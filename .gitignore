@@ -15,3 +15,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 SpainInside_WEB/
+*.rdb
+*.db
+*.db-shm
+*.db-wal
