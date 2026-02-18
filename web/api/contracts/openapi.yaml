@@ -1,0 +1,1621 @@
+openapi: 3.0.3
+info:
+  title: DatqBox API
+  description: API REST para DatqBox - Sistema Administrativo con Stored Procedures
+  version: 1.0.0
+  contact:
+    name: DatqBox Team
+
+servers:
+  - url: http://localhost:3001/v1
+    description: Development server
+  - url: http://localhost:3001/api/v1
+    description: Alternative path
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    SpResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    # Clientes
+    Cliente:
+      type: object
+      properties:
+        CODIGO:
+          type: string
+          example: "CLI001"
+        NOMBRE:
+          type: string
+          example: "Juan Pérez"
+        RIF:
+          type: string
+          example: "J-12345678-9"
+        NIT:
+          type: string
+        DIRECCION:
+          type: string
+        TELEFONO:
+          type: string
+        EMAIL:
+          type: string
+        LIMITE:
+          type: number
+        CREDITO:
+          type: number
+
+    # Proveedores
+    Proveedor:
+      type: object
+      properties:
+        CODIGO:
+          type: string
+          example: "PROV001"
+        NOMBRE:
+          type: string
+          example: "Proveedor ABC"
+        RIF:
+          type: string
+        NIT:
+          type: string
+        DIRECCION:
+          type: string
+        TELEFONO:
+          type: string
+        FAX:
+          type: string
+        NOTAS:
+          type: string
+
+    # Inventario
+    Inventario:
+      type: object
+      properties:
+        CODIGO:
+          type: string
+          example: "ART001"
+        DESCRIPCION:
+          type: string
+          example: "Producto de prueba"
+        Referencia:
+          type: string
+        Categoria:
+          type: string
+        Marca:
+          type: string
+        EXISTENCIA:
+          type: number
+        PRECIO_COMPRA:
+          type: number
+        PRECIO_VENTA:
+          type: number
+
+    # Bancos
+    Banco:
+      type: object
+      properties:
+        Nombre:
+          type: string
+          example: "Banco Mercantil"
+        Contacto:
+          type: string
+        Direccion:
+          type: string
+        Telefonos:
+          type: string
+
+    # Categorías
+    Categoria:
+      type: object
+      properties:
+        Codigo:
+          type: integer
+          example: 1
+        Nombre:
+          type: string
+          example: "Electrónica"
+
+    # Almacén
+    Almacen:
+      type: object
+      properties:
+        Codigo:
+          type: string
+          example: "ALM01"
+        Descripcion:
+          type: string
+          example: "Almacén Principal"
+        Tipo:
+          type: string
+
+    # Vendedores
+    Vendedor:
+      type: object
+      properties:
+        Codigo:
+          type: string
+          example: "V001"
+        Nombre:
+          type: string
+        Email:
+          type: string
+        Comision:
+          type: number
+        Status:
+          type: boolean
+
+    # Empleados
+    Empleado:
+      type: object
+      properties:
+        CEDULA:
+          type: string
+          example: "V12345678"
+        NOMBRE:
+          type: string
+        CARGO:
+          type: string
+        SUELDO:
+          type: number
+        STATUS:
+          type: string
+          example: "ACTIVO"
+
+    # Cuentas
+    Cuenta:
+      type: object
+      properties:
+        COD_CUENTA:
+          type: string
+          example: "1.1.01"
+        DESCRIPCION:
+          type: string
+        TIPO:
+          type: string
+        grupo:
+          type: string
+
+    # Centro de Costo
+    CentroCosto:
+      type: object
+      properties:
+        Codigo:
+          type: string
+          example: "CC001"
+        Descripcion:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================
+  # CLIENTES
+  # ============================================
+  /clientes:
+    get:
+      summary: Listar clientes
+      tags: [Clientes]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+        - name: vendedor
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Cliente'
+    post:
+      summary: Crear cliente
+      tags: [Clientes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+      responses:
+        201:
+          description: Cliente creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpResult'
+
+  /clientes/{codigo}:
+    get:
+      summary: Obtener cliente por código
+      tags: [Clientes]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+        404:
+          description: Cliente no encontrado
+    put:
+      summary: Actualizar cliente
+      tags: [Clientes]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cliente'
+      responses:
+        200:
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpResult'
+    delete:
+      summary: Eliminar cliente
+      tags: [Clientes]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Cliente eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpResult'
+
+  # ============================================
+  # PROVEEDORES
+  # ============================================
+  /proveedores:
+    get:
+      summary: Listar proveedores
+      tags: [Proveedores]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Lista de proveedores
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Proveedor'
+    post:
+      summary: Crear proveedor
+      tags: [Proveedores]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Proveedor'
+      responses:
+        201:
+          description: Proveedor creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpResult'
+
+  /proveedores/{codigo}:
+    get:
+      summary: Obtener proveedor por código
+      tags: [Proveedores]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Proveedor encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proveedor'
+    put:
+      summary: Actualizar proveedor
+      tags: [Proveedores]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Proveedor'
+      responses:
+        200:
+          description: Proveedor actualizado
+    delete:
+      summary: Eliminar proveedor
+      tags: [Proveedores]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Proveedor eliminado
+
+  # ============================================
+  # INVENTARIO
+  # ============================================
+  /inventario:
+    get:
+      summary: Listar inventario
+      tags: [Inventario]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: categoria
+          in: query
+          schema:
+            type: string
+        - name: marca
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Lista de artículos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Inventario'
+    post:
+      summary: Crear artículo
+      tags: [Inventario]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Inventario'
+      responses:
+        201:
+          description: Artículo creado
+
+  /inventario/{codigo}:
+    get:
+      summary: Obtener artículo por código
+      tags: [Inventario]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Artículo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventario'
+    put:
+      summary: Actualizar artículo
+      tags: [Inventario]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Inventario'
+      responses:
+        200:
+          description: Artículo actualizado
+    delete:
+      summary: Eliminar artículo
+      tags: [Inventario]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Artículo eliminado
+
+  # ============================================
+  # BANCOS
+  # ============================================
+  /bancos:
+    get:
+      summary: Listar bancos
+      tags: [Bancos]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Lista de bancos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Banco'
+    post:
+      summary: Crear banco
+      tags: [Bancos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Banco'
+      responses:
+        201:
+          description: Banco creado
+
+  /bancos/{nombre}:
+    get:
+      summary: Obtener banco por nombre
+      tags: [Bancos]
+      parameters:
+        - name: nombre
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Banco encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Banco'
+    put:
+      summary: Actualizar banco
+      tags: [Bancos]
+      parameters:
+        - name: nombre
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Banco actualizado
+    delete:
+      summary: Eliminar banco
+      tags: [Bancos]
+      parameters:
+        - name: nombre
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Banco eliminado
+
+  # ============================================
+  # CATEGORÍAS
+  # ============================================
+  /categorias:
+    get:
+      summary: Listar categorías
+      tags: [Categorias]
+      responses:
+        200:
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Categoria'
+    post:
+      summary: Crear categoría
+      tags: [Categorias]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Categoria'
+      responses:
+        201:
+          description: Categoría creada
+
+  /categorias/{codigo}:
+    get:
+      summary: Obtener categoría por código
+      tags: [Categorias]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Categoría encontrada
+    put:
+      summary: Actualizar categoría
+      tags: [Categorias]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Categoría actualizada
+    delete:
+      summary: Eliminar categoría
+      tags: [Categorias]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Categoría eliminada
+
+  # ============================================
+  # ALMACÉN
+  # ============================================
+  /almacen:
+    get:
+      summary: Listar almacenes
+      tags: [Almacén]
+      responses:
+        200:
+          description: Lista de almacenes
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Almacen'
+    post:
+      summary: Crear almacén
+      tags: [Almacén]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Almacen'
+      responses:
+        201:
+          description: Almacén creado
+
+  /almacen/{codigo}:
+    get:
+      summary: Obtener almacén por código
+      tags: [Almacén]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Almacén encontrado
+    put:
+      summary: Actualizar almacén
+      tags: [Almacén]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Almacén actualizado
+    delete:
+      summary: Eliminar almacén
+      tags: [Almacén]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Almacén eliminado
+
+  # ============================================
+  # VENDEDORES
+  # ============================================
+  /vendedores:
+    get:
+      summary: Listar vendedores
+      tags: [Vendedores]
+      responses:
+        200:
+          description: Lista de vendedores
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Vendedor'
+    post:
+      summary: Crear vendedor
+      tags: [Vendedores]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vendedor'
+      responses:
+        201:
+          description: Vendedor creado
+
+  /vendedores/{codigo}:
+    get:
+      summary: Obtener vendedor por código
+      tags: [Vendedores]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Vendedor encontrado
+    put:
+      summary: Actualizar vendedor
+      tags: [Vendedores]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Vendedor actualizado
+    delete:
+      summary: Eliminar vendedor
+      tags: [Vendedores]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Vendedor eliminado
+
+  # ============================================
+  # EMPLEADOS
+  # ============================================
+  /empleados:
+    get:
+      summary: Listar empleados
+      tags: [Empleados]
+      responses:
+        200:
+          description: Lista de empleados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Empleado'
+    post:
+      summary: Crear empleado
+      tags: [Empleados]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Empleado'
+      responses:
+        201:
+          description: Empleado creado
+
+  /empleados/{cedula}:
+    get:
+      summary: Obtener empleado por cédula
+      tags: [Empleados]
+      parameters:
+        - name: cedula
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Empleado encontrado
+    put:
+      summary: Actualizar empleado
+      tags: [Empleados]
+      parameters:
+        - name: cedula
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Empleado actualizado
+    delete:
+      summary: Eliminar empleado
+      tags: [Empleados]
+      parameters:
+        - name: cedula
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Empleado eliminado
+
+  # ============================================
+  # CUENTAS
+  # ============================================
+  /cuentas:
+    get:
+      summary: Listar cuentas contables
+      tags: [Cuentas]
+      responses:
+        200:
+          description: Lista de cuentas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/Cuenta'
+    post:
+      summary: Crear cuenta
+      tags: [Cuentas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cuenta'
+      responses:
+        201:
+          description: Cuenta creada
+
+  /cuentas/{codCuenta}:
+    get:
+      summary: Obtener cuenta por código
+      tags: [Cuentas]
+      parameters:
+        - name: codCuenta
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Cuenta encontrada
+    put:
+      summary: Actualizar cuenta
+      tags: [Cuentas]
+      parameters:
+        - name: codCuenta
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Cuenta actualizada
+    delete:
+      summary: Eliminar cuenta
+      tags: [Cuentas]
+      parameters:
+        - name: codCuenta
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Cuenta eliminada
+
+  # ============================================
+  # CENTRO DE COSTO
+  # ============================================
+  /centro-costo:
+    get:
+      summary: Listar centros de costo
+      tags: [Centro de Costo]
+      responses:
+        200:
+          description: Lista de centros de costo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  rows:
+                    items:
+                      $ref: '#/components/schemas/CentroCosto'
+    post:
+      summary: Crear centro de costo
+      tags: [Centro de Costo]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CentroCosto'
+      responses:
+        201:
+          description: Centro de costo creado
+
+  /centro-costo/{codigo}:
+    get:
+      summary: Obtener centro de costo por código
+      tags: [Centro de Costo]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Centro de costo encontrado
+    put:
+      summary: Actualizar centro de costo
+      tags: [Centro de Costo]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Centro de costo actualizado
+    delete:
+      summary: Eliminar centro de costo
+      tags: [Centro de Costo]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Centro de costo eliminado
+
+  # ============================================
+  # DOCUMENTOS VENTA (UNIFICADO)
+  # ============================================
+  /documentos-venta:
+    get:
+      summary: Listar documentos de venta (FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB)
+      tags: [Documentos Venta]
+      parameters:
+        - name: tipoOperacion
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: codigo
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Lista de documentos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+
+  /documentos-venta/{tipoOperacion}/{numFact}:
+    get:
+      summary: Obtener documento de venta por numero
+      tags: [Documentos Venta]
+      parameters:
+        - name: tipoOperacion
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: numFact
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Documento encontrado
+        404:
+          description: Documento no encontrado
+
+  /documentos-venta/{tipoOperacion}/{numFact}/detalle:
+    get:
+      summary: Obtener detalle de documento de venta
+      tags: [Documentos Venta]
+      parameters:
+        - name: tipoOperacion
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: numFact
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Detalle del documento
+
+  /documentos-venta/emitir-tx:
+    post:
+      summary: Emitir documento de venta transaccional
+      tags: [Documentos Venta]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipoOperacion:
+                  type: string
+                  enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB]
+                documento:
+                  type: object
+                detalle:
+                  type: array
+                  items:
+                    type: object
+                formasPago:
+                  type: array
+                  items:
+                    type: object
+                options:
+                  type: object
+      responses:
+        201:
+          description: Documento emitido
+        400:
+          description: Error de validacion
+
+  /documentos-venta/anular-tx:
+    post:
+      summary: Anular documento de venta
+      tags: [Documentos Venta]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipoOperacion:
+                  type: string
+                numFact:
+                  type: string
+                motivo:
+                  type: string
+      responses:
+        200:
+          description: Documento anulado
+
+  /documentos-venta/facturar-desde-pedido-tx:
+    post:
+      summary: Convertir pedido a factura
+      tags: [Documentos Venta]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                numFactPedido:
+                  type: string
+                factura:
+                  type: object
+                formasPago:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        201:
+          description: Factura generada desde pedido
+
+  # ============================================
+  # DOCUMENTOS COMPRA (UNIFICADO)
+  # ============================================
+  /documentos-compra:
+    get:
+      summary: Listar documentos de compra (ORDEN, COMPRA)
+      tags: [Documentos Compra]
+      parameters:
+        - name: tipoOperacion
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ORDEN, COMPRA]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: proveedor
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Lista de documentos
+
+  /documentos-compra/{tipoOperacion}/{numFact}:
+    get:
+      summary: Obtener documento de compra
+      tags: [Documentos Compra]
+      parameters:
+        - name: tipoOperacion
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: numFact
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Documento encontrado
+
+  /documentos-compra/{tipoOperacion}/{numFact}/detalle:
+    get:
+      summary: Obtener detalle de documento de compra
+      tags: [Documentos Compra]
+      parameters:
+        - name: tipoOperacion
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: numFact
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Detalle del documento
+
+  /documentos-compra/emitir-tx:
+    post:
+      summary: Emitir documento de compra transaccional
+      tags: [Documentos Compra]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipoOperacion:
+                  type: string
+                  enum: [ORDEN, COMPRA]
+                documento:
+                  type: object
+                detalle:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        201:
+          description: Documento emitido
+
+  /documentos-compra/anular-tx:
+    post:
+      summary: Anular documento de compra
+      tags: [Documentos Compra]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipoOperacion:
+                  type: string
+                numFact:
+                  type: string
+                motivo:
+                  type: string
+      responses:
+        200:
+          description: Documento anulado
+
+  /documentos-compra/cerrar-orden-con-compra-tx:
+    post:
+      summary: Cerrar orden de compra con factura de compra
+      tags: [Documentos Compra]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                numFactOrden:
+                  type: string
+                compra:
+                  type: object
+                detalle:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        201:
+          description: Orden cerrada con compra
+
+  # ============================================
+  # CONTABILIDAD GENERAL
+  # ============================================
+  /contabilidad/asientos:
+    get:
+      summary: Listar asientos contables
+      tags: [Contabilidad]
+      parameters:
+        - name: fechaDesde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: tipoAsiento
+          in: query
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Lista de asientos
+    post:
+      summary: Crear asiento contable
+      tags: [Contabilidad]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fecha:
+                  type: string
+                  format: date
+                tipoAsiento:
+                  type: string
+                  example: DIA
+                referencia:
+                  type: string
+                concepto:
+                  type: string
+                moneda:
+                  type: string
+                  example: VES
+                tasa:
+                  type: number
+                origenModulo:
+                  type: string
+                origenDocumento:
+                  type: string
+                detalle:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      codCuenta:
+                        type: string
+                      descripcion:
+                        type: string
+                      centroCosto:
+                        type: string
+                      auxiliarTipo:
+                        type: string
+                      auxiliarCodigo:
+                        type: string
+                      documento:
+                        type: string
+                      debe:
+                        type: number
+                      haber:
+                        type: number
+      responses:
+        201:
+          description: Asiento creado
+
+  /contabilidad/asientos/{id}:
+    get:
+      summary: Obtener asiento por ID
+      tags: [Contabilidad]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Asiento encontrado
+        404:
+          description: Asiento no encontrado
+
+  /contabilidad/asientos/{id}/anular:
+    post:
+      summary: Anular asiento contable
+      tags: [Contabilidad]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                motivo:
+                  type: string
+      responses:
+        200:
+          description: Asiento anulado
+
+  /contabilidad/ajustes:
+    post:
+      summary: Crear ajuste contable
+      tags: [Contabilidad]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fecha:
+                  type: string
+                  format: date
+                tipoAjuste:
+                  type: string
+                referencia:
+                  type: string
+                motivo:
+                  type: string
+                detalle:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        201:
+          description: Ajuste creado
+
+  /contabilidad/depreciaciones/generar:
+    post:
+      summary: Generar depreciacion del periodo
+      tags: [Contabilidad]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                periodo:
+                  type: string
+                  example: "2026-02"
+                centroCosto:
+                  type: string
+      responses:
+        201:
+          description: Depreciacion generada
+
+  /contabilidad/reportes/libro-mayor:
+    get:
+      summary: Libro mayor por rango de fechas
+      tags: [Contabilidad]
+      parameters:
+        - name: fechaDesde
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Libro mayor
+
+  /contabilidad/reportes/mayor-analitico:
+    get:
+      summary: Mayor analitico por cuenta
+      tags: [Contabilidad]
+      parameters:
+        - name: codCuenta
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fechaDesde
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Mayor analitico
+
+  /contabilidad/reportes/balance-comprobacion:
+    get:
+      summary: Balance de comprobacion
+      tags: [Contabilidad]
+      parameters:
+        - name: fechaDesde
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Balance de comprobacion
+
+  /contabilidad/reportes/estado-resultados:
+    get:
+      summary: Estado de resultados
+      tags: [Contabilidad]
+      parameters:
+        - name: fechaDesde
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Estado de resultados
+
+  /contabilidad/reportes/balance-general:
+    get:
+      summary: Balance general a fecha de corte
+      tags: [Contabilidad]
+      parameters:
+        - name: fechaCorte
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Balance general
+
+  /contabilidad/setup/seed-plan-cuentas:
+    post:
+      summary: Cargar seed minimo de plan de cuentas
+      tags: [Contabilidad]
+      responses:
+        201:
+          description: Seed aplicado

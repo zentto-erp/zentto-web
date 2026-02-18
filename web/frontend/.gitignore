@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+.eslintcache
+.prettierignore
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.pem
+.turbo/

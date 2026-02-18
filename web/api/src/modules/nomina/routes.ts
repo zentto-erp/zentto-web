@@ -1,0 +1,306 @@
+/**
+ * Rutas de Nómina
+ */
+import { Router } from "express";
+import { z } from "zod";
+import * as nominaService from "./service.js";
+import { conceptoLegalRouter } from "./conceptolegal.routes.js";
+
+export const nominaRouter = Router();
+
+// Sub-rutas para ConceptoLegal (tabla existente del usuario)
+nominaRouter.use("/", conceptoLegalRouter);
+
+// Esquemas de validación
+const conceptoSchema = z.object({
+  codigo: z.string().min(1).max(10),
+  codigoNomina: z.string().min(1).max(15),
+  nombre: z.string().min(1).max(100),
+  formula: z.string().max(255).optional(),
+  sobre: z.string().max(255).optional(),
+  clase: z.string().max(15).optional(),
+  tipo: z.enum(["ASIGNACION", "DEDUCCION", "BONO"]).optional(),
+  uso: z.string().max(15).optional(),
+  bonificable: z.string().length(1).optional(),
+  esAntiguedad: z.string().length(1).optional(),
+  cuentaContable: z.string().max(50).optional(),
+  aplica: z.string().length(1).optional(),
+  valorDefecto: z.number().optional(),
+});
+
+const procesarEmpleadoSchema = z.object({
+  nomina: z.string().min(1),
+  cedula: z.string().min(1),
+  fechaInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  fechaHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+const procesarNominaSchema = z.object({
+  nomina: z.string().min(1),
+  fechaInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fechaHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  soloActivos: z.boolean().optional(),
+});
+
+const vacacionesSchema = z.object({
+  vacacionId: z.string().min(1),
+  cedula: z.string().min(1),
+  fechaInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fechaHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fechaReintegro: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+const liquidacionSchema = z.object({
+  liquidacionId: z.string().min(1),
+  cedula: z.string().min(1),
+  fechaRetiro: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  causaRetiro: z.enum(["RENUNCIA", "DESPIDO", "DESPIDO_JUSTIFICADO"]).optional(),
+});
+
+const constanteSchema = z.object({
+  codigo: z.string().min(1).max(50),
+  nombre: z.string().max(100).optional(),
+  valor: z.number().optional(),
+  origen: z.string().max(50).optional(),
+});
+
+// GET /v1/nomina/conceptos - Listar conceptos
+nominaRouter.get("/conceptos", async (req, res) => {
+  try {
+    const result = await nominaService.listConceptos({
+      coNomina: req.query.coNomina as string,
+      tipo: req.query.tipo as string,
+      search: req.query.search as string,
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/conceptos - Guardar concepto
+nominaRouter.post("/conceptos", async (req, res) => {
+  const parsed = conceptoSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const result = await nominaService.saveConcepto(parsed.data);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/procesar-empleado - Procesar nómina de un empleado
+nominaRouter.post("/procesar-empleado", async (req, res) => {
+  const parsed = procesarEmpleadoSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await nominaService.procesarNominaEmpleado({
+      ...parsed.data,
+      codUsuario,
+    });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/procesar - Procesar nómina completa
+nominaRouter.post("/procesar", async (req, res) => {
+  const parsed = procesarNominaSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await nominaService.procesarNominaCompleta({
+      ...parsed.data,
+      codUsuario,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina - Listar nóminas
+nominaRouter.get("/", async (req, res) => {
+  try {
+    const result = await nominaService.listNominas({
+      nomina: req.query.nomina as string,
+      cedula: req.query.cedula as string,
+      fechaDesde: req.query.fechaDesde as string,
+      fechaHasta: req.query.fechaHasta as string,
+      soloAbiertas: req.query.soloAbiertas === "true",
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina/:nomina/:cedula - Obtener detalle
+nominaRouter.get("/:nomina/:cedula", async (req, res) => {
+  try {
+    const result = await nominaService.getNomina(req.params.nomina, req.params.cedula);
+    if (!result.cabecera) {
+      return res.status(404).json({ error: "nomina_not_found" });
+    }
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/cerrar - Cerrar nómina
+nominaRouter.post("/cerrar", async (req, res) => {
+  const schema = z.object({
+    nomina: z.string().min(1),
+    cedula: z.string().optional(),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await nominaService.cerrarNomina({
+      ...parsed.data,
+      codUsuario,
+    });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/vacaciones/procesar - Procesar vacaciones
+nominaRouter.post("/vacaciones/procesar", async (req, res) => {
+  const parsed = vacacionesSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await nominaService.procesarVacaciones({
+      ...parsed.data,
+      codUsuario,
+    });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina/vacaciones - Listar vacaciones
+nominaRouter.get("/vacaciones/list", async (req, res) => {
+  try {
+    const result = await nominaService.listVacaciones({
+      cedula: req.query.cedula as string,
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina/vacaciones/:id - Obtener vacación
+nominaRouter.get("/vacaciones/:id", async (req, res) => {
+  try {
+    const result = await nominaService.getVacaciones(req.params.id);
+    if (!result.cabecera) {
+      return res.status(404).json({ error: "vacacion_not_found" });
+    }
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/liquidacion/calcular - Calcular liquidación
+nominaRouter.post("/liquidacion/calcular", async (req, res) => {
+  const parsed = liquidacionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await nominaService.calcularLiquidacion({
+      ...parsed.data,
+      codUsuario,
+    });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina/liquidaciones - Listar liquidaciones
+nominaRouter.get("/liquidaciones/list", async (req, res) => {
+  try {
+    const result = await nominaService.listLiquidaciones({
+      cedula: req.query.cedula as string,
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina/liquidaciones/:id - Obtener liquidación
+nominaRouter.get("/liquidaciones/:id", async (req, res) => {
+  try {
+    const result = await nominaService.getLiquidacion(req.params.id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/nomina/constantes - Listar constantes
+nominaRouter.get("/constantes", async (req, res) => {
+  try {
+    const result = await nominaService.listConstantes({
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/nomina/constantes - Guardar constante
+nominaRouter.post("/constantes", async (req, res) => {
+  const parsed = constanteSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+
+  try {
+    const result = await nominaService.saveConstante(parsed.data);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});

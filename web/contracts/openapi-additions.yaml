@@ -1,0 +1,1259 @@
+  # ============================================
+  # BANCOS - Conciliación Bancaria
+  # ============================================
+  /v1/bancos:
+    get:
+      tags:
+        - Bancos
+      summary: Lista bancos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Bancos
+      summary: Crea banco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nombre]
+              properties:
+                Nombre:
+                  type: string
+                Contacto:
+                  type: string
+                Direccion:
+                  type: string
+                Telefonos:
+                  type: string
+                Co_Usuario:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/{nombre}:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene banco por nombre
+      parameters:
+        - in: path
+          name: nombre
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Bancos
+      summary: Actualiza banco
+      parameters:
+        - in: path
+          name: nombre
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Contacto:
+                  type: string
+                Direccion:
+                  type: string
+                Telefonos:
+                  type: string
+                Co_Usuario:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags:
+        - Bancos
+      summary: Elimina banco
+      parameters:
+        - in: path
+          name: nombre
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/cuentas/list:
+    get:
+      tags:
+        - Bancos
+      summary: Lista cuentas bancarias
+      responses:
+        "200":
+          description: Lista de cuentas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/cuentas/{nroCta}/movimientos:
+    get:
+      tags:
+        - Bancos
+      summary: Movimientos de cuenta bancaria
+      parameters:
+        - in: path
+          name: nroCta
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: desde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: hasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/movimientos/generar:
+    post:
+      tags:
+        - Bancos
+      summary: Genera movimiento bancario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nro_Cta, Tipo, Nro_Ref, Beneficiario, Monto, Concepto]
+              properties:
+                Nro_Cta:
+                  type: string
+                Tipo:
+                  type: string
+                  enum: [PCH, DEP, NCR, NDB, IDB]
+                Nro_Ref:
+                  type: string
+                Beneficiario:
+                  type: string
+                Monto:
+                  type: number
+                Concepto:
+                  type: string
+                Categoria:
+                  type: string
+                Documento_Relacionado:
+                  type: string
+                Tipo_Doc_Rel:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones:
+    get:
+      tags:
+        - Bancos
+      summary: Lista conciliaciones bancarias
+      parameters:
+        - in: query
+          name: Nro_Cta
+          schema:
+            type: string
+        - in: query
+          name: Estado
+          schema:
+            type: string
+            enum: [ABIERTA, CERRADA, EN_PROCESO]
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/crear:
+    post:
+      tags:
+        - Bancos
+      summary: Crea nueva conciliación bancaria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nro_Cta, Fecha_Desde, Fecha_Hasta]
+              properties:
+                Nro_Cta:
+                  type: string
+                Fecha_Desde:
+                  type: string
+                  format: date
+                Fecha_Hasta:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/{id}:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene conciliación por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/{id}/importar-extracto:
+    post:
+      tags:
+        - Bancos
+      summary: Importa extracto bancario a conciliación
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [extracto]
+              properties:
+                extracto:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Fecha:
+                        type: string
+                        format: date
+                      Descripcion:
+                        type: string
+                      Referencia:
+                        type: string
+                      Tipo:
+                        type: string
+                        enum: [DEBITO, CREDITO]
+                      Monto:
+                        type: number
+                      Saldo:
+                        type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/conciliar:
+    post:
+      tags:
+        - Bancos
+      summary: Concilia movimientos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, MovimientoSistema_ID]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                MovimientoSistema_ID:
+                  type: integer
+                Extracto_ID:
+                  type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/ajuste:
+    post:
+      tags:
+        - Bancos
+      summary: Genera ajuste de conciliación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, Tipo_Ajuste, Monto, Descripcion]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                Tipo_Ajuste:
+                  type: string
+                  enum: [NOTA_CREDITO, NOTA_DEBITO]
+                Monto:
+                  type: number
+                Descripcion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/cerrar:
+    post:
+      tags:
+        - Bancos
+      summary: Cierra conciliación bancaria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, Saldo_Final_Banco]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                Saldo_Final_Banco:
+                  type: number
+                Observaciones:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # NOMINA
+  # ============================================
+  /v1/nomina/conceptos-legales:
+    get:
+      tags:
+        - Nomina
+      summary: Lista conceptos legales de nómina
+      parameters:
+        - in: query
+          name: convencion
+          schema:
+            type: string
+            enum: [LOT, CCT_PETROLERO, CONSTRUCCION, COMERCIO, SALUD]
+        - in: query
+          name: tipoCalculo
+          schema:
+            type: string
+            enum: [MENSUAL, SEMANAL, QUINCENAL, VACACIONES, LIQUIDACION]
+        - in: query
+          name: tipo
+          schema:
+            type: string
+            enum: [ASIGNACION, DEDUCCION, BONO]
+        - in: query
+          name: activo
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Lista de conceptos legales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/nomina/convenciones:
+    get:
+      tags:
+        - Nomina
+      summary: Lista convenciones disponibles
+      responses:
+        "200":
+          description: Convenciones de nómina
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/procesar-conceptolegal:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa nómina usando conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nomina, cedula, fechaInicio, fechaHasta]
+              properties:
+                nomina:
+                  type: string
+                  description: Código de nómina
+                cedula:
+                  type: string
+                  description: Cédula del empleado
+                fechaInicio:
+                  type: string
+                  format: date
+                fechaHasta:
+                  type: string
+                  format: date
+                convencion:
+                  type: string
+                  enum: [LOT, CCT_PETROLERO, CONSTRUCCION, COMERCIO, SALUD]
+                  description: Convención colectiva a aplicar
+                tipoCalculo:
+                  type: string
+                  enum: [MENSUAL, SEMANAL, QUINCENAL, VACACIONES, LIQUIDACION]
+                  default: MENSUAL
+      responses:
+        "200":
+          description: Resultado del procesamiento
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  nomina:
+                    type: string
+                  cedula:
+                    type: string
+                  asignaciones:
+                    type: number
+                  deducciones:
+                    type: number
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/procesar-conceptolegal:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa vacaciones usando conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vacacionId, cedula, fechaInicio, fechaHasta]
+              properties:
+                vacacionId:
+                  type: string
+                cedula:
+                  type: string
+                fechaInicio:
+                  type: string
+                  format: date
+                fechaHasta:
+                  type: string
+                  format: date
+                fechaReintegro:
+                  type: string
+                  format: date
+                convencion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/liquidacion/procesar-conceptolegal:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa liquidación usando conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [liquidacionId, cedula, fechaRetiro]
+              properties:
+                liquidacionId:
+                  type: string
+                cedula:
+                  type: string
+                fechaRetiro:
+                  type: string
+                  format: date
+                causaRetiro:
+                  type: string
+                  enum: [RENUNCIA, DESPIDO, DESPIDO_JUSTIFICADO]
+                convencion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/validar-formulas:
+    post:
+      tags:
+        - Nomina
+      summary: Valida fórmulas de conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                convencion:
+                  type: string
+                tipoCalculo:
+                  type: string
+      responses:
+        "200":
+          description: Resultado de validación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resumen:
+                    $ref: "#/components/schemas/GenericObject"
+                  errores:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # CONTABILIDAD
+  # ============================================
+  /v1/contabilidad/cuentas:
+    get:
+      tags:
+        - Contabilidad
+      summary: Lista plan de cuentas
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: tipo
+          schema:
+            type: string
+        - in: query
+          name: nivel
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Plan de cuentas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/cuentas/{codCuenta}:
+    get:
+      tags:
+        - Contabilidad
+      summary: Obtiene cuenta contable específica
+      parameters:
+        - in: path
+          name: codCuenta
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos:
+    get:
+      tags:
+        - Contabilidad
+      summary: Lista asientos contables
+      parameters:
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: tipoAsiento
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos/{id}:
+    get:
+      tags:
+        - Contabilidad
+      summary: Obtiene asiento contable
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos:
+    post:
+      tags:
+        - Contabilidad
+      summary: Crea asiento contable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fecha, tipoAsiento, concepto, detalle]
+              properties:
+                fecha:
+                  type: string
+                  format: date
+                tipoAsiento:
+                  type: string
+                referencia:
+                  type: string
+                concepto:
+                  type: string
+                moneda:
+                  type: string
+                tasa:
+                  type: number
+                origenModulo:
+                  type: string
+                origenDocumento:
+                  type: string
+                detalle:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      codCuenta:
+                        type: string
+                      descripcion:
+                        type: string
+                      centroCosto:
+                        type: string
+                      auxiliarTipo:
+                        type: string
+                      auxiliarCodigo:
+                        type: string
+                      documento:
+                        type: string
+                      debe:
+                        type: number
+                      haber:
+                        type: number
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos/{id}/anular:
+    post:
+      tags:
+        - Contabilidad
+      summary: Anula asiento contable
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/ajustes:
+    post:
+      tags:
+        - Contabilidad
+      summary: Crea ajuste contable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fecha, tipoAjuste, motivo, detalle]
+              properties:
+                fecha:
+                  type: string
+                  format: date
+                tipoAjuste:
+                  type: string
+                referencia:
+                  type: string
+                motivo:
+                  type: string
+                detalle:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/depreciaciones/generar:
+    post:
+      tags:
+        - Contabilidad
+      summary: Genera depreciación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [periodo]
+              properties:
+                periodo:
+                  type: string
+                  pattern: "^\\d{4}-\\d{2}$"
+                  example: "2026-02"
+                centroCosto:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/libro-mayor:
+    get:
+      tags:
+        - Contabilidad
+      summary: Reporte libro mayor
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/mayor-analitico:
+    get:
+      tags:
+        - Contabilidad
+      summary: Reporte mayor analítico
+      parameters:
+        - in: query
+          name: codCuenta
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/balance-comprobacion:
+    get:
+      tags:
+        - Contabilidad
+      summary: Balance de comprobación
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/estado-resultados:
+    get:
+      tags:
+        - Contabilidad
+      summary: Estado de resultados
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/balance-general:
+    get:
+      tags:
+        - Contabilidad
+      summary: Balance general
+      parameters:
+        - in: query
+          name: fechaCorte
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/setup/seed-plan-cuentas:
+    post:
+      tags:
+        - Contabilidad
+      summary: Seed inicial del plan de cuentas
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # CxC / CxP - Mejorados
+  # ============================================
+  /v1/cxc/documentos:
+    get:
+      tags:
+        - CxC
+      summary: Lista documentos CxC (facturas, notas)
+      parameters:
+        - in: query
+          name: codCliente
+          schema:
+            type: string
+        - in: query
+          name: tipoDoc
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [PENDIENTE, PAGADO, PARCIAL, ANULADO]
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de documentos CxC
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/cxp/documentos:
+    get:
+      tags:
+        - CxP
+      summary: Lista documentos CxP (facturas, notas proveedores)
+      parameters:
+        - in: query
+          name: codProveedor
+          schema:
+            type: string
+        - in: query
+          name: tipoDoc
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [PENDIENTE, PAGADO, PARCIAL, ANULADO]
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de documentos CxP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # HEALTH
+  # ============================================
+  /health/db:
+    get:
+      tags:
+        - Health
+      summary: Health check con verificación de base de datos
+      security: []
+      responses:
+        "200":
+          description: Estado de la conexión a BD
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  database:
+                    type: string
+                    enum: [connected, disconnected]
+                  timestamp:
+                    type: string
+                    format: date-time
+        "500":
+          description: Error de conexión a BD
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  database:
+                    type: string
+                  error:
+                    type: string
+
+  # ============================================
+  # VENDEDORES, EMPLEADOS, CENTRO COSTO
+  # ============================================
+  /v1/vendedores:
+    get:
+      tags:
+        - Vendedores
+      summary: Lista vendedores
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/empleados:
+    get:
+      tags:
+        - Empleados
+      summary: Lista empleados
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/centro-costo:
+    get:
+      tags:
+        - CentroCosto
+      summary: Lista centros de costo
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/unidades:
+    get:
+      tags:
+        - Unidades
+      summary: Lista unidades de medida
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/empresa:
+    get:
+      tags:
+        - Empresa
+      summary: Datos de la empresa
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/usuarios:
+    get:
+      tags:
+        - Usuarios
+      summary: Lista usuarios
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"

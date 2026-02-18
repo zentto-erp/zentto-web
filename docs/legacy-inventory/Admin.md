@@ -1,0 +1,91 @@
+﻿# Inventario Legacy - Admin
+
+- VBP: DatQBox Admin/DatQBoxAdmin.vbp
+- Forms: 60
+- Modules: 13
+- Classes: 6
+
+## Forms
+- frmSplashpuntoventa -> ..\DatQBox PtoVenta\frmSplashpuntoventa.frm
+- frmCargarSQL -> ..\DatQBox PtoVenta\frmCargarSQL.frm
+- infoproductos -> ..\DatQBox PtoVenta\infoproductos.frm
+- infoproductosCliente -> ..\DatQBox PtoVenta\infoproductosCliente.frm
+- frmBuscardorProveedor -> ..\DatQBox PtoVenta\frmBuscardorProveedor.frm
+- FrmActualizaEmpresa -> FrmActualizaEmpresa.frm
+- DetalleFacts_C -> ..\DatQBox PtoVenta\DetalleFacts_C.frm
+- DetalleFacts -> ..\DatQBox PtoVenta\DetalleFacts.frm
+- frmcambiaclaveventa -> ..\DatQBox PtoVenta\frmcambiaclaveventa.frm
+- frmClaves -> ..\DatQBox PtoVenta\frmClaves.frm
+- Calc -> ..\DatQBox PtoVenta\Calc.frm
+- frmLoginpuntoventa -> ..\DatQBox PtoVenta\frmLoginpuntoventa.frm
+- frmBuscardorCompras -> ..\DatQBox Compras\frmBuscardorCompras.frm
+- frmMainAdmin -> frmMainAdmin.frm
+- frmVisorReport -> ..\DatQBox Compras\frmVisorReport.frm
+- frmVisorReportCrystal -> ..\DatQBox Compras\frmVisorReportCrystal.frm
+- frmCUsuarios -> ..\DatQBox Compras\frmCUsuarios.frm
+- frmPorPagar -> frmPorPagar.frm
+- frmBuscardorAux -> ..\DatQBox PtoVenta\frmBuscardorAux.frm
+- frmSqlQuery -> ..\DatQBox Compras\frmSqlQuery.frm
+- frmProveedores -> frmProveedores.frm
+- frmTablas -> ..\DatQBox Compras\frmTablas.frm
+- frmVentasAdd -> ..\DatQBox PtoVenta\frmVentasAdd.frm
+- frmControls -> ..\DatQBox PtoVenta\frmControls.frm
+- frmTrasladosInventario -> ..\DatQBox Compras\frmTrasladosInventario.frm
+- FrmDetalleFormaPago -> ..\DatQBox PtoVenta\FrmDetalleFormaPago.frm
+- frmBuscardorCliente -> ..\DatQBox PtoVenta\frmBuscardorCliente.frm
+- FrmReportes -> FrmReportes.frm
+- frmVuelto -> ..\DatQBox PtoVenta\frmVuelto.frm
+- configurad -> configurad.frm
+- DialogFecha -> DialogFecha.frm
+- frmDepositoCaja -> frmDepositoCaja.frm
+- TransacionBanco -> TransacionBanco.frm
+- frmDistribuGasto -> frmDistribuGasto.frm
+- frmMovCtas -> frmMovCtas.frm
+- ClientesFact -> ..\DatQBox PtoVenta\ClientesFact.frm
+- FrmComisiones -> FrmComisiones.frm
+- Clientes -> ..\DatQBox Compras\Clientes.Frm
+- phone -> phone.frm
+- frmConsultasCompras -> ..\DatQBox Compras\frmConsultasCompras.frm
+- ATRASADOS -> ..\DatQBox PtoVenta\ATRASADOS.frm
+- frmConsultasVentas -> frmConsultasVentas.frm
+- frmVisorScaner -> ..\DatQBox Compras\frmVisorScaner.frm
+- frmLoginPreciominimo -> ..\DatQBox PtoVenta\frmLoginPreciominimo.frm
+- FrmVendedorClave -> ..\DatQBox PtoVenta\FrmVendedorClave.frm
+- configurador -> configurador.frm
+- frmComprasAdd -> ..\DatQBox Compras\frmComprasAdd.frm
+- FrmInfoLubricantes -> ..\DatQBox PtoVenta\FrmInfoLubricantes.frm
+- frmInventario -> ..\DatQBox Compras\frmInventario.frm
+- frmArticulos -> ..\DatQBox Compras\frmArticulos.frm
+- frmImprimeEtiqueta -> ..\DatQBox Compras\frmImprimeEtiqueta.frm
+- frmCompras -> ..\DatQBox Compras\frmCompras.frm
+- frmCambiaPrecios -> ..\DatQBox Compras\frmCambiaPrecios.frm
+- frmdetalleinventario -> ..\DatQBox Compras\frmdetalleinventario.frm
+- seriales -> ..\DatQBox Compras\seriales.frm
+- frmdetalleLotes -> ..\DatQBox PtoVenta\frmdetalleLotes.frm
+- empresa -> empresa.frm
+- FRMABOUT -> ..\..\Syswin Administrativo\FRMABOUT.FRM
+- frmInventarioAux -> ..\DatQBox Compras\frmInventarioAux.frm
+- frmBuscardor -> ..\DatQBox PtoVenta\frmBuscardor.frm
+
+## Modules
+- Definitions -> DefinitionsAdmin.bas
+- vDbGym -> ..\DatQBox PtoVenta\Sanjose.bas
+- ADOBinary -> ..\DatQBox PtoVenta\ADOBinary.bas
+- LibNomina -> ..\DatQBox PtoVenta\Nomina.Bas
+- Global -> ..\DatQBox PtoVenta\Global.bas
+- FocusWindows -> ..\DatQBox PtoVenta\FocusWindows.bas
+- EFBAREAN -> ..\DatQBox Compras\VBbarEAN.bas
+- WinApisAdmin -> WinapisAdmin.bas
+- ClonFiscal -> ..\DatQBox PtoVenta\ClonFiscal.bas
+- TWERP1 -> ..\DatQBox Compras\TWERP.BAS
+- Regional -> Regional.bas
+- Fiscal -> ..\Spooler Fiscal HKA\Fiscal.bas
+- Encriptar -> ..\..\Configurador\Encriptar.bas
+
+## Classes
+- cNum2Text -> ..\DatQBox PtoVenta\cNum2Text.cls
+- cQueryReg -> ..\DatQBox PtoVenta\cQueryReg.cls
+- MisTextBoxes -> ..\DatQBox PtoVenta\MisTextBoxes.cls
+- MiTextBox -> ..\DatQBox PtoVenta\MiTextBox.cls
+- cInternetTime -> cInternetTime.cls
+- Registro -> ..\..\Configurador\Registro.cls

@@ -1,0 +1,115 @@
+/* Estilos globales para DatqBox */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Animación de gradiente */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ScrollBar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Celdas no editables DataGrid */
+.non-editable-cell {
+  background-color: #f0f0f0 !important;
+  color: #757575 !important;
+}
+
+/* Otros */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Estilos para impresión */
+@media print {
+  .no-print,
+  .MuiButton-root,
+  .MuiTabs-root,
+  .MuiDialog-root {
+    display: none !important;
+  }
+
+  .MuiTabPanel-root {
+    display: block !important;
+    height: auto !important;
+    visibility: visible !important;
+    padding: 8px !important;
+  }
+
+  .MuiTableCell-root {
+    padding: 4px !important;
+    font-size: 10px !important;
+  }
+
+  .MuiDataGrid-root {
+    height: auto !important;
+    overflow: visible !important;
+    border: 1px solid #ddd;
+  }
+
+  .MuiDataGrid-main {
+    overflow: visible !important;
+  }
+
+  .MuiDataGrid-virtualScroller {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body {
+    font-size: 10pt;
+    margin: 1cm;
+  }
+
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+}

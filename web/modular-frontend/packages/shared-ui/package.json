@@ -1,0 +1,31 @@
+{
+  "name": "@datqbox/shared-ui",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./globals.css": "./src/globals.css",
+    "./theme": "./src/theme.ts"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^6",
+    "@mui/material": "^6.5.0",
+    "@mui/material-nextjs": "^6",
+    "@mui/system": "^6.4.6",
+    "@mui/x-data-grid": "^7.24.0",
+    "@mui/x-date-pickers": "^7",
+    "@toolpad/core": "^0.10.0",
+    "dayjs": "^1",
+    "next": "^15.5.12",
+    "next-auth": "^5.0.0-beta.25",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.5.1",
+    "@datqbox/shared-auth": "0.1.0"
+  }
+}

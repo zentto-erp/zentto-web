@@ -1,0 +1,26 @@
+{
+  "name": "@datqbox/module-bancos",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./components/*": "./src/components/*",
+    "./hooks/*": "./src/hooks/*",
+    "./pages/*": "./src/pages/*"
+  },
+  "dependencies": {
+    "@datqbox/shared-api": "*",
+    "@datqbox/shared-auth": "*",
+    "@datqbox/shared-ui": "*",
+    "@datqbox/module-contabilidad": "*",
+    "@mui/material": "^6.5.0",
+    "@mui/icons-material": "^6.5.0",
+    "@mui/x-data-grid": "^8.5.0",
+    "@mui/x-date-pickers": "^8.5.0",
+    "@tanstack/react-query": "^5.64.2",
+    "dayjs": "^1.11.13",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

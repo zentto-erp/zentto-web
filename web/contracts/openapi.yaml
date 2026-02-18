@@ -1,0 +1,5526 @@
+openapi: 3.0.3
+info:
+  title: DatqBox API
+  version: 1.7.0
+  description: |
+    API REST de DatqBox ERP - Sistema de Gestión Empresarial
+    
+    **Módulos disponibles:**
+    - Auth (Autenticación JWT, RBAC, Cambio/Reset de contraseña)
+    - Clientes, Proveedores, Vendedores, Empleados
+    - Inventario, Artículos, Categorías, Marcas, Líneas
+    - Documentos de Venta (FACT, PED, COT, etc.)
+    - Documentos de Compra (ORDEN, COMPRA)
+    - CxC / CxP (Cuentas por Cobrar/Pagar)
+    - Abonos, Pagos, Cuentas por Pagar
+    - **Bancos** (Conciliación bancaria)
+    - **Nómina** (Conceptos legales, LOT, procesamiento)
+    - **Contabilidad** (Plan de cuentas, asientos, reportes)
+    - Retenciones, Movimientos de Inventario
+    - Meta, CRUD, Addons
+servers:
+  - url: http://localhost:3001
+    description: Servidor de desarrollo local
+  - url: http://localhost:4000
+    description: Puerto alternativo (legacy)
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - usuario
+        - clave
+      properties:
+        usuario:
+          type: string
+          example: SUP
+        clave:
+          type: string
+          example: SUP
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        isAdmin:
+          type: boolean
+        permisos:
+          $ref: "#/components/schemas/PermisosObject"
+        modulos:
+          type: array
+          items:
+            type: string
+          description: Módulos permitidos para este usuario
+        usuario:
+          type: object
+          properties:
+            codUsuario:
+              type: string
+            nombre:
+              type: string
+              nullable: true
+            tipo:
+              type: string
+              nullable: true
+            isAdmin:
+              type: boolean
+    PermisosObject:
+      type: object
+      description: Permisos del usuario basados en campos de tabla Usuarios
+      properties:
+        canUpdate:
+          type: boolean
+          description: Campo Updates
+        canCreate:
+          type: boolean
+          description: Campo Addnews
+        canDelete:
+          type: boolean
+          description: Campo Deletes
+        canChangePrice:
+          type: boolean
+          description: Campo PrecioMinimo
+        canGiveCredit:
+          type: boolean
+          description: Campo Credito
+        canChangePwd:
+          type: boolean
+          description: Campo Cambiar
+        isCreator:
+          type: boolean
+          description: Campo Creador
+    GenericObject:
+      type: object
+      additionalProperties: true
+    TxPayload:
+      type: object
+      properties:
+        header:
+          $ref: "#/components/schemas/GenericObject"
+        detalle:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenericObject"
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        issues:
+          type: object
+          additionalProperties: true
+      required:
+        - error
+    PagedRowsResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 1234
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenericObject"
+      required:
+        - rows
+    PagedRowsPageSizeResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 50
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenericObject"
+      required:
+        - rows
+    RowsArrayResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/GenericObject"
+    MutationResponse:
+      type: object
+      additionalProperties: true
+      example:
+        ok: true
+    TxResultResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        numFact:
+          type: string
+          example: "000123"
+        detalleRows:
+          type: integer
+          example: 3
+      required:
+        - ok
+    AddonsListResponse:
+      type: object
+      properties:
+        addons:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenericObject"
+      required:
+        - addons
+    CrudKeyResponse:
+      type: object
+      properties:
+        key:
+          type: string
+          example: eyJDT0RJR08iOiJDMDAxIn0
+      required:
+        - key
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+      required:
+        - ok
+  parameters:
+    IdParam:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+    CodigoParam:
+      in: path
+      name: codigo
+      required: true
+      schema:
+        type: string
+    NumFactParam:
+      in: path
+      name: numFact
+      required: true
+      schema:
+        type: string
+    TableParam:
+      in: path
+      name: table
+      required: true
+      schema:
+        type: string
+    KeyParam:
+      in: path
+      name: key
+      required: true
+      schema:
+        type: string
+        description: base64url json key
+    SchemaQuery:
+      in: query
+      name: schema
+      required: false
+      schema:
+        type: string
+        default: dbo
+    SearchQuery:
+      in: query
+      name: search
+      required: false
+      schema:
+        type: string
+    PageQuery:
+      in: query
+      name: page
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitQuery:
+      in: query
+      name: limit
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
+  responses:
+    Unauthorized:
+      description: Token requerido o invalido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: Solicitud invalida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Registro no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    OkObject:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GenericObject"
+    OkArray:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RowsArrayResponse"
+    OkPagedRows:
+      description: Lista paginada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PagedRowsResponse"
+    OkPagedRowsPageSize:
+      description: Lista paginada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PagedRowsPageSizeResponse"
+    CreatedObject:
+      description: Creado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MutationResponse"
+    TxCreated:
+      description: Transacci?n completada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/TxResultResponse"
+    OkAddons:
+      description: Add-ons activos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AddonsListResponse"
+    OkCrudKey:
+      description: Key codificada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CrudKeyResponse"
+    HealthOk:
+      description: Servicio activo
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HealthResponse"
+paths:
+  /v1/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login contra tabla Usuarios
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login correcto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Datos del usuario autenticado (desde JWT)
+      responses:
+        "200":
+          description: Perfil del usuario autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codUsuario:
+                    type: string
+                  nombre:
+                    type: string
+                  tipo:
+                    type: string
+                  isAdmin:
+                    type: boolean
+                  permisos:
+                    $ref: "#/components/schemas/PermisosObject"
+                  modulos:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/change-password:
+    post:
+      tags:
+        - Auth
+      summary: Cambio de contraseña del usuario autenticado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  description: Contraseña actual
+                newPassword:
+                  type: string
+                  description: "Nueva contraseña (min 6 chars, 1 mayúscula, 1 número)"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: "Reset de contraseña por administrador (admin only)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codUsuario, newPassword]
+              properties:
+                codUsuario:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Solo administradores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/clientes:
+    get:
+      tags:
+        - Clientes
+      summary: Lista clientes
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Clientes
+      summary: Crea cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/clientes/{codigo}:
+    get:
+      tags:
+        - Clientes
+      summary: Cliente por codigo
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Clientes
+      summary: Actualiza cliente
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Clientes
+      summary: Elimina cliente
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/proveedores:
+    get:
+      tags:
+        - Proveedores
+      summary: Lista proveedores
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Proveedores
+      summary: Crea proveedor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/proveedores/{codigo}:
+    get:
+      tags:
+        - Proveedores
+      summary: Proveedor por codigo
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Proveedores
+      summary: Actualiza proveedor
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Proveedores
+      summary: Elimina proveedor
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/inventario:
+    get:
+      tags:
+        - Inventario
+      summary: Lista inventario
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Inventario
+      summary: Crea item inventario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/inventario/{codigo}:
+    get:
+      tags:
+        - Inventario
+      summary: Inventario por codigo
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Inventario
+      summary: Actualiza item inventario
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Inventario
+      summary: Elimina item inventario
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/articulos:
+    get:
+      tags:
+        - Inventario
+      summary: Alias de inventario para articulos
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/articulos/{codigo}:
+    get:
+      tags:
+        - Inventario
+      summary: Alias detalle articulo
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/compras:
+    get:
+      tags:
+        - Compras
+      summary: Lista compras
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Compras
+      summary: Crea compra cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/compras/tx:
+    post:
+      tags:
+        - Compras
+      summary: Crea compra mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                compra:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/compras/{numFact}:
+    get:
+      tags:
+        - Compras
+      summary: Compra por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Compras
+      summary: Actualiza compra
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Compras
+      summary: Elimina compra
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/compras/{numFact}/detalle:
+    get:
+      tags:
+        - Compras
+      summary: Detalle compra
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/facturas:
+    get:
+      tags:
+        - Facturas
+      summary: Lista facturas
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/facturas/tx:
+    post:
+      tags:
+        - Facturas
+      summary: Crea factura mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factura:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/facturas/{numFact}:
+    get:
+      tags:
+        - Facturas
+      summary: Factura por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/facturas/{numFact}/detalle:
+    get:
+      tags:
+        - Facturas
+      summary: Detalle factura
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/abonos:
+    get:
+      tags:
+        - Abonos
+      summary: Lista abonos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Abonos
+      summary: Crea abono cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/abonos/tx:
+    post:
+      tags:
+        - Abonos
+      summary: Crea abono mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                abono:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/abonos/{id}:
+    get:
+      tags:
+        - Abonos
+      summary: Abono por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Abonos
+      summary: Actualiza abono
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Abonos
+      summary: Elimina abono
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/abonos/{id}/detalle:
+    get:
+      tags:
+        - Abonos
+      summary: Detalle abono
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pagos:
+    get:
+      tags:
+        - Pagos
+      summary: Lista pagos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Pagos
+      summary: Crea pago cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pagos/tx:
+    post:
+      tags:
+        - Pagos
+      summary: Crea pago mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pago:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pagos/{id}:
+    get:
+      tags:
+        - Pagos
+      summary: Pago por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Pagos
+      summary: Actualiza pago
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Pagos
+      summary: Elimina pago
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/pagos/{id}/detalle:
+    get:
+      tags:
+        - Pagos
+      summary: Detalle pago
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pagosc:
+    get:
+      tags:
+        - PagosC
+      summary: Lista Pagosc
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - PagosC
+      summary: Crea Pagosc cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pagosc/tx:
+    post:
+      tags:
+        - PagosC
+      summary: Crea Pagosc mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pago:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pagosc/{id}:
+    get:
+      tags:
+        - PagosC
+      summary: Pagosc por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - PagosC
+      summary: Actualiza Pagosc
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - PagosC
+      summary: Elimina Pagosc
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/pagosc/{id}/detalle:
+    get:
+      tags:
+        - PagosC
+      summary: Detalle Pagosc
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/abonospagos:
+    get:
+      tags:
+        - AbonosPagos
+      summary: Lista AbonosPagos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - AbonosPagos
+      summary: Crea AbonosPagos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/abonospagos/{id}:
+    get:
+      tags:
+        - AbonosPagos
+      summary: AbonosPagos por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - AbonosPagos
+      summary: Actualiza AbonosPagos
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - AbonosPagos
+      summary: Elimina AbonosPagos
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/cuentas-por-pagar:
+    get:
+      tags:
+        - CuentasPorPagar
+      summary: Lista cuentas por pagar
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - CuentasPorPagar
+      summary: Crea cta por pagar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/cuentas-por-pagar/{id}:
+    get:
+      tags:
+        - CuentasPorPagar
+      summary: Cta por pagar por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - CuentasPorPagar
+      summary: Actualiza cta por pagar
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - CuentasPorPagar
+      summary: Elimina cta por pagar
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/p-cobrar:
+    get:
+      tags:
+        - CuentasPorCobrar
+      summary: Lista p_cobrar
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - CuentasPorCobrar
+      summary: Crea p_cobrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/p-cobrar/{id}:
+    get:
+      tags:
+        - CuentasPorCobrar
+      summary: p_cobrar por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - CuentasPorCobrar
+      summary: Actualiza p_cobrar
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - CuentasPorCobrar
+      summary: Elimina p_cobrar
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/p-cobrar/c/list:
+    get:
+      tags:
+        - CuentasPorCobrar
+      summary: Lista P_Cobrarc
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/p-cobrar/c:
+    post:
+      tags:
+        - CuentasPorCobrar
+      summary: Crea P_Cobrarc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/p-cobrar/c/{id}:
+    get:
+      tags:
+        - CuentasPorCobrar
+      summary: P_Cobrarc por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - CuentasPorCobrar
+      summary: Actualiza P_Cobrarc
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - CuentasPorCobrar
+      summary: Elimina P_Cobrarc
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/notas/credito:
+    get:
+      tags:
+        - Notas
+      summary: Lista notas credito
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Notas
+      summary: Crea nota credito cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/notas/credito/tx:
+    post:
+      tags:
+        - Notas
+      summary: Crea nota credito mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nota:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/notas/credito/{numFact}:
+    get:
+      tags:
+        - Notas
+      summary: Nota credito por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Notas
+      summary: Actualiza nota credito
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Notas
+      summary: Elimina nota credito
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/notas/credito/{numFact}/detalle:
+    get:
+      tags:
+        - Notas
+      summary: Detalle nota credito
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/notas/debito:
+    get:
+      tags:
+        - Notas
+      summary: Lista notas debito
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Notas
+      summary: Crea nota debito cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/notas/debito/tx:
+    post:
+      tags:
+        - Notas
+      summary: Crea nota debito mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nota:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/notas/debito/{numFact}:
+    get:
+      tags:
+        - Notas
+      summary: Nota debito por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Notas
+      summary: Actualiza nota debito
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Notas
+      summary: Elimina nota debito
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/notas/debito/{numFact}/detalle:
+    get:
+      tags:
+        - Notas
+      summary: Detalle nota debito
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pedidos:
+    get:
+      tags:
+        - Pedidos
+      summary: Lista pedidos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Pedidos
+      summary: Crea pedido cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pedidos/tx:
+    post:
+      tags:
+        - Pedidos
+      summary: Crea pedido mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pedido:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/pedidos/{numFact}:
+    get:
+      tags:
+        - Pedidos
+      summary: Pedido por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Pedidos
+      summary: Actualiza pedido
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Pedidos
+      summary: Elimina pedido
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/pedidos/{numFact}/detalle:
+    get:
+      tags:
+        - Pedidos
+      summary: Detalle pedido
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/cotizaciones:
+    get:
+      tags:
+        - Cotizaciones
+      summary: Lista cotizaciones
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Cotizaciones
+      summary: Crea cotizacion cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/cotizaciones/tx:
+    post:
+      tags:
+        - Cotizaciones
+      summary: Crea cotizacion mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cotizacion:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/cotizaciones/{numFact}:
+    get:
+      tags:
+        - Cotizaciones
+      summary: Cotizacion por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Cotizaciones
+      summary: Actualiza cotizacion
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Cotizaciones
+      summary: Elimina cotizacion
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/cotizaciones/{numFact}/detalle:
+    get:
+      tags:
+        - Cotizaciones
+      summary: Detalle cotizacion
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/ordenes:
+    get:
+      tags:
+        - Ordenes
+      summary: Lista ordenes
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Ordenes
+      summary: Crea orden cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/ordenes/tx:
+    post:
+      tags:
+        - Ordenes
+      summary: Crea orden mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orden:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/ordenes/{numFact}:
+    get:
+      tags:
+        - Ordenes
+      summary: Orden por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Ordenes
+      summary: Actualiza orden
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Ordenes
+      summary: Elimina orden
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/ordenes/{numFact}/detalle:
+    get:
+      tags:
+        - Ordenes
+      summary: Detalle orden
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/presupuestos:
+    get:
+      tags:
+        - Presupuestos
+      summary: Lista presupuestos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Presupuestos
+      summary: Crea presupuesto cabecera
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/presupuestos/tx:
+    post:
+      tags:
+        - Presupuestos
+      summary: Crea presupuesto mas detalle en transaccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                presupuesto:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/presupuestos/emitir-tx:
+    post:
+      tags:
+        - Presupuestos
+      summary: Emite presupuesto con logica de negocio (formas de pago, CxC, inventario, MovInvent)
+      description: Misma estructura que facturas/emitir-tx; tablas Presupuestos y Detalle_Presupuestos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - detalle
+              properties:
+                presupuesto:
+                  $ref: "#/components/schemas/GenericObject"
+                factura:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                formasPago:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  properties:
+                    actualizarInventario:
+                      type: boolean
+                      default: true
+                    generarCxC:
+                      type: boolean
+                      default: true
+                    cxcTable:
+                      type: string
+                      enum:
+                        - P_Cobrar
+                        - P_CobrarC
+                      default: P_Cobrar
+                    formaPagoTable:
+                      type: string
+                      example: Detalle_FormaPagoCotizacion
+                    actualizarSaldosCliente:
+                      type: boolean
+                      default: true
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/presupuestos/anular-tx:
+    post:
+      tags:
+        - Presupuestos
+      summary: Anula presupuesto (revierte inventario y CxC tipo PRESUP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - numFact
+              properties:
+                numFact:
+                  type: string
+                codUsuario:
+                  type: string
+                  default: API
+                motivo:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/presupuestos/{numFact}:
+    get:
+      tags:
+        - Presupuestos
+      summary: Presupuesto por numero
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Presupuestos
+      summary: Actualiza presupuesto
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Presupuestos
+      summary: Elimina presupuesto
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/presupuestos/{numFact}/detalle:
+    get:
+      tags:
+        - Presupuestos
+      summary: Detalle presupuesto
+      parameters:
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/retenciones:
+    get:
+      tags:
+        - Retenciones
+      summary: Lista retenciones
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: tipo
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Retenciones
+      summary: Crea retencion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/retenciones/{codigo}:
+    get:
+      tags:
+        - Retenciones
+      summary: Retencion por codigo
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Retenciones
+      summary: Actualiza retencion
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Retenciones
+      summary: Elimina retencion
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/movinvent:
+    get:
+      tags:
+        - MovInvent
+      summary: Lista movimientos inventario
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: tipo
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - MovInvent
+      summary: Crea movimiento inventario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/movinvent/{id}:
+    get:
+      tags:
+        - MovInvent
+      summary: Movimiento inventario por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - MovInvent
+      summary: Actualiza movimiento inventario
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - MovInvent
+      summary: Elimina movimiento inventario
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/movinvent/mes/list:
+    get:
+      tags:
+        - MovInvent
+      summary: Lista movimientos inventario por mes
+      parameters:
+        - in: query
+          name: periodo
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: codigo
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/addons:
+    get:
+      tags:
+        - Addons
+      summary: Lista addons activos
+      responses:
+        "200":
+          $ref: "#/components/responses/OkAddons"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/meta/schema:
+    get:
+      tags:
+        - Meta
+      summary: Lista tablas y columnas
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/meta/relations:
+    get:
+      tags:
+        - Meta
+      summary: Lista relaciones FK
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/crud/tables:
+    get:
+      tags:
+        - CRUD
+      summary: Lista tablas para CRUD dinamico
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/crud/{table}/describe:
+    get:
+      tags:
+        - CRUD
+      summary: Describe tabla para CRUD
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+        - $ref: "#/components/parameters/SchemaQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/crud/{table}/query:
+    post:
+      tags:
+        - CRUD
+      summary: Consulta paginada por tabla
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+        - $ref: "#/components/parameters/SchemaQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/crud/{table}:
+    post:
+      tags:
+        - CRUD
+      summary: Inserta fila en tabla
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+        - $ref: "#/components/parameters/SchemaQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/crud/{table}/{key}:
+    get:
+      tags:
+        - CRUD
+      summary: Obtiene fila por key
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+        - $ref: "#/components/parameters/KeyParam"
+        - $ref: "#/components/parameters/SchemaQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - CRUD
+      summary: Actualiza fila por key
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+        - $ref: "#/components/parameters/KeyParam"
+        - $ref: "#/components/parameters/SchemaQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - CRUD
+      summary: Elimina fila por key
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+        - $ref: "#/components/parameters/KeyParam"
+        - $ref: "#/components/parameters/SchemaQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/crud/{table}/key:
+    post:
+      tags:
+        - CRUD
+      summary: Genera key codificada por pk
+      parameters:
+        - $ref: "#/components/parameters/TableParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkCrudKey"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/facturas/emitir-tx:
+    post:
+      tags:
+        - Facturas
+      summary: Emite factura con logica de negocio (formas de pago, CxC, inventario, MovInvent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - factura
+                - detalle
+              properties:
+                factura:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                formasPago:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  properties:
+                    actualizarInventario:
+                      type: boolean
+                      default: true
+                    generarCxC:
+                      type: boolean
+                      default: true
+                    cxcTable:
+                      type: string
+                      enum:
+                        - P_Cobrar
+                        - P_CobrarC
+                      default: P_Cobrar
+                    formaPagoTable:
+                      type: string
+                      example: Detalle_FormaPagoFacturas
+                    actualizarSaldosCliente:
+                      type: boolean
+                      default: true
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/cxc/aplicar-cobro-tx:
+    post:
+      tags:
+        - CxC
+      summary: Aplica cobro a cuentas por cobrar (transaccional)
+      description: |
+        Aplica un cobro a documentos pendientes de un cliente en una transaccion atomica.
+        Incluye:
+        - Insertar cabecera en Pagos
+        - Insertar detalle en Pagos_Detalle (formas de pago)
+        - Actualizar P_Cobrar (reduce pendiente/saldo)
+        - Insertar historico en PagosC
+        - Insertar Movimiento_Cuenta para control bancario
+        - Recalcular saldos del cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - requestId
+                - codCliente
+                - fecha
+                - montoTotal
+                - documentos
+                - formasPago
+                - codUsuario
+              properties:
+                requestId:
+                  type: string
+                  description: ID unico para idempotencia
+                  example: req-cobro-001-20240214
+                codCliente:
+                  type: string
+                  description: Codigo del cliente
+                  example: CLI001
+                fecha:
+                  type: string
+                  format: date
+                  description: Fecha del cobro (YYYY-MM-DD)
+                  example: 2026-02-14
+                montoTotal:
+                  type: number
+                  description: Monto total del cobro
+                  example: 1500
+                documentos:
+                  type: array
+                  description: Documentos a los que se aplica el cobro
+                  items:
+                    type: object
+                    required:
+                      - tipoDoc
+                      - numDoc
+                      - montoAplicar
+                    properties:
+                      tipoDoc:
+                        type: string
+                        enum:
+                          - FACT
+                          - N/C
+                          - N/D
+                        example: FACT
+                      numDoc:
+                        type: string
+                        example: F000123
+                      montoAplicar:
+                        type: number
+                        example: 1000
+                formasPago:
+                  type: array
+                  description: Formas de pago utilizadas
+                  items:
+                    type: object
+                    required:
+                      - formaPago
+                      - monto
+                    properties:
+                      formaPago:
+                        type: string
+                        example: EFECTIVO
+                      monto:
+                        type: number
+                        example: 500
+                      banco:
+                        type: string
+                        example: Banco X
+                      numCheque:
+                        type: string
+                        example: "123456"
+                      fechaVencimiento:
+                        type: string
+                        format: date
+                        example: 2026-02-14
+                codUsuario:
+                  type: string
+                  description: Codigo del usuario que registra
+                  example: SUP
+                observaciones:
+                  type: string
+                  example: Cobro parcial factura
+            example:
+              requestId: req-cobro-001-20240214
+              codCliente: CLI001
+              fecha: 2026-02-14
+              montoTotal: 1500
+              documentos:
+                - tipoDoc: FACT
+                  numDoc: F000123
+                  montoAplicar: 1000
+                - tipoDoc: FACT
+                  numDoc: F000124
+                  montoAplicar: 500
+              formasPago:
+                - formaPago: EFECTIVO
+                  monto: 500
+                - formaPago: CHEQUE
+                  monto: 1000
+                  banco: Banco X
+                  numCheque: "123456"
+              codUsuario: SUP
+              observaciones: Cobro parcial
+      responses:
+        "200":
+          description: Cobro aplicado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        example: true
+                      numRecibo:
+                        type: string
+                        example: RC260214153045
+                      montoAplicado:
+                        type: number
+                        example: 1500
+                      documentosAfectados:
+                        type: integer
+                        example: 2
+        "400":
+          description: Error de validacion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid_payload
+                  message:
+                    type: string
+                    example: La suma de formas de pago no coincide con el monto total
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: Error en la transaccion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: transaction_failed
+                  message:
+                    type: string
+                    example: "Documento no encontrado: FACT-F000123"
+  /v1/compras/emitir-tx:
+    post:
+      tags:
+        - Compras
+      summary: Emite compra con logica de negocio (inventario, MovInvent, CxP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - compra
+                - detalle
+              properties:
+                compra:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  properties:
+                    actualizarInventario:
+                      type: boolean
+                      default: true
+                    generarCxP:
+                      type: boolean
+                      default: true
+                    actualizarSaldosProveedor:
+                      type: boolean
+                      default: true
+                    cxpTable:
+                      type: string
+                      enum:
+                        - P_Pagar
+                      default: P_Pagar
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  # --- Documentos unificados (integrados) ---
+  /v1/documentos-venta:
+    get:
+      tags:
+        - DocumentosVenta
+      summary: Lista documentos de venta por tipoOperacion
+      parameters:
+        - in: query
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: codigo
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-venta/{tipoOperacion}/{numFact}:
+    get:
+      tags:
+        - DocumentosVenta
+      summary: Obtiene cabecera de documento de venta
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/documentos-venta/{tipoOperacion}/{numFact}/detalle:
+    get:
+      tags:
+        - DocumentosVenta
+      summary: Obtiene detalle de documento de venta
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/documentos-venta/emitir-tx:
+    post:
+      tags:
+        - DocumentosVenta
+      summary: Emite documento de venta (transaccional)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, documento, detalle]
+              properties:
+                tipoOperacion:
+                  type: string
+                  enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
+                documento:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                formasPago:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  additionalProperties: true
+            examples:
+              facturaContado:
+                summary: Factura contado (cliente 0002, inventario real)
+                value:
+                  tipoOperacion: FACT
+                  documento:
+                    NUM_FACT: F-API-001
+                    CODIGO: "0002"
+                    NOMBRE: RAUL  ARZOLA
+                    FECHA: "2026-02-15"
+                    PAGO: CONTADO
+                    TOTAL: 13
+                    COD_USUARIO: SUP
+                    SERIALTIPO: EOC02255
+                    Tipo_Orden: "1"
+                  detalle:
+                    - COD_SERV: "0000106995"
+                      CANTIDAD: 1
+                      PRECIO: 11
+                      ALICUOTA: 16
+                    - COD_SERV: "0000106996"
+                      CANTIDAD: 1
+                      PRECIO: 2
+                      ALICUOTA: 16
+                  formasPago:
+                    - tipo: EFECTIVO
+                      monto: 13
+                  options:
+                    actualizarInventario: true
+                    generarCxC: false
+                    actualizarSaldosCliente: true
+              pedido:
+                summary: Pedido con compromiso de inventario
+                value:
+                  tipoOperacion: PEDIDO
+                  documento:
+                    NUM_FACT: PED-API-001
+                    CODIGO: "0002"
+                    NOMBRE: RAUL  ARZOLA
+                    FECHA: "2026-02-15"
+                    TOTAL: 11
+                    COD_USUARIO: SUP
+                    SERIALTIPO: EOC02255
+                    Tipo_Orden: "1"
+                  detalle:
+                    - CODIGO: "0000106995"
+                      CANTIDAD: 1
+                      PRECIO_VENTA: 11
+                      ALICUOTA: 16
+                  options:
+                    comprometerInventario: true
+              notaCredito:
+                summary: Nota de credito con ajuste CxC e inventario
+                value:
+                  tipoOperacion: NOTACRED
+                  documento:
+                    NUM_FACT: NCR-API-001
+                    CODIGO: "0002"
+                    NOMBRE: RAUL  ARZOLA
+                    FECHA: "2026-02-15"
+                    TOTAL: 11
+                    COD_USUARIO: SUP
+                    SERIALTIPO: EOC02255
+                    Tipo_Orden: "1"
+                    NUM_FACT_REF: "441"
+                  detalle:
+                    - CODIGO: "0000106995"
+                      CANTIDAD: 1
+                      PRECIO: 11
+                      ALICUOTA: 16
+                  options:
+                    impactarInventario: true
+                    ajustarCxC: true
+              notaDebito:
+                summary: Nota de debito (mora/recargo) con ajuste CxC
+                value:
+                  tipoOperacion: NOTADEB
+                  documento:
+                    NUM_FACT: NDB-API-001
+                    CODIGO: "0002"
+                    NOMBRE: RAUL  ARZOLA
+                    FECHA: "2026-02-15"
+                    TOTAL: 5
+                    COD_USUARIO: SUP
+                    SERIALTIPO: EOC02255
+                    Tipo_Orden: "1"
+                  detalle:
+                    - CODIGO: SERV-MORA
+                      CANTIDAD: 1
+                      PRECIO: 5
+                      ALICUOTA: 0
+                  options:
+                    ajustarCxC: true
+              notaEntrega:
+                summary: Nota de entrega con salida de inventario
+                value:
+                  tipoOperacion: NOTA_ENT
+                  documento:
+                    NUM_FACT: NENT-API-001
+                    CODIGO: "0002"
+                    NOMBRE: RAUL  ARZOLA
+                    FECHA: "2026-02-15"
+                    TOTAL: 11
+                    COD_USUARIO: SUP
+                    SERIALTIPO: EOC02255
+                    Tipo_Orden: "1"
+                  detalle:
+                    - CODIGO: "0000106995"
+                      CANTIDAD: 1
+                      PRECIO: 11
+                      ALICUOTA: 16
+                  options:
+                    impactarInventario: true
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-venta/anular-tx:
+    post:
+      tags:
+        - DocumentosVenta
+      summary: Anula documento de venta (transaccional)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, numFact]
+              properties:
+                tipoOperacion:
+                  type: string
+                  enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
+                numFact:
+                  type: string
+                codUsuario:
+                  type: string
+                motivo:
+                  type: string
+            examples:
+              anularFactura:
+                value:
+                  tipoOperacion: FACT
+                  numFact: F-API-001
+                  codUsuario: SUP
+                  motivo: Prueba API
+              anularPedido:
+                value:
+                  tipoOperacion: PEDIDO
+                  numFact: PED-API-001
+                  codUsuario: SUP
+                  motivo: Cliente cancelo
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-venta/facturar-desde-pedido-tx:
+    post:
+      tags:
+        - DocumentosVenta
+      summary: Convierte un pedido en factura sin doble descuento de inventario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [numFactPedido, factura]
+              properties:
+                numFactPedido:
+                  type: string
+                factura:
+                  $ref: "#/components/schemas/GenericObject"
+                formasPago:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  additionalProperties: true
+            example:
+              numFactPedido: PED-API-001
+              factura:
+                NUM_FACT: F-API-002
+                CODIGO: "0002"
+                NOMBRE: RAUL  ARZOLA
+                FECHA: "2026-02-15"
+                PAGO: CONTADO
+                TOTAL: 11
+                COD_USUARIO: SUP
+                SERIALTIPO: EOC02255
+                Tipo_Orden: "1"
+              formasPago:
+                - tipo: EFECTIVO
+                  monto: 11
+              options:
+                generarCxC: false
+                actualizarSaldosCliente: true
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-compra:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Lista documentos de compra por tipoOperacion
+      parameters:
+        - in: query
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [ORDEN, COMPRA]
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: codigo
+          schema:
+            type: string
+        - in: query
+          name: proveedor
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-compra/{tipoOperacion}/{numFact}:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Obtiene cabecera de documento de compra
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [ORDEN, COMPRA]
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/documentos-compra/{tipoOperacion}/{numFact}/detalle:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Obtiene detalle de documento de compra
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [ORDEN, COMPRA]
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /v1/documentos-compra/{tipoOperacion}/{numFact}/indicadores:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Indicadores de compra (solo tipoOperacion COMPRA)
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+            enum: [ORDEN, COMPRA]
+        - $ref: "#/components/parameters/NumFactParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/documentos-compra/emitir-tx:
+    post:
+      tags:
+        - DocumentosCompra
+      summary: Emite documento de compra (transaccional)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, documento, detalle]
+              properties:
+                tipoOperacion:
+                  type: string
+                  enum: [ORDEN, COMPRA]
+                documento:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  additionalProperties: true
+            examples:
+              compraCredito:
+                summary: Compra credito con CxP e inventario
+                value:
+                  tipoOperacion: COMPRA
+                  documento:
+                    NUM_FACT: C-API-001
+                    COD_PROVEEDOR: "0001"
+                    NOMBRE: IMPORTADORA BICIMOTO LTDA, C.A
+                    FECHA: "2026-02-15"
+                    TIPO: CREDITO
+                    TOTAL: 7.6
+                    COD_USUARIO: SUP
+                  detalle:
+                    - CODIGO: "0000106995"
+                      DESCRIPCION: "1 1/4"
+                      CANTIDAD: 1
+                      PRECIO_COSTO: 7.6
+                      ALICUOTA: 16
+                      REFERENCIA: "0000106995"
+                  options:
+                    actualizarInventario: true
+                    generarCxP: true
+                    actualizarSaldosProveedor: true
+              ordenCompra:
+                summary: Orden de compra (sin inventario ni CxP)
+                value:
+                  tipoOperacion: ORDEN
+                  documento:
+                    NUM_FACT: O-API-001
+                    COD_PROVEEDOR: "0001"
+                    NOMBRE: IMPORTADORA BICIMOTO LTDA, C.A
+                    FECHA: "2026-02-15"
+                    TOTAL: 7.6
+                    COD_USUARIO: SUP
+                  detalle:
+                    - CODIGO: "0000106995"
+                      DESCRIPCION: "1 1/4"
+                      CANTIDAD: 1
+                      PRECIO_COSTO: 7.6
+                      ALICUOTA: 16
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-compra/anular-tx:
+    post:
+      tags:
+        - DocumentosCompra
+      summary: Anula compra (transaccional)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, numFact]
+              properties:
+                tipoOperacion:
+                  type: string
+                  enum: [ORDEN, COMPRA]
+                numFact:
+                  type: string
+                codUsuario:
+                  type: string
+                motivo:
+                  type: string
+            example:
+              tipoOperacion: COMPRA
+              numFact: C-API-001
+              codUsuario: SUP
+              motivo: Prueba API
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/documentos-compra/cerrar-orden-con-compra-tx:
+    post:
+      tags:
+        - DocumentosCompra
+      summary: Cierra una orden de compra emitiendo la compra asociada
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [numFactOrden, compra]
+              properties:
+                numFactOrden:
+                  type: string
+                compra:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  type: object
+                  additionalProperties: true
+            example:
+              numFactOrden: O-API-001
+              compra:
+                NUM_FACT: C-API-002
+                COD_PROVEEDOR: "0001"
+                NOMBRE: IMPORTADORA BICIMOTO LTDA, C.A
+                FECHA: "2026-02-15"
+                TIPO: CREDITO
+                TOTAL: 7.6
+                COD_USUARIO: SUP
+              options:
+                actualizarInventario: true
+                generarCxP: true
+                actualizarSaldosProveedor: true
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"  # ============================================
+  # BANCOS - Conciliación Bancaria
+  # ============================================
+  /v1/bancos:
+    get:
+      tags:
+        - Bancos
+      summary: Lista bancos
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Bancos
+      summary: Crea banco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nombre]
+              properties:
+                Nombre:
+                  type: string
+                Contacto:
+                  type: string
+                Direccion:
+                  type: string
+                Telefonos:
+                  type: string
+                Co_Usuario:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/{nombre}:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene banco por nombre
+      parameters:
+        - in: path
+          name: nombre
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Bancos
+      summary: Actualiza banco
+      parameters:
+        - in: path
+          name: nombre
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Contacto:
+                  type: string
+                Direccion:
+                  type: string
+                Telefonos:
+                  type: string
+                Co_Usuario:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags:
+        - Bancos
+      summary: Elimina banco
+      parameters:
+        - in: path
+          name: nombre
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/cuentas/list:
+    get:
+      tags:
+        - Bancos
+      summary: Lista cuentas bancarias
+      responses:
+        "200":
+          description: Lista de cuentas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/cuentas/{nroCta}/movimientos:
+    get:
+      tags:
+        - Bancos
+      summary: Movimientos de cuenta bancaria
+      parameters:
+        - in: path
+          name: nroCta
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: desde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: hasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/movimientos/generar:
+    post:
+      tags:
+        - Bancos
+      summary: Genera movimiento bancario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nro_Cta, Tipo, Nro_Ref, Beneficiario, Monto, Concepto]
+              properties:
+                Nro_Cta:
+                  type: string
+                Tipo:
+                  type: string
+                  enum: [PCH, DEP, NCR, NDB, IDB]
+                Nro_Ref:
+                  type: string
+                Beneficiario:
+                  type: string
+                Monto:
+                  type: number
+                Concepto:
+                  type: string
+                Categoria:
+                  type: string
+                Documento_Relacionado:
+                  type: string
+                Tipo_Doc_Rel:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones:
+    get:
+      tags:
+        - Bancos
+      summary: Lista conciliaciones bancarias
+      parameters:
+        - in: query
+          name: Nro_Cta
+          schema:
+            type: string
+        - in: query
+          name: Estado
+          schema:
+            type: string
+            enum: [ABIERTA, CERRADA, EN_PROCESO]
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/crear:
+    post:
+      tags:
+        - Bancos
+      summary: Crea nueva conciliación bancaria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nro_Cta, Fecha_Desde, Fecha_Hasta]
+              properties:
+                Nro_Cta:
+                  type: string
+                Fecha_Desde:
+                  type: string
+                  format: date
+                Fecha_Hasta:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/{id}:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene conciliación por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/{id}/importar-extracto:
+    post:
+      tags:
+        - Bancos
+      summary: Importa extracto bancario a conciliación
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [extracto]
+              properties:
+                extracto:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Fecha:
+                        type: string
+                        format: date
+                      Descripcion:
+                        type: string
+                      Referencia:
+                        type: string
+                      Tipo:
+                        type: string
+                        enum: [DEBITO, CREDITO]
+                      Monto:
+                        type: number
+                      Saldo:
+                        type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/conciliar:
+    post:
+      tags:
+        - Bancos
+      summary: Concilia movimientos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, MovimientoSistema_ID]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                MovimientoSistema_ID:
+                  type: integer
+                Extracto_ID:
+                  type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/ajuste:
+    post:
+      tags:
+        - Bancos
+      summary: Genera ajuste de conciliación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, Tipo_Ajuste, Monto, Descripcion]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                Tipo_Ajuste:
+                  type: string
+                  enum: [NOTA_CREDITO, NOTA_DEBITO]
+                Monto:
+                  type: number
+                Descripcion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/cerrar:
+    post:
+      tags:
+        - Bancos
+      summary: Cierra conciliación bancaria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, Saldo_Final_Banco]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                Saldo_Final_Banco:
+                  type: number
+                Observaciones:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # NOMINA
+  # ============================================
+  /v1/nomina/conceptos-legales:
+    get:
+      tags:
+        - Nomina
+      summary: Lista conceptos legales de nómina
+      parameters:
+        - in: query
+          name: convencion
+          schema:
+            type: string
+            enum: [LOT, CCT_PETROLERO, CONSTRUCCION, COMERCIO, SALUD]
+        - in: query
+          name: tipoCalculo
+          schema:
+            type: string
+            enum: [MENSUAL, SEMANAL, QUINCENAL, VACACIONES, LIQUIDACION]
+        - in: query
+          name: tipo
+          schema:
+            type: string
+            enum: [ASIGNACION, DEDUCCION, BONO]
+        - in: query
+          name: activo
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Lista de conceptos legales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/nomina/convenciones:
+    get:
+      tags:
+        - Nomina
+      summary: Lista convenciones disponibles
+      responses:
+        "200":
+          description: Convenciones de nómina
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/procesar-conceptolegal:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa nómina usando conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nomina, cedula, fechaInicio, fechaHasta]
+              properties:
+                nomina:
+                  type: string
+                  description: Código de nómina
+                cedula:
+                  type: string
+                  description: Cédula del empleado
+                fechaInicio:
+                  type: string
+                  format: date
+                fechaHasta:
+                  type: string
+                  format: date
+                convencion:
+                  type: string
+                  enum: [LOT, CCT_PETROLERO, CONSTRUCCION, COMERCIO, SALUD]
+                  description: Convención colectiva a aplicar
+                tipoCalculo:
+                  type: string
+                  enum: [MENSUAL, SEMANAL, QUINCENAL, VACACIONES, LIQUIDACION]
+                  default: MENSUAL
+      responses:
+        "200":
+          description: Resultado del procesamiento
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  nomina:
+                    type: string
+                  cedula:
+                    type: string
+                  asignaciones:
+                    type: number
+                  deducciones:
+                    type: number
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/procesar-conceptolegal:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa vacaciones usando conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vacacionId, cedula, fechaInicio, fechaHasta]
+              properties:
+                vacacionId:
+                  type: string
+                cedula:
+                  type: string
+                fechaInicio:
+                  type: string
+                  format: date
+                fechaHasta:
+                  type: string
+                  format: date
+                fechaReintegro:
+                  type: string
+                  format: date
+                convencion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/liquidacion/procesar-conceptolegal:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa liquidación usando conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [liquidacionId, cedula, fechaRetiro]
+              properties:
+                liquidacionId:
+                  type: string
+                cedula:
+                  type: string
+                fechaRetiro:
+                  type: string
+                  format: date
+                causaRetiro:
+                  type: string
+                  enum: [RENUNCIA, DESPIDO, DESPIDO_JUSTIFICADO]
+                convencion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/validar-formulas:
+    post:
+      tags:
+        - Nomina
+      summary: Valida fórmulas de conceptos legales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                convencion:
+                  type: string
+                tipoCalculo:
+                  type: string
+      responses:
+        "200":
+          description: Resultado de validación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resumen:
+                    $ref: "#/components/schemas/GenericObject"
+                  errores:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # CONTABILIDAD
+  # ============================================
+  /v1/contabilidad/cuentas:
+    get:
+      tags:
+        - Contabilidad
+      summary: Lista plan de cuentas
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: tipo
+          schema:
+            type: string
+        - in: query
+          name: nivel
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Plan de cuentas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/cuentas/{codCuenta}:
+    get:
+      tags:
+        - Contabilidad
+      summary: Obtiene cuenta contable específica
+      parameters:
+        - in: path
+          name: codCuenta
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos:
+    get:
+      tags:
+        - Contabilidad
+      summary: Lista asientos contables
+      parameters:
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: tipoAsiento
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Contabilidad
+      summary: Crea asiento contable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fecha, tipoAsiento, concepto, detalle]
+              properties:
+                fecha:
+                  type: string
+                  format: date
+                tipoAsiento:
+                  type: string
+                referencia:
+                  type: string
+                concepto:
+                  type: string
+                moneda:
+                  type: string
+                tasa:
+                  type: number
+                origenModulo:
+                  type: string
+                origenDocumento:
+                  type: string
+                detalle:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      codCuenta:
+                        type: string
+                      descripcion:
+                        type: string
+                      centroCosto:
+                        type: string
+                      auxiliarTipo:
+                        type: string
+                      auxiliarCodigo:
+                        type: string
+                      documento:
+                        type: string
+                      debe:
+                        type: number
+                      haber:
+                        type: number
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos/{id}:
+    get:
+      tags:
+        - Contabilidad
+      summary: Obtiene asiento contable
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/asientos/{id}/anular:
+    post:
+      tags:
+        - Contabilidad
+      summary: Anula asiento contable
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/ajustes:
+    post:
+      tags:
+        - Contabilidad
+      summary: Crea ajuste contable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fecha, tipoAjuste, motivo, detalle]
+              properties:
+                fecha:
+                  type: string
+                  format: date
+                tipoAjuste:
+                  type: string
+                referencia:
+                  type: string
+                motivo:
+                  type: string
+                detalle:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/depreciaciones/generar:
+    post:
+      tags:
+        - Contabilidad
+      summary: Genera depreciación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [periodo]
+              properties:
+                periodo:
+                  type: string
+                  pattern: "^\\d{4}-\\d{2}$"
+                  example: "2026-02"
+                centroCosto:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/libro-mayor:
+    get:
+      tags:
+        - Contabilidad
+      summary: Reporte libro mayor
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/mayor-analitico:
+    get:
+      tags:
+        - Contabilidad
+      summary: Reporte mayor analítico
+      parameters:
+        - in: query
+          name: codCuenta
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/balance-comprobacion:
+    get:
+      tags:
+        - Contabilidad
+      summary: Balance de comprobación
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/estado-resultados:
+    get:
+      tags:
+        - Contabilidad
+      summary: Estado de resultados
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/reportes/balance-general:
+    get:
+      tags:
+        - Contabilidad
+      summary: Balance general
+      parameters:
+        - in: query
+          name: fechaCorte
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/contabilidad/setup/seed-plan-cuentas:
+    post:
+      tags:
+        - Contabilidad
+      summary: Seed inicial del plan de cuentas
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # CxC / CxP - Mejorados
+  # ============================================
+  /v1/cxc/documentos:
+    get:
+      tags:
+        - CxC
+      summary: Lista documentos CxC (facturas, notas)
+      parameters:
+        - in: query
+          name: codCliente
+          schema:
+            type: string
+        - in: query
+          name: tipoDoc
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [PENDIENTE, PAGADO, PARCIAL, ANULADO]
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de documentos CxC
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/cxp/documentos:
+    get:
+      tags:
+        - CxP
+      summary: Lista documentos CxP (facturas, notas proveedores)
+      parameters:
+        - in: query
+          name: codProveedor
+          schema:
+            type: string
+        - in: query
+          name: tipoDoc
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [PENDIENTE, PAGADO, PARCIAL, ANULADO]
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de documentos CxP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GenericObject"
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ============================================
+  # HEALTH
+  # ============================================
+  /health/db:
+    get:
+      tags:
+        - Health
+      summary: Health check con verificación de base de datos
+      security: []
+      responses:
+        "200":
+          description: Estado de la conexión a BD
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  database:
+                    type: string
+                    enum: [connected, disconnected]
+                  timestamp:
+                    type: string
+                    format: date-time
+        "500":
+          description: Error de conexión a BD
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  database:
+                    type: string
+                  error:
+                    type: string
+
+  # ============================================
+  # VENDEDORES, EMPLEADOS, CENTRO COSTO
+  # ============================================
+  /v1/vendedores:
+    get:
+      tags:
+        - Vendedores
+      summary: Lista vendedores
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: ["true", "false"]
+        - in: query
+          name: tipo
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Vendedores
+      summary: Crea vendedor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Codigo, Nombre]
+              properties:
+                Codigo:
+                  type: string
+                  maxLength: 10
+                Nombre:
+                  type: string
+                Comision:
+                  type: number
+                Direccion:
+                  type: string
+                Telefonos:
+                  type: string
+                Email:
+                  type: string
+                  format: email
+                Status:
+                  type: boolean
+                  default: true
+                Tipo:
+                  type: string
+                clave:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/vendedores/{codigo}:
+    get:
+      tags:
+        - Vendedores
+      summary: Obtiene vendedor por código
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Vendedores
+      summary: Actualiza vendedor
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Nombre:
+                  type: string
+                Comision:
+                  type: number
+                Direccion:
+                  type: string
+                Telefonos:
+                  type: string
+                Email:
+                  type: string
+                  format: email
+                Status:
+                  type: boolean
+                Tipo:
+                  type: string
+                clave:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags:
+        - Vendedores
+      summary: Elimina vendedor
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/empleados:
+    get:
+      tags:
+        - Empleados
+      summary: Lista empleados
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: grupo
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Empleados
+      summary: Crea empleado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [CEDULA, NOMBRE]
+              properties:
+                CEDULA:
+                  type: string
+                NOMBRE:
+                  type: string
+                GRUPO:
+                  type: string
+                DIRECCION:
+                  type: string
+                TELEFONO:
+                  type: string
+                CARGO:
+                  type: string
+                NOMINA:
+                  type: string
+                SUELDO:
+                  type: number
+                STATUS:
+                  type: string
+                  default: ACTIVO
+                SEXO:
+                  type: string
+                NACIONALIDAD:
+                  type: string
+                Autoriza:
+                  type: boolean
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/empleados/{cedula}:
+    get:
+      tags:
+        - Empleados
+      summary: Obtiene empleado por cédula
+      parameters:
+        - in: path
+          name: cedula
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Empleados
+      summary: Actualiza empleado
+      parameters:
+        - in: path
+          name: cedula
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                NOMBRE:
+                  type: string
+                GRUPO:
+                  type: string
+                DIRECCION:
+                  type: string
+                TELEFONO:
+                  type: string
+                CARGO:
+                  type: string
+                NOMINA:
+                  type: string
+                SUELDO:
+                  type: number
+                STATUS:
+                  type: string
+                SEXO:
+                  type: string
+                NACIONALIDAD:
+                  type: string
+                Autoriza:
+                  type: boolean
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags:
+        - Empleados
+      summary: Elimina empleado
+      parameters:
+        - in: path
+          name: cedula
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/centro-costo:
+    get:
+      tags:
+        - CentroCosto
+      summary: Lista centros de costo
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - CentroCosto
+      summary: Crea centro de costo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Codigo, Descripcion]
+              properties:
+                Codigo:
+                  type: string
+                Descripcion:
+                  type: string
+                Presupuestado:
+                  type: string
+                Saldo_Real:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/centro-costo/{codigo}:
+    get:
+      tags:
+        - CentroCosto
+      summary: Obtiene centro de costo por código
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - CentroCosto
+      summary: Actualiza centro de costo
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Descripcion:
+                  type: string
+                Presupuestado:
+                  type: string
+                Saldo_Real:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags:
+        - CentroCosto
+      summary: Elimina centro de costo
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/unidades:
+    get:
+      tags:
+        - Unidades
+      summary: Lista unidades de medida
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/empresa:
+    get:
+      tags:
+        - Empresa
+      summary: Datos de la empresa
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/usuarios:
+    get:
+      tags:
+        - Usuarios
+      summary: Lista usuarios (admin only, sin passwords)
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: tipo
+          schema:
+            type: string
+          description: Filtrar por tipo de usuario
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRowsPageSize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Solo administradores
+    post:
+      tags:
+        - Usuarios
+      summary: Crea usuario (admin only, password hasheado con bcrypt)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Cod_Usuario]
+              properties:
+                Cod_Usuario:
+                  type: string
+                Password:
+                  type: string
+                Nombre:
+                  type: string
+                Tipo:
+                  type: string
+                  enum: [ADMIN, SUP, USER, VEND, CAJA]
+                Updates:
+                  type: boolean
+                  description: Puede actualizar registros
+                Addnews:
+                  type: boolean
+                  description: Puede crear registros
+                Deletes:
+                  type: boolean
+                  description: Puede eliminar registros
+                Creador:
+                  type: boolean
+                Cambiar:
+                  type: boolean
+                  description: Puede cambiar su propia contraseña
+                PrecioMinimo:
+                  type: boolean
+                  description: Puede modificar precios
+                Credito:
+                  type: boolean
+                  description: Puede otorgar crédito
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Solo administradores
+
+  /v1/usuarios/modules:
+    get:
+      tags:
+        - Usuarios
+      summary: Lista todos los módulos disponibles del sistema
+      responses:
+        "200":
+          description: Módulos del sistema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modulos:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/usuarios/{codigo}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtiene usuario por código (sin password, incluye modulosAcceso)
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Usuarios
+      summary: Actualiza usuario (admin only)
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Password:
+                  type: string
+                Nombre:
+                  type: string
+                Tipo:
+                  type: string
+                Updates:
+                  type: boolean
+                Addnews:
+                  type: boolean
+                Deletes:
+                  type: boolean
+                Creador:
+                  type: boolean
+                Cambiar:
+                  type: boolean
+                PrecioMinimo:
+                  type: boolean
+                Credito:
+                  type: boolean
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Solo administradores
+    delete:
+      tags:
+        - Usuarios
+      summary: Elimina usuario (admin only)
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Solo administradores
+
+  /v1/usuarios/{codigo}/modulos:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtiene acceso a módulos de un usuario
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      responses:
+        "200":
+          description: Módulos asignados y disponibles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modulos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        modulo:
+                          type: string
+                        permitido:
+                          type: boolean
+                  available:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Usuarios
+      summary: Asigna acceso a módulos de un usuario (admin only)
+      parameters:
+        - $ref: "#/components/parameters/CodigoParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modulos]
+              properties:
+                modulos:
+                  type: array
+                  items:
+                    type: object
+                    required: [modulo, permitido]
+                    properties:
+                      modulo:
+                        type: string
+                      permitido:
+                        type: boolean
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Solo administradores

@@ -1,0 +1,1221 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "DatqBox API",
+    "description": "API REST unificada para DatqBox - Sistema Administrativo",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/v1",
+      "description": "Development server"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["usuario", "clave"],
+        "properties": {
+          "usuario": { "type": "string", "example": "SUP" },
+          "clave": { "type": "string", "example": "SUP" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "usuario": {
+            "type": "object",
+            "properties": {
+              "codUsuario": { "type": "string" },
+              "nombre": { "type": "string", "nullable": true },
+              "tipo": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      },
+      "GenericObject": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" }
+        },
+        "required": ["error"]
+      },
+      "PagedResponse": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer", "example": 1 },
+          "limit": { "type": "integer", "example": 50 },
+          "total": { "type": "integer", "example": 1234 },
+          "rows": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GenericObject" }
+          }
+        },
+        "required": ["rows"]
+      },
+      "TxResultResponse": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean", "example": true },
+          "numFact": { "type": "string", "example": "000123" },
+          "detalleRows": { "type": "integer", "example": 3 }
+        },
+        "required": ["ok"]
+      }
+    },
+    "parameters": {
+      "SearchQuery": {
+        "in": "query",
+        "name": "search",
+        "schema": { "type": "string" }
+      },
+      "PageQuery": {
+        "in": "query",
+        "name": "page",
+        "schema": { "type": "integer", "default": 1 }
+      },
+      "LimitQuery": {
+        "in": "query",
+        "name": "limit",
+        "schema": { "type": "integer", "default": 50 }
+      },
+      "CodigoParam": {
+        "in": "path",
+        "name": "codigo",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "NumFactParam": {
+        "in": "path",
+        "name": "numFact",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Token requerido o invalido",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Solicitud invalida",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Registro no encontrado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "OkPaged": {
+        "description": "Lista paginada",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/PagedResponse" }
+          }
+        }
+      },
+      "TxCreated": {
+        "description": "Transaccion completada",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/TxResultResponse" }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login correcto" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/clientes": {
+      "get": {
+        "tags": ["Clientes"],
+        "summary": "Lista clientes",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Clientes"],
+        "summary": "Crea cliente",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/clientes/{codigo}": {
+      "get": {
+        "tags": ["Clientes"],
+        "summary": "Cliente por codigo",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Clientes"],
+        "summary": "Actualiza cliente",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Clientes"],
+        "summary": "Elimina cliente",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/proveedores": {
+      "get": {
+        "tags": ["Proveedores"],
+        "summary": "Lista proveedores",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Proveedores"],
+        "summary": "Crea proveedor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/proveedores/{codigo}": {
+      "get": {
+        "tags": ["Proveedores"],
+        "summary": "Proveedor por codigo",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Proveedores"],
+        "summary": "Actualiza proveedor",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Proveedores"],
+        "summary": "Elimina proveedor",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/inventario": {
+      "get": {
+        "tags": ["Inventario"],
+        "summary": "Lista inventario",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Inventario"],
+        "summary": "Crea item inventario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/inventario/{codigo}": {
+      "get": {
+        "tags": ["Inventario"],
+        "summary": "Inventario por codigo",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Inventario"],
+        "summary": "Actualiza item inventario",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Inventario"],
+        "summary": "Elimina item inventario",
+        "parameters": [{ "$ref": "#/components/parameters/CodigoParam" }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-venta": {
+      "get": {
+        "tags": ["Documentos Venta"],
+        "summary": "Lista documentos de venta (unificado)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tipoOperacion",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["FACT", "PRESUP", "PEDIDO", "COTIZ", "NOTACRED", "NOTADEB", "NOTA_ENT"]
+            }
+          },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-venta/{tipoOperacion}/{numFact}": {
+      "get": {
+        "tags": ["Documentos Venta"],
+        "summary": "Documento de venta por numero",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipoOperacion",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/NumFactParam" }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-venta/{tipoOperacion}/{numFact}/detalle": {
+      "get": {
+        "tags": ["Documentos Venta"],
+        "summary": "Detalle del documento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipoOperacion",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/NumFactParam" }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-venta/emitir-tx": {
+      "post": {
+        "tags": ["Documentos Venta"],
+        "summary": "Emite documento de venta transaccional",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tipoOperacion", "documento", "detalle"],
+                "properties": {
+                  "tipoOperacion": {
+                    "type": "string",
+                    "enum": ["FACT", "PRESUP", "PEDIDO", "COTIZ", "NOTACRED", "NOTADEB", "NOTA_ENT"]
+                  },
+                  "documento": { "$ref": "#/components/schemas/GenericObject" },
+                  "detalle": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/GenericObject" }
+                  },
+                  "formasPago": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/GenericObject" }
+                  },
+                  "options": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/TxCreated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-venta/anular-tx": {
+      "post": {
+        "tags": ["Documentos Venta"],
+        "summary": "Anula documento de venta",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tipoOperacion", "numFact"],
+                "properties": {
+                  "tipoOperacion": { "type": "string" },
+                  "numFact": { "type": "string" },
+                  "motivo": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-venta/facturar-desde-pedido-tx": {
+      "post": {
+        "tags": ["Documentos Venta"],
+        "summary": "Convierte pedido a factura",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["numFactPedido", "factura"],
+                "properties": {
+                  "numFactPedido": { "type": "string" },
+                  "factura": { "$ref": "#/components/schemas/GenericObject" },
+                  "formasPago": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/GenericObject" }
+                  },
+                  "options": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/TxCreated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-compra": {
+      "get": {
+        "tags": ["Documentos Compra"],
+        "summary": "Lista documentos de compra (unificado)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tipoOperacion",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["ORDEN", "COMPRA"]
+            }
+          },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-compra/{tipoOperacion}/{numFact}": {
+      "get": {
+        "tags": ["Documentos Compra"],
+        "summary": "Documento de compra por numero",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipoOperacion",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/NumFactParam" }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-compra/{tipoOperacion}/{numFact}/detalle": {
+      "get": {
+        "tags": ["Documentos Compra"],
+        "summary": "Detalle del documento",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipoOperacion",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/NumFactParam" }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-compra/emitir-tx": {
+      "post": {
+        "tags": ["Documentos Compra"],
+        "summary": "Emite documento de compra transaccional",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tipoOperacion", "documento", "detalle"],
+                "properties": {
+                  "tipoOperacion": {
+                    "type": "string",
+                    "enum": ["ORDEN", "COMPRA"]
+                  },
+                  "documento": { "$ref": "#/components/schemas/GenericObject" },
+                  "detalle": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/GenericObject" }
+                  },
+                  "options": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/TxCreated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-compra/anular-tx": {
+      "post": {
+        "tags": ["Documentos Compra"],
+        "summary": "Anula documento de compra",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tipoOperacion", "numFact"],
+                "properties": {
+                  "tipoOperacion": { "type": "string" },
+                  "numFact": { "type": "string" },
+                  "motivo": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/documentos-compra/cerrar-orden-con-compra-tx": {
+      "post": {
+        "tags": ["Documentos Compra"],
+        "summary": "Cierra orden con factura de compra",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["numFactOrden", "compra"],
+                "properties": {
+                  "numFactOrden": { "type": "string" },
+                  "compra": { "$ref": "#/components/schemas/GenericObject" },
+                  "detalle": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/GenericObject" }
+                  },
+                  "options": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/TxCreated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/abonos": {
+      "get": {
+        "tags": ["Abonos"],
+        "summary": "Lista abonos",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/pagos": {
+      "get": {
+        "tags": ["Pagos"],
+        "summary": "Lista pagos",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/p-cobrar": {
+      "get": {
+        "tags": ["Cuentas por Cobrar"],
+        "summary": "Lista cuentas por cobrar",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/cxp/aplicar-pago-tx": {
+      "post": {
+        "tags": ["CxP"],
+        "summary": "Aplica pago a cuentas por pagar",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/cxc/aplicar-cobro-tx": {
+      "post": {
+        "tags": ["CxC"],
+        "summary": "Aplica cobro a cuentas por cobrar",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/crud/{table}": {
+      "post": {
+        "tags": ["CRUD"],
+        "summary": "Inserta fila en tabla",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "table",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenericObject" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/bancos": {
+      "get": {
+        "tags": ["Bancos"],
+        "summary": "Lista bancos",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/cuentas-bank": {
+      "get": {
+        "tags": ["Cuentas Bancarias"],
+        "summary": "Lista cuentas bancarias",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/movimientos-cuenta": {
+      "get": {
+        "tags": ["Movimientos Cuenta"],
+        "summary": "Lista movimientos de cuenta bancaria",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" },
+          {
+            "in": "query",
+            "name": "nroCta",
+            "schema": { "type": "string" },
+            "description": "Filtrar por número de cuenta"
+          },
+          {
+            "in": "query",
+            "name": "desde",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Fecha desde (YYYY-MM-DD)"
+          },
+          {
+            "in": "query",
+            "name": "hasta",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Fecha hasta (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/conciliaciones": {
+      "get": {
+        "tags": ["Conciliación Bancaria"],
+        "summary": "Lista conciliaciones bancarias",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Conciliación Bancaria"],
+        "summary": "Crea nueva conciliación",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nroCta", "fechaDesde", "fechaHasta"],
+                "properties": {
+                  "nroCta": { "type": "string" },
+                  "fechaDesde": { "type": "string", "format": "date" },
+                  "fechaHasta": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/conciliaciones/{id}/importar-extracto": {
+      "post": {
+        "tags": ["Conciliación Bancaria"],
+        "summary": "Importa extracto bancario CSV",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "formato": {
+                    "type": "string",
+                    "enum": ["estandar", "banesco", "provincial", "mercantil"],
+                    "default": "estandar"
+                  },
+                  "delimitador": { "type": "string", "default": "," }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Importado" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/conciliaciones/{id}/conciliar": {
+      "post": {
+        "tags": ["Conciliación Bancaria"],
+        "summary": "Concilia movimiento con extracto",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["movimientoId", "extractoId"],
+                "properties": {
+                  "movimientoId": { "type": "integer" },
+                  "extractoId": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Conciliado" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/conciliaciones/{id}/cerrar": {
+      "post": {
+        "tags": ["Conciliación Bancaria"],
+        "summary": "Cierra conciliación bancaria",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Cerrado" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina/conceptos": {
+      "get": {
+        "tags": ["Nómina"],
+        "summary": "Lista conceptos de nómina",
+        "parameters": [
+          { "in": "query", "name": "coNomina", "schema": { "type": "string" } },
+          { "in": "query", "name": "tipo", "schema": { "type": "string", "enum": ["ASIGNACION", "DEDUCCION", "BONO"] } },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Nómina"],
+        "summary": "Guarda concepto de nómina",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["codigo", "codigoNomina", "nombre"],
+                "properties": {
+                  "codigo": { "type": "string" },
+                  "codigoNomina": { "type": "string" },
+                  "nombre": { "type": "string" },
+                  "formula": { "type": "string" },
+                  "tipo": { "type": "string", "enum": ["ASIGNACION", "DEDUCCION", "BONO"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina": {
+      "get": {
+        "tags": ["Nómina"],
+        "summary": "Lista nóminas procesadas",
+        "parameters": [
+          { "in": "query", "name": "nomina", "schema": { "type": "string" } },
+          { "in": "query", "name": "cedula", "schema": { "type": "string" } },
+          { "in": "query", "name": "soloAbiertas", "schema": { "type": "boolean" } },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina/procesar": {
+      "post": {
+        "tags": ["Nómina"],
+        "summary": "Procesa nómina completa",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nomina", "fechaInicio", "fechaHasta"],
+                "properties": {
+                  "nomina": { "type": "string" },
+                  "fechaInicio": { "type": "string", "format": "date" },
+                  "fechaHasta": { "type": "string", "format": "date" },
+                  "soloActivos": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina/procesar-empleado": {
+      "post": {
+        "tags": ["Nómina"],
+        "summary": "Procesa nómina de un empleado",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nomina", "cedula", "fechaInicio", "fechaHasta"],
+                "properties": {
+                  "nomina": { "type": "string" },
+                  "cedula": { "type": "string" },
+                  "fechaInicio": { "type": "string", "format": "date" },
+                  "fechaHasta": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina/vacaciones/procesar": {
+      "post": {
+        "tags": ["Nómina - Vacaciones"],
+        "summary": "Procesa vacaciones",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["vacacionId", "cedula", "fechaInicio", "fechaHasta"],
+                "properties": {
+                  "vacacionId": { "type": "string" },
+                  "cedula": { "type": "string" },
+                  "fechaInicio": { "type": "string", "format": "date" },
+                  "fechaHasta": { "type": "string", "format": "date" },
+                  "fechaReintegro": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina/liquidacion/calcular": {
+      "post": {
+        "tags": ["Nómina - Liquidación"],
+        "summary": "Calcula liquidación",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["liquidacionId", "cedula", "fechaRetiro"],
+                "properties": {
+                  "liquidacionId": { "type": "string" },
+                  "cedula": { "type": "string" },
+                  "fechaRetiro": { "type": "string", "format": "date" },
+                  "causaRetiro": { "type": "string", "enum": ["RENUNCIA", "DESPIDO", "DESPIDO_JUSTIFICADO"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/nomina/constantes": {
+      "get": {
+        "tags": ["Nómina - Constantes"],
+        "summary": "Lista constantes de nómina",
+        "parameters": [
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/OkPaged" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Nómina - Constantes"],
+        "summary": "Guarda constante",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["codigo"],
+                "properties": {
+                  "codigo": { "type": "string" },
+                  "nombre": { "type": "string" },
+                  "valor": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    }
+  }
+}

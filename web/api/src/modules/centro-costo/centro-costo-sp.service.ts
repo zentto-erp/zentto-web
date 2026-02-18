@@ -1,0 +1,130 @@
+/**
+ * Centro Costo Service - Stored Procedures
+ * Usa SPs: usp_CentroCosto_List, GetByCodigo, Insert, Update, Delete
+ */
+import { getPool, sql } from "../../db/mssql.js";
+
+export interface CentroCostoRow {
+  Codigo?: string;
+  Descripcion?: string;
+  Presupuestado?: string;
+  Saldo_Real?: string;
+  [key: string]: unknown;
+}
+
+export interface ListCentroCostoParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListCentroCostoResult {
+  rows: CentroCostoRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface SpResult {
+  success: boolean;
+  message: string;
+}
+
+function rowToXml(row: Record<string, unknown>): string {
+  const attrs = Object.entries(row)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => {
+      const escaped = String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      return `${k}="${escaped}"`;
+    })
+    .join(" ");
+  return `<row ${attrs}/>`;
+}
+
+export async function listCentroCostoSP(params: ListCentroCostoParams = {}): Promise<ListCentroCostoResult> {
+  const pool = await getPool();
+  const request = new sql.Request(pool);
+
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(Math.max(1, params.limit || 50), 500);
+
+  request.input("Search", sql.NVarChar(100), params.search || null);
+  request.input("Page", sql.Int, page);
+  request.input("Limit", sql.Int, limit);
+  request.output("TotalCount", sql.Int);
+
+  const result = await request.execute("usp_CentroCosto_List");
+
+  return {
+    rows: result.recordset || [],
+    total: result.output.TotalCount || 0,
+    page,
+    limit,
+  };
+}
+
+export async function getCentroCostoByCodigoSP(codigo: string): Promise<CentroCostoRow | null> {
+  const pool = await getPool();
+  const request = new sql.Request(pool);
+
+  request.input("Codigo", sql.NVarChar(50), codigo);
+
+  const result = await request.execute("usp_CentroCosto_GetByCodigo");
+  return result.recordset?.[0] || null;
+}
+
+export async function insertCentroCostoSP(row: CentroCostoRow): Promise<SpResult> {
+  const pool = await getPool();
+  const request = new sql.Request(pool);
+
+  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
+  request.output("Resultado", sql.Int);
+  request.output("Mensaje", sql.NVarChar(500));
+
+  await request.execute("usp_CentroCosto_Insert");
+
+  const resultado = request.parameters.Resultado?.value as number;
+  return {
+    success: resultado === 1,
+    message: (request.parameters.Mensaje?.value as string) || "OK",
+  };
+}
+
+export async function updateCentroCostoSP(codigo: string, row: Partial<CentroCostoRow>): Promise<SpResult> {
+  const pool = await getPool();
+  const request = new sql.Request(pool);
+
+  request.input("Codigo", sql.NVarChar(50), codigo);
+  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
+  request.output("Resultado", sql.Int);
+  request.output("Mensaje", sql.NVarChar(500));
+
+  await request.execute("usp_CentroCosto_Update");
+
+  const resultado = request.parameters.Resultado?.value as number;
+  return {
+    success: resultado === 1,
+    message: (request.parameters.Mensaje?.value as string) || "OK",
+  };
+}
+
+export async function deleteCentroCostoSP(codigo: string): Promise<SpResult> {
+  const pool = await getPool();
+  const request = new sql.Request(pool);
+
+  request.input("Codigo", sql.NVarChar(50), codigo);
+  request.output("Resultado", sql.Int);
+  request.output("Mensaje", sql.NVarChar(500));
+
+  await request.execute("usp_CentroCosto_Delete");
+
+  const resultado = request.parameters.Resultado?.value as number;
+  return {
+    success: resultado === 1,
+    message: (request.parameters.Mensaje?.value as string) || "OK",
+  };
+}

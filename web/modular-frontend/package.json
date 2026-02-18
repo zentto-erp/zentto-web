@@ -1,0 +1,23 @@
+{
+  "name": "datqbox-modular-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:shell": "npm --workspace @datqbox/shell run dev",
+    "build:shell": "npm --workspace @datqbox/shell run build",
+    "start:shell": "npm --workspace @datqbox/shell run start"
+  },
+  "overrides": {
+    "title": "4.0.1",
+    "clipboardy": "4.0.0",
+    "execa": "8.0.1",
+    "cross-spawn": "7.0.6"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.23"
+  }
+}

@@ -1,0 +1,7 @@
+﻿{
+  "id": "sample-addon",
+  "name": "Sample Addon",
+  "version": "0.1.0",
+  "description": "Addon de ejemplo para registrar endpoints",
+  "entry": "index.mjs"
+}

@@ -1,0 +1,7 @@
+"use client";
+
+import { ConciliacionWizard } from "@datqbox/module-bancos";
+
+export default function ConciliacionPage() {
+  return <ConciliacionWizard />;
+}

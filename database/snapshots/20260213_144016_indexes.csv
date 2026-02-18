@@ -1,0 +1,2 @@
+Msg 1934, Level 16, State 1, Server DELLXEONE31545\SQLEXPRESS, Line 3
+Error de SELECT porque las siguientes opciones SET tienen una configuración incorrecta: 'QUOTED_IDENTIFIER'. Compruebe que las opciones SET son correctas y se pueden usar con vistas indizadas y/o índices en columnas calculadas y/o índices filtrados y/o notificaciones de consulta y/o métodos de tipo de datos XML y/u operaciones de índice espacial.

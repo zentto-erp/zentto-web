@@ -1,0 +1,13 @@
+{
+  "name": "datqbox-frontend-agent",
+  "version": "1.0.0",
+  "description": "MCP Agent for DatQBox Next.js + React frontend operations",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  }
+}

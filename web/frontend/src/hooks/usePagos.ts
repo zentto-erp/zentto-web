@@ -1,0 +1,61 @@
+// hooks/usePagos.ts
+"use client";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Pago, CreatePagoDTO, UpdatePagoDTO, CrudFilter, PaginatedResponse } from "@/lib/types";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
+
+const QUERY_KEY = "pagos";
+const API_BASE = "/api/v1/pagos";
+
+export function usePagosList(filter?: CrudFilter) {
+  return useQuery<PaginatedResponse<Pago>>({
+    queryKey: [QUERY_KEY, "list", filter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filter?.search) params.append("search", filter.search);
+      if (filter?.page) params.append("page", filter.page.toString());
+      if (filter?.limit) params.append("limit", filter.limit.toString());
+      return apiGet(`${API_BASE}?${params.toString()}`);
+    },
+  });
+}
+
+export function usePagoById(numeroPago: string) {
+  return useQuery<Pago>({
+    queryKey: [QUERY_KEY, numeroPago],
+    queryFn: () => apiGet(`${API_BASE}/${numeroPago}`),
+    enabled: !!numeroPago,
+  });
+}
+
+export function useCreatePago() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreatePagoDTO) => apiPost(API_BASE, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+  });
+}
+
+export function useUpdatePago(numeroPago: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdatePagoDTO) => apiPut(`${API_BASE}/${numeroPago}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, numeroPago] });
+    },
+  });
+}
+
+export function useDeletePago() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (numeroPago: string) => apiDelete(`${API_BASE}/${numeroPago}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+  });
+}
