@@ -16,3 +16,9 @@ export { default as SidebarFooterAccount, ToolbarAccountOverride } from './compo
 export { LoadingFallback } from './components/LoadingFallback';
 export { default as CustomStepper } from './components/CustomStepper';
 export type { CustomStepperProps, StepDef } from './components/CustomStepper';
+export { default as ContextActionHeader } from './components/ContextActionHeader';
+export { default as OdooLayout } from './components/OdooLayout';
+export { default as SettingsLayout } from './components/SettingsLayout';
+export { default as SettingsSection } from './components/SettingsSection';
+export { default as SettingsItem } from './components/SettingsItem';
+export { default as SettingsInputGroup } from './components/SettingsInputGroup';

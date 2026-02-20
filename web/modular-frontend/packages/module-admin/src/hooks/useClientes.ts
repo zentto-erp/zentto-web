@@ -21,6 +21,19 @@ export interface ClienteFilter {
   estado?: string;
 }
 
+function mapRowToCliente(row: Record<string, any>): ClienteListItem {
+  return {
+    codigo: String(row.CODIGO ?? row.codigo ?? ""),
+    nombre: String(row.NOMBRE ?? row.nombre ?? ""),
+    rif: String(row.RIF ?? row.rif ?? ""),
+    email: row.EMAIL ?? row.email,
+    telefono: row.TELEFONO ?? row.telefono,
+    direccion: row.DIRECCION ?? row.direccion,
+    saldo: Number(row.SALDO_TOT ?? row.SALDO ?? row.saldo ?? 0),
+    estado: String(row.ESTADO ?? row.estado ?? "Activo"),
+  };
+}
+
 export function useClientesList(filter?: ClienteFilter) {
   return useQuery({
     queryKey: ["clientes", "list", filter],
@@ -32,7 +45,22 @@ export function useClientesList(filter?: ClienteFilter) {
       if (filter?.estado) params.append("estado", filter.estado);
 
       const query = params.toString();
-      return apiGet(`/api/v1/clientes${query ? "?" + query : ""}`);
+      const raw = await apiGet(`/api/v1/clientes${query ? "?" + query : ""}`);
+      const rows = (raw?.rows ?? raw?.items ?? raw?.data ?? []) as Record<string, any>[];
+      const items = rows.map(mapRowToCliente);
+      const total = Number(raw?.total ?? items.length);
+      const page = Number(raw?.page ?? filter?.page ?? 1);
+      const pageSize = Number(raw?.limit ?? filter?.limit ?? 50);
+      const totalPages = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
+
+      return {
+        items,
+        data: items,
+        total,
+        page,
+        pageSize,
+        totalPages,
+      };
     },
   });
 }

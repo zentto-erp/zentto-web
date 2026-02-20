@@ -51,6 +51,8 @@ export { default as FacturaForm } from './components/modules/facturas/FacturaFor
 // Re-export components — inventario
 export { default as InventarioTable } from './components/modules/inventario/InventarioTable';
 export { default as AjusteInventarioForm } from './components/modules/inventario/AjusteInventarioForm';
+export { default as CatalogoCrudPage } from './components/modules/inventario/CatalogoCrudPage';
+export { default as GenericEntityCrudPage } from './components/modules/inventario/CatalogoCrudPage';
 
 // Re-export components — pagos
 export { default as PagosTable } from './components/modules/pagos/PagosTable';
@@ -63,6 +65,7 @@ export { default as ProveedorForm } from './components/modules/proveedores/Prove
 // Re-export common components
 export { FacturaTable } from './components/FacturaTable';
 export { ProtectedComponent, withProtection } from './components/ProtectedComponent';
+export { default as EditableDataGrid } from './components/EditableDataGrid';
 
 // Home page
 export { default as AdminHome } from './pages/AdminHome';

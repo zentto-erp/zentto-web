@@ -18,10 +18,10 @@ import {
   Alert,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import AddIcon from "@mui/icons-material/Add";
 import BlockIcon from "@mui/icons-material/Block";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { formatCurrency } from "@datqbox/shared-api";
+import { ContextActionHeader } from "@datqbox/shared-ui";
 import {
   useAsientosList,
   useAsientoDetalle,
@@ -100,45 +100,50 @@ export default function AsientosListPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} href="/contabilidad/asientos/new">
-          Nuevo Asiento
-        </Button>
-      </Stack>
+      <ContextActionHeader
+        title="Asientos Contables"
+        primaryAction={{
+          label: "Nuevo Asiento",
+          onClick: () => { window.location.href = "/contabilidad/asientos/new" }
+        }}
+      />
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Desde"
-          type="date"
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          value={filter.fechaDesde || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value }))}
-        />
-        <TextField
-          label="Hasta"
-          type="date"
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          value={filter.fechaHasta || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value }))}
-        />
-      </Stack>
+      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <Stack direction="row" spacing={2} mb={2}>
+          <TextField
+            label="Desde"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={filter.fechaDesde || ""}
+            onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value }))}
+          />
+          <TextField
+            label="Hasta"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={filter.fechaHasta || ""}
+            onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value }))}
+          />
+        </Stack>
 
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-          onPaginationModelChange={(m) =>
-            setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-          }
-          disableRowSelectionOnClick
-          getRowId={(row) => row.id ?? row.Id}
-        />
-      </Paper>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            loading={isLoading}
+            pageSizeOptions={[25, 50]}
+            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
+            onPaginationModelChange={(m) =>
+              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
+            }
+            disableRowSelectionOnClick
+            getRowId={(row) => row.id ?? row.Id}
+            sx={{ border: 'none' }}
+          />
+        </Paper>
+      </Box>
 
       {/* Detail Dialog */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="md" fullWidth>

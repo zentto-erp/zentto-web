@@ -27,118 +27,104 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import BadgeIcon from '@mui/icons-material/Badge';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 
-// ─── Navigation ───────────────────────────────────────────────
+// Navigation
 
 /** Check if a user has access to a given module */
 function has(modulos: string[], mod: SystemModule): boolean {
   return modulos.includes(mod);
 }
 
-function buildNavigation(isAdmin: boolean, modulos: string[]): Navigation {
-  const nav: Navigation = [
-    { kind: 'header', title: 'Principal' },
-    { kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> },
-  ];
+export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: string): any[] {
+  const nav: any[] = [];
 
-  // ── Business modules (flat — different top-level routes) ──
-  const hasAnyBusiness =
-    has(modulos, 'facturas') || has(modulos, 'compras') ||
-    has(modulos, 'cuentas-por-pagar') || has(modulos, 'pagos') ||
-    has(modulos, 'cxc') || has(modulos, 'cxp') || has(modulos, 'abonos');
-
-  if (hasAnyBusiness) {
-    nav.push({ kind: 'header', title: 'Módulos de Negocio' });
-    if (has(modulos, 'facturas'))
-      nav.push({ kind: 'page', segment: 'facturas', title: 'Facturas', icon: <PaymentIcon /> });
-    if (has(modulos, 'compras'))
-      nav.push({ kind: 'page', segment: 'compras', title: 'Compras', icon: <LocalShippingIcon /> });
-    if (has(modulos, 'cuentas-por-pagar'))
-      nav.push({ kind: 'page', segment: 'cuentas-por-pagar', title: 'Cuentas por Pagar', icon: <AccountBalanceIcon /> });
-    if (has(modulos, 'pagos'))
-      nav.push({ kind: 'page', segment: 'pagos', title: 'Pagos', icon: <PaymentIcon /> });
-    if (has(modulos, 'abonos'))
-      nav.push({ kind: 'page', segment: 'abonos', title: 'Abonos', icon: <PaymentsIcon /> });
-    if (has(modulos, 'cxc'))
-      nav.push({ kind: 'page', segment: 'cxc', title: 'Cobros CxC', icon: <PaymentsIcon />,
-        children: [{ kind: 'page', segment: 'new', title: 'Nuevo Cobro CxC', icon: <PaymentsIcon /> }] as any,
-      } as any);
-    if (has(modulos, 'cxp'))
-      nav.push({ kind: 'page', segment: 'cxp', title: 'Pagos CxP', icon: <PaymentsIcon />,
-        children: [{ kind: 'page', segment: 'new', title: 'Nuevo Pago CxP', icon: <PaymentsIcon /> }] as any,
-      } as any);
+  // If we are on the App Selector, show no menus in the top bar
+  if (pathname === '/' || pathname === '/aplicaciones') {
+    return nav;
   }
 
-  // ── Standalone pages (flat) ──
-  const hasAnyStandalone =
-    has(modulos, 'inventario') || has(modulos, 'proveedores') ||
-    has(modulos, 'articulos') || has(modulos, 'clientes');
+  // Helper
+  const isApp = (appPath: string) => pathname.startsWith(appPath);
 
-  if (hasAnyStandalone) {
-    nav.push({ kind: 'header', title: 'Catálogos' });
-    if (has(modulos, 'clientes'))
-      nav.push({ kind: 'page', segment: 'clientes', title: 'Clientes', icon: <PeopleIcon /> });
-    if (has(modulos, 'proveedores'))
-      nav.push({ kind: 'page', segment: 'proveedores', title: 'Proveedores', icon: <PeopleIcon /> });
-    if (has(modulos, 'articulos'))
-      nav.push({ kind: 'page', segment: 'articulos', title: 'Artículos', icon: <InventoryIcon /> });
-    if (has(modulos, 'inventario'))
-      nav.push({ kind: 'page', segment: 'inventario', title: 'Inventario', icon: <InventoryIcon /> });
+  // App: Contabilidad
+  if (has(modulos, 'contabilidad') && isApp('/contabilidad')) {
+    nav.push({ kind: 'page', segment: 'contabilidad', title: 'Dashboard', icon: <AccountBalanceWalletIcon /> });
+    nav.push({ kind: 'page', segment: 'contabilidad/asientos', title: 'Asientos', icon: <AccountBalanceWalletIcon /> });
+    nav.push({ kind: 'page', segment: 'contabilidad/cuentas', title: 'Plan de Cuentas', icon: <AccountBalanceWalletIcon /> });
+    nav.push({ kind: 'page', segment: 'contabilidad/reportes', title: 'Reportes', icon: <AccountBalanceWalletIcon /> });
+    return nav;
   }
 
-  // ── Bancos group (nested under /bancos/) ──
-  if (has(modulos, 'bancos')) {
-    nav.push({
-      kind: 'page', segment: 'bancos', title: 'Bancos', icon: <AccountBalanceIcon />,
-      children: [
-        { kind: 'page', segment: 'cuentas', title: 'Cuentas y Mov. Bancarios', icon: <AccountBalanceIcon /> },
-        { kind: 'page', segment: 'conciliaciones', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> },
-      ] as any,
-    } as any);
+  // App: Nómina
+  if (has(modulos, 'nomina') && isApp('/nomina')) {
+    nav.push({ kind: 'page', segment: 'nomina', title: 'Dashboard', icon: <BadgeIcon /> });
+    nav.push({ kind: 'page', segment: 'nomina/nominas', title: 'Nóminas', icon: <BadgeIcon /> });
+    nav.push({ kind: 'page', segment: 'nomina/conceptos', title: 'Conceptos', icon: <BadgeIcon /> });
+    nav.push({ kind: 'page', segment: 'nomina/vacaciones', title: 'Vacaciones', icon: <BadgeIcon /> });
+    nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <BadgeIcon /> });
+    nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <BadgeIcon /> });
+    return nav;
   }
 
-  // ── Contabilidad group (nested under /contabilidad/) ──
-  if (has(modulos, 'contabilidad')) {
-    nav.push({
-      kind: 'page', segment: 'contabilidad', title: 'Contabilidad', icon: <AccountBalanceWalletIcon />,
-      children: [
-        { kind: 'page', segment: 'asientos', title: 'Asientos', icon: <AccountBalanceWalletIcon /> },
-        { kind: 'page', segment: 'cuentas', title: 'Plan de Cuentas', icon: <AccountBalanceWalletIcon /> },
-        { kind: 'page', segment: 'reportes', title: 'Reportes', icon: <AccountBalanceWalletIcon /> },
-      ] as any,
-    } as any);
+  // App: Bancos
+  if (has(modulos, 'bancos') && isApp('/bancos')) {
+    nav.push({ kind: 'page', segment: 'bancos', title: 'Dashboard', icon: <AccountBalanceIcon /> });
+    nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas y Movimientos', icon: <AccountBalanceIcon /> });
+    nav.push({ kind: 'page', segment: 'bancos/conciliaciones', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> });
+    return nav;
   }
 
-  // ── Nómina group (nested under /nomina/) ──
-  if (has(modulos, 'nomina')) {
-    nav.push({
-      kind: 'page', segment: 'nomina', title: 'Nómina', icon: <BadgeIcon />,
-      children: [
-        { kind: 'page', segment: 'nominas', title: 'Nóminas', icon: <BadgeIcon /> },
-        { kind: 'page', segment: 'conceptos', title: 'Conceptos', icon: <BadgeIcon /> },
-        { kind: 'page', segment: 'vacaciones', title: 'Vacaciones', icon: <BadgeIcon /> },
-        { kind: 'page', segment: 'liquidaciones', title: 'Liquidaciones', icon: <BadgeIcon /> },
-        { kind: 'page', segment: 'constantes', title: 'Constantes', icon: <BadgeIcon /> },
-      ] as any,
-    } as any);
+  // App: Inventario
+  if ((has(modulos, 'inventario') || has(modulos, 'articulos')) && isApp('/inventario')) {
+    nav.push({ kind: 'page', segment: 'inventario', title: 'Dashboard', icon: <InventoryIcon /> });
+    nav.push({ kind: 'page', segment: 'articulos', title: 'Maestro de Artículos', icon: <InventoryIcon /> });
+    nav.push({ kind: 'page', segment: 'inventario/marcas', title: 'Marcas', icon: <InventoryIcon /> });
+    nav.push({ kind: 'page', segment: 'inventario/categorias', title: 'Categorías', icon: <InventoryIcon /> });
+    nav.push({ kind: 'page', segment: 'inventario/clases', title: 'Clases', icon: <InventoryIcon /> });
+    nav.push({ kind: 'page', segment: 'inventario/tipos', title: 'Tipos', icon: <InventoryIcon /> });
+    return nav;
   }
 
-  // ── Administration (admin only, nested under /configuracion/) ──
-  if (isAdmin) {
-    nav.push({ kind: 'header', title: 'Administración' });
-    const adminChildren: any[] = [];
+  // App: Ventas y CxC
+  const hasVentas = has(modulos, 'facturas') || has(modulos, 'abonos') || has(modulos, 'cxc') || has(modulos, 'clientes');
+  if (hasVentas && isApp('/ventas')) {
+    nav.push({ kind: 'page', segment: 'ventas', title: 'Dashboard', icon: <PaymentIcon /> });
+    if (has(modulos, 'facturas')) nav.push({ kind: 'page', segment: 'facturas', title: 'Facturas', icon: <PaymentIcon /> });
+    if (has(modulos, 'abonos')) nav.push({ kind: 'page', segment: 'abonos', title: 'Abonos', icon: <PaymentsIcon /> });
+    if (has(modulos, 'cxc')) nav.push({ kind: 'page', segment: 'cxc', title: 'Cuentas por Cobrar (CxC)', icon: <PaymentsIcon /> });
+    if (has(modulos, 'clientes')) nav.push({ kind: 'page', segment: 'clientes', title: 'Clientes', icon: <PeopleIcon /> });
+    return nav;
+  }
+
+  // App: Compras y CxP
+  const hasCompras = has(modulos, 'compras') || has(modulos, 'cuentas-por-pagar') || has(modulos, 'pagos') || has(modulos, 'cxp') || has(modulos, 'proveedores');
+  if (hasCompras && isApp('/compras')) {
+    nav.push({ kind: 'page', segment: 'compras', title: 'Dashboard', icon: <LocalShippingIcon /> });
+    if (has(modulos, 'compras')) nav.push({ kind: 'page', segment: 'compras', title: 'Compras', icon: <LocalShippingIcon /> });
+    if (has(modulos, 'cuentas-por-pagar')) nav.push({ kind: 'page', segment: 'cuentas-por-pagar', title: 'Cuentas por Pagar', icon: <AccountBalanceIcon /> });
+    if (has(modulos, 'pagos')) nav.push({ kind: 'page', segment: 'pagos', title: 'Pagos', icon: <PaymentIcon /> });
+    if (has(modulos, 'cxp')) nav.push({ kind: 'page', segment: 'cxp', title: 'Pagos CxP', icon: <PaymentsIcon /> });
+    if (has(modulos, 'proveedores')) nav.push({ kind: 'page', segment: 'proveedores', title: 'Proveedores', icon: <PeopleIcon /> });
+    return nav;
+  }
+
+  // App: Configuración Central (Ajustes) y Maestros
+  if (isAdmin && isApp('/configuracion')) {
+    nav.push({ kind: 'page', segment: 'configuracion', title: 'Ajustes Generales', icon: <SettingsIcon /> });
     if (has(modulos, 'usuarios')) {
-      adminChildren.push({ kind: 'page', segment: 'usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
+      nav.push({ kind: 'page', segment: 'usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
     }
-    nav.push({
-      kind: 'page', segment: 'configuracion', title: 'Configuración', icon: <SettingsIcon />,
-      children: adminChildren,
-    } as any);
+    nav.push({ kind: 'page', segment: 'maestros/correlativo', title: 'Correlativos', icon: <SettingsIcon /> });
+    nav.push({ kind: 'page', segment: 'maestros/empresa', title: 'Empresa', icon: <SettingsIcon /> });
+    nav.push({ kind: 'page', segment: 'maestros/feriados', title: 'Feriados', icon: <SettingsIcon /> });
+    nav.push({ kind: 'page', segment: 'maestros/monedas', title: 'Monedas', icon: <SettingsIcon /> });
+    nav.push({ kind: 'page', segment: 'maestros/tasa-moneda', title: 'Tasa Moneda', icon: <SettingsIcon /> });
+    nav.push({ kind: 'page', segment: 'empleados', title: 'Empleados', icon: <PeopleIcon /> });
+    return nav;
   }
 
   return nav;
@@ -146,7 +132,7 @@ function buildNavigation(isAdmin: boolean, modulos: string[]): Navigation {
 
 const AUTHENTICATION = { signIn, signOut };
 
-// ─── Inner App (has access to session + auth) ─────────────────
+// Inner App (has access to session + auth)
 function AppContent({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const { isLoading, isAdmin, modulos } = useAuth();
@@ -189,7 +175,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Root Layout ──────────────────────────────────────────────
+// Root Layout
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" data-toolpad-color-scheme="light" suppressHydrationWarning>

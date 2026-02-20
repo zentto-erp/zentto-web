@@ -28,9 +28,9 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import ArticleIcon from "@mui/icons-material/Article";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useRouter } from "next/navigation";
-import { 
-  usePlanCuentas, 
-  useSeedPlanCuentas, 
+import {
+  usePlanCuentas,
+  useSeedPlanCuentas,
   useLibroMayor,
   useMayorAnalitico,
   useCreateCuenta,
@@ -38,6 +38,7 @@ import {
   useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
+import { ContextActionHeader } from "@datqbox/shared-ui";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 
@@ -52,13 +53,13 @@ interface CuentaContable {
 
 // ─── Componente Mayor Analítico Dialog ─────────────────────────
 
-function MayorAnaliticoDialog({ 
-  open, 
-  onClose, 
-  cuenta 
-}: { 
-  open: boolean; 
-  onClose: () => void; 
+function MayorAnaliticoDialog({
+  open,
+  onClose,
+  cuenta
+}: {
+  open: boolean;
+  onClose: () => void;
   cuenta: CuentaContable | null;
 }) {
   const [fechaDesde, setFechaDesde] = useState(
@@ -99,7 +100,7 @@ function MayorAnaliticoDialog({
             InputLabelProps={{ shrink: true }}
           />
         </Stack>
-        
+
         {isLoading ? (
           <Typography>Cargando...</Typography>
         ) : data?.rows?.length > 0 ? (
@@ -173,7 +174,7 @@ export default function PlanCuentasPageMejorado() {
   // Filtrar por tipo de cuenta según tab (usando primer dígito del código)
   const filteredRows = React.useMemo(() => {
     if (tabValue === 0) return rows;
-    
+
     // Filtrar por el primer dígito del código de cuenta
     // 1 = Activos, 2 = Pasivos, 3 = Capital, 4 = Ingresos, 5/6 = Gastos/Costos
     return rows.filter((r) => {
@@ -290,7 +291,7 @@ export default function PlanCuentasPageMejorado() {
           "6": { label: "Gasto", color: { bg: "secondary.light", color: "secondary.dark" } },
         };
         const tc = tipoContable[primerDigito] || { label: params.value, color: { bg: "grey.200", color: "grey.800" } };
-        
+
         return (
           <Chip
             label={tc.label}
@@ -352,26 +353,31 @@ export default function PlanCuentasPageMejorado() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {/* Header */}
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleSeedData}
-            disabled={seedMutation.isPending}
-          >
-            {seedMutation.isPending ? "Creando..." : "Crear Datos Ejemplo"}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => router.push("/contabilidad/asientos/new")}
-          >
-            Nuevo Asiento
-          </Button>
-        </Stack>
-      </Stack>
+      {/* Context Action Header (Odoo Style) */}
+      <ContextActionHeader
+        title="Plan de Cuentas"
+        primaryAction={{
+          label: "Nueva Cuenta",
+          onClick: () => {
+            // Este evento idealmente llamaría al dispatch addRow del EditableDataGrid
+            // Por simplicidad en este demo lo dejamos como placeholder
+            console.log("Nueva cuenta activada");
+          }
+        }}
+        secondaryActions={[
+          {
+            label: seedMutation.isPending ? "Creando..." : "Crear Datos Ejemplo",
+            onClick: handleSeedData,
+            disabled: seedMutation.isPending
+          },
+          {
+            label: "Nuevo Asiento",
+            onClick: () => router.push("/contabilidad/asientos/new")
+          }
+        ]}
+        onSearch={setSearch}
+        searchPlaceholder="Buscar por código o descripción..."
+      />
 
       {/* Error */}
       {error && (

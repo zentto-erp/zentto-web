@@ -1,7 +1,5 @@
-"use client";
-
-import { ProveedoresTable } from "@datqbox/module-admin";
+import CatalogoCrudPage from '@/components/modules/inventario/CatalogoCrudPage';
 
 export default function ProveedoresPage() {
-  return <ProveedoresTable />;
+  return <CatalogoCrudPage endpoint="proveedores" title="Proveedores" />;
 }

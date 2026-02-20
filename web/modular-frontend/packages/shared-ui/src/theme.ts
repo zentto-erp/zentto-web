@@ -1,16 +1,7 @@
 'use client';
 import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
-import type {} from '@mui/x-data-grid/themeAugmentation';
-/*import getMPTheme from './theme/getMPTheme';
-
-const lightTheme = createTheme(getMPTheme('light'));
-const darkTheme = createTheme(getMPTheme('dark'));
-
-const theme = {
-  light: lightTheme,
-  dark: darkTheme,
-};*/
+import type { } from '@mui/x-data-grid/themeAugmentation';
 
 const theme = createTheme({
   cssVariables: {
@@ -18,36 +9,36 @@ const theme = createTheme({
   },
   colorSchemes: { light: true, dark: true },
   breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 600,
-      lg: 1200,
-      xl: 1536,
-    },
+    values: { xs: 0, sm: 600, md: 600, lg: 1200, xl: 1536 },
   },
   palette: {
     primary: {
-      main: '#aa1816', // Color principal de la marca (rojo)
-      light: '#e04a48',
-      dark: '#7a100e',
+      main: '#714B67', // Odoo Purple
+      light: '#8E6783',
+      dark: '#52344B',
       contrastText: '#fff',
     },
     secondary: {
-      main: '#d32f2f', // Color secundario
-      light: '#ef5350',
-      dark: '#c62828',
-      contrastText: '#fff',
+      main: '#E7E9ED', // Light gray actions
+      light: '#F8F9FA',
+      dark: '#D1D5DB',
+      contrastText: '#374151',
     },
     error: {
       main: red.A400,
     },
     background: {
-      default: '#fafafa',
+      default: '#F9FAFB',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#111827',
+      secondary: '#6B7280',
     },
   },
   typography: {
     fontFamily: [
+      'Inter',
       '-apple-system',
       'BlinkMacSystemFont',
       '"Segoe UI"',
@@ -57,17 +48,20 @@ const theme = createTheme({
       'sans-serif',
     ].join(','),
     button: {
-      textTransform: 'none', // Evitar texto en mayúsculas en botones por defecto
+      textTransform: 'none',
+      fontWeight: 500,
     },
+    h6: {
+      fontWeight: 600,
+      fontSize: '1.125rem',
+    }
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 4,
+          borderRadius: 6,
           textTransform: 'none',
-        },
-        contained: {
           boxShadow: 'none',
           '&:hover': {
             boxShadow: 'none',
@@ -79,8 +73,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
+          fontWeight: 500,
           '&.Mui-selected': {
-            color: '#aa1816',
+            color: '#714B67',
           },
         },
       },
@@ -88,7 +83,7 @@ const theme = createTheme({
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: '#aa1816',
+          backgroundColor: '#714B67',
         },
       },
     },
@@ -97,25 +92,31 @@ const theme = createTheme({
         density: 'compact',
         disableColumnMenu: false,
         showCellVerticalBorder: false,
+        rowHeight: 40,
+        columnHeaderHeight: 48,
       },
       styleOverrides: {
         root: {
           border: 'none',
-          borderRadius: 8,
+          borderRadius: 0,
+          backgroundColor: '#fff',
           fontSize: '0.875rem',
           '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#f5f5f5',
-            borderBottom: '1px solid #e0e0e0',
+            backgroundColor: '#fff',
+            borderBottom: '1px solid #E5E7EB',
             fontWeight: 600,
+            color: '#374151',
           },
           '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid #f0f0f0',
+            borderBottom: '1px solid #F3F4F6',
+            color: '#4B5563',
           },
           '& .MuiDataGrid-row:hover': {
-            backgroundColor: '#fafafa',
+            backgroundColor: '#F9FAFB',
           },
           '& .MuiDataGrid-footerContainer': {
-            borderTop: '1px solid #e0e0e0',
+            borderTop: '1px solid #E5E7EB',
+            backgroundColor: '#fff',
           },
         },
       },
@@ -124,8 +125,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-          border: '1px solid #e8e8e8',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
+          border: 'none',
         },
       },
     },
@@ -147,27 +148,6 @@ const theme = createTheme({
         },
       },
     },
-    MuiDialog: {
-      styleOverrides: {
-        paper: {
-          borderRadius: 12,
-        },
-      },
-    },
-    MuiAlert: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: 6,
-        },
-      },
-    },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
@@ -176,12 +156,20 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 6,
-            minHeight: 48,
+            backgroundColor: '#fff',
+            minHeight: 40,
+            '& fieldset': {
+              borderColor: '#D1D5DB',
+            },
+            '&:hover fieldset': {
+              borderColor: '#9CA3AF',
+            },
             '&.Mui-focused fieldset': {
-              borderColor: '#aa1816',
+              borderColor: '#714B67',
+              borderWidth: '1px',
             },
             '&.MuiInputBase-sizeSmall': {
-              minHeight: 42,
+              minHeight: 36,
             },
           },
         },
@@ -189,45 +177,19 @@ const theme = createTheme({
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        root: {
-          minHeight: 48,
-          '&.MuiInputBase-sizeSmall': {
-            minHeight: 42,
-          },
-        },
         input: {
-          paddingTop: 13,
-          paddingBottom: 13,
-          '&.MuiInputBase-inputSizeSmall': {
-            paddingTop: 10,
-            paddingBottom: 10,
-          },
+          padding: '8px 12px',
         },
       },
-    },
-    MuiSelect: {
-      defaultProps: {},
-      styleOverrides: {
-        select: {
-          display: 'flex',
-          alignItems: 'center',
-        },
-      },
-    },
-    MuiFormControl: {
-      defaultProps: {},
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          '&.MuiInputLabel-outlined': {
-            transform: 'translate(14px, 14px) scale(1)',
-          },
-          '&.MuiInputLabel-outlined.MuiInputLabel-sizeSmall': {
-            transform: 'translate(14px, 10px) scale(1)',
-          },
-          '&.MuiInputLabel-outlined.MuiInputLabel-shrink': {
+          transform: 'translate(14px, 10px) scale(1)',
+          '&.MuiInputLabel-shrink': {
             transform: 'translate(14px, -9px) scale(0.75)',
+            backgroundColor: '#fff',
+            padding: '0 4px',
           },
         },
       },
@@ -236,3 +198,4 @@ const theme = createTheme({
 });
 
 export default theme;
+

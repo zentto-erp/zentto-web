@@ -43,6 +43,14 @@ let cache: TableMetadata[] | null = null;
 let cacheAt = 0;
 const CACHE_TTL_MS = 60_000;
 
+function normalizeColumnName(name: string) {
+  return name.replace(/[\s_]/g, "").toLowerCase();
+}
+
+function isExcludedMetadataColumn(name: string) {
+  return normalizeColumnName(name) === "upsizets";
+}
+
 export async function getMetadata(force = false): Promise<TableMetadata[]> {
   const now = Date.now();
   if (!force && cache && now - cacheAt < CACHE_TTL_MS) {
@@ -94,6 +102,7 @@ export async function getMetadata(force = false): Promise<TableMetadata[]> {
 
   const colMap = new Map<string, TableColumn[]>();
   for (const col of columns) {
+    if (isExcludedMetadataColumn(col.COLUMN_NAME)) continue;
     const key = `${col.TABLE_SCHEMA}.${col.TABLE_NAME}`;
     const arr = colMap.get(key) ?? [];
     arr.push({

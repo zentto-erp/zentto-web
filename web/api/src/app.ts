@@ -45,6 +45,7 @@ import { documentosVentaRouter } from "./modules/documentos-venta/routes.js";
 import { documentosCompraRouter } from "./modules/documentos-compra/routes.js";
 import { nominaRouter } from "./modules/nomina/routes.js";
 import { contabilidadRouter } from "./modules/contabilidad/routes.js";
+import { maestrosRouter } from "./modules/maestros/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 
 function resolveOpenApiPath() {
@@ -167,6 +168,7 @@ export async function createApp() {
   app.use("/v1/tipos", tiposRouter);
   app.use("/v1/usuarios", usuariosRouter);
   app.use("/v1/empresa", empresaRouter);
+  app.use("/v1/maestros", maestrosRouter);
   
   // Terceros y Productos
   app.use("/v1/clientes", clientesRouter);
@@ -211,6 +213,7 @@ export async function createApp() {
   app.use("/api/v1/tipos", tiposRouter);
   app.use("/api/v1/usuarios", usuariosRouter);
   app.use("/api/v1/empresa", empresaRouter);
+  app.use("/api/v1/maestros", maestrosRouter);
   app.use("/api/v1/clientes", clientesRouter);
   app.use("/api/v1/proveedores", proveedoresRouter);
   app.use("/api/v1/inventario", inventarioRouter);

@@ -31,7 +31,7 @@ import { Cliente } from '@datqbox/shared-api/types';
 export default function ClientesTable() {
   const router = useRouter();
   const crud = useCrudGeneric<Cliente>('clientes');
-  const { data, isLoading } = crud.list({ status: 'active' });
+  const { data, isLoading } = crud.list();
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +42,7 @@ export default function ClientesTable() {
   const { mutate: deleteCliente, isPending: isDeleting } = crud.delete('');
 
   // Filtrado local
-  const filteredData = (data?.items || []).filter(
+  const filteredData = (data?.items || data?.data || []).filter(
     (client: Cliente) =>
       client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.rif.includes(searchTerm)

@@ -6,6 +6,9 @@
   "types": "src/index.tsx",
   "exports": {
     ".": "./src/index.tsx",
+    "./components/EditableDataGrid": "./src/components/EditableDataGrid.tsx",
+    "./components/modules/inventario/CatalogoCrudBase": "./src/components/modules/inventario/CatalogoCrudBase.tsx",
+    "./components/modules/inventario/CatalogoCrudPage": "./src/components/modules/inventario/CatalogoCrudPage.tsx",
     "./components/*": "./src/components/*",
     "./hooks/*": "./src/hooks/*",
     "./pages/*": "./src/pages/*"

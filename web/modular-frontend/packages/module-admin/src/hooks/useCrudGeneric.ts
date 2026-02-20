@@ -9,6 +9,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiDelete, apiGet, apiPost, apiPut } from '@datqbox/shared-api';
 
 interface CrudGenericOptions {
   baseUrl: string;
@@ -19,12 +20,12 @@ interface UseCrudGenericReturn<T, CreateDTO> {
   // Queries
   list: (filters?: any) => any;
   getById: (id: string) => any;
-  
+
   // Mutations
   create: () => any;
   update: (id: string) => any;
   delete: (id: string) => any;
-  
+
   // Utils
   invalidateList: () => void;
 }
@@ -36,6 +37,38 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
   const queryClient = useQueryClient();
   const url = `${baseUrl}/${endpoint}`;
 
+  const normalizeRow = (row: any): T => {
+    if (!row || typeof row !== 'object') return row as T;
+    const get = (...keys: string[]) => {
+      for (const key of keys) {
+        if (row[key] !== undefined && row[key] !== null) return row[key];
+      }
+      return undefined;
+    };
+
+    return {
+      ...row,
+      codigo: get('codigo', 'CODIGO', 'Codigo'),
+      nombre: get('nombre', 'NOMBRE', 'Nombre'),
+      rif: get('rif', 'RIF', 'Rif'),
+      email: get('email', 'EMAIL', 'Email'),
+      telefono: get('telefono', 'TELEFONO', 'Telefono'),
+      direccion: get('direccion', 'DIRECCION', 'Direccion'),
+      estado: get('estado', 'ESTADO', 'Estado'),
+      saldo: Number(get('saldo', 'SALDO', 'SALDO_TOT') ?? 0),
+    } as T;
+  };
+
+  const normalizeListPayload = (raw: any, filters?: any) => {
+    const rows = (raw?.items ?? raw?.data ?? raw?.rows ?? []) as any[];
+    const items = rows.map(normalizeRow);
+    const total = Number(raw?.total ?? items.length);
+    const page = Number(raw?.page ?? filters?.page ?? 1);
+    const pageSize = Number(raw?.pageSize ?? raw?.limit ?? filters?.limit ?? (items.length || 1));
+    const totalPages = Number(raw?.totalPages ?? Math.max(1, Math.ceil(total / Math.max(1, pageSize))));
+    return { items, data: items, total, page, pageSize, totalPages };
+  };
+
   // ========== QUERIES ==========
 
   const list = (filters?: any) =>
@@ -44,26 +77,31 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
       queryFn: async () => {
         const params = new URLSearchParams();
         if (filters) {
-          Object.entries(filters).forEach(([key, value]) => {
+          const normalizedFilters = { ...filters } as Record<string, unknown>;
+          if (normalizedFilters.status != null && normalizedFilters.estado == null) {
+            const status = String(normalizedFilters.status).toLowerCase();
+            if (status === 'active') normalizedFilters.estado = 'Activo';
+            else if (status === 'inactive') normalizedFilters.estado = 'Inactivo';
+            else normalizedFilters.estado = normalizedFilters.status;
+          }
+          delete normalizedFilters.status;
+
+          Object.entries(normalizedFilters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
               params.append(key, String(value));
             }
           });
         }
-        const res = await fetch(`${url}?${params.toString()}`);
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
+        const query = params.toString();
+        const raw = await apiGet(`${url}${query ? `?${query}` : ''}`);
+        return normalizeListPayload(raw, filters);
       },
     });
 
   const getById = (id: string) =>
     useQuery({
       queryKey: [endpoint, 'detail', id],
-      queryFn: async () => {
-        const res = await fetch(`${url}/${id}`);
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
-      },
+      queryFn: async () => normalizeRow(await apiGet(`${url}/${id}`)),
       enabled: !!id,
     });
 
@@ -72,13 +110,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
   const create = () =>
     useMutation({
       mutationFn: async (data: CreateDTO) => {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
+        return apiPost(url, data);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [endpoint, 'list'] });
@@ -88,13 +120,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
   const update = (id: string) =>
     useMutation({
       mutationFn: async (data: Partial<CreateDTO>) => {
-        const res = await fetch(`${url}/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
+        return apiPut(`${url}/${id}`, data);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [endpoint, 'list'] });
@@ -105,9 +131,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
   const deleteItem = (id: string) =>
     useMutation({
       mutationFn: async () => {
-        const res = await fetch(`${url}/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
+        return apiDelete(`${url}/${id}`);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [endpoint, 'list'] });

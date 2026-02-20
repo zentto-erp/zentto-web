@@ -1,5 +1,5 @@
 /**
- * Configuración de navegación y menú para la aplicación
+ * Configuracion de navegacion y menu para la aplicacion
  */
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -28,95 +28,214 @@ export const MENU_CONFIG: MenuItem[] = [
     requiredRole: 'any',
   },
   {
-    title: 'Módulos de Negocio',
+    title: 'Modulos de Negocio',
     icon: ShoppingCartIcon,
     requiredRole: 'any',
     children: [
       {
-        title: 'Facturas',
+        title: 'Ventas y CxC',
         icon: PaymentIcon,
-        href: '/facturas',
         requiredRole: 'any',
+        children: [
+          {
+            title: 'Facturas',
+            icon: PaymentIcon,
+            href: '/facturas',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Abonos',
+            icon: PaymentsIcon,
+            href: '/abonos',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Cuentas por Cobrar (CxC)',
+            icon: PaymentsIcon,
+            href: '/cxc',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Clientes',
+            icon: PeopleIcon,
+            href: '/clientes',
+            requiredRole: 'any',
+          },
+        ],
       },
       {
-        title: 'Compras',
+        title: 'Compras y CxP',
         icon: LocalShippingIcon,
-        href: '/compras',
         requiredRole: 'any',
-      },
-      {
-        title: 'Cuentas por Pagar',
-        icon: AccountBalanceIcon,
-        href: '/cuentas-por-pagar',
-        requiredRole: 'any',
-      },
-      {
-        title: 'Pagos',
-        icon: PaymentIcon,
-        href: '/pagos',
-        requiredRole: 'any',
-      },
-      {
-        title: 'Cobros CxC TX',
-        icon: PaymentsIcon,
-        href: '/cxc/new',
-        requiredRole: 'any',
-      },
-      {
-        title: 'Pagos CxP TX',
-        icon: PaymentsIcon,
-        href: '/cxp/new',
-        requiredRole: 'any',
+        children: [
+          {
+            title: 'Compras',
+            icon: LocalShippingIcon,
+            href: '/compras',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Cuentas por Pagar',
+            icon: AccountBalanceIcon,
+            href: '/cuentas-por-pagar',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Pagos',
+            icon: PaymentIcon,
+            href: '/pagos',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Pagos CxP',
+            icon: PaymentsIcon,
+            href: '/cxp',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Proveedores',
+            icon: PeopleIcon,
+            href: '/proveedores',
+            requiredRole: 'any',
+          },
+        ],
       },
       {
         title: 'Bancos',
         icon: AccountBalanceIcon,
-        href: '/bancos',
         requiredRole: 'any',
-      },
-      {
-        title: 'Cuentas y Mov. Bancarios',
-        icon: AccountBalanceIcon,
-        href: '/bancos/cuentas',
-        requiredRole: 'any',
-      },
-      {
-        title: 'Conciliacion Bancaria',
-        icon: AccountBalanceIcon,
-        href: '/bancos/conciliaciones',
-        requiredRole: 'any',
+        children: [
+          {
+            title: 'Bancos',
+            icon: AccountBalanceIcon,
+            href: '/bancos',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Cuentas y Mov. Bancarios',
+            icon: AccountBalanceIcon,
+            href: '/bancos/cuentas',
+            requiredRole: 'any',
+          },
+          {
+            title: 'Conciliacion Bancaria',
+            icon: AccountBalanceIcon,
+            href: '/bancos/conciliaciones',
+            requiredRole: 'any',
+          },
+        ],
       },
     ],
   },
   {
     title: 'Inventario',
     icon: InventoryIcon,
-    href: '/inventario',
     requiredRole: 'any',
+    children: [
+      {
+        title: 'Maestro de Articulos',
+        icon: InventoryIcon,
+        href: '/articulos',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Marcas',
+        icon: InventoryIcon,
+        href: '/inventario/marcas',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Categorias',
+        icon: InventoryIcon,
+        href: '/inventario/categorias',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Clases',
+        icon: InventoryIcon,
+        href: '/inventario/clases',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Tipos',
+        icon: InventoryIcon,
+        href: '/inventario/tipos',
+        requiredRole: 'any',
+      },
+    ],
   },
   {
-    title: 'Proveedores',
-    icon: PeopleIcon,
-    href: '/proveedores',
+    title: 'Maestros',
+    icon: SettingsIcon,
     requiredRole: 'any',
-  },
-  {
-    title: 'Artículos',
-    icon: InventoryIcon,
-    href: '/articulos',
-    requiredRole: 'any',
+    children: [
+      {
+        title: 'Empleados',
+        icon: PeopleIcon,
+        href: '/empleados',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Correlativos',
+        icon: SettingsIcon,
+        href: '/maestros/correlativo',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Empresa',
+        icon: SettingsIcon,
+        href: '/maestros/empresa',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Feriados',
+        icon: SettingsIcon,
+        href: '/maestros/feriados',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Monedas',
+        icon: SettingsIcon,
+        href: '/maestros/monedas',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Tasa Moneda',
+        icon: SettingsIcon,
+        href: '/maestros/tasa-moneda',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Reportes',
+        icon: SettingsIcon,
+        href: '/maestros/reportes',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Reporte Z',
+        icon: SettingsIcon,
+        href: '/maestros/reportez',
+        requiredRole: 'any',
+      },
+      {
+        title: 'Linea Proveedores',
+        icon: SettingsIcon,
+        href: '/maestros/linea-proveedores',
+        requiredRole: 'any',
+      },
+    ],
   },
 ];
 
 export const ADMIN_MENU_CONFIG: MenuItem[] = [
   ...MENU_CONFIG,
   {
-    title: 'Administración',
+    title: 'Administracion',
     icon: SettingsIcon,
     requiredRole: 'admin',
     children: [
       {
-        title: 'Configuración',
+        title: 'Configuracion',
         icon: SettingsIcon,
         href: '/configuracion',
         requiredRole: 'admin',
@@ -126,7 +245,7 @@ export const ADMIN_MENU_CONFIG: MenuItem[] = [
 ];
 
 /**
- * Obtiene el menú según el rol del usuario
+ * Obtiene el menu segun el rol del usuario
  */
 export function getMenuItems(isAdmin: boolean): MenuItem[] {
   if (isAdmin) {
@@ -136,7 +255,7 @@ export function getMenuItems(isAdmin: boolean): MenuItem[] {
 }
 
 /**
- * Filtra los elementos del menú según el rol
+ * Filtra los elementos del menu segun el rol
  */
 export function filterMenuByRole(menu: MenuItem[], isAdmin: boolean): MenuItem[] {
   return menu
