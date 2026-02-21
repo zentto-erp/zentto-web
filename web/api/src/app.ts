@@ -88,7 +88,6 @@ function loadOpenApiDoc() {
   doc.paths = paths;
   return doc;
 }
-
 export async function createApp() {
   const app = express();
   app.disable("etag");
@@ -99,6 +98,26 @@ export async function createApp() {
       'http://localhost:3100',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3100',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:3003',
+      'http://localhost:3004',
+      'http://localhost:3005',
+      'http://localhost:3006',
+      'http://localhost:3007',
+      'http://localhost:3008',
+      'http://localhost:3009',
+      'http://localhost:3010',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002',
+      'http://127.0.0.1:3003',
+      'http://127.0.0.1:3004',
+      'http://127.0.0.1:3005',
+      'http://127.0.0.1:3006',
+      'http://127.0.0.1:3007',
+      'http://127.0.0.1:3008',
+      'http://127.0.0.1:3009',
+      'http://127.0.0.1:3010',
     ],
     credentials: true,
   }));
@@ -127,15 +146,15 @@ export async function createApp() {
   });
 
   app.use("/health", healthRouter);
-  
+
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
   app.use("/v1/auth", authRouter);
-  
+
   // Documentos Unificados (reemplazan a facturas, pedidos, cotizaciones, presupuestos, notas, compras, ordenes)
   app.use("/v1/documentos-venta", documentosVentaRouter);
   app.use("/v1/documentos-compra", documentosCompraRouter);
-  
+
   // Pagos y Cobros
   app.use("/v1/abonos", abonosRouter);
   app.use("/v1/pagos", pagosRouter);
@@ -143,11 +162,11 @@ export async function createApp() {
   app.use("/v1/pagosc", pagosCRouter);
   app.use("/v1/p-cobrar", pCobrarRouter);
   app.use("/v1/cuentas-por-pagar", cuentasPorPagarRouter);
-  
+
   // Cuentas por Cobrar/Pagar
   app.use("/v1/cxc", cxcRouter);
   app.use("/v1/cxp", cxpRouter);
-  
+
   // Configuración y Maestros
   app.use("/v1/retenciones", retencionesRouter);
   app.use("/v1/movinvent", movInventRouter);
@@ -169,13 +188,13 @@ export async function createApp() {
   app.use("/v1/usuarios", usuariosRouter);
   app.use("/v1/empresa", empresaRouter);
   app.use("/v1/maestros", maestrosRouter);
-  
+
   // Terceros y Productos
   app.use("/v1/clientes", clientesRouter);
   app.use("/v1/proveedores", proveedoresRouter);
   app.use("/v1/inventario", inventarioRouter);
   app.use("/v1/articulos", inventarioRouter);
-  
+
   // Utilidades
   app.use("/v1/addons", addonsRouter);
   app.use("/v1/crud", crudRouter);

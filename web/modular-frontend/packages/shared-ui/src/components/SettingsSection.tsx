@@ -13,13 +13,14 @@ export default function SettingsSection({ id, title, children }: SettingsSection
         <Box id={`settings-section-${id}`} sx={{ mb: 6 }}>
             {/* Separador Gris con Título Pleno (Estilo Odoo Settings Section Header) */}
             <Box sx={{
-                bgcolor: '#F3F4F6',
+                bgcolor: 'action.hover',
                 px: 2, py: 1.5,
                 mt: 2, mb: 3,
-                borderBottom: '1px solid #E5E7EB',
-                borderTop: '1px solid #E5E7EB'
+                borderBottom: '1px solid',
+                borderTop: '1px solid',
+                borderColor: 'divider'
             }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#374151' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
                     {title}
                 </Typography>
             </Box>

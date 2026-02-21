@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppProvider } from '@toolpad/core/nextjs';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Navigation } from '@toolpad/core/AppProvider';
@@ -31,6 +33,10 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import BadgeIcon from '@mui/icons-material/Badge';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import HelpIcon from '@mui/icons-material/Help';
+import InfoIcon from '@mui/icons-material/Info';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AppsIcon from '@mui/icons-material/Apps';
 
 // Navigation
 
@@ -42,8 +48,14 @@ function has(modulos: string[], mod: SystemModule): boolean {
 export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: string): any[] {
   const nav: any[] = [];
 
-  // If we are on the App Selector, show no menus in the top bar
+  // If we are on the App Selector or Home, show the general landing/support sidebar
   if (pathname === '/' || pathname === '/aplicaciones') {
+    nav.push({ kind: 'header', title: 'DATQBOX' });
+    nav.push({ kind: 'page', segment: '', title: 'Inicio / Aplicaciones', icon: <AppsIcon /> });
+    nav.push({ kind: 'header', title: 'RECURSOS' });
+    nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });
+    nav.push({ kind: 'page', segment: 'soporte', title: 'Soporte Técnico', icon: <HelpIcon /> });
+    nav.push({ kind: 'page', segment: 'info', title: 'Acerca de', icon: <InfoIcon /> });
     return nav;
   }
 
@@ -137,6 +149,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const { isLoading, isAdmin, modulos } = useAuth();
   const [showContent, setShowContent] = useState(false);
+  const pathname = usePathname() || '/';
 
   useEffect(() => {
     if (!isLoading) {
@@ -145,7 +158,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading]);
 
-  const navigation = useMemo(() => buildNavigation(isAdmin, modulos), [isAdmin, modulos]);
+  const navigation = useMemo(() => buildNavigation(isAdmin, modulos, pathname), [isAdmin, modulos, pathname]);
 
   if (isLoading) {
     return <LoadingFallback />;
@@ -178,9 +191,10 @@ function AppContent({ children }: { children: React.ReactNode }) {
 // Root Layout
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" data-toolpad-color-scheme="light" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <title>DatqBox Web</title>
+        <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
       </head>
       <body>
         <SessionProvider>

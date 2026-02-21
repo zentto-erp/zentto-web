@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@datqbox/shared-auth';
 
-// Icons
+// Icons - Importar todos los necesarios
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
 const BadgeIcon = dynamic(() => import('@mui/icons-material/Badge'), { ssr: false });
 const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalance'), { ssr: false });
@@ -16,6 +16,10 @@ const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'
 const AppsIcon = dynamic(() => import('@mui/icons-material/Apps'), { ssr: false });
 const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
 const PointOfSaleIcon = dynamic(() => import('@mui/icons-material/PointOfSale'), { ssr: false });
+const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShipping'), { ssr: false });
+const RestaurantIcon = dynamic(() => import('@mui/icons-material/Restaurant'), { ssr: false });
+const LanguageIcon = dynamic(() => import('@mui/icons-material/Language'), { ssr: false });
+const ContentPasteSearchIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearch'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -23,7 +27,7 @@ interface AppShortcut {
   icon: React.ReactNode;
   path: string;
   bgColor: string;
-  requiredModule?: string; // If null, always visible based on logic
+  requiredModule?: string;
 }
 
 export default function AppSelectorPage() {
@@ -33,7 +37,16 @@ export default function AppSelectorPage() {
 
   const has = (mod: string) => isAdmin || modulos.includes(mod);
 
-  // Define dynamic apps based on auth
+  const navigateToApp = (path: string) => {
+    const localPaths = ['/aplicaciones', '/configuracion', '/docs', '/soporte', '/info'];
+    if (localPaths.includes(path)) {
+      router.push(path);
+      return;
+    }
+    window.location.assign(path);
+  };
+
+  // Todas las apps disponibles
   const allApps: AppShortcut[] = [];
 
   if (has('contabilidad')) {
@@ -51,11 +64,23 @@ export default function AppSelectorPage() {
   if (has('ventas') || has('facturas')) {
     allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/ventas', bgColor: '#3498DB' });
   }
+  if (has('compras') || has('cxp')) {
+    allApps.push({ id: 'compras', name: 'Compras', icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
+  }
   if (has('pos')) {
     allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/pos', bgColor: '#9B59B6' });
   }
+  if (has('restaurante')) {
+    allApps.push({ id: 'restaurante', name: 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });
+  }
+  if (has('ecommerce')) {
+    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <LanguageIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
+  }
+  if (has('auditoria')) {
+    allApps.push({ id: 'auditoria', name: 'Auditoría', icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
+  }
 
-  // Always add App Store and Settings at the end
+  // Siempre agregar App Store y Settings al final
   allApps.push({ id: 'apps', name: 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });
   if (isAdmin) {
     allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
@@ -63,7 +88,7 @@ export default function AppSelectorPage() {
 
   return (
     <Box sx={{ minHeight: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 8 }, background: 'linear-gradient(to right bottom, #f3f4f6, #e5e7eb)' }}>
-      <Box sx={{ width: '100%', maxWidth: 1000, mt: 5 }}>
+      <Box sx={{ width: '100%', maxWidth: 1200, mt: 5 }}>
         {isAdmin && <Box sx={{ width: '100%', p: 2, mb: 4, bgcolor: '#fdf2f8', color: '#831843', borderRadius: 2, border: '1px solid #fbcfe8', textAlign: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>⚙️ Modo Administrador de Sistema activado. Tienes acceso a todas las aplicaciones.</Typography>
         </Box>}
@@ -72,7 +97,7 @@ export default function AppSelectorPage() {
           {allApps.map((app) => (
             <Grid key={app.id} size={{ xs: 4, sm: 3, md: 2 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <ButtonBase
-                onClick={() => router.push(app.path)}
+                onClick={() => navigateToApp(app.path)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',

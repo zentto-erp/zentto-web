@@ -41,8 +41,8 @@ export default function SettingsLayout({
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
             {/* Barra superior de Acciones (Guardar/Descartar Fijada) */}
             <Box sx={{
-                position: 'sticky', top: 0, zIndex: 1100, bgcolor: '#ffffff',
-                borderBottom: '1px solid #E5E7EB', px: 3, py: 1.5,
+                position: 'sticky', top: 0, zIndex: 1100, bgcolor: 'background.paper',
+                borderBottom: '1px solid', borderColor: 'divider', px: 3, py: 1.5,
                 display: 'flex', alignItems: 'center', gap: 2,
                 boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
             }}>
@@ -59,17 +59,17 @@ export default function SettingsLayout({
                     variant="outlined"
                     onClick={onDiscard}
                     disabled={!hasChanges || isSaving}
-                    sx={{ borderColor: '#D1D5DB', color: '#374151', '&:hover': { bgcolor: '#F3F4F6', borderColor: '#9CA3AF' } }}
+                    sx={{ borderColor: 'divider', color: 'text.primary', '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' } }}
                 >
                     Descartar
                 </Button>
             </Box>
 
             {/* Contenido Dividido (Sidebar + Scroll Area) */}
-            <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
                 {/* Sidebar Lateral Fijo tipo Ancla */}
                 <Box sx={{
-                    width: 250, flexShrink: 0, bgcolor: '#F8F9FA', borderRight: '1px solid #E5E7EB',
+                    width: 250, flexShrink: 0, bgcolor: 'background.default', borderRight: '1px solid', borderColor: 'divider',
                     overflowY: 'auto', py: 2
                 }}>
                     <Stack spacing={0.5} sx={{ px: 1 }}>
@@ -80,11 +80,11 @@ export default function SettingsLayout({
                                 sx={{
                                     display: 'flex', alignItems: 'center', gap: 1.5,
                                     px: 2, py: 1.25, borderRadius: 1.5, cursor: 'pointer',
-                                    bgcolor: activeCategory === cat.id ? '#DEE2E6' : 'transparent',
-                                    color: activeCategory === cat.id ? '#111827' : '#4B5563',
+                                    bgcolor: activeCategory === cat.id ? 'action.selected' : 'transparent',
+                                    color: activeCategory === cat.id ? 'text.primary' : 'text.secondary',
                                     fontWeight: activeCategory === cat.id ? 600 : 500,
                                     fontSize: '0.9rem',
-                                    '&:hover': { bgcolor: activeCategory === cat.id ? '#DEE2E6' : '#F3F4F6' },
+                                    '&:hover': { bgcolor: activeCategory === cat.id ? 'action.selected' : 'action.hover' },
                                     transition: 'all 0.1s ease'
                                 }}
                             >
@@ -96,7 +96,7 @@ export default function SettingsLayout({
                 </Box>
 
                 {/* Área Derecha de Contenido Desplazable */}
-                <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, bgcolor: '#FFFFFF' }}>
+                <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, bgcolor: 'background.paper' }}>
                     <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
                         {children}
                     </Box>

@@ -23,11 +23,11 @@ export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
   return (
     <>
       <Box onClick={handleClick} component="button" sx={{
-        p: 1.5, gap: 1, alignItems: 'center', borderRadius: 1, bgcolor: 'action.selected',
-        border: '1px solid', borderColor: 'divider', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' },
+        p: 0.5, pr: 1.5, gap: 1, alignItems: 'center', borderRadius: 8, bgcolor: 'transparent',
+        border: 'none', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
       }}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem', bgcolor: 'primary.main' }}>{getInitials(userName)}</Avatar>
+          <Avatar sx={{ width: 36, height: 36, fontSize: '1rem', fontWeight: 600, bgcolor: '#321fdb', color: '#fff' }}>{getInitials(userName)}</Avatar>
           <Stack direction="column" spacing={0} sx={{ display: mini ? 'none' : { xs: 'none', sm: 'flex' }, alignItems: 'flex-start' }}>
             <Typography variant="subtitle2" fontWeight="600">{userName || 'Usuario'}</Typography>
             <Typography variant="caption" color="textSecondary">{isAdmin ? 'Administrador' : 'Usuario'}</Typography>

@@ -7,34 +7,30 @@ const theme = createTheme({
   cssVariables: {
     colorSchemeSelector: 'data-toolpad-color-scheme',
   },
-  colorSchemes: { light: true, dark: true },
+  colorSchemes: {
+    light: {
+      palette: {
+        primary: { main: '#714B67', light: '#8E6783', dark: '#52344B', contrastText: '#fff' },
+        secondary: { main: '#E7E9ED', light: '#F8F9FA', dark: '#D1D5DB', contrastText: '#374151' },
+        error: { main: red.A400 },
+        background: { default: '#F9FAFB', paper: '#FFFFFF' },
+        text: { primary: '#111827', secondary: '#6B7280' },
+      }
+    },
+    dark: {
+      palette: {
+        mode: 'dark',
+        primary: { main: '#8E6783', light: '#714B67', dark: '#52344B', contrastText: '#fff' },
+        secondary: { main: '#4B5563', light: '#6B7280', dark: '#374151', contrastText: '#F9FAFB' },
+        error: { main: red.A200 },
+        background: { default: '#1F2937', paper: '#111827' },
+        text: { primary: '#F9FAFB', secondary: '#9CA3AF' },
+        divider: 'rgba(255, 255, 255, 0.12)',
+      }
+    }
+  },
   breakpoints: {
     values: { xs: 0, sm: 600, md: 600, lg: 1200, xl: 1536 },
-  },
-  palette: {
-    primary: {
-      main: '#714B67', // Odoo Purple
-      light: '#8E6783',
-      dark: '#52344B',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#E7E9ED', // Light gray actions
-      light: '#F8F9FA',
-      dark: '#D1D5DB',
-      contrastText: '#374151',
-    },
-    error: {
-      main: red.A400,
-    },
-    background: {
-      default: '#F9FAFB',
-      paper: '#FFFFFF',
-    },
-    text: {
-      primary: '#111827',
-      secondary: '#6B7280',
-    },
   },
   typography: {
     fontFamily: [
@@ -75,7 +71,7 @@ const theme = createTheme({
           textTransform: 'none',
           fontWeight: 500,
           '&.Mui-selected': {
-            color: '#714B67',
+            color: 'var(--mui-palette-primary-main, #714B67)',
           },
         },
       },
@@ -83,7 +79,7 @@ const theme = createTheme({
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: '#714B67',
+          backgroundColor: 'var(--mui-palette-primary-main, #714B67)',
         },
       },
     },
@@ -99,24 +95,24 @@ const theme = createTheme({
         root: {
           border: 'none',
           borderRadius: 0,
-          backgroundColor: '#fff',
+          backgroundColor: 'transparent',
           fontSize: '0.875rem',
           '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#fff',
-            borderBottom: '1px solid #E5E7EB',
+            backgroundColor: 'var(--mui-palette-background-paper)',
+            borderBottom: '1px solid var(--mui-palette-divider)',
             fontWeight: 600,
-            color: '#374151',
+            color: 'var(--mui-palette-text-primary)',
           },
           '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid #F3F4F6',
-            color: '#4B5563',
+            borderBottom: '1px solid var(--mui-palette-divider)',
+            color: 'var(--mui-palette-text-secondary)',
           },
           '& .MuiDataGrid-row:hover': {
-            backgroundColor: '#F9FAFB',
+            backgroundColor: 'var(--mui-palette-action-hover)',
           },
           '& .MuiDataGrid-footerContainer': {
-            borderTop: '1px solid #E5E7EB',
-            backgroundColor: '#fff',
+            borderTop: '1px solid var(--mui-palette-divider)',
+            backgroundColor: 'var(--mui-palette-background-paper)',
           },
         },
       },
@@ -156,16 +152,16 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 6,
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--mui-palette-background-paper)',
             minHeight: 40,
             '& fieldset': {
-              borderColor: '#D1D5DB',
+              borderColor: 'var(--mui-palette-divider)',
             },
             '&:hover fieldset': {
-              borderColor: '#9CA3AF',
+              borderColor: 'var(--mui-palette-text-secondary)',
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#714B67',
+              borderColor: 'var(--mui-palette-primary-main)',
               borderWidth: '1px',
             },
             '&.MuiInputBase-sizeSmall': {
@@ -188,7 +184,7 @@ const theme = createTheme({
           transform: 'translate(14px, 10px) scale(1)',
           '&.MuiInputLabel-shrink': {
             transform: 'translate(14px, -9px) scale(0.75)',
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--mui-palette-background-paper)',
             padding: '0 4px',
           },
         },
