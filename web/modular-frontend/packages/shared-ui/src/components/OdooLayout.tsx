@@ -54,9 +54,17 @@ export default function OdooLayout({
 
     const { mode, setMode } = useColorScheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const hideSidebar = !navigationFields || navigationFields.length === 0;
+    const fullSidebarWidth = 260;
+    const miniSidebarWidth = 72;
 
     const [openMenus, setOpenMenus] = React.useState<{ [key: string]: boolean }>({});
-    const [isSidebarOpen, setSidebarOpen] = React.useState(true);
+    const [isSidebarOpen, setSidebarOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        if (hideSidebar) return;
+        setSidebarOpen(!isMobile);
+    }, [isMobile, hideSidebar]);
 
     // Auto close sidebar on mobile when navigating
     const handleToggleMenu = (key: string) => {
@@ -141,10 +149,8 @@ export default function OdooLayout({
         );
     };
 
-    const fullSidebarWidth = 260;
-    const miniSidebarWidth = 72;
-    const hideSidebar = !navigationFields || navigationFields.length === 0;
     const actualSidebarWidth = hideSidebar ? 0 : (isMobile ? 0 : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
+    const drawerPaperWidth = hideSidebar ? 0 : (isMobile ? fullSidebarWidth : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
 
     return (
         <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -159,11 +165,11 @@ export default function OdooLayout({
                         keepMounted: true, // Better open performance on mobile.
                     }}
                     sx={{
-                        width: actualSidebarWidth,
+                        width: drawerPaperWidth,
                         flexShrink: 0,
                         transition: 'width 0.2s',
                         [`& .MuiDrawer-paper`]: {
-                            width: actualSidebarWidth,
+                            width: drawerPaperWidth,
                             boxSizing: 'border-box',
                             borderRight: 'none',
                             bgcolor: '#3c4b64', /* CoreUI Dark Blue/Grey */

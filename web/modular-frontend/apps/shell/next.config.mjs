@@ -8,6 +8,8 @@ const nextConfig = {
     '@datqbox/module-bancos',
     '@datqbox/module-contabilidad',
     '@datqbox/module-nomina',
+    '@datqbox/pos',
+    '@datqbox/restaurante',
   ],
   async rewrites() {
     return [
@@ -38,8 +40,8 @@ const nextConfig = {
         source: '/nomina/:path*',
         destination: `http://localhost:3003/nomina/:path*`,
       },
-      
-      
+
+
       // Bancos - Puerto 3004
       {
         source: '/bancos',
@@ -78,12 +80,12 @@ const nextConfig = {
       },
       // Restaurante - Puerto 3008
       {
-        source: '/restaurant',
-        destination: `http://localhost:3008/restaurant`,
+        source: '/restaurante',
+        destination: `http://localhost:3008/restaurante`,
       },
       {
-        source: '/restaurant/:path*',
-        destination: `http://localhost:3008/restaurant/:path*`,
+        source: '/restaurante/:path*',
+        destination: `http://localhost:3008/restaurante/:path*`,
       },
       // E-commerce - Puerto 3009
       {

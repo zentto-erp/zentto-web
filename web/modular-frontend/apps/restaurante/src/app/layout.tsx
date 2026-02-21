@@ -1,11 +1,9 @@
-﻿'use client';
+'use client';
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
-import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
-import { SessionProvider, useSession } from 'next-auth/react';
+import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@datqbox/shared-auth';
 import { QueryProvider } from '@datqbox/shared-api';
 import {
@@ -13,12 +11,11 @@ import {
     LoadingFallback,
     ToastProvider,
     LocalizationProviderWrapper,
-    theme,
     OdooLayout
 } from '@datqbox/shared-ui';
 import '@datqbox/shared-ui/globals.css';
 
-import { buildNav } from './nav';
+import { buildRestauranteNav } from './nav';
 
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading, isAdmin, modulos } = useAuth();
@@ -31,7 +28,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
         }
     }, [isLoading]);
 
-    const navigation = React.useMemo(() => buildNav(isAdmin, modulos), [isAdmin, modulos]);
+    const navigation = React.useMemo(() => buildRestauranteNav(isAdmin, modulos), [isAdmin, modulos]);
 
     if (isLoading) {
         return <LoadingFallback />;
@@ -54,21 +51,19 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="es" suppressHydrationWarning>
+        <html lang="es" data-toolpad-color-scheme="light" suppressHydrationWarning>
             <head>
                 <title>Restaurante - DatqBox App</title>
-                <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
             </head>
             <body>
                 <SessionProvider basePath="/api/auth">
                     <QueryProvider>
                         <AuthProvider>
                             <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                                <ThemeProvider theme={theme} defaultMode="system">
-                                    <LocalizationProviderWrapper>
-                                        <AppContent>{children}</AppContent>
-                                    </LocalizationProviderWrapper>
-                                </ThemeProvider>
+                                <LocalizationProviderWrapper>
+                                    <AppContent>{children}</AppContent>
+                                </LocalizationProviderWrapper>
                             </AppRouterCacheProvider>
                         </AuthProvider>
                     </QueryProvider>
