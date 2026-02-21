@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-    Box, 
-    Typography, 
-    Button, 
-    Paper, 
-    useTheme, 
-    Avatar, 
-    Chip, 
+import {
+    Box,
+    Typography,
+    Button,
+    Paper,
+    useTheme,
+    Avatar,
+    Chip,
     Stack,
     Dialog,
     DialogTitle,
@@ -57,130 +57,130 @@ interface StoreApp {
 }
 
 const CATALOG: StoreApp[] = [
-    { 
-        id: 'contabilidad', 
-        name: 'Contabilidad', 
+    {
+        id: 'contabilidad',
+        name: 'Contabilidad',
         description: 'Gestione la contabilidad financiera y analítica, asientos, mayores y reportes.',
         fullDescription: 'El módulo de Contabilidad le permite gestionar toda la contabilidad de su empresa de manera eficiente. Incluye gestión de asientos contables, plan de cuentas, mayores, balances y reportes financieros completos.',
-        icon: <AccountBalanceWalletIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#875A7B', 
+        icon: <AccountBalanceWalletIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#875A7B',
         category: 'Finanzas',
         path: '/contabilidad',
         features: ['Asientos contables', 'Plan de cuentas', 'Mayores automáticos', 'Balances', 'Reportes financieros'],
         version: '2.1.0',
         author: 'DatqBox'
     },
-    { 
-        id: 'nomina', 
-        name: 'Nómina', 
+    {
+        id: 'nomina',
+        name: 'Nómina',
         description: 'Administración de empleados, vacaciones, liquidaciones y roles de pago.',
         fullDescription: 'Gestione su talento humano con el módulo de Nómina. Incluye administración de empleados, cálculo de nómina, gestión de vacaciones, liquidaciones y roles de pago automatizados.',
-        icon: <BadgeIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#00A09D', 
+        icon: <BadgeIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#00A09D',
         category: 'Recursos Humanos',
         path: '/nomina',
         features: ['Gestión de empleados', 'Cálculo de nómina', 'Vacaciones', 'Liquidaciones', 'Roles de pago'],
         version: '1.8.5',
         author: 'DatqBox'
     },
-    { 
-        id: 'bancos', 
-        name: 'Bancos e Inst.', 
+    {
+        id: 'bancos',
+        name: 'Bancos e Inst.',
         description: 'Gestión de cuentas corrientes, movimientos y conciliación bancaria.',
         fullDescription: 'Controle sus finanzas bancarias con este módulo integrado. Gestione múltiples cuentas corrientes, registre movimientos y realice conciliaciones bancarias automáticas.',
-        icon: <AccountBalanceIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#E67E22', 
+        icon: <AccountBalanceIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#E67E22',
         category: 'Finanzas',
         path: '/bancos',
         features: ['Múltiples cuentas', 'Conciliación bancaria', 'Movimientos', 'Reportes', 'Integración contable'],
         version: '1.5.2',
         author: 'DatqBox'
     },
-    { 
-        id: 'inventario', 
-        name: 'Inventario', 
+    {
+        id: 'inventario',
+        name: 'Inventario',
         description: 'Controle su stock, existencias, bodegas, kardex y valoración.',
         fullDescription: 'Mantenga el control total de su inventario. Gestione bodegas múltiples, movimientos de stock, kardex valorizado, y obtenga reportes detallados de existencias.',
-        icon: <StorefrontIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#27AE60', 
+        icon: <StorefrontIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#27AE60',
         category: 'Operaciones',
         path: '/inventario',
         features: ['Múltiples bodegas', 'Kardex valorizado', 'Movimientos', 'Alertas de stock', 'Reportes'],
         version: '3.0.1',
         author: 'DatqBox'
     },
-    { 
-        id: 'ventas', 
-        name: 'Ventas', 
+    {
+        id: 'ventas',
+        name: 'Ventas',
         description: 'Gestione facturas, abonos, cuentas por cobrar (CxC) y bases de clientes.',
         fullDescription: 'Maximice sus ventas con este completo módulo. Gestione facturación, cuentas por cobrar, abonos, notas de crédito/débito y mantenga su cartera de clientes organizada.',
-        icon: <ShoppingCartIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#3498DB', 
+        icon: <ShoppingCartIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#3498DB',
         category: 'Ventas',
         path: '/ventas',
         features: ['Facturación', 'Cuentas por cobrar', 'Abonos', 'Notas crédito/débito', 'Clientes'],
         version: '2.5.0',
         author: 'DatqBox'
     },
-    { 
-        id: 'compras', 
-        name: 'Compras', 
+    {
+        id: 'compras',
+        name: 'Compras',
         description: 'Órdenes de compra, recepción de facturas proveedor y cuentas por pagar.',
         fullDescription: 'Optimice su proceso de compras. Desde órdenes de compra hasta recepción de mercancía y gestión de cuentas por pagar. Mantenga a sus proveedores organizados.',
-        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#F39C12', 
+        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#F39C12',
         category: 'Operaciones',
         path: '/compras',
         features: ['Órdenes de compra', 'Recepciones', 'Cuentas por pagar', 'Proveedores', 'Reportes'],
         version: '2.0.3',
         author: 'DatqBox'
     },
-    { 
-        id: 'pos', 
-        name: 'Punto de Venta', 
+    {
+        id: 'pos',
+        name: 'Punto de Venta',
         description: 'Software TPV optimizado para tiendas. Fácil, rápido y robusto.',
         fullDescription: 'El Punto de Venta perfecto para su tienda. Interfaz táctil optimizada, gestión de caja, facturación rápida y reportes de ventas en tiempo real.',
-        icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#9B59B6', 
+        icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#9B59B6',
         category: 'Ventas',
         path: '/pos',
         features: ['Interfaz táctil', 'Múltiples formas de pago', 'Cierre de caja', 'Reportes Z', 'Facturación'],
         version: '1.9.0',
         author: 'DatqBox'
     },
-    { 
-        id: 'restaurante', 
-        name: 'Restaurante', 
+    {
+        id: 'restaurante',
+        name: 'Restaurante',
         description: 'Extensión de Punto de Venta con mapas de mesas, salones y cocina.',
         fullDescription: 'Especializado para restaurantes. Gestione mapas de mesas, múltiples salones, comandas para cocina y propinas. Integrado con el módulo POS.',
-        icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#E84393', 
+        icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#E84393',
         category: 'Especializados',
         path: '/restaurante',
         features: ['Mapa de mesas', 'Salones múltiples', 'Comandas cocina', 'Propinas', 'Integración POS'],
         version: '1.2.0',
         author: 'DatqBox'
     },
-    { 
-        id: 'ecommerce', 
-        name: 'Comercio Electrónico', 
+    {
+        id: 'ecommerce',
+        name: 'Comercio Electrónico',
         description: 'Tienda en línea B2B/B2C integrada en tiempo real con facturación.',
         fullDescription: 'Lleve su negocio al siguiente nivel con una tienda en línea integrada. Ventas B2B y B2C, sincronización automática de inventario y facturación electrónica.',
-        icon: <LanguageIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#0984E3', 
+        icon: <LanguageIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#0984E3',
         category: 'Ventas',
         path: '/ecommerce',
         features: ['Tienda online', 'B2B/B2C', 'Sincronización inventario', 'Pagos en línea', 'Envíos'],
         version: '1.0.5',
         author: 'DatqBox'
     },
-    { 
-        id: 'auditoria', 
-        name: 'Auditoría Fiscal', 
+    {
+        id: 'auditoria',
+        name: 'Auditoría Fiscal',
         description: 'Preparación de libros contables legales y declaración de impuestos.',
         fullDescription: 'Mantenga su empresa al día con las obligaciones fiscales. Generación de libros legales, declaraciones de impuestos y reportes para auditorías.',
-        icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />, 
-        bgColor: '#2D3436', 
+        icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#2D3436',
         category: 'Especializados',
         path: '/auditoria',
         features: ['Libros legales', 'Declaraciones', 'Reportes fiscales', 'Auditorías', 'Compliance'],
@@ -257,7 +257,7 @@ export default function AppsStorePage() {
                                     {app.description}
                                 </Typography>
 
-                                <Stack direction="row" gap={1}>
+                                <Stack direction={{ xs: 'column', sm: 'row' }} gap={1}>
                                     {installed ? (
                                         <Button
                                             variant="contained"
@@ -317,11 +317,11 @@ export default function AppsStorePage() {
             >
                 {selectedApp && (
                     <>
-                        <DialogTitle sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
+                        <DialogTitle sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
                             alignItems: 'flex-start',
-                            pb: 1 
+                            pb: 1
                         }}>
                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                 <Avatar
@@ -334,9 +334,9 @@ export default function AppsStorePage() {
                                     <Typography variant="h6" fontWeight="bold">
                                         {selectedApp.name}
                                     </Typography>
-                                    <Chip 
-                                        label={selectedApp.category} 
-                                        size="small" 
+                                    <Chip
+                                        label={selectedApp.category}
+                                        size="small"
                                         sx={{ mt: 0.5 }}
                                     />
                                 </Box>
@@ -345,7 +345,7 @@ export default function AppsStorePage() {
                                 <CloseIcon />
                             </IconButton>
                         </DialogTitle>
-                        
+
                         <DialogContent>
                             <Typography variant="body1" sx={{ mb: 3 }}>
                                 {selectedApp.fullDescription}
@@ -381,9 +381,9 @@ export default function AppsStorePage() {
                             </Box>
 
                             {isInstalled(selectedApp.id) && (
-                                <Box sx={{ 
-                                    p: 2, 
-                                    bgcolor: '#e8f5e9', 
+                                <Box sx={{
+                                    p: 2,
+                                    bgcolor: '#e8f5e9',
                                     borderRadius: 1,
                                     display: 'flex',
                                     alignItems: 'center',
@@ -402,7 +402,7 @@ export default function AppsStorePage() {
                                 Cerrar
                             </Button>
                             {isInstalled(selectedApp.id) ? (
-                                <Button 
+                                <Button
                                     variant="contained"
                                     onClick={() => {
                                         handleOpenApp(selectedApp);

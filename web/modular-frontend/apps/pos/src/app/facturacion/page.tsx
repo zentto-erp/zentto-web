@@ -42,6 +42,7 @@ export default function PosFacturacionPage() {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [numpadValue, setNumpadValue] = useState('');
     const [numpadMode, setNumpadMode] = useState<'qty' | 'discount' | 'price'>('qty');
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [customer, setCustomer] = useState<Customer>({
         id: '1',
         codigo: 'CF',
@@ -50,7 +51,7 @@ export default function PosFacturacionPage() {
         tipoPrecio: 'Detal',
         credito: 0,
     });
-    
+
     // Modales
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -61,7 +62,7 @@ export default function PosFacturacionPage() {
 
     // Filtrar productos por categoría
     const filteredProducts = useMemo(() => {
-        return productos.filter(p => 
+        return productos.filter(p =>
             !selectedCategory || p.categoria === selectedCategory
         );
     }, [productos, selectedCategory]);
@@ -85,6 +86,7 @@ export default function PosFacturacionPage() {
             iva: 16,
         };
         addItem(producto, 1, customer.tipoPrecio);
+        setShowMobileMenu(false);
     };
 
     // Manejar teclado numérico
@@ -93,10 +95,10 @@ export default function PosFacturacionPage() {
             setNumpadValue(prev => prev.startsWith('-') ? prev.slice(1) : '-' + prev);
             return;
         }
-        
+
         const newValue = numpadValue + num;
         setNumpadValue(newValue);
-        
+
         // Aplicar directamente si hay item seleccionado
         if (selectedItemId) {
             const numVal = parseFloat(newValue);
@@ -148,19 +150,19 @@ export default function PosFacturacionPage() {
     };
 
     return (
-        <Box sx={{ 
+        <Box sx={{
             height: 'calc(100vh - 64px)',
             display: 'flex',
             overflow: 'hidden',
             bgcolor: '#f5f5f5',
         }}>
             {/* Panel Izquierdo - Carrito y Controles */}
-            <Box sx={{ 
-                width: { xs: '100%', md: 440 }, 
-                minWidth: 400,
-                display: 'flex', 
+            <Box sx={{
+                width: { xs: '100%', md: 440 },
+                minWidth: { xs: 0, md: 400 },
+                display: { xs: showMobileMenu ? 'none' : 'flex', md: 'flex' },
                 flexDirection: 'column',
-                borderRight: '1px solid #e0e0e0',
+                borderRight: { xs: 'none', md: '1px solid #e0e0e0' },
                 bgcolor: '#fff',
             }}>
                 {/* Header del Carrito con Cliente */}
@@ -182,8 +184,8 @@ export default function PosFacturacionPage() {
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <Tooltip title="Cambiar Cliente">
-                                <IconButton 
-                                    size="small" 
+                                <IconButton
+                                    size="small"
                                     onClick={() => setCustomerModalOpen(true)}
                                     color="primary"
                                 >
@@ -192,8 +194,8 @@ export default function PosFacturacionPage() {
                             </Tooltip>
                             {items.length > 0 && (
                                 <Tooltip title="Limpiar Carrito">
-                                    <IconButton 
-                                        size="small" 
+                                    <IconButton
+                                        size="small"
                                         onClick={clearCart}
                                         color="error"
                                     >
@@ -224,7 +226,7 @@ export default function PosFacturacionPage() {
                             total: item.total,
                         }))}
                         onRemoveItem={removeItem}
-                        onUpdateQuantity={() => {}}
+                        onUpdateQuantity={() => { }}
                         subtotal={subtotal}
                         impuestos={impuestos}
                         total={totalConImpuesto}
@@ -250,22 +252,39 @@ export default function PosFacturacionPage() {
                 </Box>
 
                 {/* Botón de Pago */}
-                <Box sx={{ height: 100 }}>
+                <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <PosPaymentButton
                         total={totalConImpuesto}
                         onClick={() => setPaymentModalOpen(true)}
                         disabled={items.length === 0}
                     />
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        sx={{ display: { xs: 'flex', md: 'none' }, minHeight: 48, fontWeight: 'bold' }}
+                        onClick={() => setShowMobileMenu(true)}
+                    >
+                        + Agregar Productos
+                    </Button>
                 </Box>
             </Box>
 
             {/* Panel Derecho - Productos */}
-            <Box sx={{ 
-                flexGrow: 1, 
-                display: 'flex', 
+            <Box sx={{
+                flexGrow: 1,
+                display: { xs: showMobileMenu ? 'flex' : 'none', md: 'flex' },
                 flexDirection: 'column',
                 overflow: 'hidden',
+                width: { xs: '100%', md: 'auto' }
             }}>
+                {/* Botón volver móvil */}
+                <Button
+                    variant="text"
+                    onClick={() => setShowMobileMenu(false)}
+                    sx={{ display: { xs: 'flex', md: 'none' }, alignSelf: 'flex-start', m: 1, fontWeight: 'bold' }}
+                >
+                    ← Volver al Carrito
+                </Button>
                 {/* Header con búsqueda y categorías */}
                 <PosHeader
                     searchTerm={searchTerm}
@@ -283,10 +302,10 @@ export default function PosFacturacionPage() {
                         products={filteredProducts.map(p => ({
                             id: p.id,
                             nombre: p.nombre,
-                            precio: customer.tipoPrecio === 'Mayor' 
-                                ? p.precioMayor 
-                                : customer.tipoPrecio === 'Distribuidor' 
-                                    ? p.precioDistribuidor 
+                            precio: customer.tipoPrecio === 'Mayor'
+                                ? p.precioMayor
+                                : customer.tipoPrecio === 'Distribuidor'
+                                    ? p.precioDistribuidor
                                     : p.precioDetal,
                             imagen: p.imagen,
                             categoria: p.categoria,

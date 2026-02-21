@@ -66,13 +66,20 @@ export default function SettingsLayout({
             </Box>
 
             {/* Contenido Dividido (Sidebar + Scroll Area) */}
-            <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, flexGrow: 1, minHeight: 0 }}>
                 {/* Sidebar Lateral Fijo tipo Ancla */}
                 <Box sx={{
-                    width: 250, flexShrink: 0, bgcolor: 'background.default', borderRight: '1px solid', borderColor: 'divider',
-                    overflowY: 'auto', py: 2
+                    width: { xs: '100%', md: 250 },
+                    flexShrink: 0,
+                    bgcolor: 'background.default',
+                    borderRight: { xs: 'none', md: '1px solid' },
+                    borderBottom: { xs: '1px solid', md: 'none' },
+                    borderColor: 'divider',
+                    overflowY: { xs: 'hidden', md: 'auto' },
+                    overflowX: { xs: 'auto', md: 'hidden' },
+                    py: { xs: 1, md: 2 }
                 }}>
-                    <Stack spacing={0.5} sx={{ px: 1 }}>
+                    <Stack direction={{ xs: 'row', md: 'column' }} spacing={0.5} sx={{ px: 1 }}>
                         {categories.map((cat) => (
                             <Box
                                 key={cat.id}
@@ -80,6 +87,7 @@ export default function SettingsLayout({
                                 sx={{
                                     display: 'flex', alignItems: 'center', gap: 1.5,
                                     px: 2, py: 1.25, borderRadius: 1.5, cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
                                     bgcolor: activeCategory === cat.id ? 'action.selected' : 'transparent',
                                     color: activeCategory === cat.id ? 'text.primary' : 'text.secondary',
                                     fontWeight: activeCategory === cat.id ? 600 : 500,

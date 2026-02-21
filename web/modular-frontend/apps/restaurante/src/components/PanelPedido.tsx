@@ -54,12 +54,13 @@ export function PanelPedido({
     const [componentesSeleccionados, setComponentesSeleccionados] = useState<Record<string, string>>({});
     const [comentario, setComentario] = useState('');
     const [cantidad, setCantidad] = useState(1);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     const categorias = ['todos', ...Array.from(new Set(productos.map(p => p.categoria)))];
 
     const productosFiltrados = categoriaActiva === 'todos'
         ? productos
-        : productos.filter(p => p.categoria === categoriaActivo);
+        : productos.filter(p => p.categoria === categoriaActiva);
 
     const sugerencias = productos.filter(p => p.esSugerenciaDelDia);
 
@@ -80,6 +81,7 @@ export function PanelPedido({
                 esCompuesto: false,
                 enviadoACocina: false,
             });
+            setShowMobileMenu(false);
         }
     };
 
@@ -113,6 +115,7 @@ export function PanelPedido({
         setComponentesSeleccionados({});
         setComentario('');
         setCantidad(1);
+        setShowMobileMenu(false);
     };
 
     const pedido = mesa.pedidoActual;
@@ -121,15 +124,20 @@ export function PanelPedido({
     const total = pedido?.total || 0;
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', gap: 2 }}>
+        <Box sx={{ height: '100%', display: 'flex', gap: 2, pb: { xs: 8, md: 0 } }}>
             {/* Panel izquierdo - Items del pedido */}
-            <Paper sx={{ width: 350, p: 2, display: 'flex', flexDirection: 'column' }}>
+            <Paper sx={{
+                width: { xs: '100%', md: 350 },
+                p: { xs: 1.5, md: 2 },
+                display: { xs: showMobileMenu ? 'none' : 'flex', md: 'flex' },
+                flexDirection: 'column'
+            }}>
                 <Typography variant="h6" gutterBottom>
                     {mesa.nombre} - Pedido
                 </Typography>
-                
+
                 {mesa.cliente && (
-                    <Chip 
+                    <Chip
                         label={mesa.cliente.nombre}
                         size="small"
                         sx={{ mb: 2, alignSelf: 'flex-start' }}
@@ -195,28 +203,56 @@ export function PanelPedido({
                 </Box>
 
                 {/* Botones de acción */}
-                <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<KitchenIcon />}
+                            onClick={onEnviarComanda}
+                            disabled={itemsPendientes.length === 0}
+                            fullWidth
+                            sx={{ height: 48 }}
+                        >
+                            Enviar ({itemsPendientes.length})
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ReceiptIcon />}
+                            disabled={itemsEnviados.length === 0}
+                            sx={{ height: 48 }}
+                        >
+                            Cuenta
+                        </Button>
+                    </Box>
                     <Button
                         variant="contained"
-                        startIcon={<KitchenIcon />}
-                        onClick={onEnviarComanda}
-                        disabled={itemsPendientes.length === 0}
+                        color="secondary"
+                        startIcon={<AddIcon />}
+                        sx={{ display: { xs: 'flex', md: 'none' }, mt: 1, height: 48 }}
+                        onClick={() => setShowMobileMenu(true)}
                         fullWidth
                     >
-                        Enviar ({itemsPendientes.length})
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ReceiptIcon />}
-                        disabled={itemsEnviados.length === 0}
-                    >
-                        Cuenta
+                        Agregar Artículos al Pedido
                     </Button>
                 </Box>
             </Paper>
 
             {/* Panel derecho - Menú táctil */}
-            <Paper sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column' }}>
+            <Paper sx={{
+                flexGrow: 1,
+                p: { xs: 1.5, md: 2 },
+                display: { xs: showMobileMenu ? 'flex' : 'none', md: 'flex' },
+                flexDirection: 'column'
+            }}>
+                {/* Botón volver móvil */}
+                <Button
+                    variant="text"
+                    onClick={() => setShowMobileMenu(false)}
+                    sx={{ display: { xs: 'flex', md: 'none' }, alignSelf: 'flex-start', mb: 1, fontWeight: 'bold' }}
+                >
+                    ← Cancelar y Volver a la cuenta
+                </Button>
+
                 {/* Sugerencias del día */}
                 {sugerencias.length > 0 && (
                     <Box sx={{ mb: 2 }}>
@@ -250,9 +286,9 @@ export function PanelPedido({
                     sx={{ mb: 2 }}
                 >
                     {categorias.map(cat => (
-                        <Tab 
-                            key={cat} 
-                            value={cat} 
+                        <Tab
+                            key={cat}
+                            value={cat}
                             label={cat.charAt(0).toUpperCase() + cat.slice(1)}
                         />
                     ))}
@@ -267,8 +303,9 @@ export function PanelPedido({
                                     onClick={() => handleAgregarProducto(producto)}
                                     sx={{
                                         width: '100%',
-                                        height: 100,
-                                        p: 1.5,
+                                        height: { xs: 'auto', md: 100 },
+                                        minHeight: { xs: 80, md: 100 },
+                                        p: { xs: 1, md: 1.5 },
                                         justifyContent: 'flex-start',
                                         alignItems: 'flex-start',
                                         flexDirection: 'column',
@@ -283,11 +320,11 @@ export function PanelPedido({
                                         transition: 'all 0.2s',
                                     }}
                                 >
-                                    <Typography 
-                                        variant="body2" 
+                                    <Typography
+                                        variant="body2"
                                         fontWeight="medium"
                                         align="left"
-                                        sx={{ 
+                                        sx={{
                                             flexGrow: 1,
                                             display: '-webkit-box',
                                             WebkitLineClamp: 2,
@@ -319,8 +356,8 @@ export function PanelPedido({
             </Paper>
 
             {/* Dialog para producto compuesto */}
-            <Dialog 
-                open={!!productoSeleccionado} 
+            <Dialog
+                open={!!productoSeleccionado}
                 onClose={() => setProductoSeleccionado(null)}
                 maxWidth="sm"
                 fullWidth
@@ -379,7 +416,7 @@ export function PanelPedido({
                     <Button onClick={() => setProductoSeleccionado(null)}>
                         Cancelar
                     </Button>
-                    <Button 
+                    <Button
                         variant="contained"
                         onClick={handleConfirmarProductoCompuesto}
                         disabled={productoSeleccionado?.componentes?.some(

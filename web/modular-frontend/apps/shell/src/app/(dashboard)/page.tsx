@@ -114,8 +114,8 @@ export default function AppSelectorPage() {
                 <Avatar
                   variant="rounded"
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: { xs: 64, sm: 80 },
+                    height: { xs: 64, sm: 80 },
                     bgcolor: app.bgColor,
                     mb: 1.5,
                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'

@@ -99,41 +99,46 @@ export default function RestaurantePage() {
     };
 
     return (
-        <Box sx={{ height: 'calc(100vh - 100px)', p: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)', p: { xs: 1, md: 2 } }}>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h4" fontWeight="bold">
+            <Box sx={{ flexShrink: 0, display: { xs: mesaSeleccionada ? 'none' : 'flex', md: 'flex' }, flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 2, gap: { xs: 1, md: 0 } }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
                     🍽️ Gestión de Salón
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={modoEdicion}
-                                onChange={(e) => setModoEdicion(e.target.checked)}
-                            />
-                        }
-                        label="Modo Edición"
-                    />
-                    <Button
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        onClick={() => setModoEdicion(!modoEdicion)}
-                    >
-                        {modoEdicion ? 'Guardar Layout' : 'Editar Layout'}
-                    </Button>
-                </Box>
+                {(!mesaSeleccionada) && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'space-between', md: 'flex-end' } }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={modoEdicion}
+                                    onChange={(e) => setModoEdicion(e.target.checked)}
+                                />
+                            }
+                            label="Modo Edición"
+                        />
+                        <Button
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            onClick={() => setModoEdicion(!modoEdicion)}
+                        >
+                            {modoEdicion ? 'Guardar Layout' : 'Editar Layout'}
+                        </Button>
+                    </Box>
+                )}
             </Box>
 
             {mesaSeleccionada && mesaSeleccionada.estado === 'ocupada' ? (
                 /* Panel de pedido activo */
-                <Box sx={{ height: 'calc(100% - 60px)' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6">
+                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <Box sx={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
                             Pedido en {mesaSeleccionada.nombre}
                         </Typography>
-                        <Button variant="outlined" onClick={() => setMesaSeleccionada(null)}>
+                        <Button variant="outlined" size="small" sx={{ display: { xs: 'none', md: 'inline-flex' } }} onClick={() => setMesaSeleccionada(null)}>
                             Volver al Salón
+                        </Button>
+                        <Button variant="outlined" size="small" sx={{ display: { xs: 'inline-flex', md: 'none' } }} onClick={() => setMesaSeleccionada(null)}>
+                            Atrás
                         </Button>
                     </Box>
                     <PanelPedido
@@ -146,7 +151,7 @@ export default function RestaurantePage() {
                 </Box>
             ) : (
                 /* Mapa de mesas */
-                <Box sx={{ height: 'calc(100% - 60px)' }}>
+                <Box sx={{ flexGrow: 1, position: 'relative', minHeight: 0 }}>
                     <MapaMesas
                         ambientes={ambientes}
                         ambienteActivo={ambienteActivo}
