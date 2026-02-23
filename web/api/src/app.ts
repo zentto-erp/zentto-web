@@ -46,6 +46,8 @@ import { documentosCompraRouter } from "./modules/documentos-compra/routes.js";
 import { nominaRouter } from "./modules/nomina/routes.js";
 import { contabilidadRouter } from "./modules/contabilidad/routes.js";
 import { maestrosRouter } from "./modules/maestros/routes.js";
+import { posRouter } from "./modules/pos/routes.js";
+import { restauranteRouter } from "./modules/restaurante/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 
 function resolveOpenApiPath() {
@@ -195,10 +197,13 @@ export async function createApp() {
   app.use("/v1/inventario", inventarioRouter);
   app.use("/v1/articulos", inventarioRouter);
 
-  // Utilidades
   app.use("/v1/addons", addonsRouter);
   app.use("/v1/crud", crudRouter);
   app.use("/v1/meta", metaRouter);
+
+  // POS y Restaurante
+  app.use("/v1/pos", posRouter);
+  app.use("/v1/restaurante", restauranteRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
   app.use("/api/v1", requireJwt);
@@ -240,6 +245,8 @@ export async function createApp() {
   app.use("/api/v1/addons", addonsRouter);
   app.use("/api/v1/crud", crudRouter);
   app.use("/api/v1/meta", metaRouter);
+  app.use("/api/v1/pos", posRouter);
+  app.use("/api/v1/restaurante", restauranteRouter);
 
   await loadAddons(app);
 

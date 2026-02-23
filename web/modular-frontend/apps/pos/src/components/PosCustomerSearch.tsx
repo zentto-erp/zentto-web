@@ -87,7 +87,7 @@ export function PosCustomerSearch({
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">Buscar Cliente</Typography>
+                <Typography variant="h6" component="div">Buscar Cliente</Typography>
                 <IconButton onClick={onClose}>
                     <CloseIcon />
                 </IconButton>
@@ -168,6 +168,8 @@ export function PosCustomerSearch({
                                         {customer.nombre.charAt(0)}
                                     </Avatar>
                                     <ListItemText
+                                        primaryTypographyProps={{ component: 'div' } as any}
+                                        secondaryTypographyProps={{ component: 'div' } as any}
                                         primary={
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <Typography fontWeight="medium">

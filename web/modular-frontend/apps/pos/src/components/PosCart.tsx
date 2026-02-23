@@ -59,10 +59,10 @@ export function PosCart({
             {/* Lista de Items del Carrito */}
             <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
                 {items.length === 0 ? (
-                    <Box sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         height: '100%',
                         color: 'text.secondary'
@@ -109,7 +109,7 @@ export function PosCart({
                                         e.stopPropagation();
                                         onRemoveItem(item.id);
                                     }}
-                                    sx={{ 
+                                    sx={{
                                         p: 0.5,
                                         opacity: 0,
                                         '&:hover': { opacity: 1 },
@@ -142,40 +142,14 @@ export function PosCart({
                 </Box>
             </Box>
 
-            {/* Puntos de Fidelidad */}
-            {items.length > 0 && (
-                <Box sx={{ p: 2, bgcolor: '#f3e5f5', borderTop: '1px solid #e0e0e0' }}>
-                    <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <LoyaltyIcon fontSize="small" color="secondary" />
-                        Puntos de Fidelidad
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Paper sx={{ flex: 1, p: 1, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                                Puntos Ganados
-                            </Typography>
-                            <Typography variant="h6" color="success.main" fontWeight="bold">
-                                +{puntosGanados}
-                            </Typography>
-                        </Paper>
-                        <Paper sx={{ flex: 1, p: 1, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                                Total Acumulado
-                            </Typography>
-                            <Typography variant="h6" color="secondary.main" fontWeight="bold">
-                                {puntosTotales}
-                            </Typography>
-                        </Paper>
-                    </Box>
-                </Box>
-            )}
+            {/* Puntos de Fidelidad (Eliminado a petición del usuario) */}
 
             {/* Botones de Acción */}
             <Box sx={{ display: 'flex', borderTop: '1px solid #e0e0e0' }}>
                 <Button
                     startIcon={<UndoIcon />}
-                    sx={{ 
-                        flex: 1, 
+                    sx={{
+                        flex: 1,
                         py: 1.5,
                         borderRadius: 0,
                         color: 'text.primary',
@@ -187,8 +161,8 @@ export function PosCart({
                 <Divider orientation="vertical" flexItem />
                 <Button
                     startIcon={<ReceiptIcon />}
-                    sx={{ 
-                        flex: 1, 
+                    sx={{
+                        flex: 1,
                         py: 1.5,
                         borderRadius: 0,
                         color: 'text.primary',
@@ -200,8 +174,8 @@ export function PosCart({
                 <Divider orientation="vertical" flexItem />
                 <Button
                     startIcon={<BarcodeIcon />}
-                    sx={{ 
-                        flex: 1, 
+                    sx={{
+                        flex: 1,
                         py: 1.5,
                         borderRadius: 0,
                         color: 'text.primary',

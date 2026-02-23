@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { usePosStore } from '@datqbox/shared-api';
 
 // Tipos
 export interface Mesa {
@@ -155,6 +156,8 @@ export function useRestaurante() {
     const productos: ProductoMenu[] = [
         { id: 'p1', codigo: 'ENT001', nombre: 'Bruschetta', descripcion: 'Pan tostado con tomate y albahaca', precio: 8, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 10, disponible: true },
         { id: 'p2', codigo: 'ENT002', nombre: 'Calamares Fritos', descripcion: 'Con salsa tártara', precio: 12, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 15, disponible: true, esSugerenciaDelDia: true },
+        { id: 'p9', codigo: 'ENT003', nombre: 'Tequeños', descripcion: 'Deditos de queso venezolanos', precio: 7, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 12, disponible: true },
+        { id: 'p10', codigo: 'ENT004', nombre: 'Empanadas', descripcion: 'De carne o pollo', precio: 6, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 8, disponible: true },
         {
             id: 'p3', codigo: 'PAST001', nombre: 'Pasta Carbonara', descripcion: 'Con huevo, queso y panceta', precio: 15, categoria: 'Pastas', esCompuesto: true,
             componentes: [
@@ -164,6 +167,8 @@ export function useRestaurante() {
             tiempoPreparacion: 20, disponible: true
         },
         { id: 'p4', codigo: 'PAST002', nombre: 'Lasagna', descripcion: 'Casera con carne', precio: 16, categoria: 'Pastas', esCompuesto: false, tiempoPreparacion: 25, disponible: true },
+        { id: 'p11', codigo: 'PAST003', nombre: 'Raviolis de Carne', descripcion: 'Con salsa roja', precio: 14, categoria: 'Pastas', esCompuesto: false, tiempoPreparacion: 22, disponible: true },
+        { id: 'p12', codigo: 'PAST004', nombre: 'Gnocchi al Pesto', descripcion: 'Pesto genovese', precio: 13, categoria: 'Pastas', esCompuesto: false, tiempoPreparacion: 18, disponible: true },
         {
             id: 'p5', codigo: 'CARNE001', nombre: 'Filete de Res', descripcion: 'Con vegetales grillados', precio: 25, categoria: 'Carnes', esCompuesto: true,
             componentes: [
@@ -172,9 +177,14 @@ export function useRestaurante() {
             ],
             tiempoPreparacion: 30, disponible: true, esSugerenciaDelDia: true
         },
+        { id: 'p13', codigo: 'CARNE002', nombre: 'Costillas BBQ', descripcion: 'Medio rack', precio: 22, categoria: 'Carnes', esCompuesto: false, tiempoPreparacion: 25, disponible: true },
+        { id: 'p14', codigo: 'CARNE003', nombre: 'Pollo a la Plancha', descripcion: 'Pechuga marinada', precio: 18, categoria: 'Carnes', esCompuesto: false, tiempoPreparacion: 20, disponible: true },
         { id: 'p6', codigo: 'BEB001', nombre: 'Coca Cola', precio: 3, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
         { id: 'p7', codigo: 'BEB002', nombre: 'Agua Mineral', precio: 2, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
+        { id: 'p15', codigo: 'BEB003', nombre: 'Cerveza Artesanal', precio: 5, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
+        { id: 'p16', codigo: 'BEB004', nombre: 'Jugo de Naranja', precio: 4, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
         { id: 'p8', codigo: 'POST001', nombre: 'Tiramisú', descripcion: 'Postre italiano clásico', precio: 8, categoria: 'Postres', esCompuesto: false, tiempoPreparacion: 5, disponible: true },
+        { id: 'p17', codigo: 'POST002', nombre: 'Flan Casero', descripcion: 'Con dulce de leche', precio: 6, categoria: 'Postres', esCompuesto: false, tiempoPreparacion: 2, disponible: true },
     ];
 
     const getMesaById = useCallback((id: string) => {
@@ -332,6 +342,51 @@ export function useRestaurante() {
         return comandas.sort((a, b) => a.horaRecibido.getTime() - b.horaRecibido.getTime());
     }, [ambientes]);
 
+    // ═══ Impresión de Comandas a Cocina (ESC/POS) ═══
+    const printKitchenOrder = usePosStore((s) => s.printKitchenOrder);
+    const printFiscalInvoice = usePosStore((s) => s.printFiscalInvoice);
+
+    const imprimirComandaCocina = useCallback(async (mesaId: string) => {
+        const mesa = getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+
+        const itemsPendientes = mesa.pedidoActual.items.filter(i => !i.enviadoACocina);
+        if (itemsPendientes.length === 0) return { success: false, message: 'No hay items pendientes de enviar' };
+
+        const result = await printKitchenOrder('Cocina Principal', {
+            texto: `Mesa: ${mesa.nombre}\n${itemsPendientes.map(i => `${i.cantidad}x ${i.nombre}${i.comentarios ? ` >> ${i.comentarios}` : ''}`).join('\n')}`,
+            renglones: itemsPendientes.map(i => ({
+                articulo: i.nombre,
+                cantidad: i.cantidad,
+                nota: i.comentarios || '',
+            })),
+        });
+
+        // Si la impresión fue exitosa, marcar items como enviados
+        if (result.success) {
+            enviarComandaACocina(mesaId);
+        }
+
+        return result;
+    }, [getMesaById, printKitchenOrder, enviarComandaACocina]);
+
+    // ═══ Impresión de Cuenta Fiscal ═══
+    const imprimirCuentaFiscal = useCallback(async (mesaId: string) => {
+        const mesa = getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+
+        const result = await printFiscalInvoice({
+            items: mesa.pedidoActual.items.map(i => ({
+                nombre: i.nombre,
+                cantidad: i.cantidad,
+                precio: i.precioUnitario,
+                iva: 16,
+            })),
+        });
+
+        return result;
+    }, [getMesaById, printFiscalInvoice]);
+
     return {
         ambientes,
         ambienteActivo,
@@ -344,6 +399,8 @@ export function useRestaurante() {
         enviarComandaACocina,
         moverMesa,
         transferirMesa,
-        getComandasPendientes
+        getComandasPendientes,
+        imprimirComandaCocina,
+        imprimirCuentaFiscal,
     };
 }

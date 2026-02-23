@@ -33,6 +33,8 @@ export default function RestaurantePage() {
         enviarComandaACocina,
         moverMesa,
         transferirMesa,
+        imprimirComandaCocina,
+        imprimirCuentaFiscal,
     } = useRestaurante();
 
     const [mesaSeleccionada, setMesaSeleccionada] = useState<Mesa | null>(null);
@@ -83,12 +85,29 @@ export default function RestaurantePage() {
         }
     };
 
-    const handleEnviarComanda = () => {
+    const handleEnviarComanda = async () => {
         if (!mesaSeleccionada) return;
-        enviarComandaACocina(mesaSeleccionada.id);
+        // Imprime la comanda en la impresora de cocina (ESC/POS)
+        const result = await imprimirComandaCocina(mesaSeleccionada.id);
+        if (!result.success) {
+            // Si falla la impresión, igualmente enviamos los items localmente
+            console.warn('Impresión de comanda falló:', result.message);
+            enviarComandaACocina(mesaSeleccionada.id);
+        }
         const mesaActualizada = getMesaById(mesaSeleccionada.id);
         if (mesaActualizada) {
             setMesaSeleccionada(mesaActualizada);
+        }
+    };
+
+    const handleImprimirCuenta = async () => {
+        if (!mesaSeleccionada) return;
+        const result = await imprimirCuentaFiscal(mesaSeleccionada.id);
+        if (!result.success) {
+            console.warn('Impresión fiscal falló:', result.message);
+            alert(`Error Fiscal: ${result.message}`);
+        } else {
+            alert('Cuenta fiscal generada exitosamente.');
         }
     };
 
@@ -146,6 +165,7 @@ export default function RestaurantePage() {
                         productos={productos}
                         onAgregarItem={handleAgregarItem}
                         onEnviarComanda={handleEnviarComanda}
+                        onImprimirCuenta={handleImprimirCuenta}
                         onCerrar={() => setMesaSeleccionada(null)}
                     />
                 </Box>

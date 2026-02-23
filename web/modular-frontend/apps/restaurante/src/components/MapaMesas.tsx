@@ -180,7 +180,11 @@ export function MapaMesas({
                     <Box sx={{
                         position: 'relative',
                         width: '100%',
-                        height: '100%'
+                        height: '100%',
+                        display: { xs: 'flex', md: 'block' },
+                        flexWrap: { xs: 'wrap', md: 'nowrap' },
+                        gap: { xs: 2.5, md: 0 },
+                        justifyContent: { xs: 'center', md: 'unset' }
                     }}>
                         {mesasToShow
                             .sort((a, b) => a.posicionY - b.posicionY || a.posicionX - b.posicionX)

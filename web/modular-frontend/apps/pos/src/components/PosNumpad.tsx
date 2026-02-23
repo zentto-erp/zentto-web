@@ -39,6 +39,8 @@ export function PosNumpad({
             borderLeft: '1px solid #e0e0e0',
             borderBottom: '1px solid #e0e0e0',
             fontWeight: isActive ? 'bold' : 'normal',
+            fontSize: { xs: '0.8rem', md: '1rem' },
+            minHeight: { xs: 40, md: 'auto' },
             '&:hover': {
                 bgcolor: isActive ? '#bbdefb' : '#f5f5f5',
             },
@@ -59,11 +61,11 @@ export function PosNumpad({
                                 borderRadius: 0,
                                 borderRight: '1px solid #e0e0e0',
                                 borderBottom: '1px solid #e0e0e0',
-                                fontSize: '1.25rem',
+                                fontSize: { xs: '1rem', md: '1.25rem' },
                                 fontWeight: 'medium',
                                 bgcolor: '#fff',
                                 color: 'text.primary',
-                                minHeight: 56,
+                                minHeight: { xs: 40, md: 56 },
                                 '&:hover': {
                                     bgcolor: '#f5f5f5',
                                 },

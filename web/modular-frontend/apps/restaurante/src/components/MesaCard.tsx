@@ -55,9 +55,9 @@ export function MesaCard({ mesa, onClick, isDraggable = false }: MesaCardProps) 
             {...(isActuallyDraggable ? { ...listeners, ...attributes } : {})}
             style={style}
             sx={{
-                position: 'absolute',
-                left: mesa.posicionX,
-                top: mesa.posicionY,
+                position: { xs: 'relative', md: 'absolute' },
+                left: { xs: 'auto', md: mesa.posicionX },
+                top: { xs: 'auto', md: mesa.posicionY },
                 cursor: isDraggable ? 'move' : 'pointer',
                 transition: isDragging ? 'none' : 'transform 0.2s',
                 '&:hover': {

@@ -111,9 +111,11 @@ export default function OdooLayout({
                                 borderRadius: 1.5,
                                 justifyContent: isSidebarOpen ? 'flex-start' : 'center',
                                 color: isRouteActive ? '#fff' : 'rgba(255,255,255,0.7)',
-                                bgcolor: isRouteActive && !hasChildren ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                bgcolor: isRouteActive && !hasChildren ? 'rgba(255,255,255,0.15)' : 'transparent',
+                                boxShadow: isRouteActive && !hasChildren ? 'inset 4px 0 0 0 #ffffff' : 'none',
+                                transition: 'all 0.2s',
                                 '&:hover': {
-                                    bgcolor: 'rgba(255,255,255,0.05)',
+                                    bgcolor: isRouteActive && !hasChildren ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.05)',
                                 }
                             }}
                         >

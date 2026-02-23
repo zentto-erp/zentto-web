@@ -8,6 +8,9 @@ import {
     Chip,
     IconButton,
     Tooltip,
+    useTheme,
+    useMediaQuery,
+    Button,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import {
@@ -20,7 +23,7 @@ import {
     PosCustomerSearch,
     type Customer,
 } from '@/components';
-import { useCart, useBuscarProductos } from '@/hooks';
+import { useCart, useBuscarProductos, useBarcodeScanner } from '@/hooks';
 
 // Iconos dinámicos
 const PersonIcon = dynamic(() => import('@mui/icons-material/Person'), { ssr: false });
@@ -43,6 +46,13 @@ export default function PosFacturacionPage() {
     const [numpadValue, setNumpadValue] = useState('');
     const [numpadMode, setNumpadMode] = useState<'qty' | 'discount' | 'price'>('qty');
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+    // Theme & Responsive Logic
+    const theme = useTheme();
+    const isMobileLandscape = useMediaQuery('(max-height: 500px) and (orientation: landscape)');
+    const isMobilePortrait = useMediaQuery(theme.breakpoints.down('md'));
+    const isMobileLayout = isMobilePortrait || isMobileLandscape;
+
     const [customer, setCustomer] = useState<Customer>({
         id: '1',
         codigo: 'CF',
@@ -57,8 +67,24 @@ export default function PosFacturacionPage() {
     const [customerModalOpen, setCustomerModalOpen] = useState(false);
 
     // Hooks
-    const { items, addItem, updateItem, removeItem, clearCart, subtotal, total } = useCart();
+    const { items, addItem, updateItem, removeItem, clearCart, subtotal, impuestos, total: totalConImpuesto } = useCart();
     const { data: productos = [], isLoading } = useBuscarProductos(searchTerm);
+
+    // Escáner de Código de Barras
+    useBarcodeScanner((barcode) => {
+        const prod = productos.find(p => p.codigo.toLowerCase() === barcode.toLowerCase() || p.id === barcode);
+        if (prod) {
+            // Transformamos el 'Producto' puro a la estructura que espera handleAddProduct
+            handleAddProduct({
+                id: prod.id,
+                nombre: prod.nombre,
+                precio: prod.precioDetal,
+                categoria: prod.categoria,
+            });
+        } else {
+            console.warn(`Producto no encontrado o código inválido: ${barcode}`);
+        }
+    });
 
     // Filtrar productos por categoría
     const filteredProducts = useMemo(() => {
@@ -67,10 +93,7 @@ export default function PosFacturacionPage() {
         );
     }, [productos, selectedCategory]);
 
-    // Calcular impuestos (16% IVA)
-    const impuestos = total * 0.16;
-    const totalConImpuesto = total + impuestos;
-
+    // Eliminar cálculos de IVA que se hacían sobre el total general (están ahora línea por línea en el hook)
     // Agregar producto al carrito
     const handleAddProduct = (product: { id: string; nombre: string; precio: number; categoria?: string }) => {
         // Convertir al formato Producto esperado por el hook
@@ -153,17 +176,20 @@ export default function PosFacturacionPage() {
         <Box sx={{
             height: 'calc(100vh - 64px)',
             display: 'flex',
+            flexDirection: isMobileLayout ? 'column' : 'row',
             overflow: 'hidden',
             bgcolor: '#f5f5f5',
+            pb: isMobileLayout ? 8 : 0,
         }}>
             {/* Panel Izquierdo - Carrito y Controles */}
             <Box sx={{
-                width: { xs: '100%', md: 440 },
-                minWidth: { xs: 0, md: 400 },
-                display: { xs: showMobileMenu ? 'none' : 'flex', md: 'flex' },
+                width: isMobileLayout ? '100%' : 440,
+                minWidth: isMobileLayout ? 0 : 400,
+                display: isMobileLayout ? (showMobileMenu ? 'none' : 'flex') : 'flex',
                 flexDirection: 'column',
-                borderRight: { xs: 'none', md: '1px solid #e0e0e0' },
+                borderRight: isMobileLayout ? 'none' : '1px solid #e0e0e0',
                 bgcolor: '#fff',
+                height: '100%',
             }}>
                 {/* Header del Carrito con Cliente */}
                 <Paper sx={{ p: 2, borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
@@ -223,7 +249,8 @@ export default function PosFacturacionPage() {
                             nombre: item.nombre,
                             cantidad: item.cantidad,
                             precioUnitario: item.precio,
-                            total: item.total,
+                            descuento: item.descuento || 0,
+                            total: item.totalRenglon,
                         }))}
                         onRemoveItem={removeItem}
                         onUpdateQuantity={() => { }}
@@ -239,7 +266,7 @@ export default function PosFacturacionPage() {
                 </Box>
 
                 {/* Numpad */}
-                <Box sx={{ height: 280, borderTop: '1px solid #e0e0e0' }}>
+                <Box sx={{ height: { xs: 180, md: 280 }, borderTop: '1px solid #e0e0e0' }}>
                     <PosNumpad
                         onNumberPress={handleNumberPress}
                         onBackspace={handleBackspace}
@@ -255,36 +282,22 @@ export default function PosFacturacionPage() {
                 <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <PosPaymentButton
                         total={totalConImpuesto}
-                        onClick={() => setPaymentModalOpen(true)}
+                        onClick={() => {
+                            setPaymentModalOpen(true);
+                        }}
                         disabled={items.length === 0}
                     />
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        sx={{ display: { xs: 'flex', md: 'none' }, minHeight: 48, fontWeight: 'bold' }}
-                        onClick={() => setShowMobileMenu(true)}
-                    >
-                        + Agregar Productos
-                    </Button>
                 </Box>
             </Box>
 
             {/* Panel Derecho - Productos */}
             <Box sx={{
                 flexGrow: 1,
-                display: { xs: showMobileMenu ? 'flex' : 'none', md: 'flex' },
+                display: isMobileLayout ? (showMobileMenu ? 'flex' : 'none') : 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                width: { xs: '100%', md: 'auto' }
+                width: isMobileLayout ? '100%' : 'auto'
             }}>
-                {/* Botón volver móvil */}
-                <Button
-                    variant="text"
-                    onClick={() => setShowMobileMenu(false)}
-                    sx={{ display: { xs: 'flex', md: 'none' }, alignSelf: 'flex-start', m: 1, fontWeight: 'bold' }}
-                >
-                    ← Volver al Carrito
-                </Button>
                 {/* Header con búsqueda y categorías */}
                 <PosHeader
                     searchTerm={searchTerm}
@@ -338,6 +351,44 @@ export default function PosFacturacionPage() {
                 onSelectCustomer={handleCustomerChange}
                 selectedCustomerId={customer.id}
             />
+
+            {/* Odoo Style Mobile Floating Bottom Control Bar */}
+            {isMobileLayout && (
+                <Paper elevation={8} sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200, display: 'flex', height: 50, borderRadius: 0 }}>
+                    {!showMobileMenu ? (
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            sx={{ flex: 1, borderRadius: 0, fontSize: '1rem', fontWeight: 'bold', textTransform: 'none' }}
+                            onClick={() => setShowMobileMenu(true)}
+                        >
+                            + Ver Menú de Productos
+                        </Button>
+                    ) : (
+                        <Box sx={{ display: 'flex', width: '100%', borderTop: '1px solid #e0e0e0' }}>
+                            <Button
+                                variant="contained"
+                                sx={{ flex: 1, borderRadius: 0, bgcolor: '#6B4C6A', color: 'white', '&:hover': { bgcolor: '#513751' }, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', p: 0 }}
+                                onClick={() => {
+                                    setShowMobileMenu(false);
+                                    setPaymentModalOpen(true);
+                                }}
+                                disabled={items.length === 0}
+                            >
+                                <Typography sx={{ fontSize: '1.15rem', fontWeight: 'bold', mr: 1, textTransform: 'capitalize' }}>Pagar</Typography>
+                                <Typography sx={{ fontSize: '1rem', fontWeight: 'normal' }}>${totalConImpuesto.toFixed(2)}</Typography>
+                            </Button>
+                            <Button
+                                sx={{ flex: 0.7, borderRadius: 0, bgcolor: '#f5f5f5', color: 'text.primary', borderLeft: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', p: 0 }}
+                                onClick={() => setShowMobileMenu(false)}
+                            >
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>Carrito</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: '500', fontSize: '0.75rem', lineHeight: 1 }}>{items.length || 0} artículos</Typography>
+                            </Button>
+                        </Box>
+                    )}
+                </Paper>
+            )}
         </Box>
     );
 }

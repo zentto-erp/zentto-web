@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     TextField,
@@ -8,15 +8,20 @@ import {
     Breadcrumbs,
     Typography,
     Chip,
-    Avatar,
     IconButton,
+    Button,
+    useTheme,
+    useMediaQuery,
+    Tooltip,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
+import { usePrinterStatus } from '../hooks';
 
 const SearchIcon = dynamic(() => import('@mui/icons-material/Search'), { ssr: false });
 const HomeIcon = dynamic(() => import('@mui/icons-material/Home'), { ssr: false });
-const WifiIcon = dynamic(() => import('@mui/icons-material/Wifi'), { ssr: false });
-const MenuIcon = dynamic(() => import('@mui/icons-material/Menu'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+const ChevronLeftIcon = dynamic(() => import('@mui/icons-material/ChevronLeft'), { ssr: false });
+const ChevronRightIcon = dynamic(() => import('@mui/icons-material/ChevronRight'), { ssr: false });
 
 interface Category {
     id: string;
@@ -45,17 +50,26 @@ export function PosHeader({
     userName = 'Usuario',
     userAvatar,
 }: PosHeaderProps) {
+    const [categoriaPage, setCategoriaPage] = useState(0);
+    const allCategories = [{ id: null, nombre: 'Todo' }, ...categories];
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+    const itemsPerPage = isDesktop ? 6 : 3;
+
+    // Hook para monitorear el Estatus de Impresora Local en Background
+    const { data: printerStatus, isError, isFetching } = usePrinterStatus("PNP", "EMULADOR", "emulador");
+
     return (
-        <Box sx={{ 
-            display: 'flex', 
+        <Box sx={{
+            display: 'flex',
             flexDirection: 'column',
             borderBottom: '1px solid #e0e0e0',
             bgcolor: '#fff',
         }}>
             {/* Barra Superior */}
-            <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 p: 1.5,
                 gap: 2,
@@ -64,9 +78,23 @@ export function PosHeader({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <HomeIcon color="action" />
                     <Breadcrumbs separator="›" aria-label="breadcrumb">
-                        <Typography color="text.primary" fontWeight="medium">
-                            {cajaName}
-                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography color="text.primary" fontWeight="medium" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {cajaName}
+                                {printerStatus && (
+                                    <Tooltip title={printerStatus.message || "Estado de la impresora"}>
+                                        <Chip
+                                            icon={<PrintIcon style={{ fontSize: 14 }} />}
+                                            label={printerStatus.success ? "Fiscal OK" : "Error Fiscal"}
+                                            size="small"
+                                            color={printerStatus.success ? "success" : "error"}
+                                            variant={printerStatus.success ? "outlined" : "filled"}
+                                            sx={{ height: 20, fontSize: '0.65rem' }}
+                                        />
+                                    </Tooltip>
+                                )}
+                            </Typography>
+                        </Box>
                         {selectedCategory && (
                             <Typography color="text.primary">
                                 {categories.find(c => c.id === selectedCategory)?.nombre}
@@ -81,7 +109,7 @@ export function PosHeader({
                     value={searchTerm}
                     onChange={(e) => onSearchChange(e.target.value)}
                     size="small"
-                    sx={{ 
+                    sx={{
                         maxWidth: 300,
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
@@ -97,70 +125,70 @@ export function PosHeader({
                     }}
                 />
 
-                {/* Info de Usuario y Estado */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <WifiIcon color="success" fontSize="small" />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar 
-                            sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
-                            src={userAvatar}
-                        >
-                            {userName.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant="body2" fontWeight="medium">
-                            {userName}
-                        </Typography>
-                    </Box>
-                    <IconButton size="small">
-                        <MenuIcon />
-                    </IconButton>
-                </Box>
             </Box>
 
-            {/* Chips de Categorías */}
-            <Box sx={{ 
-                display: 'flex', 
-                gap: 1, 
-                p: 1.5,
-                pt: 0,
-                overflowX: 'auto',
-                '&::-webkit-scrollbar': {
-                    height: 4,
-                },
-                '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: '#ccc',
-                    borderRadius: 2,
-                },
-            }}>
-                <Chip
-                    label="Todo"
-                    onClick={() => onCategorySelect(null)}
-                    color={selectedCategory === null ? 'primary' : 'default'}
-                    variant={selectedCategory === null ? 'filled' : 'outlined'}
-                    sx={{ 
-                        minWidth: 80,
-                        '&.MuiChip-colorPrimary': {
-                            bgcolor: '#e3f2fd',
-                            color: '#1976d2',
-                        }
-                    }}
-                />
-                {categories.map((category) => (
-                    <Chip
-                        key={category.id}
-                        label={category.nombre}
-                        onClick={() => onCategorySelect(category.id)}
-                        color={selectedCategory === category.id ? 'primary' : 'default'}
-                        variant={selectedCategory === category.id ? 'filled' : 'outlined'}
-                        sx={{ 
-                            minWidth: 80,
-                            '&.MuiChip-colorPrimary': {
-                                bgcolor: '#e3f2fd',
-                                color: '#1976d2',
-                            }
-                        }}
-                    />
-                ))}
+            {/* Paginación de Categorías estilo Tablero Clásico (Odoo) */}
+            <Box sx={{ display: 'flex', alignItems: 'stretch', height: 55, px: 1.5, pb: 1.5 }}>
+                {/* Botón Izquierda */}
+                <Button
+                    variant="outlined"
+                    disabled={categoriaPage === 0}
+                    onClick={() => setCategoriaPage(Math.max(0, categoriaPage - 1))}
+                    sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', bgcolor: '#ffffff' }}
+                >
+                    <ChevronLeftIcon />
+                </Button>
+
+                {/* Botones de Categorías Visibles (Dinámico: 6 o 3) */}
+                <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
+                    {allCategories.slice(categoriaPage * itemsPerPage, (categoriaPage + 1) * itemsPerPage).map((cat) => {
+                        const isActive = selectedCategory === cat.id;
+                        const pastelColors = ['#F5F5F5', '#CEEAD6', '#FCE8E6', '#FEF7E0', '#E4F7FB', '#F3E5F5'];
+                        const colorIndex = allCategories.indexOf(cat) % pastelColors.length;
+                        const bgColor = pastelColors[colorIndex];
+
+                        return (
+                            <Button
+                                key={cat.id || 'todo'}
+                                disableElevation
+                                variant="contained"
+                                onClick={() => onCategorySelect(cat.id)}
+                                sx={{
+                                    flex: 1,
+                                    height: '100%',
+                                    borderRadius: 0,
+                                    fontWeight: isActive ? 'bold' : 'normal',
+                                    color: 'text.primary',
+                                    bgcolor: isActive ? '#ffffff' : bgColor,
+                                    borderTop: '1px solid #e0e0e0',
+                                    borderBottom: '1px solid #e0e0e0',
+                                    borderRight: '1px solid #e0e0e0',
+                                    borderLeft: 0,
+                                    textTransform: 'capitalize',
+                                    boxShadow: 'none',
+                                    px: 1,
+                                    '&:hover': { bgcolor: isActive ? '#ffffff' : '#e0e0e0' },
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    display: 'block'
+                                }}
+                            >
+                                {cat.nombre}
+                            </Button>
+                        );
+                    })}
+                </Box>
+
+                {/* Botón Derecha */}
+                <Button
+                    variant="outlined"
+                    disabled={(categoriaPage + 1) * itemsPerPage >= allCategories.length}
+                    onClick={() => setCategoriaPage(categoriaPage + 1)}
+                    sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', borderLeft: 0, bgcolor: '#ffffff' }}
+                >
+                    <ChevronRightIcon />
+                </Button>
             </Box>
         </Box>
     );

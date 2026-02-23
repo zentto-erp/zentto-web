@@ -5,6 +5,11 @@ export { formatCurrency, formatDate, formatName, formatPercent, truncateText, ge
 export { requestLogger } from './requestLogger';
 export { default as QueryProvider } from './QueryProvider';
 export { useStore } from './store';
+export { usePosStore } from './usePosStore';
+export type {
+  PrinterConfig, KitchenPrinterConfig, PrinterStatus,
+  CajaConfig, ClientePos, CartItem,
+} from './usePosStore';
 export { loadFrontendAddons } from './addons';
 export type { FrontendAddon } from './addons';
 export type { RequestLog } from './requestLogger';

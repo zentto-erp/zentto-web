@@ -68,7 +68,7 @@ export default function AppSelectorPage() {
     allApps.push({ id: 'compras', name: 'Compras', icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
   }
   if (has('pos')) {
-    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/pos', bgColor: '#9B59B6' });
+    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/pos/facturacion', bgColor: '#9B59B6' });
   }
   if (has('restaurante')) {
     allApps.push({ id: 'restaurant', name: 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });

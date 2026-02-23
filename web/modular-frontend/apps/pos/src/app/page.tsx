@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import { 
-    Box, 
-    Typography, 
-    Grid, 
-    Card, 
-    CardContent, 
+import {
+    Box,
+    Typography,
+    Grid,
+    Card,
+    CardContent,
     CardActionArea,
     Button,
     Stack
@@ -32,28 +32,28 @@ export default function PosDashboardPage() {
             title: 'Nueva Factura',
             description: 'Iniciar venta rápida',
             icon: <PointOfSaleIcon sx={{ fontSize: 48 }} />,
-            path: '/pos/facturacion',
+            path: '/facturacion',
             color: '#1976d2',
         },
         {
             title: 'Cierre de Caja',
             description: 'Arqueo y cuadre',
             icon: <AccountBalanceWalletIcon sx={{ fontSize: 48 }} />,
-            path: '/pos/cierre-caja',
+            path: '/cierre-caja',
             color: '#388e3c',
         },
         {
             title: 'Reportes',
             description: 'Ventas y estadísticas',
             icon: <BarChartIcon sx={{ fontSize: 48 }} />,
-            path: '/pos/reportes',
+            path: '/reportes',
             color: '#f57c00',
         },
         {
             title: 'Últimas Facturas',
             description: 'Historial de ventas',
             icon: <ReceiptIcon sx={{ fontSize: 48 }} />,
-            path: '/pos/facturacion',
+            path: '/facturacion',
             color: '#7b1fa2',
         },
     ];
@@ -70,7 +70,7 @@ export default function PosDashboardPage() {
             <Grid container spacing={3}>
                 {quickActions.map((action, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
-                        <Card 
+                        <Card
                             elevation={2}
                             sx={{
                                 height: '100%',
@@ -81,7 +81,7 @@ export default function PosDashboardPage() {
                                 },
                             }}
                         >
-                            <CardActionArea 
+                            <CardActionArea
                                 onClick={() => router.push(action.path)}
                                 sx={{ height: '100%', p: 2 }}
                             >
@@ -102,61 +102,39 @@ export default function PosDashboardPage() {
                 ))}
             </Grid>
 
-            {/* Resumen del día - Placeholder para datos futuros */}
             <Box sx={{ mt: 6 }}>
-                <Typography variant="h5" gutterBottom>
+                <Typography variant="h5" gutterBottom fontWeight="bold">
                     Resumen del Día
                 </Typography>
-                <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={4}>
                         <Card sx={{ bgcolor: 'primary.light', color: 'primary.contrastText' }}>
                             <CardContent>
-                                <Typography variant="h6">Ventas Hoy</Typography>
-                                <Typography variant="h4" fontWeight="bold">
-                                    $0.00
-                                </Typography>
+                                <Typography variant="h6" gutterBottom>Ventas Totales</Typography>
+                                <Typography variant="h3">$1,250.00</Typography>
+                                <Typography variant="body2" sx={{ mt: 1 }}>24 facturas emitidas</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} md={4}>
                         <Card sx={{ bgcolor: 'success.light', color: 'success.contrastText' }}>
                             <CardContent>
-                                <Typography variant="h6">Transacciones</Typography>
-                                <Typography variant="h4" fontWeight="bold">
-                                    0
-                                </Typography>
+                                <Typography variant="h6" gutterBottom>Efectivo en Caja</Typography>
+                                <Typography variant="h3">$450.00</Typography>
+                                <Typography variant="body2" sx={{ mt: 1 }}>Base: $100.00</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} md={4}>
                         <Card sx={{ bgcolor: 'warning.light', color: 'warning.contrastText' }}>
                             <CardContent>
-                                <Typography variant="h6">Productos Vendidos</Typography>
-                                <Typography variant="h4" fontWeight="bold">
-                                    0
-                                </Typography>
+                                <Typography variant="h6" gutterBottom>En Espera</Typography>
+                                <Typography variant="h3">3</Typography>
+                                <Typography variant="body2" sx={{ mt: 1 }}>Facturas guardadas</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
                 </Grid>
-            </Box>
-
-            {/* Botón de acción flotante para nueva factura */}
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<PointOfSaleIcon />}
-                    onClick={() => router.push('/pos/facturacion')}
-                    sx={{
-                        px: 6,
-                        py: 2,
-                        fontSize: '1.2rem',
-                        borderRadius: 3,
-                    }}
-                >
-                    Iniciar Nueva Venta
-                </Button>
             </Box>
         </Box>
     );

@@ -1,9 +1,12 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { usePosStore } from '@datqbox/shared-api';
 
-// Tipos
+// ═══════════════════════════════════════════════════════════════
+// TIPOS
+// ═══════════════════════════════════════════════════════════════
+
 export interface Producto {
     id: string;
     codigo: string;
@@ -48,188 +51,213 @@ export interface FacturaPayload {
     cajaId: string;
 }
 
-// URLs base (placeholder - cambiar por la URL real de la API)
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// ═══════════════════════════════════════════════════════════════
+// URL BASE DE LA API
+// ═══════════════════════════════════════════════════════════════
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const POS_API = `${API_BASE}/v1/pos`;
 
-// Hook para buscar productos
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - PRODUCTOS (API REAL)
+// ═══════════════════════════════════════════════════════════════
+
 export function useBuscarProductos(filtro?: string) {
     return useQuery({
         queryKey: ['pos', 'productos', filtro],
         queryFn: async (): Promise<Producto[]> => {
-            // TODO: Implementar llamada real a la API
-            // const response = await fetch(`${API_BASE}/v1/productos?search=${filtro || ''}`);
-            // if (!response.ok) throw new Error('Error al cargar productos');
-            // return response.json();
-            
-            // Mock data por ahora
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve([
-                        { id: '1', codigo: 'PROD001', nombre: 'Escritorio Esquinero', precioDetal: 97.75, precioMayor: 85.00, precioDistribuidor: 75.00, existencia: 15, categoria: 'escritorios', iva: 16 },
-                        { id: '2', codigo: 'PROD002', nombre: 'Silla Ergonómica', precioDetal: 245.00, precioMayor: 220.00, precioDistribuidor: 195.00, existencia: 8, categoria: 'sillas', iva: 16 },
-                        { id: '3', codigo: 'PROD003', nombre: 'Lámpara LED Escritorio', precioDetal: 45.90, precioMayor: 40.00, precioDistribuidor: 35.00, existencia: 25, categoria: 'accesorios', iva: 16 },
-                    ]);
-                }, 300);
-            });
+            const params = new URLSearchParams();
+            if (filtro) params.set('search', filtro);
+            params.set('limit', '100');
+
+            const res = await fetch(`${POS_API}/productos?${params.toString()}`);
+            if (!res.ok) throw new Error('Error al cargar productos');
+            const data = await res.json();
+            return (data.rows ?? data ?? []).map((row: any) => ({
+                id: row.id?.toString().trim() ?? '',
+                codigo: row.codigo?.toString().trim() ?? row.id?.toString().trim() ?? '',
+                nombre: row.nombre?.toString().trim() ?? '',
+                precioDetal: Number(row.precioDetal ?? row.PRECIO_VENTA ?? 0),
+                precioMayor: Number(row.precioMayor ?? row.PRECIO_VENTA2 ?? 0),
+                precioDistribuidor: Number(row.precioDistribuidor ?? row.PRECIO_VENTA3 ?? 0),
+                existencia: Number(row.existencia ?? row.EXISTENCIA ?? 0),
+                categoria: row.categoria?.toString().trim() ?? '',
+                iva: Number(row.iva ?? row.PORCENTAJE ?? 16),
+            }));
         },
         enabled: true,
     });
 }
 
-// Hook para buscar clientes
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - CLIENTES (API REAL)
+// ═══════════════════════════════════════════════════════════════
+
 export function useBuscarClientes(searchTerm: string) {
     return useQuery({
         queryKey: ['pos', 'clientes', searchTerm],
         queryFn: async (): Promise<Cliente[]> => {
-            // TODO: Implementar llamada real a la API
-            // const response = await fetch(`${API_BASE}/v1/clientes?search=${searchTerm}`);
-            // if (!response.ok) throw new Error('Error al cargar clientes');
-            // return response.json();
-            
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve([
-                        { id: '1', codigo: 'CF', nombre: 'Consumidor Final', rif: 'J-00000000-0', tipoPrecio: 'Detal', credito: 0 },
-                        { id: '2', codigo: 'C001', nombre: 'Juan Pérez', rif: 'V-12345678-9', telefono: '0414-1234567', tipoPrecio: 'Detal', credito: 500 },
-                    ]);
-                }, 200);
-            });
+            const params = new URLSearchParams();
+            if (searchTerm) params.set('search', searchTerm);
+
+            const res = await fetch(`${POS_API}/clientes?${params.toString()}`);
+            if (!res.ok) throw new Error('Error al cargar clientes');
+            const data = await res.json();
+            return (data.rows ?? data ?? []).map((row: any) => ({
+                id: row.id?.toString().trim() ?? '',
+                codigo: row.codigo?.toString().trim() ?? '',
+                nombre: row.nombre?.toString().trim() ?? '',
+                rif: row.rif?.toString().trim() ?? '',
+                telefono: row.telefono?.toString().trim(),
+                email: row.email?.toString().trim(),
+                direccion: row.direccion?.toString().trim(),
+                tipoPrecio: row.tipoPrecio ?? 'Detal',
+                credito: Number(row.credito ?? 0),
+            }));
         },
         enabled: searchTerm.length > 2,
     });
 }
 
-// Hook para crear factura
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - CATEGORÍAS (API REAL)
+// ═══════════════════════════════════════════════════════════════
+
+export function useCategoriasPOS() {
+    return useQuery({
+        queryKey: ['pos', 'categorias'],
+        queryFn: async () => {
+            const res = await fetch(`${POS_API}/categorias`);
+            if (!res.ok) throw new Error('Error al cargar categorías');
+            const data = await res.json();
+            return (data.rows ?? data ?? []).map((row: any) => ({
+                id: row.id?.toString().trim() ?? '',
+                nombre: row.nombre?.toString().trim() ?? '',
+                productCount: Number(row.productCount ?? 0),
+            }));
+        },
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - FACTURACIÓN (AGENTE FISCAL LOCAL)
+// ═══════════════════════════════════════════════════════════════
+
 export function useCrearFactura() {
     const queryClient = useQueryClient();
-    
+    const printFiscalInvoice = usePosStore((s) => s.printFiscalInvoice);
+
     return useMutation({
         mutationFn: async (payload: FacturaPayload) => {
-            // TODO: Implementar llamada real a la API
-            // const response = await fetch(`${API_BASE}/v1/facturas`, {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(payload),
-            // });
-            // if (!response.ok) throw new Error('Error al crear factura');
-            // return response.json();
-            
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve({
-                        id: `F-${Date.now()}`,
-                        numero: `0001-${Date.now().toString().slice(-8)}`,
-                        fecha: new Date().toISOString(),
-                        ...payload,
-                    });
-                }, 500);
-            });
+            // Llamar al agente fiscal local via Zustand store
+            const result = await printFiscalInvoice(payload);
+
+            if (!result.success) {
+                throw new Error(result.message || 'Cajero, revise la Impresora Fiscal (Sin Papel, Tapa o Desconectada).');
+            }
+
+            return {
+                id: `F-${Date.now()}`,
+                numero: `0001-${Date.now().toString().slice(-8)}`,
+                fecha: new Date().toISOString(),
+                ...payload,
+                hardwareLog: result.message,
+                tramasFiscales: result.tramas,
+            };
         },
         onSuccess: () => {
-            // Invalidar caches relevantes
             queryClient.invalidateQueries({ queryKey: ['pos', 'facturas'] });
         },
     });
 }
 
-// Hook para obtener configuración de caja
-export function useConfiguracionCaja(cajaId: string) {
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - STATUS IMPRESORA (VIA ZUSTAND STORE)
+// ═══════════════════════════════════════════════════════════════
+
+export function usePrinterStatus(marca: string = "PNP", puerto: string = "EMULADOR", conexion: string = "emulador") {
+    const fetchPrinterStatus = usePosStore((s) => s.fetchPrinterStatus);
+    const printerStatus = usePosStore((s) => s.printerStatus);
+
     return useQuery({
-        queryKey: ['pos', 'caja', cajaId],
+        queryKey: ['pos', 'printerStatus', marca, puerto, conexion],
         queryFn: async () => {
-            // TODO: Implementar llamada real
-            return {
-                id: cajaId,
-                nombre: 'Caja Principal',
-                serieFactura: 'A',
-                numeroActual: 1250,
-                almacenId: '1',
-                almacenNombre: 'Almacén Central',
+            await fetchPrinterStatus();
+            return usePosStore.getState().printerStatus ?? {
+                success: false,
+                message: 'Agente Fiscal Apagado.',
+                statusCode: 2,
             };
         },
+        refetchInterval: 15000,
     });
 }
 
-// Hook local para manejar el estado del carrito
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - CONFIGURACIÓN DE CAJA
+// ═══════════════════════════════════════════════════════════════
+
+export function useConfiguracionCaja(cajaId: string) {
+    const caja = usePosStore((s) => s.caja);
+    return useQuery({
+        queryKey: ['pos', 'caja', cajaId],
+        queryFn: async () => caja,
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HOOK - CARRITO (RE-EXPORT DEL ZUSTAND STORE)
+// ═══════════════════════════════════════════════════════════════
+
 export function useCart() {
-    const [items, setItems] = useState<Array<{
-        id: string;
-        productoId: string;
-        nombre: string;
-        cantidad: number;
-        precio: number;
-        descuento: number;
-        total: number;
-    }>>([]);
+    const cart = usePosStore((s) => s.cart);
+    const addToCart = usePosStore((s) => s.addToCart);
+    const updateCartItem = usePosStore((s) => s.updateCartItem);
+    const removeFromCart = usePosStore((s) => s.removeFromCart);
+    const clearCartAction = usePosStore((s) => s.clearCart);
+    const getSubtotal = usePosStore((s) => s.getSubtotal);
+    const getImpuestos = usePosStore((s) => s.getImpuestos);
+    const getTotal = usePosStore((s) => s.getTotal);
+    const getDescuento = usePosStore((s) => s.getDescuento);
 
     const addItem = (producto: Producto, cantidad: number = 1, tipoPrecio: string = 'Detal') => {
-        const precio = tipoPrecio === 'Mayor' 
-            ? producto.precioMayor 
-            : tipoPrecio === 'Distribuidor' 
-                ? producto.precioDistribuidor 
+        const precio = tipoPrecio === 'Mayor'
+            ? producto.precioMayor
+            : tipoPrecio === 'Distribuidor'
+                ? producto.precioDistribuidor
                 : producto.precioDetal;
 
-        setItems(prev => {
-            const existing = prev.find(item => item.productoId === producto.id);
-            if (existing) {
-                return prev.map(item =>
-                    item.productoId === producto.id
-                        ? {
-                            ...item,
-                            cantidad: item.cantidad + cantidad,
-                            total: (item.cantidad + cantidad) * item.precio * (1 - item.descuento / 100),
-                        }
-                        : item
-                );
-            }
-            return [...prev, {
-                id: `${producto.id}-${Date.now()}`,
-                productoId: producto.id,
-                nombre: producto.nombre,
-                cantidad,
-                precio,
-                descuento: 0,
-                total: cantidad * precio,
-            }];
+        addToCart({
+            productoId: producto.id,
+            codigo: producto.codigo,
+            nombre: producto.nombre,
+            cantidad,
+            precio,
+            descuento: 0,
+            iva: producto.iva || 16,
         });
     };
 
     const updateItem = (id: string, updates: Partial<{ cantidad: number; precio: number; descuento: number }>) => {
-        setItems(prev => prev.map(item => {
-            if (item.id !== id) return item;
-            const cantidad = updates.cantidad ?? item.cantidad;
-            const precio = updates.precio ?? item.precio;
-            const descuento = updates.descuento ?? item.descuento;
-            return {
-                ...item,
-                cantidad,
-                precio,
-                descuento,
-                total: cantidad * precio * (1 - descuento / 100),
-            };
-        }));
+        updateCartItem(id, updates);
     };
 
     const removeItem = (id: string) => {
-        setItems(prev => prev.filter(item => item.id !== id));
+        removeFromCart(id);
     };
 
     const clearCart = () => {
-        setItems([]);
+        clearCartAction();
     };
 
-    const totals = items.reduce((acc, item) => ({
-        subtotal: acc.subtotal + (item.cantidad * item.precio),
-        descuento: acc.descuento + (item.cantidad * item.precio * item.descuento / 100),
-        total: acc.total + item.total,
-    }), { subtotal: 0, descuento: 0, total: 0 });
-
     return {
-        items,
+        items: cart,
         addItem,
         updateItem,
         removeItem,
         clearCart,
-        ...totals,
+        subtotal: getSubtotal(),
+        descuento: getDescuento(),
+        impuestos: getImpuestos(),
+        total: getTotal(),
     };
 }
