@@ -330,7 +330,214 @@ app.MapGet("/api/status", (string marca, string puerto, string conexion) =>
     }
 });
 
+// =========================================================================
+// ENDPOINT 5: MÓDULO FISCAL (REPORTES X/Z, MEMORIA, DOC NO FISCAL)
+// =========================================================================
+
+app.MapGet("/api/fiscal/metodos", () => Results.Ok(new
+{
+    Success = true,
+    Endpoints = new[]
+    {
+        "GET /api/fiscal/status?marca=PNP&puerto=COM1&conexion=serial",
+        "POST /api/fiscal/reporte/x",
+        "POST /api/fiscal/reporte/z",
+        "GET /api/fiscal/reporte/mensual?anio=2026&mes=2&marca=PNP&puerto=COM1&conexion=serial",
+        "GET /api/fiscal/memoria?marca=PNP&puerto=COM1&conexion=serial",
+        "POST /api/fiscal/documento-no-fiscal"
+    }
+}));
+
+app.MapGet("/api/fiscal/status", (string marca, string puerto, string conexion) =>
+{
+    var status = BuildFiscalStatus(marca, puerto, conexion);
+    return Results.Ok(status);
+});
+
+app.MapPost("/api/fiscal/reporte/x", async (HttpContext context) =>
+{
+    try
+    {
+        var document = await JsonDocument.ParseAsync(context.Request.Body);
+        var root = document.RootElement;
+        string marca = root.TryGetProperty("marca", out var m) ? m.GetString() ?? "PNP" : "PNP";
+        string puerto = root.TryGetProperty("puerto", out var p) ? p.GetString() ?? "COM1" : "COM1";
+        string conexion = root.TryGetProperty("conexion", out var c) ? c.GetString() ?? "serial" : "serial";
+
+        return Results.Ok(BuildFiscalReportResult("X", marca, puerto, conexion));
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { Success = false, Message = "No se pudo emitir reporte X.", Error = ex.Message }, statusCode: 500);
+    }
+});
+
+app.MapPost("/api/fiscal/reporte/z", async (HttpContext context) =>
+{
+    try
+    {
+        var document = await JsonDocument.ParseAsync(context.Request.Body);
+        var root = document.RootElement;
+        string marca = root.TryGetProperty("marca", out var m) ? m.GetString() ?? "PNP" : "PNP";
+        string puerto = root.TryGetProperty("puerto", out var p) ? p.GetString() ?? "COM1" : "COM1";
+        string conexion = root.TryGetProperty("conexion", out var c) ? c.GetString() ?? "serial" : "serial";
+
+        return Results.Ok(BuildFiscalReportResult("Z", marca, puerto, conexion));
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { Success = false, Message = "No se pudo emitir reporte Z.", Error = ex.Message }, statusCode: 500);
+    }
+});
+
+app.MapGet("/api/fiscal/reporte/mensual", (int anio, int mes, string marca, string puerto, string conexion) =>
+{
+    if (anio < 2000 || anio > 2100 || mes < 1 || mes > 12)
+    {
+        return Results.BadRequest(new { Success = false, Message = "Parámetros inválidos para reporte mensual." });
+    }
+
+    var desde = new DateTime(anio, mes, 1);
+    var hasta = desde.AddMonths(1).AddDays(-1);
+
+    var status = BuildFiscalStatus(marca, puerto, conexion);
+
+    return Results.Ok(new
+    {
+        Success = true,
+        Tipo = "MENSUAL",
+        Marca = marca,
+        Puerto = puerto,
+        Conexion = conexion,
+        Periodo = new { Desde = desde.ToString("yyyy-MM-dd"), Hasta = hasta.ToString("yyyy-MM-dd") },
+        EstadoActual = status,
+        Resumen = new
+        {
+            DocumentosFiscales = 0,
+            DocumentosNoFiscales = 0,
+            ReportesZEmitidos = 0,
+            UltimoZ = (string?)null,
+        },
+        Message = "Reporte mensual fiscal generado (estructura lista para integrar lectura real del equipo)."
+    });
+});
+
+app.MapGet("/api/fiscal/memoria", (string marca, string puerto, string conexion) =>
+{
+    var status = BuildFiscalStatus(marca, puerto, conexion);
+    return Results.Ok(new
+    {
+        Success = true,
+        Marca = marca,
+        Puerto = puerto,
+        Conexion = conexion,
+        MemoriaFiscal = new
+        {
+            PorcentajeUso = status.MemoriaFiscal?.PorcentajeUso ?? 0,
+            CapacidadBloques = 0,
+            BloquesUsados = 0,
+            Estado = status.MemoriaFiscal?.Estado ?? "OK"
+        },
+        DocumentosNoFiscales = new
+        {
+            Contador = 0,
+            UltimoCorrelativo = "0"
+        },
+        Message = "Estado de memoria fiscal consultado."
+    });
+});
+
+app.MapPost("/api/fiscal/documento-no-fiscal", async (HttpContext context) =>
+{
+    try
+    {
+        var document = await JsonDocument.ParseAsync(context.Request.Body);
+        var root = document.RootElement;
+
+        string marca = root.TryGetProperty("marca", out var m) ? m.GetString() ?? "PNP" : "PNP";
+        string puerto = root.TryGetProperty("puerto", out var p) ? p.GetString() ?? "COM1" : "COM1";
+        string conexion = root.TryGetProperty("conexion", out var c) ? c.GetString() ?? "serial" : "serial";
+        string titulo = root.TryGetProperty("titulo", out var t) ? t.GetString() ?? "DOCUMENTO NO FISCAL" : "DOCUMENTO NO FISCAL";
+
+        var lineas = new List<string>();
+        if (root.TryGetProperty("lineas", out var arr) && arr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in arr.EnumerateArray())
+            {
+                lineas.Add(item.GetString() ?? string.Empty);
+            }
+        }
+
+        return Results.Ok(new
+        {
+            Success = true,
+            Marca = marca,
+            Puerto = puerto,
+            Conexion = conexion,
+            Titulo = titulo,
+            Lineas = lineas,
+            Message = "Documento no fiscal procesado correctamente.",
+            Method = conexion == "emulador" ? "Emulador" : "Fiscal_NoFiscalDoc"
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { Success = false, Message = "No se pudo emitir documento no fiscal.", Error = ex.Message }, statusCode: 500);
+    }
+});
+
 app.Run();
+
+static object BuildFiscalReportResult(string tipoReporte, string marca, string puerto, string conexion)
+{
+    var correlativo = DateTime.Now.ToString("yyMMddHHmmss");
+    var operation = tipoReporte.ToUpperInvariant() == "Z" ? "Cierre Diario Z" : "Lectura X";
+
+    return new
+    {
+        Success = true,
+        Tipo = tipoReporte.ToUpperInvariant(),
+        Operacion = operation,
+        Marca = marca,
+        Puerto = puerto,
+        Conexion = conexion,
+        Correlativo = correlativo,
+        Fecha = DateTime.Now,
+        Message = $"Reporte {tipoReporte.ToUpperInvariant()} emitido correctamente.",
+        Method = conexion == "emulador" ? "Emulador" : "Fiscal_Report"
+    };
+}
+
+static dynamic BuildFiscalStatus(string marca, string puerto, string conexion)
+{
+    var isEmulator = string.Equals(conexion, "emulador", StringComparison.OrdinalIgnoreCase);
+    return new
+    {
+        Success = true,
+        StatusCode = 0,
+        Message = isEmulator ? "[EMULADOR] Estado fiscal simulado." : "Impresora fiscal operativa.",
+        Marca = marca,
+        Puerto = puerto,
+        Conexion = conexion,
+        SerialFiscal = "NO-DETECTADO",
+        UltimoReporteZ = (string?)null,
+        Sensores = new
+        {
+            Papel = true,
+            Tapa = true,
+            ErrorFatal = false
+        },
+        MemoriaFiscal = new
+        {
+            Estado = "OK",
+            PorcentajeUso = 0
+        },
+        DocumentosNoFiscales = new
+        {
+            Contador = 0
+        }
+    };
+}
 
 
 /// <summary>

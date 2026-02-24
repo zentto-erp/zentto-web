@@ -13,6 +13,8 @@ import {
     FormControlLabel,
     MenuItem,
     Divider,
+    Alert,
+    CircularProgress,
 } from '@mui/material';
 
 export interface LocalizacionConfig {
@@ -40,24 +42,90 @@ const PREDEFINED_COUNTRIES = [
     { code: 'US', name: 'Estados Unidos', defaultLoc: { preciosIncluyenIva: false, tasaCambio: 1.0, monedaPrincipal: '$', monedaReferencia: 'EUR', tasaIgtf: 0, aplicarIgtf: false } },
 ];
 
+type TasasBcvResponse = {
+    success?: boolean;
+    USD?: number;
+    EUR?: number;
+    fechaInformativa?: string;
+    origen?: string;
+};
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000';
+
+function normalizeRefCurrency(monedaReferencia: string): 'USD' | 'EUR' | null {
+    const ref = (monedaReferencia || '').trim().toUpperCase();
+    if (!ref) return null;
+    if (ref === '$' || ref.includes('USD') || ref.includes('DOLAR')) return 'USD';
+    if (ref === '€' || ref.includes('EUR')) return 'EUR';
+    return null;
+}
+
 export function LocalizacionModal({ open, onClose, currentConfig, onSave }: LocalizacionModalProps) {
     const [config, setConfig] = useState<LocalizacionConfig>(currentConfig);
+    const [bcvRates, setBcvRates] = useState<TasasBcvResponse | null>(null);
+    const [loadingRates, setLoadingRates] = useState(false);
+    const [ratesError, setRatesError] = useState<string | null>(null);
+
+    const applyBcvRateIfNeeded = (baseConfig: LocalizacionConfig, rates?: TasasBcvResponse | null): LocalizacionConfig => {
+        const source = rates ?? bcvRates;
+        const refCurrency = normalizeRefCurrency(baseConfig.monedaReferencia);
+        if (!source || !refCurrency) return baseConfig;
+
+        const rateValue = refCurrency === 'USD' ? Number(source.USD ?? 0) : Number(source.EUR ?? 0);
+        if (!Number.isFinite(rateValue) || rateValue <= 0) return baseConfig;
+
+        return {
+            ...baseConfig,
+            tasaCambio: rateValue,
+        };
+    };
+
+    const fetchBcvRates = async () => {
+        setLoadingRates(true);
+        setRatesError(null);
+        try {
+            const endpoints = [`${API_BASE}/v1/config/tasas`, `${API_BASE}/api/v1/config/tasas`];
+            let data: TasasBcvResponse | null = null;
+
+            for (const endpoint of endpoints) {
+                const res = await fetch(endpoint);
+                if (!res.ok) continue;
+                data = await res.json() as TasasBcvResponse;
+                break;
+            }
+
+            if (!data) throw new Error('BCV_ENDPOINT_UNAVAILABLE');
+            setBcvRates(data);
+            setConfig(prev => applyBcvRateIfNeeded(prev, data));
+        } catch {
+            setRatesError('No se pudo cargar la tasa BCV en este momento.');
+        } finally {
+            setLoadingRates(false);
+        }
+    };
 
     useEffect(() => {
         if (open) {
             setConfig(currentConfig);
+            fetchBcvRates();
         }
     }, [open, currentConfig]);
+
+    useEffect(() => {
+        if (!open) return;
+        setConfig(prev => applyBcvRateIfNeeded(prev));
+    }, [config.monedaReferencia, bcvRates, open]);
 
     const handleCountryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const pais = e.target.value;
         const preset = PREDEFINED_COUNTRIES.find(c => c.code === pais)?.defaultLoc;
         if (preset) {
-            setConfig({
+            const nextConfig = {
                 ...config,
                 pais,
                 ...preset
-            });
+            };
+            setConfig(applyBcvRateIfNeeded(nextConfig));
         } else {
             setConfig({ ...config, pais });
         }
@@ -120,6 +188,25 @@ export function LocalizacionModal({ open, onClose, currentConfig, onSave }: Loca
                             onChange={(e) => handleChange('tasaCambio', parseFloat(e.target.value))}
                         />
                     </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+                            <Typography variant="body2" color="text.secondary">
+                                {bcvRates
+                                    ? `BCV ${normalizeRefCurrency(config.monedaReferencia) || '-'}: ${normalizeRefCurrency(config.monedaReferencia) === 'EUR' ? Number(bcvRates.EUR ?? 0).toFixed(2) : Number(bcvRates.USD ?? 0).toFixed(2)} (${bcvRates.fechaInformativa || 's/f'})`
+                                    : 'Tasa BCV no cargada'}
+                            </Typography>
+                            <Button onClick={fetchBcvRates} size="small" disabled={loadingRates}>
+                                {loadingRates ? <CircularProgress size={16} /> : 'Actualizar BCV'}
+                            </Button>
+                        </Box>
+                    </Grid>
+
+                    {ratesError && (
+                        <Grid item xs={12}>
+                            <Alert severity="warning">{ratesError}</Alert>
+                        </Grid>
+                    )}
 
                     <Grid item xs={12} sm={6}>
                         <Box sx={{ mt: 1 }}>

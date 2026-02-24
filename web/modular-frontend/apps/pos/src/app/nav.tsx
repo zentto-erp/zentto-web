@@ -9,6 +9,8 @@ const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
 const BarChartIcon = dynamic(() => import('@mui/icons-material/BarChart'), { ssr: false });
 const DashboardIcon = dynamic(() => import('@mui/icons-material/Dashboard'), { ssr: false });
+const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
+const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'), { ssr: false });
 
 /**
  * Construye la navegación del módulo POS basada en permisos del usuario
@@ -51,6 +53,21 @@ export function buildPosNav(isAdmin: boolean, modulos: string[]): any[] {
             segment: 'reportes', 
             title: 'Reportes', 
             icon: <BarChartIcon /> 
+        });
+
+        nav.push({
+            kind: 'page',
+            segment: 'fiscal',
+            title: 'Módulo Fiscal',
+            icon: <ReceiptLongIcon />,
+        });
+
+        // Gestión de serial/correlativo fiscal
+        nav.push({
+            kind: 'page',
+            segment: 'correlativos-fiscales',
+            title: 'Correlativos Fiscales',
+            icon: <SettingsIcon />,
         });
     }
 

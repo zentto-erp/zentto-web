@@ -9,6 +9,9 @@ import {
     listPosReportVentas,
     listPosReportProductosTop,
     listPosReportFormasPago,
+    listPosReportCajas,
+    listCorrelativosFiscales,
+    upsertCorrelativoFiscal,
 } from "./service.js";
 
 export const posRouter = Router();
@@ -57,10 +60,31 @@ posRouter.get("/categorias", async (_req, res) => {
 const reporteSchema = z.object({
     from: z.string().optional(),
     to: z.string().optional(),
+    cajaId: z.string().optional(),
 });
 
 const reporteConLimitSchema = reporteSchema.extend({
     limit: z.coerce.number().int().min(1).max(500).optional(),
+});
+
+const correlativoFiscalSchema = z.object({
+    cajaId: z.string().optional(),
+    serialFiscal: z.string().min(1),
+    correlativoActual: z.coerce.number().int().min(0).optional(),
+    descripcion: z.string().optional(),
+});
+
+posRouter.get("/correlativos-fiscales", async (req, res) => {
+    const cajaId = (req.query.cajaId as string | undefined)?.trim();
+    const data = await listCorrelativosFiscales({ cajaId });
+    res.json(data);
+});
+
+posRouter.put("/correlativos-fiscales", async (req, res) => {
+    const parsed = correlativoFiscalSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    const data = await upsertCorrelativoFiscal(parsed.data);
+    res.json(data);
 });
 
 posRouter.get("/reportes/resumen", async (req, res) => {
@@ -88,5 +112,12 @@ posRouter.get("/reportes/formas-pago", async (req, res) => {
     const parsed = reporteSchema.safeParse(req.query);
     if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
     const data = await listPosReportFormasPago(parsed.data);
+    res.json(data);
+});
+
+posRouter.get("/reportes/cajas", async (req, res) => {
+    const parsed = reporteSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
+    const data = await listPosReportCajas(parsed.data);
     res.json(data);
 });

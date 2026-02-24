@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, usePosStore } from '@datqbox/shared-api';
+import { apiGet, apiPut, usePosStore } from '@datqbox/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS
@@ -64,9 +64,20 @@ export interface PosReporteVenta {
     numFactura: string;
     fecha: string;
     cliente: string;
+    cajaId?: string;
     total: number;
     estado: string;
     metodoPago?: string;
+    serialFiscal?: string;
+    correlativoFiscal?: number;
+}
+
+export interface PosCorrelativoFiscal {
+    tipo: string;
+    cajaId?: string | null;
+    serialFiscal?: string;
+    correlativoActual?: number;
+    descripcion?: string;
 }
 
 export interface PosReporteProductoTop {
@@ -81,6 +92,13 @@ export interface PosReporteFormaPago {
     metodoPago: string;
     transacciones: number;
     total: number;
+}
+
+export interface PosReporteCaja {
+    cajaId: string;
+    transacciones: number;
+    total: number;
+    serialFiscal?: string;
 }
 
 const POS_API_BASE = '/v1/pos';
@@ -162,11 +180,11 @@ export function useCategoriasPOS() {
 // HOOKS - REPORTES POS
 // ═══════════════════════════════════════════════════════════════
 
-export function usePosReporteResumen(from?: string, to?: string) {
+export function usePosReporteResumen(from?: string, to?: string, cajaId?: string) {
     return useQuery({
-        queryKey: ['pos', 'reportes', 'resumen', from, to],
+        queryKey: ['pos', 'reportes', 'resumen', from, to, cajaId],
         queryFn: async (): Promise<PosReporteResumen> => {
-            const data = await apiGet(`${POS_API_BASE}/reportes/resumen`, { from, to });
+            const data = await apiGet(`${POS_API_BASE}/reportes/resumen`, { from, to, cajaId });
             const row = data.row ?? {};
             return {
                 totalVentas: Number(row.totalVentas ?? 0),
@@ -179,29 +197,67 @@ export function usePosReporteResumen(from?: string, to?: string) {
     });
 }
 
-export function usePosReporteVentas(from?: string, to?: string, limit = 200) {
+export function usePosReporteVentas(from?: string, to?: string, limit = 200, cajaId?: string) {
     return useQuery({
-        queryKey: ['pos', 'reportes', 'ventas', from, to, limit],
+        queryKey: ['pos', 'reportes', 'ventas', from, to, limit, cajaId],
         queryFn: async (): Promise<PosReporteVenta[]> => {
-            const data = await apiGet(`${POS_API_BASE}/reportes/ventas`, { from, to, limit });
+            const data = await apiGet(`${POS_API_BASE}/reportes/ventas`, { from, to, limit, cajaId });
             return (data.rows ?? []).map((row: any) => ({
                 id: Number(row.id ?? 0),
                 numFactura: row.numFactura?.toString().trim() ?? '',
                 fecha: row.fecha,
                 cliente: row.cliente?.toString().trim() ?? 'Consumidor Final',
+                cajaId: row.cajaId?.toString().trim() ?? undefined,
                 total: Number(row.total ?? 0),
                 estado: row.estado?.toString().trim() ?? 'Completada',
                 metodoPago: row.metodoPago?.toString().trim() ?? undefined,
+                serialFiscal: row.serialFiscal?.toString().trim() ?? undefined,
+                correlativoFiscal: row.correlativoFiscal !== undefined && row.correlativoFiscal !== null
+                    ? Number(row.correlativoFiscal)
+                    : undefined,
             }));
         },
     });
 }
 
-export function usePosReporteProductosTop(from?: string, to?: string, limit = 20) {
+export function usePosCorrelativosFiscales(cajaId?: string) {
     return useQuery({
-        queryKey: ['pos', 'reportes', 'productos-top', from, to, limit],
+        queryKey: ['pos', 'correlativos-fiscales', cajaId],
+        queryFn: async (): Promise<PosCorrelativoFiscal[]> => {
+            const data = await apiGet(`${POS_API_BASE}/correlativos-fiscales`, { cajaId });
+            return (data.rows ?? []).map((row: any) => ({
+                tipo: row.tipo?.toString().trim() ?? '',
+                cajaId: row.cajaId?.toString().trim() ?? null,
+                serialFiscal: row.serialFiscal?.toString().trim() ?? '',
+                correlativoActual: Number(row.correlativoActual ?? 0),
+                descripcion: row.descripcion?.toString() ?? '',
+            }));
+        },
+    });
+}
+
+export function useGuardarPosCorrelativoFiscal() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: {
+            cajaId?: string;
+            serialFiscal: string;
+            correlativoActual?: number;
+            descripcion?: string;
+        }) => apiPut(`${POS_API_BASE}/correlativos-fiscales`, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pos', 'correlativos-fiscales'] });
+            queryClient.invalidateQueries({ queryKey: ['pos', 'reportes', 'ventas'] });
+        },
+    });
+}
+
+export function usePosReporteProductosTop(from?: string, to?: string, limit = 20, cajaId?: string) {
+    return useQuery({
+        queryKey: ['pos', 'reportes', 'productos-top', from, to, limit, cajaId],
         queryFn: async (): Promise<PosReporteProductoTop[]> => {
-            const data = await apiGet(`${POS_API_BASE}/reportes/productos-top`, { from, to, limit });
+            const data = await apiGet(`${POS_API_BASE}/reportes/productos-top`, { from, to, limit, cajaId });
             return (data.rows ?? []).map((row: any) => ({
                 productoId: row.productoId?.toString().trim() ?? '',
                 codigo: row.codigo?.toString().trim() ?? '',
@@ -213,15 +269,30 @@ export function usePosReporteProductosTop(from?: string, to?: string, limit = 20
     });
 }
 
-export function usePosReporteFormasPago(from?: string, to?: string) {
+export function usePosReporteFormasPago(from?: string, to?: string, cajaId?: string) {
     return useQuery({
-        queryKey: ['pos', 'reportes', 'formas-pago', from, to],
+        queryKey: ['pos', 'reportes', 'formas-pago', from, to, cajaId],
         queryFn: async (): Promise<PosReporteFormaPago[]> => {
-            const data = await apiGet(`${POS_API_BASE}/reportes/formas-pago`, { from, to });
+            const data = await apiGet(`${POS_API_BASE}/reportes/formas-pago`, { from, to, cajaId });
             return (data.rows ?? []).map((row: any) => ({
                 metodoPago: row.metodoPago?.toString().trim() ?? 'No especificado',
                 transacciones: Number(row.transacciones ?? 0),
                 total: Number(row.total ?? 0),
+            }));
+        },
+    });
+}
+
+export function usePosReporteCajas(from?: string, to?: string) {
+    return useQuery({
+        queryKey: ['pos', 'reportes', 'cajas', from, to],
+        queryFn: async (): Promise<PosReporteCaja[]> => {
+            const data = await apiGet(`${POS_API_BASE}/reportes/cajas`, { from, to });
+            return (data.rows ?? []).map((row: any) => ({
+                cajaId: row.cajaId?.toString().trim() ?? '',
+                transacciones: Number(row.transacciones ?? 0),
+                total: Number(row.total ?? 0),
+                serialFiscal: row.serialFiscal?.toString().trim() || undefined,
             }));
         },
     });

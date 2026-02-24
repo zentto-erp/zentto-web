@@ -10,6 +10,7 @@ import {
     Button,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
+import { usePosStore } from '@datqbox/shared-api';
 
 // Iconos dinámicos
 const CloseIcon = dynamic(() => import('@mui/icons-material/Close'), { ssr: false });
@@ -54,6 +55,12 @@ export function PosCart({
     selectedItemId,
     onSelectItem,
 }: PosCartProps) {
+    const localizacion = usePosStore((s) => s.localizacion);
+    const symP = localizacion.monedaPrincipal || 'Bs';
+    const symR = localizacion.monedaReferencia || '$';
+    const tc = Number(localizacion.tasaCambio || 1);
+    const toRef = (value: number) => (tc > 0 ? value / tc : value);
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper' }}>
             {/* Lista de Items del Carrito */}
@@ -105,12 +112,12 @@ export function PosCart({
                                     {item.nombre}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {item.cantidad.toFixed(2)} Und x ${item.precioUnitario.toFixed(2)} / Und
+                                    {item.cantidad.toFixed(2)} Und x {symP} {item.precioUnitario.toFixed(2)} / Und · Ref {symR} {toRef(item.precioUnitario).toFixed(2)}
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="body2" fontWeight="medium">
-                                    ${item.total.toFixed(2)}
+                                    {symP} {item.total.toFixed(2)}
                                 </Typography>
                                 <IconButton
                                     size="small"
@@ -137,16 +144,22 @@ export function PosCart({
             <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="body2">Subtotal:</Typography>
-                    <Typography variant="body2">${subtotal.toFixed(2)}</Typography>
+                    <Typography variant="body2">{symP} {subtotal.toFixed(2)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography variant="body2">Impuestos:</Typography>
-                    <Typography variant="body2">${impuestos.toFixed(2)}</Typography>
+                    <Typography variant="body2">{symP} {impuestos.toFixed(2)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <Typography variant="h6" fontWeight="bold">Total:</Typography>
                     <Typography variant="h5" fontWeight="bold" color="primary">
-                        ${total.toFixed(2)}
+                        {symP} {total.toFixed(2)}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary">Total Referencia:</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {symR} {toRef(total).toFixed(2)} (Tasa {tc.toFixed(2)})
                     </Typography>
                 </Box>
             </Box>

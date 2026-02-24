@@ -126,8 +126,124 @@ async function hasPosSalesTables() {
     return Number(rows[0]?.ok ?? 0) === 1;
 }
 
-export async function getPosReportResumen(params: { from?: string; to?: string }) {
+async function hasCorrelativoTable() {
+    const rows = await query<{ ok: number }>(
+        "SELECT CASE WHEN OBJECT_ID('dbo.Correlativo', 'U') IS NOT NULL THEN 1 ELSE 0 END AS ok"
+    );
+    return Number(rows[0]?.ok ?? 0) === 1;
+}
+
+function inferSerialFromTrama(raw: unknown): string | null {
+    if (!raw) return null;
+    const trama = String(raw);
+    const patterns = [
+        /serial\s*[:=]\s*([A-Z0-9\-]+)/i,
+        /registeredmachinenumber\s*[:=]\s*([A-Z0-9\-]+)/i,
+        /fiscal\s*serial\s*[:=]\s*([A-Z0-9\-]+)/i,
+    ];
+    for (const pattern of patterns) {
+        const match = trama.match(pattern);
+        if (match?.[1]) return match[1].trim();
+    }
+    return null;
+}
+
+function correlativoTipoPorCaja(cajaId: string) {
+    return `FACTURA|CAJA:${cajaId.trim().toUpperCase()}`;
+}
+
+export async function listCorrelativosFiscales(params: { cajaId?: string }) {
+    if (!(await hasCorrelativoTable())) {
+        return { rows: [], executionMode: "ts_fallback" as const };
+    }
+
+    const rows = await query<any>(
+        `
+        SELECT
+            Tipo AS tipo,
+            CASE
+                WHEN Tipo LIKE 'FACTURA|CAJA:%' THEN SUBSTRING(Tipo, LEN('FACTURA|CAJA:') + 1, 50)
+                ELSE NULL
+            END AS cajaId,
+            Serie AS serialFiscal,
+            Valor AS correlativoActual,
+            Descripcion AS descripcion
+        FROM Correlativo
+        WHERE Tipo = 'FACTURA'
+           OR Tipo LIKE 'FACTURA|CAJA:%'
+           OR Tipo = 'CONTROL'
+           OR Tipo LIKE 'CONTROL%'
+        ORDER BY CASE WHEN Tipo = 'FACTURA' THEN 1 WHEN Tipo LIKE 'FACTURA|CAJA:%' THEN 2 ELSE 3 END, Tipo
+        `
+    );
+
+    if (!params.cajaId) {
+        return { rows, executionMode: "ts_fallback" as const };
+    }
+
+    const caja = params.cajaId.trim().toUpperCase();
+    return {
+        rows: rows.filter((r: any) => !r.cajaId || String(r.cajaId).trim().toUpperCase() === caja),
+        executionMode: "ts_fallback" as const,
+    };
+}
+
+export async function upsertCorrelativoFiscal(params: {
+    cajaId?: string;
+    serialFiscal: string;
+    correlativoActual?: number;
+    descripcion?: string;
+}) {
+    if (!(await hasCorrelativoTable())) {
+        throw new Error("table_not_found:Correlativo");
+    }
+
+    const tipo = params.cajaId && params.cajaId.trim().length > 0
+        ? correlativoTipoPorCaja(params.cajaId)
+        : "FACTURA";
+
+    const serialFiscal = params.serialFiscal.trim();
+    const correlativoActual = Number.isFinite(Number(params.correlativoActual))
+        ? Number(params.correlativoActual)
+        : 0;
+
+    await query(
+        `
+        MERGE Correlativo AS target
+        USING (SELECT @tipo AS Tipo) AS source
+        ON target.Tipo = source.Tipo
+        WHEN MATCHED THEN
+            UPDATE SET
+                Serie = @serie,
+                Valor = @valor,
+                Descripcion = @descripcion
+        WHEN NOT MATCHED THEN
+            INSERT (Tipo, Serie, Descripcion, Valor)
+            VALUES (@tipo, @serie, @descripcion, @valor);
+        `,
+        {
+            tipo,
+            serie: serialFiscal,
+            valor: correlativoActual,
+            descripcion: params.descripcion ?? "",
+        }
+    );
+
+    return {
+        ok: true,
+        row: {
+            tipo,
+            cajaId: params.cajaId?.trim().toUpperCase() ?? null,
+            serialFiscal,
+            correlativoActual,
+            descripcion: params.descripcion ?? "",
+        },
+    };
+}
+
+export async function getPosReportResumen(params: { from?: string; to?: string; cajaId?: string }) {
     const { fromDate, toDate } = normalizeRange(params.from, params.to);
+    const cajaId = params.cajaId?.trim() || null;
     if (!(await hasPosSalesTables())) {
         return {
             from: fromDate,
@@ -149,6 +265,7 @@ export async function getPosReportResumen(params: { from?: string; to?: string }
             SELECT Id, Total
             FROM PosVentas
             WHERE CAST(FechaVenta AS date) BETWEEN @fromDate AND @toDate
+              AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
         ),
         detalle AS (
             SELECT d.ProductoId, d.Cantidad
@@ -165,7 +282,7 @@ export async function getPosReportResumen(params: { from?: string; to?: string }
                 ELSE ISNULL((SELECT SUM(Total) FROM ventas), 0) / NULLIF((SELECT COUNT(1) FROM ventas), 0)
             END AS ticketPromedio
         `,
-        { fromDate, toDate }
+        { fromDate, toDate, cajaId }
     );
 
     return {
@@ -182,35 +299,56 @@ export async function getPosReportResumen(params: { from?: string; to?: string }
     };
 }
 
-export async function listPosReportVentas(params: { from?: string; to?: string; limit?: number }) {
+export async function listPosReportVentas(params: { from?: string; to?: string; limit?: number; cajaId?: string }) {
     const { fromDate, toDate } = normalizeRange(params.from, params.to);
+    const cajaId = params.cajaId?.trim() || null;
     const limit = Math.min(Math.max(params.limit ?? 200, 1), 500);
     if (!(await hasPosSalesTables())) {
         return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
     }
 
-    const rows = await query<any>(
+    const rowsRaw = await query<any>(
         `
         SELECT TOP ${limit}
             v.Id AS id,
             v.NumFactura AS numFactura,
             v.FechaVenta AS fecha,
             ISNULL(NULLIF(LTRIM(RTRIM(v.ClienteNombre)), ''), 'Consumidor Final') AS cliente,
+            v.CajaId AS cajaId,
             v.Total AS total,
             'Completada' AS estado,
-            v.MetodoPago AS metodoPago
+            v.MetodoPago AS metodoPago,
+            v.TramaFiscal AS tramaFiscal,
+            corr.Serie AS serialFiscal,
+            corr.Valor AS correlativoFiscal
         FROM PosVentas v
+        OUTER APPLY (
+            SELECT TOP 1 c.Serie, c.Valor
+            FROM Correlativo c
+            WHERE c.Tipo IN (
+                CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))),
+                'FACTURA'
+            )
+            ORDER BY CASE WHEN c.Tipo = CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))) THEN 0 ELSE 1 END
+        ) corr
         WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
+                    AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(v.CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
         ORDER BY v.FechaVenta DESC, v.Id DESC
         `,
-        { fromDate, toDate }
+                { fromDate, toDate, cajaId }
     );
+
+    const rows = rowsRaw.map((row) => ({
+        ...row,
+        serialFiscal: row.serialFiscal ?? inferSerialFromTrama(row.tramaFiscal),
+    }));
 
     return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
 }
 
-export async function listPosReportProductosTop(params: { from?: string; to?: string; limit?: number }) {
+export async function listPosReportProductosTop(params: { from?: string; to?: string; limit?: number; cajaId?: string }) {
     const { fromDate, toDate } = normalizeRange(params.from, params.to);
+    const cajaId = params.cajaId?.trim() || null;
     const limit = Math.min(Math.max(params.limit ?? 20, 1), 100);
     if (!(await hasPosSalesTables())) {
         return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
@@ -227,17 +365,19 @@ export async function listPosReportProductosTop(params: { from?: string; to?: st
         FROM PosVentasDetalle d
         INNER JOIN PosVentas v ON v.Id = d.VentaId
         WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
+                    AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(v.CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
         GROUP BY d.ProductoId, d.Codigo, d.Nombre
         ORDER BY total DESC, cantidad DESC
         `,
-        { fromDate, toDate }
+                { fromDate, toDate, cajaId }
     );
 
     return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
 }
 
-export async function listPosReportFormasPago(params: { from?: string; to?: string }) {
+export async function listPosReportFormasPago(params: { from?: string; to?: string; cajaId?: string }) {
     const { fromDate, toDate } = normalizeRange(params.from, params.to);
+    const cajaId = params.cajaId?.trim() || null;
     if (!(await hasPosSalesTables())) {
         return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
     }
@@ -250,8 +390,42 @@ export async function listPosReportFormasPago(params: { from?: string; to?: stri
             SUM(v.Total) AS total
         FROM PosVentas v
         WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
+                    AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(v.CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
         GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(v.MetodoPago)), ''), 'No especificado')
         ORDER BY total DESC
+        `,
+                { fromDate, toDate, cajaId }
+    );
+
+    return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
+}
+
+export async function listPosReportCajas(params: { from?: string; to?: string }) {
+    const { fromDate, toDate } = normalizeRange(params.from, params.to);
+    if (!(await hasPosSalesTables())) {
+        return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
+    }
+
+    const rows = await query<any>(
+        `
+        SELECT
+            UPPER(LTRIM(RTRIM(v.CajaId))) AS cajaId,
+            COUNT(1) AS transacciones,
+            SUM(v.Total) AS total,
+            MAX(ISNULL(corr.Serie, '')) AS serialFiscal
+        FROM PosVentas v
+        OUTER APPLY (
+            SELECT TOP 1 c.Serie
+            FROM Correlativo c
+            WHERE c.Tipo IN (
+                CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))),
+                'FACTURA'
+            )
+            ORDER BY CASE WHEN c.Tipo = CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))) THEN 0 ELSE 1 END
+        ) corr
+        WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
+        GROUP BY UPPER(LTRIM(RTRIM(v.CajaId)))
+        ORDER BY cajaId
         `,
         { fromDate, toDate }
     );

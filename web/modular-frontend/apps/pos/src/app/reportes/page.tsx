@@ -18,6 +18,8 @@ import {
     Tabs,
     Tab,
     Chip,
+    TextField,
+    Autocomplete,
 } from '@mui/material';
 import { DatePicker } from '@datqbox/shared-ui';
 import dayjs, { Dayjs } from 'dayjs';
@@ -27,6 +29,7 @@ import {
     usePosReporteProductosTop,
     usePosReporteResumen,
     usePosReporteVentas,
+    usePosReporteCajas,
 } from '@/hooks';
 
 const DownloadIcon = dynamic(() => import('@mui/icons-material/Download'), { ssr: false });
@@ -42,13 +45,16 @@ export default function PosReportesPage() {
     const [activeTab, setActiveTab] = useState(0);
     const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().startOf('day'));
     const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().endOf('day'));
+    const [cajaFiltro, setCajaFiltro] = useState<string>('');
     const [appliedDesde, setAppliedDesde] = useState<string>(dayjs().format('YYYY-MM-DD'));
     const [appliedHasta, setAppliedHasta] = useState<string>(dayjs().format('YYYY-MM-DD'));
+    const [appliedCaja, setAppliedCaja] = useState<string>('');
 
-    const resumenQuery = usePosReporteResumen(appliedDesde, appliedHasta);
-    const ventasQuery = usePosReporteVentas(appliedDesde, appliedHasta, 200);
-    const productosTopQuery = usePosReporteProductosTop(appliedDesde, appliedHasta, 20);
-    const formasPagoQuery = usePosReporteFormasPago(appliedDesde, appliedHasta);
+    const resumenQuery = usePosReporteResumen(appliedDesde, appliedHasta, appliedCaja || undefined);
+    const ventasQuery = usePosReporteVentas(appliedDesde, appliedHasta, 200, appliedCaja || undefined);
+    const productosTopQuery = usePosReporteProductosTop(appliedDesde, appliedHasta, 20, appliedCaja || undefined);
+    const formasPagoQuery = usePosReporteFormasPago(appliedDesde, appliedHasta, appliedCaja || undefined);
+    const cajasQuery = usePosReporteCajas(appliedDesde, appliedHasta);
 
     const resumen = resumenQuery.data ?? {
         totalVentas: 0,
@@ -60,6 +66,7 @@ export default function PosReportesPage() {
     const ventasRecientes = ventasQuery.data ?? [];
     const productosTop = productosTopQuery.data ?? [];
     const formasPago = formasPagoQuery.data ?? [];
+    const cajasDisponibles = (cajasQuery.data ?? []).map((c) => c.cajaId).filter(Boolean);
 
     const isLoading =
         resumenQuery.isLoading ||
@@ -80,6 +87,7 @@ export default function PosReportesPage() {
     const handleGenerar = () => {
         setAppliedDesde((fechaDesde ?? dayjs()).format('YYYY-MM-DD'));
         setAppliedHasta((fechaHasta ?? dayjs()).format('YYYY-MM-DD'));
+        setAppliedCaja(cajaFiltro.trim().toUpperCase());
     };
 
     return (
@@ -108,11 +116,28 @@ export default function PosReportesPage() {
                         />
                     </Grid>
                     <Grid item xs={12} sm={3}>
+                        <Autocomplete
+                            freeSolo
+                            size="small"
+                            options={cajasDisponibles}
+                            value={cajaFiltro}
+                            onInputChange={(_e, value) => setCajaFiltro(value.toUpperCase())}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Caja"
+                                    placeholder="Ej: 01"
+                                    helperText="Vacío = todas"
+                                />
+                            )}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
                         <Button variant="contained" fullWidth onClick={handleGenerar}>
                             Generar
                         </Button>
                     </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid item xs={12} sm={4}>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button variant="outlined" startIcon={<PrintIcon />} fullWidth>
                                 Imprimir
@@ -138,7 +163,7 @@ export default function PosReportesPage() {
                             </Typography>
                             <Chip
                                 icon={<TrendingUpIcon />}
-                                label={`Rango: ${appliedDesde} a ${appliedHasta}`}
+                                label={`Rango: ${appliedDesde} a ${appliedHasta}${appliedCaja ? ` | Caja: ${appliedCaja}` : ''}`}
                                 color="success"
                                 size="small"
                                 sx={{ mt: 1 }}
@@ -224,6 +249,8 @@ export default function PosReportesPage() {
                                 <TableRow>
                                     <TableCell>N° Factura</TableCell>
                                     <TableCell>Fecha</TableCell>
+                                    <TableCell>Caja</TableCell>
+                                    <TableCell>Serial Fiscal</TableCell>
                                     <TableCell>Cliente</TableCell>
                                     <TableCell align="right">Total</TableCell>
                                     <TableCell>Estado</TableCell>
@@ -234,6 +261,8 @@ export default function PosReportesPage() {
                                     <TableRow key={`${venta.id}-${venta.numFactura}`}>
                                         <TableCell>{venta.numFactura}</TableCell>
                                         <TableCell>{dayjs(venta.fecha).format('YYYY-MM-DD HH:mm')}</TableCell>
+                                        <TableCell>{venta.cajaId || '-'}</TableCell>
+                                        <TableCell>{venta.serialFiscal || 'Sin serial'}</TableCell>
                                         <TableCell>{venta.cliente}</TableCell>
                                         <TableCell align="right">${venta.total.toFixed(2)}</TableCell>
                                         <TableCell>
@@ -247,7 +276,7 @@ export default function PosReportesPage() {
                                 ))}
                                 {ventasRecientes.length === 0 && !isLoading && (
                                     <TableRow>
-                                        <TableCell colSpan={5} align="center">
+                                        <TableCell colSpan={7} align="center">
                                             Sin ventas registradas en este período.
                                         </TableCell>
                                     </TableRow>

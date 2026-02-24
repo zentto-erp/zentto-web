@@ -9,6 +9,9 @@ export {
     usePosReporteVentas,
     usePosReporteProductosTop,
     usePosReporteFormasPago,
+    usePosReporteCajas,
+    usePosCorrelativosFiscales,
+    useGuardarPosCorrelativoFiscal,
     useCart,
     type Producto,
     type Cliente,
@@ -17,5 +20,7 @@ export {
     type PosReporteVenta,
     type PosReporteProductoTop,
     type PosReporteFormaPago,
+    type PosReporteCaja,
+    type PosCorrelativoFiscal,
 } from './usePosApi';
 export { useBarcodeScanner } from './useBarcodeScanner';
