@@ -12,6 +12,7 @@ export type {
   LocalizacionConfig,
 } from './usePosStore';
 export { calcTotals } from './usePosStore';
+export * from './useConfigStore';
 export { loadFrontendAddons } from './addons';
 export type { FrontendAddon } from './addons';
 export type { RequestLog } from './requestLogger';

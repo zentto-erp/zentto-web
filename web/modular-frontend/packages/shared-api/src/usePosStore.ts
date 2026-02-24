@@ -211,8 +211,21 @@ const DEFAULT_FISCAL_PRINTER: PrinterConfig = {
     marca: 'PNP',
     conexion: 'emulador',
     puerto: 'EMULADOR',
-    agentUrl: 'http://localhost:5000',
+    agentUrl: 'http://localhost:5059',
 };
+
+function normalizeAgentUrl(url: string | undefined): string {
+    if (!url || !url.trim()) {
+        return 'http://localhost:5059';
+    }
+
+    const trimmed = url.trim();
+    if (trimmed.includes('localhost:5000') || trimmed.includes('127.0.0.1:5000')) {
+        return trimmed.replace(':5000', ':5059');
+    }
+
+    return trimmed;
+}
 
 export function calcTotals(cantidad: number, precioRaw: number, descuento: number, iva: number, loc: LocalizacionConfig) {
     // 1. Convertir a moneda local usando la tasa de cambio vigente
@@ -243,7 +256,7 @@ export const usePosStore = create<PosState>()(
             // ─── Estado Inicial ───
             fiscalPrinter: DEFAULT_FISCAL_PRINTER,
             kitchenPrinters: [
-                { nombre: 'Cocina Principal', conexion: 'emulador', destino: '', agentUrl: 'http://localhost:5000' },
+                { nombre: 'Cocina Principal', conexion: 'emulador', destino: '', agentUrl: 'http://localhost:5059' },
             ],
             printerStatus: null,
             localizacion: {
@@ -677,6 +690,26 @@ export const usePosStore = create<PosState>()(
         }),
         {
             name: 'datqbox-pos-store',
+            version: 2,
+            migrate: (persistedState: any) => {
+                const nextState = { ...(persistedState || {}) };
+
+                if (nextState.fiscalPrinter) {
+                    nextState.fiscalPrinter = {
+                        ...nextState.fiscalPrinter,
+                        agentUrl: normalizeAgentUrl(nextState.fiscalPrinter.agentUrl),
+                    };
+                }
+
+                if (Array.isArray(nextState.kitchenPrinters)) {
+                    nextState.kitchenPrinters = nextState.kitchenPrinters.map((printer: any) => ({
+                        ...printer,
+                        agentUrl: normalizeAgentUrl(printer?.agentUrl),
+                    }));
+                }
+
+                return nextState;
+            },
             partialize: (state) => ({
                 fiscalPrinter: state.fiscalPrinter,
                 kitchenPrinters: state.kitchenPrinters,

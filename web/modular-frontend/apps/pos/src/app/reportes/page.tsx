@@ -8,7 +8,6 @@ import {
     Grid,
     Card,
     CardContent,
-    TextField,
     Button,
     Table,
     TableBody,
@@ -23,6 +22,12 @@ import {
 import { DatePicker } from '@datqbox/shared-ui';
 import dayjs, { Dayjs } from 'dayjs';
 import dynamic from 'next/dynamic';
+import {
+    usePosReporteFormasPago,
+    usePosReporteProductosTop,
+    usePosReporteResumen,
+    usePosReporteVentas,
+} from '@/hooks';
 
 const DownloadIcon = dynamic(() => import('@mui/icons-material/Download'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
@@ -35,28 +40,46 @@ const ReceiptIcon = dynamic(() => import('@mui/icons-material/Receipt'), { ssr: 
  */
 export default function PosReportesPage() {
     const [activeTab, setActiveTab] = useState(0);
-    const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs());
-    const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs());
+    const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().startOf('day'));
+    const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().endOf('day'));
+    const [appliedDesde, setAppliedDesde] = useState<string>(dayjs().format('YYYY-MM-DD'));
+    const [appliedHasta, setAppliedHasta] = useState<string>(dayjs().format('YYYY-MM-DD'));
 
-    // Datos de ejemplo (placeholder)
-    const ventasRecientes = [
-        { id: 'F-001', fecha: '2026-02-20', cliente: 'Consumidor Final', total: 125.50, estado: 'Completada' },
-        { id: 'F-002', fecha: '2026-02-20', cliente: 'Juan Pérez', total: 450.00, estado: 'Completada' },
-        { id: 'F-003', fecha: '2026-02-20', cliente: 'María García', total: 78.25, estado: 'Completada' },
-        { id: 'F-004', fecha: '2026-02-19', cliente: 'Consumidor Final', total: 230.00, estado: 'Completada' },
-        { id: 'F-005', fecha: '2026-02-19', cliente: 'Pedro López', total: 89.90, estado: 'Cancelada' },
-    ];
+    const resumenQuery = usePosReporteResumen(appliedDesde, appliedHasta);
+    const ventasQuery = usePosReporteVentas(appliedDesde, appliedHasta, 200);
+    const productosTopQuery = usePosReporteProductosTop(appliedDesde, appliedHasta, 20);
+    const formasPagoQuery = usePosReporteFormasPago(appliedDesde, appliedHasta);
 
-    const productosTop = [
-        { nombre: 'Producto A', cantidad: 45, total: 1125.00 },
-        { nombre: 'Producto B', cantidad: 32, total: 800.00 },
-        { nombre: 'Producto C', cantidad: 28, total: 560.00 },
-        { nombre: 'Producto D', cantidad: 20, total: 600.00 },
-        { nombre: 'Producto E', cantidad: 15, total: 375.00 },
-    ];
+    const resumen = resumenQuery.data ?? {
+        totalVentas: 0,
+        transacciones: 0,
+        productosVendidos: 0,
+        productosDiferentes: 0,
+        ticketPromedio: 0,
+    };
+    const ventasRecientes = ventasQuery.data ?? [];
+    const productosTop = productosTopQuery.data ?? [];
+    const formasPago = formasPagoQuery.data ?? [];
+
+    const isLoading =
+        resumenQuery.isLoading ||
+        ventasQuery.isLoading ||
+        productosTopQuery.isLoading ||
+        formasPagoQuery.isLoading;
+
+    const hasError =
+        resumenQuery.isError ||
+        ventasQuery.isError ||
+        productosTopQuery.isError ||
+        formasPagoQuery.isError;
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
+    };
+
+    const handleGenerar = () => {
+        setAppliedDesde((fechaDesde ?? dayjs()).format('YYYY-MM-DD'));
+        setAppliedHasta((fechaHasta ?? dayjs()).format('YYYY-MM-DD'));
     };
 
     return (
@@ -85,7 +108,7 @@ export default function PosReportesPage() {
                         />
                     </Grid>
                     <Grid item xs={12} sm={3}>
-                        <Button variant="contained" fullWidth>
+                        <Button variant="contained" fullWidth onClick={handleGenerar}>
                             Generar
                         </Button>
                     </Grid>
@@ -111,13 +134,13 @@ export default function PosReportesPage() {
                                 Total Ventas
                             </Typography>
                             <Typography variant="h4" fontWeight="bold">
-                                $2,450.00
+                                ${resumen.totalVentas.toFixed(2)}
                             </Typography>
-                            <Chip 
-                                icon={<TrendingUpIcon />} 
-                                label="+12% vs ayer" 
-                                color="success" 
-                                size="small" 
+                            <Chip
+                                icon={<TrendingUpIcon />}
+                                label={`Rango: ${appliedDesde} a ${appliedHasta}`}
+                                color="success"
+                                size="small"
                                 sx={{ mt: 1 }}
                             />
                         </CardContent>
@@ -130,12 +153,12 @@ export default function PosReportesPage() {
                                 Transacciones
                             </Typography>
                             <Typography variant="h4" fontWeight="bold">
-                                47
+                                {resumen.transacciones}
                             </Typography>
-                            <Chip 
-                                icon={<ReceiptIcon />} 
-                                label="Prom: $52.13" 
-                                size="small" 
+                            <Chip
+                                icon={<ReceiptIcon />}
+                                label={`Prom: $${resumen.ticketPromedio.toFixed(2)}`}
+                                size="small"
                                 sx={{ mt: 1 }}
                             />
                         </CardContent>
@@ -148,9 +171,9 @@ export default function PosReportesPage() {
                                 Productos Vendidos
                             </Typography>
                             <Typography variant="h4" fontWeight="bold">
-                                128
+                                {resumen.productosVendidos}
                             </Typography>
-                            <Chip label="15 diferentes" size="small" sx={{ mt: 1 }} />
+                            <Chip label={`${resumen.productosDiferentes} diferentes`} size="small" sx={{ mt: 1 }} />
                         </CardContent>
                     </Card>
                 </Grid>
@@ -161,13 +184,29 @@ export default function PosReportesPage() {
                                 Ticket Promedio
                             </Typography>
                             <Typography variant="h4" fontWeight="bold">
-                                $52.13
+                                ${resumen.ticketPromedio.toFixed(2)}
                             </Typography>
-                            <Chip label="Meta: $60" color="warning" size="small" sx={{ mt: 1 }} />
+                            <Chip label={`${resumen.transacciones} operaciones`} color="warning" size="small" sx={{ mt: 1 }} />
                         </CardContent>
                     </Card>
                 </Grid>
             </Grid>
+
+            {isLoading && (
+                <Paper sx={{ p: 2, mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                        Cargando reportes...
+                    </Typography>
+                </Paper>
+            )}
+
+            {hasError && (
+                <Paper sx={{ p: 2, mb: 2 }}>
+                    <Typography variant="body2" color="error">
+                        No se pudieron cargar los datos de reportes para el rango seleccionado.
+                    </Typography>
+                </Paper>
+            )}
 
             {/* Tabs con tablas */}
             <Paper sx={{ width: '100%' }}>
@@ -192,20 +231,27 @@ export default function PosReportesPage() {
                             </TableHead>
                             <TableBody>
                                 {ventasRecientes.map((venta) => (
-                                    <TableRow key={venta.id}>
-                                        <TableCell>{venta.id}</TableCell>
-                                        <TableCell>{venta.fecha}</TableCell>
+                                    <TableRow key={`${venta.id}-${venta.numFactura}`}>
+                                        <TableCell>{venta.numFactura}</TableCell>
+                                        <TableCell>{dayjs(venta.fecha).format('YYYY-MM-DD HH:mm')}</TableCell>
                                         <TableCell>{venta.cliente}</TableCell>
                                         <TableCell align="right">${venta.total.toFixed(2)}</TableCell>
                                         <TableCell>
-                                            <Chip 
-                                                label={venta.estado} 
+                                            <Chip
+                                                label={venta.estado}
                                                 color={venta.estado === 'Completada' ? 'success' : 'error'}
                                                 size="small"
                                             />
                                         </TableCell>
                                     </TableRow>
                                 ))}
+                                {ventasRecientes.length === 0 && !isLoading && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center">
+                                            Sin ventas registradas en este período.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -225,15 +271,22 @@ export default function PosReportesPage() {
                             </TableHead>
                             <TableBody>
                                 {productosTop.map((prod, idx) => (
-                                    <TableRow key={idx}>
+                                    <TableRow key={`${prod.productoId}-${idx}`}>
                                         <TableCell>{prod.nombre}</TableCell>
                                         <TableCell align="right">{prod.cantidad}</TableCell>
                                         <TableCell align="right">${prod.total.toFixed(2)}</TableCell>
                                         <TableCell align="right">
-                                            {((prod.total / 3460) * 100).toFixed(1)}%
+                                            {resumen.totalVentas > 0 ? ((prod.total / resumen.totalVentas) * 100).toFixed(1) : '0.0'}%
                                         </TableCell>
                                     </TableRow>
                                 ))}
+                                {productosTop.length === 0 && !isLoading && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            Sin productos vendidos en este período.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -241,11 +294,37 @@ export default function PosReportesPage() {
 
                 {/* Tab 3: Formas de Pago */}
                 {activeTab === 2 && (
-                    <Box sx={{ p: 3 }}>
-                        <Typography variant="body1" color="text.secondary">
-                            Reporte de formas de pago en desarrollo...
-                        </Typography>
-                    </Box>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Forma de Pago</TableCell>
+                                    <TableCell align="right">Transacciones</TableCell>
+                                    <TableCell align="right">Total</TableCell>
+                                    <TableCell align="right">% del Total</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {formasPago.map((row, idx) => (
+                                    <TableRow key={`${row.metodoPago}-${idx}`}>
+                                        <TableCell>{row.metodoPago}</TableCell>
+                                        <TableCell align="right">{row.transacciones}</TableCell>
+                                        <TableCell align="right">${row.total.toFixed(2)}</TableCell>
+                                        <TableCell align="right">
+                                            {resumen.totalVentas > 0 ? ((row.total / resumen.totalVentas) * 100).toFixed(1) : '0.0'}%
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {formasPago.length === 0 && !isLoading && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            Sin movimientos por forma de pago en este período.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 )}
             </Paper>
         </Box>

@@ -77,7 +77,7 @@ export function PosEsperaDrawer({ open, onClose, onRecuperado, onError }: PosEsp
             PaperProps={{
                 sx: {
                     width: { xs: '100%', sm: 420 },
-                    bgcolor: '#fafafa',
+                    bgcolor: 'background.default',
                 },
             }}
         >
@@ -114,10 +114,10 @@ export function PosEsperaDrawer({ open, onClose, onRecuperado, onError }: PosEsp
                                 {idx > 0 && <Divider />}
                                 <ListItem
                                     sx={{
-                                        bgcolor: 'white',
+                                        bgcolor: 'background.paper',
                                         borderRadius: 2,
                                         mb: 1,
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                                        boxShadow: 1,
                                         flexDirection: 'column',
                                         alignItems: 'stretch',
                                         py: 1.5,
@@ -200,7 +200,7 @@ export function PosEsperaDrawer({ open, onClose, onRecuperado, onError }: PosEsp
             </Box>
 
             {/* Footer refresh */}
-            <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                 <Button
                     fullWidth
                     variant="outlined"

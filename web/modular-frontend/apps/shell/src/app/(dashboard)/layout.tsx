@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { OdooLayout } from '@datqbox/shared-ui';
 import { useAuth } from '@datqbox/shared-auth';
-import { buildNavigation } from '../layout';
+import { buildNavigation } from '../../lib/navigation';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();

@@ -8,7 +8,9 @@
   ],
   "scripts": {
     "dev:all": "npx concurrently \"npm run dev:shell\" \"npm run dev:contabilidad\" \"npm run dev:nomina\" \"npm run dev:pos\" \"npm run dev:bancos\" \"npm run dev:inventario\" \"npm run dev:ventas\" \"npm run dev:compras\" \"npm run dev:restaurant\" \"npm run dev:ecommerce\" \"npm run dev:auditoria\"",
+    "dev:all:3011": "npx concurrently \"npm run dev:shell:3011\" \"npm run dev:contabilidad\" \"npm run dev:nomina\" \"npm run dev:pos\" \"npm run dev:bancos\" \"npm run dev:inventario\" \"npm run dev:ventas\" \"npm run dev:compras\" \"npm run dev:restaurant\" \"npm run dev:ecommerce\" \"npm run dev:auditoria\"",
     "dev:shell": "npm --workspace @datqbox/shell run dev",
+    "dev:shell:3011": "npm --workspace @datqbox/shell run dev -- -p 3011",
     "build:shell": "npm --workspace @datqbox/shell run build",
     "start:shell": "npm --workspace @datqbox/shell run start",
     "dev:nomina": "npm --workspace @datqbox/nomina run dev",

@@ -34,15 +34,16 @@ export function PosNumpad({
     const getModeButtonStyle = (mode: 'qty' | 'discount' | 'price') => {
         const isActive = activeMode === mode;
         return {
-            bgcolor: isActive ? '#e3f2fd' : '#fff',
-            color: isActive ? '#1976d2' : 'text.primary',
-            borderLeft: '1px solid #e0e0e0',
-            borderBottom: '1px solid #e0e0e0',
+            bgcolor: isActive ? 'action.selected' : 'background.paper',
+            color: isActive ? 'primary.main' : 'text.primary',
+            borderLeft: '1px solid',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
             fontWeight: isActive ? 'bold' : 'normal',
             fontSize: { xs: '0.8rem', md: '1rem' },
             minHeight: { xs: 40, md: 'auto' },
             '&:hover': {
-                bgcolor: isActive ? '#bbdefb' : '#f5f5f5',
+                bgcolor: 'action.hover',
             },
         };
     };
@@ -59,15 +60,16 @@ export function PosNumpad({
                             onClick={() => onNumberPress(num)}
                             sx={{
                                 borderRadius: 0,
-                                borderRight: '1px solid #e0e0e0',
-                                borderBottom: '1px solid #e0e0e0',
+                                borderRight: '1px solid',
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
                                 fontSize: { xs: '1rem', md: '1.25rem' },
                                 fontWeight: 'medium',
-                                bgcolor: '#fff',
+                                bgcolor: 'background.paper',
                                 color: 'text.primary',
                                 minHeight: { xs: 40, md: 56 },
                                 '&:hover': {
-                                    bgcolor: '#f5f5f5',
+                                    bgcolor: 'action.hover',
                                 },
                             }}
                         >
@@ -100,13 +102,14 @@ export function PosNumpad({
                         onClick={onBackspace}
                         sx={{
                             flexGrow: 1,
-                            borderLeft: '1px solid #e0e0e0',
-                            borderBottom: '1px solid #e0e0e0',
+                            borderLeft: '1px solid',
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
                             borderRadius: 0,
-                            bgcolor: '#fff',
+                            bgcolor: 'background.paper',
                             color: 'error.main',
                             '&:hover': {
-                                bgcolor: '#ffebee',
+                                bgcolor: 'action.hover',
                             },
                         }}
                     >

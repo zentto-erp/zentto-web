@@ -212,6 +212,7 @@ export async function createApp() {
 
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
+  app.use("/api/v1/config", configRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
   app.use("/api/v1", requireJwt);

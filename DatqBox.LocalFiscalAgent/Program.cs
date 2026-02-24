@@ -264,7 +264,10 @@ app.MapGet("/api/perifericos/balanza", (string puerto) =>
         }
         */
 
-        return Results.Ok(new { Success = true, Peso = 2.450, Unidad = "KG", Hardware = puerto });
+        var peso = 0.0;
+        _ = double.TryParse(pesoDetectado, out peso);
+
+        return Results.Ok(new { Success = true, Peso = peso, Unidad = "KG", Hardware = puerto });
     }
     catch (Exception ex)
     {

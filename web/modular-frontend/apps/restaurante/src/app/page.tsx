@@ -63,10 +63,10 @@ export default function RestaurantePage() {
 
     // Sincronizar estado: si la mesa pasa a libre, deseleccionar
     useEffect(() => {
-        if (mesaSeleccionada && mesaSeleccionada.estado === 'libre') {
+        if (mesaSeleccionada && mesaSeleccionada.estado === 'libre' && !dialogCliente) {
             setMesaSeleccionadaId(null);
         }
-    }, [mesaSeleccionada]);
+    }, [mesaSeleccionada, dialogCliente]);
 
     const showMsg = (message: string, severity: 'success' | 'error' | 'warning' = 'success') => {
         setSnackbar({ open: true, message, severity });

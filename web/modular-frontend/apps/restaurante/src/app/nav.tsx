@@ -13,17 +13,40 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): any[] 
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('restaurante') || has('pos')) {
-        nav.push({ 
-            kind: 'page', 
-            segment: '', 
-            title: 'Salón / Mesas', 
-            icon: <TableRestaurantIcon /> 
+        nav.push({
+            kind: 'page',
+            segment: '',
+            title: 'Salón / Mesas',
+            icon: <TableRestaurantIcon />
         });
-        nav.push({ 
-            kind: 'page', 
-            segment: 'cocina', 
-            title: 'Cocina / Pedidos', 
-            icon: <KitchenIcon /> 
+        nav.push({
+            kind: 'page',
+            segment: 'cocina',
+            title: 'Cocina / Pedidos',
+            icon: <KitchenIcon />
+        });
+    }
+
+    if (isAdmin) {
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'header', title: 'CONFIGURACIÓN' });
+        nav.push({
+            kind: 'page',
+            segment: 'admin/ambientes',
+            title: 'Salones y Mesas',
+            icon: <DashboardIcon />
+        });
+        nav.push({
+            kind: 'page',
+            segment: 'admin/productos',
+            title: 'Platos y Bebidas',
+            icon: <TableRestaurantIcon />
+        });
+        nav.push({
+            kind: 'page',
+            segment: 'admin/recetas',
+            title: 'Recetas e Insumos',
+            icon: <SettingsIcon />
         });
     }
 

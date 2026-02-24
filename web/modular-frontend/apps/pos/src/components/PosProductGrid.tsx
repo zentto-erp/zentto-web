@@ -30,9 +30,9 @@ export function PosProductGrid({ products, onProductClick, selectedCategory }: P
 
     return (
         <Box sx={{ height: '100%', overflow: 'auto', p: 2 }}>
-            <Grid container spacing={1.5}>
+            <Grid container spacing={1}>
                 {filteredProducts.map((product) => (
-                    <Grid item xs={6} sm={4} md={3} lg={2.4} key={product.id}>
+                    <Grid item xs={6} sm={4} md={2.4} lg={2} key={product.id}>
                         <Paper
                             onClick={() => onProductClick(product)}
                             elevation={1}
@@ -57,8 +57,8 @@ export function PosProductGrid({ products, onProductClick, selectedCategory }: P
                             <Box
                                 sx={{
                                     width: '100%',
-                                    aspectRatio: '1',
-                                    bgcolor: '#f5f5f5',
+                                    aspectRatio: '1.18',
+                                    bgcolor: 'action.hover',
                                     position: 'relative',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -78,7 +78,7 @@ export function PosProductGrid({ products, onProductClick, selectedCategory }: P
                                         sx={{
                                             width: '60%',
                                             height: '60%',
-                                            bgcolor: '#e0e0e0',
+                                            bgcolor: 'action.selected',
                                             borderRadius: 1,
                                             display: 'flex',
                                             alignItems: 'center',
@@ -93,24 +93,25 @@ export function PosProductGrid({ products, onProductClick, selectedCategory }: P
                             </Box>
 
                             {/* Info del Producto */}
-                            <Box sx={{ p: 1.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Box sx={{ p: 1, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                                 <Typography
                                     variant="body2"
                                     fontWeight="medium"
                                     sx={{
-                                        lineHeight: 1.3,
-                                        mb: 0.5,
+                                        lineHeight: 1.25,
+                                        mb: 0.25,
                                         display: '-webkit-box',
                                         WebkitLineClamp: 2,
                                         WebkitBoxOrient: 'vertical',
                                         overflow: 'hidden',
-                                        minHeight: '2.6em',
+                                        minHeight: '2.45em',
+                                        fontSize: '0.75rem',
                                     }}
                                 >
                                     {product.nombre}
                                 </Typography>
                                 <Typography
-                                    variant="body2"
+                                    variant="caption"
                                     fontWeight="bold"
                                     color="primary"
                                     sx={{ mt: 'auto' }}

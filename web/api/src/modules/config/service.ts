@@ -1,6 +1,10 @@
 import * as cheerio from 'cheerio';
 import { getPool, sql } from "../../db/mssql.js";
 
+// Necesario ya que la web del Banco Central de Venezuela (bcv.org.ve)
+// frecuentemente tiene errores en su cadena de certificados SSL (UNABLE_TO_VERIFY_LEAF_SIGNATURE).
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 interface TasasBCV {
     USD: number;
     EUR: number;

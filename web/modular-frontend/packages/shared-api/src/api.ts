@@ -3,7 +3,7 @@
 import { getSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 
 async function getAuthToken(): Promise<string | null> {
   try {

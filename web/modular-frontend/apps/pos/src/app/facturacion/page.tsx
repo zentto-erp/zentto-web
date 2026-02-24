@@ -33,7 +33,7 @@ import {
     PosEsperaDrawer,
     type Customer,
 } from '@/components';
-import { useBuscarProductos, useBarcodeScanner } from '@/hooks';
+import { useBuscarProductos, useCategoriasPOS, useBarcodeScanner } from '@/hooks';
 import { usePosStore } from '@datqbox/shared-api';
 
 // Iconos dinámicos
@@ -42,14 +42,7 @@ const DeleteSweepIcon = dynamic(() => import('@mui/icons-material/DeleteSweep'),
 const PauseCircleIcon = dynamic(() => import('@mui/icons-material/PauseCircle'), { ssr: false });
 const AccessTimeIcon = dynamic(() => import('@mui/icons-material/AccessTime'), { ssr: false });
 
-// Categorías de ejemplo
-const CATEGORIES = [
-    { id: 'escritorios', nombre: 'Escritorios' },
-    { id: 'sillas', nombre: 'Sillas' },
-    { id: 'accesorios', nombre: 'Accesorios' },
-    { id: 'tecnologia', nombre: 'Tecnología' },
-    { id: 'papeleria', nombre: 'Papelería' },
-];
+const MAX_CATEGORY_TABS = 24;
 
 export default function PosFacturacionPage() {
     // ─── State local (UI only) ───
@@ -58,6 +51,7 @@ export default function PosFacturacionPage() {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [numpadValue, setNumpadValue] = useState('');
     const [numpadMode, setNumpadMode] = useState<'qty' | 'discount' | 'price'>('qty');
+    const [numpadReplaceNext, setNumpadReplaceNext] = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [esperaDrawerOpen, setEsperaDrawerOpen] = useState(false);
     const [esperaMotiveDialog, setEsperaMotiveDialog] = useState(false);
@@ -101,6 +95,55 @@ export default function PosFacturacionPage() {
 
     // ─── API Data ───
     const { data: productos = [] } = useBuscarProductos(searchTerm);
+    const { data: categoriasApi = [] } = useCategoriasPOS();
+
+    const categories = useMemo(() => {
+        const fromApi = (categoriasApi ?? [])
+            .map((category: any) => ({
+                id: String(category?.nombre ?? '').trim(),
+                nombre: String(category?.nombre ?? '').trim(),
+                productCount: Number(category?.productCount ?? 0),
+            }))
+            .filter((category) => category.id.length > 0);
+
+        const dedup = new Map<string, { id: string; nombre: string; productCount: number }>();
+        for (const category of fromApi) {
+            const key = category.nombre.toLowerCase();
+            const existing = dedup.get(key);
+            if (!existing || category.productCount > existing.productCount) {
+                dedup.set(key, category);
+            }
+        }
+
+        const apiSorted = Array.from(dedup.values())
+            .sort((a, b) => b.productCount - a.productCount || a.nombre.localeCompare(b.nombre))
+            .slice(0, MAX_CATEGORY_TABS)
+            .map(({ id, nombre }) => ({ id, nombre }));
+
+        if (apiSorted.length > 0) {
+            return apiSorted;
+        }
+
+        const fallbackFromProducts = Array.from(
+            new Set(
+                productos
+                    .map((product) => String(product.categoria ?? '').trim())
+                    .filter((name) => name.length > 0)
+            )
+        )
+            .slice(0, MAX_CATEGORY_TABS)
+            .map((name) => ({ id: name, nombre: name }));
+
+        return fallbackFromProducts;
+    }, [categoriasApi, productos]);
+
+    React.useEffect(() => {
+        if (!selectedCategory) return;
+        const exists = categories.some((category) => category.id === selectedCategory);
+        if (!exists) {
+            setSelectedCategory(null);
+        }
+    }, [categories, selectedCategory]);
 
     // ─── Barcode Scanner ───
     useBarcodeScanner((barcode) => {
@@ -128,6 +171,46 @@ export default function PosFacturacionPage() {
         return productos.filter(p => !selectedCategory || p.categoria === selectedCategory);
     }, [productos, selectedCategory]);
 
+    const selectedCartItem = useMemo(
+        () => cart.find((item) => item.id === selectedItemId) ?? null,
+        [cart, selectedItemId]
+    );
+
+    const getNumpadValueFromItem = useCallback((mode: 'qty' | 'discount' | 'price', itemId: string | null) => {
+        if (!itemId) return '';
+        const item = cart.find((cartItem) => cartItem.id === itemId);
+        if (!item) return '';
+
+        switch (mode) {
+            case 'qty': return String(item.cantidad ?? '');
+            case 'price': return String(item.precio ?? '');
+            case 'discount': return String(item.descuento ?? 0);
+            default: return '';
+        }
+    }, [cart]);
+
+    const applyNumpadValueToSelectedItem = useCallback((rawValue: string) => {
+        if (!selectedItemId || !rawValue || rawValue === '-' || rawValue === '+') return;
+
+        const parsed = parseFloat(rawValue);
+        if (Number.isNaN(parsed)) return;
+
+        if (numpadMode === 'qty') {
+            if (parsed > 0) updateCartItem(selectedItemId, { cantidad: parsed });
+            return;
+        }
+
+        if (numpadMode === 'price') {
+            if (parsed >= 0) updateCartItem(selectedItemId, { precio: parsed });
+            return;
+        }
+
+        if (numpadMode === 'discount') {
+            const normalized = Math.max(0, Math.min(parsed, 100));
+            updateCartItem(selectedItemId, { descuento: normalized });
+        }
+    }, [numpadMode, selectedItemId, updateCartItem]);
+
     // ═══════════════════════════════════════════════════════════
     // AGREGAR PRODUCTO — Solo Store (sin BD)
     // ═══════════════════════════════════════════════════════════
@@ -146,26 +229,49 @@ export default function PosFacturacionPage() {
 
     // ─── Teclado numérico ───
     const handleNumberPress = (num: string) => {
+        if (!selectedItemId) return;
+
         if (num === '+/-') {
-            setNumpadValue(prev => prev.startsWith('-') ? prev.slice(1) : '-' + prev);
+            const toggled = numpadValue.startsWith('-') ? numpadValue.slice(1) : `-${numpadValue || '0'}`;
+            setNumpadValue(toggled);
+            setNumpadReplaceNext(false);
+            applyNumpadValueToSelectedItem(toggled);
             return;
         }
-        const newValue = numpadValue + num;
+
+        if (num === '.' && numpadValue.includes('.') && !numpadReplaceNext) return;
+
+        const base = numpadReplaceNext ? '' : numpadValue;
+        const newValue = `${base}${num}`;
         setNumpadValue(newValue);
-        if (selectedItemId) {
-            const numVal = parseFloat(newValue);
-            if (!isNaN(numVal)) {
-                switch (numpadMode) {
-                    case 'qty': updateCartItem(selectedItemId, { cantidad: numVal }); break;
-                    case 'price': updateCartItem(selectedItemId, { precio: numVal }); break;
-                    case 'discount': updateCartItem(selectedItemId, { descuento: numVal }); break;
-                }
-            }
-        }
+        setNumpadReplaceNext(false);
+        applyNumpadValueToSelectedItem(newValue);
     };
 
-    const handleBackspace = () => setNumpadValue(prev => prev.slice(0, -1));
-    const handleClear = () => setNumpadValue('');
+    const handleBackspace = () => {
+        if (!selectedItemId) return;
+        const newValue = numpadValue.slice(0, -1);
+        setNumpadValue(newValue);
+        setNumpadReplaceNext(false);
+        applyNumpadValueToSelectedItem(newValue);
+    };
+
+    const handleClear = () => {
+        setNumpadValue('');
+        setNumpadReplaceNext(true);
+    };
+
+    const handleSelectItem = (itemId: string) => {
+        setSelectedItemId(itemId);
+        setNumpadValue(getNumpadValueFromItem(numpadMode, itemId));
+        setNumpadReplaceNext(true);
+    };
+
+    const handleModeChange = (mode: 'qty' | 'discount' | 'price') => {
+        setNumpadMode(mode);
+        setNumpadValue(getNumpadValueFromItem(mode, selectedItemId));
+        setNumpadReplaceNext(true);
+    };
 
     // ═══════════════════════════════════════════════════════════
     // FACTURAR — Imprimir fiscal + Guardar en BD + Limpiar
@@ -207,7 +313,7 @@ export default function PosFacturacionPage() {
             display: 'flex',
             flexDirection: isMobileLayout ? 'column' : 'row',
             overflow: 'hidden',
-            bgcolor: '#f5f5f5',
+            bgcolor: 'background.default',
             pb: isMobileLayout ? 8 : 0,
         }}>
             {/* Syncing bar */}
@@ -215,16 +321,17 @@ export default function PosFacturacionPage() {
 
             {/* Panel Izquierdo - Carrito y Controles */}
             <Box sx={{
-                width: isMobileLayout ? '100%' : 440,
-                minWidth: isMobileLayout ? 0 : 400,
+                width: isMobileLayout ? '100%' : 470,
+                minWidth: isMobileLayout ? 0 : 430,
                 display: isMobileLayout ? (showMobileMenu ? 'none' : 'flex') : 'flex',
                 flexDirection: 'column',
                 borderRight: isMobileLayout ? 'none' : '1px solid #e0e0e0',
-                bgcolor: '#fff',
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
                 height: '100%',
             }}>
                 {/* Header del Carrito con Cliente */}
-                <Paper sx={{ p: 2, borderRadius: 0, borderBottom: '1px solid #e0e0e0' }}>
+                <Paper sx={{ p: 2, borderRadius: 0, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <PersonIcon color="action" />
@@ -298,19 +405,19 @@ export default function PosFacturacionPage() {
                         puntosGanados={Math.floor(totalConImpuesto / 10)}
                         puntosTotales={1250}
                         selectedItemId={selectedItemId}
-                        onSelectItem={setSelectedItemId}
+                        onSelectItem={handleSelectItem}
                     />
                 </Box>
 
                 {/* Numpad */}
-                <Box sx={{ height: { xs: 180, md: 280 }, borderTop: '1px solid #e0e0e0' }}>
+                <Box sx={{ height: { xs: 180, md: 280 }, borderTop: '1px solid', borderColor: 'divider' }}>
                     <PosNumpad
                         onNumberPress={handleNumberPress}
                         onBackspace={handleBackspace}
                         onClear={handleClear}
-                        onQuantity={() => setNumpadMode('qty')}
-                        onDiscount={() => setNumpadMode('discount')}
-                        onPrice={() => setNumpadMode('price')}
+                        onQuantity={() => handleModeChange('qty')}
+                        onDiscount={() => handleModeChange('discount')}
+                        onPrice={() => handleModeChange('price')}
                         activeMode={numpadMode}
                     />
                 </Box>
@@ -336,7 +443,7 @@ export default function PosFacturacionPage() {
                 <PosHeader
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
-                    categories={CATEGORIES}
+                    categories={categories}
                     selectedCategory={selectedCategory}
                     onCategorySelect={setSelectedCategory}
                     cajaName={caja.nombre}
@@ -431,10 +538,16 @@ export default function PosFacturacionPage() {
                             + Ver Menú de Productos
                         </Button>
                     ) : (
-                        <Box sx={{ display: 'flex', width: '100%', borderTop: '1px solid #e0e0e0' }}>
+                        <Box sx={{ display: 'flex', width: '100%', borderTop: '1px solid', borderColor: 'divider' }}>
                             <Button
                                 variant="contained"
-                                sx={{ flex: 1, borderRadius: 0, bgcolor: '#6B4C6A', color: 'white', '&:hover': { bgcolor: '#513751' } }}
+                                sx={{
+                                    flex: 1,
+                                    borderRadius: 0,
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    '&:hover': { bgcolor: 'primary.dark' },
+                                }}
                                 onClick={() => {
                                     setShowMobileMenu(false);
                                     setPaymentModal(true);
@@ -445,7 +558,7 @@ export default function PosFacturacionPage() {
                                 <Typography sx={{ fontSize: '1rem' }}>${totalConImpuesto.toFixed(2)}</Typography>
                             </Button>
                             <Button
-                                sx={{ flex: 0.5, borderRadius: 0, bgcolor: '#f5f5f5', color: 'text.primary', borderLeft: '1px solid #e0e0e0' }}
+                                sx={{ flex: 0.5, borderRadius: 0, bgcolor: 'action.hover', color: 'text.primary', borderLeft: '1px solid', borderColor: 'divider' }}
                                 onClick={() => setShowMobileMenu(false)}
                             >
                                 <Box sx={{ textAlign: 'center' }}>
@@ -455,7 +568,7 @@ export default function PosFacturacionPage() {
                             </Button>
                             {ventasEnEspera.length > 0 && (
                                 <Button
-                                    sx={{ flex: 0.3, borderRadius: 0, bgcolor: '#FFF3E0', color: '#E65100', borderLeft: '1px solid #e0e0e0' }}
+                                    sx={{ flex: 0.3, borderRadius: 0, bgcolor: 'warning.light', color: 'warning.dark', borderLeft: '1px solid', borderColor: 'divider' }}
                                     onClick={() => { setShowMobileMenu(false); setEsperaDrawerOpen(true); }}
                                 >
                                     <Badge badgeContent={ventasEnEspera.length} color="error">

@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { usePosStore, calcTotals } from '@datqbox/shared-api';
+import { usePosStore, calcTotals, apiGet, apiPost } from '@datqbox/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS — Modelo de datos del Restaurante
@@ -189,9 +189,9 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
 
             // Paralelo: mesas + ambientes + productos
             const [mesasRes, ambRes, prodsRes] = await Promise.all([
-                fetch(`${API_BASE}/v1/restaurante/mesas`).then(r => r.ok ? r.json() : { rows: [] }).catch(() => ({ rows: [] })),
-                fetch(`${API_BASE}/v1/restaurante/admin/ambientes`).then(r => r.ok ? r.json() : { rows: [] }).catch(() => ({ rows: [] })),
-                fetch(`${API_BASE}/v1/restaurante/admin/productos`).then(r => r.ok ? r.json() : { rows: [] }).catch(() => ({ rows: [] })),
+                apiGet(`/v1/restaurante/mesas`).catch(() => ({ rows: [] })),
+                apiGet(`/v1/restaurante/admin/ambientes`).catch(() => ({ rows: [] })),
+                apiGet(`/v1/restaurante/admin/productos`).catch(() => ({ rows: [] })),
             ]);
 
             const mesas: Mesa[] = (mesasRes.rows ?? []).map((r: any) => ({
@@ -209,38 +209,35 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             for (const mesa of mesas) {
                 if (mesa.estado === 'ocupada' || mesa.estado === 'cuenta') {
                     try {
-                        const pedidoRes = await fetch(`${API_BASE}/v1/restaurante/mesas/${mesa.id}/pedido`);
-                        if (pedidoRes.ok) {
-                            const data = await pedidoRes.json();
-                            if (data.pedido) {
-                                mesa.pedidoActual = {
+                        const data = await apiGet(`/v1/restaurante/mesas/${mesa.id}/pedido`);
+                        if (data && data.pedido) {
+                            mesa.pedidoActual = {
+                                id: uuidv4(),
+                                dbId: data.pedido.id,
+                                mesaId: mesa.id,
+                                clienteNombre: data.pedido.clienteNombre,
+                                items: (data.items ?? []).map((i: any) => ({
                                     id: uuidv4(),
-                                    dbId: data.pedido.id,
-                                    mesaId: mesa.id,
-                                    clienteNombre: data.pedido.clienteNombre,
-                                    items: (data.items ?? []).map((i: any) => ({
-                                        id: uuidv4(),
-                                        dbId: i.id,
-                                        productoId: i.productoId,
-                                        nombre: i.nombre?.trim(),
-                                        cantidad: Number(i.cantidad),
-                                        precioUnitario: Number(i.precioUnitario),
-                                        subtotal: Number(i.subtotal),
-                                        estado: i.estado || 'entregado',
-                                        esCompuesto: Boolean(i.esCompuesto),
-                                        enviadoACocina: Boolean(i.enviadoACocina),
-                                        horaEnvio: i.horaEnvio ? new Date(i.horaEnvio) : undefined,
-                                        comentarios: i.comentarios,
-                                    })),
-                                    estado: data.pedido.estado || 'abierto',
-                                    fechaApertura: new Date(data.pedido.fechaApertura),
-                                    total: Number(data.pedido.total ?? 0),
-                                    subtotal: Number(data.pedido.subtotal ?? 0),
-                                    impuestos: Number(data.pedido.impuestos ?? 0),
-                                    servicio: Number(data.pedido.servicio ?? 0),
-                                    persistido: true,
-                                } as any;
-                            }
+                                    dbId: i.id,
+                                    productoId: i.productoId,
+                                    nombre: i.nombre?.trim(),
+                                    cantidad: Number(i.cantidad),
+                                    precioUnitario: Number(i.precioUnitario),
+                                    subtotal: Number(i.subtotal),
+                                    estado: i.estado || 'entregado',
+                                    esCompuesto: Boolean(i.esCompuesto),
+                                    enviadoACocina: Boolean(i.enviadoACocina),
+                                    horaEnvio: i.horaEnvio ? new Date(i.horaEnvio) : undefined,
+                                    comentarios: i.comentarios,
+                                })),
+                                estado: data.pedido.estado || 'abierto',
+                                fechaApertura: new Date(data.pedido.fechaApertura),
+                                total: Number(data.pedido.total ?? 0),
+                                subtotal: Number(data.pedido.subtotal ?? 0),
+                                impuestos: Number(data.pedido.impuestos ?? 0),
+                                servicio: Number(data.pedido.servicio ?? 0),
+                                persistido: true,
+                            } as any;
                         }
                     } catch { /* mesa sin pedido */ }
                 }
@@ -472,16 +469,11 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
 
             // ─── (a) Si el pedido no existe en BD, crearlo ───
             if (!pedido.persistido || !dbPedidoId) {
-                const abrirRes = await fetch(`${API_BASE}/v1/restaurante/pedidos/abrir`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        mesaId: Number(mesaId),
-                        clienteNombre: pedido.cliente?.nombre,
-                        clienteRif: pedido.cliente?.cedula,
-                    }),
+                const abrirData = await apiPost(`/v1/restaurante/pedidos/abrir`, {
+                    mesaId: Number(mesaId),
+                    clienteNombre: pedido.cliente?.nombre,
+                    clienteRif: pedido.cliente?.cedula,
                 });
-                const abrirData = await abrirRes.json();
                 if (!abrirData.ok) {
                     set({ syncing: false });
                     return { success: false, message: `Error abriendo pedido: ${abrirData.error || 'desconocido'}` };
@@ -491,30 +483,23 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
 
             // ─── (b) Persistir cada item nuevo ───
             for (const item of itemsPendientes) {
-                const itemRes = await fetch(`${API_BASE}/v1/restaurante/pedidos/item`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        pedidoId: dbPedidoId,
-                        productoId: item.productoId,
-                        nombre: item.nombre,
-                        cantidad: item.cantidad,
-                        precioUnitario: item.precioUnitario,
-                        esCompuesto: item.esCompuesto,
-                        componentes: item.componentes ? JSON.stringify(item.componentes) : undefined,
-                        comentarios: item.comentarios,
-                    }),
+                const itemData = await apiPost(`/v1/restaurante/pedidos/item`, {
+                    pedidoId: dbPedidoId,
+                    productoId: item.productoId,
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precioUnitario: item.precioUnitario,
+                    esCompuesto: item.esCompuesto,
+                    componentes: item.componentes ? JSON.stringify(item.componentes) : undefined,
+                    comentarios: item.comentarios,
                 });
-                const itemData = await itemRes.json();
                 if (itemData.ok) {
                     item.dbId = itemData.itemId;
                 }
             }
 
             // ─── (c) Marcar como enviado en BD ───
-            await fetch(`${API_BASE}/v1/restaurante/pedidos/${dbPedidoId}/comanda`, {
-                method: 'POST',
-            });
+            await apiPost(`/v1/restaurante/pedidos/${dbPedidoId}/comanda`, {});
 
             // ─── (d) Imprimir comanda en cocina ───
             const printResult = await usePosStore.getState().printKitchenOrder('Cocina Principal', {
@@ -611,25 +596,19 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             const sinEnviar = mesa.pedidoActual.items.filter(i => !i.enviadoACocina);
             if (sinEnviar.length > 0 && dbPedidoId) {
                 for (const item of sinEnviar) {
-                    await fetch(`${API_BASE}/v1/restaurante/pedidos/item`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            pedidoId: dbPedidoId,
-                            productoId: item.productoId,
-                            nombre: item.nombre,
-                            cantidad: item.cantidad,
-                            precioUnitario: item.precioUnitario,
-                        }),
+                    await apiPost(`/v1/restaurante/pedidos/item`, {
+                        pedidoId: dbPedidoId,
+                        productoId: item.productoId,
+                        nombre: item.nombre,
+                        cantidad: item.cantidad,
+                        precioUnitario: item.precioUnitario,
                     });
                 }
             }
 
             // Cerrar pedido en BD
             if (dbPedidoId) {
-                await fetch(`${API_BASE}/v1/restaurante/pedidos/${dbPedidoId}/cerrar`, {
-                    method: 'POST',
-                });
+                await apiPost(`/v1/restaurante/pedidos/${dbPedidoId}/cerrar`, {});
             }
 
             // Limpiar mesa en store

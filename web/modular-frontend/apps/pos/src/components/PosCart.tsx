@@ -55,7 +55,7 @@ export function PosCart({
     onSelectItem,
 }: PosCartProps) {
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#fff' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper' }}>
             {/* Lista de Items del Carrito */}
             <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
                 {items.length === 0 ? (
@@ -85,14 +85,23 @@ export function PosCart({
                                 mb: 0.5,
                                 borderRadius: 1,
                                 cursor: 'pointer',
-                                bgcolor: selectedItemId === item.id ? '#e3f2fd' : index % 2 === 0 ? '#f5f5f5' : 'transparent',
+                                bgcolor: selectedItemId === item.id ? 'action.selected' : index % 2 === 0 ? 'action.hover' : 'transparent',
                                 '&:hover': {
-                                    bgcolor: selectedItemId === item.id ? '#e3f2fd' : '#eeeeee',
+                                    bgcolor: selectedItemId === item.id ? 'action.selected' : 'action.hover',
                                 },
                             }}
                         >
-                            <Box sx={{ flexGrow: 1, pr: 1 }}>
-                                <Typography variant="body2" fontWeight="medium" noWrap>
+                            <Box sx={{ flexGrow: 1, pr: 1, minWidth: 0 }}>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight="medium"
+                                    sx={{
+                                        whiteSpace: 'normal',
+                                        wordBreak: 'break-word',
+                                        overflowWrap: 'anywhere',
+                                        lineHeight: 1.2,
+                                    }}
+                                >
                                     {item.nombre}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
@@ -125,7 +134,7 @@ export function PosCart({
             </Box>
 
             {/* Sección de Totales */}
-            <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#fafafa' }}>
+            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="body2">Subtotal:</Typography>
                     <Typography variant="body2">${subtotal.toFixed(2)}</Typography>
@@ -145,7 +154,7 @@ export function PosCart({
             {/* Puntos de Fidelidad (Eliminado a petición del usuario) */}
 
             {/* Botones de Acción */}
-            <Box sx={{ display: 'flex', borderTop: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', borderTop: '1px solid', borderColor: 'divider' }}>
                 <Button
                     startIcon={<UndoIcon />}
                     sx={{
@@ -153,7 +162,7 @@ export function PosCart({
                         py: 1.5,
                         borderRadius: 0,
                         color: 'text.primary',
-                        '&:hover': { bgcolor: '#f5f5f5' }
+                        '&:hover': { bgcolor: 'action.hover' }
                     }}
                 >
                     Reembolso
@@ -166,7 +175,7 @@ export function PosCart({
                         py: 1.5,
                         borderRadius: 0,
                         color: 'text.primary',
-                        '&:hover': { bgcolor: '#f5f5f5' }
+                        '&:hover': { bgcolor: 'action.hover' }
                     }}
                 >
                     Nota Cliente
@@ -179,7 +188,7 @@ export function PosCart({
                         py: 1.5,
                         borderRadius: 0,
                         color: 'text.primary',
-                        '&:hover': { bgcolor: '#f5f5f5' }
+                        '&:hover': { bgcolor: 'action.hover' }
                     }}
                 >
                     Código

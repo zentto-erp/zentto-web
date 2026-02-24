@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usePosStore } from '@datqbox/shared-api';
+import { apiGet, usePosStore } from '@datqbox/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS
@@ -51,11 +51,39 @@ export interface FacturaPayload {
     cajaId: string;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// URL BASE DE LA API
-// ═══════════════════════════════════════════════════════════════
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-const POS_API = `${API_BASE}/v1/pos`;
+export interface PosReporteResumen {
+    totalVentas: number;
+    transacciones: number;
+    productosVendidos: number;
+    productosDiferentes: number;
+    ticketPromedio: number;
+}
+
+export interface PosReporteVenta {
+    id: number;
+    numFactura: string;
+    fecha: string;
+    cliente: string;
+    total: number;
+    estado: string;
+    metodoPago?: string;
+}
+
+export interface PosReporteProductoTop {
+    productoId: string;
+    codigo: string;
+    nombre: string;
+    cantidad: number;
+    total: number;
+}
+
+export interface PosReporteFormaPago {
+    metodoPago: string;
+    transacciones: number;
+    total: number;
+}
+
+const POS_API_BASE = '/v1/pos';
 
 // ═══════════════════════════════════════════════════════════════
 // HOOKS - PRODUCTOS (API REAL)
@@ -65,13 +93,10 @@ export function useBuscarProductos(filtro?: string) {
     return useQuery({
         queryKey: ['pos', 'productos', filtro],
         queryFn: async (): Promise<Producto[]> => {
-            const params = new URLSearchParams();
-            if (filtro) params.set('search', filtro);
-            params.set('limit', '100');
-
-            const res = await fetch(`${POS_API}/productos?${params.toString()}`);
-            if (!res.ok) throw new Error('Error al cargar productos');
-            const data = await res.json();
+            const data = await apiGet(`${POS_API_BASE}/productos`, {
+                search: filtro,
+                limit: 100,
+            });
             return (data.rows ?? data ?? []).map((row: any) => ({
                 id: row.id?.toString().trim() ?? '',
                 codigo: row.codigo?.toString().trim() ?? row.id?.toString().trim() ?? '',
@@ -96,12 +121,9 @@ export function useBuscarClientes(searchTerm: string) {
     return useQuery({
         queryKey: ['pos', 'clientes', searchTerm],
         queryFn: async (): Promise<Cliente[]> => {
-            const params = new URLSearchParams();
-            if (searchTerm) params.set('search', searchTerm);
-
-            const res = await fetch(`${POS_API}/clientes?${params.toString()}`);
-            if (!res.ok) throw new Error('Error al cargar clientes');
-            const data = await res.json();
+            const data = await apiGet(`${POS_API_BASE}/clientes`, {
+                search: searchTerm,
+            });
             return (data.rows ?? data ?? []).map((row: any) => ({
                 id: row.id?.toString().trim() ?? '',
                 codigo: row.codigo?.toString().trim() ?? '',
@@ -126,13 +148,80 @@ export function useCategoriasPOS() {
     return useQuery({
         queryKey: ['pos', 'categorias'],
         queryFn: async () => {
-            const res = await fetch(`${POS_API}/categorias`);
-            if (!res.ok) throw new Error('Error al cargar categorías');
-            const data = await res.json();
+            const data = await apiGet(`${POS_API_BASE}/categorias`);
             return (data.rows ?? data ?? []).map((row: any) => ({
                 id: row.id?.toString().trim() ?? '',
                 nombre: row.nombre?.toString().trim() ?? '',
                 productCount: Number(row.productCount ?? 0),
+            }));
+        },
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HOOKS - REPORTES POS
+// ═══════════════════════════════════════════════════════════════
+
+export function usePosReporteResumen(from?: string, to?: string) {
+    return useQuery({
+        queryKey: ['pos', 'reportes', 'resumen', from, to],
+        queryFn: async (): Promise<PosReporteResumen> => {
+            const data = await apiGet(`${POS_API_BASE}/reportes/resumen`, { from, to });
+            const row = data.row ?? {};
+            return {
+                totalVentas: Number(row.totalVentas ?? 0),
+                transacciones: Number(row.transacciones ?? 0),
+                productosVendidos: Number(row.productosVendidos ?? 0),
+                productosDiferentes: Number(row.productosDiferentes ?? 0),
+                ticketPromedio: Number(row.ticketPromedio ?? 0),
+            };
+        },
+    });
+}
+
+export function usePosReporteVentas(from?: string, to?: string, limit = 200) {
+    return useQuery({
+        queryKey: ['pos', 'reportes', 'ventas', from, to, limit],
+        queryFn: async (): Promise<PosReporteVenta[]> => {
+            const data = await apiGet(`${POS_API_BASE}/reportes/ventas`, { from, to, limit });
+            return (data.rows ?? []).map((row: any) => ({
+                id: Number(row.id ?? 0),
+                numFactura: row.numFactura?.toString().trim() ?? '',
+                fecha: row.fecha,
+                cliente: row.cliente?.toString().trim() ?? 'Consumidor Final',
+                total: Number(row.total ?? 0),
+                estado: row.estado?.toString().trim() ?? 'Completada',
+                metodoPago: row.metodoPago?.toString().trim() ?? undefined,
+            }));
+        },
+    });
+}
+
+export function usePosReporteProductosTop(from?: string, to?: string, limit = 20) {
+    return useQuery({
+        queryKey: ['pos', 'reportes', 'productos-top', from, to, limit],
+        queryFn: async (): Promise<PosReporteProductoTop[]> => {
+            const data = await apiGet(`${POS_API_BASE}/reportes/productos-top`, { from, to, limit });
+            return (data.rows ?? []).map((row: any) => ({
+                productoId: row.productoId?.toString().trim() ?? '',
+                codigo: row.codigo?.toString().trim() ?? '',
+                nombre: row.nombre?.toString().trim() ?? '',
+                cantidad: Number(row.cantidad ?? 0),
+                total: Number(row.total ?? 0),
+            }));
+        },
+    });
+}
+
+export function usePosReporteFormasPago(from?: string, to?: string) {
+    return useQuery({
+        queryKey: ['pos', 'reportes', 'formas-pago', from, to],
+        queryFn: async (): Promise<PosReporteFormaPago[]> => {
+            const data = await apiGet(`${POS_API_BASE}/reportes/formas-pago`, { from, to });
+            return (data.rows ?? []).map((row: any) => ({
+                metodoPago: row.metodoPago?.toString().trim() ?? 'No especificado',
+                transacciones: Number(row.transacciones ?? 0),
+                total: Number(row.total ?? 0),
             }));
         },
     });

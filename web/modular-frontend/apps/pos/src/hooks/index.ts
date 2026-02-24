@@ -5,9 +5,17 @@ export {
     usePrinterStatus,
     useConfiguracionCaja,
     useCategoriasPOS,
+    usePosReporteResumen,
+    usePosReporteVentas,
+    usePosReporteProductosTop,
+    usePosReporteFormasPago,
     useCart,
     type Producto,
     type Cliente,
     type FacturaPayload,
+    type PosReporteResumen,
+    type PosReporteVenta,
+    type PosReporteProductoTop,
+    type PosReporteFormaPago,
 } from './usePosApi';
 export { useBarcodeScanner } from './useBarcodeScanner';

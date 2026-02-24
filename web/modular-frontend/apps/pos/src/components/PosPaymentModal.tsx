@@ -180,7 +180,17 @@ export function PosPaymentModal({
     }
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth={false}
+            fullWidth
+            PaperProps={{
+                sx: {
+                    width: 'min(1320px, 98vw)',
+                },
+            }}
+        >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6">Procesar Pago</Typography>
                 <IconButton onClick={onClose}>
@@ -192,7 +202,7 @@ export function PosPaymentModal({
                 <Grid container spacing={3}>
                     {/* Panel Izquierdo - Resumen */}
                     <Grid item xs={12} md={5}>
-                        <Paper sx={{ p: 2, height: '100%', bgcolor: '#f5f5f5' }}>
+                        <Paper sx={{ p: 2, height: '100%', bgcolor: 'action.hover' }}>
                             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Resumen de Compra
                             </Typography>
@@ -384,7 +394,7 @@ export function PosPaymentModal({
                         )}
 
                         {/* Totales de pago */}
-                        <Paper sx={{ p: 2, mt: 2, bgcolor: totalPagado >= totalConIgtf ? '#e8f5e9' : '#fff3e0' }}>
+                        <Paper sx={{ p: 2, mt: 2, bgcolor: totalPagado >= totalConIgtf ? 'success.light' : 'warning.light' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                 <Typography>Pagado:</Typography>
                                 <Typography fontWeight="bold">{symP} {totalPagado.toFixed(2)}</Typography>

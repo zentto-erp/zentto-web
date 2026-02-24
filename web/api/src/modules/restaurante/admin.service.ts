@@ -1,6 +1,41 @@
 import { getPool, sql } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
 
+const MOJIBAKE_PATTERN = /(Ã.|Â.|â.|�)/;
+
+function repairMojibakeText(value: string): string {
+    if (!value || !MOJIBAKE_PATTERN.test(value)) {
+        return value;
+    }
+
+    try {
+        const fixed = Buffer.from(value, "latin1").toString("utf8");
+        if (!fixed || fixed.includes("�")) {
+            return value;
+        }
+        return fixed;
+    } catch {
+        return value;
+    }
+}
+
+function normalizeRowText<T extends Record<string, unknown>>(row: T): T {
+    const normalized = { ...row };
+
+    for (const key of Object.keys(normalized)) {
+        const value = normalized[key];
+        if (typeof value === "string") {
+            normalized[key as keyof T] = repairMojibakeText(value) as T[keyof T];
+        }
+    }
+
+    return normalized;
+}
+
+function normalizeRowsText<T extends Record<string, unknown>>(rows: T[]): T[] {
+    return rows.map((row) => normalizeRowText(row));
+}
+
 // ═════════════════════════════════════════════════════
 // AMBIENTES
 // ═════════════════════════════════════════════════════
@@ -9,10 +44,10 @@ export async function listAmbientes() {
     try {
         const pool = await getPool();
         const result = await pool.request().execute("usp_REST_Ambientes_List");
-        return { rows: result.recordset ?? [], executionMode: "sp" as const };
+        return { rows: normalizeRowsText(result.recordset ?? []), executionMode: "sp" as const };
     } catch { }
     const rows = await query<any>("SELECT Id AS id, Nombre AS nombre, Color AS color, Orden AS orden FROM RestauranteAmbientes WHERE Activo=1 ORDER BY Orden");
-    return { rows, executionMode: "ts_fallback" as const };
+    return { rows: normalizeRowsText(rows), executionMode: "ts_fallback" as const };
 }
 
 export async function upsertAmbiente(data: { id?: number; nombre: string; color?: string; orden?: number }) {
@@ -35,12 +70,12 @@ export async function listCategoriasMenu() {
     try {
         const pool = await getPool();
         const result = await pool.request().execute("usp_REST_Categorias_List");
-        return { rows: result.recordset ?? [], executionMode: "sp" as const };
+        return { rows: normalizeRowsText(result.recordset ?? []), executionMode: "sp" as const };
     } catch { }
     const rows = await query<any>(
         "SELECT Id AS id, Nombre AS nombre, Color AS color, Orden AS orden FROM RestauranteCategorias WHERE Activa=1 ORDER BY Orden"
     );
-    return { rows, executionMode: "ts_fallback" as const };
+    return { rows: normalizeRowsText(rows), executionMode: "ts_fallback" as const };
 }
 
 export async function upsertCategoriaMenu(data: { id?: number; nombre: string; descripcion?: string; color?: string; orden?: number }) {
@@ -68,12 +103,12 @@ export async function listProductosMenu(params: { categoriaId?: number; search?:
         req.input("Search", sql.NVarChar(100), params.search ?? null);
         req.input("SoloDisponibles", sql.Bit, params.soloDisponibles ?? true);
         const result = await req.execute("usp_REST_Productos_List");
-        return { rows: result.recordset ?? [], executionMode: "sp" as const };
+        return { rows: normalizeRowsText(result.recordset ?? []), executionMode: "sp" as const };
     } catch { }
     const rows = await query<any>(
         "SELECT Id AS id, Codigo AS codigo, Nombre AS nombre, Precio AS precio, CategoriaId AS categoriaId, EsCompuesto AS esCompuesto, Disponible AS disponible FROM RestauranteProductos WHERE Activo=1 ORDER BY Nombre"
     );
-    return { rows, executionMode: "ts_fallback" as const };
+    return { rows: normalizeRowsText(rows), executionMode: "ts_fallback" as const };
 }
 
 export async function getProductoMenu(id: number) {
@@ -83,9 +118,9 @@ export async function getProductoMenu(id: number) {
         req.input("Id", sql.Int, id);
         const result = await req.execute("usp_REST_Producto_Get");
         const sets = result.recordsets as any[][];
-        const producto = sets?.[0]?.[0] ?? null;
-        const componentesRaw = sets?.[1] ?? [];
-        const receta = sets?.[2] ?? [];
+        const producto = sets?.[0]?.[0] ? normalizeRowText(sets[0][0]) : null;
+        const componentesRaw = normalizeRowsText(sets?.[1] ?? []);
+        const receta = normalizeRowsText(sets?.[2] ?? []);
 
         // Agrupar componentes con sus opciones
         const componentesMap: Record<number, any> = {};
@@ -221,17 +256,17 @@ export async function listCompras(params: { estado?: string; from?: string; to?:
         req.input("From", sql.DateTime, params.from ? new Date(params.from) : null);
         req.input("To", sql.DateTime, params.to ? new Date(params.to) : null);
         const result = await req.execute("usp_REST_Compras_List");
-        return { rows: result.recordset ?? [], executionMode: "sp" as const };
+        return { rows: normalizeRowsText(result.recordset ?? []), executionMode: "sp" as const };
     } catch { }
     const rows = await query<any>(
         "SELECT Id AS id, NumCompra AS numCompra, ProveedorId AS proveedorId, FechaCompra AS fechaCompra, Estado AS estado, Total AS total FROM RestauranteCompras ORDER BY FechaCompra DESC"
     );
-    return { rows, executionMode: "ts_fallback" as const };
+    return { rows: normalizeRowsText(rows), executionMode: "ts_fallback" as const };
 }
 
 export async function getCompraDetalle(compraId: number) {
-    const header = await query<any>("SELECT * FROM RestauranteCompras WHERE Id = @compraId", { compraId });
-    const detalle = await query<any>("SELECT * FROM RestauranteComprasDetalle WHERE CompraId = @compraId", { compraId });
+    const header = normalizeRowsText(await query<any>("SELECT * FROM RestauranteCompras WHERE Id = @compraId", { compraId }));
+    const detalle = normalizeRowsText(await query<any>("SELECT * FROM RestauranteComprasDetalle WHERE CompraId = @compraId", { compraId }));
     return { compra: header[0] ?? null, detalle };
 }
 
@@ -272,5 +307,5 @@ export async function searchProveedores(search?: string, limit = 20) {
         `SELECT TOP ${limit} CODIGO AS id, CODIGO AS codigo, NOMBRE AS nombre, RIF AS rif, TELEFONO AS telefono, DIRECCION AS direccion FROM Proveedores ${where} ORDER BY NOMBRE`,
         search ? { search: `%${search}%` } : {}
     );
-    return { rows };
+    return { rows: normalizeRowsText(rows) };
 }

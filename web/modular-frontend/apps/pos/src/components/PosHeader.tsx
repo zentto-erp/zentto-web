@@ -58,6 +58,7 @@ export function PosHeader({
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const itemsPerPage = isDesktop ? 6 : 3;
+    const isDark = theme.palette.mode === 'dark';
 
     // Hook para monitorear el Estatus de Impresora Local en Background
     const { data: printerStatus, isError, isFetching } = usePrinterStatus("PNP", "EMULADOR", "emulador");
@@ -70,8 +71,9 @@ export function PosHeader({
         <Box sx={{
             display: 'flex',
             flexDirection: 'column',
-            borderBottom: '1px solid #e0e0e0',
-            bgcolor: '#fff',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
         }}>
             {/* Barra Superior */}
             <Box sx={{
@@ -86,7 +88,7 @@ export function PosHeader({
                     <HomeIcon color="action" />
                     <Breadcrumbs separator="›" aria-label="breadcrumb">
                         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                            <Typography color="text.primary" fontWeight="medium" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography component="div" color="text.primary" fontWeight="medium" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {cajaName}
                                 {printerStatus && (
                                     <Tooltip title={printerStatus.message || "Estado de la impresora"}>
@@ -123,7 +125,7 @@ export function PosHeader({
                         maxWidth: 300,
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
-                            bgcolor: '#f5f5f5',
+                            bgcolor: 'action.hover',
                         }
                     }}
                     InputProps={{
@@ -144,7 +146,7 @@ export function PosHeader({
                     variant="outlined"
                     disabled={categoriaPage === 0}
                     onClick={() => setCategoriaPage(Math.max(0, categoriaPage - 1))}
-                    sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', bgcolor: '#ffffff' }}
+                    sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
                 >
                     <ChevronLeftIcon />
                 </Button>
@@ -153,7 +155,9 @@ export function PosHeader({
                 <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
                     {allCategories.slice(categoriaPage * itemsPerPage, (categoriaPage + 1) * itemsPerPage).map((cat) => {
                         const isActive = selectedCategory === cat.id;
-                        const pastelColors = ['#F5F5F5', '#CEEAD6', '#FCE8E6', '#FEF7E0', '#E4F7FB', '#F3E5F5'];
+                        const pastelColors = isDark
+                            ? ['#2b3345', '#2f3b34', '#3a2f38', '#3a372a', '#2a3a44', '#372d40']
+                            : ['#F5F5F5', '#CEEAD6', '#FCE8E6', '#FEF7E0', '#E4F7FB', '#F3E5F5'];
                         const colorIndex = allCategories.indexOf(cat) % pastelColors.length;
                         const bgColor = pastelColors[colorIndex];
 
@@ -169,15 +173,16 @@ export function PosHeader({
                                     borderRadius: 0,
                                     fontWeight: isActive ? 'bold' : 'normal',
                                     color: 'text.primary',
-                                    bgcolor: isActive ? '#ffffff' : bgColor,
-                                    borderTop: '1px solid #e0e0e0',
-                                    borderBottom: '1px solid #e0e0e0',
-                                    borderRight: '1px solid #e0e0e0',
+                                    bgcolor: isActive ? 'background.paper' : bgColor,
+                                    borderTop: '1px solid',
+                                    borderBottom: '1px solid',
+                                    borderRight: '1px solid',
+                                    borderColor: 'divider',
                                     borderLeft: 0,
                                     textTransform: 'capitalize',
                                     boxShadow: 'none',
                                     px: 1,
-                                    '&:hover': { bgcolor: isActive ? '#ffffff' : '#e0e0e0' },
+                                    '&:hover': { bgcolor: isActive ? 'background.paper' : 'action.hover' },
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -195,6 +200,7 @@ export function PosHeader({
                     variant="outlined"
                     disabled={(categoriaPage + 1) * itemsPerPage >= allCategories.length}
                     onClick={() => setCategoriaPage(categoriaPage + 1)}
+                    sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}
                 >
                     <ChevronRightIcon />
                 </Button>
