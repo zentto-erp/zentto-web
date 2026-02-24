@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     Box,
     Paper,
@@ -11,6 +11,15 @@ import {
     useTheme,
     useMediaQuery,
     Button,
+    Badge,
+    Snackbar,
+    Alert,
+    LinearProgress,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import {
@@ -21,13 +30,17 @@ import {
     PosHeader,
     PosPaymentModal,
     PosCustomerSearch,
+    PosEsperaDrawer,
     type Customer,
 } from '@/components';
-import { useCart, useBuscarProductos, useBarcodeScanner } from '@/hooks';
+import { useBuscarProductos, useBarcodeScanner } from '@/hooks';
+import { usePosStore } from '@datqbox/shared-api';
 
 // Iconos dinámicos
 const PersonIcon = dynamic(() => import('@mui/icons-material/Person'), { ssr: false });
 const DeleteSweepIcon = dynamic(() => import('@mui/icons-material/DeleteSweep'), { ssr: false });
+const PauseCircleIcon = dynamic(() => import('@mui/icons-material/PauseCircle'), { ssr: false });
+const AccessTimeIcon = dynamic(() => import('@mui/icons-material/AccessTime'), { ssr: false });
 
 // Categorías de ejemplo
 const CATEGORIES = [
@@ -39,136 +52,152 @@ const CATEGORIES = [
 ];
 
 export default function PosFacturacionPage() {
-    // Estados
+    // ─── State local (UI only) ───
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [numpadValue, setNumpadValue] = useState('');
     const [numpadMode, setNumpadMode] = useState<'qty' | 'discount' | 'price'>('qty');
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [esperaDrawerOpen, setEsperaDrawerOpen] = useState(false);
+    const [esperaMotiveDialog, setEsperaMotiveDialog] = useState(false);
+    const [esperaMotive, setEsperaMotive] = useState('');
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({
+        open: false, message: '', severity: 'success',
+    });
+    const [customerModalOpen, setCustomerModalOpen] = useState(false);
 
-    // Theme & Responsive Logic
+    // ─── Zustand Store (source of truth) ───
+    const cart = usePosStore(s => s.cart);
+    const cliente = usePosStore(s => s.cliente);
+    const caja = usePosStore(s => s.caja);
+    const syncing = usePosStore(s => s.syncing);
+    const ventasEnEspera = usePosStore(s => s.ventasEnEspera);
+    const esperaOrigenId = usePosStore(s => s.esperaOrigenId);
+    const addToCart = usePosStore(s => s.addToCart);
+    const updateCartItem = usePosStore(s => s.updateCartItem);
+    const removeFromCart = usePosStore(s => s.removeFromCart);
+    const clearCart = usePosStore(s => s.clearCart);
+    const setCliente = usePosStore(s => s.setCliente);
+    const resetCliente = usePosStore(s => s.resetCliente);
+    const getSubtotal = usePosStore(s => s.getSubtotal);
+    const getImpuestos = usePosStore(s => s.getImpuestos);
+    const getTotal = usePosStore(s => s.getTotal);
+    const ponerEnEspera = usePosStore(s => s.ponerEnEspera);
+    const facturar = usePosStore(s => s.facturar);
+    const listarEspera = usePosStore(s => s.listarEspera);
+    const paymentModalOpen = usePosStore(s => s.paymentModalOpen);
+    const setPaymentModal = usePosStore(s => s.setPaymentModal);
+
+    const subtotal = getSubtotal();
+    const impuestos = getImpuestos();
+    const totalConImpuesto = getTotal();
+
+    // ─── Theme & Responsive ───
     const theme = useTheme();
     const isMobileLandscape = useMediaQuery('(max-height: 500px) and (orientation: landscape)');
     const isMobilePortrait = useMediaQuery(theme.breakpoints.down('md'));
     const isMobileLayout = isMobilePortrait || isMobileLandscape;
 
-    const [customer, setCustomer] = useState<Customer>({
-        id: '1',
-        codigo: 'CF',
-        nombre: 'Consumidor Final',
-        rif: 'J-00000000-0',
-        tipoPrecio: 'Detal',
-        credito: 0,
-    });
+    // ─── API Data ───
+    const { data: productos = [] } = useBuscarProductos(searchTerm);
 
-    // Modales
-    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-    const [customerModalOpen, setCustomerModalOpen] = useState(false);
-
-    // Hooks
-    const { items, addItem, updateItem, removeItem, clearCart, subtotal, impuestos, total: totalConImpuesto } = useCart();
-    const { data: productos = [], isLoading } = useBuscarProductos(searchTerm);
-
-    // Escáner de Código de Barras
+    // ─── Barcode Scanner ───
     useBarcodeScanner((barcode) => {
         const prod = productos.find(p => p.codigo.toLowerCase() === barcode.toLowerCase() || p.id === barcode);
         if (prod) {
-            // Transformamos el 'Producto' puro a la estructura que espera handleAddProduct
             handleAddProduct({
                 id: prod.id,
+                codigo: prod.codigo,
                 nombre: prod.nombre,
                 precio: prod.precioDetal,
-                categoria: prod.categoria,
+                iva: prod.iva,
             });
-        } else {
-            console.warn(`Producto no encontrado o código inválido: ${barcode}`);
         }
     });
 
-    // Filtrar productos por categoría
+    // Refrescar lista de espera al montar
+    React.useEffect(() => { listarEspera(); }, []); // eslint-disable-line
+
+    const showMsg = useCallback((message: string, severity: 'success' | 'error' | 'warning' = 'success') => {
+        setSnackbar({ open: true, message, severity });
+    }, []);
+
+    // ─── Filtrar productos ───
     const filteredProducts = useMemo(() => {
-        return productos.filter(p =>
-            !selectedCategory || p.categoria === selectedCategory
-        );
+        return productos.filter(p => !selectedCategory || p.categoria === selectedCategory);
     }, [productos, selectedCategory]);
 
-    // Eliminar cálculos de IVA que se hacían sobre el total general (están ahora línea por línea en el hook)
-    // Agregar producto al carrito
-    const handleAddProduct = (product: { id: string; nombre: string; precio: number; categoria?: string }) => {
-        // Convertir al formato Producto esperado por el hook
-        const producto = {
-            id: product.id,
-            codigo: product.id,
+    // ═══════════════════════════════════════════════════════════
+    // AGREGAR PRODUCTO — Solo Store (sin BD)
+    // ═══════════════════════════════════════════════════════════
+    const handleAddProduct = (product: { id: string; codigo?: string; nombre: string; precio: number; iva?: number }) => {
+        addToCart({
+            productoId: product.id,
+            codigo: product.codigo || product.id,
             nombre: product.nombre,
-            precioDetal: product.precio,
-            precioMayor: product.precio * 0.9,
-            precioDistribuidor: product.precio * 0.8,
-            existencia: 100,
-            categoria: product.categoria || '',
-            iva: 16,
-        };
-        addItem(producto, 1, customer.tipoPrecio);
+            cantidad: 1,
+            precio: product.precio,
+            descuento: 0,
+            iva: product.iva || 16,
+        });
         setShowMobileMenu(false);
     };
 
-    // Manejar teclado numérico
+    // ─── Teclado numérico ───
     const handleNumberPress = (num: string) => {
         if (num === '+/-') {
             setNumpadValue(prev => prev.startsWith('-') ? prev.slice(1) : '-' + prev);
             return;
         }
-
         const newValue = numpadValue + num;
         setNumpadValue(newValue);
-
-        // Aplicar directamente si hay item seleccionado
         if (selectedItemId) {
             const numVal = parseFloat(newValue);
             if (!isNaN(numVal)) {
                 switch (numpadMode) {
-                    case 'qty':
-                        updateItem(selectedItemId, { cantidad: numVal });
-                        break;
-                    case 'price':
-                        updateItem(selectedItemId, { precio: numVal });
-                        break;
-                    case 'discount':
-                        updateItem(selectedItemId, { descuento: numVal });
-                        break;
+                    case 'qty': updateCartItem(selectedItemId, { cantidad: numVal }); break;
+                    case 'price': updateCartItem(selectedItemId, { precio: numVal }); break;
+                    case 'discount': updateCartItem(selectedItemId, { descuento: numVal }); break;
                 }
             }
         }
     };
 
-    const handleBackspace = () => {
-        setNumpadValue(prev => prev.slice(0, -1));
+    const handleBackspace = () => setNumpadValue(prev => prev.slice(0, -1));
+    const handleClear = () => setNumpadValue('');
+
+    // ═══════════════════════════════════════════════════════════
+    // FACTURAR — Imprimir fiscal + Guardar en BD + Limpiar
+    // ═══════════════════════════════════════════════════════════
+    const handlePaymentComplete = async (payments: Array<{ metodo: string; monto: number; referencia?: string }>) => {
+        const metodoPago = payments.map(p => p.metodo).join(', ');
+        const result = await facturar(metodoPago);
+        showMsg(result.message, result.success ? 'success' : 'error');
     };
 
-    const handleClear = () => {
-        setNumpadValue('');
+    // ═══════════════════════════════════════════════════════════
+    // PONER EN ESPERA — Guardar carrito en BD + Limpiar local
+    // ═══════════════════════════════════════════════════════════
+    const handlePonerEnEspera = async () => {
+        const result = await ponerEnEspera(esperaMotive || undefined);
+        setEsperaMotiveDialog(false);
+        setEsperaMotive('');
+        showMsg(result.message, result.success ? 'success' : 'error');
     };
 
-    // Completar pago
-    const handlePaymentComplete = (payments: Array<{ metodo: string; monto: number; referencia?: string }>) => {
-        console.log('Pago completado:', { items, customer, payments, total: totalConImpuesto });
-        clearCart();
-        setCustomer({
-            id: '1',
-            codigo: 'CF',
-            nombre: 'Consumidor Final',
-            rif: 'J-00000000-0',
-            tipoPrecio: 'Detal',
-            credito: 0,
-        });
-    };
-
-    // Cambiar cliente
+    // ─── Cambiar cliente ───
     const handleCustomerChange = (newCustomer: Customer) => {
-        setCustomer(newCustomer);
-        // Actualizar precios de items existentes según el tipo de cliente
-        items.forEach(item => {
-            // Aquí se podría recalcular precios según el tipo de cliente
+        setCliente({
+            id: newCustomer.id,
+            codigo: newCustomer.codigo,
+            nombre: newCustomer.nombre,
+            rif: newCustomer.rif,
+            telefono: newCustomer.telefono,
+            email: newCustomer.email,
+            direccion: newCustomer.direccion,
+            tipoPrecio: newCustomer.tipoPrecio as any || 'Detal',
+            credito: newCustomer.credito || 0,
         });
     };
 
@@ -181,6 +210,9 @@ export default function PosFacturacionPage() {
             bgcolor: '#f5f5f5',
             pb: isMobileLayout ? 8 : 0,
         }}>
+            {/* Syncing bar */}
+            {syncing && <LinearProgress sx={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }} />}
+
             {/* Panel Izquierdo - Carrito y Controles */}
             <Box sx={{
                 width: isMobileLayout ? '100%' : 440,
@@ -201,50 +233,55 @@ export default function PosFacturacionPage() {
                                     Cliente
                                 </Typography>
                                 <Typography variant="body1" fontWeight="medium">
-                                    {customer.nombre}
+                                    {cliente.nombre}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {customer.rif}
+                                    {cliente.rif}
                                 </Typography>
                             </Box>
                         </Box>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
                             <Tooltip title="Cambiar Cliente">
-                                <IconButton
-                                    size="small"
-                                    onClick={() => setCustomerModalOpen(true)}
-                                    color="primary"
-                                >
+                                <IconButton size="small" onClick={() => setCustomerModalOpen(true)} color="primary">
                                     <PersonIcon />
                                 </IconButton>
                             </Tooltip>
-                            {items.length > 0 && (
-                                <Tooltip title="Limpiar Carrito">
-                                    <IconButton
-                                        size="small"
-                                        onClick={clearCart}
-                                        color="error"
-                                    >
-                                        <DeleteSweepIcon />
-                                    </IconButton>
-                                </Tooltip>
+                            {/* Botón Espera */}
+                            <Tooltip title={`Ventas en Espera (${ventasEnEspera.length})`}>
+                                <IconButton size="small" onClick={() => setEsperaDrawerOpen(true)} color="warning">
+                                    <Badge badgeContent={ventasEnEspera.length} color="error">
+                                        <AccessTimeIcon />
+                                    </Badge>
+                                </IconButton>
+                            </Tooltip>
+                            {cart.length > 0 && (
+                                <>
+                                    <Tooltip title="Poner en Espera">
+                                        <IconButton size="small" onClick={() => setEsperaMotiveDialog(true)} color="warning">
+                                            <PauseCircleIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Limpiar Carrito">
+                                        <IconButton size="small" onClick={clearCart} color="error">
+                                            <DeleteSweepIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </>
                             )}
                         </Box>
                     </Box>
-                    {customer.tipoPrecio !== 'Detal' && (
-                        <Chip
-                            label={`Precio: ${customer.tipoPrecio}`}
-                            color="primary"
-                            size="small"
-                            sx={{ mt: 1 }}
-                        />
+                    {cliente.tipoPrecio !== 'Detal' && (
+                        <Chip label={`Precio: ${cliente.tipoPrecio}`} color="primary" size="small" sx={{ mt: 1 }} />
+                    )}
+                    {esperaOrigenId && (
+                        <Chip label={`⏳ Recuperada de espera #${esperaOrigenId}`} color="warning" size="small" sx={{ mt: 1, ml: 1 }} />
                     )}
                 </Paper>
 
                 {/* Carrito */}
                 <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
                     <PosCart
-                        items={items.map(item => ({
+                        items={cart.map(item => ({
                             id: item.id,
                             nombre: item.nombre,
                             cantidad: item.cantidad,
@@ -252,12 +289,12 @@ export default function PosFacturacionPage() {
                             descuento: item.descuento || 0,
                             total: item.totalRenglon,
                         }))}
-                        onRemoveItem={removeItem}
+                        onRemoveItem={removeFromCart}
                         onUpdateQuantity={() => { }}
                         subtotal={subtotal}
                         impuestos={impuestos}
                         total={totalConImpuesto}
-                        cliente={customer.nombre}
+                        cliente={cliente.nombre}
                         puntosGanados={Math.floor(totalConImpuesto / 10)}
                         puntosTotales={1250}
                         selectedItemId={selectedItemId}
@@ -278,14 +315,12 @@ export default function PosFacturacionPage() {
                     />
                 </Box>
 
-                {/* Botón de Pago */}
+                {/* Botones de acción */}
                 <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <PosPaymentButton
                         total={totalConImpuesto}
-                        onClick={() => {
-                            setPaymentModalOpen(true);
-                        }}
-                        disabled={items.length === 0}
+                        onClick={() => setPaymentModal(true)}
+                        disabled={cart.length === 0 || syncing}
                     />
                 </Box>
             </Box>
@@ -296,28 +331,25 @@ export default function PosFacturacionPage() {
                 display: isMobileLayout ? (showMobileMenu ? 'flex' : 'none') : 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                width: isMobileLayout ? '100%' : 'auto'
+                width: isMobileLayout ? '100%' : 'auto',
             }}>
-                {/* Header con búsqueda y categorías */}
                 <PosHeader
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
                     categories={CATEGORIES}
                     selectedCategory={selectedCategory}
                     onCategorySelect={setSelectedCategory}
-                    cajaName="Caja Principal"
-                    userName="Ana García"
+                    cajaName={caja.nombre}
+                    userName="Cajero"
                 />
-
-                {/* Grid de Productos */}
                 <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
                     <PosProductGrid
                         products={filteredProducts.map(p => ({
                             id: p.id,
                             nombre: p.nombre,
-                            precio: customer.tipoPrecio === 'Mayor'
+                            precio: cliente.tipoPrecio === 'Mayor'
                                 ? p.precioMayor
-                                : customer.tipoPrecio === 'Distribuidor'
+                                : cliente.tipoPrecio === 'Distribuidor'
                                     ? p.precioDistribuidor
                                     : p.precioDetal,
                             imagen: p.imagen,
@@ -332,15 +364,15 @@ export default function PosFacturacionPage() {
             {/* Modal de Pago */}
             <PosPaymentModal
                 open={paymentModalOpen}
-                onClose={() => setPaymentModalOpen(false)}
+                onClose={() => setPaymentModal(false)}
                 total={totalConImpuesto}
-                items={items.map(item => ({
+                items={cart.map(item => ({
                     nombre: item.nombre,
                     cantidad: item.cantidad,
                     precio: item.precio,
-                    total: item.total,
+                    total: item.totalRenglon,
                 }))}
-                cliente={customer.nombre}
+                cliente={cliente.nombre}
                 onPaymentComplete={handlePaymentComplete}
             />
 
@@ -349,10 +381,44 @@ export default function PosFacturacionPage() {
                 open={customerModalOpen}
                 onClose={() => setCustomerModalOpen(false)}
                 onSelectCustomer={handleCustomerChange}
-                selectedCustomerId={customer.id}
+                selectedCustomerId={cliente.id}
             />
 
-            {/* Odoo Style Mobile Floating Bottom Control Bar */}
+            {/* Drawer de Ventas en Espera */}
+            <PosEsperaDrawer
+                open={esperaDrawerOpen}
+                onClose={() => setEsperaDrawerOpen(false)}
+                onRecuperado={(msg) => showMsg(msg, 'success')}
+                onError={(msg) => showMsg(msg, 'error')}
+            />
+
+            {/* Dialog Motivo de Espera */}
+            <Dialog open={esperaMotiveDialog} onClose={() => setEsperaMotiveDialog(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>⏸️ Poner Venta en Espera</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        El carrito completo ({cart.length} items, ${totalConImpuesto.toFixed(2)}) será
+                        guardado y podrá ser recuperado desde cualquier caja.
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        label="Motivo (opcional)"
+                        placeholder="Ej: Tarjeta rechazada, cliente sin efectivo..."
+                        value={esperaMotive}
+                        onChange={(e) => setEsperaMotive(e.target.value)}
+                        multiline
+                        rows={2}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEsperaMotiveDialog(false)}>Cancelar</Button>
+                    <Button variant="contained" color="warning" onClick={handlePonerEnEspera} disabled={syncing}>
+                        Poner en Espera
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Mobile Floating Bar */}
             {isMobileLayout && (
                 <Paper elevation={8} sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200, display: 'flex', height: 50, borderRadius: 0 }}>
                     {!showMobileMenu ? (
@@ -368,27 +434,51 @@ export default function PosFacturacionPage() {
                         <Box sx={{ display: 'flex', width: '100%', borderTop: '1px solid #e0e0e0' }}>
                             <Button
                                 variant="contained"
-                                sx={{ flex: 1, borderRadius: 0, bgcolor: '#6B4C6A', color: 'white', '&:hover': { bgcolor: '#513751' }, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', p: 0 }}
+                                sx={{ flex: 1, borderRadius: 0, bgcolor: '#6B4C6A', color: 'white', '&:hover': { bgcolor: '#513751' } }}
                                 onClick={() => {
                                     setShowMobileMenu(false);
-                                    setPaymentModalOpen(true);
+                                    setPaymentModal(true);
                                 }}
-                                disabled={items.length === 0}
+                                disabled={cart.length === 0}
                             >
-                                <Typography sx={{ fontSize: '1.15rem', fontWeight: 'bold', mr: 1, textTransform: 'capitalize' }}>Pagar</Typography>
-                                <Typography sx={{ fontSize: '1rem', fontWeight: 'normal' }}>${totalConImpuesto.toFixed(2)}</Typography>
+                                <Typography sx={{ fontSize: '1.15rem', fontWeight: 'bold', mr: 1 }}>Pagar</Typography>
+                                <Typography sx={{ fontSize: '1rem' }}>${totalConImpuesto.toFixed(2)}</Typography>
                             </Button>
                             <Button
-                                sx={{ flex: 0.7, borderRadius: 0, bgcolor: '#f5f5f5', color: 'text.primary', borderLeft: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', p: 0 }}
+                                sx={{ flex: 0.5, borderRadius: 0, bgcolor: '#f5f5f5', color: 'text.primary', borderLeft: '1px solid #e0e0e0' }}
                                 onClick={() => setShowMobileMenu(false)}
                             >
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>Carrito</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: '500', fontSize: '0.75rem', lineHeight: 1 }}>{items.length || 0} artículos</Typography>
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="body2" fontWeight="bold">Carrito</Typography>
+                                    <Typography variant="caption">{cart.length} items</Typography>
+                                </Box>
                             </Button>
+                            {ventasEnEspera.length > 0 && (
+                                <Button
+                                    sx={{ flex: 0.3, borderRadius: 0, bgcolor: '#FFF3E0', color: '#E65100', borderLeft: '1px solid #e0e0e0' }}
+                                    onClick={() => { setShowMobileMenu(false); setEsperaDrawerOpen(true); }}
+                                >
+                                    <Badge badgeContent={ventasEnEspera.length} color="error">
+                                        <AccessTimeIcon />
+                                    </Badge>
+                                </Button>
+                            )}
                         </Box>
                     )}
                 </Paper>
             )}
+
+            {/* Snackbar */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={5000}
+                onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar(s => ({ ...s, open: false }))}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

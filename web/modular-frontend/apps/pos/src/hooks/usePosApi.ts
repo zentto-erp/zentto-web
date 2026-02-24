@@ -149,7 +149,7 @@ export function useCrearFactura() {
     return useMutation({
         mutationFn: async (payload: FacturaPayload) => {
             // Llamar al agente fiscal local via Zustand store
-            const result = await printFiscalInvoice(payload);
+            const result = await printFiscalInvoice(payload as unknown as Record<string, unknown>);
 
             if (!result.success) {
                 throw new Error(result.message || 'Cajero, revise la Impresora Fiscal (Sin Papel, Tapa o Desconectada).');

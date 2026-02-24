@@ -47,7 +47,9 @@ import { nominaRouter } from "./modules/nomina/routes.js";
 import { contabilidadRouter } from "./modules/contabilidad/routes.js";
 import { maestrosRouter } from "./modules/maestros/routes.js";
 import { posRouter } from "./modules/pos/routes.js";
+import { posEsperaRouter } from "./modules/pos/espera.routes.js";
 import { restauranteRouter } from "./modules/restaurante/routes.js";
+import { restauranteAdminRouter } from "./modules/restaurante/admin.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 
 function resolveOpenApiPath() {
@@ -203,7 +205,9 @@ export async function createApp() {
 
   // POS y Restaurante
   app.use("/v1/pos", posRouter);
+  app.use("/v1/pos", posEsperaRouter);
   app.use("/v1/restaurante", restauranteRouter);
+  app.use("/v1/restaurante/admin", restauranteAdminRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
   app.use("/api/v1", requireJwt);
@@ -246,7 +250,9 @@ export async function createApp() {
   app.use("/api/v1/crud", crudRouter);
   app.use("/api/v1/meta", metaRouter);
   app.use("/api/v1/pos", posRouter);
+  app.use("/api/v1/pos", posEsperaRouter);
   app.use("/api/v1/restaurante", restauranteRouter);
+  app.use("/api/v1/restaurante/admin", restauranteAdminRouter);
 
   await loadAddons(app);
 

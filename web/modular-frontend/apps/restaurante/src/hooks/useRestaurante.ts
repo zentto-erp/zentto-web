@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
+import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { usePosStore } from '@datqbox/shared-api';
 
-// Tipos
+// ═══════════════════════════════════════════════════════════════
+// TIPOS — Modelo de datos del Restaurante
+// ═══════════════════════════════════════════════════════════════
+
 export interface Mesa {
     id: string;
     numero: number;
@@ -34,7 +38,8 @@ export interface ClienteMesa {
 }
 
 export interface Pedido {
-    id: string;
+    id: string;              // UUID local hasta que se persista
+    dbId?: number;           // ID asignado por la BD al persistir
     mesaId: string;
     cliente?: ClienteMesa;
     items: ItemPedido[];
@@ -43,10 +48,12 @@ export interface Pedido {
     fechaCierre?: Date;
     total: number;
     comentarios?: string;
+    persistido: boolean;     // Si ya se guardó en BD con abrir-pedido
 }
 
 export interface ItemPedido {
-    id: string;
+    id: string;              // UUID local
+    dbId?: number;           // ID asignado por la BD al persistir
     productoId: string;
     nombre: string;
     cantidad: number;
@@ -56,7 +63,7 @@ export interface ItemPedido {
     comentarios?: string;
     esCompuesto: boolean;
     componentes?: ComponenteItem[];
-    enviadoACocina: boolean;
+    enviadoACocina: boolean;   // true = ya fue enviado y persistido
     horaEnvio?: Date;
 }
 
@@ -76,7 +83,7 @@ export interface ProductoMenu {
     categoria: string;
     esCompuesto: boolean;
     componentes?: ComponenteProducto[];
-    tiempoPreparacion: number; // minutos
+    tiempoPreparacion: number;
     imagen?: string;
     esSugerenciaDelDia?: boolean;
     disponible: boolean;
@@ -99,110 +106,206 @@ export interface ComandaCocina {
     ambiente: string;
 }
 
-// Hook principal del restaurante
-export function useRestaurante() {
-    const [ambientes, setAmbientes] = useState<Ambiente[]>([
-        {
-            id: '1',
-            nombre: 'Salón Principal',
-            color: '#4CAF50',
-            mesas: [
-                { id: 'm1', numero: 1, nombre: 'Mesa 1', capacidad: 4, ambienteId: '1', posicionX: 20, posicionY: 20, estado: 'libre' },
-                { id: 'm2', numero: 2, nombre: 'Mesa 2', capacidad: 2, ambienteId: '1', posicionX: 180, posicionY: 20, estado: 'libre' },
-                {
-                    id: 'm3', numero: 3, nombre: 'Mesa 3', capacidad: 6, ambienteId: '1', posicionX: 340, posicionY: 20, estado: 'ocupada',
-                    pedidoActual: {
-                        id: 'p1',
-                        mesaId: 'm3',
-                        cliente: { id: 'c1', nombre: 'Juan Pérez', telefono: '0414-1234567' },
-                        items: [
-                            { id: 'i1', productoId: 'p1', nombre: 'Pasta Carbonara', cantidad: 2, precioUnitario: 15, subtotal: 30, estado: 'entregado', esCompuesto: false, enviadoACocina: true, horaEnvio: new Date() },
-                            { id: 'i2', productoId: 'p2', nombre: 'Coca Cola', cantidad: 2, precioUnitario: 3, subtotal: 6, estado: 'entregado', esCompuesto: false, enviadoACocina: true, horaEnvio: new Date() },
-                        ],
-                        estado: 'abierto',
-                        fechaApertura: new Date(),
-                        total: 36
-                    },
-                    cliente: { id: 'c1', nombre: 'Juan Pérez', telefono: '0414-1234567' }
-                },
-                { id: 'm4', numero: 4, nombre: 'Mesa 4', capacidad: 4, ambienteId: '1', posicionX: 20, posicionY: 180, estado: 'libre' },
-                { id: 'm5', numero: 5, nombre: 'Mesa 5', capacidad: 8, ambienteId: '1', posicionX: 180, posicionY: 180, estado: 'reservada' },
-            ]
-        },
-        {
-            id: '2',
-            nombre: 'Terraza',
-            color: '#FF9800',
-            mesas: [
-                { id: 'm6', numero: 6, nombre: 'Mesa 6', capacidad: 4, ambienteId: '2', posicionX: 20, posicionY: 340, estado: 'libre' },
-                { id: 'm7', numero: 7, nombre: 'Mesa 7', capacidad: 2, ambienteId: '2', posicionX: 180, posicionY: 340, estado: 'cuenta' },
-            ]
-        },
-        {
-            id: '3',
-            nombre: 'Barra',
-            color: '#9C27B0',
-            mesas: [
-                { id: 'm8', numero: 8, nombre: 'Barra 1', capacidad: 1, ambienteId: '3', posicionX: 20, posicionY: 500, estado: 'libre' },
-                { id: 'm9', numero: 9, nombre: 'Barra 2', capacidad: 1, ambienteId: '3', posicionX: 180, posicionY: 500, estado: 'ocupada' },
-                { id: 'm10', numero: 10, nombre: 'Barra 3', capacidad: 1, ambienteId: '3', posicionX: 340, posicionY: 500, estado: 'libre' },
-            ]
+// ═══════════════════════════════════════════════════════════════
+// ZUSTAND STORE — Estado global del Restaurante
+// ═══════════════════════════════════════════════════════════════
+//
+// FLUJO REAL:
+//
+//  1. initFromApi()     → Carga mesas, ambientes y productos SOLO al inicio
+//  2. abrirPedido()     → Crea pedido en STORE (sin BD)
+//  3. agregarItem()     → Agrega item en STORE (sin BD)
+//  4. quitarItem()      → Quita item en STORE (sin BD)
+//  5. enviarComanda()   → PERSISTE items nuevos a BD + imprime cocina ESC/POS
+//  6. generarCuenta()   → Imprime factura fiscal (lee del STORE)
+//  7. cerrarMesa()      → POST cerrar a BD + limpia mesa en STORE
+//
+
+const API_BASE = typeof window !== 'undefined'
+    ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
+    : 'http://localhost:4000';
+
+interface RestauranteState {
+    // ─── Data ───
+    ambientes: Ambiente[];
+    ambienteActivo: string;
+    productos: ProductoMenu[];
+    loading: boolean;
+    syncing: boolean;  // true mientras persiste a BD
+
+    // ─── Actions: Init ───
+    initFromApi: () => Promise<void>;
+    setAmbienteActivo: (id: string) => void;
+
+    // ─── Actions: Mesas (STORE ONLY — sin BD) ───
+    getMesaById: (id: string) => Mesa | undefined;
+    actualizarMesa: (mesaId: string, updates: Partial<Mesa>) => void;
+
+    // ─── Actions: Pedido lifecycle (STORE first, BD en momentos clave) ───
+    abrirPedido: (mesaId: string, cliente?: ClienteMesa) => void;
+    agregarItem: (mesaId: string, item: Omit<ItemPedido, 'id' | 'dbId'>) => void;
+    quitarItem: (mesaId: string, itemId: string) => void;
+    editarItem: (mesaId: string, itemId: string, updates: Partial<Pick<ItemPedido, 'cantidad' | 'comentarios'>>) => void;
+
+    // ─── Actions: Persistencia (estos SÍ tocan la BD) ───
+    enviarComanda: (mesaId: string) => Promise<{ success: boolean; message: string }>;
+    generarCuenta: (mesaId: string) => Promise<{ success: boolean; message: string }>;
+    cerrarMesa: (mesaId: string) => Promise<{ success: boolean; message: string }>;
+
+    // ─── Actions: Layout ───
+    moverMesa: (mesaId: string, nuevoX: number, nuevoY: number, nuevoAmbienteId?: string) => void;
+    transferirMesa: (origenId: string, destinoId: string) => void;
+
+    // ─── Computed ───
+    getComandasPendientes: () => ComandaCocina[];
+    getItemsPendientes: (mesaId: string) => ItemPedido[];
+    getItemsEnviados: (mesaId: string) => ItemPedido[];
+    getTotalMesa: (mesaId: string) => number;
+}
+
+export const useRestauranteStore = create<RestauranteState>((set, get) => ({
+    // ─── Estado Inicial ───
+    ambientes: [],
+    ambienteActivo: '1',
+    productos: [],
+    loading: true,
+    syncing: false,
+
+    // ═══════════════════════════════════════════════════════════════
+    // 1. INIT — Carga inicial desde la API (solo una vez)
+    // ═══════════════════════════════════════════════════════════════
+    initFromApi: async () => {
+        try {
+            set({ loading: true });
+
+            // Paralelo: mesas + ambientes + productos
+            const [mesasRes, ambRes, prodsRes] = await Promise.all([
+                fetch(`${API_BASE}/v1/restaurante/mesas`).then(r => r.ok ? r.json() : { rows: [] }).catch(() => ({ rows: [] })),
+                fetch(`${API_BASE}/v1/restaurante/admin/ambientes`).then(r => r.ok ? r.json() : { rows: [] }).catch(() => ({ rows: [] })),
+                fetch(`${API_BASE}/v1/restaurante/admin/productos`).then(r => r.ok ? r.json() : { rows: [] }).catch(() => ({ rows: [] })),
+            ]);
+
+            const mesas: Mesa[] = (mesasRes.rows ?? []).map((r: any) => ({
+                id: String(r.id),
+                numero: r.numero,
+                nombre: r.nombre?.trim(),
+                capacidad: r.capacidad,
+                ambienteId: String(r.ambienteId),
+                posicionX: r.posicionX,
+                posicionY: r.posicionY,
+                estado: r.estado || 'libre',
+            }));
+
+            // Para mesas ocupadas, cargar su pedido activo
+            for (const mesa of mesas) {
+                if (mesa.estado === 'ocupada' || mesa.estado === 'cuenta') {
+                    try {
+                        const pedidoRes = await fetch(`${API_BASE}/v1/restaurante/mesas/${mesa.id}/pedido`);
+                        if (pedidoRes.ok) {
+                            const data = await pedidoRes.json();
+                            if (data.pedido) {
+                                mesa.pedidoActual = {
+                                    id: uuidv4(),
+                                    dbId: data.pedido.id,
+                                    mesaId: mesa.id,
+                                    clienteNombre: data.pedido.clienteNombre,
+                                    items: (data.items ?? []).map((i: any) => ({
+                                        id: uuidv4(),
+                                        dbId: i.id,
+                                        productoId: i.productoId,
+                                        nombre: i.nombre?.trim(),
+                                        cantidad: Number(i.cantidad),
+                                        precioUnitario: Number(i.precioUnitario),
+                                        subtotal: Number(i.subtotal),
+                                        estado: i.estado || 'entregado',
+                                        esCompuesto: Boolean(i.esCompuesto),
+                                        enviadoACocina: Boolean(i.enviadoACocina),
+                                        horaEnvio: i.horaEnvio ? new Date(i.horaEnvio) : undefined,
+                                        comentarios: i.comentarios,
+                                    })),
+                                    estado: data.pedido.estado || 'abierto',
+                                    fechaApertura: new Date(data.pedido.fechaApertura),
+                                    total: Number(data.pedido.total ?? 0),
+                                    persistido: true,
+                                } as any;
+                            }
+                        }
+                    } catch { /* mesa sin pedido */ }
+                }
+            }
+
+            const ambientesDb = ambRes.rows ?? [];
+            const defaultColors = ['#4CAF50', '#FF9800', '#9C27B0', '#2196F3'];
+            const uniqueAmbIds = [...new Set(mesas.map(m => m.ambienteId))];
+
+            const ambientes: Ambiente[] = uniqueAmbIds.map((ambId, idx) => {
+                const dbAmb = ambientesDb.find((a: any) => String(a.id) === ambId);
+                return {
+                    id: ambId,
+                    nombre: dbAmb?.nombre || `Ambiente ${ambId}`,
+                    color: dbAmb?.color || defaultColors[idx % defaultColors.length],
+                    mesas: mesas.filter(m => m.ambienteId === ambId),
+                };
+            });
+
+            const productos: ProductoMenu[] = (prodsRes.rows ?? []).map((r: any) => ({
+                id: String(r.id),
+                codigo: r.codigo?.trim() ?? '',
+                nombre: r.nombre?.trim() ?? '',
+                descripcion: r.descripcion?.trim(),
+                precio: Number(r.precio ?? 0),
+                categoria: r.categoria?.trim() ?? '',
+                esCompuesto: Boolean(r.esCompuesto),
+                tiempoPreparacion: Number(r.tiempoPreparacion ?? 0),
+                imagen: r.imagen,
+                esSugerenciaDelDia: Boolean(r.esSugerenciaDelDia),
+                disponible: r.disponible !== false,
+            }));
+
+            set({
+                ambientes: ambientes.length > 0 ? ambientes : [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }],
+                productos,
+                loading: false,
+            });
+        } catch (err) {
+            console.error('Error cargando datos del restaurante:', err);
+            set({
+                ambientes: [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }],
+                productos: [],
+                loading: false,
+            });
         }
-    ]);
+    },
 
-    const [ambienteActivo, setAmbienteActivo] = useState<string>('1');
+    setAmbienteActivo: (id) => set({ ambienteActivo: id }),
 
-    // Productos de ejemplo
-    const productos: ProductoMenu[] = [
-        { id: 'p1', codigo: 'ENT001', nombre: 'Bruschetta', descripcion: 'Pan tostado con tomate y albahaca', precio: 8, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 10, disponible: true },
-        { id: 'p2', codigo: 'ENT002', nombre: 'Calamares Fritos', descripcion: 'Con salsa tártara', precio: 12, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 15, disponible: true, esSugerenciaDelDia: true },
-        { id: 'p9', codigo: 'ENT003', nombre: 'Tequeños', descripcion: 'Deditos de queso venezolanos', precio: 7, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 12, disponible: true },
-        { id: 'p10', codigo: 'ENT004', nombre: 'Empanadas', descripcion: 'De carne o pollo', precio: 6, categoria: 'Entradas', esCompuesto: false, tiempoPreparacion: 8, disponible: true },
-        {
-            id: 'p3', codigo: 'PAST001', nombre: 'Pasta Carbonara', descripcion: 'Con huevo, queso y panceta', precio: 15, categoria: 'Pastas', esCompuesto: true,
-            componentes: [
-                { id: 'c1', nombre: 'Tipo de Pasta', opciones: ['Spaghetti', 'Penne', 'Fettuccine'], obligatorio: true },
-                { id: 'c2', nombre: 'Extra Queso', opciones: ['Sí', 'No'], obligatorio: false }
-            ],
-            tiempoPreparacion: 20, disponible: true
-        },
-        { id: 'p4', codigo: 'PAST002', nombre: 'Lasagna', descripcion: 'Casera con carne', precio: 16, categoria: 'Pastas', esCompuesto: false, tiempoPreparacion: 25, disponible: true },
-        { id: 'p11', codigo: 'PAST003', nombre: 'Raviolis de Carne', descripcion: 'Con salsa roja', precio: 14, categoria: 'Pastas', esCompuesto: false, tiempoPreparacion: 22, disponible: true },
-        { id: 'p12', codigo: 'PAST004', nombre: 'Gnocchi al Pesto', descripcion: 'Pesto genovese', precio: 13, categoria: 'Pastas', esCompuesto: false, tiempoPreparacion: 18, disponible: true },
-        {
-            id: 'p5', codigo: 'CARNE001', nombre: 'Filete de Res', descripcion: 'Con vegetales grillados', precio: 25, categoria: 'Carnes', esCompuesto: true,
-            componentes: [
-                { id: 'c3', nombre: 'Cocción', opciones: ['Poco hecho', 'Al punto', 'Bien hecho'], obligatorio: true },
-                { id: 'c4', nombre: 'Guarnición', opciones: ['Papas', 'Ensalada', 'Arroz'], obligatorio: true }
-            ],
-            tiempoPreparacion: 30, disponible: true, esSugerenciaDelDia: true
-        },
-        { id: 'p13', codigo: 'CARNE002', nombre: 'Costillas BBQ', descripcion: 'Medio rack', precio: 22, categoria: 'Carnes', esCompuesto: false, tiempoPreparacion: 25, disponible: true },
-        { id: 'p14', codigo: 'CARNE003', nombre: 'Pollo a la Plancha', descripcion: 'Pechuga marinada', precio: 18, categoria: 'Carnes', esCompuesto: false, tiempoPreparacion: 20, disponible: true },
-        { id: 'p6', codigo: 'BEB001', nombre: 'Coca Cola', precio: 3, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
-        { id: 'p7', codigo: 'BEB002', nombre: 'Agua Mineral', precio: 2, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
-        { id: 'p15', codigo: 'BEB003', nombre: 'Cerveza Artesanal', precio: 5, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
-        { id: 'p16', codigo: 'BEB004', nombre: 'Jugo de Naranja', precio: 4, categoria: 'Bebidas', esCompuesto: false, tiempoPreparacion: 0, disponible: true },
-        { id: 'p8', codigo: 'POST001', nombre: 'Tiramisú', descripcion: 'Postre italiano clásico', precio: 8, categoria: 'Postres', esCompuesto: false, tiempoPreparacion: 5, disponible: true },
-        { id: 'p17', codigo: 'POST002', nombre: 'Flan Casero', descripcion: 'Con dulce de leche', precio: 6, categoria: 'Postres', esCompuesto: false, tiempoPreparacion: 2, disponible: true },
-    ];
+    // ═══════════════════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════════════════
 
-    const getMesaById = useCallback((id: string) => {
-        for (const ambiente of ambientes) {
-            const mesa = ambiente.mesas.find(m => m.id === id);
+    getMesaById: (id) => {
+        for (const amb of get().ambientes) {
+            const mesa = amb.mesas.find(m => m.id === id);
             if (mesa) return mesa;
         }
         return undefined;
-    }, [ambientes]);
+    },
 
-    const actualizarMesa = useCallback((mesaId: string, updates: Partial<Mesa>) => {
-        setAmbientes(prev => prev.map(amb => ({
-            ...amb,
-            mesas: amb.mesas.map(m => m.id === mesaId ? { ...m, ...updates } : m)
-        })));
-    }, []);
+    actualizarMesa: (mesaId, updates) => {
+        set(state => ({
+            ambientes: state.ambientes.map(amb => ({
+                ...amb,
+                mesas: amb.mesas.map(m => m.id === mesaId ? { ...m, ...updates } : m),
+            })),
+        }));
+    },
 
-    const abrirPedido = useCallback((mesaId: string, cliente?: ClienteMesa) => {
+    // ═══════════════════════════════════════════════════════════════
+    // 2. ABRIR PEDIDO — Solo en STORE (sin BD)
+    //    La BD se toca en enviarComanda cuando es la primera vez
+    // ═══════════════════════════════════════════════════════════════
+
+    abrirPedido: (mesaId, cliente) => {
         const nuevoPedido: Pedido = {
             id: uuidv4(),
             mesaId,
@@ -210,55 +313,286 @@ export function useRestaurante() {
             items: [],
             estado: 'abierto',
             fechaApertura: new Date(),
-            total: 0
+            total: 0,
+            persistido: false,   // ← AÚN NO existe en la BD
         };
-        actualizarMesa(mesaId, {
+        get().actualizarMesa(mesaId, {
             estado: 'ocupada',
             pedidoActual: nuevoPedido,
-            cliente
+            cliente,
         });
-        return nuevoPedido;
-    }, [actualizarMesa]);
+    },
 
-    const agregarItemAPedido = useCallback((mesaId: string, item: Omit<ItemPedido, 'id'>) => {
-        const mesa = getMesaById(mesaId);
+    // ═══════════════════════════════════════════════════════════════
+    // 3. AGREGAR ITEM — Solo en STORE (sin BD)
+    //    El mesero puede agregar y quitar libremente
+    // ═══════════════════════════════════════════════════════════════
+
+    agregarItem: (mesaId, item) => {
+        const mesa = get().getMesaById(mesaId);
         if (!mesa?.pedidoActual) return;
 
-        const nuevoItem: ItemPedido = { ...item, id: uuidv4() };
+        const nuevoItem: ItemPedido = {
+            ...item,
+            id: uuidv4(),
+            enviadoACocina: false,    // ← Pendiente de enviar
+            estado: 'pendiente',
+        };
         const nuevosItems = [...mesa.pedidoActual.items, nuevoItem];
         const nuevoTotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
 
-        actualizarMesa(mesaId, {
+        get().actualizarMesa(mesaId, {
             pedidoActual: {
                 ...mesa.pedidoActual,
                 items: nuevosItems,
-                total: nuevoTotal
-            }
+                total: nuevoTotal,
+            },
         });
-    }, [getMesaById, actualizarMesa]);
+    },
 
-    const enviarComandaACocina = useCallback((mesaId: string, itemIds?: string[]) => {
-        const mesa = getMesaById(mesaId);
+    quitarItem: (mesaId, itemId) => {
+        const mesa = get().getMesaById(mesaId);
         if (!mesa?.pedidoActual) return;
 
-        const itemsActualizados = mesa.pedidoActual.items.map(item => {
-            if (itemIds && !itemIds.includes(item.id)) return item;
-            if (item.enviadoACocina) return item;
-            return { ...item, enviadoACocina: true, horaEnvio: new Date(), estado: 'en_preparacion' as const };
-        });
+        const item = mesa.pedidoActual.items.find(i => i.id === itemId);
+        // Solo se pueden quitar items NO enviados a cocina
+        if (item?.enviadoACocina) return;
 
-        actualizarMesa(mesaId, {
+        const nuevosItems = mesa.pedidoActual.items.filter(i => i.id !== itemId);
+        const nuevoTotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+        get().actualizarMesa(mesaId, {
             pedidoActual: {
                 ...mesa.pedidoActual,
-                items: itemsActualizados
-            }
+                items: nuevosItems,
+                total: nuevoTotal,
+            },
         });
-    }, [getMesaById, actualizarMesa]);
+    },
 
-    const moverMesa = useCallback((mesaId: string, nuevoX: number, nuevoY: number, nuevoAmbienteId?: string) => {
-        setAmbientes(prev => {
+    editarItem: (mesaId, itemId, updates) => {
+        const mesa = get().getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return;
+
+        const nuevosItems = mesa.pedidoActual.items.map(item => {
+            if (item.id !== itemId) return item;
+            // Solo editar si NO fue enviado a cocina
+            if (item.enviadoACocina) return item;
+
+            const cantidad = updates.cantidad ?? item.cantidad;
+            const subtotal = cantidad * item.precioUnitario;
+            return { ...item, cantidad, subtotal, comentarios: updates.comentarios ?? item.comentarios };
+        });
+        const nuevoTotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+        get().actualizarMesa(mesaId, {
+            pedidoActual: {
+                ...mesa.pedidoActual,
+                items: nuevosItems,
+                total: nuevoTotal,
+            },
+        });
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 5. ENVIAR COMANDA — AQUÍ SÍ se persiste a la BD + imprime
+    //
+    //    Flujo:
+    //    a) Si el pedido no existe en BD → POST /pedidos/abrir
+    //    b) Para cada item NO enviado → POST /pedidos/item
+    //    c) POST /pedidos/:id/comanda (marca como enviados en BD)
+    //    d) Imprime comanda ESC/POS a cocina
+    //    e) Actualiza store: items marcados como enviadoACocina=true
+    // ═══════════════════════════════════════════════════════════════
+
+    enviarComanda: async (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+
+        const pedido = mesa.pedidoActual;
+        const itemsPendientes = pedido.items.filter(i => !i.enviadoACocina);
+        if (itemsPendientes.length === 0) return { success: false, message: 'No hay items nuevos para enviar' };
+
+        set({ syncing: true });
+
+        try {
+            let dbPedidoId = pedido.dbId;
+
+            // ─── (a) Si el pedido no existe en BD, crearlo ───
+            if (!pedido.persistido || !dbPedidoId) {
+                const abrirRes = await fetch(`${API_BASE}/v1/restaurante/pedidos/abrir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mesaId: Number(mesaId),
+                        clienteNombre: pedido.cliente?.nombre,
+                        clienteRif: pedido.cliente?.cedula,
+                    }),
+                });
+                const abrirData = await abrirRes.json();
+                if (!abrirData.ok) {
+                    set({ syncing: false });
+                    return { success: false, message: `Error abriendo pedido: ${abrirData.error || 'desconocido'}` };
+                }
+                dbPedidoId = abrirData.pedidoId;
+            }
+
+            // ─── (b) Persistir cada item nuevo ───
+            for (const item of itemsPendientes) {
+                const itemRes = await fetch(`${API_BASE}/v1/restaurante/pedidos/item`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pedidoId: dbPedidoId,
+                        productoId: item.productoId,
+                        nombre: item.nombre,
+                        cantidad: item.cantidad,
+                        precioUnitario: item.precioUnitario,
+                        esCompuesto: item.esCompuesto,
+                        componentes: item.componentes ? JSON.stringify(item.componentes) : undefined,
+                        comentarios: item.comentarios,
+                    }),
+                });
+                const itemData = await itemRes.json();
+                if (itemData.ok) {
+                    item.dbId = itemData.itemId;
+                }
+            }
+
+            // ─── (c) Marcar como enviado en BD ───
+            await fetch(`${API_BASE}/v1/restaurante/pedidos/${dbPedidoId}/comanda`, {
+                method: 'POST',
+            });
+
+            // ─── (d) Imprimir comanda en cocina ───
+            const printResult = await usePosStore.getState().printKitchenOrder('Cocina Principal', {
+                texto: `Mesa: ${mesa.nombre}\n${itemsPendientes.map(i => `${i.cantidad}x ${i.nombre}${i.comentarios ? ` >> ${i.comentarios}` : ''}`).join('\n')}`,
+                renglones: itemsPendientes.map(i => ({
+                    articulo: i.nombre,
+                    cantidad: i.cantidad,
+                    nota: i.comentarios || '',
+                })),
+            });
+
+            // ─── (e) Actualizar store ───
+            const itemsActualizados = pedido.items.map(item => {
+                if (item.enviadoACocina) return item;
+                return { ...item, enviadoACocina: true, horaEnvio: new Date(), estado: 'en_preparacion' as const };
+            });
+
+            get().actualizarMesa(mesaId, {
+                pedidoActual: {
+                    ...pedido,
+                    dbId: dbPedidoId,
+                    items: itemsActualizados,
+                    estado: 'en_preparacion',
+                    persistido: true,
+                },
+            });
+
+            set({ syncing: false });
+            return {
+                success: true,
+                message: printResult.success
+                    ? `✅ Comanda enviada (${itemsPendientes.length} items) e impresa.`
+                    : `⚠️ Comanda guardada pero impresión falló: ${printResult.message}`,
+            };
+
+        } catch (e: any) {
+            set({ syncing: false });
+            return { success: false, message: `Error: ${e.message}` };
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 6. GENERAR CUENTA — Impresión fiscal (lee del STORE)
+    //    No persiste nada extra, solo imprime
+    // ═══════════════════════════════════════════════════════════════
+
+    generarCuenta: async (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+
+        const result = await usePosStore.getState().printFiscalInvoice({
+            items: mesa.pedidoActual.items.map(i => ({
+                nombre: i.nombre,
+                cantidad: i.cantidad,
+                precio: i.precioUnitario,
+                iva: 16,
+            })),
+        });
+
+        if (result.success) {
+            get().actualizarMesa(mesaId, {
+                estado: 'cuenta',
+            });
+        }
+
+        return result;
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 7. CERRAR MESA — Persiste cierre a BD + limpia STORE
+    // ═══════════════════════════════════════════════════════════════
+
+    cerrarMesa: async (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+
+        set({ syncing: true });
+
+        try {
+            const dbPedidoId = mesa.pedidoActual.dbId;
+
+            // Si hay items sin enviar, persistirlos primero
+            const sinEnviar = mesa.pedidoActual.items.filter(i => !i.enviadoACocina);
+            if (sinEnviar.length > 0 && dbPedidoId) {
+                for (const item of sinEnviar) {
+                    await fetch(`${API_BASE}/v1/restaurante/pedidos/item`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pedidoId: dbPedidoId,
+                            productoId: item.productoId,
+                            nombre: item.nombre,
+                            cantidad: item.cantidad,
+                            precioUnitario: item.precioUnitario,
+                        }),
+                    });
+                }
+            }
+
+            // Cerrar pedido en BD
+            if (dbPedidoId) {
+                await fetch(`${API_BASE}/v1/restaurante/pedidos/${dbPedidoId}/cerrar`, {
+                    method: 'POST',
+                });
+            }
+
+            // Limpiar mesa en store
+            get().actualizarMesa(mesaId, {
+                estado: 'libre',
+                pedidoActual: undefined,
+                cliente: undefined,
+            });
+
+            set({ syncing: false });
+            return { success: true, message: 'Mesa cerrada exitosamente.' };
+
+        } catch (e: any) {
+            set({ syncing: false });
+            return { success: false, message: `Error cerrando mesa: ${e.message}` };
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // Layout: mover y transferir mesas
+    // ═══════════════════════════════════════════════════════════════
+
+    moverMesa: (mesaId, nuevoX, nuevoY, nuevoAmbienteId) => {
+        set(state => {
             let mesaAMover: Mesa | undefined;
-            const ambientesSinMesa = prev.map(amb => {
+            const ambientesSinMesa = state.ambientes.map(amb => {
                 const mesa = amb.mesas.find(m => m.id === mesaId);
                 if (mesa) {
                     mesaAMover = mesa;
@@ -266,61 +600,53 @@ export function useRestaurante() {
                 }
                 return amb;
             });
-
-            if (!mesaAMover) return prev;
+            if (!mesaAMover) return state;
             const ambienteDestino = nuevoAmbienteId || mesaAMover.ambienteId;
-
-            return ambientesSinMesa.map(amb => {
-                if (amb.id === ambienteDestino) {
-                    return {
-                        ...amb,
-                        mesas: [...amb.mesas, { ...mesaAMover!, posicionX: nuevoX, posicionY: nuevoY, ambienteId: ambienteDestino }]
-                    };
-                }
-                return amb;
-            });
+            return {
+                ambientes: ambientesSinMesa.map(amb => amb.id === ambienteDestino
+                    ? { ...amb, mesas: [...amb.mesas, { ...mesaAMover!, posicionX: nuevoX, posicionY: nuevoY, ambienteId: ambienteDestino }] }
+                    : amb
+                ),
+            };
         });
-    }, []);
+    },
 
-    const transferirMesa = useCallback((origenId: string, destinoId: string) => {
-        setAmbientes(prev => {
+    transferirMesa: (origenId, destinoId) => {
+        set(state => {
             let mesaOrigen: Mesa | undefined;
             let mesaDestino: Mesa | undefined;
-
-            prev.forEach(amb => {
+            state.ambientes.forEach(amb => {
                 amb.mesas.forEach(m => {
                     if (m.id === origenId) mesaOrigen = m;
                     if (m.id === destinoId) mesaDestino = m;
                 });
             });
-
-            if (!mesaOrigen || !mesaDestino || mesaOrigen.estado === 'libre' || mesaDestino.estado !== 'libre') {
-                return prev;
-            }
-
-            return prev.map(amb => ({
-                ...amb,
-                mesas: amb.mesas.map(m => {
-                    if (m.id === origenId) {
-                        return { ...m, estado: 'libre', pedidoActual: undefined, cliente: undefined };
-                    }
-                    if (m.id === destinoId) {
-                        return {
+            if (!mesaOrigen || !mesaDestino || mesaOrigen.estado === 'libre' || mesaDestino.estado !== 'libre') return state;
+            return {
+                ambientes: state.ambientes.map(amb => ({
+                    ...amb,
+                    mesas: amb.mesas.map(m => {
+                        if (m.id === origenId) return { ...m, estado: 'libre' as const, pedidoActual: undefined, cliente: undefined };
+                        if (m.id === destinoId) return {
                             ...m,
                             estado: mesaOrigen!.estado,
                             pedidoActual: mesaOrigen!.pedidoActual ? { ...mesaOrigen!.pedidoActual, mesaId: destinoId } : undefined,
-                            cliente: mesaOrigen!.cliente
+                            cliente: mesaOrigen!.cliente,
                         };
-                    }
-                    return m;
-                })
-            }));
+                        return m;
+                    }),
+                })),
+            };
         });
-    }, []);
+    },
 
-    const getComandasPendientes = useCallback((): ComandaCocina[] => {
+    // ═══════════════════════════════════════════════════════════════
+    // Computed
+    // ═══════════════════════════════════════════════════════════════
+
+    getComandasPendientes: () => {
         const comandas: ComandaCocina[] = [];
-        ambientes.forEach(amb => {
+        get().ambientes.forEach(amb => {
             amb.mesas.forEach(mesa => {
                 if (mesa.pedidoActual) {
                     mesa.pedidoActual.items
@@ -333,74 +659,114 @@ export function useRestaurante() {
                                 item,
                                 horaRecibido: item.horaEnvio || new Date(),
                                 prioridad: item.estado === 'pendiente' ? 'normal' : 'alta',
-                                ambiente: amb.nombre
+                                ambiente: amb.nombre,
                             });
                         });
                 }
             });
         });
         return comandas.sort((a, b) => a.horaRecibido.getTime() - b.horaRecibido.getTime());
-    }, [ambientes]);
+    },
 
-    // ═══ Impresión de Comandas a Cocina (ESC/POS) ═══
-    const printKitchenOrder = usePosStore((s) => s.printKitchenOrder);
-    const printFiscalInvoice = usePosStore((s) => s.printFiscalInvoice);
+    getItemsPendientes: (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        return mesa?.pedidoActual?.items.filter(i => !i.enviadoACocina) ?? [];
+    },
 
-    const imprimirComandaCocina = useCallback(async (mesaId: string) => {
-        const mesa = getMesaById(mesaId);
-        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+    getItemsEnviados: (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        return mesa?.pedidoActual?.items.filter(i => i.enviadoACocina) ?? [];
+    },
 
-        const itemsPendientes = mesa.pedidoActual.items.filter(i => !i.enviadoACocina);
-        if (itemsPendientes.length === 0) return { success: false, message: 'No hay items pendientes de enviar' };
+    getTotalMesa: (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        return mesa?.pedidoActual?.total ?? 0;
+    },
+}));
 
-        const result = await printKitchenOrder('Cocina Principal', {
-            texto: `Mesa: ${mesa.nombre}\n${itemsPendientes.map(i => `${i.cantidad}x ${i.nombre}${i.comentarios ? ` >> ${i.comentarios}` : ''}`).join('\n')}`,
-            renglones: itemsPendientes.map(i => ({
-                articulo: i.nombre,
-                cantidad: i.cantidad,
-                nota: i.comentarios || '',
-            })),
-        });
 
-        // Si la impresión fue exitosa, marcar items como enviados
-        if (result.success) {
-            enviarComandaACocina(mesaId);
+// ═══════════════════════════════════════════════════════════════
+// HOOK WRAPPER — Compatibilidad con los componentes existentes
+// Inicializa el store al montar + re-exporta todo
+// ═══════════════════════════════════════════════════════════════
+
+export function useRestaurante() {
+    const store = useRestauranteStore();
+
+    // Inicializar al montar (solo una vez)
+    useEffect(() => {
+        if (store.loading && store.ambientes.length === 0) {
+            store.initFromApi();
         }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-        return result;
-    }, [getMesaById, printKitchenOrder, enviarComandaACocina]);
+    // Wrapper para abrirPedido compatible con la firma anterior
+    const abrirPedido = useCallback((mesaId: string, cliente?: ClienteMesa) => {
+        store.abrirPedido(mesaId, cliente);
+    }, [store.abrirPedido]);
 
-    // ═══ Impresión de Cuenta Fiscal ═══
-    const imprimirCuentaFiscal = useCallback(async (mesaId: string) => {
-        const mesa = getMesaById(mesaId);
-        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+    // Wrapper para agregarItem compatible con la firma anterior
+    const agregarItemAPedido = useCallback((mesaId: string, item: Omit<ItemPedido, 'id'>) => {
+        store.agregarItem(mesaId, item);
+    }, [store.agregarItem]);
 
-        const result = await printFiscalInvoice({
-            items: mesa.pedidoActual.items.map(i => ({
-                nombre: i.nombre,
-                cantidad: i.cantidad,
-                precio: i.precioUnitario,
-                iva: 16,
-            })),
+    // enviarComanda ahora retorna una promesa con { success, message }
+    const enviarComandaACocina = useCallback((mesaId: string) => {
+        // Marca local sin BD (para compat — la real es enviarComanda)
+        const mesa = store.getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return;
+        const itemsActualizados = mesa.pedidoActual.items.map(item => {
+            if (item.enviadoACocina) return item;
+            return { ...item, enviadoACocina: true, horaEnvio: new Date(), estado: 'en_preparacion' as const };
         });
+        store.actualizarMesa(mesaId, {
+            pedidoActual: { ...mesa.pedidoActual, items: itemsActualizados },
+        });
+    }, [store.getMesaById, store.actualizarMesa]);
 
-        return result;
-    }, [getMesaById, printFiscalInvoice]);
+    // Impresión integrada: enviarComanda persiste + imprime
+    const imprimirComandaCocina = useCallback(async (mesaId: string) => {
+        return store.enviarComanda(mesaId);
+    }, [store.enviarComanda]);
+
+    const imprimirCuentaFiscal = useCallback(async (mesaId: string) => {
+        return store.generarCuenta(mesaId);
+    }, [store.generarCuenta]);
 
     return {
-        ambientes,
-        ambienteActivo,
-        setAmbienteActivo,
-        productos,
-        getMesaById,
-        actualizarMesa,
+        // Estado
+        ambientes: store.ambientes,
+        ambienteActivo: store.ambienteActivo,
+        setAmbienteActivo: store.setAmbienteActivo,
+        productos: store.productos,
+        loading: store.loading,
+        syncing: store.syncing,
+
+        // Mesas
+        getMesaById: store.getMesaById,
+        actualizarMesa: store.actualizarMesa,
+
+        // Pedido lifecycle
         abrirPedido,
         agregarItemAPedido,
+        quitarItem: store.quitarItem,
+        editarItem: store.editarItem,
         enviarComandaACocina,
-        moverMesa,
-        transferirMesa,
-        getComandasPendientes,
+
+        // Persistencia + impresión
+        enviarComanda: store.enviarComanda,
         imprimirComandaCocina,
         imprimirCuentaFiscal,
+        cerrarMesa: store.cerrarMesa,
+
+        // Layout
+        moverMesa: store.moverMesa,
+        transferirMesa: store.transferirMesa,
+
+        // Computed
+        getComandasPendientes: store.getComandasPendientes,
+        getItemsPendientes: store.getItemsPendientes,
+        getItemsEnviados: store.getItemsEnviados,
+        getTotalMesa: store.getTotalMesa,
     };
 }

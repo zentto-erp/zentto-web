@@ -48,18 +48,26 @@ interface PanelPedidoProps {
     mesa: Mesa;
     productos: ProductoMenu[];
     onAgregarItem: (item: Omit<ItemPedido, 'id'>) => void;
+    onQuitarItem?: (mesaId: string, itemId: string) => void;
+    onEditarItem?: (mesaId: string, itemId: string, cambios: Partial<ItemPedido>) => void;
     onEnviarComanda: () => void;
     onImprimirCuenta?: () => void;
+    onCerrarMesa?: () => void;
     onCerrar: () => void;
+    syncing?: boolean;
 }
 
 export function PanelPedido({
     mesa,
     productos,
     onAgregarItem,
+    onQuitarItem,
+    onEditarItem,
     onEnviarComanda,
     onImprimirCuenta,
+    onCerrarMesa,
     onCerrar,
+    syncing = false,
 }: PanelPedidoProps) {
     const theme = useTheme();
     const isMobileLandscape = useMediaQuery('(max-height: 500px) and (orientation: landscape)');
@@ -181,18 +189,49 @@ export function PanelPedido({
                         {itemsPendientes.length > 0 && (
                             <>
                                 <Typography variant="caption" color="warning.main" fontWeight="bold">
-                                    Pendientes de enviar
+                                    ⏳ Pendientes de enviar
                                 </Typography>
                                 <List dense>
                                     {itemsPendientes.map((item) => (
-                                        <ListItem key={item.id}>
+                                        <ListItem key={item.id} sx={{ bgcolor: '#FFF8E1', borderRadius: 1, mb: 0.5 }}>
                                             <ListItemText
                                                 primary={item.nombre}
                                                 secondary={`${item.cantidad}x $${item.precioUnitario.toFixed(2)}`}
                                             />
-                                            <Typography variant="body2" fontWeight="bold">
-                                                ${item.subtotal.toFixed(2)}
-                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                {onEditarItem && (
+                                                    <>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => onEditarItem(mesa.id, item.id, { cantidad: Math.max(1, item.cantidad - 1) })}
+                                                            disabled={item.cantidad <= 1}
+                                                        >
+                                                            <RemoveIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 20, textAlign: 'center' }}>
+                                                            {item.cantidad}
+                                                        </Typography>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => onEditarItem(mesa.id, item.id, { cantidad: item.cantidad + 1 })}
+                                                        >
+                                                            <AddIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </>
+                                                )}
+                                                <Typography variant="body2" fontWeight="bold" sx={{ mx: 0.5 }}>
+                                                    ${item.subtotal.toFixed(2)}
+                                                </Typography>
+                                                {onQuitarItem && (
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => onQuitarItem(mesa.id, item.id)}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
                                         </ListItem>
                                     ))}
                                 </List>
@@ -256,6 +295,18 @@ export function PanelPedido({
                                 Cuenta
                             </Button>
                         </Box>
+                        {onCerrarMesa && mesa.estado === 'cuenta' && (
+                            <Button
+                                variant="contained"
+                                color="error"
+                                fullWidth
+                                onClick={onCerrarMesa}
+                                disabled={syncing}
+                                sx={{ height: 48 }}
+                            >
+                                🔒 Cerrar Mesa
+                            </Button>
+                        )}
                     </Box>
                 </Paper>
 

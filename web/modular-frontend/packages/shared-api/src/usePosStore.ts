@@ -71,8 +71,37 @@ export interface CartItem {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// STORE PRINCIPAL
+// STORE PRINCIPAL — POS con flujo de supermercado
+//
+// FLUJO:
+//  1. addToCart()       → Solo Store (escanear productos)
+//  2. updateCartItem()  → Solo Store (editar cantidad)
+//  3. removeFromCart()  → Solo Store (quitar item)
+//  4. facturar()        → Fiscal + Persist BD + clear cart
+//     Si falla fiscal:
+//  5. ponerEnEspera()   → Persist carrito a BD + clear local
+//  6. listarEspera()    → Carga lista de espera (multi-estación)
+//  7. recuperarEspera() → Carga de BD al carrito + elimina de espera
+//  8. anularEspera()    → Elimina de espera en BD
 // ═══════════════════════════════════════════════════════════════
+
+export interface VentaEnEspera {
+    id: number;
+    cajaId: string;
+    estacionNombre?: string;
+    codUsuario?: string;
+    clienteNombre?: string;
+    clienteRif?: string;
+    tipoPrecio?: string;
+    motivo?: string;
+    total: number;
+    fechaCreacion: string;
+    cantItems: number;
+}
+
+const API_BASE = typeof window !== 'undefined'
+    ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
+    : 'http://localhost:4000';
 
 interface PosState {
     // --- Configuración Hardware ---
@@ -89,6 +118,12 @@ interface PosState {
     // --- Carrito ---
     cart: CartItem[];
     selectedCartItemId: string | null;
+    esperaOrigenId: number | null;  // Si el carrito fue recuperado de espera
+
+    // --- Ventas en Espera (multi-estación) ---
+    ventasEnEspera: VentaEnEspera[];
+    loadingEspera: boolean;
+    syncing: boolean;
 
     // --- UI State ---
     paymentModalOpen: boolean;
@@ -108,7 +143,7 @@ interface PosState {
     setCliente: (cliente: ClientePos) => void;
     resetCliente: () => void;
 
-    // --- Actions: Carrito ---
+    // --- Actions: Carrito (SOLO STORE — sin BD) ---
     addToCart: (item: Omit<CartItem, 'id' | 'totalBase' | 'totalIva' | 'totalRenglon'>) => void;
     updateCartItem: (id: string, updates: Partial<Pick<CartItem, 'cantidad' | 'precio' | 'descuento'>>) => void;
     removeFromCart: (id: string) => void;
@@ -123,11 +158,21 @@ interface PosState {
     printFiscalInvoice: (payload: Record<string, unknown>) => Promise<{ success: boolean; message: string; tramas?: string[] }>;
     printKitchenOrder: (printerName: string, payload: Record<string, unknown>) => Promise<{ success: boolean; message: string }>;
 
+    // --- Actions: ESPERA (PERSISTE a BD) ---
+    ponerEnEspera: (motivo?: string) => Promise<{ success: boolean; esperaId?: number; message: string }>;
+    listarEspera: () => Promise<void>;
+    recuperarEspera: (id: number) => Promise<{ success: boolean; message: string }>;
+    anularEspera: (id: number) => Promise<{ success: boolean; message: string }>;
+
+    // --- Actions: FACTURAR (Fiscal + BD) ---
+    facturar: (metodoPago?: string) => Promise<{ success: boolean; message: string; ventaId?: number }>;
+
     // --- Computed (derivados) ---
     getSubtotal: () => number;
     getImpuestos: () => number;
     getTotal: () => number;
     getDescuento: () => number;
+    getCartCount: () => number;
 }
 
 const DEFAULT_CLIENTE: ClientePos = {
@@ -175,6 +220,10 @@ export const usePosStore = create<PosState>()(
             cliente: DEFAULT_CLIENTE,
             cart: [],
             selectedCartItemId: null,
+            esperaOrigenId: null,
+            ventasEnEspera: [],
+            loadingEspera: false,
+            syncing: false,
             paymentModalOpen: false,
             customerModalOpen: false,
 
@@ -344,6 +393,247 @@ export const usePosStore = create<PosState>()(
             getTotal: () => get().cart.reduce((sum, c) => sum + c.totalRenglon, 0),
             getDescuento: () =>
                 get().cart.reduce((sum, c) => sum + c.cantidad * c.precio * (c.descuento / 100), 0),
+            getCartCount: () => get().cart.reduce((sum, c) => sum + c.cantidad, 0),
+
+            // ═══════════════════════════════════════════════════════════════
+            // PONER EN ESPERA — Persiste el carrito completo a BD
+            // Visible para TODAS las estaciones
+            // ═══════════════════════════════════════════════════════════════
+            ponerEnEspera: async (motivo) => {
+                const { cart, caja, cliente } = get();
+                if (cart.length === 0) return { success: false, message: 'El carrito está vacío.' };
+
+                set({ syncing: true });
+                try {
+                    const res = await fetch(`${API_BASE}/v1/pos/espera`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            cajaId: caja.id,
+                            estacionNombre: caja.nombre,
+                            clienteNombre: cliente.nombre,
+                            clienteRif: cliente.rif,
+                            clienteId: cliente.id !== '0' ? cliente.codigo : undefined,
+                            tipoPrecio: cliente.tipoPrecio,
+                            motivo: motivo || 'Puesta en espera',
+                            items: cart.map(c => ({
+                                productoId: c.productoId,
+                                codigo: c.codigo,
+                                nombre: c.nombre,
+                                cantidad: c.cantidad,
+                                precioUnitario: c.precio,
+                                descuento: c.descuento,
+                                iva: c.iva,
+                                subtotal: c.totalBase,
+                            })),
+                        }),
+                    });
+                    const data = await res.json();
+                    if (!data.ok) {
+                        set({ syncing: false });
+                        return { success: false, message: data.error || 'Error al poner en espera' };
+                    }
+
+                    // Limpiar carrito local
+                    set({ cart: [], selectedCartItemId: null, esperaOrigenId: null, cliente: DEFAULT_CLIENTE, syncing: false });
+                    // Refrescar lista
+                    get().listarEspera();
+
+                    return { success: true, esperaId: data.esperaId, message: `✅ Venta #${data.esperaId} puesta en espera. ${cart.length} items guardados.` };
+                } catch (e: any) {
+                    set({ syncing: false });
+                    return { success: false, message: e?.message || 'Error de red.' };
+                }
+            },
+
+            // ═══════════════════════════════════════════════════════════════
+            // LISTAR ESPERA — Visible para todas las estaciones
+            // ═══════════════════════════════════════════════════════════════
+            listarEspera: async () => {
+                set({ loadingEspera: true });
+                try {
+                    const res = await fetch(`${API_BASE}/v1/pos/espera`);
+                    const data = await res.json();
+                    set({ ventasEnEspera: data.rows ?? [], loadingEspera: false });
+                } catch {
+                    set({ loadingEspera: false });
+                }
+            },
+
+            // ═══════════════════════════════════════════════════════════════
+            // RECUPERAR ESPERA — Carga desde BD al carrito local
+            // Marca como "recuperado" en BD para que no aparezca en otras cajas
+            // ═══════════════════════════════════════════════════════════════
+            recuperarEspera: async (id) => {
+                const { cart, caja } = get();
+                if (cart.length > 0) {
+                    return { success: false, message: 'Hay items en el carrito. Vacíe o ponga en espera antes de recuperar.' };
+                }
+
+                set({ syncing: true });
+                try {
+                    const res = await fetch(`${API_BASE}/v1/pos/espera/${id}/recuperar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cajaId: caja.id }),
+                    });
+                    const data = await res.json();
+                    if (!data.ok) {
+                        set({ syncing: false });
+                        return { success: false, message: data.error || 'Error al recuperar.' };
+                    }
+
+                    // Restaurar carrito desde los items de la BD
+                    const items: CartItem[] = (data.items ?? []).map((i: any) => {
+                        const cantidad = Number(i.cantidad);
+                        const precio = Number(i.precioUnitario);
+                        const descuento = Number(i.descuento ?? 0);
+                        const iva = Number(i.iva ?? 16);
+                        return {
+                            id: `${i.productoId}-${Date.now()}-${Math.random()}`,
+                            productoId: String(i.productoId),
+                            codigo: i.codigo || '',
+                            nombre: i.nombre,
+                            cantidad,
+                            precio,
+                            descuento,
+                            iva,
+                            ...calcTotals(cantidad, precio, descuento, iva),
+                        };
+                    });
+
+                    // Restaurar cliente si lo tiene
+                    const header = data.header;
+                    const cliente: ClientePos = header?.clienteNombre && header.clienteNombre !== 'Consumidor Final'
+                        ? {
+                            id: header.clienteId || '0',
+                            codigo: header.clienteId || 'CF',
+                            nombre: header.clienteNombre,
+                            rif: header.clienteRif || 'J-00000000-0',
+                            tipoPrecio: header.tipoPrecio || 'Detal',
+                            credito: 0,
+                        }
+                        : DEFAULT_CLIENTE;
+
+                    set({
+                        cart: items,
+                        cliente,
+                        esperaOrigenId: id,
+                        selectedCartItemId: null,
+                        syncing: false,
+                    });
+
+                    // Refrescar lista
+                    get().listarEspera();
+
+                    return { success: true, message: `✅ Venta recuperada con ${items.length} items.` };
+                } catch (e: any) {
+                    set({ syncing: false });
+                    return { success: false, message: e?.message || 'Error de red.' };
+                }
+            },
+
+            // ═══════════════════════════════════════════════════════════════
+            // ANULAR ESPERA
+            // ═══════════════════════════════════════════════════════════════
+            anularEspera: async (id) => {
+                try {
+                    await fetch(`${API_BASE}/v1/pos/espera/${id}`, { method: 'DELETE' });
+                    set(s => ({ ventasEnEspera: s.ventasEnEspera.filter(e => e.id !== id) }));
+                    return { success: true, message: 'Venta en espera anulada.' };
+                } catch (e: any) {
+                    return { success: false, message: e?.message || 'Error al anular.' };
+                }
+            },
+
+            // ═══════════════════════════════════════════════════════════════
+            // FACTURAR — Imprimir fiscal + Persistir venta a BD + Limpiar
+            //
+            // Flujo:
+            // 1. Intenta imprimir fiscal
+            // 2. Si OK: guarda venta en BD con trama fiscal
+            // 3. Limpia carrito
+            // 4. Si FALLA fiscal: retorna error (cajero decide: espera/reintentar)
+            // ═══════════════════════════════════════════════════════════════
+            facturar: async (metodoPago) => {
+                const { cart, caja, cliente, esperaOrigenId } = get();
+                if (cart.length === 0) return { success: false, message: 'El carrito está vacío.' };
+
+                set({ syncing: true });
+
+                // 1. Imprimir fiscal
+                const printResult = await get().printFiscalInvoice({
+                    items: cart.map(c => ({
+                        nombre: c.nombre,
+                        cantidad: c.cantidad,
+                        precio: c.precio,
+                        iva: c.iva,
+                    })),
+                });
+
+                if (!printResult.success) {
+                    set({ syncing: false });
+                    return {
+                        success: false,
+                        message: `❌ Error fiscal: ${printResult.message}. Puede poner la venta en espera.`,
+                    };
+                }
+
+                // 2. Generar número de factura
+                const numFactura = `${caja.serieFactura}-${String(caja.numeroActual + 1).padStart(8, '0')}`;
+
+                // 3. Persistir venta a BD
+                try {
+                    const res = await fetch(`${API_BASE}/v1/pos/ventas`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            numFactura,
+                            cajaId: caja.id,
+                            clienteNombre: cliente.nombre,
+                            clienteRif: cliente.rif,
+                            clienteId: cliente.id !== '0' ? cliente.codigo : undefined,
+                            tipoPrecio: cliente.tipoPrecio,
+                            metodoPago: metodoPago || 'Efectivo',
+                            tramaFiscal: printResult.tramas?.join('|') || '',
+                            esperaOrigenId: esperaOrigenId || undefined,
+                            items: cart.map(c => ({
+                                productoId: c.productoId,
+                                codigo: c.codigo,
+                                nombre: c.nombre,
+                                cantidad: c.cantidad,
+                                precioUnitario: c.precio,
+                                descuento: c.descuento,
+                                iva: c.iva,
+                                subtotal: c.totalBase,
+                            })),
+                        }),
+                    });
+                    const data = await res.json();
+
+                    // 4. Incrementar número de factura y limpiar
+                    set(s => ({
+                        cart: [],
+                        selectedCartItemId: null,
+                        esperaOrigenId: null,
+                        cliente: DEFAULT_CLIENTE,
+                        syncing: false,
+                        caja: { ...s.caja, numeroActual: s.caja.numeroActual + 1 },
+                    }));
+
+                    return {
+                        success: true,
+                        message: `✅ Factura ${numFactura} emitida exitosamente.`,
+                        ventaId: data.ventaId,
+                    };
+                } catch (e: any) {
+                    set({ syncing: false });
+                    return {
+                        success: false,
+                        message: `Fiscal imprimió pero falló guardado en BD: ${e?.message}. Contacte soporte.`,
+                    };
+                }
+            },
         }),
         {
             name: 'datqbox-pos-store',

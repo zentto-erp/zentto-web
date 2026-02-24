@@ -6,3 +6,4 @@ export { PosProductGrid, type Product } from './PosProductGrid';
 export { PosHeader } from './PosHeader';
 export { PosPaymentModal } from './PosPaymentModal';
 export { PosCustomerSearch, type Customer } from './PosCustomerSearch';
+export { PosEsperaDrawer } from './PosEsperaDrawer';
