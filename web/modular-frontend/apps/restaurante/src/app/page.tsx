@@ -17,6 +17,10 @@ import {
     LinearProgress,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import SettingsIcon from '@mui/icons-material/Settings';
+import IconButton from '@mui/material/IconButton';
+import { LocalizacionModal } from '@datqbox/shared-ui';
+import { usePosStore } from '@datqbox/shared-api';
 import { MapaMesas } from '@/components/MapaMesas';
 import { PanelPedido } from '@/components/PanelPedido';
 import { useRestaurante, Mesa, ClienteMesa } from '@/hooks/useRestaurante';
@@ -49,6 +53,10 @@ export default function RestaurantePage() {
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({
         open: false, message: '', severity: 'success',
     });
+
+    // Configuración compartida con POS (Multi-moneda / Multi-país)
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const { localizacion, setLocalizacion } = usePosStore();
 
     // La mesa seleccionada SIEMPRE se lee del store (fuente de verdad)
     const mesaSeleccionada = mesaSeleccionadaId ? getMesaById(mesaSeleccionadaId) ?? null : null;
@@ -141,8 +149,11 @@ export default function RestaurantePage() {
 
             {/* Header */}
             <Box sx={{ flexShrink: 0, display: { xs: mesaSeleccionada ? 'none' : 'flex', md: 'flex' }, flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 2, gap: { xs: 1, md: 0 } }}>
-                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' }, display: 'flex', alignItems: 'center' }}>
                     🍽️ Gestión de Salón
+                    <IconButton sx={{ ml: 1 }} size="small" onClick={() => setSettingsOpen(true)}>
+                        <SettingsIcon fontSize="small" />
+                    </IconButton>
                 </Typography>
                 {(!mesaSeleccionada) && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'space-between', md: 'flex-end' } }}>
@@ -257,6 +268,15 @@ export default function RestaurantePage() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Modal de Configuración Fiscal & Multimoneda (Compartido con POS) */}
+            <LocalizacionModal
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                currentConfig={localizacion}
+                onSave={(newLoc) => setLocalizacion(newLoc)}
+            />
+
         </Box>
     );
 }

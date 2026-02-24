@@ -50,6 +50,7 @@ import { posRouter } from "./modules/pos/routes.js";
 import { posEsperaRouter } from "./modules/pos/espera.routes.js";
 import { restauranteRouter } from "./modules/restaurante/routes.js";
 import { restauranteAdminRouter } from "./modules/restaurante/admin.routes.js";
+import { configRouter } from "./modules/config/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 
 function resolveOpenApiPath() {
@@ -208,6 +209,9 @@ export async function createApp() {
   app.use("/v1/pos", posEsperaRouter);
   app.use("/v1/restaurante", restauranteRouter);
   app.use("/v1/restaurante/admin", restauranteAdminRouter);
+
+  // Configuraciones Globales (BD, Tasas, Licencias)
+  app.use("/v1/config", configRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
   app.use("/api/v1", requireJwt);

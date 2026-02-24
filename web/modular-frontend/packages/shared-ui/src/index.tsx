@@ -22,6 +22,8 @@ export { default as SettingsLayout } from './components/SettingsLayout';
 export { default as SettingsSection } from './components/SettingsSection';
 export { default as SettingsItem } from './components/SettingsItem';
 export { default as SettingsInputGroup } from './components/SettingsInputGroup';
+export { LocalizacionModal } from './components/LocalizacionModal';
+export type { LocalizacionConfig } from './components/LocalizacionModal';
 
 // MUI X re-exports (single source to avoid duplicated contexts across apps)
 export { DatePicker } from '@mui/x-date-pickers/DatePicker';

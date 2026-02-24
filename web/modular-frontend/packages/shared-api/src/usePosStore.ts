@@ -100,6 +100,7 @@ export interface VentaEnEspera {
 }
 
 export interface LocalizacionConfig {
+    pais: string; // ej. "VE", "CO", "MX", "ES", "US"
     preciosIncluyenIva: boolean;
     tasaCambio: number;
     monedaPrincipal: string; // ej. "Bs"
@@ -246,6 +247,7 @@ export const usePosStore = create<PosState>()(
             ],
             printerStatus: null,
             localizacion: {
+                pais: 'VE',
                 preciosIncluyenIva: true,
                 tasaCambio: 1, // Por defecto 1 (misma moneda)
                 monedaPrincipal: 'Bs',

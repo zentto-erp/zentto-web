@@ -16,10 +16,13 @@ import {
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import { usePrinterStatus } from '../hooks';
+import { usePosStore } from '@datqbox/shared-api';
+import { LocalizacionModal } from '@datqbox/shared-ui';
 
 const SearchIcon = dynamic(() => import('@mui/icons-material/Search'), { ssr: false });
 const HomeIcon = dynamic(() => import('@mui/icons-material/Home'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
 const ChevronLeftIcon = dynamic(() => import('@mui/icons-material/ChevronLeft'), { ssr: false });
 const ChevronRightIcon = dynamic(() => import('@mui/icons-material/ChevronRight'), { ssr: false });
 
@@ -59,6 +62,10 @@ export function PosHeader({
     // Hook para monitorear el Estatus de Impresora Local en Background
     const { data: printerStatus, isError, isFetching } = usePrinterStatus("PNP", "EMULADOR", "emulador");
 
+    // UI Global States
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const { localizacion, setLocalizacion } = usePosStore();
+
     return (
         <Box sx={{
             display: 'flex',
@@ -93,6 +100,9 @@ export function PosHeader({
                                         />
                                     </Tooltip>
                                 )}
+                                <IconButton size="small" onClick={() => setSettingsOpen(true)}>
+                                    <SettingsIcon fontSize="small" />
+                                </IconButton>
                             </Typography>
                         </Box>
                         {selectedCategory && (
@@ -185,11 +195,18 @@ export function PosHeader({
                     variant="outlined"
                     disabled={(categoriaPage + 1) * itemsPerPage >= allCategories.length}
                     onClick={() => setCategoriaPage(categoriaPage + 1)}
-                    sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', borderLeft: 0, bgcolor: '#ffffff' }}
                 >
                     <ChevronRightIcon />
                 </Button>
             </Box>
+
+            {/* Modal de Configuración Fiscal & Multimoneda */}
+            <LocalizacionModal
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                currentConfig={localizacion}
+                onSave={(newLoc) => setLocalizacion(newLoc)}
+            />
         </Box>
     );
 }
