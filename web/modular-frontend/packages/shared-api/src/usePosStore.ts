@@ -99,6 +99,15 @@ export interface VentaEnEspera {
     cantItems: number;
 }
 
+export interface LocalizacionConfig {
+    preciosIncluyenIva: boolean;
+    tasaCambio: number;
+    monedaPrincipal: string; // ej. "Bs"
+    monedaReferencia: string; // ej. "REF $"
+    tasaIgtf: number;         // ej. 3 (%)
+    aplicarIgtf: boolean;     // flag para habilitar IGTF
+}
+
 const API_BASE = typeof window !== 'undefined'
     ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
     : 'http://localhost:4000';
@@ -108,6 +117,9 @@ interface PosState {
     fiscalPrinter: PrinterConfig;
     kitchenPrinters: KitchenPrinterConfig[];
     printerStatus: PrinterStatus | null;
+
+    // --- Configuración Localización ---
+    localizacion: LocalizacionConfig;
 
     // --- Caja ---
     caja: CajaConfig;
@@ -136,8 +148,9 @@ interface PosState {
     setPrinterStatus: (status: PrinterStatus | null) => void;
     fetchPrinterStatus: () => Promise<void>;
 
-    // --- Actions: Caja ---
+    // --- Actions: Caja y Configuración ---
     setCaja: (caja: Partial<CajaConfig>) => void;
+    setLocalizacion: (loc: Partial<LocalizacionConfig>) => void;
 
     // --- Actions: Cliente ---
     setCliente: (cliente: ClientePos) => void;
@@ -200,11 +213,27 @@ const DEFAULT_FISCAL_PRINTER: PrinterConfig = {
     agentUrl: 'http://localhost:5000',
 };
 
-function calcTotals(cantidad: number, precio: number, descuento: number, iva: number) {
-    const totalBase = Number((cantidad * precio * (1 - descuento / 100)).toFixed(2));
-    const totalIva = Number((totalBase * (iva / 100)).toFixed(2));
-    const totalRenglon = Number((totalBase + totalIva).toFixed(2));
-    return { totalBase, totalIva, totalRenglon };
+export function calcTotals(cantidad: number, precioRaw: number, descuento: number, iva: number, loc: LocalizacionConfig) {
+    // 1. Convertir a moneda local usando la tasa de cambio vigente
+    const precioLocalBruto = precioRaw * loc.tasaCambio;
+
+    // 2. Extraer Base Pura si el precio incluye IVA
+    const precioBaseUnidad = loc.preciosIncluyenIva && iva > 0
+        ? precioLocalBruto / (1 + (iva / 100))
+        : precioLocalBruto;
+
+    // 3. Calculamos Base, IVA y Total Renglón con 2 decimales según lógica fiscal PNP
+    const totalBase = Math.round((cantidad * precioBaseUnidad * (1 - descuento / 100)) * 100) / 100;
+    const totalIva = Math.round((totalBase * (iva / 100)) * 100) / 100;
+    const totalRenglon = Math.round((totalBase + totalIva) * 100) / 100;
+
+    return {
+        precioBaseUnidad,
+        precioLocalBruto,
+        totalBase,
+        totalIva,
+        totalRenglon
+    };
 }
 
 export const usePosStore = create<PosState>()(
@@ -216,6 +245,14 @@ export const usePosStore = create<PosState>()(
                 { nombre: 'Cocina Principal', conexion: 'emulador', destino: '', agentUrl: 'http://localhost:5000' },
             ],
             printerStatus: null,
+            localizacion: {
+                preciosIncluyenIva: true,
+                tasaCambio: 1, // Por defecto 1 (misma moneda)
+                monedaPrincipal: 'Bs',
+                monedaReferencia: '$',
+                tasaIgtf: 3,
+                aplicarIgtf: true,
+            },
             caja: DEFAULT_CAJA,
             cliente: DEFAULT_CLIENTE,
             cart: [],
@@ -280,6 +317,7 @@ export const usePosStore = create<PosState>()(
 
             // ─── Caja ───
             setCaja: (caja) => set((s) => ({ caja: { ...s.caja, ...caja } })),
+            setLocalizacion: (loc) => set((s) => ({ localizacion: { ...s.localizacion, ...loc } })),
 
             // ─── Cliente ───
             setCliente: (cliente) => set({ cliente }),
@@ -294,14 +332,14 @@ export const usePosStore = create<PosState>()(
                             cart: s.cart.map((c) => {
                                 if (c.productoId !== item.productoId) return c;
                                 const cantidad = c.cantidad + item.cantidad;
-                                return { ...c, cantidad, ...calcTotals(cantidad, c.precio, c.descuento, c.iva) };
+                                return { ...c, cantidad, ...calcTotals(cantidad, c.precio, c.descuento, c.iva, get().localizacion) };
                             }),
                         };
                     }
                     const newItem: CartItem = {
                         ...item,
                         id: `${item.productoId}-${Date.now()}`,
-                        ...calcTotals(item.cantidad, item.precio, item.descuento, item.iva),
+                        ...calcTotals(item.cantidad, item.precio, item.descuento, item.iva, get().localizacion),
                     };
                     return { cart: [...s.cart, newItem] };
                 }),
@@ -313,7 +351,7 @@ export const usePosStore = create<PosState>()(
                         const cantidad = updates.cantidad ?? c.cantidad;
                         const precio = updates.precio ?? c.precio;
                         const descuento = updates.descuento ?? c.descuento;
-                        return { ...c, cantidad, precio, descuento, ...calcTotals(cantidad, precio, descuento, c.iva) };
+                        return { ...c, cantidad, precio, descuento, ...calcTotals(cantidad, precio, descuento, c.iva, get().localizacion) };
                     }),
                 })),
 
@@ -339,7 +377,7 @@ export const usePosStore = create<PosState>()(
                         items: cart.map((c) => ({
                             nombre: c.nombre,
                             cantidad: c.cantidad,
-                            precio: c.precio,
+                            precio: c.totalBase / c.cantidad, // La impresora PNP asume Precio Unitario BASE, el store ya lo tiene pre-calculado
                             iva: c.iva,
                         })),
                         ...payload,
@@ -498,7 +536,7 @@ export const usePosStore = create<PosState>()(
                             precio,
                             descuento,
                             iva,
-                            ...calcTotals(cantidad, precio, descuento, iva),
+                            ...calcTotals(cantidad, precio, descuento, iva, get().localizacion),
                         };
                     });
 

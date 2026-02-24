@@ -9,7 +9,9 @@ export { usePosStore } from './usePosStore';
 export type {
   PrinterConfig, KitchenPrinterConfig, PrinterStatus,
   CajaConfig, ClientePos, CartItem, VentaEnEspera,
+  LocalizacionConfig,
 } from './usePosStore';
+export { calcTotals } from './usePosStore';
 export { loadFrontendAddons } from './addons';
 export type { FrontendAddon } from './addons';
 export type { RequestLog } from './requestLogger';

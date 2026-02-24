@@ -23,14 +23,19 @@ import MoneyIcon from '@mui/icons-material/Money';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SmartphoneIcon from '@mui/icons-material/Smartphone';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PrintIcon from '@mui/icons-material/Print';
+
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { usePosStore } from '@datqbox/shared-api';
 
 interface PaymentMethod {
     id: string;
     nombre: string;
     icon: React.ReactElement;
     color: string;
+    isDivisa?: boolean;
 }
 
 interface Payment {
@@ -55,9 +60,11 @@ interface PosPaymentModalProps {
 
 const PAYMENT_METHODS: PaymentMethod[] = [
     { id: 'efectivo', nombre: 'Efectivo', icon: <MoneyIcon />, color: '#4caf50' },
-    { id: 'tarjeta', nombre: 'Tarjeta', icon: <CreditCardIcon />, color: '#2196f3' },
-    { id: 'transferencia', nombre: 'Transferencia', icon: <AccountBalanceIcon />, color: '#ff9800' },
+    { id: 'divisas', nombre: 'Divisas (Efectivo)', icon: <AttachMoneyIcon />, color: '#2e7d32', isDivisa: true },
+    { id: 'punto_venta', nombre: 'Punto de Venta', icon: <CreditCardIcon />, color: '#2196f3' },
     { id: 'pago_movil', nombre: 'Pago Móvil', icon: <SmartphoneIcon />, color: '#9c27b0' },
+    { id: 'transferencia', nombre: 'Transferencia', icon: <AccountBalanceIcon />, color: '#ff9800' },
+    { id: 'cashea', nombre: 'Cashea', icon: <QrCode2Icon />, color: '#e91e63' },
 ];
 
 export function PosPaymentModal({
@@ -75,9 +82,30 @@ export function PosPaymentModal({
     const [change, setChange] = useState(0);
     const [showSuccess, setShowSuccess] = useState(false);
 
+    const { localizacion, getSubtotal, getImpuestos } = usePosStore();
+    const isBs = localizacion.monedaPrincipal === 'Bs';
+    const symP = localizacion.monedaPrincipal;
+    const symR = localizacion.monedaReferencia;
+    const tc = localizacion.tasaCambio || 1;
+
+    // Calcular montos desde el carrito para ser precisos
+    const subtotalLocal = getSubtotal();
+    const impuestosLocal = getImpuestos();
+    const totalLocal = total; // = getTotal()
+
+    const totalRef = totalLocal / tc;
+
+    // Si pagan con divisa, calcular IGTF
+    const pagosDivisa = payments.filter(p => PAYMENT_METHODS.find(m => m.nombre === p.metodo)?.isDivisa);
+    const totalPagadoDivisaLocal = pagosDivisa.reduce((sum, p) => sum + p.monto, 0);
+    const igtfAplicado = (localizacion.aplicarIgtf && localizacion.tasaIgtf > 0)
+        ? Math.round(totalPagadoDivisaLocal * (localizacion.tasaIgtf / 100) * 100) / 100
+        : 0;
+
+    const totalConIgtf = totalLocal + igtfAplicado;
     const totalPagado = payments.reduce((sum, p) => sum + p.monto, 0);
-    const restante = Math.max(0, total - totalPagado);
-    const cambio = Math.max(0, totalPagado - total);
+    const restante = Math.max(0, totalConIgtf - totalPagado);
+    const cambio = Math.max(0, totalPagado - totalConIgtf);
 
     useEffect(() => {
         if (open) {
@@ -95,10 +123,14 @@ export function PosPaymentModal({
         if (isNaN(amount) || amount <= 0) return;
 
         const method = PAYMENT_METHODS[activeTab];
-        
+
+        // Si el método es en divisa, el amount tipeado está en divisa, lo guardamos en local en 'monto' para totalizar
+        // Ejemplo: Tipeó "10" dólares, tc=45 => monto = 450 Bs.
+        const montoLocal = method.isDivisa ? amount * tc : amount;
+
         setPayments(prev => [...prev, {
             metodo: method.nombre,
-            monto: amount,
+            monto: montoLocal,
             referencia: referencia || undefined,
         }]);
 
@@ -111,7 +143,7 @@ export function PosPaymentModal({
     };
 
     const handleCompletePayment = () => {
-        if (totalPagado >= total) {
+        if (totalPagado >= totalConIgtf) {
             setShowSuccess(true);
             setTimeout(() => {
                 onPaymentComplete(payments);
@@ -124,7 +156,7 @@ export function PosPaymentModal({
         setCurrentAmount(restante.toFixed(2));
     };
 
-    const suggestedAmounts = [10, 20, 50, 100, 200, 500].filter(a => a >= total || a >= restante);
+    const suggestedAmounts = [10, 20, 50, 100, 200, 500].filter(a => a >= (totalConIgtf / tc) || a >= (restante / tc));
 
     if (showSuccess) {
         return (
@@ -155,7 +187,7 @@ export function PosPaymentModal({
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            
+
             <DialogContent>
                 <Grid container spacing={3}>
                     {/* Panel Izquierdo - Resumen */}
@@ -164,7 +196,7 @@ export function PosPaymentModal({
                             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Resumen de Compra
                             </Typography>
-                            
+
                             <Box sx={{ maxHeight: 200, overflow: 'auto', mb: 2 }}>
                                 {items.map((item, idx) => (
                                     <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -172,7 +204,7 @@ export function PosPaymentModal({
                                             {item.cantidad}x {item.nombre}
                                         </Typography>
                                         <Typography variant="body2" fontWeight="medium">
-                                            ${item.total.toFixed(2)}
+                                            {symP} {item.total.toFixed(2)}
                                         </Typography>
                                     </Box>
                                 ))}
@@ -181,18 +213,31 @@ export function PosPaymentModal({
                             <Divider sx={{ my: 1 }} />
 
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography>Subtotal:</Typography>
-                                <Typography>${(total / 1.16).toFixed(2)}</Typography>
+                                <Typography>Subtotal Base:</Typography>
+                                <Typography>{symP} {subtotalLocal.toFixed(2)}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography>IVA (16%):</Typography>
-                                <Typography>${(total - (total / 1.16)).toFixed(2)}</Typography>
+                                <Typography>IVA Totales:</Typography>
+                                <Typography>{symP} {impuestosLocal.toFixed(2)}</Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                                <Typography variant="h6" fontWeight="bold">Total:</Typography>
-                                <Typography variant="h6" fontWeight="bold" color="primary">
-                                    ${total.toFixed(2)}
-                                </Typography>
+
+                            {igtfAplicado > 0 && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography color="secondary.main">IGTF ({localizacion.tasaIgtf}%):</Typography>
+                                    <Typography color="secondary.main">{symP} {igtfAplicado.toFixed(2)}</Typography>
+                                </Box>
+                            )}
+
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+                                <Typography variant="h6" fontWeight="bold">Total Pagar:</Typography>
+                                <Box sx={{ textAlign: 'right' }}>
+                                    <Typography variant="h6" fontWeight="bold" color="primary">
+                                        {symP} {totalConIgtf.toFixed(2)}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Ref {symR} {(totalConIgtf / tc).toFixed(2)} (Tasa: {tc.toFixed(2)})
+                                    </Typography>
+                                </Box>
                             </Box>
 
                             <Divider sx={{ my: 1 }} />
@@ -230,6 +275,11 @@ export function PosPaymentModal({
                             <Box sx={{ mb: 3 }}>
                                 <Typography variant="subtitle2" gutterBottom>
                                     Monto a Pagar ({PAYMENT_METHODS[activeTab].nombre})
+                                    {PAYMENT_METHODS[activeTab].isDivisa && (
+                                        <Typography component="span" variant="caption" color="secondary" sx={{ ml: 1 }}>
+                                            (+{localizacion.tasaIgtf}% IGTF)
+                                        </Typography>
+                                    )}
                                 </Typography>
                                 <TextField
                                     fullWidth
@@ -238,36 +288,44 @@ export function PosPaymentModal({
                                     onChange={(e) => setCurrentAmount(e.target.value)}
                                     placeholder="0.00"
                                     InputProps={{
-                                        startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
+                                        startAdornment: <Typography sx={{ mr: 1, whiteSpace: 'nowrap' }}>
+                                            {PAYMENT_METHODS[activeTab].isDivisa ? symR : symP}
+                                        </Typography>,
                                     }}
                                     sx={{ mb: 1 }}
+                                    helperText={`Nota: Ingresa el monto en ${PAYMENT_METHODS[activeTab].isDivisa ? 'Divisa (' + symR + ')' : 'Moneda Local (' + symP + ')'} `}
                                 />
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    <Button size="small" variant="outlined" onClick={handleExactAmount}>
-                                        Exacto (${restante.toFixed(2)})
-                                    </Button>
-                                    {suggestedAmounts.map(amount => (
-                                        <Button
-                                            key={amount}
-                                            size="small"
-                                            variant="outlined"
-                                            onClick={() => setCurrentAmount(amount.toString())}
-                                        >
-                                            ${amount}
+                                    {PAYMENT_METHODS[activeTab].isDivisa ? (
+                                        <Button size="small" variant="outlined" onClick={() => setCurrentAmount((restante / tc).toFixed(2))}>
+                                            Exacto Ref ({symR} {(restante / tc).toFixed(2)})
                                         </Button>
-                                    ))}
+                                    ) : (
+                                        <Button size="small" variant="outlined" onClick={() => setCurrentAmount(restante.toFixed(2))}>
+                                            Exacto ({symP} {restante.toFixed(2)})
+                                        </Button>
+                                    )}
                                 </Box>
                             </Box>
 
-                            {/* Referencia (para tarjeta/transferencia) */}
-                            {activeTab !== 0 && (
+                            {/* Referencia (para tarjeta/transferencia/etc) */}
+                            {!['efectivo', 'divisas'].includes(PAYMENT_METHODS[activeTab].id) && (
                                 <TextField
                                     fullWidth
-                                    label="Número de Referencia"
+                                    label={
+                                        PAYMENT_METHODS[activeTab].id === 'cashea' ? 'Token / Nro de Orden Cashea' :
+                                            PAYMENT_METHODS[activeTab].id === 'punto_venta' ? 'Nro de Aprobación (Lote/Ref)' :
+                                                PAYMENT_METHODS[activeTab].id === 'pago_movil' ? 'Referencia Pago Móvil (Ultimos dígitos)' :
+                                                    'Número de Referencia Bancaria'
+                                    }
                                     value={referencia}
                                     onChange={(e) => setReferencia(e.target.value)}
-                                    placeholder={activeTab === 1 ? 'Últimos 4 dígitos' : 'Número de referencia'}
+                                    placeholder="Simula ingreso de Ref / API externa futura"
                                     sx={{ mb: 2 }}
+                                    helperText={
+                                        ['cashea', 'pago_movil', 'punto_venta'].includes(PAYMENT_METHODS[activeTab].id)
+                                            ? "Nota: A futuro esto se llenará automáticamente vía integración API." : ""
+                                    }
                                 />
                             )}
 
@@ -310,7 +368,7 @@ export function PosPaymentModal({
                                         </Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Typography fontWeight="medium">
-                                                ${payment.monto.toFixed(2)}
+                                                {symP} {payment.monto.toFixed(2)}
                                             </Typography>
                                             <IconButton
                                                 size="small"
@@ -326,16 +384,16 @@ export function PosPaymentModal({
                         )}
 
                         {/* Totales de pago */}
-                        <Paper sx={{ p: 2, mt: 2, bgcolor: totalPagado >= total ? '#e8f5e9' : '#fff3e0' }}>
+                        <Paper sx={{ p: 2, mt: 2, bgcolor: totalPagado >= totalConIgtf ? '#e8f5e9' : '#fff3e0' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                 <Typography>Pagado:</Typography>
-                                <Typography fontWeight="bold">${totalPagado.toFixed(2)}</Typography>
+                                <Typography fontWeight="bold">{symP} {totalPagado.toFixed(2)}</Typography>
                             </Box>
                             {restante > 0 && (
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                     <Typography color="warning.main">Restante:</Typography>
                                     <Typography fontWeight="bold" color="warning.main">
-                                        ${restante.toFixed(2)}
+                                        {symP} {restante.toFixed(2)}
                                     </Typography>
                                 </Box>
                             )}
@@ -343,7 +401,7 @@ export function PosPaymentModal({
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <Typography color="success.main">Cambio:</Typography>
                                     <Typography fontWeight="bold" color="success.main">
-                                        ${cambio.toFixed(2)}
+                                        {symP} {cambio.toFixed(2)}
                                     </Typography>
                                 </Box>
                             )}
@@ -360,13 +418,13 @@ export function PosPaymentModal({
                     variant="contained"
                     startIcon={<PrintIcon />}
                     onClick={handleCompletePayment}
-                    disabled={totalPagado < total}
+                    disabled={totalPagado < totalConIgtf}
                     sx={{
-                        bgcolor: totalPagado >= total ? 'success.main' : 'grey.400',
-                        '&:hover': { bgcolor: totalPagado >= total ? 'success.dark' : 'grey.400' },
+                        bgcolor: totalPagado >= totalConIgtf ? 'success.main' : 'grey.400',
+                        '&:hover': { bgcolor: totalPagado >= totalConIgtf ? 'success.dark' : 'grey.400' },
                     }}
                 >
-                    {totalPagado >= total ? 'Facturar e Imprimir' : `Faltan $${restante.toFixed(2)}`}
+                    {totalPagado >= totalConIgtf ? 'Facturar e Imprimir' : `Faltan ${symP} ${restante.toFixed(2)}`}
                 </Button>
             </DialogActions>
         </Dialog>

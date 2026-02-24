@@ -43,6 +43,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Mesa, ProductoMenu, ItemPedido, ComponenteProducto } from '@/hooks/useRestaurante';
+import { usePosStore } from '@datqbox/shared-api';
 
 interface PanelPedidoProps {
     mesa: Mesa;
@@ -113,6 +114,8 @@ export function PanelPedido({
                 estado: 'pendiente',
                 esCompuesto: false,
                 enviadoACocina: false,
+                iva: producto.iva || 16,
+                montoIva: Math.round((producto.precio * ((producto.iva || 16) / 100)) * 100) / 100,
             });
             setShowMobileMenu(false);
         }
@@ -142,6 +145,8 @@ export function PanelPedido({
             })),
             comentarios: comentario,
             enviadoACocina: false,
+            iva: productoSeleccionado.iva || 16,
+            montoIva: Math.round(((productoSeleccionado.precio * cantidad) * ((productoSeleccionado.iva || 16) / 100)) * 100) / 100,
         });
 
         setProductoSeleccionado(null);
@@ -154,7 +159,15 @@ export function PanelPedido({
     const pedido = mesa.pedidoActual;
     const itemsPendientes = pedido?.items.filter(i => !i.enviadoACocina) || [];
     const itemsEnviados = pedido?.items.filter(i => i.enviadoACocina) || [];
+    const subtotal = pedido?.subtotal || 0;
+    const impuestos = pedido?.impuestos || 0;
+    const servicio = pedido?.servicio || 0;
     const total = pedido?.total || 0;
+
+    const { localizacion } = usePosStore();
+    const symP = localizacion.monedaPrincipal || 'Bs';
+    const symR = localizacion.monedaReferencia || '$';
+    const tc = localizacion.tasaCambio || 1;
 
     return (
         <React.Fragment>
@@ -220,7 +233,7 @@ export function PanelPedido({
                                                     </>
                                                 )}
                                                 <Typography variant="body2" fontWeight="bold" sx={{ mx: 0.5 }}>
-                                                    ${item.subtotal.toFixed(2)}
+                                                    {symP} {item.subtotal.toFixed(2)}
                                                 </Typography>
                                                 {onQuitarItem && (
                                                     <IconButton
@@ -254,7 +267,7 @@ export function PanelPedido({
                                                 sx={{ opacity: 0.7 }}
                                             />
                                             <Typography variant="body2">
-                                                ${item.subtotal.toFixed(2)}
+                                                {symP} {item.subtotal.toFixed(2)}
                                             </Typography>
                                         </ListItem>
                                     ))}
@@ -265,12 +278,34 @@ export function PanelPedido({
 
                     <Divider sx={{ my: 2 }} />
 
-                    {/* Total */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="h6">Total:</Typography>
-                        <Typography variant="h5" fontWeight="bold" color="primary">
-                            ${total.toFixed(2)}
-                        </Typography>
+                    {/* Totales */}
+                    <Box sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="body1">Subtotal Base:</Typography>
+                            <Typography variant="body1">{symP} {subtotal.toFixed(2)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="body1">IVA:</Typography>
+                            <Typography variant="body1">{symP} {impuestos.toFixed(2)}</Typography>
+                        </Box>
+                        {servicio > 0 && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="body1">Servicio (10%):</Typography>
+                                <Typography variant="body1">{symP} {servicio.toFixed(2)}</Typography>
+                            </Box>
+                        )}
+                        <Divider sx={{ my: 1 }} />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="h6">Total:</Typography>
+                            <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="h5" fontWeight="bold" color="primary">
+                                    {symP} {total.toFixed(2)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Ref {symR} {(total / tc).toFixed(2)} (Tasa: {tc.toFixed(2)})
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Box>
 
                     {/* Botones de acción */}
@@ -604,7 +639,7 @@ export function PanelPedido({
                                 disabled={itemsPendientes.length === 0}
                             >
                                 <Typography sx={{ fontSize: '1.15rem', fontWeight: 'bold', mr: 1, textTransform: 'capitalize' }}>Pagar</Typography>
-                                <Typography sx={{ fontSize: '1rem', fontWeight: 'normal' }}>${total.toFixed(2)}</Typography>
+                                <Typography sx={{ fontSize: '1rem', fontWeight: 'normal' }}>{symP} {total.toFixed(2)}</Typography>
                             </Button>
                             <Button
                                 sx={{ flex: 0.7, borderRadius: 0, bgcolor: '#f5f5f5', color: 'text.primary', borderLeft: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', p: 0 }}

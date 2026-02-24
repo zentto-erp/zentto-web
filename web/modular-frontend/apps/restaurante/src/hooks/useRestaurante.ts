@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { usePosStore } from '@datqbox/shared-api';
+import { usePosStore, calcTotals } from '@datqbox/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS — Modelo de datos del Restaurante
@@ -47,6 +47,9 @@ export interface Pedido {
     fechaApertura: Date;
     fechaCierre?: Date;
     total: number;
+    subtotal: number;       // Suma de las bases
+    impuestos: number;      // Suma de IVAs
+    servicio: number;       // 10% sobre el subtotal (base)
     comentarios?: string;
     persistido: boolean;     // Si ya se guardó en BD con abrir-pedido
 }
@@ -58,7 +61,9 @@ export interface ItemPedido {
     nombre: string;
     cantidad: number;
     precioUnitario: number;
-    subtotal: number;
+    subtotal: number;       // precio * cantidad (Base renglon)
+    iva: number;            // % de iva (e.g. 16, 8, 0)
+    montoIva: number;       // Monto calculado de IVA del renglón
     estado: 'pendiente' | 'en_preparacion' | 'listo' | 'entregado';
     comentarios?: string;
     esCompuesto: boolean;
@@ -80,6 +85,7 @@ export interface ProductoMenu {
     nombre: string;
     descripcion?: string;
     precio: number;
+    iva: number;
     categoria: string;
     esCompuesto: boolean;
     componentes?: ComponenteProducto[];
@@ -160,6 +166,9 @@ interface RestauranteState {
     getComandasPendientes: () => ComandaCocina[];
     getItemsPendientes: (mesaId: string) => ItemPedido[];
     getItemsEnviados: (mesaId: string) => ItemPedido[];
+    getSubtotalMesa: (mesaId: string) => number;
+    getImpuestosMesa: (mesaId: string) => number;
+    getServicioMesa: (mesaId: string) => number;
     getTotalMesa: (mesaId: string) => number;
 }
 
@@ -226,6 +235,9 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                                     estado: data.pedido.estado || 'abierto',
                                     fechaApertura: new Date(data.pedido.fechaApertura),
                                     total: Number(data.pedido.total ?? 0),
+                                    subtotal: Number(data.pedido.subtotal ?? 0),
+                                    impuestos: Number(data.pedido.impuestos ?? 0),
+                                    servicio: Number(data.pedido.servicio ?? 0),
                                     persistido: true,
                                 } as any;
                             }
@@ -254,6 +266,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                 nombre: r.nombre?.trim() ?? '',
                 descripcion: r.descripcion?.trim(),
                 precio: Number(r.precio ?? 0),
+                iva: Number(r.iva ?? r.PORCENTAJE ?? 16),
                 categoria: r.categoria?.trim() ?? '',
                 esCompuesto: Boolean(r.esCompuesto),
                 tiempoPreparacion: Number(r.tiempoPreparacion ?? 0),
@@ -314,6 +327,9 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             estado: 'abierto',
             fechaApertura: new Date(),
             total: 0,
+            subtotal: 0,
+            impuestos: 0,
+            servicio: 0,
             persistido: false,   // ← AÚN NO existe en la BD
         };
         get().actualizarMesa(mesaId, {
@@ -332,20 +348,31 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
         const mesa = get().getMesaById(mesaId);
         if (!mesa?.pedidoActual) return;
 
-        const nuevoItem: ItemPedido = {
-            ...item,
+        const loc = usePosStore.getState().localizacion;
+        const calc = calcTotals(item.cantidad, item.precioUnitario, 0, item.iva || 16, loc);
+
+        const newItem: ItemPedido = {
             id: uuidv4(),
-            enviadoACocina: false,    // ← Pendiente de enviar
-            estado: 'pendiente',
+            ...item,
+            precioUnitario: calc.precioBaseUnidad,
+            subtotal: calc.totalBase,
+            iva: item.iva || 16,
+            montoIva: calc.totalIva,
+            estado: item.estado || 'pendiente',
+            enviadoACocina: false,
         };
-        const nuevosItems = [...mesa.pedidoActual.items, nuevoItem];
-        const nuevoTotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+        const nuevosItems = [...mesa.pedidoActual.items, newItem];
+        const subtotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+        const impuestos = nuevosItems.reduce((sum, i) => sum + i.montoIva, 0);
+        const servicio = Math.round((subtotal * 0.10) * 100) / 100; // 10% de la base
+        const total = subtotal + impuestos + servicio;
 
         get().actualizarMesa(mesaId, {
             pedidoActual: {
                 ...mesa.pedidoActual,
                 items: nuevosItems,
-                total: nuevoTotal,
+                subtotal, impuestos, servicio, total,
             },
         });
     },
@@ -359,13 +386,16 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
         if (item?.enviadoACocina) return;
 
         const nuevosItems = mesa.pedidoActual.items.filter(i => i.id !== itemId);
-        const nuevoTotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+        const subtotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+        const impuestos = nuevosItems.reduce((sum, i) => sum + i.montoIva, 0);
+        const servicio = Math.round((subtotal * 0.10) * 100) / 100; // 10% de la base
+        const total = subtotal + impuestos + servicio;
 
         get().actualizarMesa(mesaId, {
             pedidoActual: {
                 ...mesa.pedidoActual,
                 items: nuevosItems,
-                total: nuevoTotal,
+                subtotal, impuestos, servicio, total,
             },
         });
     },
@@ -374,22 +404,44 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
         const mesa = get().getMesaById(mesaId);
         if (!mesa?.pedidoActual) return;
 
+        const loc = usePosStore.getState().localizacion;
+
         const nuevosItems = mesa.pedidoActual.items.map(item => {
             if (item.id !== itemId) return item;
             // Solo editar si NO fue enviado a cocina
             if (item.enviadoACocina) return item;
 
             const cantidad = updates.cantidad ?? item.cantidad;
-            const subtotal = cantidad * item.precioUnitario;
-            return { ...item, cantidad, subtotal, comentarios: updates.comentarios ?? item.comentarios };
+
+            // Asumimos que para editar la cantidad o el precio usamos el original o si cambió
+            // Nota: Aquí se debería quizá mantener el precioUnitario base ya calculado, pero para ser seguros
+            // si modifican algo, recalculamos (aunque editarItem rara vez cambia el precio base aquí).
+            // Para mantener consistencia con POS, asumiendo precioUnitario original, pero el store ya guardó precioBaseUnidad.
+            // Asi que en restaurante item.precioUnitario YA está depurado de IVA si lo tenía.
+            // Por lo tanto, no volvemos a pasar `calcTotals` a menos que usemos un Flag, o asumimos que ya no incluya iva:
+            // Vamos a forzar un objeto loc local sin preciosIncluyenIva para que no descuente el IVA de nuevo.
+            const locAjustado = { ...loc, preciosIncluyenIva: false, tasaCambio: 1 };
+            const calc = calcTotals(cantidad, item.precioUnitario, 0, item.iva, locAjustado);
+
+            return {
+                ...item,
+                cantidad,
+                subtotal: calc.totalBase,
+                montoIva: calc.totalIva,
+                comentarios: updates.comentarios ?? item.comentarios
+            };
         });
-        const nuevoTotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+        const subtotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+        const impuestos = nuevosItems.reduce((sum, i) => sum + i.montoIva, 0);
+        const servicio = Math.round((subtotal * 0.10) * 100) / 100; // 10% de la base
+        const total = subtotal + impuestos + servicio;
 
         get().actualizarMesa(mesaId, {
             pedidoActual: {
                 ...mesa.pedidoActual,
                 items: nuevosItems,
-                total: nuevoTotal,
+                subtotal, impuestos, servicio, total,
             },
         });
     },
@@ -513,13 +565,24 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
         const mesa = get().getMesaById(mesaId);
         if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
 
+        const itemsToPrint = mesa.pedidoActual.items.map(i => ({
+            nombre: i.nombre,
+            cantidad: i.cantidad,
+            precio: i.precioUnitario,
+            iva: i.iva ?? 16,
+        }));
+
+        if (mesa.pedidoActual.servicio > 0) {
+            itemsToPrint.push({
+                nombre: "SERVICIO 10%",
+                cantidad: 1,
+                precio: mesa.pedidoActual.servicio,
+                iva: 0, // El servicio es base imponible, pero no genera IVA
+            });
+        }
+
         const result = await usePosStore.getState().printFiscalInvoice({
-            items: mesa.pedidoActual.items.map(i => ({
-                nombre: i.nombre,
-                cantidad: i.cantidad,
-                precio: i.precioUnitario,
-                iva: 16,
-            })),
+            items: itemsToPrint,
         });
 
         if (result.success) {
@@ -682,6 +745,21 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
         const mesa = get().getMesaById(mesaId);
         return mesa?.pedidoActual?.total ?? 0;
     },
+
+    getSubtotalMesa: (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        return mesa?.pedidoActual?.subtotal ?? 0;
+    },
+
+    getImpuestosMesa: (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        return mesa?.pedidoActual?.impuestos ?? 0;
+    },
+
+    getServicioMesa: (mesaId) => {
+        const mesa = get().getMesaById(mesaId);
+        return mesa?.pedidoActual?.servicio ?? 0;
+    },
 }));
 
 
@@ -768,5 +846,8 @@ export function useRestaurante() {
         getItemsPendientes: store.getItemsPendientes,
         getItemsEnviados: store.getItemsEnviados,
         getTotalMesa: store.getTotalMesa,
+        getSubtotalMesa: store.getSubtotalMesa,
+        getImpuestosMesa: store.getImpuestosMesa,
+        getServicioMesa: store.getServicioMesa,
     };
 }
