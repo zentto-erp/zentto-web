@@ -23,10 +23,10 @@ import MenuIcon from '@mui/icons-material/Menu';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import Tooltip from '@mui/material/Tooltip';
 import Avatar from '@mui/material/Avatar';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
+import NotificationsMenu from './NotificationsMenu';
+import TasksMenu from './TasksMenu';
+import MessagesMenu from './MessagesMenu';
 import AppTitle from './AppTitle';
 import SidebarFooterAccount from './SidebarFooterAccount';
 import Copyright from './Copyright';
@@ -248,21 +248,9 @@ export default function OdooLayout({
                                     <Brightness4Icon />
                                 </IconButton>
                             </Tooltip>
-                            <Tooltip title="Notificaciones">
-                                <IconButton size="small" sx={{ color: 'text.secondary' }}>
-                                    <NotificationsIcon />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Tareas">
-                                <IconButton size="small" sx={{ color: 'text.secondary' }}>
-                                    <FormatListBulletedIcon />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Mensajes">
-                                <IconButton size="small" sx={{ color: 'text.secondary' }}>
-                                    <MailOutlineIcon />
-                                </IconButton>
-                            </Tooltip>
+                            <NotificationsMenu />
+                            <TasksMenu />
+                            <MessagesMenu />
                             <SidebarFooterAccount mini={false} />
                         </Box>
                     </Toolbar>

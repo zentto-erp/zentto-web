@@ -72,6 +72,20 @@ export async function apiPut(path: string, body: unknown) {
   return responseData;
 }
 
+export async function apiPatch(path: string, body: unknown) {
+  const fullUrl = `${API_BASE}${path}`;
+  const res = await fetch(fullUrl, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  await handleUnauthorized(res);
+  const responseData = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(responseData?.message || responseData?.error || res.statusText);
+  return responseData;
+}
+
 export async function apiDelete(path: string) {
   const fullUrl = `${API_BASE}${path}`;
   const res = await fetch(fullUrl, { method: "DELETE", headers: await authHeader(), credentials: 'include' });

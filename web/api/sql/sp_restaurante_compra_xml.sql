@@ -1,6 +1,10 @@
 -- SP Compra Restaurante con XML (compatible SQL Server 2012)
 IF OBJECT_ID('usp_REST_Compra_Crear', 'P') IS NOT NULL DROP PROCEDURE usp_REST_Compra_Crear;
 GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 CREATE PROCEDURE usp_REST_Compra_Crear
   @ProveedorId   NVARCHAR(12) = NULL,
   @Observaciones NVARCHAR(500) = NULL,

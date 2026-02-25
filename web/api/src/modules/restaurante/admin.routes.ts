@@ -6,8 +6,9 @@ import {
     listProductosMenu, getProductoMenu, upsertProductoMenu, deleteProductoMenu,
     upsertComponente, upsertOpcion,
     upsertRecetaItem, deleteRecetaItem,
-    listCompras, getCompraDetalle, crearCompra,
+    listCompras, getCompraDetalle, crearCompra, updateCompra, upsertCompraDetalle, deleteCompraDetalle,
     searchProveedores,
+    searchInsumosRestaurante,
 } from "./admin.service.js";
 
 export const restauranteAdminRouter = Router();
@@ -159,9 +160,66 @@ restauranteAdminRouter.post("/compras", async (req, res) => {
     }
 });
 
+const compraUpdateSchema = z.object({
+    proveedorId: z.string().optional(),
+    estado: z.string().optional(),
+    observaciones: z.string().optional(),
+});
+
+restauranteAdminRouter.put("/compras/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+    const parsed = compraUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    try {
+        res.json(await updateCompra(id, parsed.data));
+    } catch (err) {
+        res.status(400).json({ error: String(err) });
+    }
+});
+
+const compraDetalleSchema = z.object({
+    id: z.number().optional(),
+    inventarioId: z.string().optional(),
+    descripcion: z.string().min(1),
+    cantidad: z.number().min(0.001),
+    precioUnit: z.number().min(0),
+    iva: z.number().optional(),
+});
+
+restauranteAdminRouter.post("/compras/:id/detalle", async (req, res) => {
+    const compraId = Number(req.params.id);
+    if (isNaN(compraId)) return res.status(400).json({ error: "id inválido" });
+    const parsed = compraDetalleSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    try {
+        res.status(201).json(await upsertCompraDetalle({ ...parsed.data, compraId }));
+    } catch (err) {
+        res.status(400).json({ error: String(err) });
+    }
+});
+
+restauranteAdminRouter.delete("/compras/:id/detalle/:detalleId", async (req, res) => {
+    const compraId = Number(req.params.id);
+    const detalleId = Number(req.params.detalleId);
+    if (isNaN(compraId) || isNaN(detalleId)) return res.status(400).json({ error: "id inválido" });
+    try {
+        res.json(await deleteCompraDetalle(compraId, detalleId));
+    } catch (err) {
+        res.status(400).json({ error: String(err) });
+    }
+});
+
 // ═══ PROVEEDORES (lectura — de tabla compartida) ═══
 restauranteAdminRouter.get("/proveedores", async (req, res) => {
     const search = req.query.search as string | undefined;
     const limit = req.query.limit ? Number(req.query.limit) : 20;
     res.json(await searchProveedores(search, limit));
+});
+
+// ═══ INSUMOS RESTAURANTE (para recetas) ═══
+restauranteAdminRouter.get("/insumos", async (req, res) => {
+    const search = req.query.search as string | undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : 30;
+    res.json(await searchInsumosRestaurante(search, limit));
 });

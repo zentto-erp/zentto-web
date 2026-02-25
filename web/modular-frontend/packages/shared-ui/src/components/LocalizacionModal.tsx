@@ -16,6 +16,7 @@ import {
     Alert,
     CircularProgress,
 } from '@mui/material';
+import { getSession } from 'next-auth/react';
 
 export interface LocalizacionConfig {
     pais: string;
@@ -86,9 +87,17 @@ export function LocalizacionModal({ open, onClose, currentConfig, onSave }: Loca
         try {
             const endpoints = [`${API_BASE}/v1/config/tasas`, `${API_BASE}/api/v1/config/tasas`];
             let data: TasasBcvResponse | null = null;
+            const session = await getSession();
+            const accessToken = (session as any)?.accessToken as string | undefined;
+            const headers: Record<string, string> = accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {};
 
             for (const endpoint of endpoints) {
-                const res = await fetch(endpoint);
+                const res = await fetch(endpoint, {
+                    headers,
+                    credentials: 'include',
+                });
                 if (!res.ok) continue;
                 data = await res.json() as TasasBcvResponse;
                 break;

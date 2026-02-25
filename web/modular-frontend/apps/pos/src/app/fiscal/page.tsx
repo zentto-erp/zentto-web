@@ -11,15 +11,7 @@ import {
     Typography,
 } from '@mui/material';
 import { usePosStore } from '@datqbox/shared-api';
-
-async function safeJson(res: Response) {
-    const text = await res.text();
-    try {
-        return JSON.parse(text);
-    } catch {
-        return { raw: text };
-    }
-}
+import { apiGet, apiPost } from '@datqbox/shared-api';
 
 export default function PosFiscalPage() {
     const fiscalPrinter = usePosStore((s) => s.fiscalPrinter);
@@ -38,14 +30,13 @@ export default function PosFiscalPage() {
         conexion: fiscalPrinter.conexion,
     }), [fiscalPrinter.marca, fiscalPrinter.puerto, fiscalPrinter.conexion]);
 
-    const run = async (executor: () => Promise<Response>) => {
+    const run = async (executor: () => Promise<any>) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await executor();
-            const data = await safeJson(res);
-            if (!res.ok || data?.Success === false || data?.success === false) {
-                throw new Error(data?.Message || data?.message || data?.error || `HTTP ${res.status}`);
+            const data = await executor();
+            if (data?.Success === false || data?.success === false) {
+                throw new Error(data?.Message || data?.message || data?.error || 'Operación no completada');
             }
             setResult(data);
         } catch (e: any) {
@@ -54,8 +45,6 @@ export default function PosFiscalPage() {
             setLoading(false);
         }
     };
-
-    const baseUrl = fiscalPrinter.agentUrl;
 
     return (
         <Box sx={{ p: 3 }}>
@@ -91,17 +80,19 @@ export default function PosFiscalPage() {
                             <Button
                                 variant="outlined"
                                 disabled={loading}
-                                onClick={() => run(() => fetch(`${baseUrl}/api/fiscal/status?marca=${encodeURIComponent(basePayload.marca)}&puerto=${encodeURIComponent(basePayload.puerto)}&conexion=${encodeURIComponent(basePayload.conexion)}`))}
+                                onClick={() => run(() => apiGet('/v1/pos/fiscal/status', {
+                                    ...basePayload,
+                                    agentUrl: fiscalPrinter.agentUrl,
+                                }))}
                             >
                                 Ver Estado
                             </Button>
                             <Button
                                 variant="contained"
                                 disabled={loading}
-                                onClick={() => run(() => fetch(`${baseUrl}/api/fiscal/reporte/x`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(basePayload),
+                                onClick={() => run(() => apiPost('/v1/pos/fiscal/reporte/x', {
+                                    ...basePayload,
+                                    agentUrl: fiscalPrinter.agentUrl,
                                 }))}
                             >
                                 Emitir X
@@ -110,10 +101,9 @@ export default function PosFiscalPage() {
                                 variant="contained"
                                 color="warning"
                                 disabled={loading}
-                                onClick={() => run(() => fetch(`${baseUrl}/api/fiscal/reporte/z`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(basePayload),
+                                onClick={() => run(() => apiPost('/v1/pos/fiscal/reporte/z', {
+                                    ...basePayload,
+                                    agentUrl: fiscalPrinter.agentUrl,
                                 }))}
                             >
                                 Emitir Z
@@ -121,7 +111,10 @@ export default function PosFiscalPage() {
                             <Button
                                 variant="outlined"
                                 disabled={loading}
-                                onClick={() => run(() => fetch(`${baseUrl}/api/fiscal/memoria?marca=${encodeURIComponent(basePayload.marca)}&puerto=${encodeURIComponent(basePayload.puerto)}&conexion=${encodeURIComponent(basePayload.conexion)}`))}
+                                onClick={() => run(() => apiGet('/v1/pos/fiscal/memoria', {
+                                    ...basePayload,
+                                    agentUrl: fiscalPrinter.agentUrl,
+                                }))}
                             >
                                 Memoria Fiscal
                             </Button>
@@ -143,7 +136,12 @@ export default function PosFiscalPage() {
                                 <Button
                                     variant="outlined"
                                     disabled={loading}
-                                    onClick={() => run(() => fetch(`${baseUrl}/api/fiscal/reporte/mensual?anio=${anio}&mes=${mes}&marca=${encodeURIComponent(basePayload.marca)}&puerto=${encodeURIComponent(basePayload.puerto)}&conexion=${encodeURIComponent(basePayload.conexion)}`))}
+                                    onClick={() => run(() => apiGet('/v1/pos/fiscal/reporte/mensual', {
+                                        anio,
+                                        mes,
+                                        ...basePayload,
+                                        agentUrl: fiscalPrinter.agentUrl,
+                                    }))}
                                 >
                                     Generar Reporte Mensual
                                 </Button>
@@ -166,14 +164,11 @@ export default function PosFiscalPage() {
                                 <Button
                                     variant="outlined"
                                     disabled={loading}
-                                    onClick={() => run(() => fetch(`${baseUrl}/api/fiscal/documento-no-fiscal`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            ...basePayload,
-                                            titulo: docTitulo,
-                                            lineas: docTexto.split('\n').map((l) => l.trim()).filter(Boolean),
-                                        }),
+                                    onClick={() => run(() => apiPost('/v1/pos/fiscal/documento-no-fiscal', {
+                                        ...basePayload,
+                                        agentUrl: fiscalPrinter.agentUrl,
+                                        titulo: docTitulo,
+                                        lineas: docTexto.split('\n').map((l) => l.trim()).filter(Boolean),
                                     }))}
                                 >
                                     Emitir Documento No Fiscal

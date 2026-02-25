@@ -1,0 +1,135 @@
+2026-02-25T00:27:49.221Z - info: Initializing jsreport (version: 4.12.0, configuration file: none, nodejs: 22.18.0)
+2026-02-25T00:27:49.224Z - info: Searching for available extensions in D:\DatqBoxWorkspace\DatqBoxWeb\DatqBox.JsReport\
+2026-02-25T00:27:49.228Z - info: Extensions location cache not found, crawling directories
+2026-02-25T00:27:51.952Z - info: Found 35 extension(s)
+2026-02-25T00:27:52.000Z - debug: Writing extension locations cache to C:\Users\Dell\AppData\Local\Temp\jsreport\core\locations.json
+2026-02-25T00:27:52.001Z - debug: Discovered 35 extensions
+2026-02-25T00:27:52.071Z - info: Using extension authentication@4.3.1
+2026-02-25T00:27:52.378Z - debug: Extension authentication@4.3.1 was disabled
+2026-02-25T00:27:52.379Z - info: Using extension base@4.1.0
+2026-02-25T00:27:52.383Z - info: Using extension child-templates@4.2.0
+2026-02-25T00:27:52.386Z - info: Using extension cli@4.2.0
+2026-02-25T00:27:52.389Z - info: Using extension components@4.1.0
+2026-02-25T00:27:52.392Z - info: Using extension data@4.2.0
+2026-02-25T00:27:52.395Z - info: Using extension express@4.3.1
+2026-02-25T00:27:53.326Z - info: Using extension freeze@4.1.0
+2026-02-25T00:27:53.331Z - info: Using extension fs-store@4.2.0
+2026-02-25T00:27:53.539Z - info: Using extension handlebars@4.1.0
+2026-02-25T00:27:53.541Z - info: Using extension import-export@4.1.0
+2026-02-25T00:27:53.566Z - info: Using extension jsrender@4.1.0
+2026-02-25T00:27:53.567Z - info: Using extension licensing@4.1.0
+2026-02-25T00:27:53.631Z - info: Using extension localization@4.1.0
+2026-02-25T00:27:53.633Z - info: Using extension npm@4.1.0
+2026-02-25T00:27:53.640Z - info: Using extension pdf-utils@4.5.3
+2026-02-25T00:27:53.644Z - info: Using extension reports@4.3.0
+2026-02-25T00:27:53.650Z - info: Using extension tags@4.1.0
+2026-02-25T00:27:53.653Z - info: Using extension text@4.1.0
+2026-02-25T00:27:53.654Z - info: Using extension version-control@4.2.1
+2026-02-25T00:27:53.672Z - info: Using extension assets@4.3.0
+2026-02-25T00:27:53.690Z - info: Using extension authorization@4.2.0
+2026-02-25T00:27:53.700Z - debug: Extension authorization@4.2.0 was disabled
+2026-02-25T00:27:53.700Z - info: Using extension browser-client@4.2.0
+2026-02-25T00:27:53.703Z - info: Using extension chrome-pdf@4.4.0
+2026-02-25T00:27:53.708Z - debug: Chrome strategy is chrome-pool, numberOfWorkers: 1
+2026-02-25T00:27:53.709Z - debug: Chrome custom launch options are args=--no-sandbox,--disable-setuid-sandbox, protocolTimeout=60000
+2026-02-25T00:27:53.709Z - info: Using extension docx@4.10.1
+2026-02-25T00:27:53.713Z - info: Using extension html-to-xlsx@4.4.0
+2026-02-25T00:27:54.300Z - info: html-to-xlsx detected chrome as available html engine
+2026-02-25T00:27:54.301Z - info: Using extension pptx@4.5.0
+2026-02-25T00:27:54.305Z - info: Using extension scheduling@4.2.0
+2026-02-25T00:27:54.369Z - info: Using extension scripts@4.3.0
+2026-02-25T00:27:54.371Z - info: Using extension static-pdf@4.2.0
+2026-02-25T00:27:54.373Z - info: Using extension studio@4.4.1
+2026-02-25T00:27:54.501Z - info: Using extension xlsx@4.6.1
+2026-02-25T00:27:54.504Z - info: Using extension public-templates@4.1.0
+2026-02-25T00:27:54.507Z - debug: Extension public-templates@4.1.0 was disabled
+2026-02-25T00:27:54.507Z - info: Using extension sample-template@4.1.0
+2026-02-25T00:27:54.510Z - info: Using extension studio-theme-dark@4.1.0
+2026-02-25T00:27:54.513Z - info: Code sandboxing is disabled, users can potentially penetrate the local system if you allow code from external users to be part of your reports
+2026-02-25T00:27:54.514Z - warn: options.allowLocalFilesAccess is deprecated, use options.trustUserCode instead
+2026-02-25T00:27:54.514Z - info: Using general timeout for rendering (reportTimeout: 60000)
+2026-02-25T00:27:54.515Z - info: Using fs provider for template store.
+2026-02-25T00:27:54.520Z - info: fs store is persisting using fs for D:\DatqBoxWorkspace\DatqBoxWeb\DatqBox.JsReport\data
+2026-02-25T00:27:54.531Z - info: fs store is loading data
+2026-02-25T00:27:54.551Z - info: fs store is initialized successfully
+2026-02-25T00:27:54.556Z - debug: studio default theme is: light
+2026-02-25T00:27:54.564Z - info: Creating default express app.
+2026-02-25T00:27:54.593Z - info: jsreport server successfully started on http port: 5070
+2026-02-25T00:27:54.595Z - info: Verifying license key free
+2026-02-25T00:27:54.597Z - info: Using free license
+2026-02-25T00:27:54.613Z - info: pdf footers check started
+2026-02-25T00:27:54.614Z - info: pdf footers check finished without found problems
+2026-02-25T00:27:54.632Z - info: Migrating templates chrome settings (waitForNetworkIddle -> waitForNetworkIdle)
+2026-02-25T00:27:54.642Z - info: Migration successful
+2026-02-25T00:27:54.643Z - debug: Creating samples is disabled
+2026-02-25T00:27:54.644Z - info: Initializing worker threads
+2026-02-25T00:27:54.646Z - debug: Extensions in workers: base, child-templates, components, data, express, handlebars, jsrender, localization, npm, pdf-utils, reports, text, version-control, assets, browser-client, chrome-pdf, docx, html-to-xlsx, pptx, scripts, static-pdf, studio, xlsx
+2026-02-25T00:27:54.954Z - info: 2 worker threads initialized in 310ms
+2026-02-25T00:27:54.954Z - info: Starting temp files cleanup with 180000ms threshold
+2026-02-25T00:27:54.955Z - info: reporter initialized
+2026-02-25T00:28:41.623Z - debug: OData query on templates
+2026-02-25T00:28:41.639Z - debug: OData query on settings
+2026-02-25T00:28:41.642Z - debug: OData query on folders
+2026-02-25T00:28:41.669Z - debug: OData query on components
+2026-02-25T00:28:41.674Z - debug: OData query on data
+2026-02-25T00:28:41.683Z - debug: OData query on tags
+2026-02-25T00:28:41.688Z - debug: OData query on assets
+2026-02-25T00:28:41.695Z - debug: OData query on scripts
+2026-02-25T00:28:41.701Z - debug: OData query on schedules
+2026-02-25T00:28:41.873Z - debug: OData query on templates
+2026-02-25T00:28:41.887Z - debug: OData query on profiles
+2026-02-25T00:28:41.904Z - debug: OData query on profiles
+2026-02-25T00:28:41.916Z - debug: OData query on profiles
+2026-02-25T00:28:41.921Z - debug: OData query on profiles
+2026-02-25T00:28:41.926Z - debug: OData query on profiles
+2026-02-25T00:28:41.931Z - debug: OData query on profiles
+2026-02-25T00:28:41.935Z - debug: OData query on templates
+2026-02-25T00:29:46.703Z - debug: OData query on profiles
+2026-02-25T00:29:51.719Z - debug: OData query on profiles
+2026-02-25T00:29:56.704Z - debug: OData query on profiles
+2026-02-25T00:30:01.715Z - debug: OData query on profiles
+2026-02-25T00:30:06.705Z - debug: OData query on profiles
+2026-02-25T00:30:11.704Z - debug: OData query on profiles
+2026-02-25T00:30:16.762Z - debug: OData query on profiles
+2026-02-25T00:30:21.760Z - debug: OData query on profiles
+2026-02-25T00:30:26.706Z - debug: OData query on profiles
+2026-02-25T00:30:31.705Z - debug: OData query on profiles
+2026-02-25T00:30:36.705Z - debug: OData query on profiles
+2026-02-25T00:30:41.705Z - debug: OData query on profiles
+2026-02-25T00:30:46.706Z - debug: OData query on profiles
+2026-02-25T00:30:51.706Z - debug: OData query on profiles
+2026-02-25T00:30:56.707Z - debug: OData query on profiles
+2026-02-25T00:31:01.726Z - debug: OData query on profiles
+2026-02-25T00:31:06.707Z - debug: OData query on profiles
+2026-02-25T00:31:11.706Z - debug: OData query on profiles
+2026-02-25T00:31:16.707Z - debug: OData query on profiles
+2026-02-25T00:31:21.708Z - debug: OData query on profiles
+2026-02-25T00:31:26.708Z - debug: OData query on profiles
+2026-02-25T00:31:31.708Z - debug: OData query on profiles
+2026-02-25T00:31:36.709Z - debug: OData query on profiles
+2026-02-25T00:31:41.708Z - debug: OData query on profiles
+2026-02-25T00:31:46.709Z - debug: OData query on profiles
+2026-02-25T00:31:51.705Z - debug: OData query on profiles
+2026-02-25T00:31:56.706Z - debug: OData query on profiles
+2026-02-25T00:32:01.709Z - debug: OData query on profiles
+2026-02-25T00:32:06.710Z - debug: OData query on profiles
+2026-02-25T00:32:11.709Z - debug: OData query on profiles
+2026-02-25T00:32:16.706Z - debug: OData query on profiles
+2026-02-25T00:32:21.711Z - debug: OData query on profiles
+2026-02-25T00:32:26.716Z - debug: OData query on profiles
+2026-02-25T00:32:31.706Z - debug: OData query on profiles
+2026-02-25T00:32:36.711Z - debug: OData query on profiles
+2026-02-25T00:32:41.711Z - debug: OData query on profiles
+2026-02-25T00:32:46.707Z - debug: OData query on profiles
+2026-02-25T00:32:51.712Z - debug: OData query on profiles
+2026-02-25T00:32:56.705Z - debug: OData query on profiles
+2026-02-25T00:33:01.707Z - debug: OData query on profiles
+2026-02-25T00:33:06.713Z - debug: OData query on profiles
+2026-02-25T00:33:07.137Z - debug: OData query on templates
+2026-02-25T00:33:07.148Z - debug: OData query on profiles
+2026-02-25T00:33:07.153Z - debug: OData query on profiles
+2026-02-25T00:33:07.159Z - debug: OData query on profiles
+2026-02-25T00:33:07.165Z - debug: OData query on profiles
+2026-02-25T00:33:07.169Z - debug: OData query on profiles
+2026-02-25T00:33:07.174Z - debug: OData query on profiles
+2026-02-25T00:33:07.179Z - debug: OData query on templates

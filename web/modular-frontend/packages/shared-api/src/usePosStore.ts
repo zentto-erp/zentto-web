@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiGet, apiPost } from './api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS
@@ -294,20 +295,12 @@ export const usePosStore = create<PosState>()(
             fetchPrinterStatus: async () => {
                 const { fiscalPrinter } = get();
                 try {
-                    const url = `${fiscalPrinter.agentUrl}/api/status?marca=${fiscalPrinter.marca}&puerto=${fiscalPrinter.puerto}&conexion=${fiscalPrinter.conexion}`;
-                    const res = await fetch(url);
-                    if (!res.ok) {
-                        set({
-                            printerStatus: {
-                                success: false,
-                                statusCode: 2,
-                                message: 'Falla al conectar con el agente. Revise cable o inicie el Agente Local.',
-                                lastCheck: Date.now(),
-                            },
-                        });
-                        return;
-                    }
-                    const data = await res.json();
+                    const data = await apiGet('/v1/pos/fiscal/status', {
+                        marca: fiscalPrinter.marca,
+                        puerto: fiscalPrinter.puerto,
+                        conexion: fiscalPrinter.conexion,
+                        agentUrl: fiscalPrinter.agentUrl,
+                    });
                     set({
                         printerStatus: {
                             success: data.Success ?? data.success ?? false,
@@ -395,14 +388,10 @@ export const usePosStore = create<PosState>()(
                             precio: c.totalBase / c.cantidad, // La impresora PNP asume Precio Unitario BASE, el store ya lo tiene pre-calculado
                             iva: c.iva,
                         })),
+                        agentUrl: fiscalPrinter.agentUrl,
                         ...payload,
                     };
-                    const res = await fetch(`${fiscalPrinter.agentUrl}/api/print`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                    });
-                    const data = await res.json();
+                    const data = await apiPost('/v1/pos/fiscal/print', body);
                     return {
                         success: data.Success ?? data.success ?? false,
                         message: data.Message ?? data.message ?? 'Error desconocido',

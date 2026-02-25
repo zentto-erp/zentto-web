@@ -7,6 +7,9 @@ const TableRestaurantIcon = dynamic(() => import('@mui/icons-material/TableResta
 const KitchenIcon = dynamic(() => import('@mui/icons-material/Kitchen'), { ssr: false });
 const DashboardIcon = dynamic(() => import('@mui/icons-material/Dashboard'), { ssr: false });
 const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
+const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'), { ssr: false });
+const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
+const Inventory2Icon = dynamic(() => import('@mui/icons-material/Inventory2'), { ssr: false });
 
 export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): any[] {
     const nav: any[] = [];
@@ -24,6 +27,12 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): any[] 
             segment: 'cocina',
             title: 'Cocina / Pedidos',
             icon: <KitchenIcon />
+        });
+        nav.push({
+            kind: 'page',
+            segment: 'fiscal',
+            title: 'Módulo Fiscal',
+            icon: <ReceiptLongIcon />
         });
     }
 
@@ -47,6 +56,18 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): any[] 
             segment: 'admin/recetas',
             title: 'Recetas e Insumos',
             icon: <SettingsIcon />
+        });
+        nav.push({
+            kind: 'page',
+            segment: 'admin/compras',
+            title: 'Compras',
+            icon: <ShoppingCartIcon />
+        });
+        nav.push({
+            kind: 'page',
+            segment: 'admin/insumos',
+            title: 'Insumos',
+            icon: <Inventory2Icon />
         });
     }
 

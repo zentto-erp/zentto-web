@@ -36,11 +36,11 @@ restauranteRouter.post("/pedidos/abrir", async (req, res) => {
 
 // ═══ Agregar item a pedido ═══
 const itemSchema = z.object({
-    pedidoId: z.number(),
-    productoId: z.string(),
-    nombre: z.string(),
-    cantidad: z.number(),
-    precioUnitario: z.number(),
+    pedidoId: z.coerce.number().int().positive(),
+    productoId: z.string().trim().min(1),
+    nombre: z.string().trim().min(1),
+    cantidad: z.coerce.number().positive(),
+    precioUnitario: z.coerce.number().nonnegative(),
     esCompuesto: z.boolean().optional(),
     componentes: z.string().optional(),
     comentarios: z.string().optional(),

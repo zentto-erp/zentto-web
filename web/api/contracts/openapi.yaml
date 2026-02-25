@@ -1619,3 +1619,121 @@ paths:
       responses:
         201:
           description: Seed aplicado
+
+  # ============================================
+  # SISTEMA (Notificaciones, Tareas, Mensajes)
+  # ============================================
+  /sistema/notificaciones:
+    get:
+      tags: [Sistema]
+      summary: Lista notificaciones
+      parameters:
+        - name: usuarioId
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+        500:
+          description: Error
+
+  /sistema/notificaciones/leido:
+    post:
+      tags: [Sistema]
+      summary: Marca notificaciones como leídas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad Request
+        500:
+          description: Error
+
+  /sistema/tareas:
+    get:
+      tags: [Sistema]
+      summary: Lista de tareas pendientes
+      parameters:
+        - name: asignadoA
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+        500:
+          description: Error
+
+  /sistema/tareas/{id}/progreso:
+    patch:
+      tags: [Sistema]
+      summary: Actualiza el progreso de una tarea
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [progress]
+              properties:
+                progress:
+                  type: integer
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad Request
+        500:
+          description: Error
+
+  /sistema/mensajes:
+    get:
+      tags: [Sistema]
+      summary: Buzón de mensajes
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+        500:
+          description: Error
+
+  /sistema/mensajes/{id}/leido:
+    patch:
+      tags: [Sistema]
+      summary: Marca un mensaje como leído
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad Request
+        500:
+          description: Error

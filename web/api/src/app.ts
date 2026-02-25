@@ -51,6 +51,8 @@ import { posEsperaRouter } from "./modules/pos/espera.routes.js";
 import { restauranteRouter } from "./modules/restaurante/routes.js";
 import { restauranteAdminRouter } from "./modules/restaurante/admin.routes.js";
 import { configRouter } from "./modules/config/routes.js";
+import { reportesRouter } from "./modules/reportes/routes.js";
+import { sistemaRouter } from "./modules/sistema/sistema.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 
 function resolveOpenApiPath() {
@@ -210,8 +212,12 @@ export async function createApp() {
   app.use("/v1/restaurante", restauranteRouter);
   app.use("/v1/restaurante/admin", restauranteAdminRouter);
 
+  // Reportes Crystal Reports (proxy al .NET Report Server)
+  app.use("/v1/reportes", reportesRouter);
+
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
+  app.use("/v1/sistema", sistemaRouter); // Added this line
   app.use("/api/v1/config", configRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
@@ -258,6 +264,8 @@ export async function createApp() {
   app.use("/api/v1/pos", posEsperaRouter);
   app.use("/api/v1/restaurante", restauranteRouter);
   app.use("/api/v1/restaurante/admin", restauranteAdminRouter);
+  app.use("/api/v1/reportes", reportesRouter);
+  app.use("/api/v1/sistema", sistemaRouter); // Added this line
 
   await loadAddons(app);
 

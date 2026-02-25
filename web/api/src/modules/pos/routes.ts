@@ -16,6 +16,68 @@ import {
 
 export const posRouter = Router();
 
+const DEFAULT_LOCAL_FISCAL_AGENT = "http://localhost:5059";
+
+function normalizeAgentUrl(raw?: string) {
+    const value = (raw || "").trim();
+    if (!value) return DEFAULT_LOCAL_FISCAL_AGENT;
+    return value.replace(/\/$/, "");
+}
+
+async function proxyFiscalGet(res: any, path: string, query: Record<string, string | undefined>) {
+    try {
+        const agentUrl = normalizeAgentUrl(query.agentUrl);
+        const params = new URLSearchParams();
+        Object.entries(query).forEach(([key, value]) => {
+            if (key === "agentUrl") return;
+            if (value !== undefined && value !== null && String(value).trim() !== "") {
+                params.set(key, String(value));
+            }
+        });
+        const qs = params.toString();
+        const target = `${agentUrl}${path}${qs ? `?${qs}` : ""}`;
+        const response = await fetch(target);
+        const text = await response.text();
+        let data: unknown = { raw: text };
+        try {
+            data = JSON.parse(text);
+        } catch {
+            // raw fallback
+        }
+        return res.status(response.status).json(data);
+    } catch (error: any) {
+        return res.status(502).json({
+            success: false,
+            message: error?.message || "No se pudo conectar con el Agente Fiscal local",
+        });
+    }
+}
+
+async function proxyFiscalPost(res: any, path: string, body: Record<string, unknown>) {
+    try {
+        const agentUrl = normalizeAgentUrl(typeof body.agentUrl === "string" ? body.agentUrl : undefined);
+        const { agentUrl: _agentUrl, ...payload } = body;
+        const response = await fetch(`${agentUrl}${path}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const text = await response.text();
+        let data: unknown = { raw: text };
+        try {
+            data = JSON.parse(text);
+        } catch {
+            // raw fallback
+        }
+        return res.status(response.status).json(data);
+    } catch (error: any) {
+        return res.status(502).json({
+            success: false,
+            message: error?.message || "No se pudo conectar con el Agente Fiscal local",
+        });
+    }
+}
+
 // ═══ Productos POS ═══
 const productosSchema = z.object({
     search: z.string().optional(),
@@ -120,4 +182,81 @@ posRouter.get("/reportes/cajas", async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
     const data = await listPosReportCajas(parsed.data);
     res.json(data);
+});
+
+// ═══ Proxy Fiscal (Agente Local) ═══
+const fiscalActionSchema = z.object({
+    marca: z.string().min(1),
+    puerto: z.string().min(1),
+    conexion: z.string().min(1),
+    agentUrl: z.string().url().optional(),
+});
+
+const fiscalPrintSchema = fiscalActionSchema.extend({
+    cliente: z.record(z.any()).optional(),
+    items: z.array(z.record(z.any())).optional(),
+});
+
+const fiscalDocumentoNoFiscalSchema = fiscalActionSchema.extend({
+    titulo: z.string().optional(),
+    lineas: z.array(z.string()).optional(),
+});
+
+posRouter.get("/fiscal/metodos", async (req, res) => {
+    return proxyFiscalGet(res, "/api/fiscal/metodos", {
+        agentUrl: req.query.agentUrl as string | undefined,
+    });
+});
+
+posRouter.get("/fiscal/status", async (req, res) => {
+    return proxyFiscalGet(res, "/api/fiscal/status", {
+        marca: req.query.marca as string | undefined,
+        puerto: req.query.puerto as string | undefined,
+        conexion: req.query.conexion as string | undefined,
+        agentUrl: req.query.agentUrl as string | undefined,
+    });
+});
+
+posRouter.post("/fiscal/reporte/x", async (req, res) => {
+    const parsed = fiscalActionSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return proxyFiscalPost(res, "/api/fiscal/reporte/x", parsed.data as Record<string, unknown>);
+});
+
+posRouter.post("/fiscal/reporte/z", async (req, res) => {
+    const parsed = fiscalActionSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return proxyFiscalPost(res, "/api/fiscal/reporte/z", parsed.data as Record<string, unknown>);
+});
+
+posRouter.get("/fiscal/reporte/mensual", async (req, res) => {
+    return proxyFiscalGet(res, "/api/fiscal/reporte/mensual", {
+        anio: req.query.anio as string | undefined,
+        mes: req.query.mes as string | undefined,
+        marca: req.query.marca as string | undefined,
+        puerto: req.query.puerto as string | undefined,
+        conexion: req.query.conexion as string | undefined,
+        agentUrl: req.query.agentUrl as string | undefined,
+    });
+});
+
+posRouter.get("/fiscal/memoria", async (req, res) => {
+    return proxyFiscalGet(res, "/api/fiscal/memoria", {
+        marca: req.query.marca as string | undefined,
+        puerto: req.query.puerto as string | undefined,
+        conexion: req.query.conexion as string | undefined,
+        agentUrl: req.query.agentUrl as string | undefined,
+    });
+});
+
+posRouter.post("/fiscal/documento-no-fiscal", async (req, res) => {
+    const parsed = fiscalDocumentoNoFiscalSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return proxyFiscalPost(res, "/api/fiscal/documento-no-fiscal", parsed.data as Record<string, unknown>);
+});
+
+posRouter.post("/fiscal/print", async (req, res) => {
+    const parsed = fiscalPrintSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return proxyFiscalPost(res, "/api/print", parsed.data as Record<string, unknown>);
 });

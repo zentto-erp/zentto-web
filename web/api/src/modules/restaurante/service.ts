@@ -53,7 +53,7 @@ export async function agregarItemPedido(params: {
         const pool = await getPool();
         const req = pool.request();
         req.input("PedidoId", sql.Int, params.pedidoId);
-        req.input("ProductoId", sql.NVarChar(15), params.productoId);
+        req.input("ProductoId", sql.NVarChar(50), params.productoId);
         req.input("Nombre", sql.NVarChar(200), params.nombre);
         req.input("Cantidad", sql.Decimal(10, 3), params.cantidad);
         req.input("PrecioUnitario", sql.Decimal(18, 2), params.precioUnitario);

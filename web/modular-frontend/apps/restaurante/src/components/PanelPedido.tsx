@@ -168,6 +168,8 @@ export function PanelPedido({
     const symP = localizacion.monedaPrincipal || 'Bs';
     const symR = localizacion.monedaReferencia || '$';
     const tc = localizacion.tasaCambio || 1;
+    const safeTc = tc > 0 ? tc : 1;
+    const toPrincipal = (value: number) => value * safeTc;
 
     return (
         <React.Fragment>
@@ -209,7 +211,7 @@ export function PanelPedido({
                                         <ListItem key={item.id} sx={{ bgcolor: '#FFF8E1', borderRadius: 1, mb: 0.5 }}>
                                             <ListItemText
                                                 primary={item.nombre}
-                                                secondary={`${item.cantidad}x $${item.precioUnitario.toFixed(2)}`}
+                                                secondary={`${item.cantidad}x ${symP} ${item.precioUnitario.toFixed(2)}${safeTc !== 1 ? ` (Ref ${symR} ${(item.precioUnitario / safeTc).toFixed(2)})` : ''}`}
                                             />
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 {onEditarItem && (
@@ -368,7 +370,7 @@ export function PanelPedido({
                                 {sugerencias.map(p => (
                                     <Chip
                                         key={p.id}
-                                        label={`${p.nombre} - $${p.precio}`}
+                                        label={`${p.nombre} - ${symP} ${toPrincipal(p.precio).toFixed(2)}${safeTc !== 1 ? ` (Ref ${symR} ${p.precio.toFixed(2)})` : ''}`}
                                         onClick={() => handleAgregarProducto(p)}
                                         color="primary"
                                         variant="outlined"
@@ -522,9 +524,16 @@ export function PanelPedido({
 
                                                 {/* Fila Inferior con Precio Alineado Izquierda y Tiempo Derecha */}
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', mt: 'auto' }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#555' }}>
-                                                        ${producto.precio.toFixed(2)}
-                                                    </Typography>
+                                                    <Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#555', lineHeight: 1.1 }}>
+                                                            {symP} {toPrincipal(producto.precio).toFixed(2)}
+                                                        </Typography>
+                                                        {safeTc !== 1 && (
+                                                            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1 }}>
+                                                                Ref {symR} {producto.precio.toFixed(2)}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
                                                     {producto.tiempoPreparacion > 0 && (
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
                                                             <KitchenIcon sx={{ fontSize: 12 }} />
@@ -611,7 +620,7 @@ export function PanelPedido({
                                 c => c.obligatorio && !componentesSeleccionados[c.id]
                             )}
                         >
-                            Agregar - ${((productoSeleccionado?.precio || 0) * cantidad).toFixed(2)}
+                            Agregar - {symP} {(toPrincipal(productoSeleccionado?.precio || 0) * cantidad).toFixed(2)}
                         </Button>
                     </DialogActions>
                 </Dialog>

@@ -1,0 +1,80 @@
+import { Router } from 'express';
+import * as service from './sistema.service.js';
+
+const router = Router();
+
+// /v1/sistema/notificaciones
+router.get('/notificaciones', async (req, res) => {
+    try {
+        const usuarioId = (req.query.usuarioId as string) || undefined;
+        const data = await service.getNotificaciones(usuarioId);
+        res.json({ ok: true, data });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
+router.post('/notificaciones/leido', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids)) {
+            return res.status(400).json({ error: 'ids debe ser un arreglo de números' });
+        }
+        await service.markNotificacionesAsRead(ids);
+        res.json({ ok: true });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
+// /v1/sistema/tareas
+router.get('/tareas', async (req, res) => {
+    try {
+        const asignadoA = (req.query.asignadoA as string) || undefined;
+        const data = await service.getTareas(asignadoA);
+        res.json({ ok: true, data });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
+router.patch('/tareas/:id/progreso', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { progress } = req.body;
+        if (!id || typeof progress !== 'number') {
+            return res.status(400).json({ error: 'id y progress son requeridos' });
+        }
+        const isCompleted = progress >= 100;
+        await service.toggleTarea(id, isCompleted, progress);
+        res.json({ ok: true });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
+// /v1/sistema/mensajes
+router.get('/mensajes', async (req, res) => {
+    try {
+        // En una app real lo sacas del token (req.user.id)
+        // Por ahora lo permitimos por query params:
+        const destinatarioId = (req.query.userId as string) || 'admin';
+        const data = await service.getMensajes(destinatarioId);
+        res.json({ ok: true, data });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
+router.patch('/mensajes/:id/leido', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (!id) return res.status(400).json({ error: 'id invalido' });
+        await service.markMensajeAsRead(id);
+        res.json({ ok: true });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
+export const sistemaRouter = router;

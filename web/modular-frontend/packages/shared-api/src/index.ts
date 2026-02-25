@@ -1,6 +1,6 @@
 'use client';
 
-export { apiGet, apiPost, apiPut, apiDelete } from './api';
+export { apiGet, apiPost, apiPut, apiPatch, apiDelete } from './api';
 export { formatCurrency, formatDate, formatName, formatPercent, truncateText, getStatusColor } from './formatters';
 export { requestLogger } from './requestLogger';
 export { default as QueryProvider } from './QueryProvider';
