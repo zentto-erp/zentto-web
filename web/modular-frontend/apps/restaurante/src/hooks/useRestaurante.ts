@@ -131,6 +131,22 @@ const API_BASE = typeof window !== 'undefined'
     ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
     : 'http://localhost:4000';
 
+function round2(value: number) {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function normalizeIvaPercent(raw: unknown, fallback = 16): number {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return fallback;
+    if (value < 0) return 0;
+    if (value > 100) return 100;
+    return Math.round((value + Number.EPSILON) * 10000) / 10000;
+}
+
+function calcIvaAmount(baseAmount: number, ivaPercent: number) {
+    return round2(baseAmount * (ivaPercent / 100));
+}
+
 interface RestauranteState {
     // ─── Data ───
     ambientes: Ambiente[];
@@ -217,6 +233,8 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                                 mesaId: mesa.id,
                                 clienteNombre: data.pedido.clienteNombre,
                                 items: (data.items ?? []).map((i: any) => ({
+                                    iva: normalizeIvaPercent(i.iva ?? i.IvaPct ?? i.PORCENTAJE, 16),
+                                    montoIva: calcIvaAmount(Number(i.subtotal ?? 0), normalizeIvaPercent(i.iva ?? i.IvaPct ?? i.PORCENTAJE, 16)),
                                     id: uuidv4(),
                                     dbId: i.id,
                                     productoId: i.productoId,
@@ -346,14 +364,15 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
         if (!mesa?.pedidoActual) return;
 
         const loc = usePosStore.getState().localizacion;
-        const calc = calcTotals(item.cantidad, item.precioUnitario, 0, item.iva || 16, loc);
+        const ivaPct = normalizeIvaPercent(item.iva, 16);
+        const calc = calcTotals(item.cantidad, item.precioUnitario, 0, ivaPct, loc);
 
         const newItem: ItemPedido = {
             id: uuidv4(),
             ...item,
             precioUnitario: calc.precioBaseUnidad,
             subtotal: calc.totalBase,
-            iva: item.iva || 16,
+            iva: ivaPct,
             montoIva: calc.totalIva,
             estado: item.estado || 'pendiente',
             enviadoACocina: false,
@@ -418,11 +437,13 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             // Por lo tanto, no volvemos a pasar `calcTotals` a menos que usemos un Flag, o asumimos que ya no incluya iva:
             // Vamos a forzar un objeto loc local sin preciosIncluyenIva para que no descuente el IVA de nuevo.
             const locAjustado = { ...loc, preciosIncluyenIva: false, tasaCambio: 1 };
-            const calc = calcTotals(cantidad, item.precioUnitario, 0, item.iva, locAjustado);
+            const ivaPct = normalizeIvaPercent(item.iva, 16);
+            const calc = calcTotals(cantidad, item.precioUnitario, 0, ivaPct, locAjustado);
 
             return {
                 ...item,
                 cantidad,
+                iva: ivaPct,
                 subtotal: calc.totalBase,
                 montoIva: calc.totalIva,
                 comentarios: updates.comentarios ?? item.comentarios
@@ -483,12 +504,14 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
 
             // ─── (b) Persistir cada item nuevo ───
             for (const item of itemsPendientes) {
+                const ivaPct = normalizeIvaPercent(item.iva, 16);
                 const itemData = await apiPost(`/v1/restaurante/pedidos/item`, {
                     pedidoId: dbPedidoId,
                     productoId: item.productoId,
                     nombre: item.nombre,
                     cantidad: item.cantidad,
                     precioUnitario: item.precioUnitario,
+                    iva: ivaPct,
                     esCompuesto: item.esCompuesto,
                     componentes: item.componentes ? JSON.stringify(item.componentes) : undefined,
                     comentarios: item.comentarios,
@@ -596,12 +619,17 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             const sinEnviar = mesa.pedidoActual.items.filter(i => !i.enviadoACocina);
             if (sinEnviar.length > 0 && dbPedidoId) {
                 for (const item of sinEnviar) {
+                    const ivaPct = normalizeIvaPercent(item.iva, 16);
                     await apiPost(`/v1/restaurante/pedidos/item`, {
                         pedidoId: dbPedidoId,
                         productoId: item.productoId,
                         nombre: item.nombre,
                         cantidad: item.cantidad,
                         precioUnitario: item.precioUnitario,
+                        iva: ivaPct,
+                        esCompuesto: item.esCompuesto,
+                        componentes: item.componentes ? JSON.stringify(item.componentes) : undefined,
+                        comentarios: item.comentarios,
                     });
                 }
             }

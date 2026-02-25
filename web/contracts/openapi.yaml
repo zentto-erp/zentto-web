@@ -5645,3 +5645,447 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "500":
           $ref: "#/components/responses/BadRequest"
+
+  /v1/pos/ventas:
+    post:
+      tags:
+        - POS
+      summary: Registrar venta POS con emision fiscal multipais
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [numFactura, cajaId, items]
+              properties:
+                numFactura:
+                  type: string
+                cajaId:
+                  type: string
+                codUsuario:
+                  type: string
+                clienteId:
+                  type: string
+                clienteNombre:
+                  type: string
+                clienteRif:
+                  type: string
+                tipoPrecio:
+                  type: string
+                metodoPago:
+                  type: string
+                tramaFiscal:
+                  type: string
+                esperaOrigenId:
+                  type: integer
+                empresaId:
+                  type: integer
+                sucursalId:
+                  type: integer
+                countryCode:
+                  type: string
+                  enum: [VE, ES]
+                invoiceTypeHint:
+                  type: string
+                fiscalPrinterSerial:
+                  type: string
+                fiscalControlNumber:
+                  type: string
+                zReportNumber:
+                  type: integer
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [productoId, nombre, cantidad, precioUnitario, subtotal]
+                    properties:
+                      productoId:
+                        type: string
+                      codigo:
+                        type: string
+                      nombre:
+                        type: string
+                      cantidad:
+                        type: number
+                      precioUnitario:
+                        type: number
+                      descuento:
+                        type: number
+                      iva:
+                        type: number
+                      subtotal:
+                        type: number
+      responses:
+        "201":
+          description: Venta registrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  ventaId:
+                    type: integer
+                  fiscal:
+                    type: object
+                    additionalProperties: true
+                  contabilidad:
+                    type: object
+                    additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/pos/ventas/{ventaId}/contabilizar:
+    post:
+      tags:
+        - POS
+      summary: Reprocesar asiento contable de una venta POS existente
+      parameters:
+        - name: ventaId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codUsuario:
+                  type: string
+                countryCode:
+                  type: string
+                  enum: [VE, ES]
+                currency:
+                  type: string
+                exchangeRate:
+                  type: number
+      responses:
+        "200":
+          description: Reproceso contable ejecutado
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/restaurante/pedidos/{pedidoId}/cerrar:
+    post:
+      tags:
+        - Restaurante
+      summary: Cerrar pedido e invocar emision fiscal
+      parameters:
+        - name: pedidoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                empresaId:
+                  type: integer
+                sucursalId:
+                  type: integer
+                countryCode:
+                  type: string
+                  enum: [VE, ES]
+                codUsuario:
+                  type: string
+                invoiceNumber:
+                  type: string
+                invoiceDate:
+                  type: string
+                  format: date-time
+                invoiceTypeHint:
+                  type: string
+                fiscalPrinterSerial:
+                  type: string
+                fiscalControlNumber:
+                  type: string
+                zReportNumber:
+                  type: integer
+      responses:
+        "200":
+          description: Pedido cerrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  executionMode:
+                    type: string
+                  alreadyClosed:
+                    type: boolean
+                  fiscal:
+                    type: object
+                    additionalProperties: true
+                  contabilidad:
+                    type: object
+                    additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/restaurante/pedidos/{pedidoId}/contabilizar:
+    post:
+      tags:
+        - Restaurante
+      summary: Reprocesar asiento contable de un pedido de restaurante
+      parameters:
+        - name: pedidoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codUsuario:
+                  type: string
+                countryCode:
+                  type: string
+                  enum: [VE, ES]
+                currency:
+                  type: string
+                exchangeRate:
+                  type: number
+                invoiceNumber:
+                  type: string
+      responses:
+        "200":
+          description: Reproceso contable ejecutado
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/fiscal/plugins:
+    get:
+      tags:
+        - Fiscal
+      summary: Lista plugins fiscales disponibles
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/countries:
+    get:
+      tags:
+        - Fiscal
+      summary: Lista paises fiscales soportados
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/countries/{countryCode}:
+    get:
+      tags:
+        - Fiscal
+      summary: Perfil fiscal de un pais
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/fiscal/countries/{countryCode}/default-config:
+    get:
+      tags:
+        - Fiscal
+      summary: Configuracion fiscal por defecto del pais
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/countries/{countryCode}/tax-rates:
+    get:
+      tags:
+        - Fiscal
+      summary: Tasas de impuesto por pais
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/countries/{countryCode}/invoice-types:
+    get:
+      tags:
+        - Fiscal
+      summary: Tipos de factura por pais
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/countries/{countryCode}/milestones:
+    get:
+      tags:
+        - Fiscal
+      summary: Hitos regulatorios por pais
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/countries/{countryCode}/sources:
+    get:
+      tags:
+        - Fiscal
+      summary: Fuentes oficiales regulatorias por pais
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+
+  /v1/fiscal/config:
+    get:
+      tags:
+        - Fiscal
+      summary: Obtener configuracion fiscal por empresa/sucursal/pais
+      parameters:
+        - name: empresaId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: sucursalId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: countryCode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [VE, ES]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    put:
+      tags:
+        - Fiscal
+      summary: Crear o actualizar configuracion fiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [empresaId, countryCode]
+              properties:
+                empresaId:
+                  type: integer
+                sucursalId:
+                  type: integer
+                countryCode:
+                  type: string
+                  enum: [VE, ES]
+                currency:
+                  type: string
+                taxRegime:
+                  type: string
+                defaultTaxCode:
+                  type: string
+                defaultTaxRate:
+                  type: number
+                fiscalPrinterEnabled:
+                  type: boolean
+                printerBrand:
+                  type: string
+                printerPort:
+                  type: string
+                verifactuEnabled:
+                  type: boolean
+                verifactuMode:
+                  type: string
+                  enum: [auto, manual]
+                certificatePath:
+                  type: string
+                certificatePassword:
+                  type: string
+                aeatEndpoint:
+                  type: string
+                senderNIF:
+                  type: string
+                senderRIF:
+                  type: string
+                softwareId:
+                  type: string
+                softwareName:
+                  type: string
+                softwareVersion:
+                  type: string
+                posEnabled:
+                  type: boolean
+                restaurantEnabled:
+                  type: boolean
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"

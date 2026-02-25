@@ -1,3 +1,7 @@
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 -- ═══════════════════════════════════════════════════════════════════
 -- DatqBox POS — Ventas en Espera (multi-estación)
 -- Permite a una cajera "aparcar" un carrito completo y que

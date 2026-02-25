@@ -115,14 +115,15 @@ export async function crearAsiento(input: CrearAsientoInput, codUsuario?: string
   req.output("Resultado", sql.Int);
   req.output("Mensaje", sql.NVarChar(500));
 
-  await req.execute("usp_Contabilidad_Asiento_Crear");
-  const resultado = Number(req.parameters.Resultado.value || 0);
+  const rs = await req.execute("usp_Contabilidad_Asiento_Crear");
+  const output = rs.output as Record<string, unknown>;
+  const resultado = Number(output.Resultado || 0);
   return {
     ok: resultado === 1,
     resultado,
-    mensaje: String(req.parameters.Mensaje.value || ""),
-    asientoId: req.parameters.AsientoId.value ? Number(req.parameters.AsientoId.value) : null,
-    numeroAsiento: req.parameters.NumeroAsiento.value ? String(req.parameters.NumeroAsiento.value) : null
+    mensaje: String(output.Mensaje || ""),
+    asientoId: output.AsientoId ? Number(output.AsientoId) : null,
+    numeroAsiento: output.NumeroAsiento ? String(output.NumeroAsiento) : null
   };
 }
 
@@ -134,13 +135,14 @@ export async function anularAsiento(asientoId: number, motivo: string, codUsuari
   req.input("CodUsuario", sql.NVarChar(40), codUsuario || "API");
   req.output("Resultado", sql.Int);
   req.output("Mensaje", sql.NVarChar(500));
-  await req.execute("usp_Contabilidad_Asiento_Anular");
+  const rs = await req.execute("usp_Contabilidad_Asiento_Anular");
+  const output = rs.output as Record<string, unknown>;
 
-  const resultado = Number(req.parameters.Resultado.value || 0);
+  const resultado = Number(output.Resultado || 0);
   return {
     ok: resultado === 1,
     resultado,
-    mensaje: String(req.parameters.Mensaje.value || "")
+    mensaje: String(output.Mensaje || "")
   };
 }
 
@@ -165,14 +167,15 @@ export async function crearAjuste(
   req.output("AsientoId", sql.BigInt);
   req.output("Resultado", sql.Int);
   req.output("Mensaje", sql.NVarChar(500));
-  await req.execute("usp_Contabilidad_Ajuste_Crear");
+  const rs = await req.execute("usp_Contabilidad_Ajuste_Crear");
+  const output = rs.output as Record<string, unknown>;
 
-  const resultado = Number(req.parameters.Resultado.value || 0);
+  const resultado = Number(output.Resultado || 0);
   return {
     ok: resultado === 1,
     resultado,
-    mensaje: String(req.parameters.Mensaje.value || ""),
-    asientoId: req.parameters.AsientoId.value ? Number(req.parameters.AsientoId.value) : null
+    mensaje: String(output.Mensaje || ""),
+    asientoId: output.AsientoId ? Number(output.AsientoId) : null
   };
 }
 
@@ -184,13 +187,14 @@ export async function generarDepreciacion(periodo: string, centroCosto?: string,
   req.input("CentroCosto", sql.NVarChar(20), centroCosto || null);
   req.output("Resultado", sql.Int);
   req.output("Mensaje", sql.NVarChar(500));
-  await req.execute("usp_Contabilidad_Depreciacion_Generar");
+  const rs = await req.execute("usp_Contabilidad_Depreciacion_Generar");
+  const output = rs.output as Record<string, unknown>;
 
-  const resultado = Number(req.parameters.Resultado.value || 0);
+  const resultado = Number(output.Resultado || 0);
   return {
     ok: resultado === 1,
     resultado,
-    mensaje: String(req.parameters.Mensaje.value || "")
+    mensaje: String(output.Mensaje || "")
   };
 }
 

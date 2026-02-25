@@ -105,6 +105,7 @@ export function PanelPedido({
             setComentario('');
             setCantidad(1);
         } else {
+            const ivaPct = Number.isFinite(Number(producto.iva)) ? Number(producto.iva) : 16;
             onAgregarItem({
                 productoId: producto.id,
                 nombre: producto.nombre,
@@ -114,8 +115,8 @@ export function PanelPedido({
                 estado: 'pendiente',
                 esCompuesto: false,
                 enviadoACocina: false,
-                iva: producto.iva || 16,
-                montoIva: Math.round((producto.precio * ((producto.iva || 16) / 100)) * 100) / 100,
+                iva: ivaPct,
+                montoIva: Math.round((producto.precio * (ivaPct / 100)) * 100) / 100,
             });
             setShowMobileMenu(false);
         }
@@ -123,6 +124,7 @@ export function PanelPedido({
 
     const handleConfirmarProductoCompuesto = () => {
         if (!productoSeleccionado) return;
+        const ivaPct = Number.isFinite(Number(productoSeleccionado.iva)) ? Number(productoSeleccionado.iva) : 16;
 
         const componentesTexto = Object.entries(componentesSeleccionados)
             .map(([key, value]) => value)
@@ -145,8 +147,8 @@ export function PanelPedido({
             })),
             comentarios: comentario,
             enviadoACocina: false,
-            iva: productoSeleccionado.iva || 16,
-            montoIva: Math.round(((productoSeleccionado.precio * cantidad) * ((productoSeleccionado.iva || 16) / 100)) * 100) / 100,
+            iva: ivaPct,
+            montoIva: Math.round(((productoSeleccionado.precio * cantidad) * (ivaPct / 100)) * 100) / 100,
         });
 
         setProductoSeleccionado(null);

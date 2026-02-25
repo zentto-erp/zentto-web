@@ -221,6 +221,7 @@ BEGIN
     Cantidad           DECIMAL(10,3) NOT NULL DEFAULT 1,
     PrecioUnitario     DECIMAL(18,2) NOT NULL,
     Subtotal           DECIMAL(18,2) NOT NULL,
+    IvaPct             DECIMAL(9,4) NULL,
     Estado             NVARCHAR(20) NOT NULL DEFAULT 'pendiente',
     EsCompuesto        BIT NOT NULL DEFAULT 0,
     Componentes        NVARCHAR(MAX) NULL, -- JSON con selecciones
@@ -229,6 +230,13 @@ BEGIN
     HoraEnvio          DATETIME NULL,
     CONSTRAINT FK_RestItem_Pedido FOREIGN KEY (PedidoId) REFERENCES RestaurantePedidos(Id)
   );
+END
+GO
+
+IF COL_LENGTH('dbo.RestaurantePedidoItems', 'IvaPct') IS NULL
+BEGIN
+  ALTER TABLE dbo.RestaurantePedidoItems
+    ADD IvaPct DECIMAL(9,4) NULL;
 END
 GO
 
@@ -298,6 +306,7 @@ CREATE PROCEDURE usp_REST_PedidoItem_Agregar
   @Nombre         NVARCHAR(200),
   @Cantidad       DECIMAL(10,3),
   @PrecioUnitario DECIMAL(18,2),
+  @Iva            DECIMAL(9,4) = NULL,
   @EsCompuesto    BIT = 0,
   @Componentes    NVARCHAR(MAX) = NULL,
   @Comentarios    NVARCHAR(500) = NULL,
@@ -307,9 +316,24 @@ BEGIN
   SET NOCOUNT ON;
 
   DECLARE @Subtotal DECIMAL(18,2) = @Cantidad * @PrecioUnitario;
+  DECLARE @IvaPct DECIMAL(9,4) = @Iva;
 
-  INSERT INTO RestaurantePedidoItems (PedidoId, ProductoId, Nombre, Cantidad, PrecioUnitario, Subtotal, EsCompuesto, Componentes, Comentarios)
-  VALUES (@PedidoId, @ProductoId, @Nombre, @Cantidad, @PrecioUnitario, @Subtotal, @EsCompuesto, @Componentes, @Comentarios);
+  IF @IvaPct IS NULL
+  BEGIN
+    SELECT TOP 1
+      @IvaPct = CASE
+                  WHEN ISNULL(inv.PORCENTAJE, 0) > 1 THEN CAST(inv.PORCENTAJE / 100.0 AS DECIMAL(9,4))
+                  ELSE CAST(ISNULL(inv.PORCENTAJE, 0) AS DECIMAL(9,4))
+                END
+    FROM Inventario inv
+    WHERE LTRIM(RTRIM(inv.CODIGO)) = LTRIM(RTRIM(@ProductoId));
+  END
+
+  IF @IvaPct IS NULL
+    SET @IvaPct = 0;
+
+  INSERT INTO RestaurantePedidoItems (PedidoId, ProductoId, Nombre, Cantidad, PrecioUnitario, Subtotal, IvaPct, EsCompuesto, Componentes, Comentarios)
+  VALUES (@PedidoId, @ProductoId, @Nombre, @Cantidad, @PrecioUnitario, @Subtotal, @IvaPct, @EsCompuesto, @Componentes, @Comentarios);
 
   SET @ItemId = SCOPE_IDENTITY();
 
@@ -403,6 +427,7 @@ BEGIN
     i.Cantidad        AS cantidad,
     i.PrecioUnitario  AS precioUnitario,
     i.Subtotal        AS subtotal,
+    i.IvaPct          AS iva,
     i.Estado          AS estado,
     i.EsCompuesto     AS esCompuesto,
     i.Componentes     AS componentes,

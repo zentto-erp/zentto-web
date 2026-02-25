@@ -53,6 +53,7 @@ import { restauranteAdminRouter } from "./modules/restaurante/admin.routes.js";
 import { configRouter } from "./modules/config/routes.js";
 import { reportesRouter } from "./modules/reportes/routes.js";
 import { sistemaRouter } from "./modules/sistema/sistema.routes.js";
+import { fiscalRouter } from "./modules/fiscal/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 
 function resolveOpenApiPath() {
@@ -217,6 +218,7 @@ export async function createApp() {
 
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
+  app.use("/v1/fiscal", fiscalRouter);
   app.use("/v1/sistema", sistemaRouter); // Added this line
   app.use("/api/v1/config", configRouter);
 
@@ -265,6 +267,7 @@ export async function createApp() {
   app.use("/api/v1/restaurante", restauranteRouter);
   app.use("/api/v1/restaurante/admin", restauranteAdminRouter);
   app.use("/api/v1/reportes", reportesRouter);
+  app.use("/api/v1/fiscal", fiscalRouter);
   app.use("/api/v1/sistema", sistemaRouter); // Added this line
 
   await loadAddons(app);

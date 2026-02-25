@@ -1,5 +1,8 @@
 import { getPool, sql } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
+import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
+import { CountryCode } from "../fiscal/types.js";
+import { emitSaleAccountingEntry, reprocessPosAccounting } from "../contabilidad/integracion.service.js";
 
 function escXml(v: unknown): string {
     if (v === null || v === undefined) return "";
@@ -106,6 +109,13 @@ export async function registrarVenta(data: {
     metodoPago?: string;
     tramaFiscal?: string;
     esperaOrigenId?: number;
+    empresaId?: number;
+    sucursalId?: number;
+    countryCode?: CountryCode;
+    invoiceTypeHint?: string;
+    fiscalPrinterSerial?: string;
+    fiscalControlNumber?: string;
+    zReportNumber?: number;
     items: CartItem[];
 }) {
     const xmlItems = data.items.map(d =>
@@ -128,5 +138,112 @@ export async function registrarVenta(data: {
     req.input("DetalleXml", sql.Xml, xmlStr);
     req.output("VentaId", sql.Int);
     await req.execute("usp_POS_Venta_Crear");
-    return { ok: true, ventaId: req.parameters.VentaId?.value as number };
+    let ventaId = req.parameters.VentaId?.value as number | undefined;
+    if (!Number.isFinite(Number(ventaId)) || Number(ventaId) <= 0) {
+        const rows = await query<{ id: number }>(
+            `
+            SELECT TOP 1 Id AS id
+            FROM PosVentas
+            WHERE NumFactura = @numFactura
+            ORDER BY Id DESC
+            `,
+            { numFactura: data.numFactura }
+        );
+        ventaId = rows[0]?.id;
+    }
+
+    const totalAmount = data.items.reduce((acc, item) => {
+        const subtotal = Number(item.subtotal ?? Number(item.cantidad) * Number(item.precioUnitario) - Number(item.descuento ?? 0));
+        const ivaPct = Number(item.iva ?? 0);
+        return acc + subtotal + subtotal * (ivaPct / 100);
+    }, 0);
+    const baseAmount = data.items.reduce((acc, item) => {
+        const subtotal = Number(item.subtotal ?? Number(item.cantidad) * Number(item.precioUnitario) - Number(item.descuento ?? 0));
+        return acc + subtotal;
+    }, 0);
+    const taxAmount = totalAmount - baseAmount;
+
+    let fiscal: Awaited<ReturnType<typeof emitFiscalRecordFromTransaction>> | { ok: false; reason: string };
+    try {
+        fiscal = await emitFiscalRecordFromTransaction({
+            empresaId: data.empresaId,
+            sucursalId: data.sucursalId,
+            countryCode: data.countryCode,
+            sourceModule: "POS",
+            invoiceId: Number(ventaId ?? 0),
+            invoiceNumber: data.numFactura,
+            invoiceDate: new Date(),
+            invoiceTypeHint: data.invoiceTypeHint,
+            recipientId: data.clienteRif,
+            totalAmount,
+            payload: {
+                cajaId: data.cajaId,
+                metodoPago: data.metodoPago,
+                codUsuario: data.codUsuario
+            },
+            metadata: {
+                fiscalPrinterSerial: data.fiscalPrinterSerial,
+                fiscalControlNumber: data.fiscalControlNumber,
+                zReportNumber: data.zReportNumber,
+                tramaFiscal: data.tramaFiscal
+            }
+        });
+    } catch (fiscalError: any) {
+        fiscal = {
+            ok: false,
+            reason: `fiscal_emit_exception:${String(fiscalError?.message ?? fiscalError)}`
+        };
+    }
+
+    let contabilidad: Awaited<ReturnType<typeof emitSaleAccountingEntry>>;
+    try {
+        contabilidad = await emitSaleAccountingEntry({
+            module: "POS",
+            sourceId: Number(ventaId ?? 0),
+            documentNumber: data.numFactura,
+            issueDate: new Date(),
+            paymentMethod: data.metodoPago,
+            codUsuario: data.codUsuario,
+            currency: data.countryCode === "ES" ? "EUR" : "VES",
+            exchangeRate: 1,
+            baseAmount,
+            taxAmount,
+            totalAmount,
+            taxSummary: data.items.map((item) => {
+                const subtotal = Number(item.subtotal ?? Number(item.cantidad) * Number(item.precioUnitario) - Number(item.descuento ?? 0));
+                const ivaPct = Number(item.iva ?? 0);
+                const normalizedRate = ivaPct > 1 ? ivaPct / 100 : ivaPct;
+                const lineTaxAmount = subtotal * normalizedRate;
+                return {
+                    taxRate: normalizedRate,
+                    baseAmount: subtotal,
+                    taxAmount: lineTaxAmount,
+                    totalAmount: subtotal + lineTaxAmount
+                };
+            })
+        });
+    } catch (accountingError: any) {
+        contabilidad = {
+            ok: false,
+            reason: `accounting_emit_exception:${String(accountingError?.message ?? accountingError)}`
+        };
+    }
+
+    return { ok: true, ventaId, fiscal, contabilidad };
+}
+
+export async function contabilizarVentaExistente(params: {
+    ventaId: number;
+    codUsuario?: string;
+    countryCode?: CountryCode;
+    currency?: string;
+    exchangeRate?: number;
+}) {
+    return reprocessPosAccounting({
+        ventaId: params.ventaId,
+        codUsuario: params.codUsuario,
+        countryCode: params.countryCode,
+        currency: params.currency,
+        exchangeRate: params.exchangeRate
+    });
 }

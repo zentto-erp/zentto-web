@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { crearEspera, listEspera, recuperarEspera, anularEspera, registrarVenta } from "./espera.service.js";
+import { crearEspera, listEspera, recuperarEspera, anularEspera, registrarVenta, contabilizarVentaExistente } from "./espera.service.js";
 
 export const posEsperaRouter = Router();
 
@@ -75,6 +75,13 @@ const ventaSchema = z.object({
     metodoPago: z.string().optional(),
     tramaFiscal: z.string().optional(),
     esperaOrigenId: z.number().optional(),
+    empresaId: z.number().int().positive().optional(),
+    sucursalId: z.number().int().nonnegative().optional(),
+    countryCode: z.enum(["VE", "ES"]).optional(),
+    invoiceTypeHint: z.string().optional(),
+    fiscalPrinterSerial: z.string().optional(),
+    fiscalControlNumber: z.string().optional(),
+    zReportNumber: z.number().int().optional(),
     items: z.array(z.object({
         productoId: z.string().min(1),
         codigo: z.string().optional(),
@@ -96,4 +103,35 @@ posEsperaRouter.post("/ventas", async (req, res) => {
     } catch (err) {
         res.status(400).json({ error: String(err) });
     }
+});
+
+const contabilizarVentaSchema = z.object({
+    codUsuario: z.string().optional(),
+    countryCode: z.enum(["VE", "ES"]).optional(),
+    currency: z.string().optional(),
+    exchangeRate: z.number().positive().optional(),
+});
+
+posEsperaRouter.post("/ventas/:ventaId/contabilizar", async (req, res) => {
+    const ventaId = Number(req.params.ventaId);
+    if (!Number.isFinite(ventaId) || ventaId <= 0) {
+        return res.status(400).json({ error: "ventaId invalido" });
+    }
+
+    const parsed = contabilizarVentaSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+        return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
+
+    const result = await contabilizarVentaExistente({
+        ventaId,
+        codUsuario: parsed.data.codUsuario,
+        countryCode: parsed.data.countryCode,
+        currency: parsed.data.currency,
+        exchangeRate: parsed.data.exchangeRate,
+    });
+
+    if (!result.ok && !result.skipped) return res.status(400).json(result);
+    if (result.skipped && result.reason === "venta_not_found") return res.status(404).json(result);
+    return res.json(result);
 });
