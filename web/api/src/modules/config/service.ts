@@ -61,32 +61,51 @@ export async function fetchTasasBcvWeb(): Promise<TasasBCV | null> {
 }
 
 /**
- * Helper to update SQL DB Tasa configuration (Using "TasaModMoneda").
- * Legacy DatqBox structures typically used local tables to store the official rates.
+ * Persists rates in canonical table cfg.ExchangeRateDaily.
  */
 export async function saveTasasToDB(tasas: TasasBCV): Promise<boolean> {
     try {
         const pool = await getPool();
-
-        // Check if Table ConfiguracionSistema exist to update setting if needed, 
-        // since legacy VB6 typically saves the rate there. 
-        // Or if there is a specific 'Tasas' Table like "TasaModMoneda" we would use it here.
-        // Assuming a standard Key-Value style settings table like Configuracion.
-
-        /* 
-           This is a placeholder Update since we depend on the specific table name in DB 
-           (Often [Sistem] or [Configuracion]). 
-           Let's simulate a standard procedure call or Direct Updates below.
-        */
-
-        // Update USD Config Example:
         await pool.request()
-            .input('TasaUSD', sql.Decimal(18, 4), tasas.USD)
-            .query(`IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'TasasDiarias')
-                    BEGIN 
-                        INSERT INTO TasasDiarias (Moneda, Tasa, Fecha, Origen) 
-                        VALUES ('USD', @TasaUSD, GETDATE(), 'BCV API Auto') 
-                    END`);
+            .input('RateDate', sql.Date, new Date())
+            .input('TasaUSD', sql.Decimal(18, 6), tasas.USD)
+            .input('TasaEUR', sql.Decimal(18, 6), tasas.EUR)
+            .input('SourceName', sql.NVarChar(120), 'BCV_WEB_AUTO')
+            .query(`
+                IF EXISTS (
+                    SELECT 1
+                    FROM cfg.ExchangeRateDaily
+                    WHERE CurrencyCode = 'USD' AND RateDate = @RateDate
+                )
+                BEGIN
+                    UPDATE cfg.ExchangeRateDaily
+                    SET RateToBase = @TasaUSD,
+                        SourceName = @SourceName
+                    WHERE CurrencyCode = 'USD' AND RateDate = @RateDate;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO cfg.ExchangeRateDaily (CurrencyCode, RateToBase, RateDate, SourceName)
+                    VALUES ('USD', @TasaUSD, @RateDate, @SourceName);
+                END;
+
+                IF EXISTS (
+                    SELECT 1
+                    FROM cfg.ExchangeRateDaily
+                    WHERE CurrencyCode = 'EUR' AND RateDate = @RateDate
+                )
+                BEGIN
+                    UPDATE cfg.ExchangeRateDaily
+                    SET RateToBase = @TasaEUR,
+                        SourceName = @SourceName
+                    WHERE CurrencyCode = 'EUR' AND RateDate = @RateDate;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO cfg.ExchangeRateDaily (CurrencyCode, RateToBase, RateDate, SourceName)
+                    VALUES ('EUR', @TasaEUR, @RateDate, @SourceName);
+                END;
+            `);
 
         return true;
     } catch (e) {

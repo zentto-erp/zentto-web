@@ -253,133 +253,121 @@ export async function balanceGeneral(fechaCorte: string) {
 
 export async function seedPlanCuentas(codUsuario?: string) {
   const pool = await getPool();
-  
-  // Crear plan de cuentas completo
-  const cuentasSql = `
-    -- PLan de cuentas básico
-    IF NOT EXISTS (SELECT 1 FROM Cuentas WHERE Cod_Cuenta = '1')
-    BEGIN
-      -- NIVEL 1 - ACTIVO
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('1', 'ACTIVO', 'A', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('1.1', 'ACTIVO CORRIENTE', 'A', 2, '1', 1, 0),
-        ('1.2', 'ACTIVO NO CORRIENTE', 'A', 2, '1', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('1.1.01', 'CAJA', 'A', 3, '1.1', 1, 1),
-        ('1.1.02', 'BANCOS', 'A', 3, '1.1', 1, 1),
-        ('1.1.03', 'INVERSIONES TEMPORALES', 'A', 3, '1.1', 1, 1),
-        ('1.1.04', 'CLIENTES', 'A', 3, '1.1', 1, 1),
-        ('1.1.05', 'DOCUMENTOS POR COBRAR', 'A', 3, '1.1', 1, 1),
-        ('1.1.06', 'INVENTARIOS', 'A', 3, '1.1', 1, 1);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('1.2.01', 'PROPIEDAD PLANTA Y EQUIPO', 'A', 3, '1.2', 1, 1),
-        ('1.2.02', 'DEPRECIACION ACUMULADA', 'A', 3, '1.2', 1, 1);
-      
-      -- NIVEL 1 - PASIVO
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('2', 'PASIVO', 'P', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('2.1', 'PASIVO CORRIENTE', 'P', 2, '2', 1, 0),
-        ('2.2', 'PASIVO NO CORRIENTE', 'P', 2, '2', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('2.1.01', 'PROVEEDORES', 'P', 3, '2.1', 1, 1),
-        ('2.1.02', 'DOCUMENTOS POR PAGAR', 'P', 3, '2.1', 1, 1),
-        ('2.1.03', 'IMPUESTOS POR PAGAR', 'P', 3, '2.1', 1, 1),
-        ('2.1.04', 'SUELDOS POR PAGAR', 'P', 3, '2.1', 1, 1);
-      
-      -- NIVEL 1 - PATRIMONIO
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('3', 'PATRIMONIO', 'C', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES ('3.1', 'CAPITAL SOCIAL', 'C', 2, '3', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES ('3.1.01', 'CAPITAL SUSCRITO', 'C', 3, '3.1', 1, 1);
-      
-      -- NIVEL 1 - INGRESOS
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('4', 'INGRESOS', 'I', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES ('4.1', 'INGRESOS OPERACIONALES', 'I', 2, '4', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('4.1.01', 'VENTAS', 'I', 3, '4.1', 1, 1),
-        ('4.1.02', 'DESCUENTOS EN VENTAS', 'I', 3, '4.1', 1, 1);
-      
-      -- NIVEL 1 - COSTOS Y GASTOS
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('5', 'COSTOS Y GASTOS', 'G', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('5.1', 'COSTO DE VENTAS', 'G', 2, '5', 1, 0),
-        ('5.2', 'GASTOS OPERACIONALES', 'G', 2, '5', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('5.1.01', 'COSTO DE MERCADERIA', 'G', 3, '5.1', 1, 1),
-        ('5.2.01', 'SUELDOS Y SALARIOS', 'G', 3, '5.2', 1, 1),
-        ('5.2.02', 'ALQUILERES', 'G', 3, '5.2', 1, 1),
-        ('5.2.03', 'DEPRECIACION', 'G', 3, '5.2', 1, 1);
-    END
-  `;
+  const scope = await pool.request().query(`
+    SELECT
+      c.CompanyId,
+      b.BranchId,
+      u.UserId AS SystemUserId
+    FROM cfg.Company c
+    INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId AND b.BranchCode = N'MAIN'
+    LEFT JOIN sec.[User] u ON u.UserCode = N'SYSTEM'
+    WHERE c.CompanyCode = N'DEFAULT'
+  `);
 
-  await pool.request().query(cuentasSql);
+  const companyId = Number(scope.recordset?.[0]?.CompanyId ?? 0);
+  const systemUserId = Number(scope.recordset?.[0]?.SystemUserId ?? 0);
+  if (!Number.isFinite(companyId) || companyId <= 0) {
+    return { success: false, message: "No existe cfg.Company DEFAULT para sembrar plan de cuentas" };
+  }
 
-  // Crear asientos de ejemplo
-  const asientosSql = `
-    IF NOT EXISTS (SELECT 1 FROM Asientos WHERE Id > 0)
-    BEGIN
-      DECLARE @FechaIni DATE = GETDATE();
-      
-      -- ASIENTO 1: Ventas al contado
-      INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
-      VALUES (@FechaIni, 'DIARIO', 'Registro de ventas al contado', 'VTA-001', 'APROBADO', 1000.00, 1000.00, 'VTA', '${codUsuario || "API"}');
-      
-      DECLARE @Asiento1 INT = SCOPE_IDENTITY();
-      INSERT INTO Asientos_Detalle (Id_Asiento, Cod_Cuenta, Descripcion, Debe, Haber)
-      VALUES 
-        (@Asiento1, '1.1.02', 'BANCOS', 1000.00, 0),
-        (@Asiento1, '4.1.01', 'VENTAS', 0, 1000.00);
-      
-      -- ASIENTO 2: Compra de mercadería
-      INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
-      VALUES (@FechaIni, 'COMPRA', 'Compra de mercadería', 'CMP-001', 'APROBADO', 500.00, 500.00, 'CMP', '${codUsuario || "API"}');
-      
-      DECLARE @Asiento2 INT = SCOPE_IDENTITY();
-      INSERT INTO Asientos_Detalle (Id_Asiento, Cod_Cuenta, Descripcion, Debe, Haber)
-      VALUES 
-        (@Asiento2, '1.1.06', 'INVENTARIOS', 500.00, 0),
-        (@Asiento2, '2.1.01', 'PROVEEDORES', 0, 500.00);
-      
-      -- ASIENTO 3: Pago de sueldos
-      INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
-      VALUES (@FechaIni, 'NOMINA', 'Pago de sueldos', 'NOM-001', 'APROBADO', 3000.00, 3000.00, 'NOM', '${codUsuario || "API"}');
-      
-      DECLARE @Asiento3 INT = SCOPE_IDENTITY();
-      INSERT INTO Asientos_Detalle (Id_Asiento, Cod_Cuenta, Descripcion, Debe, Haber)
-      VALUES 
-        (@Asiento3, '5.2.01', 'SUELDOS Y SALARIOS', 3000.00, 0),
-        (@Asiento3, '1.1.02', 'BANCOS', 0, 3000.00);
-    END
-  `;
+  await pool
+    .request()
+    .input("CompanyId", sql.Int, companyId)
+    .input("SystemUserId", sql.Int, Number.isFinite(systemUserId) && systemUserId > 0 ? systemUserId : null)
+    .query(`
+      DECLARE @Plan TABLE (
+        AccountCode NVARCHAR(40) NOT NULL,
+        AccountName NVARCHAR(200) NOT NULL,
+        AccountType NCHAR(1) NOT NULL,
+        AccountLevel INT NOT NULL,
+        ParentCode NVARCHAR(40) NULL,
+        AllowsPosting BIT NOT NULL
+      );
 
-  await pool.request().query(asientosSql);
+      INSERT INTO @Plan (AccountCode, AccountName, AccountType, AccountLevel, ParentCode, AllowsPosting)
+      VALUES
+        (N'1', N'ACTIVO', N'A', 1, NULL, 0),
+        (N'1.1', N'ACTIVO CORRIENTE', N'A', 2, N'1', 0),
+        (N'1.2', N'ACTIVO NO CORRIENTE', N'A', 2, N'1', 0),
+        (N'1.1.01', N'CAJA', N'A', 3, N'1.1', 1),
+        (N'1.1.02', N'BANCOS', N'A', 3, N'1.1', 1),
+        (N'1.1.03', N'INVERSIONES TEMPORALES', N'A', 3, N'1.1', 1),
+        (N'1.1.04', N'CLIENTES', N'A', 3, N'1.1', 1),
+        (N'1.1.05', N'DOCUMENTOS POR COBRAR', N'A', 3, N'1.1', 1),
+        (N'1.1.06', N'INVENTARIOS', N'A', 3, N'1.1', 1),
+        (N'1.2.01', N'PROPIEDAD PLANTA Y EQUIPO', N'A', 3, N'1.2', 1),
+        (N'1.2.02', N'DEPRECIACION ACUMULADA', N'A', 3, N'1.2', 1),
+        (N'2', N'PASIVO', N'P', 1, NULL, 0),
+        (N'2.1', N'PASIVO CORRIENTE', N'P', 2, N'2', 0),
+        (N'2.2', N'PASIVO NO CORRIENTE', N'P', 2, N'2', 0),
+        (N'2.1.01', N'PROVEEDORES', N'P', 3, N'2.1', 1),
+        (N'2.1.02', N'DOCUMENTOS POR PAGAR', N'P', 3, N'2.1', 1),
+        (N'2.1.03', N'IMPUESTOS POR PAGAR', N'P', 3, N'2.1', 1),
+        (N'2.1.04', N'SUELDOS POR PAGAR', N'P', 3, N'2.1', 1),
+        (N'3', N'PATRIMONIO', N'C', 1, NULL, 0),
+        (N'3.1', N'CAPITAL SOCIAL', N'C', 2, N'3', 0),
+        (N'3.1.01', N'CAPITAL SUSCRITO', N'C', 3, N'3.1', 1),
+        (N'4', N'INGRESOS', N'I', 1, NULL, 0),
+        (N'4.1', N'INGRESOS OPERACIONALES', N'I', 2, N'4', 0),
+        (N'4.1.01', N'VENTAS', N'I', 3, N'4.1', 1),
+        (N'4.1.02', N'DESCUENTOS EN VENTAS', N'I', 3, N'4.1', 1),
+        (N'5', N'COSTOS Y GASTOS', N'G', 1, NULL, 0),
+        (N'5.1', N'COSTO DE VENTAS', N'G', 2, N'5', 0),
+        (N'5.2', N'GASTOS OPERACIONALES', N'G', 2, N'5', 0),
+        (N'5.1.01', N'COSTO DE MERCADERIA', N'G', 3, N'5.1', 1),
+        (N'5.2.01', N'SUELDOS Y SALARIOS', N'G', 3, N'5.2', 1),
+        (N'5.2.02', N'ALQUILERES', N'G', 3, N'5.2', 1),
+        (N'5.2.03', N'DEPRECIACION', N'G', 3, N'5.2', 1);
 
-  return { success: true, message: "Datos de contabilidad creados" };
+      DECLARE @Inserted INT = 1;
+      WHILE @Inserted > 0
+      BEGIN
+        INSERT INTO acct.Account (
+          CompanyId,
+          AccountCode,
+          AccountName,
+          AccountType,
+          AccountLevel,
+          ParentAccountId,
+          AllowsPosting,
+          RequiresAuxiliary,
+          IsActive,
+          CreatedAt,
+          UpdatedAt,
+          CreatedByUserId,
+          UpdatedByUserId,
+          IsDeleted
+        )
+        SELECT
+          @CompanyId,
+          p.AccountCode,
+          p.AccountName,
+          p.AccountType,
+          p.AccountLevel,
+          parent.AccountId,
+          p.AllowsPosting,
+          0,
+          1,
+          SYSUTCDATETIME(),
+          SYSUTCDATETIME(),
+          @SystemUserId,
+          @SystemUserId,
+          0
+        FROM @Plan p
+        LEFT JOIN acct.Account existing
+          ON existing.CompanyId = @CompanyId
+         AND existing.AccountCode = p.AccountCode
+        LEFT JOIN acct.Account parent
+          ON parent.CompanyId = @CompanyId
+         AND parent.AccountCode = p.ParentCode
+        WHERE existing.AccountId IS NULL
+          AND (p.ParentCode IS NULL OR parent.AccountId IS NOT NULL);
+
+        SET @Inserted = @@ROWCOUNT;
+      END;
+    `);
+
+  const userLabel = codUsuario || "API";
+  return { success: true, message: `Plan de cuentas canonico listo (${userLabel})` };
 }
 

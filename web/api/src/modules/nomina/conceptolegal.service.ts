@@ -1,10 +1,6 @@
-/**
- * Servicio de Nómina usando NominaConceptoLegal
- * Integración con la tabla existente del usuario
- */
-import { getPool, sql } from "../../db/mssql.js";
+import { query } from "../../db/query.js";
+import { procesarNominaEmpleado, procesarVacaciones, calcularLiquidacion } from "./service.js";
 
-// Tipos
 export interface ConceptoLegal {
   id?: number;
   convencion: string;
@@ -31,135 +27,164 @@ export interface NominaResult {
   neto?: number;
 }
 
-// Listar conceptos legales
+async function getDefaultCompanyId() {
+  const rows = await query<{ companyId: number }>(
+    `
+    SELECT TOP 1 CompanyId AS companyId
+    FROM cfg.Company
+    WHERE CompanyCode = N'DEFAULT'
+    ORDER BY CompanyId
+    `
+  );
+  return Number(rows[0]?.companyId ?? 1);
+}
+
 export async function listConceptosLegales(params: {
   convencion?: string;
   tipoCalculo?: string;
   tipo?: string;
   activo?: boolean;
 }) {
-  const pool = await getPool();
-  
-  try {
-    // Intentar usar el SP primero
-    const request = new sql.Request(pool);
-    request.input("Convencion", sql.NVarChar(50), params.convencion || null);
-    request.input("TipoCalculo", sql.NVarChar(50), params.tipoCalculo || null);
-    request.input("Tipo", sql.NVarChar(15), params.tipo || null);
-    request.input("Activo", sql.Bit, params.activo ?? true);
+  const companyId = await getDefaultCompanyId();
+  const where: string[] = ["CompanyId = @companyId", "ConventionCode IS NOT NULL"];
+  const sqlParams: Record<string, unknown> = { companyId };
 
-    const result = await request.execute("sp_Nomina_ConceptosLegales_List");
-    return {
-      rows: (result.recordset || []) as ConceptoLegal[],
-    };
-  } catch {
-    // Fallback: consulta directa a la tabla
-    let query = `
-      SELECT 
-        ID as id,
-        Convencion as convencion,
-        TipoCalculo as tipoCalculo,
-        CO_CONCEPT as coConcept,
-        NB_CONCEPTO as nbConcepto,
-        FORMULA as formula,
-        SOBRE as sobre,
-        TIPO as tipo,
-        BONIFICABLE as bonificable,
-        LOTTT_Articulo as lotttArticulo,
-        CCP_Clausula as ccpClausula,
-        Orden as orden,
-        Activo as activo
-      FROM NominaConceptoLegal
-      WHERE 1=1
-    `;
-    
-    const conditions: string[] = [];
-    if (params.activo !== false) conditions.push("Activo = 1");
-    if (params.convencion) conditions.push("Convencion = @Convencion");
-    if (params.tipoCalculo) conditions.push("TipoCalculo = @TipoCalculo");
-    if (params.tipo) conditions.push("TIPO = @Tipo");
-    
-    if (conditions.length > 0) {
-      query += " AND " + conditions.join(" AND ");
-    }
-    
-    query += " ORDER BY Convencion, Orden, CO_CONCEPT";
-    
-    const request2 = new sql.Request(pool);
-    request2.input("Convencion", sql.NVarChar(50), params.convencion || null);
-    request2.input("TipoCalculo", sql.NVarChar(50), params.tipoCalculo || null);
-    request2.input("Tipo", sql.NVarChar(15), params.tipo || null);
-    
-    const result = await request2.query(query);
-    return {
-      rows: (result.recordset || []) as ConceptoLegal[],
-    };
+  if (params.activo !== false) where.push("IsActive = 1");
+  if (params.convencion?.trim()) {
+    where.push("ConventionCode = @conventionCode");
+    sqlParams.conventionCode = params.convencion.trim().toUpperCase();
   }
+  if (params.tipoCalculo?.trim()) {
+    where.push("CalculationType = @calculationType");
+    sqlParams.calculationType = params.tipoCalculo.trim().toUpperCase();
+  }
+  if (params.tipo?.trim()) {
+    where.push("ConceptType = @conceptType");
+    sqlParams.conceptType = params.tipo.trim().toUpperCase();
+  }
+
+  const clause = `WHERE ${where.join(" AND ")}`;
+  const rows = await query<ConceptoLegal>(
+    `
+    SELECT
+      PayrollConceptId AS id,
+      ConventionCode AS convencion,
+      CalculationType AS tipoCalculo,
+      ConceptCode AS coConcept,
+      ConceptName AS nbConcepto,
+      Formula AS formula,
+      BaseExpression AS sobre,
+      ConceptType AS tipo,
+      CASE WHEN IsBonifiable = 1 THEN N'S' ELSE N'N' END AS bonificable,
+      LotttArticle AS lotttArticulo,
+      CcpClause AS ccpClausula,
+      SortOrder AS orden,
+      IsActive AS activo
+    FROM hr.PayrollConcept
+    ${clause}
+    ORDER BY ConventionCode, CalculationType, SortOrder, ConceptCode
+    `,
+    sqlParams
+  );
+
+  return { rows };
 }
 
-// Procesar nómina usando ConceptoLegal
 export async function procesarNominaConceptoLegal(payload: {
   nomina: string;
   cedula: string;
   fechaInicio: string;
   fechaHasta: string;
-  convencion?: string; // LOT, CCT_PETROLERO, etc.
-  tipoCalculo?: string; // MENSUAL, SEMANAL, VACACIONES, LIQUIDACION
+  convencion?: string;
+  tipoCalculo?: string;
   codUsuario?: string;
-}) {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("Nomina", sql.NVarChar(10), payload.nomina);
-  request.input("Cedula", sql.NVarChar(12), payload.cedula);
-  request.input("FechaInicio", sql.Date, payload.fechaInicio);
-  request.input("FechaHasta", sql.Date, payload.fechaHasta);
-  request.input("Convencion", sql.NVarChar(50), payload.convencion || null);
-  request.input("TipoCalculo", sql.NVarChar(50), payload.tipoCalculo || "MENSUAL");
-  request.input("CoUsuario", sql.NVarChar(20), payload.codUsuario || "API");
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("sp_Nomina_ProcesarEmpleadoConceptoLegal");
-
-  const mensaje = (request.parameters.Mensaje?.value as string) || "";
-  const exito = (request.parameters.Resultado?.value as number) === 1;
-
-  // Parsear valores del mensaje
-  const asignacionesMatch = mensaje.match(/Asignaciones:\s*([\d.,]+)/);
-  const deduccionesMatch = mensaje.match(/Deducciones:\s*([\d.,]+)/);
+}): Promise<NominaResult> {
+  const result = await procesarNominaEmpleado(
+    {
+      nomina: payload.nomina,
+      cedula: payload.cedula,
+      fechaInicio: payload.fechaInicio,
+      fechaHasta: payload.fechaHasta,
+      codUsuario: payload.codUsuario,
+    },
+    {
+      conventionCode: payload.convencion,
+      calculationType: payload.tipoCalculo,
+      soloConceptosLegales: true,
+    }
+  );
 
   return {
-    success: exito,
-    message: mensaje,
+    success: Boolean(result.success),
+    message: String(result.message ?? ""),
     nomina: payload.nomina,
     cedula: payload.cedula,
-    asignaciones: asignacionesMatch ? parseFloat(asignacionesMatch[1].replace(/,/g, "")) : undefined,
-    deducciones: deduccionesMatch ? parseFloat(deduccionesMatch[1].replace(/,/g, "")) : undefined,
+    asignaciones: (result as any).asignaciones,
+    deducciones: (result as any).deducciones,
+    neto: (result as any).neto,
   };
 }
 
-// Validar fórmulas de conceptos
 export async function validarFormulasConceptos(params: {
   convencion?: string;
   tipoCalculo?: string;
 }) {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const companyId = await getDefaultCompanyId();
+  const where: string[] = ["CompanyId = @companyId", "ConventionCode IS NOT NULL", "IsActive = 1"];
+  const sqlParams: Record<string, unknown> = { companyId };
 
-  request.input("Convencion", sql.NVarChar(50), params.convencion || null);
-  request.input("TipoCalculo", sql.NVarChar(50), params.tipoCalculo || null);
+  if (params.convencion?.trim()) {
+    where.push("ConventionCode = @conventionCode");
+    sqlParams.conventionCode = params.convencion.trim().toUpperCase();
+  }
+  if (params.tipoCalculo?.trim()) {
+    where.push("CalculationType = @calculationType");
+    sqlParams.calculationType = params.tipoCalculo.trim().toUpperCase();
+  }
 
-  const result = await request.execute("sp_Nomina_ValidarFormulasConceptoLegal");
-  const recordsets = result.recordsets as unknown as Array<Array<Record<string, unknown>>>;
+  const concepts = await query<{
+    coConcept: string;
+    nbConcepto: string;
+    formula: string | null;
+    defaultValue: number;
+  }>(
+    `
+    SELECT
+      ConceptCode AS coConcept,
+      ConceptName AS nbConcepto,
+      Formula AS formula,
+      DefaultValue AS defaultValue
+    FROM hr.PayrollConcept
+    WHERE ${where.join(" AND ")}
+    ORDER BY SortOrder, ConceptCode
+    `,
+    sqlParams
+  );
+
+  const formulaPattern = /^[A-Za-z0-9_+\-*/().\s]*$/;
+  const errores = concepts
+    .map((item) => {
+      const formula = String(item.formula ?? "").trim();
+      if (!formula && Number(item.defaultValue ?? 0) === 0) {
+        return { coConcept: item.coConcept, nbConcepto: item.nbConcepto, error: "Sin formula y sin valor por defecto" };
+      }
+      if (formula && !formulaPattern.test(formula)) {
+        return { coConcept: item.coConcept, nbConcepto: item.nbConcepto, error: "Formula contiene caracteres no permitidos" };
+      }
+      return null;
+    })
+    .filter((row): row is { coConcept: string; nbConcepto: string; error: string } => row !== null);
 
   return {
-    resumen: recordsets[0]?.[0] || null,
-    errores: recordsets[1] || [],
+    resumen: {
+      totalConceptos: concepts.length,
+      conError: errores.length,
+      validos: concepts.length - errores.length,
+    },
+    errores,
   };
 }
 
-// Procesar vacaciones usando ConceptoLegal
 export async function procesarVacacionesConceptoLegal(payload: {
   vacacionId: string;
   cedula: string;
@@ -169,28 +194,16 @@ export async function procesarVacacionesConceptoLegal(payload: {
   convencion?: string;
   codUsuario?: string;
 }) {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("Nomina", sql.NVarChar(10), payload.vacacionId);
-  request.input("Cedula", sql.NVarChar(12), payload.cedula);
-  request.input("FechaInicio", sql.Date, payload.fechaInicio);
-  request.input("FechaHasta", sql.Date, payload.fechaHasta);
-  request.input("Convencion", sql.NVarChar(50), payload.convencion || null);
-  request.input("TipoCalculo", sql.NVarChar(50), "VACACIONES");
-  request.input("CoUsuario", sql.NVarChar(20), payload.codUsuario || "API");
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("sp_Nomina_ProcesarEmpleadoConceptoLegal");
-
-  return {
-    success: (request.parameters.Resultado?.value as number) === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
-  };
+  return procesarVacaciones({
+    vacacionId: payload.vacacionId,
+    cedula: payload.cedula,
+    fechaInicio: payload.fechaInicio,
+    fechaHasta: payload.fechaHasta,
+    fechaReintegro: payload.fechaReintegro,
+    codUsuario: payload.codUsuario,
+  });
 }
 
-// Procesar liquidación usando ConceptoLegal
 export async function procesarLiquidacionConceptoLegal(payload: {
   liquidacionId: string;
   cedula: string;
@@ -199,44 +212,34 @@ export async function procesarLiquidacionConceptoLegal(payload: {
   convencion?: string;
   codUsuario?: string;
 }) {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("Nomina", sql.NVarChar(10), payload.liquidacionId);
-  request.input("Cedula", sql.NVarChar(12), payload.cedula);
-  request.input("FechaInicio", sql.Date, payload.fechaRetiro); // Usamos fecha retiro como inicio
-  request.input("FechaHasta", sql.Date, payload.fechaRetiro);
-  request.input("Convencion", sql.NVarChar(50), payload.convencion || null);
-  request.input("TipoCalculo", sql.NVarChar(50), "LIQUIDACION");
-  request.input("CoUsuario", sql.NVarChar(20), payload.codUsuario || "API");
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("sp_Nomina_ProcesarEmpleadoConceptoLegal");
-
-  return {
-    success: (request.parameters.Resultado?.value as number) === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
-  };
+  return calcularLiquidacion({
+    liquidacionId: payload.liquidacionId,
+    cedula: payload.cedula,
+    fechaRetiro: payload.fechaRetiro,
+    causaRetiro: payload.causaRetiro,
+    codUsuario: payload.codUsuario,
+  });
 }
 
-// Obtener resumen de convenciones disponibles
 export async function getConvencionesDisponibles() {
-  const pool = await getPool();
-  const result = await pool.request().query(`
-    SELECT 
-      Convencion,
-      COUNT(*) as TotalConceptos,
-      COUNT(CASE WHEN TipoCalculo = 'MENSUAL' THEN 1 END) as ConceptosMensual,
-      COUNT(CASE WHEN TipoCalculo = 'VACACIONES' THEN 1 END) as ConceptosVacaciones,
-      COUNT(CASE WHEN TipoCalculo = 'LIQUIDACION' THEN 1 END) as ConceptosLiquidacion,
-      MIN(Orden) as OrdenInicio,
-      MAX(Orden) as OrdenFin
-    FROM NominaConceptoLegal
-    WHERE Activo = 1
-    GROUP BY Convencion
-    ORDER BY Convencion
-  `);
-
-  return result.recordset;
+  const companyId = await getDefaultCompanyId();
+  return query<any>(
+    `
+    SELECT
+      ConventionCode AS Convencion,
+      COUNT(1) AS TotalConceptos,
+      COUNT(CASE WHEN CalculationType = 'MENSUAL' THEN 1 END) AS ConceptosMensual,
+      COUNT(CASE WHEN CalculationType = 'VACACIONES' THEN 1 END) AS ConceptosVacaciones,
+      COUNT(CASE WHEN CalculationType = 'LIQUIDACION' THEN 1 END) AS ConceptosLiquidacion,
+      MIN(SortOrder) AS OrdenInicio,
+      MAX(SortOrder) AS OrdenFin
+    FROM hr.PayrollConcept
+    WHERE CompanyId = @companyId
+      AND IsActive = 1
+      AND ConventionCode IS NOT NULL
+    GROUP BY ConventionCode
+    ORDER BY ConventionCode
+    `,
+    { companyId }
+  );
 }

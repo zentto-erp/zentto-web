@@ -1,249 +1,894 @@
-import { getPool, sql } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
 import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessPosAccounting } from "../contabilidad/integracion.service.js";
 
-function escXml(v: unknown): string {
-    if (v === null || v === undefined) return "";
-    return String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 interface CartItem {
-    productoId: string;
-    codigo?: string;
-    nombre: string;
-    cantidad: number;
-    precioUnitario: number;
-    descuento?: number;
-    iva?: number;
-    subtotal: number;
+  productoId: string;
+  codigo?: string;
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  descuento?: number;
+  iva?: number;
+  subtotal: number;
 }
 
-// ═════════════════════════════════════════════════════
-// VENTAS EN ESPERA
-// ═════════════════════════════════════════════════════
+interface DefaultScope {
+  companyId: number;
+  branchId: number;
+  countryCode: CountryCode;
+}
+
+interface TaxRateRow {
+  taxCode: string;
+  rate: number;
+  isDefault: boolean;
+}
+
+const taxRateCache = new Map<CountryCode, TaxRateRow[]>();
+let defaultScopeCache: DefaultScope | null = null;
+
+function round2(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function normalizeRate(raw: unknown): number | null {
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) return null;
+  if (value > 1) return value / 100;
+  return value;
+}
+
+function normalizeCashRegister(code?: string | null) {
+  const value = String(code ?? "").trim().toUpperCase();
+  return value || "MAIN";
+}
+
+async function getDefaultScope(): Promise<DefaultScope> {
+  if (defaultScopeCache) return defaultScopeCache;
+
+  const rows = await query<{ companyId: number; branchId: number; countryCode: string }>(
+    `
+    SELECT TOP 1
+      c.CompanyId AS companyId,
+      b.BranchId AS branchId,
+      UPPER(c.FiscalCountryCode) AS countryCode
+    FROM cfg.Company c
+    INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
+    WHERE c.CompanyCode = N'DEFAULT'
+      AND b.BranchCode = N'MAIN'
+    ORDER BY c.CompanyId, b.BranchId
+    `
+  );
+
+  const row = rows[0];
+  defaultScopeCache = {
+    companyId: Number(row?.companyId ?? 1),
+    branchId: Number(row?.branchId ?? 1),
+    countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
+  };
+  return defaultScopeCache;
+}
+
+async function resolveScopeWithOverrides(input: {
+  empresaId?: number;
+  sucursalId?: number;
+  countryCode?: CountryCode;
+}) {
+  const base = await getDefaultScope();
+  return {
+    companyId: Number(input.empresaId ?? base.companyId),
+    branchId: Number(input.sucursalId ?? base.branchId),
+    countryCode: (input.countryCode ?? base.countryCode) as CountryCode,
+  };
+}
+
+async function resolveUserId(userCode?: string | null) {
+  const normalized = String(userCode ?? "").trim();
+  if (!normalized) return null;
+
+  const rows = await query<{ userId: number }>(
+    `
+    SELECT TOP 1 UserId AS userId
+    FROM sec.[User]
+    WHERE UPPER(UserCode) = UPPER(@userCode)
+      AND IsDeleted = 0
+      AND IsActive = 1
+    `,
+    { userCode: normalized }
+  );
+
+  const userId = Number(rows[0]?.userId ?? 0);
+  return Number.isFinite(userId) && userId > 0 ? userId : null;
+}
+
+async function loadCountryTaxRates(countryCode: CountryCode) {
+  const cached = taxRateCache.get(countryCode);
+  if (cached) return cached;
+
+  const rows = await query<{ taxCode: string; rate: number; isDefault: boolean }>(
+    `
+    SELECT
+      TaxCode AS taxCode,
+      Rate AS rate,
+      IsDefault AS isDefault
+    FROM fiscal.TaxRate
+    WHERE CountryCode = @countryCode
+      AND IsActive = 1
+    ORDER BY IsDefault DESC, SortOrder, TaxCode
+    `,
+    { countryCode }
+  );
+
+  const normalized = rows.map((row) => ({
+    taxCode: String(row.taxCode),
+    rate: Number(row.rate ?? 0),
+    isDefault: Boolean(row.isDefault),
+  }));
+
+  taxRateCache.set(countryCode, normalized);
+  return normalized;
+}
+
+async function resolveTaxProfile(countryCode: CountryCode, requestedRate: unknown, requestedTaxCode?: string | null) {
+  const rates = await loadCountryTaxRates(countryCode);
+  if (rates.length === 0) {
+    return { taxCode: "EXENTO", taxRate: 0 };
+  }
+
+  const normalizedCode = String(requestedTaxCode ?? "").trim().toUpperCase();
+  if (normalizedCode) {
+    const byCode = rates.find((row) => row.taxCode.toUpperCase() === normalizedCode);
+    if (byCode) {
+      return { taxCode: byCode.taxCode, taxRate: Number(byCode.rate ?? 0) };
+    }
+  }
+
+  const rate = normalizeRate(requestedRate);
+  if (rate !== null) {
+    let best = rates[0];
+    let bestDiff = Math.abs(Number(best.rate ?? 0) - rate);
+    for (const row of rates) {
+      const diff = Math.abs(Number(row.rate ?? 0) - rate);
+      if (diff < bestDiff) {
+        best = row;
+        bestDiff = diff;
+      }
+    }
+    return { taxCode: best.taxCode, taxRate: Number(best.rate ?? 0) };
+  }
+
+  const byDefault = rates.find((row) => row.isDefault) ?? rates[0];
+  return { taxCode: byDefault.taxCode, taxRate: Number(byDefault.rate ?? 0) };
+}
+
+async function resolveProduct(companyId: number, item: CartItem) {
+  const identifier = String(item.codigo ?? item.productoId ?? "").trim();
+  if (!identifier) {
+    return {
+      productId: null,
+      productCode: String(item.productoId ?? ""),
+      productName: item.nombre,
+      defaultTaxCode: null as string | null,
+      defaultTaxRate: null as number | null,
+    };
+  }
+
+  const rows = await query<any>(
+    `
+    SELECT TOP 1
+      ProductId AS productId,
+      ProductCode AS productCode,
+      ProductName AS productName,
+      DefaultTaxCode AS defaultTaxCode,
+      DefaultTaxRate AS defaultTaxRate
+    FROM [master].Product
+    WHERE CompanyId = @companyId
+      AND IsDeleted = 0
+      AND (
+        ProductCode = @identifier
+        OR CAST(ProductId AS NVARCHAR(50)) = @identifier
+      )
+    ORDER BY ProductId DESC
+    `,
+    { companyId, identifier }
+  );
+
+  const row = rows[0];
+  if (!row) {
+    return {
+      productId: null,
+      productCode: String(item.codigo ?? item.productoId ?? ""),
+      productName: item.nombre,
+      defaultTaxCode: null as string | null,
+      defaultTaxRate: null as number | null,
+    };
+  }
+
+  return {
+    productId: row.productId ? Number(row.productId) : null,
+    productCode: String(row.productCode ?? item.codigo ?? item.productoId ?? ""),
+    productName: String(row.productName ?? item.nombre),
+    defaultTaxCode: row.defaultTaxCode ? String(row.defaultTaxCode) : null,
+    defaultTaxRate: row.defaultTaxRate !== null && row.defaultTaxRate !== undefined ? Number(row.defaultTaxRate) : null,
+  };
+}
+
+async function resolveCustomer(companyId: number, data: {
+  clienteId?: string;
+  clienteRif?: string;
+  clienteNombre?: string;
+}) {
+  const idInput = String(data.clienteId ?? "").trim();
+  if (idInput) {
+    const rows = await query<any>(
+      `
+      SELECT TOP 1
+        CustomerId AS customerId,
+        CustomerCode AS customerCode,
+        CustomerName AS customerName,
+        FiscalId AS fiscalId
+      FROM [master].Customer
+      WHERE CompanyId = @companyId
+        AND IsDeleted = 0
+        AND (
+          CustomerCode = @idInput
+          OR CAST(CustomerId AS NVARCHAR(50)) = @idInput
+        )
+      ORDER BY CustomerId DESC
+      `,
+      { companyId, idInput }
+    );
+
+    if (rows[0]) {
+      return {
+        customerId: Number(rows[0].customerId),
+        customerCode: String(rows[0].customerCode ?? idInput),
+        customerName: String(rows[0].customerName ?? data.clienteNombre ?? "Consumidor Final"),
+        fiscalId: String(rows[0].fiscalId ?? data.clienteRif ?? ""),
+      };
+    }
+  }
+
+  const rif = String(data.clienteRif ?? "").trim();
+  if (rif) {
+    const rows = await query<any>(
+      `
+      SELECT TOP 1
+        CustomerId AS customerId,
+        CustomerCode AS customerCode,
+        CustomerName AS customerName,
+        FiscalId AS fiscalId
+      FROM [master].Customer
+      WHERE CompanyId = @companyId
+        AND IsDeleted = 0
+        AND FiscalId = @rif
+      ORDER BY CustomerId DESC
+      `,
+      { companyId, rif }
+    );
+
+    if (rows[0]) {
+      return {
+        customerId: Number(rows[0].customerId),
+        customerCode: String(rows[0].customerCode ?? ""),
+        customerName: String(rows[0].customerName ?? data.clienteNombre ?? "Consumidor Final"),
+        fiscalId: String(rows[0].fiscalId ?? rif),
+      };
+    }
+  }
+
+  return {
+    customerId: null,
+    customerCode: idInput || null,
+    customerName: String(data.clienteNombre ?? "Consumidor Final"),
+    fiscalId: rif || null,
+  };
+}
+
+async function buildCanonicalLines(scope: DefaultScope, items: CartItem[]) {
+  const lines: Array<{
+    lineNumber: number;
+    productId: number | null;
+    productCode: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    discountAmount: number;
+    taxCode: string;
+    taxRate: number;
+    netAmount: number;
+    taxAmount: number;
+    totalAmount: number;
+  }> = [];
+
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    const product = await resolveProduct(scope.companyId, item);
+    const quantity = Number(item.cantidad ?? 0);
+    const unitPrice = Number(item.precioUnitario ?? 0);
+    const discountAmount = round2(Number(item.descuento ?? 0));
+    const fallbackNet = round2(quantity * unitPrice - discountAmount);
+    const netAmount = round2(Number(item.subtotal ?? fallbackNet));
+
+    const tax = await resolveTaxProfile(
+      scope.countryCode,
+      item.iva ?? product.defaultTaxRate,
+      product.defaultTaxCode
+    );
+
+    const taxAmount = round2(netAmount * tax.taxRate);
+    const totalAmount = round2(netAmount + taxAmount);
+
+    lines.push({
+      lineNumber: index + 1,
+      productId: product.productId,
+      productCode: product.productCode || String(item.productoId ?? ""),
+      productName: product.productName || item.nombre,
+      quantity,
+      unitPrice,
+      discountAmount,
+      taxCode: tax.taxCode,
+      taxRate: tax.taxRate,
+      netAmount,
+      taxAmount,
+      totalAmount,
+    });
+  }
+
+  return lines;
+}
 
 export async function crearEspera(data: {
-    cajaId: string;
-    estacionNombre?: string;
-    codUsuario?: string;
-    clienteId?: string;
-    clienteNombre?: string;
-    clienteRif?: string;
-    tipoPrecio?: string;
-    motivo?: string;
-    items: CartItem[];
+  cajaId: string;
+  estacionNombre?: string;
+  codUsuario?: string;
+  clienteId?: string;
+  clienteNombre?: string;
+  clienteRif?: string;
+  tipoPrecio?: string;
+  motivo?: string;
+  items: CartItem[];
 }) {
-    const xmlItems = data.items.map((d, idx) =>
-        `<item prodId="${escXml(d.productoId)}" cod="${escXml(d.codigo)}" nom="${escXml(d.nombre)}" cant="${d.cantidad}" precio="${d.precioUnitario}" desc="${d.descuento ?? 0}" iva="${d.iva ?? 16}" sub="${d.subtotal}" ord="${idx}" />`
-    ).join("");
-    const xmlStr = `<items>${xmlItems}</items>`;
+  const scope = await getDefaultScope();
+  const createdByUserId = await resolveUserId(data.codUsuario);
+  const customer = await resolveCustomer(scope.companyId, data);
+  const lines = await buildCanonicalLines(scope, data.items);
 
-    const pool = await getPool();
-    const req = pool.request();
-    req.input("CajaId", sql.NVarChar(10), data.cajaId);
-    req.input("EstacionNombre", sql.NVarChar(50), data.estacionNombre ?? null);
-    req.input("CodUsuario", sql.NVarChar(10), data.codUsuario ?? null);
-    req.input("ClienteId", sql.NVarChar(12), data.clienteId ?? null);
-    req.input("ClienteNombre", sql.NVarChar(100), data.clienteNombre ?? null);
-    req.input("ClienteRif", sql.NVarChar(20), data.clienteRif ?? null);
-    req.input("TipoPrecio", sql.NVarChar(20), data.tipoPrecio ?? "Detal");
-    req.input("Motivo", sql.NVarChar(200), data.motivo ?? null);
-    req.input("DetalleXml", sql.Xml, xmlStr);
-    req.output("EsperaId", sql.Int);
-    await req.execute("usp_POS_Espera_Crear");
-    return { ok: true, esperaId: req.parameters.EsperaId?.value as number };
+  const netAmount = round2(lines.reduce((acc, line) => acc + line.netAmount, 0));
+  const discountAmount = round2(lines.reduce((acc, line) => acc + line.discountAmount, 0));
+  const taxAmount = round2(lines.reduce((acc, line) => acc + line.taxAmount, 0));
+  const totalAmount = round2(lines.reduce((acc, line) => acc + line.totalAmount, 0));
+
+  const insertHeader = await query<{ waitTicketId: number }>(
+    `
+    INSERT INTO pos.WaitTicket (
+      CompanyId,
+      BranchId,
+      CountryCode,
+      CashRegisterCode,
+      StationName,
+      CreatedByUserId,
+      CustomerId,
+      CustomerCode,
+      CustomerName,
+      CustomerFiscalId,
+      PriceTier,
+      Reason,
+      NetAmount,
+      DiscountAmount,
+      TaxAmount,
+      TotalAmount,
+      Status,
+      CreatedAt,
+      UpdatedAt
+    )
+    OUTPUT INSERTED.WaitTicketId AS waitTicketId
+    VALUES (
+      @companyId,
+      @branchId,
+      @countryCode,
+      @cashRegisterCode,
+      @stationName,
+      @createdByUserId,
+      @customerId,
+      @customerCode,
+      @customerName,
+      @customerFiscalId,
+      @priceTier,
+      @reason,
+      @netAmount,
+      @discountAmount,
+      @taxAmount,
+      @totalAmount,
+      N'WAITING',
+      SYSUTCDATETIME(),
+      SYSUTCDATETIME()
+    )
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      countryCode: scope.countryCode,
+      cashRegisterCode: normalizeCashRegister(data.cajaId),
+      stationName: data.estacionNombre ?? null,
+      createdByUserId,
+      customerId: customer.customerId,
+      customerCode: customer.customerCode,
+      customerName: customer.customerName,
+      customerFiscalId: customer.fiscalId,
+      priceTier: data.tipoPrecio ?? "Detal",
+      reason: data.motivo ?? null,
+      netAmount,
+      discountAmount,
+      taxAmount,
+      totalAmount,
+    }
+  );
+
+  const waitTicketId = Number(insertHeader[0]?.waitTicketId ?? 0);
+  if (!Number.isFinite(waitTicketId) || waitTicketId <= 0) {
+    throw new Error("wait_ticket_not_created");
+  }
+
+  for (const line of lines) {
+    await query(
+      `
+      INSERT INTO pos.WaitTicketLine (
+        WaitTicketId,
+        LineNumber,
+        CountryCode,
+        ProductId,
+        ProductCode,
+        ProductName,
+        Quantity,
+        UnitPrice,
+        DiscountAmount,
+        TaxCode,
+        TaxRate,
+        NetAmount,
+        TaxAmount,
+        TotalAmount,
+        CreatedAt
+      )
+      VALUES (
+        @waitTicketId,
+        @lineNumber,
+        @countryCode,
+        @productId,
+        @productCode,
+        @productName,
+        @quantity,
+        @unitPrice,
+        @discountAmount,
+        @taxCode,
+        @taxRate,
+        @netAmount,
+        @taxAmount,
+        @totalAmount,
+        SYSUTCDATETIME()
+      )
+      `,
+      {
+        waitTicketId,
+        lineNumber: line.lineNumber,
+        countryCode: scope.countryCode,
+        productId: line.productId,
+        productCode: line.productCode,
+        productName: line.productName,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        discountAmount: line.discountAmount,
+        taxCode: line.taxCode,
+        taxRate: line.taxRate,
+        netAmount: line.netAmount,
+        taxAmount: line.taxAmount,
+        totalAmount: line.totalAmount,
+      }
+    );
+  }
+
+  return { ok: true, esperaId: waitTicketId };
 }
 
 export async function listEspera() {
-    try {
-        const pool = await getPool();
-        const result = await pool.request().execute("usp_POS_Espera_List");
-        return { rows: result.recordset ?? [] };
-    } catch { }
-    const rows = await query<any>(
-        "SELECT Id AS id, CajaId AS cajaId, EstacionNombre AS estacionNombre, ClienteNombre AS clienteNombre, Motivo AS motivo, Total AS total, FechaCreacion AS fechaCreacion FROM PosVentasEnEspera WHERE Estado='espera' ORDER BY FechaCreacion"
-    );
-    return { rows };
+  const scope = await getDefaultScope();
+  const rows = await query<any>(
+    `
+    SELECT
+      WaitTicketId AS id,
+      CashRegisterCode AS cajaId,
+      StationName AS estacionNombre,
+      CustomerName AS clienteNombre,
+      Reason AS motivo,
+      TotalAmount AS total,
+      CreatedAt AS fechaCreacion
+    FROM pos.WaitTicket
+    WHERE CompanyId = @companyId
+      AND BranchId = @branchId
+      AND Status = N'WAITING'
+    ORDER BY CreatedAt
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+    }
+  );
+
+  return { rows };
 }
 
 export async function recuperarEspera(id: number, recuperadoPor?: string, recuperadoEn?: string) {
-    try {
-        const pool = await getPool();
-        const req = pool.request();
-        req.input("Id", sql.Int, id);
-        req.input("RecuperadoPor", sql.NVarChar(10), recuperadoPor ?? null);
-        req.input("RecuperadoEn", sql.NVarChar(10), recuperadoEn ?? null);
-        const result = await req.execute("usp_POS_Espera_Recuperar");
-        const sets = result.recordsets as any[][];
-        const header = sets?.[0]?.[0] ?? null;
-        const items = sets?.[1] ?? [];
-        if (!header) return { ok: false, error: "not_found" };
-        return { ok: true, header, items };
-    } catch (e: any) {
-        return { ok: false, error: e.message };
+  const scope = await getDefaultScope();
+  const recoveredByUserId = await resolveUserId(recuperadoPor);
+
+  const headerRows = await query<any>(
+    `
+    SELECT TOP 1
+      WaitTicketId AS id,
+      CashRegisterCode AS cajaId,
+      StationName AS estacionNombre,
+      CustomerCode AS clienteId,
+      CustomerName AS clienteNombre,
+      CustomerFiscalId AS clienteRif,
+      PriceTier AS tipoPrecio,
+      Reason AS motivo,
+      NetAmount AS subtotal,
+      TaxAmount AS impuestos,
+      TotalAmount AS total,
+      Status AS estado,
+      CreatedAt AS fechaCreacion
+    FROM pos.WaitTicket
+    WHERE CompanyId = @companyId
+      AND BranchId = @branchId
+      AND WaitTicketId = @waitTicketId
+    ORDER BY WaitTicketId DESC
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      waitTicketId: id,
     }
+  );
+
+  const header = headerRows[0];
+  if (!header) return { ok: false, error: "not_found" };
+
+  if (String(header.estado ?? "").toUpperCase() === "WAITING") {
+    await query(
+      `
+      UPDATE pos.WaitTicket
+      SET Status = N'RECOVERED',
+          RecoveredByUserId = @recoveredByUserId,
+          RecoveredAtRegister = @recoveredAtRegister,
+          RecoveredAt = SYSUTCDATETIME(),
+          UpdatedAt = SYSUTCDATETIME()
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND WaitTicketId = @waitTicketId
+      `,
+      {
+        companyId: scope.companyId,
+        branchId: scope.branchId,
+        waitTicketId: id,
+        recoveredByUserId,
+        recoveredAtRegister: normalizeCashRegister(recuperadoEn),
+      }
+    );
+  }
+
+  const items = await query<any>(
+    `
+    SELECT
+      WaitTicketLineId AS id,
+      ISNULL(CAST(ProductId AS NVARCHAR(50)), ProductCode) AS productoId,
+      ProductCode AS codigo,
+      ProductName AS nombre,
+      Quantity AS cantidad,
+      UnitPrice AS precioUnitario,
+      DiscountAmount AS descuento,
+      CASE WHEN TaxRate > 1 THEN TaxRate ELSE TaxRate * 100 END AS iva,
+      NetAmount AS subtotal,
+      TotalAmount AS total
+    FROM pos.WaitTicketLine
+    WHERE WaitTicketId = @waitTicketId
+    ORDER BY LineNumber
+    `,
+    { waitTicketId: id }
+  );
+
+  return {
+    ok: true,
+    header,
+    items,
+  };
 }
 
 export async function anularEspera(id: number) {
-    const pool = await getPool();
-    const req = pool.request();
-    req.input("Id", sql.Int, id);
-    await req.execute("usp_POS_Espera_Anular");
-    return { ok: true };
+  const scope = await getDefaultScope();
+  await query(
+    `
+    UPDATE pos.WaitTicket
+    SET Status = N'VOIDED',
+        UpdatedAt = SYSUTCDATETIME()
+    WHERE CompanyId = @companyId
+      AND BranchId = @branchId
+      AND WaitTicketId = @waitTicketId
+      AND Status = N'WAITING'
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      waitTicketId: id,
+    }
+  );
+
+  return { ok: true };
 }
 
-// ═════════════════════════════════════════════════════
-// VENTAS COMPLETADAS
-// ═════════════════════════════════════════════════════
-
 export async function registrarVenta(data: {
-    numFactura: string;
-    cajaId: string;
-    codUsuario?: string;
-    clienteId?: string;
-    clienteNombre?: string;
-    clienteRif?: string;
-    tipoPrecio?: string;
-    metodoPago?: string;
-    tramaFiscal?: string;
-    esperaOrigenId?: number;
-    empresaId?: number;
-    sucursalId?: number;
-    countryCode?: CountryCode;
-    invoiceTypeHint?: string;
-    fiscalPrinterSerial?: string;
-    fiscalControlNumber?: string;
-    zReportNumber?: number;
-    items: CartItem[];
+  numFactura: string;
+  cajaId: string;
+  codUsuario?: string;
+  clienteId?: string;
+  clienteNombre?: string;
+  clienteRif?: string;
+  tipoPrecio?: string;
+  metodoPago?: string;
+  tramaFiscal?: string;
+  esperaOrigenId?: number;
+  empresaId?: number;
+  sucursalId?: number;
+  countryCode?: CountryCode;
+  invoiceTypeHint?: string;
+  fiscalPrinterSerial?: string;
+  fiscalControlNumber?: string;
+  zReportNumber?: number;
+  items: CartItem[];
 }) {
-    const xmlItems = data.items.map(d =>
-        `<item prodId="${escXml(d.productoId)}" cod="${escXml(d.codigo)}" nom="${escXml(d.nombre)}" cant="${d.cantidad}" precio="${d.precioUnitario}" desc="${d.descuento ?? 0}" iva="${d.iva ?? 16}" sub="${d.subtotal}" />`
-    ).join("");
-    const xmlStr = `<items>${xmlItems}</items>`;
+  const scope = await resolveScopeWithOverrides({
+    empresaId: data.empresaId,
+    sucursalId: data.sucursalId,
+    countryCode: data.countryCode,
+  });
 
-    const pool = await getPool();
-    const req = pool.request();
-    req.input("NumFactura", sql.NVarChar(20), data.numFactura);
-    req.input("CajaId", sql.NVarChar(10), data.cajaId);
-    req.input("CodUsuario", sql.NVarChar(10), data.codUsuario ?? null);
-    req.input("ClienteId", sql.NVarChar(12), data.clienteId ?? null);
-    req.input("ClienteNombre", sql.NVarChar(100), data.clienteNombre ?? null);
-    req.input("ClienteRif", sql.NVarChar(20), data.clienteRif ?? null);
-    req.input("TipoPrecio", sql.NVarChar(20), data.tipoPrecio ?? "Detal");
-    req.input("MetodoPago", sql.NVarChar(50), data.metodoPago ?? null);
-    req.input("TramaFiscal", sql.NVarChar(sql.MAX), data.tramaFiscal ?? null);
-    req.input("EsperaOrigenId", sql.Int, data.esperaOrigenId ?? null);
-    req.input("DetalleXml", sql.Xml, xmlStr);
-    req.output("VentaId", sql.Int);
-    await req.execute("usp_POS_Venta_Crear");
-    let ventaId = req.parameters.VentaId?.value as number | undefined;
-    if (!Number.isFinite(Number(ventaId)) || Number(ventaId) <= 0) {
-        const rows = await query<{ id: number }>(
-            `
-            SELECT TOP 1 Id AS id
-            FROM PosVentas
-            WHERE NumFactura = @numFactura
-            ORDER BY Id DESC
-            `,
-            { numFactura: data.numFactura }
-        );
-        ventaId = rows[0]?.id;
+  const soldByUserId = await resolveUserId(data.codUsuario);
+  const customer = await resolveCustomer(scope.companyId, data);
+  const lines = await buildCanonicalLines(scope, data.items);
+
+  const netAmount = round2(lines.reduce((acc, line) => acc + line.netAmount, 0));
+  const discountAmount = round2(lines.reduce((acc, line) => acc + line.discountAmount, 0));
+  const taxAmount = round2(lines.reduce((acc, line) => acc + line.taxAmount, 0));
+  const totalAmount = round2(lines.reduce((acc, line) => acc + line.totalAmount, 0));
+
+  const inserted = await query<{ saleTicketId: number }>(
+    `
+    INSERT INTO pos.SaleTicket (
+      CompanyId,
+      BranchId,
+      CountryCode,
+      InvoiceNumber,
+      CashRegisterCode,
+      SoldByUserId,
+      CustomerId,
+      CustomerCode,
+      CustomerName,
+      CustomerFiscalId,
+      PriceTier,
+      PaymentMethod,
+      FiscalPayload,
+      WaitTicketId,
+      NetAmount,
+      DiscountAmount,
+      TaxAmount,
+      TotalAmount,
+      SoldAt
+    )
+    OUTPUT INSERTED.SaleTicketId AS saleTicketId
+    VALUES (
+      @companyId,
+      @branchId,
+      @countryCode,
+      @invoiceNumber,
+      @cashRegisterCode,
+      @soldByUserId,
+      @customerId,
+      @customerCode,
+      @customerName,
+      @customerFiscalId,
+      @priceTier,
+      @paymentMethod,
+      @fiscalPayload,
+      @waitTicketId,
+      @netAmount,
+      @discountAmount,
+      @taxAmount,
+      @totalAmount,
+      SYSUTCDATETIME()
+    )
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      countryCode: scope.countryCode,
+      invoiceNumber: data.numFactura,
+      cashRegisterCode: normalizeCashRegister(data.cajaId),
+      soldByUserId,
+      customerId: customer.customerId,
+      customerCode: customer.customerCode,
+      customerName: customer.customerName,
+      customerFiscalId: customer.fiscalId,
+      priceTier: data.tipoPrecio ?? "Detal",
+      paymentMethod: data.metodoPago ?? null,
+      fiscalPayload: data.tramaFiscal ?? null,
+      waitTicketId: data.esperaOrigenId ?? null,
+      netAmount,
+      discountAmount,
+      taxAmount,
+      totalAmount,
     }
+  );
 
-    const totalAmount = data.items.reduce((acc, item) => {
-        const subtotal = Number(item.subtotal ?? Number(item.cantidad) * Number(item.precioUnitario) - Number(item.descuento ?? 0));
-        const ivaPct = Number(item.iva ?? 0);
-        return acc + subtotal + subtotal * (ivaPct / 100);
-    }, 0);
-    const baseAmount = data.items.reduce((acc, item) => {
-        const subtotal = Number(item.subtotal ?? Number(item.cantidad) * Number(item.precioUnitario) - Number(item.descuento ?? 0));
-        return acc + subtotal;
-    }, 0);
-    const taxAmount = totalAmount - baseAmount;
+  const ventaId = Number(inserted[0]?.saleTicketId ?? 0);
+  if (!Number.isFinite(ventaId) || ventaId <= 0) {
+    throw new Error("sale_ticket_not_created");
+  }
 
-    let fiscal: Awaited<ReturnType<typeof emitFiscalRecordFromTransaction>> | { ok: false; reason: string };
-    try {
-        fiscal = await emitFiscalRecordFromTransaction({
-            empresaId: data.empresaId,
-            sucursalId: data.sucursalId,
-            countryCode: data.countryCode,
-            sourceModule: "POS",
-            invoiceId: Number(ventaId ?? 0),
-            invoiceNumber: data.numFactura,
-            invoiceDate: new Date(),
-            invoiceTypeHint: data.invoiceTypeHint,
-            recipientId: data.clienteRif,
-            totalAmount,
-            payload: {
-                cajaId: data.cajaId,
-                metodoPago: data.metodoPago,
-                codUsuario: data.codUsuario
-            },
-            metadata: {
-                fiscalPrinterSerial: data.fiscalPrinterSerial,
-                fiscalControlNumber: data.fiscalControlNumber,
-                zReportNumber: data.zReportNumber,
-                tramaFiscal: data.tramaFiscal
-            }
-        });
-    } catch (fiscalError: any) {
-        fiscal = {
-            ok: false,
-            reason: `fiscal_emit_exception:${String(fiscalError?.message ?? fiscalError)}`
-        };
-    }
+  for (const line of lines) {
+    await query(
+      `
+      INSERT INTO pos.SaleTicketLine (
+        SaleTicketId,
+        LineNumber,
+        CountryCode,
+        ProductId,
+        ProductCode,
+        ProductName,
+        Quantity,
+        UnitPrice,
+        DiscountAmount,
+        TaxCode,
+        TaxRate,
+        NetAmount,
+        TaxAmount,
+        TotalAmount
+      )
+      VALUES (
+        @saleTicketId,
+        @lineNumber,
+        @countryCode,
+        @productId,
+        @productCode,
+        @productName,
+        @quantity,
+        @unitPrice,
+        @discountAmount,
+        @taxCode,
+        @taxRate,
+        @netAmount,
+        @taxAmount,
+        @totalAmount
+      )
+      `,
+      {
+        saleTicketId: ventaId,
+        lineNumber: line.lineNumber,
+        countryCode: scope.countryCode,
+        productId: line.productId,
+        productCode: line.productCode,
+        productName: line.productName,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        discountAmount: line.discountAmount,
+        taxCode: line.taxCode,
+        taxRate: line.taxRate,
+        netAmount: line.netAmount,
+        taxAmount: line.taxAmount,
+        totalAmount: line.totalAmount,
+      }
+    );
+  }
 
-    let contabilidad: Awaited<ReturnType<typeof emitSaleAccountingEntry>>;
-    try {
-        contabilidad = await emitSaleAccountingEntry({
-            module: "POS",
-            sourceId: Number(ventaId ?? 0),
-            documentNumber: data.numFactura,
-            issueDate: new Date(),
-            paymentMethod: data.metodoPago,
-            codUsuario: data.codUsuario,
-            currency: data.countryCode === "ES" ? "EUR" : "VES",
-            exchangeRate: 1,
-            baseAmount,
-            taxAmount,
-            totalAmount,
-            taxSummary: data.items.map((item) => {
-                const subtotal = Number(item.subtotal ?? Number(item.cantidad) * Number(item.precioUnitario) - Number(item.descuento ?? 0));
-                const ivaPct = Number(item.iva ?? 0);
-                const normalizedRate = ivaPct > 1 ? ivaPct / 100 : ivaPct;
-                const lineTaxAmount = subtotal * normalizedRate;
-                return {
-                    taxRate: normalizedRate,
-                    baseAmount: subtotal,
-                    taxAmount: lineTaxAmount,
-                    totalAmount: subtotal + lineTaxAmount
-                };
-            })
-        });
-    } catch (accountingError: any) {
-        contabilidad = {
-            ok: false,
-            reason: `accounting_emit_exception:${String(accountingError?.message ?? accountingError)}`
-        };
-    }
+  if (Number.isFinite(Number(data.esperaOrigenId)) && Number(data.esperaOrigenId) > 0) {
+    await query(
+      `
+      UPDATE pos.WaitTicket
+      SET Status = N'RECOVERED',
+          RecoveredByUserId = @recoveredByUserId,
+          RecoveredAtRegister = @recoveredAtRegister,
+          RecoveredAt = SYSUTCDATETIME(),
+          UpdatedAt = SYSUTCDATETIME()
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND WaitTicketId = @waitTicketId
+      `,
+      {
+        companyId: scope.companyId,
+        branchId: scope.branchId,
+        waitTicketId: Number(data.esperaOrigenId),
+        recoveredByUserId: soldByUserId,
+        recoveredAtRegister: normalizeCashRegister(data.cajaId),
+      }
+    );
+  }
 
-    return { ok: true, ventaId, fiscal, contabilidad };
+  let fiscal: Awaited<ReturnType<typeof emitFiscalRecordFromTransaction>> | { ok: false; reason: string };
+  try {
+    fiscal = await emitFiscalRecordFromTransaction({
+      empresaId: scope.companyId,
+      sucursalId: scope.branchId,
+      countryCode: scope.countryCode,
+      sourceModule: "POS",
+      invoiceId: Number(ventaId),
+      invoiceNumber: data.numFactura,
+      invoiceDate: new Date(),
+      invoiceTypeHint: data.invoiceTypeHint,
+      recipientId: customer.fiscalId ?? undefined,
+      totalAmount,
+      payload: {
+        cajaId: normalizeCashRegister(data.cajaId),
+        metodoPago: data.metodoPago,
+        codUsuario: data.codUsuario,
+      },
+      metadata: {
+        fiscalPrinterSerial: data.fiscalPrinterSerial,
+        fiscalControlNumber: data.fiscalControlNumber,
+        zReportNumber: data.zReportNumber,
+        tramaFiscal: data.tramaFiscal,
+      },
+    });
+  } catch (fiscalError: any) {
+    fiscal = {
+      ok: false,
+      reason: `fiscal_emit_exception:${String(fiscalError?.message ?? fiscalError)}`,
+    };
+  }
+
+  let contabilidad: Awaited<ReturnType<typeof emitSaleAccountingEntry>>;
+  try {
+    contabilidad = await emitSaleAccountingEntry({
+      module: "POS",
+      sourceId: Number(ventaId),
+      documentNumber: data.numFactura,
+      issueDate: new Date(),
+      paymentMethod: data.metodoPago,
+      codUsuario: data.codUsuario,
+      currency: scope.countryCode === "ES" ? "EUR" : "VES",
+      exchangeRate: 1,
+      baseAmount: netAmount,
+      taxAmount,
+      totalAmount,
+      taxSummary: lines.map((line) => ({
+        taxCode: line.taxCode,
+        taxRate: line.taxRate,
+        baseAmount: line.netAmount,
+        taxAmount: line.taxAmount,
+        totalAmount: line.totalAmount,
+      })),
+    });
+  } catch (accountingError: any) {
+    contabilidad = {
+      ok: false,
+      reason: `accounting_emit_exception:${String(accountingError?.message ?? accountingError)}`,
+    };
+  }
+
+  return { ok: true, ventaId, fiscal, contabilidad };
 }
 
 export async function contabilizarVentaExistente(params: {
-    ventaId: number;
-    codUsuario?: string;
-    countryCode?: CountryCode;
-    currency?: string;
-    exchangeRate?: number;
+  ventaId: number;
+  codUsuario?: string;
+  countryCode?: CountryCode;
+  currency?: string;
+  exchangeRate?: number;
 }) {
-    return reprocessPosAccounting({
-        ventaId: params.ventaId,
-        codUsuario: params.codUsuario,
-        countryCode: params.countryCode,
-        currency: params.currency,
-        exchangeRate: params.exchangeRate
-    });
+  return reprocessPosAccounting({
+    ventaId: params.ventaId,
+    codUsuario: params.codUsuario,
+    countryCode: params.countryCode,
+    currency: params.currency,
+    exchangeRate: params.exchangeRate,
+  });
 }

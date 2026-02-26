@@ -14,8 +14,10 @@ async function hasFiscalConfigTable(): Promise<boolean> {
     `
       SELECT CASE WHEN EXISTS(
           SELECT 1
-          FROM sys.tables
-          WHERE name = 'FiscalCountryConfig'
+          FROM sys.tables t
+          INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+          WHERE t.name = 'CountryConfig'
+            AND s.name = 'fiscal'
       ) THEN 1 ELSE 0 END AS hasTable
     `
   );
@@ -27,8 +29,10 @@ async function hasFiscalRecordsTable(): Promise<boolean> {
     `
       SELECT CASE WHEN EXISTS(
           SELECT 1
-          FROM sys.tables
-          WHERE name = 'FiscalRecords'
+          FROM sys.tables t
+          INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+          WHERE t.name = 'Record'
+            AND s.name = 'fiscal'
       ) THEN 1 ELSE 0 END AS hasTable
     `
   );
@@ -127,7 +131,7 @@ async function getLatestFiscalRecord(params: {
   const rows = await query<Record<string, unknown>>(
     `
       SELECT TOP 1
-        Id,
+        FiscalRecordId AS Id,
         InvoiceId,
         CountryCode,
         InvoiceType,
@@ -139,11 +143,11 @@ async function getLatestFiscalRecord(params: {
         SentToAuthority,
         AuthorityResponse,
         CreatedAt
-      FROM FiscalRecords
-      WHERE EmpresaId = @empresaId
-        AND SucursalId = @sucursalId
+      FROM fiscal.Record
+      WHERE CompanyId = @empresaId
+        AND BranchId = @sucursalId
         AND CountryCode = @countryCode
-      ORDER BY Id DESC
+      ORDER BY FiscalRecordId DESC
     `,
     {
       empresaId: params.empresaId,
@@ -176,11 +180,11 @@ async function inferCountryCodeFromConfig(empresaId: number, sucursalId: number)
   const rows = await query<{ CountryCode: string }>(
     `
       SELECT TOP 1 CountryCode
-      FROM FiscalCountryConfig
-      WHERE EmpresaId = @empresaId
-        AND SucursalId = @sucursalId
+      FROM fiscal.CountryConfig
+      WHERE CompanyId = @empresaId
+        AND BranchId = @sucursalId
         AND IsActive = 1
-      ORDER BY UpdatedAt DESC, Id DESC
+      ORDER BY UpdatedAt DESC, CountryConfigId DESC
     `,
     { empresaId, sucursalId }
   );
@@ -235,8 +239,8 @@ export async function getFiscalConfig(params: {
   const rows = await query<Record<string, unknown>>(
     `
       SELECT TOP 1
-        EmpresaId,
-        SucursalId,
+        CompanyId AS EmpresaId,
+        BranchId AS SucursalId,
         CountryCode,
         Currency,
         TaxRegime,
@@ -257,9 +261,9 @@ export async function getFiscalConfig(params: {
         SoftwareVersion,
         PosEnabled,
         RestaurantEnabled
-      FROM FiscalCountryConfig
-      WHERE EmpresaId = @empresaId
-        AND SucursalId = @sucursalId
+      FROM fiscal.CountryConfig
+      WHERE CompanyId = @empresaId
+        AND BranchId = @sucursalId
         AND CountryCode = @countryCode
     `,
     { empresaId, sucursalId, countryCode }
@@ -292,15 +296,15 @@ export async function upsertFiscalConfig(input: Partial<FiscalConfig> & {
 
   await execute(
     `
-      MERGE FiscalCountryConfig AS target
+      MERGE fiscal.CountryConfig AS target
       USING (
         SELECT
-          @empresaId AS EmpresaId,
-          @sucursalId AS SucursalId,
+          @empresaId AS CompanyId,
+          @sucursalId AS BranchId,
           @countryCode AS CountryCode
       ) AS src
-      ON target.EmpresaId = src.EmpresaId
-         AND target.SucursalId = src.SucursalId
+      ON target.CompanyId = src.CompanyId
+         AND target.BranchId = src.BranchId
          AND target.CountryCode = src.CountryCode
       WHEN MATCHED THEN
         UPDATE SET
@@ -323,11 +327,11 @@ export async function upsertFiscalConfig(input: Partial<FiscalConfig> & {
           SoftwareVersion = @softwareVersion,
           PosEnabled = @posEnabled,
           RestaurantEnabled = @restaurantEnabled,
-          UpdatedAt = GETDATE()
+          UpdatedAt = SYSUTCDATETIME()
       WHEN NOT MATCHED THEN
         INSERT (
-          EmpresaId,
-          SucursalId,
+          CompanyId,
+          BranchId,
           CountryCode,
           Currency,
           TaxRegime,
@@ -374,8 +378,8 @@ export async function upsertFiscalConfig(input: Partial<FiscalConfig> & {
           @softwareVersion,
           @posEnabled,
           @restaurantEnabled,
-          GETDATE(),
-          GETDATE()
+          SYSUTCDATETIME(),
+          SYSUTCDATETIME()
         );
     `,
     {
@@ -482,9 +486,9 @@ export async function emitFiscalRecordFromTransaction(input: FiscalTransactionIn
 
   await execute(
     `
-      INSERT INTO FiscalRecords (
-        EmpresaId,
-        SucursalId,
+      INSERT INTO fiscal.Record (
+        CompanyId,
+        BranchId,
         CountryCode,
         InvoiceId,
         InvoiceType,
@@ -527,7 +531,7 @@ export async function emitFiscalRecordFromTransaction(input: FiscalTransactionIn
         @fiscalPrinterSerial,
         @fiscalControlNumber,
         @zReportNumber,
-        GETDATE()
+        SYSUTCDATETIME()
       )
     `,
     {

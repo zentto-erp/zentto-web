@@ -1,0 +1,12 @@
+﻿:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\00_create_database_datqboxweb.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\01_core_foundation.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\02_master_data.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\03_accounting_core.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\04_operations_core.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\05_api_compat_bridge.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\06_seed_reference_data.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\07_pos_rest_extensions.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\08_fin_hr_rest_admin_extensions.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\09_legacy_api_tables_compat.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\10_legacy_api_sps_compat.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\11_legacy_cleanup_upsize_ts.sql

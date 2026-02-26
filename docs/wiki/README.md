@@ -26,6 +26,7 @@ Usar este flujo como entrada principal para tareas nuevas:
 6. [Playbook de Agentes IA](./06-playbook-agentes.md)
 7. [Compatibilidad Multi-IA (Codex/Claude/Kimi/Gemini)](./07-compatibilidad-multi-ia.md)
 8. [Fiscal Multi-pais (VE + ES Verifactu)](./08-fiscal-multipais-ve-es.md)
+9. [Gobernanza de Base de Datos (Fase 1)](./09-gobernanza-bd.md)
 
 ## Principios de trabajo
 

@@ -106,6 +106,31 @@ function resolveCurrency(inputCurrency: string | undefined, countryCode?: "VE" |
   return "VES";
 }
 
+let defaultScopeCache: { companyId: number; branchId: number } | null = null;
+
+async function getDefaultScope(): Promise<{ companyId: number; branchId: number }> {
+  if (defaultScopeCache) return defaultScopeCache;
+
+  const rows = await query<{ companyId: number; branchId: number }>(
+    `
+    SELECT TOP 1
+      c.CompanyId AS companyId,
+      b.BranchId AS branchId
+    FROM cfg.Company c
+    INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
+    WHERE c.CompanyCode = N'DEFAULT'
+      AND b.BranchCode = N'MAIN'
+    ORDER BY c.CompanyId, b.BranchId
+    `
+  );
+
+  defaultScopeCache = {
+    companyId: Number(rows[0]?.companyId ?? 1),
+    branchId: Number(rows[0]?.branchId ?? 1)
+  };
+  return defaultScopeCache;
+}
+
 function isBankPayment(paymentMethod?: string): boolean {
   if (!paymentMethod) return false;
   const normalized = paymentMethod.trim().toLowerCase();
@@ -128,9 +153,9 @@ async function hasContabilidadInfra(): Promise<boolean> {
     `
     SELECT CASE WHEN
       OBJECT_ID('dbo.usp_Contabilidad_Asiento_Crear', 'P') IS NOT NULL
-      AND OBJECT_ID('dbo.AsientoContable', 'U') IS NOT NULL
-      AND OBJECT_ID('dbo.AsientoContableDetalle', 'U') IS NOT NULL
-      AND OBJECT_ID('dbo.Cuentas', 'U') IS NOT NULL
+      AND OBJECT_ID('acct.Account', 'U') IS NOT NULL
+      AND OBJECT_ID('acct.JournalEntry', 'U') IS NOT NULL
+      AND OBJECT_ID('acct.JournalEntryLine', 'U') IS NOT NULL
     THEN 1 ELSE 0 END AS ok
     `
   );
@@ -138,13 +163,21 @@ async function hasContabilidadInfra(): Promise<boolean> {
 }
 
 async function accountExists(accountCode: string): Promise<boolean> {
+  const scope = await getDefaultScope();
   const rows = await query<{ ok: number }>(
     `
     SELECT CASE WHEN EXISTS (
-      SELECT 1 FROM dbo.Cuentas WHERE LTRIM(RTRIM(COD_CUENTA)) = LTRIM(RTRIM(@accountCode))
+      SELECT 1
+      FROM acct.Account
+      WHERE CompanyId = @companyId
+        AND LTRIM(RTRIM(AccountCode)) = LTRIM(RTRIM(@accountCode))
+        AND IsDeleted = 0
     ) THEN 1 ELSE 0 END AS ok
     `,
-    { accountCode }
+    {
+      companyId: scope.companyId,
+      accountCode
+    }
   );
   return Number(rows[0]?.ok ?? 0) === 1;
 }
@@ -159,27 +192,26 @@ async function pickFirstExistingAccount(candidates: Array<string | null | undefi
 }
 
 async function loadConfigRows(module: SalesModule): Promise<ConfigRow[]> {
-  const hasConfigRows = await query<{ ok: number }>(
-    `
-    SELECT CASE WHEN OBJECT_ID('dbo.ConfiguracionContableAuxiliar', 'U') IS NOT NULL
-    THEN 1 ELSE 0 END AS ok
-    `
-  );
-  if (Number(hasConfigRows[0]?.ok ?? 0) !== 1) return [];
-
+  const scope = await getDefaultScope();
   const rows = await query<ConfigRow>(
     `
     SELECT
-      Proceso,
-      Naturaleza,
-      CuentaContable,
-      CentroCostoDefault
-    FROM dbo.ConfiguracionContableAuxiliar
-    WHERE Modulo = @module
-      AND Activo = 1
-      AND Proceso IN ('VENTA_TOTAL', 'VENTA_TOTAL_CAJA', 'VENTA_TOTAL_BANCO', 'VENTA_BASE', 'VENTA_IVA')
+      p.ProcessCode AS Proceso,
+      CASE WHEN p.Nature = 'DEBIT' THEN N'DEBE' ELSE N'HABER' END AS Naturaleza,
+      a.AccountCode AS CuentaContable,
+      CAST(NULL AS NVARCHAR(20)) AS CentroCostoDefault
+    FROM acct.AccountingPolicy p
+    INNER JOIN acct.Account a ON a.AccountId = p.AccountId
+    WHERE p.CompanyId = @companyId
+      AND p.ModuleCode = @module
+      AND p.IsActive = 1
+      AND p.ProcessCode IN ('VENTA_TOTAL', 'VENTA_TOTAL_CAJA', 'VENTA_TOTAL_BANCO', 'VENTA_BASE', 'VENTA_IVA')
+    ORDER BY p.PriorityOrder, p.AccountingPolicyId
     `,
-    { module }
+    {
+      companyId: scope.companyId,
+      module
+    }
   );
   return rows ?? [];
 }
@@ -240,59 +272,108 @@ async function resolveMapping(module: SalesModule, paymentMethod?: string) {
 }
 
 async function findExistingAsientoByOrigin(module: SalesModule, originDocument: string): Promise<ExistingAsientoRow | null> {
-  const hasOriginTable = await query<{ ok: number }>(
-    `
-    SELECT CASE WHEN OBJECT_ID('dbo.AsientoOrigenAuxiliar', 'U') IS NOT NULL
-    THEN 1 ELSE 0 END AS ok
-    `
-  );
-  if (Number(hasOriginTable[0]?.ok ?? 0) !== 1) return null;
-
+  const scope = await getDefaultScope();
   const rows = await query<ExistingAsientoRow>(
     `
     SELECT TOP 1
-      a.Id AS asientoId,
-      a.NumeroAsiento AS numeroAsiento
-    FROM dbo.AsientoOrigenAuxiliar ao
-    INNER JOIN dbo.AsientoContable a ON a.Id = ao.AsientoId
-    WHERE ao.OrigenModulo = @module
-      AND ao.NumeroDocumento = @originDocument
-    ORDER BY ao.Id DESC
-    `,
-    { module, originDocument }
+      je.JournalEntryId AS asientoId,
+      je.EntryNumber AS numeroAsiento
+    FROM acct.JournalEntry je
+    WHERE je.CompanyId = @companyId
+      AND je.BranchId = @branchId
+      AND je.SourceModule = @module
+      AND je.SourceDocumentNo = @originDocument
+      AND je.IsDeleted = 0
+    ORDER BY je.JournalEntryId DESC
+    `
+    ,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      module,
+      originDocument
+    }
   );
   return rows[0] ?? null;
 }
 
-async function linkSourceToAsiento(module: SalesModule, sourceId: number, asientoId: number): Promise<void> {
-  if (module === "POS") {
-    await query(
-      `
-      IF OBJECT_ID('dbo.PosVentas', 'U') IS NOT NULL
-         AND COL_LENGTH('dbo.PosVentas', 'AsientoContableId') IS NOT NULL
-      BEGIN
-        UPDATE dbo.PosVentas
-        SET AsientoContableId = @asientoId
-        WHERE Id = @sourceId
-      END
-      `,
-      { asientoId, sourceId }
-    );
-    return;
-  }
+async function resolveJournalEntryIdBySource(module: SalesModule, originDocument: string): Promise<number | null> {
+  const scope = await getDefaultScope();
+  const rows = await query<{ journalEntryId: number | null }>(
+    `
+    SELECT TOP 1
+      CAST(je.JournalEntryId AS BIGINT) AS journalEntryId
+    FROM acct.JournalEntry je
+    WHERE je.CompanyId = @companyId
+      AND je.BranchId = @branchId
+      AND je.SourceModule = @module
+      AND je.SourceDocumentNo = @originDocument
+      AND je.IsDeleted = 0
+    ORDER BY je.JournalEntryId DESC
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      module,
+      originDocument
+    }
+  );
+  const journalEntryId = Number(rows[0]?.journalEntryId ?? 0);
+  if (!Number.isFinite(journalEntryId) || journalEntryId <= 0) return null;
+  return journalEntryId;
+}
 
+async function upsertDocumentLink(params: {
+  module: SalesModule;
+  originDocument: string;
+  journalEntryId: number;
+}) {
+  const scope = await getDefaultScope();
   await query(
     `
-    IF OBJECT_ID('dbo.RestaurantePedidos', 'U') IS NOT NULL
-       AND COL_LENGTH('dbo.RestaurantePedidos', 'AsientoContableId') IS NOT NULL
+    IF NOT EXISTS (
+      SELECT 1
+      FROM acct.DocumentLink
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND ModuleCode = @module
+        AND DocumentType = @documentType
+        AND DocumentNumber = @originDocument
+    )
     BEGIN
-      UPDATE dbo.RestaurantePedidos
-      SET AsientoContableId = @asientoId
-      WHERE Id = @sourceId
+      INSERT INTO acct.DocumentLink (
+        CompanyId,
+        BranchId,
+        ModuleCode,
+        DocumentType,
+        DocumentNumber,
+        NativeDocumentId,
+        JournalEntryId
+      )
+      VALUES (
+        @companyId,
+        @branchId,
+        @module,
+        @documentType,
+        @originDocument,
+        NULL,
+        @journalEntryId
+      )
     END
     `,
-    { asientoId, sourceId }
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      module: params.module,
+      documentType: "VENTA",
+      originDocument: params.originDocument,
+      journalEntryId: params.journalEntryId
+    }
   );
+}
+
+async function linkSourceToAsiento(_module: SalesModule, _sourceId: number, _asientoId: number): Promise<void> {
+  return;
 }
 
 function normalizeTotals(baseAmount: number, taxAmount: number, totalAmount: number) {
@@ -428,6 +509,14 @@ export async function emitSaleAccountingEntry(input: EmitSaleAccountingEntryInpu
 
   if (asiento.asientoId) {
     await linkSourceToAsiento(input.module, input.sourceId, Number(asiento.asientoId));
+    const journalEntryId = await resolveJournalEntryIdBySource(input.module, originDocument);
+    if (journalEntryId) {
+      await upsertDocumentLink({
+        module: input.module,
+        originDocument,
+        journalEntryId
+      });
+    }
   }
 
   return {
@@ -466,16 +555,17 @@ export async function reprocessPosAccounting(input: ReprocessPosAccountingInput)
   const rows = await query<PosHeaderRow>(
     `
     SELECT TOP 1
-      Id AS id,
-      NumFactura AS numFactura,
-      FechaVenta AS fechaVenta,
-      MetodoPago AS metodoPago,
-      CodUsuario AS codUsuario,
-      Subtotal AS subtotal,
-      Impuestos AS impuestos,
-      Total AS total
-    FROM dbo.PosVentas
-    WHERE Id = @ventaId
+      v.SaleTicketId AS id,
+      v.InvoiceNumber AS numFactura,
+      v.SoldAt AS fechaVenta,
+      v.PaymentMethod AS metodoPago,
+      u.UserCode AS codUsuario,
+      v.NetAmount AS subtotal,
+      v.TaxAmount AS impuestos,
+      v.TotalAmount AS total
+    FROM pos.SaleTicket v
+    LEFT JOIN sec.[User] u ON u.UserId = v.SoldByUserId
+    WHERE v.SaleTicketId = @ventaId
     `,
     { ventaId: input.ventaId }
   );
@@ -488,13 +578,13 @@ export async function reprocessPosAccounting(input: ReprocessPosAccountingInput)
   const taxRows = await query<TaxSummaryRow>(
     `
     SELECT
-      IVA AS taxRate,
-      SUM(Subtotal) AS baseAmount,
-      SUM(Subtotal * IVA / 100.0) AS taxAmount,
-      SUM(Subtotal + (Subtotal * IVA / 100.0)) AS totalAmount
-    FROM dbo.PosVentasDetalle
-    WHERE VentaId = @ventaId
-    GROUP BY IVA
+      TaxRate AS taxRate,
+      SUM(NetAmount) AS baseAmount,
+      SUM(TaxAmount) AS taxAmount,
+      SUM(TotalAmount) AS totalAmount
+    FROM pos.SaleTicketLine
+    WHERE SaleTicketId = @ventaId
+    GROUP BY TaxRate
     `,
     { ventaId: input.ventaId }
   );
@@ -532,12 +622,14 @@ export async function reprocessRestauranteAccounting(
   const rows = await query<RestauranteHeaderRow>(
     `
     SELECT TOP 1
-      Id AS id,
-      Total AS total,
-      FechaCierre AS fechaCierre,
-      CodUsuario AS codUsuario
-    FROM dbo.RestaurantePedidos
-    WHERE Id = @pedidoId
+      o.OrderTicketId AS id,
+      o.TotalAmount AS total,
+      o.ClosedAt AS fechaCierre,
+      COALESCE(uClose.UserCode, uOpen.UserCode) AS codUsuario
+    FROM rest.OrderTicket o
+    LEFT JOIN sec.[User] uOpen ON uOpen.UserId = o.OpenedByUserId
+    LEFT JOIN sec.[User] uClose ON uClose.UserId = o.ClosedByUserId
+    WHERE o.OrderTicketId = @pedidoId
     `,
     { pedidoId: input.pedidoId }
   );
@@ -550,35 +642,13 @@ export async function reprocessRestauranteAccounting(
   const taxRows = await query<TaxSummaryRow>(
     `
     SELECT
-      CAST(
-        CASE
-          WHEN ISNULL(IvaPct, 0) > 1 THEN ISNULL(IvaPct, 0) / 100.0
-          ELSE ISNULL(IvaPct, 0)
-        END AS DECIMAL(9,4)
-      ) AS taxRate,
-      SUM(Subtotal) AS baseAmount,
-      SUM(
-        Subtotal * CASE
-          WHEN ISNULL(IvaPct, 0) > 1 THEN ISNULL(IvaPct, 0) / 100.0
-          ELSE ISNULL(IvaPct, 0)
-        END
-      ) AS taxAmount,
-      SUM(
-        Subtotal + (
-          Subtotal * CASE
-            WHEN ISNULL(IvaPct, 0) > 1 THEN ISNULL(IvaPct, 0) / 100.0
-            ELSE ISNULL(IvaPct, 0)
-          END
-        )
-      ) AS totalAmount
-    FROM dbo.RestaurantePedidoItems
-    WHERE PedidoId = @pedidoId
-    GROUP BY CAST(
-      CASE
-        WHEN ISNULL(IvaPct, 0) > 1 THEN ISNULL(IvaPct, 0) / 100.0
-        ELSE ISNULL(IvaPct, 0)
-      END AS DECIMAL(9,4)
-    )
+      TaxRate AS taxRate,
+      SUM(NetAmount) AS baseAmount,
+      SUM(TaxAmount) AS taxAmount,
+      SUM(TotalAmount) AS totalAmount
+    FROM rest.OrderTicketLine
+    WHERE OrderTicketId = @pedidoId
+    GROUP BY TaxRate
     `,
     { pedidoId: input.pedidoId }
   );

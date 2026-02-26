@@ -1,434 +1,553 @@
-import { getPool, sql } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
 
-// ─── Productos POS ───
+interface DefaultScope {
+  companyId: number;
+  branchId: number;
+  countryCode: "VE" | "ES";
+}
+
+let defaultScopeCache: DefaultScope | null = null;
+
+async function getDefaultScope(): Promise<DefaultScope> {
+  if (defaultScopeCache) return defaultScopeCache;
+
+  const rows = await query<{ companyId: number; branchId: number; countryCode: string }>(
+    `
+    SELECT TOP 1
+      c.CompanyId AS companyId,
+      b.BranchId AS branchId,
+      UPPER(c.FiscalCountryCode) AS countryCode
+    FROM cfg.Company c
+    INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
+    WHERE c.CompanyCode = N'DEFAULT'
+      AND b.BranchCode = N'MAIN'
+    ORDER BY c.CompanyId, b.BranchId
+    `
+  );
+
+  const row = rows[0];
+  defaultScopeCache = {
+    companyId: Number(row?.companyId ?? 1),
+    branchId: Number(row?.branchId ?? 1),
+    countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
+  };
+  return defaultScopeCache;
+}
+
+function normalizeRate(value: unknown) {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric) || numeric < 0) return 0;
+  if (numeric > 1) return numeric / 100;
+  return numeric;
+}
+
+function toPercent(value: unknown) {
+  return normalizeRate(value) * 100;
+}
+
+function normalizeRange(from?: string, to?: string) {
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0, 10);
+  const fromDate = from && from.trim().length > 0 ? from : todayIso;
+  const toDate = to && to.trim().length > 0 ? to : todayIso;
+  return { fromDate, toDate };
+}
+
+function normalizeCashRegister(code?: string | null) {
+  const value = String(code ?? "").trim().toUpperCase();
+  return value || null;
+}
 
 export async function listProductosPOS(params: {
-    search?: string;
-    categoria?: string;
-    page?: number;
-    limit?: number;
+  search?: string;
+  categoria?: string;
+  page?: number;
+  limit?: number;
 }) {
-    const page = Math.max(params.page ?? 1, 1);
-    const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
+  const scope = await getDefaultScope();
+  const page = Math.max(params.page ?? 1, 1);
+  const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
+  const offset = (page - 1) * limit;
 
-    try {
-        const pool = await getPool();
-        const req = pool.request();
-        req.input("Search", sql.NVarChar(100), params.search ?? null);
-        req.input("Categoria", sql.NVarChar(50), params.categoria ?? null);
-        req.input("AlmacenId", sql.NVarChar(10), null);
-        req.input("Page", sql.Int, page);
-        req.input("Limit", sql.Int, limit);
-        req.output("TotalCount", sql.Int);
+  const sqlParams: Record<string, unknown> = {
+    companyId: scope.companyId,
+    offset,
+    limit,
+  };
 
-        const result = await req.execute("usp_POS_Productos_List");
-        const total = (req.parameters.TotalCount?.value as number) ?? 0;
-        return { page, limit, total, rows: result.recordset ?? [], executionMode: "sp" as const };
-    } catch {
-        // fallback
-    }
+  const where: string[] = [
+    "CompanyId = @companyId",
+    "IsDeleted = 0",
+    "IsActive = 1",
+    "(StockQty > 0 OR IsService = 1)",
+  ];
 
-    // Fallback directo
-    const offset = (page - 1) * limit;
-    const where: string[] = ["(EXISTENCIA > 0 OR Servicio = 1)"];
-    const sqlParams: Record<string, unknown> = {};
+  if (params.search?.trim()) {
+    where.push("(ProductCode LIKE @search OR ProductName LIKE @search)");
+    sqlParams.search = `%${params.search.trim()}%`;
+  }
 
-    if (params.search) {
-        where.push("(CODIGO LIKE @search OR DESCRIPCION LIKE @search OR Barra LIKE @search)");
-        sqlParams.search = `%${params.search}%`;
-    }
-    if (params.categoria) {
-        where.push("Categoria = @categoria");
-        sqlParams.categoria = params.categoria;
-    }
+  if (params.categoria?.trim()) {
+    where.push("CategoryCode = @categoria");
+    sqlParams.categoria = params.categoria.trim();
+  }
 
-    const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
-    const rows = await query<any>(
-        `SELECT CODIGO AS id, CODIGO AS codigo, DESCRIPCION AS nombre, PRECIO_VENTA AS precioDetal,
-     EXISTENCIA AS existencia, Categoria AS categoria, ISNULL(PORCENTAJE, 16) AS iva
-     FROM Inventario ${clause}
-     ORDER BY CODIGO OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`,
-        sqlParams
-    );
-    const totalResult = await query<{ total: number }>(`SELECT COUNT(1) AS total FROM Inventario ${clause}`, sqlParams);
-    return { page, limit, total: Number(totalResult[0]?.total ?? 0), rows, executionMode: "ts_fallback" as const };
+  const clause = `WHERE ${where.join(" AND ")}`;
+
+  const rows = await query<any>(
+    `
+    SELECT
+      ProductId AS id,
+      ProductCode AS codigo,
+      ProductName AS nombre,
+      SalesPrice AS precioDetal,
+      StockQty AS existencia,
+      CategoryCode AS categoria,
+      CASE
+        WHEN DefaultTaxRate > 1 THEN DefaultTaxRate
+        ELSE DefaultTaxRate * 100
+      END AS iva
+    FROM [master].Product
+    ${clause}
+    ORDER BY ProductCode
+    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+    `,
+    sqlParams
+  );
+
+  const totalRows = await query<{ total: number }>(
+    `
+    SELECT COUNT(1) AS total
+    FROM [master].Product
+    ${clause}
+    `,
+    sqlParams
+  );
+
+  return {
+    page,
+    limit,
+    total: Number(totalRows[0]?.total ?? 0),
+    rows,
+    executionMode: "ts_canonical" as const,
+  };
 }
 
 export async function getProductoByCodigo(codigo: string) {
-    try {
-        const pool = await getPool();
-        const req = pool.request();
-        req.input("Codigo", sql.NVarChar(20), codigo);
-        const result = await req.execute("usp_POS_Producto_GetByCodigo");
-        return { row: result.recordset?.[0] ?? null, executionMode: "sp" as const };
-    } catch { }
+  const scope = await getDefaultScope();
+  const value = String(codigo ?? "").trim();
+  const rows = await query<any>(
+    `
+    SELECT TOP 1
+      ProductId AS id,
+      ProductCode AS codigo,
+      ProductName AS nombre,
+      SalesPrice AS precioDetal,
+      StockQty AS existencia,
+      CategoryCode AS categoria,
+      CASE
+        WHEN DefaultTaxRate > 1 THEN DefaultTaxRate
+        ELSE DefaultTaxRate * 100
+      END AS iva
+    FROM [master].Product
+    WHERE CompanyId = @companyId
+      AND IsDeleted = 0
+      AND IsActive = 1
+      AND (
+        ProductCode = @codigo
+        OR CAST(ProductId AS NVARCHAR(40)) = @codigo
+      )
+    ORDER BY ProductId DESC
+    `,
+    {
+      companyId: scope.companyId,
+      codigo: value,
+    }
+  );
 
-    const rows = await query<any>(
-        "SELECT TOP 1 CODIGO AS id, CODIGO AS codigo, DESCRIPCION AS nombre, PRECIO_VENTA AS precioDetal, EXISTENCIA AS existencia FROM Inventario WHERE CODIGO = @codigo OR Barra = @codigo",
-        { codigo }
-    );
-    return { row: rows[0] ?? null, executionMode: "ts_fallback" as const };
+  return { row: rows[0] ?? null, executionMode: "ts_canonical" as const };
 }
-
-// ─── Clientes POS ───
 
 export async function searchClientesPOS(search?: string, limit = 20) {
-    try {
-        const pool = await getPool();
-        const req = pool.request();
-        req.input("Search", sql.NVarChar(100), search ?? null);
-        req.input("Limit", sql.Int, limit);
-        const result = await req.execute("usp_POS_Clientes_Search");
-        return { rows: result.recordset ?? [], executionMode: "sp" as const };
-    } catch { }
+  const scope = await getDefaultScope();
+  const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 200);
 
-    const where = search
-        ? "WHERE CODIGO LIKE @search OR NOMBRE LIKE @search OR RIF LIKE @search"
-        : "";
-    const rows = await query<any>(
-        `SELECT TOP ${limit} CODIGO AS id, CODIGO AS codigo, NOMBRE AS nombre, RIF AS rif, TELEFONO AS telefono, EMAIL AS email, DIRECCION AS direccion, 'Detal' AS tipoPrecio, 0 AS credito FROM Clientes ${where} ORDER BY NOMBRE`,
-        search ? { search: `%${search}%` } : {}
-    );
-    return { rows, executionMode: "ts_fallback" as const };
+  const params: Record<string, unknown> = {
+    companyId: scope.companyId,
+    limit: safeLimit,
+  };
+
+  let where = "WHERE CompanyId = @companyId AND IsDeleted = 0 AND IsActive = 1";
+  if (search?.trim()) {
+    params.search = `%${search.trim()}%`;
+    where += " AND (CustomerCode LIKE @search OR CustomerName LIKE @search OR FiscalId LIKE @search)";
+  }
+
+  const rows = await query<any>(
+    `
+    SELECT TOP (@limit)
+      CustomerId AS id,
+      CustomerCode AS codigo,
+      CustomerName AS nombre,
+      FiscalId AS rif,
+      Phone AS telefono,
+      Email AS email,
+      AddressLine AS direccion,
+      N'Detal' AS tipoPrecio,
+      CreditLimit AS credito
+    FROM [master].Customer
+    ${where}
+    ORDER BY CustomerName
+    `,
+    params
+  );
+
+  return { rows, executionMode: "ts_canonical" as const };
 }
-
-// ─── Categorías POS ───
 
 export async function listCategoriasPOS() {
-    try {
-        const pool = await getPool();
-        const req = pool.request();
-        const result = await req.execute("usp_POS_Categorias_List");
-        return { rows: result.recordset ?? [], executionMode: "sp" as const };
-    } catch { }
+  const scope = await getDefaultScope();
+  const rows = await query<any>(
+    `
+    SELECT
+      ISNULL(NULLIF(LTRIM(RTRIM(CategoryCode)), N''), N'(Sin Categoria)') AS id,
+      ISNULL(NULLIF(LTRIM(RTRIM(CategoryCode)), N''), N'(Sin Categoria)') AS nombre,
+      COUNT(1) AS productCount
+    FROM [master].Product
+    WHERE CompanyId = @companyId
+      AND IsDeleted = 0
+      AND IsActive = 1
+      AND (StockQty > 0 OR IsService = 1)
+    GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(CategoryCode)), N''), N'(Sin Categoria)')
+    ORDER BY nombre
+    `,
+    { companyId: scope.companyId }
+  );
 
-    const rows = await query<any>(
-        "SELECT RTRIM(ISNULL(Categoria, '(Sin Categoría)')) AS id, RTRIM(ISNULL(Categoria, '(Sin Categoría)')) AS nombre, COUNT(1) AS productCount FROM Inventario WHERE EXISTENCIA > 0 OR Servicio = 1 GROUP BY Categoria ORDER BY Categoria"
-    );
-    return { rows, executionMode: "ts_fallback" as const };
-}
-
-// ─── Reportes POS ───
-
-function normalizeRange(from?: string, to?: string) {
-    const today = new Date();
-    const todayIso = today.toISOString().slice(0, 10);
-    const fromDate = from && from.trim().length > 0 ? from : todayIso;
-    const toDate = to && to.trim().length > 0 ? to : todayIso;
-    return { fromDate, toDate };
-}
-
-async function hasPosSalesTables() {
-    const rows = await query<{ ok: number }>(
-        "SELECT CASE WHEN OBJECT_ID('dbo.PosVentas', 'U') IS NOT NULL AND OBJECT_ID('dbo.PosVentasDetalle', 'U') IS NOT NULL THEN 1 ELSE 0 END AS ok"
-    );
-    return Number(rows[0]?.ok ?? 0) === 1;
-}
-
-async function hasCorrelativoTable() {
-    const rows = await query<{ ok: number }>(
-        "SELECT CASE WHEN OBJECT_ID('dbo.Correlativo', 'U') IS NOT NULL THEN 1 ELSE 0 END AS ok"
-    );
-    return Number(rows[0]?.ok ?? 0) === 1;
-}
-
-function inferSerialFromTrama(raw: unknown): string | null {
-    if (!raw) return null;
-    const trama = String(raw);
-    const patterns = [
-        /serial\s*[:=]\s*([A-Z0-9\-]+)/i,
-        /registeredmachinenumber\s*[:=]\s*([A-Z0-9\-]+)/i,
-        /fiscal\s*serial\s*[:=]\s*([A-Z0-9\-]+)/i,
-    ];
-    for (const pattern of patterns) {
-        const match = trama.match(pattern);
-        if (match?.[1]) return match[1].trim();
-    }
-    return null;
-}
-
-function correlativoTipoPorCaja(cajaId: string) {
-    return `FACTURA|CAJA:${cajaId.trim().toUpperCase()}`;
+  return { rows, executionMode: "ts_canonical" as const };
 }
 
 export async function listCorrelativosFiscales(params: { cajaId?: string }) {
-    if (!(await hasCorrelativoTable())) {
-        return { rows: [], executionMode: "ts_fallback" as const };
+  const scope = await getDefaultScope();
+  const caja = normalizeCashRegister(params.cajaId);
+
+  const rows = await query<any>(
+    `
+    SELECT
+      CASE
+        WHEN fc.CashRegisterCode = N'GLOBAL' THEN fc.CorrelativeType
+        ELSE fc.CorrelativeType + N'|CAJA:' + fc.CashRegisterCode
+      END AS tipo,
+      CASE WHEN fc.CashRegisterCode = N'GLOBAL' THEN NULL ELSE fc.CashRegisterCode END AS cajaId,
+      fc.SerialFiscal AS serialFiscal,
+      fc.CurrentNumber AS correlativoActual,
+      fc.Description AS descripcion
+    FROM pos.FiscalCorrelative fc
+    WHERE fc.CompanyId = @companyId
+      AND fc.BranchId = @branchId
+      AND fc.IsActive = 1
+      AND (@cajaId IS NULL OR fc.CashRegisterCode IN (N'GLOBAL', @cajaId))
+    ORDER BY
+      CASE WHEN fc.CashRegisterCode = N'GLOBAL' THEN 0 ELSE 1 END,
+      fc.CashRegisterCode,
+      fc.CorrelativeType
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      cajaId: caja,
     }
+  );
 
-    const rows = await query<any>(
-        `
-        SELECT
-            Tipo AS tipo,
-            CASE
-                WHEN Tipo LIKE 'FACTURA|CAJA:%' THEN SUBSTRING(Tipo, LEN('FACTURA|CAJA:') + 1, 50)
-                ELSE NULL
-            END AS cajaId,
-            Serie AS serialFiscal,
-            Valor AS correlativoActual,
-            Descripcion AS descripcion
-        FROM Correlativo
-        WHERE Tipo = 'FACTURA'
-           OR Tipo LIKE 'FACTURA|CAJA:%'
-           OR Tipo = 'CONTROL'
-           OR Tipo LIKE 'CONTROL%'
-        ORDER BY CASE WHEN Tipo = 'FACTURA' THEN 1 WHEN Tipo LIKE 'FACTURA|CAJA:%' THEN 2 ELSE 3 END, Tipo
-        `
-    );
-
-    if (!params.cajaId) {
-        return { rows, executionMode: "ts_fallback" as const };
-    }
-
-    const caja = params.cajaId.trim().toUpperCase();
-    return {
-        rows: rows.filter((r: any) => !r.cajaId || String(r.cajaId).trim().toUpperCase() === caja),
-        executionMode: "ts_fallback" as const,
-    };
+  return { rows, executionMode: "ts_canonical" as const };
 }
 
 export async function upsertCorrelativoFiscal(params: {
-    cajaId?: string;
-    serialFiscal: string;
-    correlativoActual?: number;
-    descripcion?: string;
+  cajaId?: string;
+  serialFiscal: string;
+  correlativoActual?: number;
+  descripcion?: string;
 }) {
-    if (!(await hasCorrelativoTable())) {
-        throw new Error("table_not_found:Correlativo");
+  const scope = await getDefaultScope();
+  const cajaId = normalizeCashRegister(params.cajaId) ?? "GLOBAL";
+  const serialFiscal = String(params.serialFiscal ?? "").trim();
+  const correlativoActual = Number.isFinite(Number(params.correlativoActual)) ? Number(params.correlativoActual) : 0;
+
+  await query(
+    `
+    IF EXISTS (
+      SELECT 1
+      FROM pos.FiscalCorrelative
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND CorrelativeType = N'FACTURA'
+        AND CashRegisterCode = @cajaId
+    )
+    BEGIN
+      UPDATE pos.FiscalCorrelative
+      SET SerialFiscal = @serialFiscal,
+          CurrentNumber = @correlativoActual,
+          Description = @descripcion,
+          UpdatedAt = SYSUTCDATETIME(),
+          IsActive = 1
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND CorrelativeType = N'FACTURA'
+        AND CashRegisterCode = @cajaId;
+    END
+    ELSE
+    BEGIN
+      INSERT INTO pos.FiscalCorrelative (
+        CompanyId,
+        BranchId,
+        CorrelativeType,
+        CashRegisterCode,
+        SerialFiscal,
+        CurrentNumber,
+        Description,
+        IsActive
+      )
+      VALUES (
+        @companyId,
+        @branchId,
+        N'FACTURA',
+        @cajaId,
+        @serialFiscal,
+        @correlativoActual,
+        @descripcion,
+        1
+      );
+    END
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      cajaId,
+      serialFiscal,
+      correlativoActual,
+      descripcion: params.descripcion ?? "",
     }
+  );
 
-    const tipo = params.cajaId && params.cajaId.trim().length > 0
-        ? correlativoTipoPorCaja(params.cajaId)
-        : "FACTURA";
-
-    const serialFiscal = params.serialFiscal.trim();
-    const correlativoActual = Number.isFinite(Number(params.correlativoActual))
-        ? Number(params.correlativoActual)
-        : 0;
-
-    await query(
-        `
-        MERGE Correlativo AS target
-        USING (SELECT @tipo AS Tipo) AS source
-        ON target.Tipo = source.Tipo
-        WHEN MATCHED THEN
-            UPDATE SET
-                Serie = @serie,
-                Valor = @valor,
-                Descripcion = @descripcion
-        WHEN NOT MATCHED THEN
-            INSERT (Tipo, Serie, Descripcion, Valor)
-            VALUES (@tipo, @serie, @descripcion, @valor);
-        `,
-        {
-            tipo,
-            serie: serialFiscal,
-            valor: correlativoActual,
-            descripcion: params.descripcion ?? "",
-        }
-    );
-
-    return {
-        ok: true,
-        row: {
-            tipo,
-            cajaId: params.cajaId?.trim().toUpperCase() ?? null,
-            serialFiscal,
-            correlativoActual,
-            descripcion: params.descripcion ?? "",
-        },
-    };
+  return {
+    ok: true,
+    row: {
+      tipo: cajaId === "GLOBAL" ? "FACTURA" : `FACTURA|CAJA:${cajaId}`,
+      cajaId: cajaId === "GLOBAL" ? null : cajaId,
+      serialFiscal,
+      correlativoActual,
+      descripcion: params.descripcion ?? "",
+    },
+  };
 }
 
 export async function getPosReportResumen(params: { from?: string; to?: string; cajaId?: string }) {
-    const { fromDate, toDate } = normalizeRange(params.from, params.to);
-    const cajaId = params.cajaId?.trim() || null;
-    if (!(await hasPosSalesTables())) {
-        return {
-            from: fromDate,
-            to: toDate,
-            row: {
-                totalVentas: 0,
-                transacciones: 0,
-                productosVendidos: 0,
-                productosDiferentes: 0,
-                ticketPromedio: 0,
-            },
-            executionMode: "ts_fallback" as const,
-        };
+  const scope = await getDefaultScope();
+  const { fromDate, toDate } = normalizeRange(params.from, params.to);
+  const cajaId = normalizeCashRegister(params.cajaId);
+
+  const rows = await query<any>(
+    `
+    WITH ventas AS (
+      SELECT SaleTicketId, TotalAmount
+      FROM pos.SaleTicket
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND CAST(SoldAt AS date) BETWEEN @fromDate AND @toDate
+        AND (@cajaId IS NULL OR UPPER(CashRegisterCode) = @cajaId)
+    ),
+    detalle AS (
+      SELECT l.ProductCode, l.Quantity
+      FROM pos.SaleTicketLine l
+      INNER JOIN ventas v ON v.SaleTicketId = l.SaleTicketId
+    )
+    SELECT
+      ISNULL((SELECT SUM(TotalAmount) FROM ventas), 0) AS totalVentas,
+      ISNULL((SELECT COUNT(1) FROM ventas), 0) AS transacciones,
+      ISNULL((SELECT SUM(Quantity) FROM detalle), 0) AS productosVendidos,
+      ISNULL((SELECT COUNT(DISTINCT ProductCode) FROM detalle), 0) AS productosDiferentes,
+      CASE
+        WHEN (SELECT COUNT(1) FROM ventas) = 0 THEN 0
+        ELSE ISNULL((SELECT SUM(TotalAmount) FROM ventas), 0) / NULLIF((SELECT COUNT(1) FROM ventas), 0)
+      END AS ticketPromedio
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      fromDate,
+      toDate,
+      cajaId,
     }
+  );
 
-    const rows = await query<any>(
-        `
-        WITH ventas AS (
-            SELECT Id, Total
-            FROM PosVentas
-            WHERE CAST(FechaVenta AS date) BETWEEN @fromDate AND @toDate
-              AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
-        ),
-        detalle AS (
-            SELECT d.ProductoId, d.Cantidad
-            FROM PosVentasDetalle d
-            INNER JOIN ventas v ON v.Id = d.VentaId
-        )
-        SELECT
-            ISNULL((SELECT SUM(Total) FROM ventas), 0) AS totalVentas,
-            ISNULL((SELECT COUNT(1) FROM ventas), 0) AS transacciones,
-            ISNULL((SELECT SUM(Cantidad) FROM detalle), 0) AS productosVendidos,
-            ISNULL((SELECT COUNT(DISTINCT ProductoId) FROM detalle), 0) AS productosDiferentes,
-            CASE
-                WHEN (SELECT COUNT(1) FROM ventas) = 0 THEN 0
-                ELSE ISNULL((SELECT SUM(Total) FROM ventas), 0) / NULLIF((SELECT COUNT(1) FROM ventas), 0)
-            END AS ticketPromedio
-        `,
-        { fromDate, toDate, cajaId }
-    );
-
-    return {
-        from: fromDate,
-        to: toDate,
-        row: rows[0] ?? {
-            totalVentas: 0,
-            transacciones: 0,
-            productosVendidos: 0,
-            productosDiferentes: 0,
-            ticketPromedio: 0,
-        },
-        executionMode: "ts_fallback" as const,
-    };
+  return {
+    from: fromDate,
+    to: toDate,
+    row: rows[0] ?? {
+      totalVentas: 0,
+      transacciones: 0,
+      productosVendidos: 0,
+      productosDiferentes: 0,
+      ticketPromedio: 0,
+    },
+    executionMode: "ts_canonical" as const,
+  };
 }
 
 export async function listPosReportVentas(params: { from?: string; to?: string; limit?: number; cajaId?: string }) {
-    const { fromDate, toDate } = normalizeRange(params.from, params.to);
-    const cajaId = params.cajaId?.trim() || null;
-    const limit = Math.min(Math.max(params.limit ?? 200, 1), 500);
-    if (!(await hasPosSalesTables())) {
-        return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
+  const scope = await getDefaultScope();
+  const { fromDate, toDate } = normalizeRange(params.from, params.to);
+  const cajaId = normalizeCashRegister(params.cajaId);
+  const limit = Math.min(Math.max(params.limit ?? 200, 1), 500);
+
+  const rows = await query<any>(
+    `
+    SELECT TOP (${limit})
+      v.SaleTicketId AS id,
+      v.InvoiceNumber AS numFactura,
+      v.SoldAt AS fecha,
+      ISNULL(NULLIF(LTRIM(RTRIM(v.CustomerName)), N''), N'Consumidor Final') AS cliente,
+      v.CashRegisterCode AS cajaId,
+      v.TotalAmount AS total,
+      N'Completada' AS estado,
+      v.PaymentMethod AS metodoPago,
+      v.FiscalPayload AS tramaFiscal,
+      corr.SerialFiscal AS serialFiscal,
+      corr.CurrentNumber AS correlativoFiscal
+    FROM pos.SaleTicket v
+    OUTER APPLY (
+      SELECT TOP 1
+        fc.SerialFiscal,
+        fc.CurrentNumber
+      FROM pos.FiscalCorrelative fc
+      WHERE fc.CompanyId = v.CompanyId
+        AND fc.BranchId = v.BranchId
+        AND fc.CorrelativeType = N'FACTURA'
+        AND fc.IsActive = 1
+        AND fc.CashRegisterCode IN (UPPER(v.CashRegisterCode), N'GLOBAL')
+      ORDER BY CASE WHEN fc.CashRegisterCode = UPPER(v.CashRegisterCode) THEN 0 ELSE 1 END,
+               fc.FiscalCorrelativeId DESC
+    ) corr
+    WHERE v.CompanyId = @companyId
+      AND v.BranchId = @branchId
+      AND CAST(v.SoldAt AS date) BETWEEN @fromDate AND @toDate
+      AND (@cajaId IS NULL OR UPPER(v.CashRegisterCode) = @cajaId)
+    ORDER BY v.SoldAt DESC, v.SaleTicketId DESC
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      fromDate,
+      toDate,
+      cajaId,
     }
+  );
 
-    const rowsRaw = await query<any>(
-        `
-        SELECT TOP ${limit}
-            v.Id AS id,
-            v.NumFactura AS numFactura,
-            v.FechaVenta AS fecha,
-            ISNULL(NULLIF(LTRIM(RTRIM(v.ClienteNombre)), ''), 'Consumidor Final') AS cliente,
-            v.CajaId AS cajaId,
-            v.Total AS total,
-            'Completada' AS estado,
-            v.MetodoPago AS metodoPago,
-            v.TramaFiscal AS tramaFiscal,
-            corr.Serie AS serialFiscal,
-            corr.Valor AS correlativoFiscal
-        FROM PosVentas v
-        OUTER APPLY (
-            SELECT TOP 1 c.Serie, c.Valor
-            FROM Correlativo c
-            WHERE c.Tipo IN (
-                CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))),
-                'FACTURA'
-            )
-            ORDER BY CASE WHEN c.Tipo = CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))) THEN 0 ELSE 1 END
-        ) corr
-        WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
-                    AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(v.CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
-        ORDER BY v.FechaVenta DESC, v.Id DESC
-        `,
-                { fromDate, toDate, cajaId }
-    );
-
-    const rows = rowsRaw.map((row) => ({
-        ...row,
-        serialFiscal: row.serialFiscal ?? inferSerialFromTrama(row.tramaFiscal),
-    }));
-
-    return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
+  return { from: fromDate, to: toDate, rows, executionMode: "ts_canonical" as const };
 }
 
 export async function listPosReportProductosTop(params: { from?: string; to?: string; limit?: number; cajaId?: string }) {
-    const { fromDate, toDate } = normalizeRange(params.from, params.to);
-    const cajaId = params.cajaId?.trim() || null;
-    const limit = Math.min(Math.max(params.limit ?? 20, 1), 100);
-    if (!(await hasPosSalesTables())) {
-        return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
+  const scope = await getDefaultScope();
+  const { fromDate, toDate } = normalizeRange(params.from, params.to);
+  const cajaId = normalizeCashRegister(params.cajaId);
+  const limit = Math.min(Math.max(params.limit ?? 20, 1), 100);
+
+  const rows = await query<any>(
+    `
+    SELECT TOP (${limit})
+      l.ProductId AS productoId,
+      l.ProductCode AS codigo,
+      l.ProductName AS nombre,
+      SUM(l.Quantity) AS cantidad,
+      SUM(l.TotalAmount) AS total
+    FROM pos.SaleTicketLine l
+    INNER JOIN pos.SaleTicket v ON v.SaleTicketId = l.SaleTicketId
+    WHERE v.CompanyId = @companyId
+      AND v.BranchId = @branchId
+      AND CAST(v.SoldAt AS date) BETWEEN @fromDate AND @toDate
+      AND (@cajaId IS NULL OR UPPER(v.CashRegisterCode) = @cajaId)
+    GROUP BY l.ProductId, l.ProductCode, l.ProductName
+    ORDER BY total DESC, cantidad DESC
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      fromDate,
+      toDate,
+      cajaId,
     }
+  );
 
-    const rows = await query<any>(
-        `
-        SELECT TOP ${limit}
-            d.ProductoId AS productoId,
-            ISNULL(NULLIF(LTRIM(RTRIM(d.Codigo)), ''), d.ProductoId) AS codigo,
-            d.Nombre AS nombre,
-            SUM(d.Cantidad) AS cantidad,
-            SUM(d.Subtotal + (d.Subtotal * d.IVA / 100.0)) AS total
-        FROM PosVentasDetalle d
-        INNER JOIN PosVentas v ON v.Id = d.VentaId
-        WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
-                    AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(v.CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
-        GROUP BY d.ProductoId, d.Codigo, d.Nombre
-        ORDER BY total DESC, cantidad DESC
-        `,
-                { fromDate, toDate, cajaId }
-    );
-
-    return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
+  return { from: fromDate, to: toDate, rows, executionMode: "ts_canonical" as const };
 }
 
 export async function listPosReportFormasPago(params: { from?: string; to?: string; cajaId?: string }) {
-    const { fromDate, toDate } = normalizeRange(params.from, params.to);
-    const cajaId = params.cajaId?.trim() || null;
-    if (!(await hasPosSalesTables())) {
-        return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
+  const scope = await getDefaultScope();
+  const { fromDate, toDate } = normalizeRange(params.from, params.to);
+  const cajaId = normalizeCashRegister(params.cajaId);
+
+  const rows = await query<any>(
+    `
+    SELECT
+      ISNULL(NULLIF(LTRIM(RTRIM(v.PaymentMethod)), N''), N'No especificado') AS metodoPago,
+      COUNT(1) AS transacciones,
+      SUM(v.TotalAmount) AS total
+    FROM pos.SaleTicket v
+    WHERE v.CompanyId = @companyId
+      AND v.BranchId = @branchId
+      AND CAST(v.SoldAt AS date) BETWEEN @fromDate AND @toDate
+      AND (@cajaId IS NULL OR UPPER(v.CashRegisterCode) = @cajaId)
+    GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(v.PaymentMethod)), N''), N'No especificado')
+    ORDER BY total DESC
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      fromDate,
+      toDate,
+      cajaId,
     }
+  );
 
-    const rows = await query<any>(
-        `
-        SELECT
-            ISNULL(NULLIF(LTRIM(RTRIM(v.MetodoPago)), ''), 'No especificado') AS metodoPago,
-            COUNT(1) AS transacciones,
-            SUM(v.Total) AS total
-        FROM PosVentas v
-        WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
-                    AND (@cajaId IS NULL OR UPPER(LTRIM(RTRIM(v.CajaId))) = UPPER(LTRIM(RTRIM(@cajaId))))
-        GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(v.MetodoPago)), ''), 'No especificado')
-        ORDER BY total DESC
-        `,
-                { fromDate, toDate, cajaId }
-    );
-
-    return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
+  return { from: fromDate, to: toDate, rows, executionMode: "ts_canonical" as const };
 }
 
 export async function listPosReportCajas(params: { from?: string; to?: string }) {
-    const { fromDate, toDate } = normalizeRange(params.from, params.to);
-    if (!(await hasPosSalesTables())) {
-        return { from: fromDate, to: toDate, rows: [], executionMode: "ts_fallback" as const };
+  const scope = await getDefaultScope();
+  const { fromDate, toDate } = normalizeRange(params.from, params.to);
+
+  const rows = await query<any>(
+    `
+    SELECT
+      UPPER(v.CashRegisterCode) AS cajaId,
+      COUNT(1) AS transacciones,
+      SUM(v.TotalAmount) AS total,
+      MAX(ISNULL(corr.SerialFiscal, N'')) AS serialFiscal
+    FROM pos.SaleTicket v
+    OUTER APPLY (
+      SELECT TOP 1 fc.SerialFiscal
+      FROM pos.FiscalCorrelative fc
+      WHERE fc.CompanyId = v.CompanyId
+        AND fc.BranchId = v.BranchId
+        AND fc.CorrelativeType = N'FACTURA'
+        AND fc.IsActive = 1
+        AND fc.CashRegisterCode IN (UPPER(v.CashRegisterCode), N'GLOBAL')
+      ORDER BY CASE WHEN fc.CashRegisterCode = UPPER(v.CashRegisterCode) THEN 0 ELSE 1 END,
+               fc.FiscalCorrelativeId DESC
+    ) corr
+    WHERE v.CompanyId = @companyId
+      AND v.BranchId = @branchId
+      AND CAST(v.SoldAt AS date) BETWEEN @fromDate AND @toDate
+    GROUP BY UPPER(v.CashRegisterCode)
+    ORDER BY cajaId
+    `,
+    {
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      fromDate,
+      toDate,
     }
+  );
 
-    const rows = await query<any>(
-        `
-        SELECT
-            UPPER(LTRIM(RTRIM(v.CajaId))) AS cajaId,
-            COUNT(1) AS transacciones,
-            SUM(v.Total) AS total,
-            MAX(ISNULL(corr.Serie, '')) AS serialFiscal
-        FROM PosVentas v
-        OUTER APPLY (
-            SELECT TOP 1 c.Serie
-            FROM Correlativo c
-            WHERE c.Tipo IN (
-                CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))),
-                'FACTURA'
-            )
-            ORDER BY CASE WHEN c.Tipo = CONCAT('FACTURA|CAJA:', UPPER(LTRIM(RTRIM(v.CajaId)))) THEN 0 ELSE 1 END
-        ) corr
-        WHERE CAST(v.FechaVenta AS date) BETWEEN @fromDate AND @toDate
-        GROUP BY UPPER(LTRIM(RTRIM(v.CajaId)))
-        ORDER BY cajaId
-        `,
-        { fromDate, toDate }
-    );
-
-    return { from: fromDate, to: toDate, rows, executionMode: "ts_fallback" as const };
+  return { from: fromDate, to: toDate, rows, executionMode: "ts_canonical" as const };
 }
