@@ -31,6 +31,9 @@ import {
   useImportarExtracto
 } from "../../hooks/useConciliacionBancaria";
 
+type CuentaRow = Record<string, unknown>;
+type ConciliacionRow = Record<string, unknown>;
+
 function firstDayOfCurrentMonth() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
@@ -84,7 +87,7 @@ export default function ConciliacionBancariaPage() {
   const ajustar = useGenerarAjuste();
   const cerrar = useCerrarConciliacion();
 
-  const rows = listData?.rows ?? [];
+  const rows = (listData?.rows ?? []) as ConciliacionRow[];
 
   const handleCrear = async () => {
     setErr("");
@@ -92,8 +95,8 @@ export default function ConciliacionBancariaPage() {
     try {
       const r = await crear.mutateAsync({ Nro_Cta: newCta, Fecha_Desde: newDesde, Fecha_Hasta: newHasta });
       setMsg(`Conciliacion creada: ${r?.conciliacionId ?? ""}`);
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -107,8 +110,8 @@ export default function ConciliacionBancariaPage() {
       setMsg(`Extracto importado. Registros: ${r?.registrosImportados ?? "ok"}`);
       setImportOpen(false);
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -124,8 +127,8 @@ export default function ConciliacionBancariaPage() {
       });
       setMsg(r?.mensaje || "Movimiento conciliado");
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -142,8 +145,8 @@ export default function ConciliacionBancariaPage() {
       });
       setMsg(r?.mensaje || "Ajuste generado");
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -159,8 +162,8 @@ export default function ConciliacionBancariaPage() {
       });
       setMsg(`Conciliacion cerrada. Estado: ${r?.estado ?? "ok"} Diferencia: ${r?.diferencia ?? 0}`);
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -176,7 +179,7 @@ export default function ConciliacionBancariaPage() {
           <Grid item xs={12} md={4}>
             <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Cuenta" value={newCta} onChange={(e) => setNewCta(e.target.value)}>
               <option value="">Seleccione</option>
-              {(cuentasData?.rows ?? []).map((c: any) => (
+              {((cuentasData?.rows ?? []) as CuentaRow[]).map((c) => (
                 <option key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>{String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}</option>
               ))}
             </TextField>
@@ -229,7 +232,7 @@ export default function ConciliacionBancariaPage() {
             {!isLoading && rows.length === 0 && (
               <TableRow><TableCell colSpan={8}>Sin conciliaciones.</TableCell></TableRow>
             )}
-            {!isLoading && rows.map((r: any) => (
+            {!isLoading && rows.map((r) => (
               <TableRow key={String(r.ID)} selected={selectedId === Number(r.ID)}>
                 <TableCell>{r.ID}</TableCell>
                 <TableCell>{r.Nro_Cta}</TableCell>
@@ -270,7 +273,7 @@ export default function ConciliacionBancariaPage() {
 
           <Grid container spacing={1} sx={{ mb: 2 }}>
             <Grid item xs={12} md={3}>
-              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as any)}>
+              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as "NOTA_CREDITO" | "NOTA_DEBITO")}>
                 <option value="NOTA_CREDITO">NOTA_CREDITO</option>
                 <option value="NOTA_DEBITO">NOTA_DEBITO</option>
               </TextField>

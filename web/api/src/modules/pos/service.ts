@@ -1,4 +1,5 @@
 import { query } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 interface DefaultScope {
   companyId: number;
@@ -9,6 +10,15 @@ interface DefaultScope {
 let defaultScopeCache: DefaultScope | null = null;
 
 async function getDefaultScope(): Promise<DefaultScope> {
+  const activeScope = getActiveScope();
+  if (defaultScopeCache && activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as "VE" | "ES",
+    };
+  }
   if (defaultScopeCache) return defaultScopeCache;
 
   const rows = await query<{ companyId: number; branchId: number; countryCode: string }>(
@@ -16,7 +26,7 @@ async function getDefaultScope(): Promise<DefaultScope> {
     SELECT TOP 1
       c.CompanyId AS companyId,
       b.BranchId AS branchId,
-      UPPER(c.FiscalCountryCode) AS countryCode
+      UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode)) AS countryCode
     FROM cfg.Company c
     INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
     WHERE c.CompanyCode = N'DEFAULT'
@@ -31,6 +41,14 @@ async function getDefaultScope(): Promise<DefaultScope> {
     branchId: Number(row?.branchId ?? 1),
     countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
   };
+  if (activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as "VE" | "ES",
+    };
+  }
   return defaultScopeCache;
 }
 
@@ -71,6 +89,7 @@ export async function listProductosPOS(params: {
 
   const sqlParams: Record<string, unknown> = {
     companyId: scope.companyId,
+    branchId: scope.branchId,
     offset,
     limit,
   };
@@ -100,6 +119,7 @@ export async function listProductosPOS(params: {
       ProductId AS id,
       ProductCode AS codigo,
       ProductName AS nombre,
+      img.PublicUrl AS imagen,
       SalesPrice AS precioDetal,
       StockQty AS existencia,
       CategoryCode AS categoria,
@@ -107,7 +127,21 @@ export async function listProductosPOS(params: {
         WHEN DefaultTaxRate > 1 THEN DefaultTaxRate
         ELSE DefaultTaxRate * 100
       END AS iva
-    FROM [master].Product
+    FROM [master].Product p
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.CompanyId = p.CompanyId
+        AND ei.BranchId = @branchId
+        AND ei.EntityType = N'MASTER_PRODUCT'
+        AND ei.EntityId = p.ProductId
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
     ${clause}
     ORDER BY ProductCode
     OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
@@ -142,6 +176,7 @@ export async function getProductoByCodigo(codigo: string) {
       ProductId AS id,
       ProductCode AS codigo,
       ProductName AS nombre,
+      img.PublicUrl AS imagen,
       SalesPrice AS precioDetal,
       StockQty AS existencia,
       CategoryCode AS categoria,
@@ -149,7 +184,21 @@ export async function getProductoByCodigo(codigo: string) {
         WHEN DefaultTaxRate > 1 THEN DefaultTaxRate
         ELSE DefaultTaxRate * 100
       END AS iva
-    FROM [master].Product
+    FROM [master].Product p
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.CompanyId = p.CompanyId
+        AND ei.BranchId = @branchId
+        AND ei.EntityType = N'MASTER_PRODUCT'
+        AND ei.EntityId = p.ProductId
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
     WHERE CompanyId = @companyId
       AND IsDeleted = 0
       AND IsActive = 1
@@ -161,6 +210,7 @@ export async function getProductoByCodigo(codigo: string) {
     `,
     {
       companyId: scope.companyId,
+      branchId: scope.branchId,
       codigo: value,
     }
   );

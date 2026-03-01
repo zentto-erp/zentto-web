@@ -112,6 +112,8 @@ export interface ComandaCocina {
     ambiente: string;
 }
 
+type ApiRow = Record<string, unknown>;
+
 // ═══════════════════════════════════════════════════════════════
 // ZUSTAND STORE — Estado global del Restaurante
 // ═══════════════════════════════════════════════════════════════
@@ -145,6 +147,13 @@ function normalizeIvaPercent(raw: unknown, fallback = 16): number {
 
 function calcIvaAmount(baseAmount: number, ivaPercent: number) {
     return round2(baseAmount * (ivaPercent / 100));
+}
+
+function resolveAmbienteActivo(current: string, ambientes: Ambiente[]): string {
+    if (current === 'todos') return 'todos';
+    if (ambientes.some((amb) => amb.id === current)) return current;
+    if (ambientes.length > 0) return ambientes[0].id;
+    return 'todos';
 }
 
 interface RestauranteState {
@@ -191,7 +200,7 @@ interface RestauranteState {
 export const useRestauranteStore = create<RestauranteState>((set, get) => ({
     // ─── Estado Inicial ───
     ambientes: [],
-    ambienteActivo: '1',
+    ambienteActivo: 'todos',
     productos: [],
     loading: true,
     syncing: false,
@@ -210,7 +219,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                 apiGet(`/v1/restaurante/admin/productos`).catch(() => ({ rows: [] })),
             ]);
 
-            const mesas: Mesa[] = (mesasRes.rows ?? []).map((r: any) => ({
+            const mesas: Mesa[] = (mesasRes.rows ?? []).map((r: ApiRow) => ({
                 id: String(r.id),
                 numero: r.numero,
                 nombre: r.nombre?.trim(),
@@ -232,7 +241,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                                 dbId: data.pedido.id,
                                 mesaId: mesa.id,
                                 clienteNombre: data.pedido.clienteNombre,
-                                items: (data.items ?? []).map((i: any) => ({
+                                items: (data.items ?? []).map((i: ApiRow) => ({
                                     iva: normalizeIvaPercent(i.iva ?? i.IvaPct ?? i.PORCENTAJE, 16),
                                     montoIva: calcIvaAmount(Number(i.subtotal ?? 0), normalizeIvaPercent(i.iva ?? i.IvaPct ?? i.PORCENTAJE, 16)),
                                     id: uuidv4(),
@@ -255,7 +264,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                                 impuestos: Number(data.pedido.impuestos ?? 0),
                                 servicio: Number(data.pedido.servicio ?? 0),
                                 persistido: true,
-                            } as any;
+                            };
                         }
                     } catch { /* mesa sin pedido */ }
                 }
@@ -266,7 +275,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             const uniqueAmbIds = [...new Set(mesas.map(m => m.ambienteId))];
 
             const ambientes: Ambiente[] = uniqueAmbIds.map((ambId, idx) => {
-                const dbAmb = ambientesDb.find((a: any) => String(a.id) === ambId);
+                const dbAmb = ambientesDb.find((a: ApiRow) => String(a.id) === ambId);
                 return {
                     id: ambId,
                     nombre: dbAmb?.nombre || `Ambiente ${ambId}`,
@@ -275,7 +284,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                 };
             });
 
-            const productos: ProductoMenu[] = (prodsRes.rows ?? []).map((r: any) => ({
+            const productos: ProductoMenu[] = (prodsRes.rows ?? []).map((r: ApiRow) => ({
                 id: String(r.id),
                 codigo: r.codigo?.trim() ?? '',
                 nombre: r.nombre?.trim() ?? '',
@@ -290,18 +299,25 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                 disponible: r.disponible !== false,
             }));
 
-            set({
-                ambientes: ambientes.length > 0 ? ambientes : [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }],
+            const fallbackAmbientes = ambientes.length > 0
+                ? ambientes
+                : [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }];
+
+            set((state) => ({
+                ambientes: fallbackAmbientes,
+                ambienteActivo: resolveAmbienteActivo(state.ambienteActivo, fallbackAmbientes),
                 productos,
                 loading: false,
-            });
+            }));
         } catch (err) {
             console.error('Error cargando datos del restaurante:', err);
-            set({
-                ambientes: [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }],
+            const fallbackAmbientes = [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }];
+            set((state) => ({
+                ambientes: fallbackAmbientes,
+                ambienteActivo: resolveAmbienteActivo(state.ambienteActivo, fallbackAmbientes),
                 productos: [],
                 loading: false,
-            });
+            }));
         }
     },
 
@@ -558,9 +574,9 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                     : `⚠️ Comanda guardada pero impresión falló: ${printResult.message}`,
             };
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             set({ syncing: false });
-            return { success: false, message: `Error: ${e.message}` };
+            return { success: false, message: `Error: ${e instanceof Error ? e.message : 'desconocido'}` };
         }
     },
 
@@ -649,9 +665,9 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             set({ syncing: false });
             return { success: true, message: 'Mesa cerrada exitosamente.' };
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             set({ syncing: false });
-            return { success: false, message: `Error cerrando mesa: ${e.message}` };
+            return { success: false, message: `Error cerrando mesa: ${e instanceof Error ? e.message : 'desconocido'}` };
         }
     },
 
@@ -858,3 +874,4 @@ export function useRestaurante() {
         getServicioMesa: store.getServicioMesa,
     };
 }
+

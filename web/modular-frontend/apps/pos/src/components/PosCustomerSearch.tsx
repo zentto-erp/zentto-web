@@ -168,8 +168,6 @@ export function PosCustomerSearch({
                                         {customer.nombre.charAt(0)}
                                     </Avatar>
                                     <ListItemText
-                                        primaryTypographyProps={{ component: 'div' } as any}
-                                        secondaryTypographyProps={{ component: 'div' } as any}
                                         primary={
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <Typography fontWeight="medium">

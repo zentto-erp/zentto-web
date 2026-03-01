@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+﻿import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import type { Provider } from 'next-auth/providers';
 import { AuthError } from 'next-auth';
@@ -14,12 +14,12 @@ export class CustomAuthError extends AuthError {
   }
 }
 
-// Lista de rutas públicas que no requieren autenticación
 const PUBLIC_ROUTES = [
   '/authentication/login',
   '/authentication/register',
   '/authentication/forgot-password',
   '/authentication/reset-password',
+  '/authentication/verify-email',
   '/api/register',
   '/api/auth-test',
 ];
@@ -28,27 +28,47 @@ const providers: Provider[] = [
   Credentials({
     credentials: {
       username: { label: 'Usuario', type: 'text' },
-      password: { label: 'Contraseña', type: 'password' },
+      password: { label: 'Contrasena', type: 'password' },
+      companyId: { label: 'Empresa', type: 'text' },
+      branchId: { label: 'Sucursal', type: 'text' },
+      captchaToken: { label: 'Captcha', type: 'text' },
     },
-    authorize: async (credentials: Record<"username" | "password", string | undefined> | undefined) => {
+    authorize: async (credentials) => {
       try {
-        const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
+        const BACKEND_URL =
+          process.env.BACKEND_URL ||
+          process.env.NEXT_PUBLIC_API_BASE ||
+          process.env.NEXT_PUBLIC_API_BASE_URL ||
+          process.env.NEXT_PUBLIC_API_URL ||
+          process.env.NEXT_PUBLIC_BACKEND_URL ||
+          process.env.API_URL ||
+          'http://localhost:4000';
 
-        if (!credentials?.username) {
+        const incoming = credentials as
+          | Partial<Record<'username' | 'password' | 'companyId' | 'branchId' | 'captchaToken', unknown>>
+          | undefined;
+        const username = typeof incoming?.username === 'string' ? incoming.username : undefined;
+        const password = typeof incoming?.password === 'string' ? incoming.password : undefined;
+        const captchaToken =
+          typeof incoming?.captchaToken === 'string' ? incoming.captchaToken : undefined;
+        if (!username) {
           throw new CustomAuthError('invalid_credentials', 'Usuario es requerido');
         }
 
-        const userData = {
-          usuario: credentials.username.includes('@') ? 
-            credentials.username.split('@')[0] : 
-            credentials.username,
-          clave: credentials?.password || '',
-        };
+        const companyId =
+          typeof incoming?.companyId === 'string' ? Number(incoming.companyId) : undefined;
+        const branchId =
+          typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
 
-        console.log('Intentando autenticación:', { 
-          usuario: userData.usuario,
-          backendUrl: BACKEND_URL 
-        });
+        const userData = {
+          usuario: username.includes('@')
+            ? username.split('@')[0]
+            : username,
+          clave: password || '',
+          companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
+          branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
+          captchaToken,
+        };
 
         const response = await fetch(`${BACKEND_URL}/v1/auth/login`, {
           method: 'POST',
@@ -58,27 +78,16 @@ const providers: Provider[] = [
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Error en autenticación:', {
-            status: response.status,
-            error: errorText
-          });
           throw new CustomAuthError(
             response.status.toString(),
-            `Error de autenticación: ${errorText}`
+            `Error de autenticacion: ${errorText}`
           );
         }
 
         const data = await response.json();
-        
-        console.log('Respuesta de autenticación:', {
-          userId: data.userId,
-          userName: data.userName,
-          hasToken: !!data.token,
-          isAdmin: data.isAdmin,
-        });
 
         if (!data || !data.token) {
-          throw new CustomAuthError('no_token', 'No se recibió un token válido');
+          throw new CustomAuthError('no_token', 'No se recibio un token valido');
         }
 
         const authUser = {
@@ -86,23 +95,17 @@ const providers: Provider[] = [
           name: data.userName || data.usuario?.nombre || 'Usuario',
           email: data.email || null,
           token: data.token,
-          isAdmin: data.isAdmin || data.usuario?.isAdmin || false
+          isAdmin: data.isAdmin || data.usuario?.isAdmin || false,
+          company: data.company || null,
+          companyAccesses: data.companyAccesses || [],
         };
-
-        console.log('Usuario autenticado:', {
-          id: authUser.id,
-          name: authUser.name,
-          hasEmail: !!authUser.email,
-          isAdmin: authUser.isAdmin
-        });
 
         return authUser;
       } catch (error: any) {
         if (error instanceof CustomAuthError) {
           throw error;
         }
-        console.error('Error inesperado:', error);
-        throw new CustomAuthError('unknown_error', 'Error en la autenticación');
+        throw new CustomAuthError('unknown_error', 'Error en la autenticacion');
       }
     },
   }),
@@ -122,6 +125,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.accessToken = user.token;
         // @ts-ignore
         token.isAdmin = user.isAdmin;
+        // @ts-ignore
+        token.company = user.company;
+        // @ts-ignore
+        token.companyAccesses = user.companyAccesses;
       }
       return token;
     },
@@ -130,18 +137,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.accessToken = token.accessToken;
       // @ts-ignore
       session.isAdmin = token.isAdmin;
+      // @ts-ignore
+      session.company = token.company;
+      // @ts-ignore
+      session.companyAccesses = token.companyAccesses;
       return session;
     },
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
-      
-      // Verificar si es una ruta pública o un recurso estático
+
       const isPublicRoute = PUBLIC_ROUTES.some(route => nextUrl.pathname.startsWith(route));
-      const isStaticAsset = nextUrl.pathname.startsWith('/_next') || 
+      const isStaticAsset = nextUrl.pathname.startsWith('/_next') ||
                            nextUrl.pathname.includes('/images/') ||
                            nextUrl.pathname.includes('.png') ||
                            nextUrl.pathname.includes('.svg');
-      
+
       if (isPublicRoute || isStaticAsset) {
         return true;
       }

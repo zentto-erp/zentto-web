@@ -254,7 +254,7 @@ export default function PagoTxForm() {
       {docsQuery.error && <Alert severity="error">Error cargando pendientes.</Alert>}
       {pagoMutation.isError && <Alert severity="error">Error aplicando pago.</Alert>}
       {pagoMutation.isSuccess && (
-        <Alert severity="success">Pago aplicado. Recibo: {String((pagoMutation.data as any)?.numPago || "")}</Alert>
+        <Alert severity="success">Pago aplicado. Recibo: {String((pagoMutation.data as { numPago?: string })?.numPago || "")}</Alert>
       )}
 
       {saldoQuery.data?.data && (

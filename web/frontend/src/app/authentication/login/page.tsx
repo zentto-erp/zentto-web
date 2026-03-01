@@ -30,8 +30,8 @@ export default function LoginPage() {
       <Grid
         container
         spacing={0}
-        sx={{ 
-          width: '100%', 
+        sx={{
+          width: '100%',
           height: '100%',
           justifyContent: 'center',
           alignItems: 'center',
@@ -45,53 +45,54 @@ export default function LoginPage() {
             alignItems: 'center',
           }}
         >
-          <Card
-            elevation={9}
-            sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px', mx: 2 }}
-          >
+          <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px', mx: 2 }}>
             <Box display="flex" alignItems="center" justifyContent="center" mb={3}>
               <Logo />
             </Box>
             <AuthLogin
               subtext={
-                <Typography
-                  variant="subtitle1"
-                  textAlign="center"
-                  color="textSecondary"
-                  mb={1}
-                >
+                <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
                   Ingresa tus credenciales para continuar
                 </Typography>
               }
               subtitle={
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  justifyContent="center"
-                  mt={3}
-                >
-                  <Typography
-                    color="textSecondary"
-                    variant="body2"
-                    fontWeight="500"
-                  >
-                    ¿No tienes cuenta?
-                  </Typography>
-                  <Typography
-                    component="a"
-                    href="/authentication/register"
-                    fontWeight="500"
-                    sx={{
-                      color: 'primary.main',
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    Contactar al administrador
-                  </Typography>
+                <Stack spacing={1} justifyContent="center" mt={3}>
+                  <Stack direction="row" spacing={1} justifyContent="center">
+                    <Typography color="textSecondary" variant="body2" fontWeight="500">
+                      No tienes cuenta?
+                    </Typography>
+                    <Typography
+                      component="a"
+                      href="/authentication/register"
+                      fontWeight="500"
+                      sx={{
+                        color: 'primary.main',
+                        cursor: 'pointer',
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      Registrarme
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} justifyContent="center">
+                    <Typography color="textSecondary" variant="body2" fontWeight="500">
+                      Necesitas recuperar acceso?
+                    </Typography>
+                    <Typography
+                      component="a"
+                      href="/authentication/forgot-password"
+                      fontWeight="500"
+                      sx={{
+                        color: 'primary.main',
+                        cursor: 'pointer',
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      Recuperar contrasena
+                    </Typography>
+                  </Stack>
                 </Stack>
               }
             />

@@ -7,7 +7,7 @@ const QUERY_KEY = "bancos-aux";
 const API_BASE = "/api/v1/bancos";
 
 export function useBancosList(filter?: { search?: string; page?: number; limit?: number }) {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QUERY_KEY, "list", filter],
     queryFn: async () => {
       const p = new URLSearchParams();
@@ -45,14 +45,14 @@ export function useDeleteBanco() {
 }
 
 export function useCuentasBancarias() {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QUERY_KEY, "cuentas"],
     queryFn: () => apiGet(`${API_BASE}/cuentas/list`)
   });
 }
 
 export function useMovimientosCuenta(input?: { nroCta?: string; desde?: string; hasta?: string; page?: number; limit?: number }) {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QUERY_KEY, "movimientos", input],
     enabled: !!input?.nroCta,
     queryFn: async () => {

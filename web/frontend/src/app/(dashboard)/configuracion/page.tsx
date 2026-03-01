@@ -104,7 +104,7 @@ export default function ConfiguracionPage() {
       ) : null}
 
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid item xs={12} lg={6}>
           <Card>
             <CardHeader title="Contexto de Operacion" />
             <CardContent>
@@ -196,7 +196,7 @@ export default function ConfiguracionPage() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid item xs={12} lg={6}>
           <Card>
             <CardHeader title={countryCode === 'VE' ? 'Plugin Fiscal Venezuela' : 'Plugin Fiscal Espana / Verifactu'} />
             <CardContent>
@@ -316,7 +316,7 @@ export default function ConfiguracionPage() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Card>
             <CardHeader title="Tipos de Documento y Cumplimiento" />
             <CardContent>
@@ -347,7 +347,7 @@ export default function ConfiguracionPage() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid item xs={12} lg={7}>
           <Card>
             <CardHeader title="Cronograma Normativo y Fuentes Oficiales" />
             <CardContent>
@@ -385,7 +385,7 @@ export default function ConfiguracionPage() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 5 }}>
+        <Grid item xs={12} lg={5}>
           <Card>
             <CardHeader title="Acciones" />
             <CardContent>

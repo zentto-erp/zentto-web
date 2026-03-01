@@ -15,6 +15,7 @@ import {
   seedPlanCuentas
 } from "./service.js";
 import { getPool, sql } from "../../db/mssql.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export const contabilidadRouter = Router();
 
@@ -87,6 +88,8 @@ const balanceGeneralSchema = z.object({
 let defaultCompanyIdCache: number | null = null;
 
 async function getDefaultCompanyId() {
+  const activeScope = getActiveScope();
+  if (activeScope?.companyId) return activeScope.companyId;
   if (defaultCompanyIdCache) return defaultCompanyIdCache;
   const pool = await getPool();
   const rs = await pool

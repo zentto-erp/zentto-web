@@ -10,6 +10,7 @@
     "db:governance:report": "tsx src/tools/db-governance-report.ts"
   },
   "dependencies": {
+    "@types/multer": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -19,6 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mssql": "^10.0.2",
+    "multer": "^2.1.0",
     "swagger-ui-express": "^5.0.1",
     "yaml": "^2.8.2",
     "zod": "^3.23.8"

@@ -16,6 +16,9 @@ import {
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
 import { ContextActionHeader } from "@datqbox/shared-ui";
 
+type CuentaRow = Record<string, unknown>;
+type MovimientoRow = Record<string, unknown>;
+
 function firstDayOfCurrentMonth() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
@@ -37,8 +40,8 @@ export default function CuentasBancariasPage() {
   const input = useMemo(() => ({ nroCta: nroCta || undefined, desde, hasta, page, limit }), [nroCta, desde, hasta, page, limit]);
   const { data: movsData, isLoading: loadingMovs } = useMovimientosCuenta(input);
 
-  const cuentas = cuentasData?.rows ?? [];
-  const movs = movsData?.rows ?? [];
+  const cuentas = (cuentasData?.rows ?? []) as CuentaRow[];
+  const movs = (movsData?.rows ?? []) as MovimientoRow[];
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -64,7 +67,7 @@ export default function CuentasBancariasPage() {
                 <TableBody>
                   {loadingCtas && <TableRow><TableCell colSpan={3}>Cargando...</TableCell></TableRow>}
                   {!loadingCtas && cuentas.length === 0 && <TableRow><TableCell colSpan={3}>Sin cuentas.</TableCell></TableRow>}
-                  {!loadingCtas && cuentas.map((c: any) => (
+                  {!loadingCtas && cuentas.map((c) => (
                     <TableRow key={String(c.Nro_Cta)} selected={nroCta === String(c.Nro_Cta)} onClick={() => setNroCta(String(c.Nro_Cta))} sx={{ cursor: "pointer" }}>
                       <TableCell>{String(c.Nro_Cta)}</TableCell>
                       <TableCell>{String(c.BancoNombre ?? c.Banco ?? "")}</TableCell>
@@ -111,7 +114,7 @@ export default function CuentasBancariasPage() {
                 <TableBody>
                   {loadingMovs && <TableRow><TableCell colSpan={6}>Cargando...</TableCell></TableRow>}
                   {!loadingMovs && movs.length === 0 && <TableRow><TableCell colSpan={6}>Sin movimientos.</TableCell></TableRow>}
-                  {!loadingMovs && movs.map((m: any) => (
+                  {!loadingMovs && movs.map((m) => (
                     <TableRow key={String(m.id ?? m.ID)}>
                       <TableCell>{String(m.id ?? m.ID)}</TableCell>
                       <TableCell>{String(m.Fecha ?? "").slice(0, 19).replace("T", " ")}</TableCell>

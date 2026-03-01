@@ -3,8 +3,8 @@ import dynamic from 'next/dynamic';
 
 const NavIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearch'), { ssr: false });
 
-export function buildNav(isAdmin: boolean, modulos: string[]): any[] {
-    const nav: any[] = [];
+export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
+    const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('auditoria')) {

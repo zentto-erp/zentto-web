@@ -6,9 +6,9 @@ export interface RequestLog {
   user: { userName: string | null; userEmail: string | null };
   method: string;
   url: string;
-  request: { data?: any; headers?: any };
-  response?: { status?: number; statusText?: string; data?: any; headers?: any };
-  error?: { message?: string; code?: string; response?: { status?: number; data?: any } };
+  request: { data?: unknown; headers?: Record<string, unknown> };
+  response?: { status?: number; statusText?: string; data?: unknown; headers?: Record<string, unknown> };
+  error?: { message?: string; code?: string; response?: { status?: number; data?: unknown } };
   duration?: number;
   success: boolean;
 }
@@ -18,8 +18,10 @@ class RequestLogger {
   private maxLogs = 1000;
 
   async logRequest(
-    method: string, url: string, requestData: any,
-    response: any, error: any, duration: number,
+    method: string, url: string, requestData: unknown,
+    response: { status?: number; statusText?: string; data?: unknown } | null,
+    error: { message?: string; code?: string } | null,
+    duration: number,
     user: { userName: string | null; userEmail: string | null }
   ) {
     const log: RequestLog = {
@@ -30,7 +32,7 @@ class RequestLogger {
       response: response ? { status: response.status, statusText: response.statusText, data: response.data } : undefined,
       error: error ? { message: error.message, code: error.code } : undefined,
       duration,
-      success: !error && response?.status >= 200 && response?.status < 300,
+      success: !error && (response?.status ?? 0) >= 200 && (response?.status ?? 0) < 300,
     };
     this.logs.push(log);
     if (this.logs.length > this.maxLogs) this.logs = this.logs.slice(-this.maxLogs);

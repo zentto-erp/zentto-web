@@ -44,6 +44,7 @@ import {
 } from '@/hooks/useRestauranteAdmin';
 
 type CompraDetalleRow = CompraDetalleInput & { rowId: string };
+type ApiRow = Record<string, unknown>;
 
 export default function AdminComprasPage() {
     const [estado, setEstado] = useState('');
@@ -131,8 +132,9 @@ export default function AdminComprasPage() {
             flex: 1.2,
             editable: true,
             valueGetter: (_value, row) => {
-                const proveedorId = String((row as any).proveedorId ?? (row as any).ProveedorId ?? '').trim();
-                const proveedorNombre = String((row as any).proveedorNombre ?? (row as any).ProveedorNombre ?? '').trim();
+                const r = row as ApiRow;
+                const proveedorId = String(r.proveedorId ?? r.ProveedorId ?? '').trim();
+                const proveedorNombre = String(r.proveedorNombre ?? r.ProveedorNombre ?? '').trim();
                 if (proveedorId && proveedorNombre) return `${proveedorId} — ${proveedorNombre}`;
                 return proveedorId || proveedorNombre || '';
             },
@@ -294,8 +296,8 @@ export default function AdminComprasPage() {
             setProveedor(nuevo);
             setProveedorSearch(`${codigo} ${nombre}`);
             setOpenProveedorDialog(false);
-        } catch (error: any) {
-            setProveedorError(error?.message || 'No se pudo crear el proveedor.');
+        } catch (error: unknown) {
+            setProveedorError(error instanceof Error ? error.message : 'No se pudo crear el proveedor.');
         }
     };
 
@@ -314,8 +316,8 @@ export default function AdminComprasPage() {
                     descripcion: productoForm.descripcion.trim() || nombre,
                     unidad: 'UND',
                 });
-            } catch (inventoryError: any) {
-                const msg = String(inventoryError?.message || '').toLowerCase();
+            } catch (inventoryError: unknown) {
+                const msg = String(inventoryError instanceof Error ? inventoryError.message : '').toLowerCase();
                 const duplicate = msg.includes('duplicate') || msg.includes('ya existe') || msg.includes('primary key');
                 if (!duplicate) {
                     throw inventoryError;
@@ -340,8 +342,8 @@ export default function AdminComprasPage() {
             setInsumoSeleccionado(nuevo);
             setInsumoSearch(`${codigo} ${nombre}`);
             setOpenProductoDialog(false);
-        } catch (error: any) {
-            setProductoError(error?.message || 'No se pudo crear el producto/insumo.');
+        } catch (error: unknown) {
+            setProductoError(error instanceof Error ? error.message : 'No se pudo crear el producto/insumo.');
         }
     };
 
@@ -428,8 +430,8 @@ export default function AdminComprasPage() {
             });
             setOpen(false);
             limpiarDialogo();
-        } catch (error: any) {
-            setErrorMsg(error?.message || 'No se pudo crear la compra.');
+        } catch (error: unknown) {
+            setErrorMsg(error instanceof Error ? error.message : 'No se pudo crear la compra.');
         }
     };
 
@@ -553,7 +555,7 @@ export default function AdminComprasPage() {
                 }}
                 addButtonText="Nueva Compra"
                 onUpdateRow={handleUpdateCompra}
-                getRowId={(row: any) => Number(row.id)}
+                getRowId={(row: ApiRow) => Number(row.id)}
             />
 
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="lg" fullWidth>
@@ -747,7 +749,7 @@ export default function AdminComprasPage() {
                         onPageChange={() => { }}
                         onUpdateRow={handleUpdateDetalle}
                         onDeleteRow={handleDeleteDetalle}
-                        getRowId={(row: any) => String(row.rowId)}
+                        getRowId={(row: ApiRow) => String(row.rowId)}
                     />
 
                     <Paper
@@ -795,25 +797,30 @@ export default function AdminComprasPage() {
                         <Alert severity="info">No se encontró la compra seleccionada.</Alert>
                     ) : (
                         <>
+                            {(() => {
+                                const compra = compraDetalleQuery.data?.compra as ApiRow;
+                                return (
                             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 1 }}>
-                                    <Typography><strong>N° Compra:</strong> {String((compraDetalleQuery.data.compra as any).numCompra ?? '')}</Typography>
+                                    <Typography><strong>N° Compra:</strong> {String(compra.numCompra ?? '')}</Typography>
                                     <Typography>
                                         <strong>Proveedor:</strong>{' '}
-                                        {String((compraDetalleQuery.data.compra as any).proveedorId ?? '')}
-                                        {String((compraDetalleQuery.data.compra as any).proveedorNombre ?? '').trim()
-                                            ? ` — ${String((compraDetalleQuery.data.compra as any).proveedorNombre)}`
+                                        {String(compra.proveedorId ?? '')}
+                                        {String(compra.proveedorNombre ?? '').trim()
+                                            ? ` — ${String(compra.proveedorNombre)}`
                                             : ''}
                                     </Typography>
-                                    <Typography><strong>Estado:</strong> {String((compraDetalleQuery.data.compra as any).estado ?? '')}</Typography>
-                                    <Typography><strong>Fecha:</strong> {String((compraDetalleQuery.data.compra as any).fechaCompra ?? '')}</Typography>
+                                    <Typography><strong>Estado:</strong> {String(compra.estado ?? '')}</Typography>
+                                    <Typography><strong>Fecha:</strong> {String(compra.fechaCompra ?? '')}</Typography>
                                 </Box>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1, mt: 1.5 }}>
-                                    <Typography><strong>Subtotal:</strong> {Number((compraDetalleQuery.data.compra as any).subtotal ?? 0).toFixed(2)}</Typography>
-                                    <Typography><strong>IVA:</strong> {Number((compraDetalleQuery.data.compra as any).iva ?? 0).toFixed(2)}</Typography>
-                                    <Typography><strong>Total:</strong> {Number((compraDetalleQuery.data.compra as any).total ?? 0).toFixed(2)}</Typography>
+                                    <Typography><strong>Subtotal:</strong> {Number(compra.subtotal ?? 0).toFixed(2)}</Typography>
+                                    <Typography><strong>IVA:</strong> {Number(compra.iva ?? 0).toFixed(2)}</Typography>
+                                    <Typography><strong>Total:</strong> {Number(compra.total ?? 0).toFixed(2)}</Typography>
                                 </Box>
                             </Paper>
+                                );
+                            })()}
 
                             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
@@ -878,7 +885,7 @@ export default function AdminComprasPage() {
                                 onPageChange={() => { }}
                                 onUpdateRow={handleUpdateDetalleCompra}
                                 onDeleteRow={handleDeleteDetalleCompra}
-                                getRowId={(row: any) => String(row.__rowKey ?? row.id ?? crypto.randomUUID())}
+                                getRowId={(row: ApiRow) => String(row.__rowKey ?? row.id ?? crypto.randomUUID())}
                             />
                         </>
                     )}

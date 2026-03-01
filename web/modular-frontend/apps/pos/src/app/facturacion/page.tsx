@@ -44,6 +44,15 @@ const AccessTimeIcon = dynamic(() => import('@mui/icons-material/AccessTime'), {
 
 const MAX_CATEGORY_TABS = 24;
 
+type PrecioCliente = 'Detal' | 'Mayor' | 'Distribuidor';
+
+function normalizeTipoPrecio(value?: string): PrecioCliente {
+    if (value === 'Mayor' || value === 'Distribuidor' || value === 'Detal') {
+        return value;
+    }
+    return 'Detal';
+}
+
 export default function PosFacturacionPage() {
     // ─── State local (UI only) ───
     const [searchTerm, setSearchTerm] = useState('');
@@ -98,13 +107,16 @@ export default function PosFacturacionPage() {
     const { data: categoriasApi = [] } = useCategoriasPOS();
 
     const categories = useMemo(() => {
-        const fromApi = (categoriasApi ?? [])
-            .map((category: any) => ({
-                id: String(category?.nombre ?? '').trim(),
-                nombre: String(category?.nombre ?? '').trim(),
-                productCount: Number(category?.productCount ?? 0),
-            }))
-            .filter((category) => category.id.length > 0);
+        const fromApi: Array<{ id: string; nombre: string; productCount: number }> = (categoriasApi ?? [])
+            .map((category: unknown) => {
+                const item = category as { nombre?: string; productCount?: number };
+                return {
+                    id: String(item.nombre ?? '').trim(),
+                    nombre: String(item.nombre ?? '').trim(),
+                    productCount: Number(item.productCount ?? 0),
+                };
+            })
+            .filter((category: { id: string }) => category.id.length > 0);
 
         const dedup = new Map<string, { id: string; nombre: string; productCount: number }>();
         for (const category of fromApi) {
@@ -302,7 +314,7 @@ export default function PosFacturacionPage() {
             telefono: newCustomer.telefono,
             email: newCustomer.email,
             direccion: newCustomer.direccion,
-            tipoPrecio: newCustomer.tipoPrecio as any || 'Detal',
+            tipoPrecio: normalizeTipoPrecio(newCustomer.tipoPrecio),
             credito: newCustomer.credito || 0,
         });
     };

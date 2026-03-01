@@ -3,8 +3,8 @@ import dynamic from 'next/dynamic';
 
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
 
-export function buildContabilidadNav(isAdmin: boolean, modulos: string[]): any[] {
-    const nav: any[] = [];
+export function buildContabilidadNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
+    const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('contabilidad')) {

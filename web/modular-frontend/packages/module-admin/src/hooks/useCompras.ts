@@ -67,7 +67,7 @@ export function useComprasList(filter?: ComprasFilter) {
 }
 
 export function useCompraById(numFact: string) {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QUERY_KEY, numFact],
     queryFn: () => apiGet(`${API_BASE}/${TIPO_OPERACION}/${encodeURIComponent(numFact)}`),
     enabled: !!numFact
@@ -75,7 +75,7 @@ export function useCompraById(numFact: string) {
 }
 
 export function useDetalleCompra(numFact: string) {
-  return useQuery<any[]>({
+  return useQuery<unknown[]>({
     queryKey: [QUERY_KEY, "detalle", numFact],
     queryFn: () => apiGet(`${API_BASE}/${TIPO_OPERACION}/${encodeURIComponent(numFact)}/detalle`),
     enabled: !!numFact
@@ -83,7 +83,7 @@ export function useDetalleCompra(numFact: string) {
 }
 
 export function useIndicadoresCompra(numFact: string) {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QUERY_KEY, "indicadores", numFact],
     queryFn: () => apiGet(`${API_BASE}/${TIPO_OPERACION}/${encodeURIComponent(numFact)}/indicadores`),
     enabled: !!numFact

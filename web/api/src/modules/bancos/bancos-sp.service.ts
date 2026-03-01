@@ -1,4 +1,5 @@
 import { query } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface BancoRow {
   Nombre?: string;
@@ -35,6 +36,13 @@ type Scope = {
 let scopeCache: Scope | null = null;
 
 async function getScope(): Promise<Scope> {
+  const activeScope = getActiveScope();
+  if (scopeCache && activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+    };
+  }
   if (scopeCache) return scopeCache;
 
   const rows = await query<{ companyId: number; systemUserId: number | null }>(
@@ -55,6 +63,12 @@ async function getScope(): Promise<Scope> {
     companyId: Number(first?.companyId ?? 1),
     systemUserId: first?.systemUserId == null ? null : Number(first.systemUserId),
   };
+  if (activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+    };
+  }
   return scopeCache;
 }
 

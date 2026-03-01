@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -45,7 +46,7 @@ export default function OdooLayout({
     navigationFields
 }: {
     children: React.ReactNode,
-    navigationFields?: any[]
+    navigationFields?: Array<Record<string, unknown>>
 }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -82,13 +83,19 @@ export default function OdooLayout({
         if (!navigationFields || navigationFields.length === 0) return null;
 
         // Render recursive function
-        const renderLevel = (item: any, idx: string, level = 0) => {
+        const renderLevel = (rawItem: Record<string, unknown>, idx: string, level = 0) => {
+            const item = rawItem as any;
             if (item.kind === 'header') {
                 if (!isSidebarOpen) return <Box key={`header-${idx}`} sx={{ height: 16 }} />;
                 return (
                     <Typography key={`header-${idx}`} variant="caption" sx={{ px: 3, pt: 2, pb: 1, display: 'block', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        {item.title}
+                        {item.title as React.ReactNode}
                     </Typography>
+                );
+            }
+            if (item.kind === 'divider') {
+                return (
+                    <Box key={`divider-${idx}`} sx={{ my: 1, height: 1, bgcolor: 'rgba(255,255,255,0.1)' }} />
                 );
             }
 
@@ -136,7 +143,7 @@ export default function OdooLayout({
                     {(hasChildren && isSidebarOpen) && (
                         <Collapse in={isOpen} timeout="auto" unmountOnExit>
                             <List component="div" disablePadding>
-                                {item.children.map((sub: any, subIdx: number) => renderLevel(sub, `${idx}-${subIdx}`, level + 1))}
+                                {(item.children as Array<Record<string, unknown>>).map((sub, subIdx: number) => renderLevel(sub, `${idx}-${subIdx}`, level + 1))}
                             </List>
                         </Collapse>
                     )}
@@ -153,6 +160,14 @@ export default function OdooLayout({
 
     const actualSidebarWidth = hideSidebar ? 0 : (isMobile ? 0 : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
     const drawerPaperWidth = hideSidebar ? 0 : (isMobile ? fullSidebarWidth : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
+    // @ts-ignore extended session fields from NextAuth callbacks in shell auth.ts
+    const activeCompany = session?.company as
+        | { companyCode?: string; companyName?: string; branchCode?: string; branchName?: string }
+        | undefined;
+    const companyLabel = activeCompany
+        ? `${activeCompany.companyCode ?? ''}/${activeCompany.branchCode ?? ''} - ${activeCompany.companyName ?? ''}`
+        : 'Sin empresa activa';
+    const dbName = process.env.NEXT_PUBLIC_DB_NAME || 'DatqBoxWeb';
 
     return (
         <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -240,6 +255,11 @@ export default function OdooLayout({
                                     </span>
                                 </Typography>
                             )}
+
+                            <Box sx={{ ml: 2, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+                                <Chip size="small" color="primary" variant="outlined" label={`Empresa: ${companyLabel}`} />
+                                <Chip size="small" variant="outlined" label={`BD: ${dbName}`} />
+                            </Box>
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>

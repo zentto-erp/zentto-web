@@ -16,8 +16,7 @@ import {
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import { usePrinterStatus } from '../hooks';
-import { usePosStore } from '@datqbox/shared-api';
-import { LocalizacionModal } from '@datqbox/shared-ui';
+import { PosSettingsModal } from './PosSettingsModal';
 
 const SearchIcon = dynamic(() => import('@mui/icons-material/Search'), { ssr: false });
 const HomeIcon = dynamic(() => import('@mui/icons-material/Home'), { ssr: false });
@@ -65,7 +64,6 @@ export function PosHeader({
 
     // UI Global States
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const { localizacion, setLocalizacion } = usePosStore();
 
     return (
         <Box sx={{
@@ -206,12 +204,10 @@ export function PosHeader({
                 </Button>
             </Box>
 
-            {/* Modal de Configuración Fiscal & Multimoneda */}
-            <LocalizacionModal
+            {/* Modal de Configuración Completa POS */}
+            <PosSettingsModal
                 open={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
-                currentConfig={localizacion}
-                onSave={(newLoc) => setLocalizacion(newLoc)}
             />
         </Box>
     );

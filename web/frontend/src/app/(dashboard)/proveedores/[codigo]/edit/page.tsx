@@ -17,15 +17,16 @@ function FormSkeleton() {
 }
 
 interface EditProveedorPageProps {
-  params: {
+  params: Promise<{
     codigo: string;
-  };
+  }>;
 }
 
-export default function EditProveedorPage({ params }: EditProveedorPageProps) {
+export default async function EditProveedorPage({ params }: EditProveedorPageProps) {
+  const resolvedParams = await params;
   return (
     <Suspense fallback={<FormSkeleton />}>
-      <ProveedorForm proveedorCodigo={params.codigo} />
+      <ProveedorForm proveedorCodigo={resolvedParams.codigo} />
     </Suspense>
   );
 }

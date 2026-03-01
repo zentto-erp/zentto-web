@@ -231,8 +231,8 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
         setDetalle([]);
         setConcepto("");
       }
-    } catch (e: any) {
-      setError(String(e?.message || e));
+    } catch (e: unknown) {
+      setError(String(e instanceof Error ? e.message : e));
     }
   };
 

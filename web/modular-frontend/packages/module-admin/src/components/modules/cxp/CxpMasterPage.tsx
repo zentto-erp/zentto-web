@@ -53,6 +53,7 @@ type FormaPagoLine = {
   numCheque?: string;
   fechaVencimiento?: string;
 };
+type ProveedorRow = Record<string, unknown>;
 
 // ─── Componente Principal ─────────────────────────────────────
 
@@ -64,15 +65,15 @@ export default function CxpMasterPage() {
 
   // ─── Datos de proveedores ─────────────────────────────────
   const provQuery = useProveedoresList({ search, limit: 50 });
-  const proveedores = (provQuery.data?.items || provQuery.data?.data || []) as any[];
+  const proveedores = (provQuery.data?.items || provQuery.data?.data || []) as ProveedorRow[];
 
   // ─── Datos CxP del proveedor seleccionado ─────────────────
   const docsQuery = useCxpDocumentosPendientes(selectedCod);
   const saldoQuery = useCxpSaldo(selectedCod);
   const documentos = docsQuery.data?.data ?? [];
-  const saldoData = saldoQuery.data?.data as Record<string, any> | null;
+  const saldoData = saldoQuery.data?.data as Record<string, unknown> | null;
 
-  const handleSelectProveedor = useCallback((prov: any) => {
+  const handleSelectProveedor = useCallback((prov: ProveedorRow) => {
     const cod = prov.codigo || prov.CODIGO || "";
     setSelectedCod(cod);
     setSelectedNombre(prov.nombre || prov.NOMBRE || cod);
@@ -127,7 +128,7 @@ export default function CxpMasterPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  proveedores.map((p: any) => {
+                  proveedores.map((p) => {
                     const cod = p.codigo || p.CODIGO || "";
                     const isSelected = cod === selectedCod;
                     return (
@@ -434,7 +435,7 @@ function AplicarPagosTab({
     <Box>
       {pagoMutation.isSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Pago aplicado exitosamente. Recibo: {String((pagoMutation.data as any)?.numPago || "")}
+          Pago aplicado exitosamente. Recibo: {String((pagoMutation.data as { numPago?: string })?.numPago || "")}
         </Alert>
       )}
       {pagoMutation.isError && (
@@ -618,7 +619,7 @@ function AplicarPagosTab({
 
 function PagosAplicadosTab({ codProveedor }: { codProveedor: string }) {
   const { data, isLoading } = useCxpSaldo(codProveedor);
-  const saldoData = data?.data as Record<string, any> | null;
+  const saldoData = data?.data as Record<string, unknown> | null;
 
   if (isLoading) {
     return (

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React from 'react';
 import {
   Box,
@@ -15,12 +15,15 @@ import {
   Checkbox,
   Alert,
   CircularProgress,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useToast } from '@/providers/ToastProvider';
 
@@ -30,9 +33,19 @@ interface loginType {
   subtext?: React.ReactNode;
 }
 
+type CompanyOption = {
+  companyId: number;
+  companyCode: string;
+  companyName: string;
+  branchId: number;
+  branchCode: string;
+  branchName: string;
+  countryCode: string;
+};
+
 const loginSchema = z.object({
   email: z.string().min(1, 'El usuario es requerido'),
-  password: z.string().min(1, 'La contraseña es requerida'),
+  password: z.string().min(1, 'La contrasena es requerida'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -43,23 +56,15 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [loadingCompanies, setLoadingCompanies] = React.useState(false);
+  const [companyOptions, setCompanyOptions] = React.useState<CompanyOption[]>([]);
+  const [selectedScope, setSelectedScope] = React.useState<string>('');
   const { showToast } = useToast();
-
-  // Mostrar error si viene en la URL (de NextAuth)
-  React.useEffect(() => {
-    const error = searchParams.get('error');
-    if (error) {
-      if (error === 'CredentialsSignin') {
-        setErrorMsg('Usuario o contraseña incorrectos');
-      } else {
-        setErrorMsg('Error al iniciar sesión. Intente nuevamente.');
-      }
-    }
-  }, [searchParams]);
 
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -69,28 +74,104 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
     },
   });
 
+  const usernameInput = watch('email');
+
+  React.useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      if (error === 'CredentialsSignin') {
+        setErrorMsg('Usuario o contrasena incorrectos');
+      } else {
+        setErrorMsg('Error al iniciar sesion. Intente nuevamente.');
+      }
+    }
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    const normalized = String(usernameInput ?? '').trim();
+    if (!normalized) {
+      setCompanyOptions([]);
+      setSelectedScope('');
+      return;
+    }
+
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      'http://localhost:4000';
+
+    const loginUser = normalized.includes('@') ? normalized.split('@')[0] : normalized;
+
+    const timer = setTimeout(async () => {
+      setLoadingCompanies(true);
+      try {
+        const response = await fetch(
+          `${backendUrl}/v1/auth/login-options?usuario=${encodeURIComponent(loginUser)}`,
+          { method: 'GET', headers: { Accept: 'application/json' } }
+        );
+
+        if (!response.ok) {
+          setCompanyOptions([]);
+          setSelectedScope('');
+          return;
+        }
+
+        const data = await response.json();
+        const rows: CompanyOption[] = Array.isArray(data?.rows) ? data.rows : [];
+        setCompanyOptions(rows);
+
+        if (rows.length > 0) {
+          const active = data?.active as CompanyOption | null;
+          const activeKey = active ? `${active.companyId}:${active.branchId}` : `${rows[0].companyId}:${rows[0].branchId}`;
+          setSelectedScope(activeKey);
+        } else {
+          setSelectedScope('');
+        }
+      } catch {
+        setCompanyOptions([]);
+        setSelectedScope('');
+      } finally {
+        setLoadingCompanies(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [usernameInput]);
+
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     setErrorMsg(null);
-    
+
+    let companyId: number | undefined;
+    let branchId: number | undefined;
+
+    if (selectedScope) {
+      const [c, b] = selectedScope.split(':').map((v) => Number(v));
+      if (Number.isFinite(c) && c > 0) companyId = c;
+      if (Number.isFinite(b) && b > 0) branchId = b;
+    }
+
     try {
       const result = await signIn('credentials', {
         username: data.email,
         password: data.password,
+        companyId: companyId ? String(companyId) : undefined,
+        branchId: branchId ? String(branchId) : undefined,
         callbackUrl: '/',
         redirect: false,
       });
 
       if (result?.error) {
-        setErrorMsg('Usuario o contraseña incorrectos');
+        setErrorMsg('Usuario o contrasena incorrectos');
         setIsSubmitting(false);
       } else if (result?.ok) {
-        showToast('Inicio de sesión exitoso', 'success');
+        showToast('Inicio de sesion exitoso', 'success');
         router.push('/');
         router.refresh();
       }
     } catch (error) {
-      setErrorMsg('Error al iniciar sesión. Intente nuevamente.');
+      setErrorMsg('Error al iniciar sesion. Intente nuevamente.');
       console.error('Error:', error);
       setIsSubmitting(false);
     }
@@ -106,7 +187,6 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
 
       {subtext}
 
-      {/* Mensaje de error */}
       {errorMsg && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {errorMsg}
@@ -115,7 +195,6 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
 
       <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
         <Stack spacing={3}>
-          {/* Campo Usuario */}
           <Controller
             name="email"
             control={control}
@@ -153,7 +232,26 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             )}
           />
 
-          {/* Campo Contraseña */}
+          {(loadingCompanies || companyOptions.length > 0) && (
+            <FormControl fullWidth>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 1, color: 'text.primary' }}>
+                Empresa / Sucursal
+              </Typography>
+              <Select
+                value={selectedScope}
+                onChange={(e) => setSelectedScope(String(e.target.value))}
+                disabled={isSubmitting || loadingCompanies || companyOptions.length === 0}
+              >
+                {companyOptions.map((opt) => (
+                  <MenuItem key={`${opt.companyId}:${opt.branchId}`} value={`${opt.companyId}:${opt.branchId}`}>
+                    {`${opt.companyCode} - ${opt.companyName} / ${opt.branchCode} - ${opt.branchName}`}
+                  </MenuItem>
+                ))}
+              </Select>
+              {loadingCompanies && <FormHelperText>Cargando empresas...</FormHelperText>}
+            </FormControl>
+          )}
+
           <Controller
             name="password"
             control={control}
@@ -166,13 +264,13 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                   htmlFor="password"
                   sx={{ mb: 1, color: 'text.primary' }}
                 >
-                  Contraseña
+                  Contrasena
                 </Typography>
                 <OutlinedInput
                   {...field}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Contraseña"
+                  placeholder="Contrasena"
                   autoComplete="current-password"
                   disabled={isSubmitting}
                   sx={{
@@ -204,18 +302,13 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             )}
           />
 
-          {/* Checkbox Recordar */}
-          <Stack
-            justifyContent="flex-start"
-            direction="row"
-            alignItems="center"
-          >
+          <Stack justifyContent="flex-start" direction="row" alignItems="center">
             <FormGroup>
               <FormControlLabel
                 control={
-                  <Checkbox 
-                    size="small" 
-                    defaultChecked 
+                  <Checkbox
+                    size="small"
+                    defaultChecked
                     disabled={isSubmitting}
                     sx={{ '& .MuiSvgIcon-root': { fontSize: 20 } }}
                   />
@@ -229,14 +322,25 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             </FormGroup>
           </Stack>
 
-          {/* Botón Submit */}
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Box />
+            <Typography
+              component={Link}
+              href="/authentication/forgot-password"
+              variant="body2"
+              sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+            >
+              Olvide mi contrasena
+            </Typography>
+          </Stack>
+
           <Button
             type="submit"
             variant="contained"
             size="large"
             disabled={isSubmitting}
             fullWidth
-            sx={{ 
+            sx={{
               py: 1.75,
               fontWeight: 600,
               textTransform: 'none',
@@ -248,12 +352,12 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             {isSubmitting ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Iniciar Sesión'
+              'Iniciar Sesion'
             )}
           </Button>
         </Stack>
       </form>
-      
+
       {subtitle}
     </Box>
   );

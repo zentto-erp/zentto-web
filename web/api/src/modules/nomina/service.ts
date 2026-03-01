@@ -1,6 +1,7 @@
 
 import { getPool, sql } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface ConceptoNomina {
   codigo: string;
@@ -78,6 +79,14 @@ type ProcessOptions = {
 let defaultScopeCache: DefaultScope | null = null;
 
 async function getDefaultScope(): Promise<DefaultScope> {
+  const activeScope = getActiveScope();
+  if (defaultScopeCache && activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   if (defaultScopeCache) return defaultScopeCache;
 
   const rows = await query<{ companyId: number; branchId: number; systemUserId: number | null }>(
@@ -103,6 +112,14 @@ async function getDefaultScope(): Promise<DefaultScope> {
     branchId: Number(row?.branchId ?? 1),
     systemUserId: row?.systemUserId == null ? null : Number(row.systemUserId),
   };
+
+  if (activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
 
   return defaultScopeCache;
 }

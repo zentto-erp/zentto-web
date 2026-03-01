@@ -397,8 +397,8 @@ export const usePosStore = create<PosState>()(
                         message: data.Message ?? data.message ?? 'Error desconocido',
                         tramas: data.TramasFiscales ?? data.tramasFiscales,
                     };
-                } catch (e: any) {
-                    return { success: false, message: e?.message || 'Error al comunicar con el Agente Fiscal.' };
+                } catch (e: unknown) {
+                    return { success: false, message: e instanceof Error ? e.message : 'Error al comunicar con el Agente Fiscal.' };
                 }
             },
 
@@ -424,8 +424,8 @@ export const usePosStore = create<PosState>()(
                         success: data.Success ?? data.success ?? false,
                         message: data.Message ?? data.message ?? 'Error desconocido',
                     };
-                } catch (e: any) {
-                    return { success: false, message: e?.message || 'Error al comunicar con la impresora de cocina.' };
+                } catch (e: unknown) {
+                    return { success: false, message: e instanceof Error ? e.message : 'Error al comunicar con la impresora de cocina.' };
                 }
             },
 
@@ -482,9 +482,9 @@ export const usePosStore = create<PosState>()(
                     get().listarEspera();
 
                     return { success: true, esperaId: data.esperaId, message: `✅ Venta #${data.esperaId} puesta en espera. ${cart.length} items guardados.` };
-                } catch (e: any) {
+                } catch (e: unknown) {
                     set({ syncing: false });
-                    return { success: false, message: e?.message || 'Error de red.' };
+                    return { success: false, message: e instanceof Error ? e.message : 'Error de red.' };
                 }
             },
 
@@ -526,7 +526,7 @@ export const usePosStore = create<PosState>()(
                     }
 
                     // Restaurar carrito desde los items de la BD
-                    const items: CartItem[] = (data.items ?? []).map((i: any) => {
+                    const items: CartItem[] = (data.items ?? []).map((i: Record<string, unknown>) => {
                         const cantidad = Number(i.cantidad);
                         const precio = Number(i.precioUnitario);
                         const descuento = Number(i.descuento ?? 0);
@@ -569,9 +569,9 @@ export const usePosStore = create<PosState>()(
                     get().listarEspera();
 
                     return { success: true, message: `✅ Venta recuperada con ${items.length} items.` };
-                } catch (e: any) {
+                } catch (e: unknown) {
                     set({ syncing: false });
-                    return { success: false, message: e?.message || 'Error de red.' };
+                    return { success: false, message: e instanceof Error ? e.message : 'Error de red.' };
                 }
             },
 
@@ -583,8 +583,8 @@ export const usePosStore = create<PosState>()(
                     await fetch(`${API_BASE}/v1/pos/espera/${id}`, { method: 'DELETE' });
                     set(s => ({ ventasEnEspera: s.ventasEnEspera.filter(e => e.id !== id) }));
                     return { success: true, message: 'Venta en espera anulada.' };
-                } catch (e: any) {
-                    return { success: false, message: e?.message || 'Error al anular.' };
+                } catch (e: unknown) {
+                    return { success: false, message: e instanceof Error ? e.message : 'Error al anular.' };
                 }
             },
 
@@ -668,11 +668,11 @@ export const usePosStore = create<PosState>()(
                         message: `✅ Factura ${numFactura} emitida exitosamente.`,
                         ventaId: data.ventaId,
                     };
-                } catch (e: any) {
+                } catch (e: unknown) {
                     set({ syncing: false });
                     return {
                         success: false,
-                        message: `Fiscal imprimió pero falló guardado en BD: ${e?.message}. Contacte soporte.`,
+                        message: `Fiscal imprimió pero falló guardado en BD: ${e instanceof Error ? e.message : 'desconocido'}. Contacte soporte.`,
                     };
                 }
             },
@@ -680,20 +680,21 @@ export const usePosStore = create<PosState>()(
         {
             name: 'datqbox-pos-store',
             version: 2,
-            migrate: (persistedState: any) => {
-                const nextState = { ...(persistedState || {}) };
+            migrate: (persistedState: unknown) => {
+                const nextState = { ...((persistedState as Record<string, unknown>) || {}) } as Record<string, unknown>;
 
-                if (nextState.fiscalPrinter) {
+                const fiscalPrinter = nextState.fiscalPrinter as Record<string, unknown> | undefined;
+                if (fiscalPrinter) {
                     nextState.fiscalPrinter = {
-                        ...nextState.fiscalPrinter,
-                        agentUrl: normalizeAgentUrl(nextState.fiscalPrinter.agentUrl),
+                        ...fiscalPrinter,
+                        agentUrl: normalizeAgentUrl(String(fiscalPrinter.agentUrl ?? '')),
                     };
                 }
 
                 if (Array.isArray(nextState.kitchenPrinters)) {
-                    nextState.kitchenPrinters = nextState.kitchenPrinters.map((printer: any) => ({
+                    nextState.kitchenPrinters = (nextState.kitchenPrinters as Array<Record<string, unknown>>).map((printer) => ({
                         ...printer,
-                        agentUrl: normalizeAgentUrl(printer?.agentUrl),
+                        agentUrl: normalizeAgentUrl(String(printer?.agentUrl ?? '')),
                     }));
                 }
 

@@ -13,6 +13,7 @@ export { default as Logo } from './components/Logo';
 export { default as AppTitle } from './components/AppTitle';
 export { default as AppBarWrapper } from './components/AppBarWrapper';
 export { default as SidebarFooterAccount, ToolbarAccountOverride } from './components/SidebarFooterAccount';
+export { default as PerfilDrawer } from './components/PerfilDrawer';
 export { LoadingFallback } from './components/LoadingFallback';
 export { default as CustomStepper } from './components/CustomStepper';
 export type { CustomStepperProps, StepDef } from './components/CustomStepper';
@@ -24,6 +25,11 @@ export { default as SettingsItem } from './components/SettingsItem';
 export { default as SettingsInputGroup } from './components/SettingsInputGroup';
 export { LocalizacionModal } from './components/LocalizacionModal';
 export type { LocalizacionConfig } from './components/LocalizacionModal';
+
+// Payment Gateway Components
+export { default as PaymentSettingsPanel } from './components/PaymentSettingsPanel';
+export { default as ProviderConfigCard } from './components/ProviderConfigCard';
+export { default as AcceptedMethodsManager } from './components/AcceptedMethodsManager';
 
 // MUI X re-exports (single source to avoid duplicated contexts across apps)
 export { DatePicker } from '@mui/x-date-pickers/DatePicker';

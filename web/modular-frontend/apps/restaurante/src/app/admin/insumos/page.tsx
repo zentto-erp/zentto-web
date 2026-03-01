@@ -150,8 +150,8 @@ export default function AdminInsumosPage() {
                 esCompuesto: false,
             });
             setModalOpen(false);
-        } catch (e: any) {
-            setErrorMsg(e?.message || 'Error al crear insumo');
+        } catch (e: unknown) {
+            setErrorMsg(e instanceof Error ? e.message : 'Error al crear insumo');
         }
     };
 

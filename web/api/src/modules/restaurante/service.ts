@@ -2,6 +2,7 @@ import { query } from "../../db/query.js";
 import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessRestauranteAccounting } from "../contabilidad/integracion.service.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 interface DefaultScope {
   companyId: number;
@@ -39,6 +40,15 @@ function mapOrderStatusToLegacy(status: string | null | undefined) {
 }
 
 async function getDefaultScope(): Promise<DefaultScope> {
+  const activeScope = getActiveScope();
+  if (defaultScopeCache && activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as CountryCode,
+    };
+  }
   if (defaultScopeCache) return defaultScopeCache;
 
   const rows = await query<{ companyId: number; branchId: number; countryCode: string }>(
@@ -46,7 +56,7 @@ async function getDefaultScope(): Promise<DefaultScope> {
     SELECT TOP 1
       c.CompanyId AS companyId,
       b.BranchId AS branchId,
-      UPPER(c.FiscalCountryCode) AS countryCode
+      UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode)) AS countryCode
     FROM cfg.Company c
     INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
     WHERE c.CompanyCode = N'DEFAULT'
@@ -61,6 +71,14 @@ async function getDefaultScope(): Promise<DefaultScope> {
     branchId: Number(row?.branchId ?? 1),
     countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
   };
+  if (activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as CountryCode,
+    };
+  }
   return defaultScopeCache;
 }
 

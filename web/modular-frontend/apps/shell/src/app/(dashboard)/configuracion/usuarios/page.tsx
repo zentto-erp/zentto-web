@@ -78,8 +78,8 @@ export default function UsuariosPage() {
       await deleteMutation.mutateAsync(deleteConfirm);
       showToast('Usuario eliminado correctamente', 'success');
       setDeleteConfirm(null);
-    } catch (e: any) {
-      showToast(e.message || 'Error al eliminar usuario', 'error');
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Error al eliminar usuario', 'error');
     }
   };
 
@@ -219,8 +219,8 @@ function CreateUsuarioDialog({ open, onClose, onSuccess }: { open: boolean; onCl
       setForm({ Cod_Usuario: '', Password: '', Nombre: '', Tipo: 'USER', Updates: false, Addnews: false, Deletes: false, Creador: false, Cambiar: true, PrecioMinimo: false, Credito: false });
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al crear usuario');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al crear usuario');
     }
   };
 
@@ -288,8 +288,8 @@ function EditUsuarioDialog({ user, onClose, onSuccess }: { user: Usuario | null;
       await updateMutation.mutateAsync(form);
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al actualizar');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al actualizar');
     }
   };
 
@@ -372,8 +372,8 @@ function ModulosDialog({ codigo, onClose, onSuccess }: { codigo: string | null; 
       await setModulosMutation.mutateAsync(modulos);
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al guardar módulos');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al guardar módulos');
     }
   };
 
@@ -429,8 +429,8 @@ function ResetPasswordDialog({ codigo, onClose, onSuccess }: { codigo: string | 
       await resetMutation.mutateAsync({ codUsuario: codigo!, newPassword: newPwd });
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al resetear contraseña');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al resetear contraseña');
     }
   };
 

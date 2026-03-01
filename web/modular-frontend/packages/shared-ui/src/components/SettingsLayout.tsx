@@ -31,9 +31,13 @@ export default function SettingsLayout({
         setActiveCategory(id);
         const element = document.getElementById(`settings-section-${id}`);
         if (element) {
-            // Ajuste de offset por los headers fijos
-            const y = element.getBoundingClientRect().top + window.scrollY - 140;
-            window.scrollTo({ top: y, behavior: 'smooth' });
+            const scrollContainer = document.getElementById('settings-scroll-container');
+            if (scrollContainer) {
+                const y = element.offsetTop - 100; // offset for the sticky header inside the layout
+                scrollContainer.scrollTo({ top: y, behavior: 'smooth' });
+            } else {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     };
 
@@ -104,7 +108,7 @@ export default function SettingsLayout({
                 </Box>
 
                 {/* Área Derecha de Contenido Desplazable */}
-                <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, bgcolor: 'background.paper' }}>
+                <Box id="settings-scroll-container" sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, bgcolor: 'background.paper' }}>
                     <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
                         {children}
                     </Box>

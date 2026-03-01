@@ -21,7 +21,9 @@ export interface ClienteFilter {
   estado?: string;
 }
 
-function mapRowToCliente(row: Record<string, any>): ClienteListItem {
+type RawRow = Record<string, unknown>;
+
+function mapRowToCliente(row: RawRow): ClienteListItem {
   return {
     codigo: String(row.CODIGO ?? row.codigo ?? ""),
     nombre: String(row.NOMBRE ?? row.nombre ?? ""),
@@ -46,7 +48,7 @@ export function useClientesList(filter?: ClienteFilter) {
 
       const query = params.toString();
       const raw = await apiGet(`/api/v1/clientes${query ? "?" + query : ""}`);
-      const rows = (raw?.rows ?? raw?.items ?? raw?.data ?? []) as Record<string, any>[];
+      const rows = (raw?.rows ?? raw?.items ?? raw?.data ?? []) as RawRow[];
       const items = rows.map(mapRowToCliente);
       const total = Number(raw?.total ?? items.length);
       const page = Number(raw?.page ?? filter?.page ?? 1);

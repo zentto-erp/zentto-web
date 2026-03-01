@@ -54,7 +54,14 @@ import { configRouter } from "./modules/config/routes.js";
 import { reportesRouter } from "./modules/reportes/routes.js";
 import { sistemaRouter } from "./modules/sistema/sistema.routes.js";
 import { fiscalRouter } from "./modules/fiscal/routes.js";
+import { paymentsRouter } from "./modules/payments/routes.js";
+import { settingsRouter } from "./modules/settings/routes.js";
+import { mediaRouter } from "./modules/media/routes.js";
 import { requireJwt } from "./middleware/auth.js";
+import {
+  localizeResponseDateTimes,
+  normalizeRequestDateTimesToUtc,
+} from "./middleware/datetime.js";
 
 function resolveOpenApiPath() {
   const here = path.dirname(fileURLToPath(import.meta.url));
@@ -129,6 +136,16 @@ export async function createApp() {
     ],
     credentials: true,
   }));
+  fs.mkdirSync(env.media.storagePath, { recursive: true });
+  app.use(
+    "/media-files",
+    express.static(env.media.storagePath, {
+      fallthrough: true,
+      setHeaders(res) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      },
+    })
+  );
   app.use((_req, res, next) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -157,6 +174,8 @@ export async function createApp() {
 
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
+  app.use("/v1", normalizeRequestDateTimesToUtc);
+  app.use("/v1", localizeResponseDateTimes);
   app.use("/v1/auth", authRouter);
 
   // Documentos Unificados (reemplazan a facturas, pedidos, cotizaciones, presupuestos, notas, compras, ordenes)
@@ -216,14 +235,21 @@ export async function createApp() {
   // Reportes Crystal Reports (proxy al .NET Report Server)
   app.use("/v1/reportes", reportesRouter);
 
+  // Payment Gateway (multi-country, multi-provider)
+  app.use("/v1/payments", paymentsRouter);
+
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
+  app.use("/v1/settings", settingsRouter);
+  app.use("/v1/media", mediaRouter);
   app.use("/v1/fiscal", fiscalRouter);
   app.use("/v1/sistema", sistemaRouter); // Added this line
   app.use("/api/v1/config", configRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
   app.use("/api/v1", requireJwt);
+  app.use("/api/v1", normalizeRequestDateTimesToUtc);
+  app.use("/api/v1", localizeResponseDateTimes);
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/documentos-venta", documentosVentaRouter);
   app.use("/api/v1/documentos-compra", documentosCompraRouter);
@@ -267,6 +293,8 @@ export async function createApp() {
   app.use("/api/v1/restaurante", restauranteRouter);
   app.use("/api/v1/restaurante/admin", restauranteAdminRouter);
   app.use("/api/v1/reportes", reportesRouter);
+  app.use("/api/v1/payments", paymentsRouter);
+  app.use("/api/v1/media", mediaRouter);
   app.use("/api/v1/fiscal", fiscalRouter);
   app.use("/api/v1/sistema", sistemaRouter); // Added this line
 

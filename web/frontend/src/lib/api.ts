@@ -301,9 +301,31 @@ export async function apiDelete(path: string) {
 }
 
 async function authHeader(): Promise<Record<string, string>> {
-  const token = await getAuthToken();
-  if (token) {
-    return { 'Authorization': `Bearer ${token}` };
+  try {
+    const session = await getSession();
+    const headers: Record<string, string> = {};
+    // @ts-ignore
+    const token = session?.accessToken as string | undefined;
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    // @ts-ignore
+    const activeCompany = session?.company as { companyId?: number; branchId?: number } | undefined;
+    // @ts-ignore
+    const accesses = (session?.companyAccesses as Array<{ companyId?: number; branchId?: number }> | undefined) ?? [];
+
+    const companyId = Number(activeCompany?.companyId ?? accesses[0]?.companyId);
+    const branchId = Number(activeCompany?.branchId ?? accesses[0]?.branchId);
+
+    if (Number.isFinite(companyId) && companyId > 0) {
+      headers['x-company-id'] = String(companyId);
+    }
+    if (Number.isFinite(branchId) && branchId > 0) {
+      headers['x-branch-id'] = String(branchId);
+    }
+
+    return headers;
+  } catch {
+    const token = await getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
-  return {};
 }

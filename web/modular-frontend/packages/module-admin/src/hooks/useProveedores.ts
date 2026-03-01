@@ -5,7 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiDelete, apiGet, apiPost, apiPut } from "@datqbox/shared-api";
 import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO, ProveedorFilter, PaginatedResponse } from "@datqbox/shared-api/types";
 
-function mapRowToProveedor(row: Record<string, any>): Proveedor {
+type RawRow = Record<string, unknown>;
+
+function mapRowToProveedor(row: RawRow): Proveedor {
   return {
     codigo: String(row.CODIGO ?? row.codigo ?? ""),
     nombre: String(row.NOMBRE ?? row.nombre ?? ""),
@@ -31,7 +33,7 @@ export function useProveedoresList(filter?: ProveedorFilter) {
       
       const query = params.toString();
       const raw = await apiGet(`/api/v1/proveedores${query ? "?" + query : ""}`);
-      const rows = (raw?.rows ?? raw?.items ?? raw?.data ?? []) as Record<string, any>[];
+      const rows = (raw?.rows ?? raw?.items ?? raw?.data ?? []) as RawRow[];
       const items = rows.map(mapRowToProveedor);
       const total = Number(raw?.total ?? items.length);
       const page = Number(raw?.page ?? filter?.page ?? 1);

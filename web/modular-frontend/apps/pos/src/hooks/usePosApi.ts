@@ -102,6 +102,7 @@ export interface PosReporteCaja {
 }
 
 const POS_API_BASE = '/v1/pos';
+type ApiRow = Record<string, unknown>;
 
 // ═══════════════════════════════════════════════════════════════
 // HOOKS - PRODUCTOS (API REAL)
@@ -115,7 +116,7 @@ export function useBuscarProductos(filtro?: string) {
                 search: filtro,
                 limit: 100,
             });
-            return (data.rows ?? data ?? []).map((row: any) => ({
+            return (data.rows ?? data ?? []).map((row: ApiRow) => ({
                 id: row.id?.toString().trim() ?? '',
                 codigo: row.codigo?.toString().trim() ?? row.id?.toString().trim() ?? '',
                 nombre: row.nombre?.toString().trim() ?? '',
@@ -142,7 +143,7 @@ export function useBuscarClientes(searchTerm: string) {
             const data = await apiGet(`${POS_API_BASE}/clientes`, {
                 search: searchTerm,
             });
-            return (data.rows ?? data ?? []).map((row: any) => ({
+            return (data.rows ?? data ?? []).map((row: ApiRow) => ({
                 id: row.id?.toString().trim() ?? '',
                 codigo: row.codigo?.toString().trim() ?? '',
                 nombre: row.nombre?.toString().trim() ?? '',
@@ -167,7 +168,7 @@ export function useCategoriasPOS() {
         queryKey: ['pos', 'categorias'],
         queryFn: async () => {
             const data = await apiGet(`${POS_API_BASE}/categorias`);
-            return (data.rows ?? data ?? []).map((row: any) => ({
+            return (data.rows ?? data ?? []).map((row: ApiRow) => ({
                 id: row.id?.toString().trim() ?? '',
                 nombre: row.nombre?.toString().trim() ?? '',
                 productCount: Number(row.productCount ?? 0),
@@ -202,7 +203,7 @@ export function usePosReporteVentas(from?: string, to?: string, limit = 200, caj
         queryKey: ['pos', 'reportes', 'ventas', from, to, limit, cajaId],
         queryFn: async (): Promise<PosReporteVenta[]> => {
             const data = await apiGet(`${POS_API_BASE}/reportes/ventas`, { from, to, limit, cajaId });
-            return (data.rows ?? []).map((row: any) => ({
+            return (data.rows ?? []).map((row: ApiRow) => ({
                 id: Number(row.id ?? 0),
                 numFactura: row.numFactura?.toString().trim() ?? '',
                 fecha: row.fecha,
@@ -225,7 +226,7 @@ export function usePosCorrelativosFiscales(cajaId?: string) {
         queryKey: ['pos', 'correlativos-fiscales', cajaId],
         queryFn: async (): Promise<PosCorrelativoFiscal[]> => {
             const data = await apiGet(`${POS_API_BASE}/correlativos-fiscales`, { cajaId });
-            return (data.rows ?? []).map((row: any) => ({
+            return (data.rows ?? []).map((row: ApiRow) => ({
                 tipo: row.tipo?.toString().trim() ?? '',
                 cajaId: row.cajaId?.toString().trim() ?? null,
                 serialFiscal: row.serialFiscal?.toString().trim() ?? '',
@@ -258,7 +259,7 @@ export function usePosReporteProductosTop(from?: string, to?: string, limit = 20
         queryKey: ['pos', 'reportes', 'productos-top', from, to, limit, cajaId],
         queryFn: async (): Promise<PosReporteProductoTop[]> => {
             const data = await apiGet(`${POS_API_BASE}/reportes/productos-top`, { from, to, limit, cajaId });
-            return (data.rows ?? []).map((row: any) => ({
+            return (data.rows ?? []).map((row: ApiRow) => ({
                 productoId: row.productoId?.toString().trim() ?? '',
                 codigo: row.codigo?.toString().trim() ?? '',
                 nombre: row.nombre?.toString().trim() ?? '',
@@ -274,7 +275,7 @@ export function usePosReporteFormasPago(from?: string, to?: string, cajaId?: str
         queryKey: ['pos', 'reportes', 'formas-pago', from, to, cajaId],
         queryFn: async (): Promise<PosReporteFormaPago[]> => {
             const data = await apiGet(`${POS_API_BASE}/reportes/formas-pago`, { from, to, cajaId });
-            return (data.rows ?? []).map((row: any) => ({
+            return (data.rows ?? []).map((row: ApiRow) => ({
                 metodoPago: row.metodoPago?.toString().trim() ?? 'No especificado',
                 transacciones: Number(row.transacciones ?? 0),
                 total: Number(row.total ?? 0),
@@ -288,7 +289,7 @@ export function usePosReporteCajas(from?: string, to?: string) {
         queryKey: ['pos', 'reportes', 'cajas', from, to],
         queryFn: async (): Promise<PosReporteCaja[]> => {
             const data = await apiGet(`${POS_API_BASE}/reportes/cajas`, { from, to });
-            return (data.rows ?? []).map((row: any) => ({
+            return (data.rows ?? []).map((row: ApiRow) => ({
                 cajaId: row.cajaId?.toString().trim() ?? '',
                 transacciones: Number(row.transacciones ?? 0),
                 total: Number(row.total ?? 0),

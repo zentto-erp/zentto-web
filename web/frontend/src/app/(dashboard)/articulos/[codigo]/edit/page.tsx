@@ -17,15 +17,16 @@ function FormSkeleton() {
 }
 
 interface EditArticuloPageProps {
-  params: {
+  params: Promise<{
     codigo: string;
-  };
+  }>;
 }
 
-export default function EditArticuloPage({ params }: EditArticuloPageProps) {
+export default async function EditArticuloPage({ params }: EditArticuloPageProps) {
+  const resolvedParams = await params;
   return (
     <Suspense fallback={<FormSkeleton />}>
-      <ArticuloForm codigoArticulo={params.codigo} />
+      <ArticuloForm codigoArticulo={resolvedParams.codigo} />
     </Suspense>
   );
 }

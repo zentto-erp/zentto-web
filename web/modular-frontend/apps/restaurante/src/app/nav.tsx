@@ -11,8 +11,8 @@ const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'),
 const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
 const Inventory2Icon = dynamic(() => import('@mui/icons-material/Inventory2'), { ssr: false });
 
-export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): any[] {
-    const nav: any[] = [];
+export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
+    const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('restaurante') || has('pos')) {
@@ -68,6 +68,12 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): any[] 
             segment: 'admin/insumos',
             title: 'Insumos',
             icon: <Inventory2Icon />
+        });
+        nav.push({
+            kind: 'page',
+            segment: 'admin/configuracion',
+            title: 'Configuración',
+            icon: <SettingsIcon />
         });
     }
 

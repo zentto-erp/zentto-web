@@ -26,3 +26,22 @@ export {
 export type {
   Usuario, ModuloAcceso, CreateUsuarioInput, UpdateUsuarioInput, SystemModuleInfo,
 } from './useUsuarios';
+
+// Payment Gateway hooks
+export {
+  usePaymentMethods, usePaymentProviders, usePaymentProvider, usePaymentPlugins,
+  useCompanyPaymentConfigs, useSaveCompanyPaymentConfig, useDeleteCompanyPaymentConfig,
+  useAcceptedPaymentMethods, useSaveAcceptedPaymentMethod, useRemoveAcceptedPaymentMethod,
+  usePaymentTransactions, useProcessPayment,
+} from './usePayments';
+export type {
+  PaymentMethod, PaymentProvider, ProviderCapability, ConfigField,
+  CompanyPaymentConfig, AcceptedPaymentMethod, PaymentTransaction,
+} from './usePayments';
+
+// Unified Settings hooks
+export {
+  useAllSettings, useModuleSettings, useModuleSettingsMeta,
+  useSaveModuleSettings, useSettingModules,
+} from './useSettings';
+export type { SettingsModule, AllSettings, SettingMeta } from './useSettings';

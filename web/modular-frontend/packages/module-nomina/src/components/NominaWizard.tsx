@@ -79,6 +79,10 @@ interface ConceptoRow {
   editable?: boolean;
 }
 
+type EmpleadoRow = Record<string, unknown>;
+type ConceptoApiRow = Record<string, unknown>;
+type CellLike = { value: unknown };
+
 // ─── Componente Principal ──────────────────────────────────────
 
 export default function NominaWizard() {
@@ -106,13 +110,13 @@ export default function NominaWizard() {
   // ─── Queries ──────────────────────────────────────────────────
 
   const empQuery = useEmpleadosList({ status: "A", limit: 500 });
-  const empleados: any[] = useMemo(
+  const empleados: EmpleadoRow[] = useMemo(
     () => (Array.isArray(empQuery.data) ? empQuery.data : empQuery.data?.rows ?? []),
     [empQuery.data]
   );
 
   const conceptosQuery = useConceptosList({ coNomina: nominaCodigo, limit: 200 });
-  const conceptosApi: any[] = useMemo(
+  const conceptosApi: ConceptoApiRow[] = useMemo(
     () => (Array.isArray(conceptosQuery.data) ? conceptosQuery.data : conceptosQuery.data?.rows ?? []),
     [conceptosQuery.data]
   );
@@ -125,24 +129,24 @@ export default function NominaWizard() {
   // ─── Empleado seleccionado ────────────────────────────────────
 
   const empleadoObj = useMemo(
-    () => empleados.find((e: any) => (e.CEDULA ?? e.cedula) === cedulaSeleccionada),
+    () => empleados.find((e) => (e.CEDULA ?? e.cedula) === cedulaSeleccionada),
     [empleados, cedulaSeleccionada]
   );
 
   // ─── Helpers ──────────────────────────────────────────────────
 
-  const empCedula = (e: any) => e.CEDULA ?? e.cedula ?? "";
-  const empNombre = (e: any) => e.NOMBRE ?? e.nombre ?? "";
-  const empCargo = (e: any) => e.CARGO ?? e.cargo ?? "";
-  const empNomina = (e: any) => e.NOMINA ?? e.nomina ?? "";
-  const empSueldo = (e: any) => Number(e.SUELDO ?? e.sueldo ?? 0);
+  const empCedula = (e: EmpleadoRow | null | undefined) => e?.CEDULA ?? e?.cedula ?? "";
+  const empNombre = (e: EmpleadoRow | null | undefined) => e?.NOMBRE ?? e?.nombre ?? "";
+  const empCargo = (e: EmpleadoRow | null | undefined) => e?.CARGO ?? e?.cargo ?? "";
+  const empNomina = (e: EmpleadoRow | null | undefined) => e?.NOMINA ?? e?.nomina ?? "";
+  const empSueldo = (e: EmpleadoRow | null | undefined) => Number(e?.SUELDO ?? e?.sueldo ?? 0);
 
   const cargarConceptos = () => {
     const sueldo = sueldoBase || empSueldo(empleadoObj);
 
     // Tomar conceptos del API si hay, si no usar por defecto
     if (conceptosApi.length > 0) {
-      const mapped: ConceptoRow[] = conceptosApi.map((c: any, i: number) => {
+      const mapped: ConceptoRow[] = conceptosApi.map((c, i: number) => {
         const tipo = String(c.tipo ?? c.TIPO ?? "ASIGNACION").toUpperCase();
         const valorDefecto = Number(c.valorDefecto ?? c.VALOR_DEFECTO ?? 0);
         let valor = valorDefecto;
@@ -228,8 +232,8 @@ export default function NominaWizard() {
       });
       showToast("Nómina procesada correctamente");
       router.push("/nomina");
-    } catch (e: any) {
-      setError(e?.message ?? "Error al procesar la nómina");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al procesar la nómina");
     }
   };
 
@@ -240,7 +244,7 @@ export default function NominaWizard() {
       field: "tipo",
       headerName: "Tipo",
       width: 120,
-      renderCell: (params: any) => (
+      renderCell: (params: CellLike) => (
         <Chip
           size="small"
           icon={params.value === "ASIGNACION" ? <AddCircleIcon /> : <RemoveCircleIcon />}
@@ -255,7 +259,7 @@ export default function NominaWizard() {
       field: "formula",
       headerName: "Fórmula",
       width: 160,
-      renderCell: (params: any) => params.value || "—",
+      renderCell: (params: CellLike) => params.value || "—",
     },
     {
       field: "valor",
@@ -263,7 +267,7 @@ export default function NominaWizard() {
       width: 140,
       editable: true,
       type: "number" as const,
-      renderCell: (params: any) => formatCurrency(params.value),
+      renderCell: (params: CellLike) => formatCurrency(params.value),
     },
   ];
 
@@ -291,7 +295,7 @@ export default function NominaWizard() {
                 <>
                   <Autocomplete
                     options={empleados}
-                    getOptionLabel={(e: any) => `${empCedula(e)} — ${empNombre(e)} (${empCargo(e)})`}
+                    getOptionLabel={(e: EmpleadoRow) => `${empCedula(e)} — ${empNombre(e)} (${empCargo(e)})`}
                     value={empleadoObj ?? null}
                     onChange={(_, val) => {
                       setCedulaSeleccionada(val ? empCedula(val) : null);

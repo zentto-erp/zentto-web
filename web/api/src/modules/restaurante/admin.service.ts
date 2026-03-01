@@ -1,5 +1,6 @@
 
 import { query } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 interface DefaultScope {
   companyId: number;
@@ -10,6 +11,14 @@ interface DefaultScope {
 let scopeCache: DefaultScope | null = null;
 
 async function getDefaultScope(): Promise<DefaultScope> {
+  const activeScope = getActiveScope();
+  if (scopeCache && activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   if (scopeCache) return scopeCache;
 
   const rows = await query<{ companyId: number; branchId: number; systemUserId: number | null }>(
@@ -35,6 +44,13 @@ async function getDefaultScope(): Promise<DefaultScope> {
     branchId: Number(row?.branchId ?? 1),
     systemUserId: row?.systemUserId == null ? null : Number(row.systemUserId),
   };
+  if (activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   return scopeCache;
 }
 
@@ -169,6 +185,119 @@ function toCode(name: string, fallback: string) {
     .replace(/^_+|_+$/g, "")
     .toUpperCase();
   return (normalized || fallback).slice(0, 30);
+}
+
+function extractStorageKeyFromUrl(url?: string | null) {
+  const value = String(url ?? "").trim();
+  const prefix = "/media-files/";
+  const idx = value.indexOf(prefix);
+  if (idx < 0) return null;
+  return value.slice(idx + prefix.length).replace(/\\/g, "/").replace(/^\/+/, "");
+}
+
+async function syncMenuProductImageLink(
+  companyId: number,
+  branchId: number,
+  menuProductId: number,
+  imageUrl: string | null | undefined,
+  userId: number | null
+) {
+  const storageKey = extractStorageKeyFromUrl(imageUrl);
+  if (!storageKey) return;
+
+  const mediaRows = await query<{ mediaAssetId: number }>(
+    `
+    SELECT TOP 1 MediaAssetId AS mediaAssetId
+    FROM cfg.MediaAsset
+    WHERE CompanyId = @companyId
+      AND BranchId = @branchId
+      AND StorageKey = @storageKey
+      AND IsDeleted = 0
+      AND IsActive = 1
+    ORDER BY MediaAssetId DESC
+    `,
+    {
+      companyId,
+      branchId,
+      storageKey,
+    }
+  );
+
+  const mediaAssetId = Number(mediaRows[0]?.mediaAssetId ?? 0);
+  if (!Number.isFinite(mediaAssetId) || mediaAssetId <= 0) return;
+
+  await query(
+    `
+    UPDATE cfg.EntityImage
+    SET
+      IsPrimary = 0,
+      UpdatedAt = SYSUTCDATETIME(),
+      UpdatedByUserId = @userId
+    WHERE CompanyId = @companyId
+      AND BranchId = @branchId
+      AND EntityType = N'REST_MENU_PRODUCT'
+      AND EntityId = @entityId
+      AND IsDeleted = 0
+      AND IsActive = 1;
+
+    IF EXISTS (
+      SELECT 1
+      FROM cfg.EntityImage
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND EntityType = N'REST_MENU_PRODUCT'
+        AND EntityId = @entityId
+        AND MediaAssetId = @mediaAssetId
+    )
+    BEGIN
+      UPDATE cfg.EntityImage
+      SET
+        IsPrimary = 1,
+        SortOrder = 0,
+        IsActive = 1,
+        IsDeleted = 0,
+        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedByUserId = @userId
+      WHERE CompanyId = @companyId
+        AND BranchId = @branchId
+        AND EntityType = N'REST_MENU_PRODUCT'
+        AND EntityId = @entityId
+        AND MediaAssetId = @mediaAssetId;
+    END
+    ELSE
+    BEGIN
+      INSERT INTO cfg.EntityImage (
+        CompanyId,
+        BranchId,
+        EntityType,
+        EntityId,
+        MediaAssetId,
+        SortOrder,
+        IsPrimary,
+        CreatedByUserId,
+        UpdatedByUserId
+      )
+      VALUES (
+        @companyId,
+        @branchId,
+        N'REST_MENU_PRODUCT',
+        @entityId,
+        @mediaAssetId,
+        0,
+        1,
+        @userId,
+        @userId
+      );
+    END
+    `,
+    {
+      companyId,
+      branchId,
+      entityId: menuProductId,
+      mediaAssetId,
+      userId,
+    }
+  );
 }
 
 export async function listAmbientes() {
@@ -401,13 +530,27 @@ export async function listProductosMenu(params: { categoriaId?: number; search?:
       mp.TaxRatePercent AS iva,
       mp.IsComposite AS esCompuesto,
       mp.PrepMinutes AS tiempoPreparacion,
-      mp.ImageUrl AS imagen,
+      COALESCE(img.PublicUrl, mp.ImageUrl) AS imagen,
       mp.IsDailySuggestion AS esSugerenciaDelDia,
       mp.IsAvailable AS disponible,
       inv.ProductCode AS articuloInventarioId
     FROM rest.MenuProduct mp
     LEFT JOIN rest.MenuCategory mc ON mc.MenuCategoryId = mp.MenuCategoryId
     LEFT JOIN [master].Product inv ON inv.ProductId = mp.InventoryProductId
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.CompanyId = mp.CompanyId
+        AND ei.BranchId = mp.BranchId
+        AND ei.EntityType = N'REST_MENU_PRODUCT'
+        AND ei.EntityId = mp.MenuProductId
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
     WHERE ${where.join(" AND ")}
     ORDER BY mp.ProductName
     `,
@@ -418,6 +561,7 @@ export async function listProductosMenu(params: { categoriaId?: number; search?:
 }
 
 export async function getProductoMenu(id: number) {
+  const scope = await getDefaultScope();
   const rows = await query<any>(
     `
     SELECT TOP 1
@@ -431,12 +575,26 @@ export async function getProductoMenu(id: number) {
       mp.TaxRatePercent AS iva,
       mp.IsComposite AS esCompuesto,
       mp.PrepMinutes AS tiempoPreparacion,
-      mp.ImageUrl AS imagen,
+      COALESCE(img.PublicUrl, mp.ImageUrl) AS imagen,
       mp.IsDailySuggestion AS esSugerenciaDelDia,
       mp.IsAvailable AS disponible,
       inv.ProductCode AS articuloInventarioId
     FROM rest.MenuProduct mp
     LEFT JOIN [master].Product inv ON inv.ProductId = mp.InventoryProductId
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.CompanyId = mp.CompanyId
+        AND ei.BranchId = mp.BranchId
+        AND ei.EntityType = N'REST_MENU_PRODUCT'
+        AND ei.EntityId = mp.MenuProductId
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
     WHERE mp.MenuProductId = @id
       AND mp.IsActive = 1
     `,
@@ -499,16 +657,31 @@ export async function getProductoMenu(id: number) {
       r.MenuProductId AS productoId,
       p.ProductCode AS inventarioId,
       p.ProductName AS descripcion,
+      img.PublicUrl AS imagen,
       r.Quantity AS cantidad,
       r.UnitCode AS unidad,
       r.Notes AS comentario
     FROM rest.MenuRecipe r
     INNER JOIN [master].Product p ON p.ProductId = r.IngredientProductId
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.CompanyId = p.CompanyId
+        AND ei.BranchId = @branchId
+        AND ei.EntityType = N'MASTER_PRODUCT'
+        AND ei.EntityId = p.ProductId
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
     WHERE r.MenuProductId = @id
       AND r.IsActive = 1
     ORDER BY r.MenuRecipeId
     `,
-    { id }
+    { id, branchId: scope.branchId }
   );
 
   return {
@@ -590,6 +763,7 @@ export async function upsertProductoMenu(data: {
         id: data.id,
       }
     );
+    await syncMenuProductImageLink(scope.companyId, scope.branchId, data.id, payload.imageUrl, userId);
     return { ok: true, id: data.id };
   }
 
@@ -640,7 +814,11 @@ export async function upsertProductoMenu(data: {
     payload
   );
 
-  return { ok: true, id: Number(inserted[0]?.id ?? 0) };
+  const insertedId = Number(inserted[0]?.id ?? 0);
+  if (insertedId > 0) {
+    await syncMenuProductImageLink(scope.companyId, scope.branchId, insertedId, payload.imageUrl, userId);
+  }
+  return { ok: true, id: insertedId };
 }
 
 export async function deleteProductoMenu(id: number) {
@@ -1241,9 +1419,24 @@ export async function searchInsumosRestaurante(search?: string, limit = 30) {
     SELECT TOP (${safeLimit})
       p.ProductCode AS codigo,
       p.ProductName AS descripcion,
+      img.PublicUrl AS imagen,
       p.UnitCode AS unidad,
       p.StockQty AS existencia
     FROM [master].Product p
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.CompanyId = p.CompanyId
+        AND ei.BranchId = @branchId
+        AND ei.EntityType = N'MASTER_PRODUCT'
+        AND ei.EntityId = p.ProductId
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
     WHERE p.CompanyId = @companyId
       AND p.IsDeleted = 0
       AND p.IsActive = 1
@@ -1256,6 +1449,7 @@ export async function searchInsumosRestaurante(search?: string, limit = 30) {
     `,
     {
       companyId: scope.companyId,
+      branchId: scope.branchId,
       search: search?.trim() ? `%${search.trim()}%` : null,
     }
   );

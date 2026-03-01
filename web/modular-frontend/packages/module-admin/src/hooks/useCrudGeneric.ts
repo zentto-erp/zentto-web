@@ -18,26 +18,26 @@ interface CrudGenericOptions {
 
 interface UseCrudGenericReturn<T, CreateDTO> {
   // Queries
-  list: (filters?: any) => any;
-  getById: (id: string) => any;
+  list: (filters?: Record<string, unknown>) => unknown;
+  getById: (id: string) => unknown;
 
   // Mutations
-  create: () => any;
-  update: (id: string) => any;
-  delete: (id: string) => any;
+  create: () => unknown;
+  update: (id: string) => unknown;
+  delete: (id: string) => unknown;
 
   // Utils
   invalidateList: () => void;
 }
 
-export function useCrudGeneric<T extends { codigo?: string; id?: string }, CreateDTO = any>(
+export function useCrudGeneric<T extends { codigo?: string; id?: string }, CreateDTO = unknown>(
   endpoint: string,
   baseUrl = '/api/v1'
 ): UseCrudGenericReturn<T, CreateDTO> {
   const queryClient = useQueryClient();
   const url = `${baseUrl}/${endpoint}`;
 
-  const normalizeRow = (row: any): T => {
+  const normalizeRow = (row: Record<string, unknown> | null | undefined): T => {
     if (!row || typeof row !== 'object') return row as T;
     const get = (...keys: string[]) => {
       for (const key of keys) {
@@ -59,8 +59,8 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
     } as T;
   };
 
-  const normalizeListPayload = (raw: any, filters?: any) => {
-    const rows = (raw?.items ?? raw?.data ?? raw?.rows ?? []) as any[];
+  const normalizeListPayload = (raw: Record<string, unknown>, filters?: Record<string, unknown>) => {
+    const rows = (raw?.items ?? raw?.data ?? raw?.rows ?? []) as Record<string, unknown>[];
     const items = rows.map(normalizeRow);
     const total = Number(raw?.total ?? items.length);
     const page = Number(raw?.page ?? filters?.page ?? 1);
@@ -71,7 +71,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
 
   // ========== QUERIES ==========
 
-  const list = (filters?: any) =>
+  const list = (filters?: Record<string, unknown>) =>
     useQuery({
       queryKey: [endpoint, 'list', filters],
       queryFn: async () => {
@@ -93,7 +93,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
           });
         }
         const query = params.toString();
-        const raw = await apiGet(`${url}${query ? `?${query}` : ''}`);
+        const raw = (await apiGet(`${url}${query ? `?${query}` : ''}`)) as Record<string, unknown>;
         return normalizeListPayload(raw, filters);
       },
     });
@@ -181,7 +181,7 @@ export function useClientes() {
   return {
     ...crud,
     // Puedes agregar métodos específicos si es necesario
-    listActive: (filters?: any) =>
+    listActive: (filters?: Record<string, unknown>) =>
       queryClient.getQueryData([
         'clientes',
         'list',

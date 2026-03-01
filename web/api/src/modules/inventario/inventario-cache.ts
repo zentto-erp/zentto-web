@@ -50,6 +50,8 @@ export interface CachedArticulo {
   Eliminado: boolean;
   COSTO_PROMEDIO: number;
   Id: number;
+  ImagenUrl: string;
+  imagen: string;
   /** Campo calculado: Categoria + Tipo + Descripcion + Marca + Clase */
   DescripcionCompleta: string;
   /** Campo pre-calculado para busqueda rapida (minusculas, un solo string) */
@@ -173,6 +175,8 @@ function rowToCache(r: Record<string, any>): CachedArticulo {
     Eliminado: Boolean(r.Eliminado),
     COSTO_PROMEDIO: parseFloat(r.COSTO_PROMEDIO) || 0,
     Id: parseInt(r.Id) || 0,
+    ImagenUrl: String(r.ImagenUrl ?? r.imagen ?? "").trim(),
+    imagen: String(r.ImagenUrl ?? r.imagen ?? "").trim(),
     DescripcionCompleta: r.DescripcionCompleta ?? buildDescripcionCompleta(r),
     _searchable: "",
   };
@@ -203,11 +207,28 @@ async function loadAllFromDB(): Promise<CachedArticulo[]> {
     PRECIO_VENTA1, PRECIO_VENTA2, PRECIO_VENTA3,
     Alicuota, PLU, Barra, N_PARTE, UBICACION, UbicaFisica, Garantia,
     FECHA, FechaVence, Servicio, Eliminado, COSTO_PROMEDIO, Id,
-    ${descExpr}
+    ${descExpr},
+    img.PublicUrl AS ImagenUrl
   `;
 
   const rows = await query<Record<string, any>>(
-    `SELECT ${selectCols} FROM Inventario ORDER BY CODIGO`
+    `
+    SELECT ${selectCols}
+    FROM Inventario i
+    OUTER APPLY (
+      SELECT TOP 1 ma.PublicUrl
+      FROM cfg.EntityImage ei
+      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+      WHERE ei.EntityType = N'MASTER_PRODUCT'
+        AND ei.EntityId = TRY_CONVERT(BIGINT, i.Id)
+        AND ei.IsDeleted = 0
+        AND ei.IsActive = 1
+        AND ma.IsDeleted = 0
+        AND ma.IsActive = 1
+      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
+    ) img
+    ORDER BY i.CODIGO
+    `
   );
 
   return rows.map(rowToCache);

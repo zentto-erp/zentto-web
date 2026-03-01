@@ -1,5 +1,6 @@
 import { query } from "../../db/query.js";
 import { crearAsiento, type AsientoDetalleInput } from "./service.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 type SalesModule = "POS" | "RESTAURANTE";
 
@@ -109,6 +110,14 @@ function resolveCurrency(inputCurrency: string | undefined, countryCode?: "VE" |
 let defaultScopeCache: { companyId: number; branchId: number } | null = null;
 
 async function getDefaultScope(): Promise<{ companyId: number; branchId: number }> {
+  const activeScope = getActiveScope();
+  if (defaultScopeCache && activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   if (defaultScopeCache) return defaultScopeCache;
 
   const rows = await query<{ companyId: number; branchId: number }>(
@@ -128,6 +137,13 @@ async function getDefaultScope(): Promise<{ companyId: number; branchId: number 
     companyId: Number(rows[0]?.companyId ?? 1),
     branchId: Number(rows[0]?.branchId ?? 1)
   };
+  if (activeScope) {
+    return {
+      ...defaultScopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   return defaultScopeCache;
 }
 

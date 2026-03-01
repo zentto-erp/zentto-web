@@ -9,6 +9,7 @@ import {
     Paper,
     TextField,
     Typography,
+    Tooltip
 } from '@mui/material';
 import { apiGet, apiPost, usePosStore } from '@datqbox/shared-api';
 
@@ -17,7 +18,7 @@ export default function RestauranteFiscalPage() {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [result, setResult] = useState<any>(null);
+    const [result, setResult] = useState<unknown>(null);
     const [mes, setMes] = useState<number>(new Date().getMonth() + 1);
     const [anio, setAnio] = useState<number>(new Date().getFullYear());
     const [docTitulo, setDocTitulo] = useState('DOCUMENTO NO FISCAL');
@@ -29,17 +30,24 @@ export default function RestauranteFiscalPage() {
         conexion: fiscalPrinter.conexion,
     }), [fiscalPrinter.marca, fiscalPrinter.puerto, fiscalPrinter.conexion]);
 
-    const run = async (executor: () => Promise<any>) => {
+    const run = async (executor: () => Promise<unknown>) => {
         setLoading(true);
         setError(null);
         try {
             const data = await executor();
-            if (data?.Success === false || data?.success === false) {
-                throw new Error(data?.Message || data?.message || data?.error || 'Operación no completada');
+            const payload = data as {
+                Success?: boolean;
+                success?: boolean;
+                Message?: string;
+                message?: string;
+                error?: string;
+            };
+            if (payload?.Success === false || payload?.success === false) {
+                throw new Error(payload?.Message || payload?.message || payload?.error || 'Operación no completada');
             }
             setResult(data);
-        } catch (e: any) {
-            setError(e?.message || 'Error en operación fiscal');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Error en operación fiscal');
         } finally {
             setLoading(false);
         }
@@ -57,16 +65,24 @@ export default function RestauranteFiscalPage() {
             <Paper sx={{ p: 2, mb: 2 }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={3}>
-                        <TextField label="Marca" value={fiscalPrinter.marca} fullWidth size="small" disabled />
+                        <Tooltip title="Marca de la impresora fiscal configurada." arrow placement="top">
+                            <TextField label="Marca" value={fiscalPrinter.marca} fullWidth disabled />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} md={2}>
-                        <TextField label="Puerto" value={fiscalPrinter.puerto} fullWidth size="small" disabled />
+                        <Tooltip title="Puerto de comunicación de la impresora (Ej. COM1)." arrow placement="top">
+                            <TextField label="Puerto" value={fiscalPrinter.puerto} fullWidth disabled />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} md={2}>
-                        <TextField label="Conexión" value={fiscalPrinter.conexion} fullWidth size="small" disabled />
+                        <Tooltip title="Tipo de conexión utilizada para comunicarse con el agente (Ej. SERIAL)." arrow placement="top">
+                            <TextField label="Conexión" value={fiscalPrinter.conexion} fullWidth disabled />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} md={5}>
-                        <TextField label="Agent URL" value={fiscalPrinter.agentUrl} fullWidth size="small" disabled />
+                        <Tooltip title="Dirección de red del Agente Fiscal local." arrow placement="top">
+                            <TextField label="Agent URL" value={fiscalPrinter.agentUrl} fullWidth disabled />
+                        </Tooltip>
                     </Grid>
                 </Grid>
             </Paper>
@@ -126,10 +142,14 @@ export default function RestauranteFiscalPage() {
                         <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>Reporte Mensual</Typography>
                         <Grid container spacing={1}>
                             <Grid item xs={6}>
-                                <TextField type="number" size="small" fullWidth label="Mes" value={mes} onChange={(e) => setMes(Number(e.target.value || 1))} inputProps={{ min: 1, max: 12 }} />
+                                <Tooltip title="Mes del cual se desea generar el reporte (1-12)." arrow placement="top">
+                                    <TextField type="number" fullWidth label="Mes" value={mes} onChange={(e) => setMes(Number(e.target.value || 1))} inputProps={{ min: 1, max: 12 }} />
+                                </Tooltip>
                             </Grid>
                             <Grid item xs={6}>
-                                <TextField type="number" size="small" fullWidth label="Año" value={anio} onChange={(e) => setAnio(Number(e.target.value || new Date().getFullYear()))} inputProps={{ min: 2000, max: 2100 }} />
+                                <Tooltip title="Año del cual se desea generar el reporte." arrow placement="top">
+                                    <TextField type="number" fullWidth label="Año" value={anio} onChange={(e) => setAnio(Number(e.target.value || new Date().getFullYear()))} inputProps={{ min: 2000, max: 2100 }} />
+                                </Tooltip>
                             </Grid>
                             <Grid item xs={12}>
                                 <Button
@@ -154,10 +174,14 @@ export default function RestauranteFiscalPage() {
                         <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>Documento No Fiscal</Typography>
                         <Grid container spacing={1}>
                             <Grid item xs={12} md={4}>
-                                <TextField label="Título" size="small" fullWidth value={docTitulo} onChange={(e) => setDocTitulo(e.target.value)} />
+                                <Tooltip title="Título que aparecerá encapsulado en el documento no fiscal." arrow placement="top">
+                                    <TextField label="Título" fullWidth value={docTitulo} onChange={(e) => setDocTitulo(e.target.value)} />
+                                </Tooltip>
                             </Grid>
                             <Grid item xs={12} md={8}>
-                                <TextField label="Líneas (una por renglón)" size="small" fullWidth multiline minRows={2} value={docTexto} onChange={(e) => setDocTexto(e.target.value)} />
+                                <Tooltip title="Contenido de texto del documento (presione enter para saltar línea)." arrow placement="top">
+                                    <TextField label="Líneas (una por renglón)" fullWidth multiline minRows={2} value={docTexto} onChange={(e) => setDocTexto(e.target.value)} />
+                                </Tooltip>
                             </Grid>
                             <Grid item xs={12}>
                                 <Button

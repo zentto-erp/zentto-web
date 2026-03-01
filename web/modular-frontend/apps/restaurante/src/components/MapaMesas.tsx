@@ -57,8 +57,11 @@ export function MapaMesas({
         posicionY: 0,
     });
 
-    const isTodos = ambienteActivo === 'todos';
-    const activeAmbiente = ambientes.find(a => a.id === ambienteActivo);
+    const validTabs = new Set(['todos', ...ambientes.map((a) => a.id)]);
+    const tabsValue = validTabs.has(ambienteActivo) ? ambienteActivo : 'todos';
+
+    const isTodos = tabsValue === 'todos';
+    const activeAmbiente = ambientes.find((a) => a.id === tabsValue);
     const mesasToShow = isTodos
         ? ambientes.flatMap(a => a.mesas)
         : activeAmbiente?.mesas || [];
@@ -113,7 +116,7 @@ export function MapaMesas({
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Tabs de ambientes */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                <Tabs value={ambienteActivo} onChange={(_, v) => onAmbienteChange(v)}>
+                <Tabs value={tabsValue} onChange={(_, v) => onAmbienteChange(String(v))}>
                     <Tab
                         value="todos"
                         label="TODOS LOS AMBIENTES"

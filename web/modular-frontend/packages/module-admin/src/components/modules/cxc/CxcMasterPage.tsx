@@ -52,6 +52,7 @@ type FormaPagoLine = {
   numCheque?: string;
   fechaVencimiento?: string;
 };
+type ClienteRow = Record<string, unknown>;
 
 // ─── Componente Principal ─────────────────────────────────────
 
@@ -63,15 +64,15 @@ export default function CxcMasterPage() {
 
   // ─── Datos de clientes ────────────────────────────────────
   const clientesQuery = useClientesList({ search, limit: 50 });
-  const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as any[];
+  const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as ClienteRow[];
 
   // ─── Datos CxC del cliente seleccionado ───────────────────
   const docsQuery = useCxcDocumentosPendientes(selectedCod);
   const saldoQuery = useCxcSaldo(selectedCod);
   const documentos = docsQuery.data?.data ?? [];
-  const saldoData = saldoQuery.data?.data as Record<string, any> | null;
+  const saldoData = saldoQuery.data?.data as Record<string, unknown> | null;
 
-  const handleSelectCliente = useCallback((cli: any) => {
+  const handleSelectCliente = useCallback((cli: ClienteRow) => {
     const cod = cli.codigo || cli.CODIGO || "";
     setSelectedCod(cod);
     setSelectedNombre(cli.nombre || cli.NOMBRE || cod);
@@ -126,7 +127,7 @@ export default function CxcMasterPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  clientes.map((c: any) => {
+                  clientes.map((c) => {
                     const cod = c.codigo || c.CODIGO || "";
                     const isSelected = cod === selectedCod;
                     return (
@@ -431,7 +432,7 @@ function AplicarCobrosTab({
     <Box>
       {cobroMutation.isSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Cobro aplicado exitosamente. Recibo: {String((cobroMutation.data as any)?.numCobro || "")}
+          Cobro aplicado exitosamente. Recibo: {String((cobroMutation.data as { numCobro?: string })?.numCobro || "")}
         </Alert>
       )}
       {cobroMutation.isError && (
@@ -615,7 +616,7 @@ function AplicarCobrosTab({
 
 function CobrosAplicadosTab({ codCliente }: { codCliente: string }) {
   const { data, isLoading } = useCxcSaldo(codCliente);
-  const saldoData = data?.data as Record<string, any> | null;
+  const saldoData = data?.data as Record<string, unknown> | null;
 
   if (isLoading) {
     return (

@@ -41,6 +41,53 @@ type FacturasFilter = {
   estado?: string;
 };
 
+type FacturaDetalleInput = {
+  cantidad?: number;
+  precioUnitario?: number;
+  precio?: number;
+  descuento?: number;
+  alicuota?: number;
+  CANTIDAD?: number;
+  PRECIO?: number;
+  DESCUENTO?: number;
+  ALICUOTA?: number;
+  codigoArticulo?: string;
+  articulo?: string;
+  COD_SERV?: string;
+  CODIGO?: string;
+};
+
+type FacturaPayloadInput = Record<string, unknown> & {
+  detalles?: FacturaDetalleInput[];
+  formasPago?: unknown[];
+  totalFactura?: number;
+  pago?: string;
+  tipoPago?: string;
+  numeroFactura?: string;
+  NUM_FACT?: string;
+  codigoCliente?: string;
+  cliente?: string;
+  CODIGO?: string;
+  nombreCliente?: string;
+  NOMBRE?: string;
+  fecha?: string;
+  referencia?: string | null;
+  observaciones?: string | null;
+  codUsuario?: string;
+  options?: Record<string, unknown>;
+};
+
+type FacturaByIdResponse = {
+  numeroFactura: string;
+  codigoCliente: string;
+  nombreCliente: string;
+  fecha: string;
+  referencia: string;
+  observaciones: string;
+  totalFactura: number;
+  estado: string;
+};
+
 function normalizeFacturaRow(row: LegacyFacturaListRow): FacturaListItem {
   const anulado = Number(row.ANULADA ?? 0) !== 0;
   return {
@@ -53,12 +100,12 @@ function normalizeFacturaRow(row: LegacyFacturaListRow): FacturaListItem {
   };
 }
 
-function buildEmitirFacturaPayload(data: Record<string, any>, numeroFactura?: string) {
+function buildEmitirFacturaPayload(data: FacturaPayloadInput, numeroFactura?: string) {
   const detalles = Array.isArray(data.detalles) ? data.detalles : [];
   const total =
     Number(data.totalFactura ?? 0) ||
     detalles.reduce(
-      (acc: number, d: any) =>
+      (acc: number, d: FacturaDetalleInput) =>
         acc + Number(d.cantidad ?? 0) * Number(d.precioUnitario ?? d.precio ?? 0) - Number(d.descuento ?? 0),
       0
     );
@@ -77,7 +124,7 @@ function buildEmitirFacturaPayload(data: Record<string, any>, numeroFactura?: st
       TOTAL: total,
       COD_USUARIO: data.codUsuario ?? "SUP"
     },
-    detalle: detalles.map((d: any) => ({
+    detalle: detalles.map((d: FacturaDetalleInput) => ({
       COD_SERV: d.codigoArticulo ?? d.articulo ?? d.COD_SERV ?? d.CODIGO,
       CANTIDAD: Number(d.cantidad ?? d.CANTIDAD ?? 0),
       PRECIO: Number(d.precioUnitario ?? d.precio ?? d.PRECIO ?? 0),
@@ -119,7 +166,7 @@ export function useFacturasList(filter?: FacturasFilter) {
 }
 
 export function useFacturaById(numeroFactura: string) {
-  return useQuery<any>({
+  return useQuery<FacturaByIdResponse>({
     queryKey: [QUERY_KEY, numeroFactura],
     queryFn: async () => {
       const row = await apiGet(`${API_BASE}/${TIPO_OPERACION}/${encodeURIComponent(numeroFactura)}`);
@@ -141,7 +188,7 @@ export function useFacturaById(numeroFactura: string) {
 export function useCreateFactura() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, any>) => apiPost(`${API_BASE}/emitir-tx`, buildEmitirFacturaPayload(data)),
+    mutationFn: (data: FacturaPayloadInput) => apiPost(`${API_BASE}/emitir-tx`, buildEmitirFacturaPayload(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
@@ -154,7 +201,7 @@ export function useCreateFactura() {
 export function useUpdateFactura(numeroFactura: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, any>) =>
+    mutationFn: (data: FacturaPayloadInput) =>
       apiPost(`${API_BASE}/emitir-tx`, buildEmitirFacturaPayload(data, numeroFactura))
     ,
     onSuccess: () => {

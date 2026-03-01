@@ -88,7 +88,7 @@ export function LocalizacionModal({ open, onClose, currentConfig, onSave }: Loca
             const endpoints = [`${API_BASE}/v1/config/tasas`, `${API_BASE}/api/v1/config/tasas`];
             let data: TasasBcvResponse | null = null;
             const session = await getSession();
-            const accessToken = (session as any)?.accessToken as string | undefined;
+            const accessToken = (session as unknown as { accessToken?: string } | null)?.accessToken;
             const headers: Record<string, string> = accessToken
                 ? { Authorization: `Bearer ${accessToken}` }
                 : {};
@@ -140,7 +140,7 @@ export function LocalizacionModal({ open, onClose, currentConfig, onSave }: Loca
         }
     };
 
-    const handleChange = (field: keyof LocalizacionConfig, value: any) => {
+    const handleChange = (field: keyof LocalizacionConfig, value: unknown) => {
         setConfig(prev => ({ ...prev, [field]: value }));
     };
 

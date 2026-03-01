@@ -32,6 +32,8 @@ import {
   type NominaFilter,
 } from "../hooks/useNomina";
 
+type NominaDetalleItem = Record<string, unknown>;
+
 export default function NominasPage() {
   const [filter, setFilter] = useState<NominaFilter>({ page: 1, limit: 25 });
   const [selectedNomina, setSelectedNomina] = useState<string | null>(null);
@@ -179,7 +181,7 @@ export default function NominasPage() {
                   <strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}
                 </Typography>
                 <DataGrid
-                  rows={(detalle.data.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }))}
+                  rows={((detalle.data.detalle ?? []) as NominaDetalleItem[]).map((d, i: number) => ({ ...d, _id: i }))}
                   columns={[
                     { field: "concepto", headerName: "Concepto", flex: 1 },
                     { field: "tipo", headerName: "Tipo", width: 120 },

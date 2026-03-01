@@ -103,7 +103,7 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {stats.map((stat, index) => (
-          <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid item key={index} xs={12} sm={6} lg={3}>
             <StatCard {...stat} />
           </Grid>
         ))}
@@ -112,7 +112,7 @@ export default function DashboardPage() {
       {/* Content Sections */}
       <Grid container spacing={2}>
         {/* Últimas Facturas */}
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid item xs={12} lg={6}>
           <Card sx={{ height: '100%' }}>
             <CardHeader
               title="Últimas Facturas"
@@ -133,7 +133,7 @@ export default function DashboardPage() {
         </Grid>
 
         {/* Actividad Reciente */}
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid item xs={12} lg={6}>
           <Card sx={{ height: '100%' }}>
             <CardHeader
               title="Actividad Reciente"

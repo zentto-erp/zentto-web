@@ -72,6 +72,9 @@ interface MovimientoExtracto {
   conciliado?: boolean;
 }
 
+type CuentaRow = Record<string, unknown>;
+type MovimientoSistemaRow = Record<string, unknown>;
+
 // ─── Componente Principal ──────────────────────────────────────
 
 export default function ConciliacionWizard() {
@@ -97,7 +100,7 @@ export default function ConciliacionWizard() {
   // ─── Queries ──────────────────────────────────────────────────
 
   const cuentasQuery = useCuentasBank();
-  const cuentas: any[] = useMemo(
+  const cuentas: CuentaRow[] = useMemo(
     () => (Array.isArray(cuentasQuery.data) ? cuentasQuery.data : cuentasQuery.data?.rows ?? []),
     [cuentasQuery.data]
   );
@@ -107,7 +110,7 @@ export default function ConciliacionWizard() {
     desde: fechaDesde?.format("YYYY-MM-DD"),
     hasta: fechaHasta?.format("YYYY-MM-DD"),
   });
-  const movSistema: any[] = useMemo(
+  const movSistema: MovimientoSistemaRow[] = useMemo(
     () => (Array.isArray(movSistemaQuery.data) ? movSistemaQuery.data : movSistemaQuery.data?.rows ?? []),
     [movSistemaQuery.data]
   );
@@ -122,14 +125,14 @@ export default function ConciliacionWizard() {
   // ─── Cuenta seleccionada ──────────────────────────────────────
 
   const cuentaObj = useMemo(
-    () => cuentas.find((c: any) => (c.Nro_Cta ?? c.nroCta ?? c.id) === nroCtaSeleccionada),
+    () => cuentas.find((c) => (c.Nro_Cta ?? c.nroCta ?? c.id) === nroCtaSeleccionada),
     [cuentas, nroCtaSeleccionada]
   );
 
   // ─── Helpers ──────────────────────────────────────────────────
 
-  const cuentaKey = (c: any) => c.Nro_Cta ?? c.nroCta ?? c.id;
-  const cuentaLabel = (c: any) =>
+  const cuentaKey = (c: CuentaRow) => c.Nro_Cta ?? c.nroCta ?? c.id;
+  const cuentaLabel = (c: CuentaRow) =>
     `${c.Banco ?? c.banco ?? ""} - ${c.Nro_Cta ?? c.nroCta ?? ""}`;
 
   // ─── Navegación ───────────────────────────────────────────────
@@ -148,15 +151,15 @@ export default function ConciliacionWizard() {
       }
       // Crear la conciliación en el backend
       try {
-        const res: any = await crearMut.mutateAsync({
+        const res = await crearMut.mutateAsync({
           Nro_Cta: nroCtaSeleccionada,
           Fecha_Desde: fechaDesde.format("YYYY-MM-DD"),
           Fecha_Hasta: fechaHasta.format("YYYY-MM-DD"),
         });
         setConciliacionId(res?.id ?? res?.Conciliacion_ID ?? null);
         showToast("Conciliación creada correctamente");
-      } catch (e: any) {
-        setError(e?.message ?? "Error al crear la conciliación");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Error al crear la conciliación");
         return;
       }
     }
@@ -171,7 +174,7 @@ export default function ConciliacionWizard() {
         try {
           await importarMut.mutateAsync({
             conciliacionId,
-            extracto: movimientosExtracto as any,
+            extracto: movimientosExtracto,
           });
           showToast("Extracto importado correctamente");
         } catch {
@@ -211,12 +214,12 @@ export default function ConciliacionWizard() {
     try {
       await cerrarMut.mutateAsync({
         Conciliacion_ID: conciliacionId,
-        Saldo_Final_Banco: cuentaObj?.Saldo ?? 0,
+        Saldo_Final_Banco: Number(cuentaObj?.Saldo ?? 0),
       });
       showToast("Conciliación cerrada exitosamente");
       router.push("/bancos");
-    } catch (e: any) {
-      setError(e?.message ?? "Error al cerrar la conciliación");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al cerrar la conciliación");
     }
   };
 
@@ -275,7 +278,7 @@ export default function ConciliacionWizard() {
 
   const movSistemaConId = useMemo(
     () =>
-      movSistema.map((m: any, i: number) => ({
+      movSistema.map((m, i: number) => ({
         ...m,
         id: m.id ?? m.Mov_ID ?? i,
       })),
@@ -283,7 +286,7 @@ export default function ConciliacionWizard() {
   );
 
   const noConciliados = useMemo(
-    () => movSistemaConId.filter((m: any) => !conciliadosIds.has(String(m.id))),
+    () => movSistemaConId.filter((m) => !conciliadosIds.has(String(m.id))),
     [movSistemaConId, conciliadosIds]
   );
 
@@ -309,7 +312,7 @@ export default function ConciliacionWizard() {
                       label="Cuenta Bancaria"
                       onChange={(e) => setNroCtaSeleccionada(e.target.value)}
                     >
-                      {cuentas.map((c: any) => (
+                      {cuentas.map((c) => (
                         <MenuItem key={cuentaKey(c)} value={cuentaKey(c)}>
                           <Stack direction="row" alignItems="center" spacing={1}>
                             <AccountBalanceIcon fontSize="small" />
@@ -490,7 +493,7 @@ export default function ConciliacionWizard() {
                   Ajustes Propuestos
                 </Typography>
                 <EditableDataGrid
-                  rows={noConciliados.map((m: any) => ({
+                  rows={noConciliados.map((m) => ({
                     id: m.id,
                     cuenta: "6.1.01",
                     descripcion: `Ajuste: ${m.Concepto ?? m.concepto ?? ""}`,

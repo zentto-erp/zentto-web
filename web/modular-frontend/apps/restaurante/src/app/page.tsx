@@ -19,9 +19,8 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import IconButton from '@mui/material/IconButton';
-import { LocalizacionModal } from '@datqbox/shared-ui';
-import { usePosStore } from '@datqbox/shared-api';
 import { MapaMesas } from '@/components/MapaMesas';
+import { RestauranteSettingsModal } from '@/components/RestauranteSettingsModal';
 import { PanelPedido } from '@/components/PanelPedido';
 import { useRestaurante, Mesa, ClienteMesa } from '@/hooks/useRestaurante';
 
@@ -54,9 +53,8 @@ export default function RestaurantePage() {
         open: false, message: '', severity: 'success',
     });
 
-    // Configuración compartida con POS (Multi-moneda / Multi-país)
+    // Configuración completa del módulo Restaurante
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const { localizacion, setLocalizacion } = usePosStore();
 
     // La mesa seleccionada SIEMPRE se lee del store (fuente de verdad)
     const mesaSeleccionada = mesaSeleccionadaId ? getMesaById(mesaSeleccionadaId) ?? null : null;
@@ -129,7 +127,7 @@ export default function RestaurantePage() {
         showMsg(result.message, result.success ? 'success' : 'error');
     };
 
-    const handleCrearMesa = (_ambienteId: string, _mesa: any) => {
+    const handleCrearMesa = (_ambienteId: string, _mesa: unknown) => {
         window.location.reload();
     };
 
@@ -269,12 +267,10 @@ export default function RestaurantePage() {
                 </Alert>
             </Snackbar>
 
-            {/* Modal de Configuración Fiscal & Multimoneda (Compartido con POS) */}
-            <LocalizacionModal
+            {/* Modal de Configuración Completa Restaurante */}
+            <RestauranteSettingsModal
                 open={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
-                currentConfig={localizacion}
-                onSave={(newLoc) => setLocalizacion(newLoc)}
             />
 
         </Box>

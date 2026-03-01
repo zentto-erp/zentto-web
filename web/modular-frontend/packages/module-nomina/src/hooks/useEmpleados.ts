@@ -18,7 +18,7 @@ export interface EmpleadoFilter {
  * Lista de empleados desde la API /v1/empleados.
  */
 export function useEmpleadosList(filter?: EmpleadoFilter) {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QK, filter],
     queryFn: () => apiGet("/v1/empleados", filter),
   });
@@ -28,7 +28,7 @@ export function useEmpleadosList(filter?: EmpleadoFilter) {
  * Detalle de un empleado por cédula.
  */
 export function useEmpleadoDetalle(cedula: string | null) {
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: [QK, "detalle", cedula],
     queryFn: () => apiGet(`/v1/empleados/${encodeURIComponent(cedula!)}`),
     enabled: !!cedula,

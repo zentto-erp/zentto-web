@@ -1,5 +1,6 @@
 import { query } from "../../db/query.js";
 import { procesarNominaEmpleado, procesarVacaciones, calcularLiquidacion } from "./service.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface ConceptoLegal {
   id?: number;
@@ -28,6 +29,8 @@ export interface NominaResult {
 }
 
 async function getDefaultCompanyId() {
+  const activeScope = getActiveScope();
+  if (activeScope?.companyId) return activeScope.companyId;
   const rows = await query<{ companyId: number }>(
     `
     SELECT TOP 1 CompanyId AS companyId

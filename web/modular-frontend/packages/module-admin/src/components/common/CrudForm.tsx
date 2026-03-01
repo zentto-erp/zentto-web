@@ -36,8 +36,8 @@ import { FormField } from '@datqbox/shared-api/types';
 interface CrudFormProps {
   fields: FormField[];
   schema: ZodSchema;
-  initialValues?: Record<string, any>;
-  onSave: (data: any) => Promise<void>;
+  initialValues?: Record<string, unknown>;
+  onSave: (data: Record<string, unknown>) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
   title?: string;
@@ -71,7 +71,7 @@ export default function CrudForm({
     }
   }, [initialValues, reset]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: Record<string, unknown>) => {
     try {
       setSubmitError(null);
       setSubmitSuccess(false);

@@ -1,8 +1,9 @@
 'use client';
 
 import Typography from '@mui/material/Typography';
+import type { SxProps, Theme } from '@mui/material/styles';
 
-export default function Copyright(props: { sx?: any }) {
+export default function Copyright(props: { sx?: SxProps<Theme> }) {
   return (
     <Typography
       variant="body2"

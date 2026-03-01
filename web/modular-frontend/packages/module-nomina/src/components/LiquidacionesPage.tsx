@@ -30,6 +30,8 @@ import {
   type LiquidacionInput,
 } from "../hooks/useNomina";
 
+type LiquidacionDetalleItem = Record<string, unknown>;
+
 export default function LiquidacionesPage() {
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -112,7 +114,7 @@ export default function LiquidacionesPage() {
               <Typography variant="body2"><strong>Causa:</strong> {detalle.data.causaRetiro}</Typography>
               {detalle.data.detalle && (
                 <DataGrid
-                  rows={(detalle.data.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }))}
+                  rows={((detalle.data.detalle ?? []) as LiquidacionDetalleItem[]).map((d, i: number) => ({ ...d, _id: i }))}
                   columns={[
                     { field: "concepto", headerName: "Concepto", flex: 1 },
                     { field: "monto", headerName: "Monto", width: 140, renderCell: (p) => formatCurrency(p.value) },
@@ -145,7 +147,7 @@ export default function LiquidacionesPage() {
               <Select
                 value={form.causaRetiro || "RENUNCIA"}
                 label="Causa de Retiro"
-                onChange={(e) => setForm((f) => ({ ...f, causaRetiro: e.target.value as any }))}
+                onChange={(e) => setForm((f) => ({ ...f, causaRetiro: e.target.value as "RENUNCIA" | "DESPIDO" | "DESPIDO_JUSTIFICADO" }))}
               >
                 <MenuItem value="RENUNCIA">Renuncia</MenuItem>
                 <MenuItem value="DESPIDO">Despido</MenuItem>

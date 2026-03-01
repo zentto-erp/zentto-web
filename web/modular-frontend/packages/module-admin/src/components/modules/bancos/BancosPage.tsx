@@ -28,6 +28,9 @@ import {
   useCuentasBancarias
 } from "../../../hooks/useBancosAuxiliares";
 
+type BancoRow = Record<string, unknown>;
+type CuentaRow = Record<string, unknown>;
+
 export default function BancosPage() {
   const [search, setSearch] = useState("");
   const [page] = useState(1);
@@ -58,7 +61,7 @@ export default function BancosPage() {
   const eliminar = useDeleteBanco();
   const generarMov = useGenerarMovimientoBancario();
 
-  const rows = data?.rows ?? data?.items ?? [];
+  const rows = (data?.rows ?? data?.items ?? []) as BancoRow[];
 
   const onCreate = async () => {
     setErr("");
@@ -67,8 +70,8 @@ export default function BancosPage() {
       await crear.mutateAsync(form);
       setMsg("Banco creado");
       setForm({ Nombre: "", Contacto: "", Direccion: "", Telefonos: "", Co_Usuario: "SUP" });
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -79,8 +82,8 @@ export default function BancosPage() {
     try {
       await editar.mutateAsync({ nombre: selectedNombre, data: form });
       setMsg("Banco actualizado");
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -90,8 +93,8 @@ export default function BancosPage() {
     try {
       await eliminar.mutateAsync(nombre);
       setMsg("Banco eliminado");
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -100,11 +103,11 @@ export default function BancosPage() {
     setMsg("");
     try {
       const payload = { ...mov, Monto: Number(mov.Monto) };
-      await generarMov.mutateAsync(payload as any);
+      await generarMov.mutateAsync(payload);
       setMsg("Movimiento bancario generado");
       setMovOpen(false);
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -165,7 +168,7 @@ export default function BancosPage() {
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={5}>Cargando...</TableCell></TableRow>}
             {!isLoading && rows.length === 0 && <TableRow><TableCell colSpan={5}>Sin bancos.</TableCell></TableRow>}
-            {!isLoading && rows.map((r: any) => (
+            {!isLoading && rows.map((r) => (
               <TableRow key={String(r.Nombre ?? r.NOMBRE)} selected={selectedNombre === String(r.Nombre ?? r.NOMBRE)}>
                 <TableCell>{String(r.Nombre ?? r.NOMBRE)}</TableCell>
                 <TableCell>{String(r.Contacto ?? "")}</TableCell>
@@ -211,7 +214,7 @@ export default function BancosPage() {
                 onChange={(e) => setMov((s) => ({ ...s, Nro_Cta: e.target.value }))}
               >
                 <option value="">Seleccione</option>
-                {(cuentas?.rows ?? []).map((c: any) => (
+                {((cuentas?.rows ?? []) as CuentaRow[]).map((c) => (
                   <option key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>{String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}</option>
                 ))}
               </TextField>

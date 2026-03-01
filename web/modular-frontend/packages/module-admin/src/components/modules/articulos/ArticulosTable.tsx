@@ -212,7 +212,7 @@ export default function ArticulosTable() {
   };
 
   // Resetear página al cambiar un filtro
-  const onFilterChange = (setter: (v: any) => void) => (val: any) => {
+  const onFilterChange = (setter: (v: unknown) => void) => (val: unknown) => {
     setter(val);
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };

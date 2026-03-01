@@ -21,8 +21,8 @@ export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
 }
 
-export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: string): any[] {
-    const nav: any[] = [];
+export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: string): Array<Record<string, unknown>> {
+    const nav: Array<Record<string, unknown>> = [];
 
     // If we are on the App Selector or Home, show the general landing/support sidebar
     if (pathname === '/' || pathname === '/aplicaciones') {
@@ -101,10 +101,11 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     }
 
     // App: Configuración Central (Ajustes) y Maestros
-    if (isAdmin && isApp('/configuracion')) {
-        nav.push({ kind: 'page', segment: 'configuracion', title: 'Ajustes Generales', icon: <SettingsIcon /> });
+    if (isAdmin && (isApp('/configuracion') || isApp('/maestros') || isApp('/empleados'))) {
+        nav.push({ kind: 'page', segment: 'configuracion', title: 'Configuración Global', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'configuracion/formas-pago', title: 'Formas de Pago', icon: <PaymentsIcon /> });
         if (has(modulos, 'usuarios')) {
-            nav.push({ kind: 'page', segment: 'usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
+            nav.push({ kind: 'page', segment: 'configuracion/usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
         }
         nav.push({ kind: 'page', segment: 'maestros/correlativo', title: 'Correlativos', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'maestros/empresa', title: 'Empresa', icon: <SettingsIcon /> });

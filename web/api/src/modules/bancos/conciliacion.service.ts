@@ -1,5 +1,6 @@
 import { getPool, sql } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface ConciliacionRow {
   ID?: number;
@@ -70,6 +71,14 @@ type BankAccountRow = {
 let scopeCache: Scope | null = null;
 
 async function getScope(): Promise<Scope> {
+  const activeScope = getActiveScope();
+  if (scopeCache && activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   if (scopeCache) return scopeCache;
 
   const rows = await query<{ companyId: number; branchId: number; systemUserId: number | null }>(
@@ -95,6 +104,13 @@ async function getScope(): Promise<Scope> {
     branchId: Number(row?.branchId ?? 1),
     systemUserId: row?.systemUserId == null ? null : Number(row.systemUserId),
   };
+  if (activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
   return scopeCache;
 }
 

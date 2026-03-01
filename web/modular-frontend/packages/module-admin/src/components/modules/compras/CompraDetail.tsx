@@ -21,6 +21,8 @@ interface CompraDetailProps {
   numFact: string;
 }
 
+type CompraDetalleRow = Record<string, unknown>;
+
 export default function CompraDetail({ numFact }: CompraDetailProps) {
   const router = useRouter();
   const compra = useCompraById(numFact);
@@ -28,7 +30,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
   const indicadores = useIndicadoresCompra(numFact);
 
   const row = compra.data ?? null;
-  const detRows = detalle.data ?? [];
+  const detRows = (detalle.data ?? []) as CompraDetalleRow[];
   const ind = indicadores.data ?? null;
 
   return (
@@ -100,7 +102,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
                 <TableCell colSpan={6}>Sin detalle.</TableCell>
               </TableRow>
             )}
-            {detRows.map((d: any, idx: number) => {
+            {detRows.map((d, idx: number) => {
               const c = Number(d.CANTIDAD || 0);
               const p = Number(d.PRECIO_COSTO || 0);
               return (

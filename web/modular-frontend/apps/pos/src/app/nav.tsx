@@ -18,8 +18,8 @@ const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'),
  * @param modulos - Lista de módulos habilitados para el usuario
  * @returns Array de configuración de navegación para OdooLayout
  */
-export function buildPosNav(isAdmin: boolean, modulos: string[]): any[] {
-    const nav: any[] = [];
+export function buildPosNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
+    const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('pos') || has('ventas')) {
@@ -67,6 +67,13 @@ export function buildPosNav(isAdmin: boolean, modulos: string[]): any[] {
             kind: 'page',
             segment: 'correlativos-fiscales',
             title: 'Correlativos Fiscales',
+            icon: <SettingsIcon />,
+        });
+
+        nav.push({
+            kind: 'page',
+            segment: 'configuracion',
+            title: 'Configuración POS',
             icon: <SettingsIcon />,
         });
     }

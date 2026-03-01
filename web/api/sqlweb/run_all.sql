@@ -10,3 +10,15 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\09_legacy_api_tables_compat.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\10_legacy_api_sps_compat.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\11_legacy_cleanup_upsize_ts.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\12_seed_smoke_test_data.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\13_auth_compat_and_seed.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\14_rest_order_ticket_audit_compat.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\15_inventario_id_compat.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\16_sistema_tables_seed.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\17_media_assets.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\18_media_asset_key_length_fix.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\001_user_company_access.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\003_branch_country_support.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\004_country_timezone_support.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\005_auth_security_hardening.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\002_seed_multicompany_demo.sql

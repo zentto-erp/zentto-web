@@ -109,6 +109,8 @@ const RESTAURANTE_ADMIN_KEYS = {
     ambientes: ['restaurante', 'admin', 'ambientes'] as const,
 };
 
+type ApiRow = Record<string, unknown>;
+
 export function useProductosAdminQuery() {
     return useQuery({
         queryKey: RESTAURANTE_ADMIN_KEYS.productos,
@@ -134,8 +136,8 @@ export function useComprasAdminQuery(filters?: { estado?: string; from?: string;
     return useQuery({
         queryKey: ['restaurante', 'admin', 'compras', filters],
         queryFn: async () => {
-            const data = await apiGet('/v1/restaurante/admin/compras', filters) as { rows?: any[] };
-            const rows: CompraRestauranteAdmin[] = (data.rows ?? []).map((row: any) => ({
+            const data = await apiGet('/v1/restaurante/admin/compras', filters) as { rows?: ApiRow[] };
+            const rows: CompraRestauranteAdmin[] = (data.rows ?? []).map((row: ApiRow) => ({
                 id: Number(row.id ?? row.Id ?? 0),
                 numCompra: String(row.numCompra ?? row.NumCompra ?? ''),
                 proveedorId: String(row.proveedorId ?? row.ProveedorId ?? ''),
@@ -154,7 +156,7 @@ export function useCompraDetalleQuery(compraId?: number) {
         queryKey: ['restaurante', 'admin', 'compras', 'detalle', compraId],
         enabled: Boolean(compraId),
         queryFn: async () => {
-            const data = await apiGet(`/v1/restaurante/admin/compras/${compraId}`) as { compra?: any; detalle?: any[] };
+            const data = await apiGet(`/v1/restaurante/admin/compras/${compraId}`) as { compra?: ApiRow; detalle?: ApiRow[] };
             const compraRaw = data.compra ?? null;
             const compra = compraRaw
                 ? {
@@ -171,7 +173,7 @@ export function useCompraDetalleQuery(compraId?: number) {
                 }
                 : null;
 
-            const detalle: CompraDetalleRowAdmin[] = (data.detalle ?? []).map((row: any) => ({
+            const detalle: CompraDetalleRowAdmin[] = (data.detalle ?? []).map((row: ApiRow) => ({
                 id: Number(row.id ?? row.Id ?? 0) || undefined,
                 compraId: Number(row.compraId ?? row.CompraId ?? 0) || undefined,
                 inventarioId: String(row.inventarioId ?? row.InventarioId ?? ''),
@@ -195,9 +197,9 @@ export function useProveedoresLookupQuery(searchText: string, enabled = true) {
             const data = await apiGet('/v1/restaurante/admin/proveedores', {
                 search: searchText || undefined,
                 limit: 20,
-            }) as { rows?: any[] };
+            }) as { rows?: ApiRow[] };
 
-            const rows: ProveedorLookupItem[] = (data.rows ?? []).map((row: any) => ({
+            const rows: ProveedorLookupItem[] = (data.rows ?? []).map((row: ApiRow) => ({
                 id: String(row.id ?? row.codigo ?? '').trim(),
                 codigo: String(row.codigo ?? row.id ?? '').trim(),
                 nombre: String(row.nombre ?? '').trim(),
@@ -363,7 +365,8 @@ export function useUpsertRecetaItemMutation() {
     return useMutation({
         mutationFn: async (payload: Record<string, unknown>) => apiPost('/v1/restaurante/admin/recetas', payload),
         onSuccess: async (_result, variables) => {
-            const productoId = Number((variables as any)?.productoId);
+            const vars = variables as { productoId?: number | string };
+            const productoId = Number(vars?.productoId);
             if (productoId) {
                 await queryClient.invalidateQueries({ queryKey: ['restaurante', 'admin', 'producto', productoId] });
             }
@@ -393,10 +396,10 @@ export function useInsumosRestauranteLookupQuery(searchText: string, enabled = t
             const data = await apiGet('/v1/restaurante/admin/insumos', {
                 search: searchText || undefined,
                 limit: 20,
-            }) as { rows?: any[] };
+            }) as { rows?: ApiRow[] };
 
             const rows = data?.rows ?? [];
-            const mapped: InventarioLookupItem[] = rows.map((row: any) => ({
+            const mapped: InventarioLookupItem[] = rows.map((row: ApiRow) => ({
                 codigo: String(row.CODIGO ?? row.codigo ?? '').trim(),
                 descripcion: String(row.DESCRIPCION ?? row.descripcion ?? row.DescripcionCompleta ?? '').trim(),
                 unidad: String(row.Unidad ?? row.unidad ?? '').trim() || undefined,
@@ -415,9 +418,9 @@ export function useInsumosAdminQuery(searchText?: string) {
             const data = await apiGet('/v1/restaurante/admin/insumos', {
                 search: searchText || undefined,
                 limit: 100,
-            }) as { rows?: any[] };
+            }) as { rows?: ApiRow[] };
 
-            const rows = (data.rows ?? []).map((row: any) => ({
+            const rows = (data.rows ?? []).map((row: ApiRow) => ({
                 codigo: String(row.codigo ?? row.CODIGO ?? '').trim(),
                 descripcion: String(row.descripcion ?? row.DESCRIPCION ?? '').trim(),
                 unidad: String(row.unidad ?? row.Unidad ?? '').trim() || '',

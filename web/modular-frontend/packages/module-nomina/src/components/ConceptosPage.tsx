@@ -121,7 +121,7 @@ export default function ConceptosPage() {
               <Select
                 value={form.tipo || "ASIGNACION"}
                 label="Tipo"
-                onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value as any }))}
+                onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value as "ASIGNACION" | "DEDUCCION" | "BONO" }))}
               >
                 <MenuItem value="ASIGNACION">Asignación</MenuItem>
                 <MenuItem value="DEDUCCION">Deducción</MenuItem>

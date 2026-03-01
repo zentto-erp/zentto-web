@@ -20,6 +20,7 @@ import {
     Chip,
     TextField,
     Autocomplete,
+    Tooltip
 } from '@mui/material';
 import { DatePicker } from '@datqbox/shared-ui';
 import dayjs, { Dayjs } from 'dayjs';
@@ -100,37 +101,46 @@ export default function PosReportesPage() {
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} sm={3}>
-                        <DatePicker
-                            label="Desde"
-                            value={fechaDesde}
-                            onChange={setFechaDesde}
-                            slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                        <DatePicker
-                            label="Hasta"
-                            value={fechaHasta}
-                            onChange={setFechaHasta}
-                            slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                        <Autocomplete
-                            freeSolo
-                            size="small"
-                            options={cajasDisponibles}
-                            value={cajaFiltro}
-                            onInputChange={(_e, value) => setCajaFiltro(value.toUpperCase())}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Caja"
-                                    placeholder="Ej: 01"
-                                    helperText="Vacío = todas"
+                        <Tooltip title="Fecha inicial para calcular métricas y buscar ventas." arrow placement="top">
+                            <Box>
+                                <DatePicker
+                                    label="Desde"
+                                    value={fechaDesde}
+                                    onChange={setFechaDesde}
+                                    slotProps={{ textField: { fullWidth: true } }}
                                 />
-                            )}
-                        />
+                            </Box>
+                        </Tooltip>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                        <Tooltip title="Fecha final para calcular métricas y buscar ventas." arrow placement="top">
+                            <Box>
+                                <DatePicker
+                                    label="Hasta"
+                                    value={fechaHasta}
+                                    onChange={setFechaHasta}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                            </Box>
+                        </Tooltip>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                        <Tooltip title="Filtrar por número de caja. Deje vacío para consultar todas." arrow placement="top">
+                            <Autocomplete
+                                freeSolo
+                                options={cajasDisponibles}
+                                value={cajaFiltro}
+                                onInputChange={(_e, value) => setCajaFiltro(value.toUpperCase())}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Caja"
+                                        placeholder="Ej: 01"
+                                        helperText="Vacío = todas"
+                                    />
+                                )}
+                            />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} sm={2}>
                         <Button variant="contained" fullWidth onClick={handleGenerar}>

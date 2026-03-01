@@ -46,7 +46,7 @@ export interface Column<T> {
   type?: 'text' | 'number' | 'date' | 'currency' | 'percentage' | 'status';
   width?: string;
   sortable?: boolean;
-  formatFn?: (value: any) => string;
+  formatFn?: (value: unknown) => string;
 }
 
 export interface Action<T> {
@@ -72,7 +72,7 @@ interface DataGridProps<T> {
   emptyText?: string;
 }
 
-export default function DataGrid<T extends { [key: string]: any }>({
+export default function DataGrid<T extends Record<string, unknown>>({
   columns,
   data,
   totalRecords = 0,
@@ -102,7 +102,7 @@ export default function DataGrid<T extends { [key: string]: any }>({
     onSortChange?.(accessor, order);
   };
 
-  const formatCellValue = (column: Column<T>, value: any): string => {
+  const formatCellValue = (column: Column<T>, value: unknown): string => {
     if (column.formatFn) {
       return column.formatFn(value);
     }

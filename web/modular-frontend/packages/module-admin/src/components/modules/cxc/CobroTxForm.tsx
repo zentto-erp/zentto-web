@@ -254,7 +254,7 @@ export default function CobroTxForm() {
       {docsQuery.error && <Alert severity="error">Error cargando pendientes.</Alert>}
       {cobrarMutation.isError && <Alert severity="error">Error aplicando cobro.</Alert>}
       {cobrarMutation.isSuccess && (
-        <Alert severity="success">Cobro aplicado. Recibo: {String((cobrarMutation.data as any)?.numRecibo || "")}</Alert>
+        <Alert severity="success">Cobro aplicado. Recibo: {String((cobrarMutation.data as { numRecibo?: string })?.numRecibo || "")}</Alert>
       )}
 
       {saldoQuery.data?.data && (

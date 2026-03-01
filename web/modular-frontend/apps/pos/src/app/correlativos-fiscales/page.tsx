@@ -15,6 +15,7 @@ import {
     TableRow,
     TextField,
     Typography,
+    Tooltip
 } from '@mui/material';
 import { useGuardarPosCorrelativoFiscal, usePosCorrelativosFiscales } from '@/hooks';
 
@@ -55,12 +56,17 @@ export default function PosCorrelativosFiscalesPage() {
                 setCorrelativoActual('0');
                 setDescripcion('');
             }
-        } catch (e: any) {
-            setError(e?.message || 'No se pudo guardar el correlativo fiscal.');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'No se pudo guardar el correlativo fiscal.');
         }
     };
 
-    const onSeleccionarFila = (row: any) => {
+    const onSeleccionarFila = (row: {
+        cajaId?: string | null;
+        serialFiscal?: string | null;
+        correlativoActual?: number | null;
+        descripcion?: string | null;
+    }) => {
         setCajaId(row.cajaId ?? '');
         setSerialFiscal(row.serialFiscal ?? '');
         setCorrelativoActual(String(row.correlativoActual ?? 0));
@@ -81,44 +87,48 @@ export default function PosCorrelativosFiscalesPage() {
             <Paper sx={{ p: 2, mb: 2 }}>
                 <Grid container spacing={2}>
                     <Grid item xs={12} sm={3}>
-                        <TextField
-                            label="Caja"
-                            value={cajaId}
-                            onChange={(e) => setCajaId(e.target.value.toUpperCase())}
-                            size="small"
-                            fullWidth
-                            helperText="Vacío = configuración global FACTURA"
-                        />
+                        <Tooltip title="Identificador de la caja para la que aplica este correlativo. Dejar vacío para configuración global." arrow placement="top">
+                            <TextField
+                                label="Caja"
+                                value={cajaId}
+                                onChange={(e) => setCajaId(e.target.value.toUpperCase())}
+                                fullWidth
+                                helperText="Vacío = configuración global FACTURA"
+                            />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} sm={3}>
-                        <TextField
-                            label="Serial Fiscal"
-                            value={serialFiscal}
-                            onChange={(e) => setSerialFiscal(e.target.value.toUpperCase())}
-                            size="small"
-                            fullWidth
-                            required
-                        />
+                        <Tooltip title="Número de serie físico de la impresora fiscal asociada a esta caja." arrow placement="top">
+                            <TextField
+                                label="Serial Fiscal"
+                                value={serialFiscal}
+                                onChange={(e) => setSerialFiscal(e.target.value.toUpperCase())}
+                                fullWidth
+                                required
+                            />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} sm={2}>
-                        <TextField
-                            label="Correlativo"
-                            value={correlativoActual}
-                            onChange={(e) => setCorrelativoActual(e.target.value)}
-                            size="small"
-                            fullWidth
-                            type="number"
-                            inputProps={{ min: 0 }}
-                        />
+                        <Tooltip title="Último número de factura o documento impreso. Se incrementará en 1 en la próxima venta." arrow placement="top">
+                            <TextField
+                                label="Correlativo"
+                                value={correlativoActual}
+                                onChange={(e) => setCorrelativoActual(e.target.value)}
+                                fullWidth
+                                type="number"
+                                inputProps={{ min: 0 }}
+                            />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12} sm={4}>
-                        <TextField
-                            label="Descripción"
-                            value={descripcion}
-                            onChange={(e) => setDescripcion(e.target.value)}
-                            size="small"
-                            fullWidth
-                        />
+                        <Tooltip title="Nota descriptiva sobre esta configuración de correlativo." arrow placement="top">
+                            <TextField
+                                label="Descripción"
+                                value={descripcion}
+                                onChange={(e) => setDescripcion(e.target.value)}
+                                fullWidth
+                            />
+                        </Tooltip>
                     </Grid>
                     <Grid item xs={12}>
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
