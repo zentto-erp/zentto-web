@@ -16,8 +16,8 @@ import {
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
 import { ContextActionHeader } from "@datqbox/shared-ui";
 
-type CuentaRow = Record<string, unknown>;
-type MovimientoRow = Record<string, unknown>;
+type CuentaRow = Record<string, any>;
+type MovimientoRow = Record<string, any>;
 
 function firstDayOfCurrentMonth() {
   const d = new Date();

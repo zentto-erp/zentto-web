@@ -79,8 +79,8 @@ interface ConceptoRow {
   editable?: boolean;
 }
 
-type EmpleadoRow = Record<string, unknown>;
-type ConceptoApiRow = Record<string, unknown>;
+type EmpleadoRow = Record<string, any>;
+type ConceptoApiRow = Record<string, any>;
 type CellLike = { value: unknown };
 
 // ─── Componente Principal ──────────────────────────────────────

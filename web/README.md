@@ -2,18 +2,15 @@
 
 ## Estructura
 - `web/api`: API REST Node.js + TypeScript (Express).
-- `web/frontend`: Next.js + MUI + TanStack.
+- `web/modular-frontend`: Monorepo micro-frontends (Next.js + MUI).
 - `web/api/plugins`: add-ons del backend (estilo SAP).
 - `web/contracts`: contrato OpenAPI compartido.
-- `web/AGENTS.md`: gestion operativa de subagentes.
-- `web/STATUS.md`: backlog y estado.
 
-## Workspace (backend + frontend)
+## Workspace
 - Desde `web/`:
 - `npm run install:all`
 - `npm run dev`
 - `npm run dev:api`
-- `npm run dev:web`
 - `npm run sync:check`
 - `npm run ci:quick`
 
@@ -58,7 +55,7 @@
 - `POST /v1/crud/:table/key`
 - `GET|PUT|DELETE /v1/crud/:table/:key?schema=dbo`
 
-Compatibilidad frontend:
+Compatibilidad modular-frontend:
 - Alias disponible en `/api/v1/*` para hooks que ya apuntan a ese prefijo.
 
 ## Add-ons (backend)

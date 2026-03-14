@@ -72,8 +72,8 @@ interface MovimientoExtracto {
   conciliado?: boolean;
 }
 
-type CuentaRow = Record<string, unknown>;
-type MovimientoSistemaRow = Record<string, unknown>;
+type CuentaRow = Record<string, any>;
+type MovimientoSistemaRow = Record<string, any>;
 
 // ─── Componente Principal ──────────────────────────────────────
 

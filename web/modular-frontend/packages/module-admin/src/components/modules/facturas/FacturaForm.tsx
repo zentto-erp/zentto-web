@@ -167,7 +167,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
       };
 
       if (isEdit && numeroFactura) {
-        updateFactura(submitData as UpdateFacturaDTO, {
+        updateFactura(submitData as any, {
           onSuccess: () => {
             setSubmitSuccess(true);
             setTimeout(() => router.push("/facturas"), 1500);
@@ -177,7 +177,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
           }
         });
       } else {
-        createFactura(submitData, {
+        createFactura(submitData as any, {
           onSuccess: () => {
             setSubmitSuccess(true);
             setTimeout(() => router.push("/facturas"), 1500);

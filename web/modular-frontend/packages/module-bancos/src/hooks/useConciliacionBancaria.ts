@@ -14,7 +14,7 @@ export type ConciliacionFilter = {
 };
 
 export function useConciliaciones(filter?: ConciliacionFilter) {
-  return useQuery<unknown>({
+  return useQuery<any>({
     queryKey: [QUERY_KEY, "list", filter],
     queryFn: async () => {
       const p = new URLSearchParams();
@@ -28,14 +28,14 @@ export function useConciliaciones(filter?: ConciliacionFilter) {
 }
 
 export function useCuentasBank() {
-  return useQuery<unknown>({
+  return useQuery<any>({
     queryKey: [QUERY_KEY, "cuentas"],
     queryFn: () => apiGet(`${API_BASE}/cuentas/list`)
   });
 }
 
 export function useConciliacionDetalle(id?: number) {
-  return useQuery<unknown>({
+  return useQuery<any>({
     queryKey: [QUERY_KEY, "detalle", id],
     queryFn: () => apiGet(`${API_BASE}/conciliaciones/${id}`),
     enabled: !!id

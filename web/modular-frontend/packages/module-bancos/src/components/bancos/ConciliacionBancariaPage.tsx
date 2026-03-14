@@ -31,8 +31,8 @@ import {
   useImportarExtracto
 } from "../../hooks/useConciliacionBancaria";
 
-type CuentaRow = Record<string, unknown>;
-type ConciliacionRow = Record<string, unknown>;
+type CuentaRow = Record<string, any>;
+type ConciliacionRow = Record<string, any>;
 
 function firstDayOfCurrentMonth() {
   const d = new Date();

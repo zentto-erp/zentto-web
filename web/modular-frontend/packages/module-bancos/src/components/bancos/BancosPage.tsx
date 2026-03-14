@@ -28,8 +28,8 @@ import {
   useCuentasBancarias
 } from "../../hooks/useBancosAuxiliares";
 
-type BancoRow = Record<string, unknown>;
-type CuentaRow = Record<string, unknown>;
+type BancoRow = Record<string, any>;
+type CuentaRow = Record<string, any>;
 
 export default function BancosPage() {
   const [search, setSearch] = useState("");
@@ -103,7 +103,7 @@ export default function BancosPage() {
     setMsg("");
     try {
       const payload = { ...mov, Monto: Number(mov.Monto) };
-      await generarMov.mutateAsync(payload);
+      await generarMov.mutateAsync(payload as any);
       setMsg("Movimiento bancario generado");
       setMovOpen(false);
     } catch (e: unknown) {
