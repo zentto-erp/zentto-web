@@ -35,6 +35,7 @@ BEGIN
     DocumentId            INT             IDENTITY(1,1) NOT NULL,
     DocumentNumber        NVARCHAR(60)    NOT NULL,
     SerialType            NVARCHAR(60)    NOT NULL CONSTRAINT DF_SalesDoc_SerialType DEFAULT (N''),
+    FiscalMemoryNumber    NVARCHAR(10)    NOT NULL CONSTRAINT DF_SalesDoc_FiscalMemNum DEFAULT (N'1'),
     OperationType         NVARCHAR(20)    NOT NULL,
     CustomerCode          NVARCHAR(60)    NULL,
     CustomerName          NVARCHAR(255)   NULL,
@@ -84,7 +85,7 @@ BEGIN
     CONSTRAINT PK_SalesDocument PRIMARY KEY (DocumentId)
   );
   ALTER TABLE ar.SalesDocument ADD
-    CONSTRAINT UQ_SalesDocument_NumDocOp UNIQUE (DocumentNumber, OperationType);
+    CONSTRAINT UQ_SalesDocument_NumDocOp UNIQUE (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType);
   CREATE INDEX IX_SalesDocument_OpDate
     ON ar.SalesDocument (OperationType, DocumentDate DESC) WHERE IsDeleted = 0;
   CREATE INDEX IX_SalesDocument_Customer
@@ -98,6 +99,8 @@ BEGIN
   CREATE TABLE ar.SalesDocumentLine (
     LineId            INT             IDENTITY(1,1) NOT NULL,
     DocumentNumber    NVARCHAR(60)    NOT NULL,
+    SerialType        NVARCHAR(60)    NOT NULL CONSTRAINT DF_SalesDocLine_SerialType DEFAULT (N''),
+    FiscalMemoryNumber NVARCHAR(10)   NOT NULL CONSTRAINT DF_SalesDocLine_FiscalMemNum DEFAULT (N'1'),
     OperationType     NVARCHAR(20)    NOT NULL,
     LineNumber        INT             NULL CONSTRAINT DF_SalesDocLine_LineNumber DEFAULT (0),
     ProductCode       NVARCHAR(60)    NULL,
@@ -125,11 +128,11 @@ BEGIN
     DeletedByUserId   INT             NULL,
     RowVer            ROWVERSION      NOT NULL,
     CONSTRAINT PK_SalesDocumentLine PRIMARY KEY (LineId),
-    CONSTRAINT FK_SalesDocLine_SalesDoc FOREIGN KEY (DocumentNumber, OperationType)
-      REFERENCES ar.SalesDocument (DocumentNumber, OperationType)
+    CONSTRAINT FK_SalesDocLine_SalesDoc FOREIGN KEY (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType)
+      REFERENCES ar.SalesDocument (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType)
   );
   CREATE INDEX IX_SalesDocLine_DocNum
-    ON ar.SalesDocumentLine (DocumentNumber, OperationType) WHERE IsDeleted = 0;
+    ON ar.SalesDocumentLine (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType) WHERE IsDeleted = 0;
 END;
 GO
 
@@ -139,6 +142,8 @@ BEGIN
   CREATE TABLE ar.SalesDocumentPayment (
     PaymentId         INT             IDENTITY(1,1) NOT NULL,
     DocumentNumber    NVARCHAR(60)    NOT NULL,
+    SerialType        NVARCHAR(60)    NOT NULL CONSTRAINT DF_SalesDocPay_SerialType DEFAULT (N''),
+    FiscalMemoryNumber NVARCHAR(10)   NOT NULL CONSTRAINT DF_SalesDocPay_FiscalMemNum DEFAULT (N'1'),
     OperationType     NVARCHAR(20)    NOT NULL CONSTRAINT DF_SalesDocPay_OpType DEFAULT (N'FACT'),
     PaymentMethod     NVARCHAR(30)    NULL,
     BankCode          NVARCHAR(60)    NULL,
@@ -159,11 +164,11 @@ BEGIN
     DeletedByUserId   INT             NULL,
     RowVer            ROWVERSION      NOT NULL,
     CONSTRAINT PK_SalesDocumentPayment PRIMARY KEY (PaymentId),
-    CONSTRAINT FK_SalesDocPay_SalesDoc FOREIGN KEY (DocumentNumber, OperationType)
-      REFERENCES ar.SalesDocument (DocumentNumber, OperationType)
+    CONSTRAINT FK_SalesDocPay_SalesDoc FOREIGN KEY (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType)
+      REFERENCES ar.SalesDocument (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType)
   );
   CREATE INDEX IX_SalesDocPayment_DocNum
-    ON ar.SalesDocumentPayment (DocumentNumber, OperationType) WHERE IsDeleted = 0;
+    ON ar.SalesDocumentPayment (DocumentNumber, SerialType, FiscalMemoryNumber, OperationType) WHERE IsDeleted = 0;
 END;
 GO
 
@@ -384,6 +389,7 @@ SELECT
     DocumentId                     AS ID,
     DocumentNumber                 AS NUM_DOC,
     SerialType                     AS SERIALTIPO,
+    FiscalMemoryNumber             AS Tipo_Orden,
     OperationType                  AS TIPO_OPERACION,
     CustomerCode                   AS CODIGO,
     CustomerName                   AS NOMBRE,
@@ -433,6 +439,8 @@ CREATE VIEW dbo.DocumentosVentaDetalle AS
 SELECT
     LineId                             AS ID,
     DocumentNumber                     AS NUM_DOC,
+    SerialType                         AS SERIALTIPO,
+    FiscalMemoryNumber                 AS Tipo_Orden,
     OperationType                      AS TIPO_OPERACION,
     LineNumber                         AS RENGLON,
     ProductCode                        AS COD_SERV,
@@ -462,6 +470,8 @@ CREATE VIEW dbo.DocumentosVentaPago AS
 SELECT
     PaymentId                          AS ID,
     DocumentNumber                     AS NUM_DOC,
+    SerialType                         AS SERIALTIPO,
+    FiscalMemoryNumber                 AS Tipo_Orden,
     OperationType                      AS TIPO_OPERACION,
     PaymentMethod                      AS TIPO_PAGO,
     BankCode                           AS BANCO,
@@ -608,7 +618,7 @@ INSTEAD OF INSERT AS
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO ar.SalesDocument (
-        DocumentNumber, SerialType, OperationType, CustomerCode, CustomerName, FiscalId,
+        DocumentNumber, SerialType, FiscalMemoryNumber, OperationType, CustomerCode, CustomerName, FiscalId,
         DocumentDate, DueDate, DocumentTime, SubTotal, TaxableAmount, ExemptAmount,
         TaxAmount, TaxRate, TotalAmount, DiscountAmount, IsVoided, IsPaid, IsInvoiced,
         IsDelivered, OriginDocumentNumber, OriginDocumentType, ControlNumber, IsLegal,
@@ -617,7 +627,7 @@ BEGIN
         VehiclePlate, Mileage, TollAmount, CreatedByUserId, UpdatedByUserId
     )
     SELECT
-        NUM_DOC, SERIALTIPO, TIPO_OPERACION, CODIGO, NOMBRE, RIF,
+        NUM_DOC, SERIALTIPO, ISNULL(Tipo_Orden, N'1'), TIPO_OPERACION, CODIGO, NOMBRE, RIF,
         FECHA, FECHA_VENCE, HORA, SUBTOTAL, MONTO_GRA, MONTO_EXE,
         IVA, ALICUOTA, TOTAL, DESCUENTO, ANULADA, CANCELADA, FACTURADA,
         ENTREGADA, DOC_ORIGEN, TIPO_DOC_ORIGEN, NUM_CONTROL, LEGAL,
@@ -634,7 +644,8 @@ INSTEAD OF UPDATE AS
 BEGIN
     SET NOCOUNT ON;
     UPDATE t SET
-        DocumentNumber = i.NUM_DOC, SerialType = i.SERIALTIPO, OperationType = i.TIPO_OPERACION,
+        DocumentNumber = i.NUM_DOC, SerialType = i.SERIALTIPO,
+        FiscalMemoryNumber = ISNULL(i.Tipo_Orden, N'1'), OperationType = i.TIPO_OPERACION,
         CustomerCode = i.CODIGO, CustomerName = i.NOMBRE, FiscalId = i.RIF,
         DocumentDate = i.FECHA, DueDate = i.FECHA_VENCE, DocumentTime = i.HORA,
         SubTotal = i.SUBTOTAL, TaxableAmount = i.MONTO_GRA, ExemptAmount = i.MONTO_EXE,
@@ -673,13 +684,15 @@ INSTEAD OF INSERT AS
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO ar.SalesDocumentLine (
-        DocumentNumber, OperationType, LineNumber, ProductCode, Description, AlternateCode,
+        DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
+        LineNumber, ProductCode, Description, AlternateCode,
         Quantity, UnitPrice, DiscountedPrice, UnitCost, SubTotal, DiscountAmount,
         TotalAmount, TaxRate, TaxAmount, IsVoided, RelatedRef, UserCode, LineDate,
         CreatedByUserId, UpdatedByUserId
     )
     SELECT
-        NUM_DOC, TIPO_OPERACION, RENGLON, COD_SERV, DESCRIPCION, COD_ALTERNO,
+        NUM_DOC, ISNULL(SERIALTIPO, N''), ISNULL(Tipo_Orden, N'1'), TIPO_OPERACION,
+        RENGLON, COD_SERV, DESCRIPCION, COD_ALTERNO,
         CANTIDAD, PRECIO, PRECIO_DESCUENTO, COSTO, SUBTOTAL, DESCUENTO,
         TOTAL, ALICUOTA, MONTO_IVA, ANULADA, RELACIONADA, CO_USUARIO, FECHA,
         CreatedByUserId, UpdatedByUserId
@@ -692,7 +705,9 @@ INSTEAD OF UPDATE AS
 BEGIN
     SET NOCOUNT ON;
     UPDATE t SET
-        DocumentNumber = i.NUM_DOC, OperationType = i.TIPO_OPERACION, LineNumber = i.RENGLON,
+        DocumentNumber = i.NUM_DOC, SerialType = ISNULL(i.SERIALTIPO, N''),
+        FiscalMemoryNumber = ISNULL(i.Tipo_Orden, N'1'),
+        OperationType = i.TIPO_OPERACION, LineNumber = i.RENGLON,
         ProductCode = i.COD_SERV, Description = i.DESCRIPCION, AlternateCode = i.COD_ALTERNO,
         Quantity = i.CANTIDAD, UnitPrice = i.PRECIO, DiscountedPrice = i.PRECIO_DESCUENTO,
         UnitCost = i.COSTO, SubTotal = i.SUBTOTAL, DiscountAmount = i.DESCUENTO,
@@ -720,12 +735,14 @@ INSTEAD OF INSERT AS
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO ar.SalesDocumentPayment (
-        DocumentNumber, OperationType, PaymentMethod, BankCode, PaymentNumber,
+        DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
+        PaymentMethod, BankCode, PaymentNumber,
         Amount, AmountBs, ExchangeRate, PaymentDate, DueDate, ReferenceNumber, UserCode,
         CreatedByUserId, UpdatedByUserId
     )
     SELECT
-        NUM_DOC, TIPO_OPERACION, TIPO_PAGO, BANCO, NUMERO,
+        NUM_DOC, ISNULL(SERIALTIPO, N''), ISNULL(Tipo_Orden, N'1'), TIPO_OPERACION,
+        TIPO_PAGO, BANCO, NUMERO,
         MONTO, MONTO_BS, TASA_CAMBIO, FECHA, FECHA_VENCE, REFERENCIA, CO_USUARIO,
         CreatedByUserId, UpdatedByUserId
     FROM INSERTED;
@@ -737,7 +754,9 @@ INSTEAD OF UPDATE AS
 BEGIN
     SET NOCOUNT ON;
     UPDATE t SET
-        DocumentNumber = i.NUM_DOC, OperationType = i.TIPO_OPERACION,
+        DocumentNumber = i.NUM_DOC, SerialType = ISNULL(i.SERIALTIPO, N''),
+        FiscalMemoryNumber = ISNULL(i.Tipo_Orden, N'1'),
+        OperationType = i.TIPO_OPERACION,
         PaymentMethod = i.TIPO_PAGO, BankCode = i.BANCO, PaymentNumber = i.NUMERO,
         Amount = i.MONTO, AmountBs = i.MONTO_BS, ExchangeRate = i.TASA_CAMBIO,
         PaymentDate = i.FECHA, DueDate = i.FECHA_VENCE, ReferenceNumber = i.REFERENCIA,

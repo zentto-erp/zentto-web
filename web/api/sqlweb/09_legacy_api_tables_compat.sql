@@ -453,6 +453,7 @@ CREATE TABLE [dbo].[Detalle_facturas](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[NUM_FACT] [nvarchar](20) NULL,
 	[SERIALTIPO] [nvarchar](20) NULL,
+	[Tipo_Orden] [nvarchar](3) NULL CONSTRAINT DF_DetFacturas_TipoOrden DEFAULT (N'1'),
 	[COD_SERV] [nvarchar](15) NULL,
 	[DESCRIPCION] [nvarchar](255) NULL,
 	[FECHA] [datetime] NULL,

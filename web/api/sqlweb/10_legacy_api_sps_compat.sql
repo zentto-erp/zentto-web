@@ -14,35 +14,35 @@ GO
   Reusa scripts existentes en web/api/sql para mantener contrato operativo.
 */
 
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\create_documentos_unificado.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\create_documentos_unificado.sql
 
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_almacen.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_categorias.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_centro_costo.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_clases.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_clientes.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_compras.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_cotizacion.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_cuentas.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_empleados.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_empresa.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_facturas.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_grupos.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_inventario.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_lineas.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_marcas.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_pedidos.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_proveedores.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_tipos.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_unidades.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_usuarios.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_crud_vendedores.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_almacen.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_categorias.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_centro_costo.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_clases.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_clientes.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_compras.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_cotizacion.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_cuentas.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_empleados.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_empresa.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_facturas.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_grupos.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_inventario.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_lineas.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_marcas.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_pedidos.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_proveedores.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_tipos.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_unidades.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_usuarios.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_vendedores.sql
 
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_emitir_compra_tx.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_anular_compra_tx.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_emitir_cotizacion_tx.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_emitir_presupuesto_tx.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sp_anular_presupuesto_tx.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_emitir_compra_tx.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_anular_compra_tx.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_emitir_cotizacion_tx.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_emitir_presupuesto_tx.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_anular_presupuesto_tx.sql
 GO
 
 IF OBJECT_ID('dbo.usp_CxC_AplicarCobro', 'P') IS NULL
