@@ -21,13 +21,13 @@ clientesRouter.get("/", async (req, res) => {
 clientesRouter.get("/:codigo", async (req, res) => {
   const data = await getCliente(req.params.codigo);
   if (!data.row) return res.status(404).json({ error: "not_found" });
-  res.json(data.executionMode ? { ...data.row, executionMode: data.executionMode } : data.row);
+  res.json(data.row);
 });
 
 clientesRouter.post("/", async (req, res) => {
   try {
     const data = await createCliente(req.body ?? {});
-    res.status(201).json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.status(201).json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -36,7 +36,7 @@ clientesRouter.post("/", async (req, res) => {
 clientesRouter.put("/:codigo", async (req, res) => {
   try {
     const data = await updateCliente(req.params.codigo, req.body ?? {});
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -45,7 +45,7 @@ clientesRouter.put("/:codigo", async (req, res) => {
 clientesRouter.delete("/:codigo", async (req, res) => {
   try {
     const data = await deleteCliente(req.params.codigo);
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

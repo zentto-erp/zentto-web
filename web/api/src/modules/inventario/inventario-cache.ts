@@ -1,23 +1,5 @@
-﻿/**
- * inventario-cache.ts
- * Cache de alto rendimiento para la tabla Inventario (~64k registros).
- *
- * Estrategia:
- *  - warmUp() carga TODO el catalogo y lo guarda en memoria + Redis.
- *  - Un intervalo automatico recarga cada REFRESH_INTERVAL_MS (5 min).
- *  - Las busquedas se resuelven contra la memoria local (NO parsea Redis cada vez).
- *  - Redis solo se usa como respaldo para reinicio rapido del servidor.
- *  - Las mutaciones invalidan y recargan inmediatamente.
- *
- * Rendimiento esperado: <10ms por busqueda paginada sobre 64k registros.
- */
-
 import { query } from "../../db/query.js";
-import { getRedis } from "../../db/redis.js";
 
-// ===================== Tipos =====================
-
-/** Articulo cacheado - campos para listado, busqueda y filtros avanzados */
 export interface CachedArticulo {
   CODIGO: string;
   Referencia: string;
@@ -44,17 +26,15 @@ export interface CachedArticulo {
   UBICACION: string;
   UbicaFisica: string;
   Garantia: string;
-  FECHA: string | null;        // Fecha ultima compra (ISO string)
-  FechaVence: string | null;   // Fecha vencimiento (ISO string)
+  FECHA: string | null;
+  FechaVence: string | null;
   Servicio: boolean;
   Eliminado: boolean;
   COSTO_PROMEDIO: number;
   Id: number;
   ImagenUrl: string;
   imagen: string;
-  /** Campo calculado: Categoria + Tipo + Descripcion + Marca + Clase */
   DescripcionCompleta: string;
-  /** Campo pre-calculado para busqueda rapida (minusculas, un solo string) */
   _searchable: string;
 }
 
@@ -67,19 +47,12 @@ export interface ArticuloCacheFilter {
   clase?: string;
   unidad?: string;
   ubicacion?: string;
-  /** Filtro por estado: 'activo' | 'inactivo' | 'todos' (default: todos) */
   estado?: string;
-  /** Rango de precio venta: min */
   precioMin?: number;
-  /** Rango de precio venta: max */
   precioMax?: number;
-  /** Rango de existencia: min */
   stockMin?: number;
-  /** Rango de existencia: max */
   stockMax?: number;
-  /** Filtrar solo servicios */
   servicio?: boolean;
-  /** Busqueda con comodines (* y ?) */
   wildcard?: string;
   page?: number;
   limit?: number;
@@ -95,221 +68,6 @@ export interface ArticuloCacheResult {
   fromCache: boolean;
 }
 
-// ===================== Constantes =====================
-
-const REDIS_KEY = "datqbox:inventario:all";
-const REDIS_TTL_SECONDS = 600;           // TTL en Redis: 10 min
-const REFRESH_INTERVAL_MS = 5 * 60_000;  // Auto-refresh: 5 min
-const LOG_PREFIX = "[inventario-cache]";
-
-// ===================== Estado en memoria =====================
-
-/** Array principal ordenado por CODIGO (viene de SQL con ORDER BY) */
-let _cache: CachedArticulo[] = [];
-
-/** Indice por codigo para busquedas O(1) */
-let _indexByCodigo: Map<string, CachedArticulo> = new Map();
-
-/** Opciones de filtro pre-calculadas */
-let _filterOptions: FilterOptionsResult | null = null;
-
-/** Timestamp de la ultima carga exitosa */
-let _loadedAt = 0;
-
-/** Indica si el cache tiene datos */
-let _ready = false;
-
-/** Handle del intervalo de auto-refresh */
-let _refreshTimer: ReturnType<typeof setInterval> | null = null;
-
-// ===================== Helpers =====================
-
-/** Construye la descripcion completa concatenando los campos descriptivos */
-function buildDescripcionCompleta(r: Record<string, any>): string {
-  return [r.Categoria, r.Tipo, r.DESCRIPCION, r.Marca, r.Clase]
-    .map((s: string | null | undefined) => (s ?? "").trim())
-    .filter(Boolean)
-    .join(" ");
-}
-
-/** Convierte un Date/string SQL a ISO string o null */
-function toISOorNull(val: any): string | null {
-  if (!val) return null;
-  try {
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? null : d.toISOString();
-  } catch { return null; }
-}
-
-/** Proyecta una fila SQL cruda al tipo CachedArticulo */
-function rowToCache(r: Record<string, any>): CachedArticulo {
-  const item: CachedArticulo = {
-    CODIGO: (r.CODIGO ?? "").trim(),
-    Referencia: (r.Referencia ?? "").trim(),
-    Categoria: (r.Categoria ?? "").trim(),
-    Marca: (r.Marca ?? "").trim(),
-    Tipo: (r.Tipo ?? "").trim(),
-    Unidad: (r.Unidad ?? "").trim(),
-    Clase: (r.Clase ?? "").trim(),
-    DESCRIPCION: (r.DESCRIPCION ?? "").trim(),
-    Linea: (r.Linea ?? "").trim(),
-    EXISTENCIA: parseFloat(r.EXISTENCIA) || 0,
-    MINIMO: parseInt(r.MINIMO) || 0,
-    MAXIMO: parseInt(r.MAXIMO) || 0,
-    PRECIO_COMPRA: parseFloat(r.PRECIO_COMPRA) || 0,
-    PRECIO_VENTA: parseFloat(r.PRECIO_VENTA) || 0,
-    PORCENTAJE: parseFloat(r.PORCENTAJE) || 0,
-    PRECIO_VENTA1: parseFloat(r.PRECIO_VENTA1) || 0,
-    PRECIO_VENTA2: parseFloat(r.PRECIO_VENTA2) || 0,
-    PRECIO_VENTA3: parseFloat(r.PRECIO_VENTA3) || 0,
-    Alicuota: parseFloat(r.Alicuota) || 0,
-    PLU: parseInt(r.PLU) || 0,
-    Barra: (r.Barra ?? "").trim(),
-    N_PARTE: (r.N_PARTE ?? "").trim(),
-    UBICACION: (r.UBICACION ?? "").trim(),
-    UbicaFisica: (r.UbicaFisica ?? "").trim(),
-    Garantia: (r.Garantia ?? "").trim(),
-    FECHA: toISOorNull(r.FECHA),
-    FechaVence: toISOorNull(r.FechaVence),
-    Servicio: Boolean(r.Servicio),
-    Eliminado: Boolean(r.Eliminado),
-    COSTO_PROMEDIO: parseFloat(r.COSTO_PROMEDIO) || 0,
-    Id: parseInt(r.Id) || 0,
-    ImagenUrl: String(r.ImagenUrl ?? r.imagen ?? "").trim(),
-    imagen: String(r.ImagenUrl ?? r.imagen ?? "").trim(),
-    DescripcionCompleta: r.DescripcionCompleta ?? buildDescripcionCompleta(r),
-    _searchable: "",
-  };
-  // Pre-calcular string de busqueda (una sola vez, no en cada request)
-  item._searchable = [
-    item.CODIGO, item.Referencia, item.DescripcionCompleta,
-    item.Categoria, item.Tipo, item.Marca, item.Clase,
-    item.Linea, item.Barra, item.N_PARTE,
-    item.UBICACION, item.UbicaFisica, item.Garantia,
-  ].join(" ").toLowerCase();
-  return item;
-}
-
-// ===================== Carga desde BD =====================
-
-async function loadAllFromDB(): Promise<CachedArticulo[]> {
-  const descExpr = `LTRIM(RTRIM(
-    ISNULL(RTRIM(Categoria), '') +
-    CASE WHEN RTRIM(ISNULL(Tipo, '')) <> '' THEN ' ' + RTRIM(Tipo) ELSE '' END +
-    CASE WHEN RTRIM(ISNULL(DESCRIPCION, '')) <> '' THEN ' ' + RTRIM(DESCRIPCION) ELSE '' END +
-    CASE WHEN RTRIM(ISNULL(Marca, '')) <> '' THEN ' ' + RTRIM(Marca) ELSE '' END +
-    CASE WHEN RTRIM(ISNULL(Clase, '')) <> '' THEN ' ' + RTRIM(Clase) ELSE '' END
-  )) AS DescripcionCompleta`;
-
-  const selectCols = `
-    CODIGO, Referencia, Categoria, Marca, Tipo, Unidad, Clase, DESCRIPCION,
-    Linea, EXISTENCIA, MINIMO, MAXIMO, PRECIO_COMPRA, PRECIO_VENTA, PORCENTAJE,
-    PRECIO_VENTA1, PRECIO_VENTA2, PRECIO_VENTA3,
-    Alicuota, PLU, Barra, N_PARTE, UBICACION, UbicaFisica, Garantia,
-    FECHA, FechaVence, Servicio, Eliminado, COSTO_PROMEDIO, Id,
-    ${descExpr},
-    img.PublicUrl AS ImagenUrl
-  `;
-
-  const rows = await query<Record<string, any>>(
-    `
-    SELECT ${selectCols}
-    FROM Inventario i
-    OUTER APPLY (
-      SELECT TOP 1 ma.PublicUrl
-      FROM cfg.EntityImage ei
-      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
-      WHERE ei.EntityType = N'MASTER_PRODUCT'
-        AND ei.EntityId = TRY_CONVERT(BIGINT, i.Id)
-        AND ei.IsDeleted = 0
-        AND ei.IsActive = 1
-        AND ma.IsDeleted = 0
-        AND ma.IsActive = 1
-      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
-    ) img
-    ORDER BY i.CODIGO
-    `
-  );
-
-  return rows.map(rowToCache);
-}
-
-// ===================== Redis helpers =====================
-
-let _redis: any = null;
-let _redisChecked = false;
-
-async function redis(): Promise<any | null> {
-  if (_redisChecked) return _redis;
-  _redisChecked = true;
-  try {
-    _redis = await getRedis();
-    if (_redis) {
-      console.log(`${LOG_PREFIX} Redis conectado`);
-    } else {
-      console.log(`${LOG_PREFIX} Redis no disponible, usando solo memoria`);
-    }
-  } catch {
-    console.log(`${LOG_PREFIX} Redis no disponible, usando solo memoria`);
-  }
-  return _redis;
-}
-
-// ===================== Funciones internas =====================
-
-/** Actualiza los indices internos despues de cargar datos */
-function rebuildIndexes(data: CachedArticulo[]): void {
-  _cache = data;
-  _indexByCodigo = new Map(data.map((item) => [item.CODIGO, item]));
-  _filterOptions = null; // se recalcula lazy
-  _loadedAt = Date.now();
-  _ready = true;
-}
-
-/** Calcula las opciones de filtro (lazy, se cachea hasta siguiente warmUp) */
-function computeFilterOptions(): FilterOptionsResult {
-  const lineas = new Set<string>();
-  const categorias = new Set<string>();
-  const marcas = new Set<string>();
-  const tipos = new Set<string>();
-  const clases = new Set<string>();
-  const unidades = new Set<string>();
-  const ubicaciones = new Set<string>();
-  const garantias = new Set<string>();
-  let precioMin = Infinity, precioMax = 0;
-
-  for (const item of _cache) {
-    if (item.Linea) lineas.add(item.Linea);
-    if (item.Categoria) categorias.add(item.Categoria);
-    if (item.Marca) marcas.add(item.Marca);
-    if (item.Tipo) tipos.add(item.Tipo);
-    if (item.Clase) clases.add(item.Clase);
-    if (item.Unidad) unidades.add(item.Unidad);
-    if (item.UBICACION) ubicaciones.add(item.UBICACION);
-    if (item.UbicaFisica && !ubicaciones.has(item.UbicaFisica)) ubicaciones.add(item.UbicaFisica);
-    if (item.Garantia) garantias.add(item.Garantia);
-    if (item.PRECIO_VENTA > 0) {
-      if (item.PRECIO_VENTA < precioMin) precioMin = item.PRECIO_VENTA;
-      if (item.PRECIO_VENTA > precioMax) precioMax = item.PRECIO_VENTA;
-    }
-  }
-
-  const sortES = (a: string, b: string) => a.localeCompare(b, "es");
-
-  return {
-    lineas: [...lineas].sort(sortES),
-    categorias: [...categorias].sort(sortES),
-    marcas: [...marcas].sort(sortES),
-    tipos: [...tipos].sort(sortES),
-    clases: [...clases].sort(sortES),
-    unidades: [...unidades].sort(sortES),
-    ubicaciones: [...ubicaciones].sort(sortES),
-    garantias: [...garantias].sort(sortES),
-    precioMin: precioMin === Infinity ? 0 : precioMin,
-    precioMax,
-  };
-}
-
 interface FilterOptionsResult {
   lineas: string[];
   categorias: string[];
@@ -323,92 +81,169 @@ interface FilterOptionsResult {
   precioMax: number;
 }
 
-// ===================== API publica =====================
+const REFRESH_INTERVAL_MS = 5 * 60_000;
+const LOG_PREFIX = "[inventario-cache-canonical]";
 
-/**
- * Precalienta el cache cargando todos los articulos de la BD.
- * Se llama al iniciar el servidor y automaticamente cada 5 min.
- */
-export async function warmUp(): Promise<number> {
-  const start = Date.now();
-  const rows = await loadAllFromDB();
-  const elapsed = Date.now() - start;
-  console.log(`${LOG_PREFIX} Cargados ${rows.length} articulos de BD en ${elapsed}ms`);
+let _cache: CachedArticulo[] = [];
+let _indexByCodigo: Map<string, CachedArticulo> = new Map();
+let _filterOptions: FilterOptionsResult | null = null;
+let _loadedAt = 0;
+let _ready = false;
+let _refreshTimer: ReturnType<typeof setInterval> | null = null;
 
-  // Actualizar memoria local (fuente principal de verdad para busquedas)
-  rebuildIndexes(rows);
+async function getDefaultCompanyId() {
+  const rows = await query<{ CompanyId: number }>(
+    `SELECT TOP 1 CompanyId
+       FROM cfg.Company
+      WHERE IsDeleted = 0
+      ORDER BY CASE WHEN CompanyCode = 'DEFAULT' THEN 0 ELSE 1 END, CompanyId`
+  );
+  const companyId = Number(rows[0]?.CompanyId ?? 0);
+  if (!Number.isFinite(companyId) || companyId <= 0) throw new Error("company_not_found");
+  return companyId;
+}
 
-  // Guardar en Redis como backup para reinicio rapido
-  const r = await redis();
-  if (r) {
-    try {
-      // Excluir _searchable del JSON de Redis para ahorrar espacio
-      const redisData = rows.map(({ _searchable, ...rest }) => rest);
-      await r.set(REDIS_KEY, JSON.stringify(redisData), "EX", REDIS_TTL_SECONDS);
-      console.log(`${LOG_PREFIX} Cache guardado en Redis (TTL ${REDIS_TTL_SECONDS}s)`);
-    } catch (err) {
-      console.error(`${LOG_PREFIX} Error guardando en Redis:`, err);
+function rowToCache(r: Record<string, any>): CachedArticulo {
+  const descripcion = String(r.ProductName ?? "").trim();
+  const categoria = String(r.CategoryCode ?? "").trim();
+  const unidad = String(r.UnitCode ?? "").trim();
+  const codigo = String(r.ProductCode ?? "").trim();
+  const searchable = `${codigo} ${descripcion} ${categoria} ${unidad}`.toLowerCase();
+
+  return {
+    CODIGO: codigo,
+    Referencia: "",
+    Categoria: categoria,
+    Marca: "",
+    Tipo: r.IsService ? "SERVICIO" : "PRODUCTO",
+    Unidad: unidad,
+    Clase: "",
+    DESCRIPCION: descripcion,
+    Linea: "",
+    EXISTENCIA: Number(r.StockQty ?? 0),
+    MINIMO: 0,
+    MAXIMO: 0,
+    PRECIO_COMPRA: Number(r.CostPrice ?? 0),
+    PRECIO_VENTA: Number(r.SalesPrice ?? 0),
+    PORCENTAJE: 0,
+    PRECIO_VENTA1: Number(r.SalesPrice ?? 0),
+    PRECIO_VENTA2: 0,
+    PRECIO_VENTA3: 0,
+    Alicuota: Number(r.DefaultTaxRate ?? 0),
+    PLU: 0,
+    Barra: "",
+    N_PARTE: "",
+    UBICACION: "",
+    UbicaFisica: "",
+    Garantia: "",
+    FECHA: r.UpdatedAt ? new Date(r.UpdatedAt).toISOString() : null,
+    FechaVence: null,
+    Servicio: Boolean(r.IsService),
+    Eliminado: Boolean(r.IsDeleted),
+    COSTO_PROMEDIO: Number(r.CostPrice ?? 0),
+    Id: Number(r.ProductId ?? 0),
+    ImagenUrl: "",
+    imagen: "",
+    DescripcionCompleta: `${categoria} ${descripcion}`.trim(),
+    _searchable: searchable
+  };
+}
+
+async function loadAllFromDB(): Promise<CachedArticulo[]> {
+  const companyId = await getDefaultCompanyId();
+  const rows = await query<Record<string, any>>(
+    `SELECT
+        ProductId,
+        ProductCode,
+        ProductName,
+        CategoryCode,
+        UnitCode,
+        SalesPrice,
+        CostPrice,
+        DefaultTaxRate,
+        StockQty,
+        IsService,
+        IsDeleted,
+        UpdatedAt
+       FROM [master].Product
+      WHERE CompanyId = @companyId
+      ORDER BY ProductCode`,
+    { companyId }
+  );
+
+  return rows.map(rowToCache);
+}
+
+function rebuildIndexes(data: CachedArticulo[]) {
+  _cache = data;
+  _indexByCodigo = new Map(data.map((item) => [item.CODIGO, item]));
+  _filterOptions = null;
+  _loadedAt = Date.now();
+  _ready = true;
+}
+
+function computeFilterOptions(): FilterOptionsResult {
+  const categorias = new Set<string>();
+  const tipos = new Set<string>();
+  const unidades = new Set<string>();
+  let precioMin = Infinity;
+  let precioMax = 0;
+
+  for (const item of _cache) {
+    if (item.Categoria) categorias.add(item.Categoria);
+    if (item.Tipo) tipos.add(item.Tipo);
+    if (item.Unidad) unidades.add(item.Unidad);
+    if (item.PRECIO_VENTA > 0) {
+      if (item.PRECIO_VENTA < precioMin) precioMin = item.PRECIO_VENTA;
+      if (item.PRECIO_VENTA > precioMax) precioMax = item.PRECIO_VENTA;
     }
   }
 
-  // Iniciar auto-refresh si no esta activo
-  startAutoRefresh();
-
-  return rows.length;
+  return {
+    lineas: [],
+    categorias: [...categorias].sort((a, b) => a.localeCompare(b, "es")),
+    marcas: [],
+    tipos: [...tipos].sort((a, b) => a.localeCompare(b, "es")),
+    clases: [],
+    unidades: [...unidades].sort((a, b) => a.localeCompare(b, "es")),
+    ubicaciones: [],
+    garantias: [],
+    precioMin: precioMin === Infinity ? 0 : precioMin,
+    precioMax
+  };
 }
 
-/**
- * Inicia el intervalo de auto-refresh (cada 5 min).
- * Si ya esta corriendo, no crea uno nuevo.
- */
-function startAutoRefresh(): void {
+function startAutoRefresh() {
   if (_refreshTimer) return;
+
   _refreshTimer = setInterval(async () => {
     try {
-      console.log(`${LOG_PREFIX} Auto-refresh iniciado...`);
       await warmUp();
-    } catch (err) {
-      console.error(`${LOG_PREFIX} Error en auto-refresh:`, err);
+    } catch {
+      // keep interval alive
     }
   }, REFRESH_INTERVAL_MS);
-  // No bloquear el cierre del proceso
+
   if (_refreshTimer && typeof _refreshTimer === "object" && "unref" in _refreshTimer) {
     (_refreshTimer as NodeJS.Timeout).unref();
   }
-  console.log(`${LOG_PREFIX} Auto-refresh programado cada ${REFRESH_INTERVAL_MS / 1000}s`);
 }
 
-/**
- * Asegura que el cache este listo. Si no hay datos, intenta cargar
- * desde Redis (rapido) o desde BD.
- */
-async function ensureReady(): Promise<void> {
+async function ensureReady() {
   if (_ready && _cache.length > 0) return;
-
-  // Intentar carga rapida desde Redis
-  const r = await redis();
-  if (r) {
-    try {
-      const cached = await r.get(REDIS_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached) as Record<string, any>[];
-        const rows = parsed.map(rowToCache);
-        rebuildIndexes(rows);
-        console.log(`${LOG_PREFIX} Cargados ${rows.length} articulos desde Redis`);
-        startAutoRefresh();
-        return;
-      }
-    } catch { /* continuar a BD */ }
-  }
-
-  // Cargar desde BD
   await warmUp();
 }
 
-/**
- * Busca articulos en el cache con filtros, paginacion y orden.
- * Rendimiento optimizado: <10ms para 64k registros.
- */
+export async function warmUp(): Promise<number> {
+  const start = Date.now();
+  const rows = await loadAllFromDB();
+  rebuildIndexes(rows);
+  startAutoRefresh();
+  const elapsed = Date.now() - start;
+  console.log(`${LOG_PREFIX} Cargados ${rows.length} productos canónicos en ${elapsed}ms`);
+  return rows.length;
+}
+
 export async function search(filter: ArticuloCacheFilter): Promise<ArticuloCacheResult> {
   await ensureReady();
 
@@ -417,198 +252,112 @@ export async function search(filter: ArticuloCacheFilter): Promise<ArticuloCache
   const sortBy = filter.sortBy ?? "CODIGO";
   const sortOrder = filter.sortOrder ?? "asc";
 
-  let results: CachedArticulo[] = _cache;
-  let needsSort = false;
+  let results = _cache;
 
-  // --- Filtro por estado (activo/inactivo) ---
-  if (filter.estado === "activo") {
-    results = results.filter((item) => !item.Eliminado);
-    needsSort = true;
-  } else if (filter.estado === "inactivo") {
-    results = results.filter((item) => item.Eliminado);
-    needsSort = true;
-  }
+  if (filter.estado === "activo") results = results.filter((item) => !item.Eliminado);
+  if (filter.estado === "inactivo") results = results.filter((item) => item.Eliminado);
 
-  // --- Filtro servicios ---
-  if (filter.servicio !== undefined) {
-    results = results.filter((item) => item.Servicio === filter.servicio);
-    needsSort = true;
-  }
+  if (filter.servicio !== undefined) results = results.filter((item) => item.Servicio === filter.servicio);
+  if (filter.categoria) results = results.filter((item) => item.Categoria.toUpperCase() === filter.categoria!.toUpperCase());
+  if (filter.tipo) results = results.filter((item) => item.Tipo.toUpperCase() === filter.tipo!.toUpperCase());
+  if (filter.unidad) results = results.filter((item) => item.Unidad.toUpperCase() === filter.unidad!.toUpperCase());
 
-  // --- Filtros exactos (selectores) ---
-  if (filter.linea) {
-    const v = filter.linea.toUpperCase();
-    results = results.filter((item) => item.Linea.toUpperCase() === v);
-    needsSort = true;
-  }
-  if (filter.categoria) {
-    const v = filter.categoria.toUpperCase();
-    results = results.filter((item) => item.Categoria.toUpperCase() === v);
-    needsSort = true;
-  }
-  if (filter.marca) {
-    const v = filter.marca.toUpperCase();
-    results = results.filter((item) => item.Marca.toUpperCase() === v);
-    needsSort = true;
-  }
-  if (filter.tipo) {
-    const v = filter.tipo.toUpperCase();
-    results = results.filter((item) => item.Tipo.toUpperCase() === v);
-    needsSort = true;
-  }
-  if (filter.clase) {
-    const v = filter.clase.toUpperCase();
-    results = results.filter((item) => item.Clase.toUpperCase() === v);
-    needsSort = true;
-  }
-  if (filter.unidad) {
-    const v = filter.unidad.toUpperCase();
-    results = results.filter((item) => item.Unidad.toUpperCase() === v);
-    needsSort = true;
-  }
-  if (filter.ubicacion) {
-    const v = filter.ubicacion.toUpperCase();
-    results = results.filter((item) =>
-      item.UBICACION.toUpperCase() === v || item.UbicaFisica.toUpperCase() === v
-    );
-    needsSort = true;
-  }
+  if (filter.precioMin !== undefined) results = results.filter((item) => item.PRECIO_VENTA >= filter.precioMin!);
+  if (filter.precioMax !== undefined) results = results.filter((item) => item.PRECIO_VENTA <= filter.precioMax!);
+  if (filter.stockMin !== undefined) results = results.filter((item) => item.EXISTENCIA >= filter.stockMin!);
+  if (filter.stockMax !== undefined) results = results.filter((item) => item.EXISTENCIA <= filter.stockMax!);
 
-  // --- Rango de precios ---
-  if (filter.precioMin !== undefined && filter.precioMin > 0) {
-    results = results.filter((item) => item.PRECIO_VENTA >= filter.precioMin!);
-    needsSort = true;
-  }
-  if (filter.precioMax !== undefined && filter.precioMax > 0) {
-    results = results.filter((item) => item.PRECIO_VENTA <= filter.precioMax!);
-    needsSort = true;
-  }
-
-  // --- Rango de existencia ---
-  if (filter.stockMin !== undefined) {
-    results = results.filter((item) => item.EXISTENCIA >= filter.stockMin!);
-    needsSort = true;
-  }
-  if (filter.stockMax !== undefined) {
-    results = results.filter((item) => item.EXISTENCIA <= filter.stockMax!);
-    needsSort = true;
-  }
-
-  // --- Busqueda con comodines (wildcard: * = cualquiera, ? = un caracter) ---
   if (filter.wildcard && filter.wildcard.trim()) {
     const pattern = filter.wildcard
       .toLowerCase()
-      .replace(/[.+^${}()|[\]\\]/g, "\\$&")  // escapar regex excepto * y ?
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
       .replace(/\*/g, ".*")
       .replace(/\?/g, ".");
+
     try {
       const re = new RegExp(pattern);
       results = results.filter((item) => re.test(item._searchable));
-      needsSort = true;
-    } catch { /* patron invalido, ignorar */ }
+    } catch {
+      // invalid wildcard pattern
+    }
   }
 
-  // --- Busqueda de texto libre (usa _searchable pre-calculado) ---
   if (filter.search && filter.search.trim()) {
     const terms = filter.search.toLowerCase().split(/\s+/).filter(Boolean);
-    results = results.filter((item) =>
-      terms.every((term) => item._searchable.includes(term))
-    );
-    needsSort = true;
+    results = results.filter((item) => terms.every((term) => item._searchable.includes(term)));
   }
+
+  const key = sortBy as keyof CachedArticulo;
+  results = [...results].sort((a, b) => {
+    const va = a[key];
+    const vb = b[key];
+
+    if (typeof va === "number" && typeof vb === "number") {
+      return sortOrder === "asc" ? va - vb : vb - va;
+    }
+
+    const sa = String(va ?? "").toUpperCase();
+    const sb = String(vb ?? "").toUpperCase();
+    const cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
+    return sortOrder === "asc" ? cmp : -cmp;
+  });
 
   const total = results.length;
-
-  // --- Ordenar solo si es necesario ---
-  // Si no hay filtros y el sort es CODIGO asc (default), el array ya viene ordenado
-  const isDefaultSort = sortBy === "CODIGO" && sortOrder === "asc";
-  if (!isDefaultSort || needsSort) {
-    const key = sortBy as keyof CachedArticulo;
-    // Comparacion rapida sin localeCompare (evita el costo de 2.5s en 64k items)
-    results = [...results].sort((a, b) => {
-      const va = a[key];
-      const vb = b[key];
-      if (typeof va === "number" && typeof vb === "number") {
-        return sortOrder === "asc" ? va - vb : vb - va;
-      }
-      const sa = String(va ?? "").toUpperCase();
-      const sb = String(vb ?? "").toUpperCase();
-      const cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
-      return sortOrder === "asc" ? cmp : -cmp;
-    });
-  }
-
-  // --- Paginar ---
   const offset = (page - 1) * limit;
   const rows = results.slice(offset, offset + limit);
 
   return { page, limit, total, rows, fromCache: true };
 }
 
-/**
- * Obtiene un articulo por codigo desde el cache (O(1) con Map).
- */
 export async function getByCode(codigo: string): Promise<CachedArticulo | null> {
   await ensureReady();
-
-  const found = _indexByCodigo.get(codigo) ?? null;
+  const normalized = codigo.trim();
+  const found = _indexByCodigo.get(normalized);
   if (found) return found;
 
-  // Fallback: buscar en BD directamente
+  const companyId = await getDefaultCompanyId();
   const rows = await query<Record<string, any>>(
-    `SELECT *, LTRIM(RTRIM(
-      ISNULL(RTRIM(Categoria), '') +
-      CASE WHEN RTRIM(ISNULL(Tipo, '')) <> '' THEN ' ' + RTRIM(Tipo) ELSE '' END +
-      CASE WHEN RTRIM(ISNULL(DESCRIPCION, '')) <> '' THEN ' ' + RTRIM(DESCRIPCION) ELSE '' END +
-      CASE WHEN RTRIM(ISNULL(Marca, '')) <> '' THEN ' ' + RTRIM(Marca) ELSE '' END +
-      CASE WHEN RTRIM(ISNULL(Clase, '')) <> '' THEN ' ' + RTRIM(Clase) ELSE '' END
-    )) AS DescripcionCompleta FROM Inventario WHERE CODIGO = @codigo`,
-    { codigo }
+    `SELECT TOP 1
+        ProductId,
+        ProductCode,
+        ProductName,
+        CategoryCode,
+        UnitCode,
+        SalesPrice,
+        CostPrice,
+        DefaultTaxRate,
+        StockQty,
+        IsService,
+        IsDeleted,
+        UpdatedAt
+       FROM [master].Product
+      WHERE CompanyId = @companyId
+        AND ProductCode = @codigo`,
+    { companyId, codigo: normalized }
   );
+
   return rows[0] ? rowToCache(rows[0]) : null;
 }
 
-/**
- * Invalida el cache completo.
- */
-export async function invalidate(): Promise<void> {
-  console.log(`${LOG_PREFIX} Invalidando cache`);
-
-  const r = await redis();
-  if (r) {
-    try { await r.del(REDIS_KEY); } catch { /* ignorar */ }
-  }
-
+export async function invalidate() {
   _cache = [];
   _indexByCodigo = new Map();
   _filterOptions = null;
-  _ready = false;
   _loadedAt = 0;
+  _ready = false;
 }
 
-/**
- * Invalida y recarga inmediatamente.
- */
-export async function invalidateAndReload(): Promise<void> {
+export async function invalidateAndReload() {
   await invalidate();
   await warmUp();
 }
 
-/**
- * Obtiene las listas unicas de valores para filtros (combos del frontend).
- * Se calcula una vez y se cachea hasta el siguiente warmUp.
- */
 export async function getFilterOptions(): Promise<FilterOptionsResult> {
   await ensureReady();
-  if (!_filterOptions) {
-    _filterOptions = computeFilterOptions();
-  }
+  if (!_filterOptions) _filterOptions = computeFilterOptions();
   return _filterOptions;
 }
 
-/**
- * Devuelve info de diagnostico del cache.
- */
 export function getCacheStats() {
   return {
     ready: _ready,
@@ -616,6 +365,7 @@ export function getCacheStats() {
     loadedAt: _loadedAt ? new Date(_loadedAt).toISOString() : null,
     ageSec: _loadedAt ? Math.round((Date.now() - _loadedAt) / 1000) : null,
     refreshIntervalSec: REFRESH_INTERVAL_MS / 1000,
-    hasRedis: !!_redis,
+    hasRedis: false,
+    source: "master.Product"
   };
 }

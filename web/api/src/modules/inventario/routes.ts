@@ -97,7 +97,7 @@ inventarioRouter.post("/", async (req, res) => {
     const data = await createInventario(req.body ?? {});
     // Invalidar caché tras mutación
     invalidateAndReload().catch(() => {});
-    res.status(201).json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.status(201).json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -109,7 +109,7 @@ inventarioRouter.put("/:codigo", async (req, res) => {
     const data = await updateInventario(req.params.codigo, req.body ?? {});
     // Invalidar caché tras mutación
     invalidateAndReload().catch(() => {});
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -121,7 +121,7 @@ inventarioRouter.delete("/:codigo", async (req, res) => {
     const data = await deleteInventario(req.params.codigo);
     // Invalidar caché tras mutación
     invalidateAndReload().catch(() => {});
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

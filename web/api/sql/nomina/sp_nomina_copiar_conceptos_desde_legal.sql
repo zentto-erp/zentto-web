@@ -1,69 +1,131 @@
 -- =============================================
--- SP: Copiar conceptos desde NominaConceptoLegal a ConcNom
--- Para una CO_NOMINA dada (ej. tipo de nomina del empleado) y una convencion/tipo de calculo.
--- Permite "aplicar" la base de conocimiento legal a la nomina operativa.
+-- SP: Copiar conceptos legales canónicos a una nómina destino
+-- Fuente y destino: hr.PayrollConcept
 -- =============================================
 
 IF OBJECT_ID('dbo.sp_Nomina_CopiarConceptosDesdeLegal', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.sp_Nomina_CopiarConceptosDesdeLegal;
+  DROP PROCEDURE dbo.sp_Nomina_CopiarConceptosDesdeLegal;
 GO
 
 CREATE PROCEDURE dbo.sp_Nomina_CopiarConceptosDesdeLegal
-    @CoNomina     NVARCHAR(15),   -- Codigo de nomina destino (ej. MENSUAL, PETROLERO, CONSTRUCCION)
-    @Convencion   NVARCHAR(20),   -- LOT, CCT_PETROLERO, CCT_CONSTRUCCION
-    @TipoCalculo  NVARCHAR(20),   -- MENSUAL, VACACIONES, LIQUIDACION, etc.
-    @Sobrescribir BIT = 0,        -- 1 = reemplazar concepto si ya existe
-    @Resultado    INT OUTPUT,
-    @Mensaje      NVARCHAR(500) OUTPUT
+  @CoNomina     NVARCHAR(30),   -- Código nómina destino (PayrollCode)
+  @Convencion   NVARCHAR(30),   -- Convención origen (ConventionCode)
+  @TipoCalculo  NVARCHAR(30),   -- Tipo cálculo origen (CalculationType)
+  @Sobrescribir BIT = 0,        -- 1 = actualiza conceptos existentes
+  @Resultado    INT OUTPUT,
+  @Mensaje      NVARCHAR(500) OUTPUT
 AS
 BEGIN
-    SET NOCOUNT ON;
-    SET @Resultado = 0;
-    SET @Mensaje = '';
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.NominaConceptoLegal WHERE Convencion = @Convencion AND TipoCalculo = @TipoCalculo)
-    BEGIN
-        SET @Resultado = -1;
-        SET @Mensaje = 'No hay conceptos legales para Convencion=' + @Convencion + ' y TipoCalculo=' + @TipoCalculo;
-        RETURN;
-    END
+  SET @Resultado = 0;
+  SET @Mensaje = N'';
 
-    BEGIN TRY
-        IF @Sobrescribir = 1
-        BEGIN
-            DELETE d
-            FROM dbo.ConcNom d
-            INNER JOIN dbo.NominaConceptoLegal l ON l.CO_CONCEPT = d.CO_CONCEPT AND l.Convencion = @Convencion AND l.TipoCalculo = @TipoCalculo
-            WHERE d.CO_NOMINA = @CoNomina;
-        END
+  DECLARE @CompanyId INT = NULL;
+  DECLARE @BranchId INT = NULL;
+  EXEC dbo.sp_Nomina_GetScope @CompanyId OUTPUT, @BranchId OUTPUT;
 
-        INSERT INTO dbo.ConcNom (CO_CONCEPT, CO_NOMINA, NB_CONCEPTO, FORMULA, SOBRE, CLASE, TIPO, USO, BONIFICABLE, Antiguedad, Contable, Aplica, Defecto)
-        SELECT
-            l.CO_CONCEPT,
-            @CoNomina,
-            l.NB_CONCEPTO,
-            l.FORMULA,
-            l.SOBRE,
-            NULL,
-            l.TIPO,
-            NULL,
-            l.BONIFICABLE,
-            NULL,
-            NULL,
-            'S',
-            NULL
-        FROM dbo.NominaConceptoLegal l
-        WHERE l.Convencion = @Convencion
-          AND l.TipoCalculo = @TipoCalculo
-          AND l.Activo = 1
-          AND (@Sobrescribir = 0 AND NOT EXISTS (SELECT 1 FROM dbo.ConcNom c WHERE c.CO_CONCEPT = l.CO_CONCEPT AND c.CO_NOMINA = @CoNomina));
+  IF @CompanyId IS NULL
+  BEGIN
+    SET @Resultado = -2;
+    SET @Mensaje = N'No se pudo resolver CompanyId en cfg.Company';
+    RETURN;
+  END;
 
-        SET @Resultado = @@ROWCOUNT;
-        SET @Mensaje = CAST(@Resultado AS NVARCHAR(10)) + ' concepto(s) copiados a CO_NOMINA=' + @CoNomina;
-    END TRY
-    BEGIN CATCH
-        SET @Resultado = -99;
-        SET @Mensaje = ERROR_MESSAGE();
-    END CATCH
+  IF NOT EXISTS (
+    SELECT 1
+    FROM hr.PayrollConcept pc
+    WHERE pc.CompanyId = @CompanyId
+      AND pc.ConventionCode = @Convencion
+      AND pc.CalculationType = @TipoCalculo
+      AND pc.IsActive = 1
+  )
+  BEGIN
+    SET @Resultado = -1;
+    SET @Mensaje = N'No hay conceptos legales en hr.PayrollConcept para Convencion=' + @Convencion + N' y TipoCalculo=' + @TipoCalculo;
+    RETURN;
+  END;
+
+  BEGIN TRY
+    DECLARE @Changes TABLE (ActionName NVARCHAR(10));
+
+    ;WITH SourceRows AS (
+      SELECT
+        pc.CompanyId,
+        @CoNomina AS PayrollCode,
+        pc.ConceptCode,
+        pc.ConceptName,
+        pc.Formula,
+        pc.BaseExpression,
+        pc.ConceptClass,
+        pc.ConceptType,
+        pc.UsageType,
+        pc.IsBonifiable,
+        pc.IsSeniority,
+        pc.AccountingAccountCode,
+        pc.AppliesFlag,
+        pc.DefaultValue,
+        pc.ConventionCode,
+        pc.CalculationType,
+        pc.LotttArticle,
+        pc.CcpClause,
+        pc.SortOrder,
+        pc.IsActive
+      FROM hr.PayrollConcept pc
+      WHERE pc.CompanyId = @CompanyId
+        AND pc.ConventionCode = @Convencion
+        AND pc.CalculationType = @TipoCalculo
+        AND pc.IsActive = 1
+    )
+    MERGE hr.PayrollConcept AS target
+    USING SourceRows AS src
+    ON target.CompanyId = src.CompanyId
+       AND target.PayrollCode = src.PayrollCode
+       AND target.ConceptCode = src.ConceptCode
+       AND ISNULL(target.ConventionCode, N'') = ISNULL(src.ConventionCode, N'')
+       AND ISNULL(target.CalculationType, N'') = ISNULL(src.CalculationType, N'')
+    WHEN MATCHED AND @Sobrescribir = 1 THEN
+      UPDATE SET
+        ConceptName = src.ConceptName,
+        Formula = src.Formula,
+        BaseExpression = src.BaseExpression,
+        ConceptClass = src.ConceptClass,
+        ConceptType = src.ConceptType,
+        UsageType = src.UsageType,
+        IsBonifiable = src.IsBonifiable,
+        IsSeniority = src.IsSeniority,
+        AccountingAccountCode = src.AccountingAccountCode,
+        AppliesFlag = src.AppliesFlag,
+        DefaultValue = src.DefaultValue,
+        LotttArticle = src.LotttArticle,
+        CcpClause = src.CcpClause,
+        SortOrder = src.SortOrder,
+        IsActive = src.IsActive,
+        UpdatedAt = SYSUTCDATETIME()
+    WHEN NOT MATCHED THEN
+      INSERT (
+        CompanyId, PayrollCode, ConceptCode, ConceptName, Formula, BaseExpression,
+        ConceptClass, ConceptType, UsageType, IsBonifiable, IsSeniority,
+        AccountingAccountCode, AppliesFlag, DefaultValue, ConventionCode,
+        CalculationType, LotttArticle, CcpClause, SortOrder, IsActive,
+        CreatedAt, UpdatedAt
+      )
+      VALUES (
+        src.CompanyId, src.PayrollCode, src.ConceptCode, src.ConceptName, src.Formula, src.BaseExpression,
+        src.ConceptClass, src.ConceptType, src.UsageType, src.IsBonifiable, src.IsSeniority,
+        src.AccountingAccountCode, src.AppliesFlag, src.DefaultValue, src.ConventionCode,
+        src.CalculationType, src.LotttArticle, src.CcpClause, src.SortOrder, src.IsActive,
+        SYSUTCDATETIME(), SYSUTCDATETIME()
+      )
+    OUTPUT $action INTO @Changes(ActionName);
+
+    SELECT @Resultado = COUNT(1) FROM @Changes;
+    SET @Mensaje = CAST(@Resultado AS NVARCHAR(20)) + N' concepto(s) sincronizados en hr.PayrollConcept para PayrollCode=' + @CoNomina;
+  END TRY
+  BEGIN CATCH
+    SET @Resultado = -99;
+    SET @Mensaje = ERROR_MESSAGE();
+  END CATCH
 END
 GO

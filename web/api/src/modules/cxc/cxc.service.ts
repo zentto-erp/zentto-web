@@ -2,7 +2,6 @@ import sql from "mssql";
 import { getPool } from "../../db/mssql.js";
 import { query } from "../../db/query.js";
 
-// Tipos
 export interface DocumentoAplicar {
   tipoDoc: string;
   numDoc: string;
@@ -44,127 +43,27 @@ export interface ListDocumentosCxCInput {
   limit?: number;
 }
 
-async function hasApplyCobroProcedure() {
-  const rows = await query<{ ok: number }>(
-    `
-    SELECT CASE WHEN OBJECT_ID('dbo.usp_CxC_AplicarCobro', 'P') IS NOT NULL
-    THEN 1 ELSE 0 END AS ok
-    `
-  );
-  return Number(rows[0]?.ok ?? 0) === 1;
-}
-
 function buildReceiptNumber(prefix: string) {
   const stamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
   return `${prefix}-${stamp}`;
 }
 
-/**
- * Convierte array de documentos a XML para SQL Server 2012
- */
-function documentosToXml(documentos: DocumentoAplicar[]): string {
-  const esc = (v: unknown) =>
-    String(v ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/'/g, "&apos;");
-
-  const rows = documentos
-    .map(
-      (d) =>
-        `  <row tipoDoc="${esc(d.tipoDoc)}" numDoc="${esc(d.numDoc)}" montoAplicar="${esc(d.montoAplicar)}"/>`
-    )
-    .join("\n");
-  return `<documentos>\n${rows}\n</documentos>`;
+function normalizeCxCEstado(estado?: string | null) {
+  const value = String(estado ?? "").trim().toUpperCase();
+  if (!value) return null;
+  if (value === "PENDIENTE") return "PENDING";
+  if (value === "PARCIAL") return "PARTIAL";
+  if (value === "PAGADO") return "PAID";
+  if (value === "ANULADO") return "VOIDED";
+  if (["PENDING", "PARTIAL", "PAID", "VOIDED"].includes(value)) return value;
+  return null;
 }
 
-/**
- * Convierte array de formas de pago a XML para SQL Server 2012
- */
-function formasPagoToXml(formasPago: FormaPago[]): string {
-  const esc = (v: unknown) =>
-    String(v ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/'/g, "&apos;");
-
-  const rows = formasPago
-    .map(
-      (fp) =>
-        `  <row formaPago="${esc(fp.formaPago)}" monto="${esc(fp.monto)}"` +
-        `${fp.banco ? ` banco="${esc(fp.banco)}"` : ""}` +
-        `${fp.numCheque ? ` numCheque="${esc(fp.numCheque)}"` : ""}` +
-        `${fp.fechaVencimiento ? ` fechaVencimiento="${esc(fp.fechaVencimiento)}"` : ""}/>`
-    )
-    .join("\n");
-  return `<formasPago>\n${rows}\n</formasPago>`;
-}
-
-/**
- * Aplica un cobro a documentos pendientes usando Stored Procedure
- * Optimizado para SQL Server 2012 - usa XML para pasar arrays
- */
-export async function aplicarCobro(
-  input: AplicarCobroInput
-): Promise<AplicarCobroResult> {
-  if (!(await hasApplyCobroProcedure())) {
-    return aplicarCobroCanonico(input);
-  }
-
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  // Configurar parámetros de entrada
-  request.input("RequestId", sql.VarChar(100), input.requestId);
-  request.input("CodCliente", sql.VarChar(20), input.codCliente);
-  request.input("Fecha", sql.VarChar(10), input.fecha);
-  request.input("MontoTotal", sql.Decimal(18, 2), input.montoTotal);
-  request.input("CodUsuario", sql.VarChar(20), input.codUsuario);
-  request.input(
-    "Observaciones",
-    sql.VarChar(500),
-    input.observaciones || ""
-  );
-
-  // Convertir arrays a XML (compatible con SQL 2012)
-  request.input(
-    "DocumentosXml",
-    sql.NVarChar(sql.MAX),
-    documentosToXml(input.documentos)
-  );
-  request.input(
-    "FormasPagoXml",
-    sql.NVarChar(sql.MAX),
-    formasPagoToXml(input.formasPago)
-  );
-
-  // Parámetros de salida
-  request.output("NumRecibo", sql.VarChar(50));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.VarChar(500));
-
-  // Ejecutar SP
-  const result = await request.execute("usp_CxC_AplicarCobro");
-
-  const resultado = result.output.Resultado as number;
-  const mensaje = result.output.Mensaje as string;
-  const numRecibo = result.output.NumRecibo as string;
-
-  return {
-    success: resultado === 1,
-    numRecibo: numRecibo || undefined,
-    message: mensaje,
-  };
-}
-
-async function aplicarCobroCanonico(input: AplicarCobroInput): Promise<AplicarCobroResult> {
+export async function aplicarCobro(input: AplicarCobroInput): Promise<AplicarCobroResult> {
   const pool = await getPool();
   const tx = new sql.Transaction(pool);
   await tx.begin();
+
   try {
     const customerRs = await new sql.Request(tx)
       .input("CodCliente", sql.NVarChar(24), input.codCliente)
@@ -174,14 +73,17 @@ async function aplicarCobroCanonico(input: AplicarCobroInput): Promise<AplicarCo
         WHERE CustomerCode = @CodCliente
           AND IsDeleted = 0
       `);
+
     const customerId = Number(customerRs.recordset?.[0]?.CustomerId ?? 0);
     if (!Number.isFinite(customerId) || customerId <= 0) {
       await tx.rollback();
       return { success: false, message: "Cliente no encontrado en esquema canonico" };
     }
 
-    let applied = 0;
     const applyDate = input.fecha ? new Date(input.fecha) : new Date();
+    const numRecibo = buildReceiptNumber("RCB");
+    let applied = 0;
+
     for (const item of input.documentos ?? []) {
       const docRs = await new sql.Request(tx)
         .input("CustomerId", sql.BigInt, customerId)
@@ -190,8 +92,9 @@ async function aplicarCobroCanonico(input: AplicarCobroInput): Promise<AplicarCo
         .query(`
           SELECT TOP 1
             ReceivableDocumentId,
-            PendingAmount
-          FROM ar.ReceivableDocument
+            PendingAmount,
+            TotalAmount
+          FROM ar.ReceivableDocument WITH (UPDLOCK, ROWLOCK)
           WHERE CustomerId = @CustomerId
             AND DocumentType = @TipoDoc
             AND DocumentNumber = @NumDoc
@@ -203,15 +106,14 @@ async function aplicarCobroCanonico(input: AplicarCobroInput): Promise<AplicarCo
       if (!row) continue;
 
       const pending = Number(row.PendingAmount ?? 0);
-      const rawApply = Number(item.montoAplicar ?? 0);
-      const applyAmount = Math.min(pending, rawApply);
+      const applyAmount = Math.min(pending, Number(item.montoAplicar ?? 0));
       if (!Number.isFinite(applyAmount) || applyAmount <= 0) continue;
 
       await new sql.Request(tx)
         .input("ReceivableDocumentId", sql.BigInt, Number(row.ReceivableDocumentId))
         .input("ApplyDate", sql.Date, applyDate)
         .input("AppliedAmount", sql.Decimal(18, 2), applyAmount)
-        .input("PaymentReference", sql.NVarChar(120), input.requestId || null)
+        .input("PaymentReference", sql.NVarChar(120), `${input.requestId}:${numRecibo}`)
         .query(`
           INSERT INTO ar.ReceivableApplication (
             ReceivableDocumentId,
@@ -272,9 +174,10 @@ async function aplicarCobroCanonico(input: AplicarCobroInput): Promise<AplicarCo
       `);
 
     await tx.commit();
+
     return {
       success: true,
-      numRecibo: buildReceiptNumber("RCB"),
+      numRecibo,
       message: "Cobro aplicado en esquema canonico"
     };
   } catch (error: any) {
@@ -286,19 +189,7 @@ async function aplicarCobroCanonico(input: AplicarCobroInput): Promise<AplicarCo
   }
 }
 
-// Alias para compatibilidad con código existente
 export const aplicarCobroTx = aplicarCobro;
-
-function normalizeCxCEstado(estado?: string | null) {
-  const value = String(estado ?? "").trim().toUpperCase();
-  if (!value) return null;
-  if (value === "PENDIENTE") return "PENDING";
-  if (value === "PARCIAL") return "PARTIAL";
-  if (value === "PAGADO") return "PAID";
-  if (value === "ANULADO") return "VOIDED";
-  if (["PENDING", "PARTIAL", "PAID", "VOIDED"].includes(value)) return value;
-  return null;
-}
 
 export async function listDocumentos(input: ListDocumentosCxCInput) {
   const page = Math.max(1, Number(input.page ?? 1) || 1);
@@ -369,11 +260,8 @@ export async function listDocumentos(input: ListDocumentosCxCInput) {
   };
 }
 
-/**
- * Obtiene los documentos pendientes de un cliente
- */
 export async function getDocumentosPendientes(codCliente: string) {
-  const rows = await query<any>(
+  return query<any>(
     `
     SELECT
       d.DocumentType AS tipoDoc,
@@ -390,12 +278,8 @@ export async function getDocumentosPendientes(codCliente: string) {
     `,
     { codCliente }
   );
-  return rows;
 }
 
-/**
- * Obtiene el saldo total de un cliente
- */
 export async function getSaldoCliente(codCliente: string) {
   const rows = await query<any>(
     `

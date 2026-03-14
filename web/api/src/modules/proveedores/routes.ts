@@ -27,13 +27,13 @@ proveedoresRouter.get("/", async (req, res) => {
 proveedoresRouter.get("/:codigo", async (req, res) => {
   const data = await getProveedor(req.params.codigo);
   if (!data.row) return res.status(404).json({ error: "not_found" });
-  res.json(data.executionMode ? { ...data.row, executionMode: data.executionMode } : data.row);
+  res.json(data.row);
 });
 
 proveedoresRouter.post("/", async (req, res) => {
   try {
     const data = await createProveedor(req.body ?? {});
-    res.status(201).json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.status(201).json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -42,7 +42,7 @@ proveedoresRouter.post("/", async (req, res) => {
 proveedoresRouter.put("/:codigo", async (req, res) => {
   try {
     const data = await updateProveedor(req.params.codigo, req.body ?? {});
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -51,7 +51,7 @@ proveedoresRouter.put("/:codigo", async (req, res) => {
 proveedoresRouter.delete("/:codigo", async (req, res) => {
   try {
     const data = await deleteProveedor(req.params.codigo);
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

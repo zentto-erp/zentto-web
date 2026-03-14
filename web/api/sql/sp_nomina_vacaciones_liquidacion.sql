@@ -1,468 +1,391 @@
+﻿-- =============================================
+-- VACACIONES Y LIQUIDACIÓN (CANÓNICO)
 -- =============================================
--- CÁLCULO DE VACACIONES Y LIQUIDACIÓN
--- Compatible con: SQL Server 2012+
--- =============================================
-
--- =============================================
--- 1. SP: Calcular salarios promedio para utilidades/vacaciones
--- =============================================
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_Nomina_CalcularSalariosPromedio')
-    DROP PROCEDURE sp_Nomina_CalcularSalariosPromedio
+SET NOCOUNT ON;
 GO
 
-CREATE PROCEDURE sp_Nomina_CalcularSalariosPromedio
-    @SessionID NVARCHAR(50),
-    @Cedula NVARCHAR(12),
-    @FechaDesde DATE,
-    @FechaHasta DATE
+IF OBJECT_ID('dbo.sp_Nomina_CalcularSalariosPromedio','P') IS NOT NULL DROP PROCEDURE dbo.sp_Nomina_CalcularSalariosPromedio;
+GO
+CREATE PROCEDURE dbo.sp_Nomina_CalcularSalariosPromedio
+  @SessionID NVARCHAR(80),
+  @Cedula NVARCHAR(32),
+  @FechaDesde DATE,
+  @FechaHasta DATE
 AS
 BEGIN
-    SET NOCOUNT ON;
-    
-    DECLARE @Dias INT = DATEDIFF(DAY, @FechaDesde, @FechaHasta) + 1;
-    DECLARE @AcumuladoAsignaciones DECIMAL(18,4) = 0;
-    DECLARE @SalarioNormal DECIMAL(18,4) = 0;
-    DECLARE @SalarioIntegral DECIMAL(18,4) = 0;
-    DECLARE @BaseUtil DECIMAL(18,4) = 0;
-    
-    -- Obtener base de utilidad de constantes
-    SELECT @BaseUtil = Valor FROM ConstanteNomina WHERE Codigo = 'BaseUtil';
-    IF @BaseUtil IS NULL SET @BaseUtil = 0;
-    
-    -- Calcular acumulado de asignaciones bonificables en el período
-    SELECT @AcumuladoAsignaciones = ISNULL(SUM(d.TOTAL), 0)
-    FROM DtllNom d
-    INNER JOIN ConcNom c ON d.CO_CONCEPTO = c.CO_CONCEPT AND c.CO_NOMINA = (SELECT NOMINA FROM Empleados WHERE CEDULA = @Cedula)
-    WHERE d.CEDULA = @Cedula
-      AND d.INICIO >= @FechaDesde
-      AND d.HASTA <= @FechaHasta
-      AND c.BONIFICABLE = 'S'
-      AND c.TIPO = 'ASIGNACION';
-    
-    -- Si no hay datos de DtllNom, usar sueldo base
-    IF @AcumuladoAsignaciones = 0
-    BEGIN
-        SELECT @AcumuladoAsignaciones = ISNULL(SUELDO, 0) * (@Dias / 30.0)
-        FROM Empleados
-        WHERE CEDULA = @Cedula;
-    END
-    
-    -- Calcular salarios
-    IF @Dias > 0
-    BEGIN
-        SET @SalarioNormal = @AcumuladoAsignaciones / @Dias;
-        SET @SalarioIntegral = @SalarioNormal + (@SalarioNormal * @BaseUtil / 100);
-    END
-    
-    -- Guardar variables
-    EXEC sp_Nomina_SetVariable @SessionID, 'SALARIO_NORMAL', @SalarioNormal, 'Salario promedio diario';
-    EXEC sp_Nomina_SetVariable @SessionID, 'SALARIO_INTEGRAL', @SalarioIntegral, 'Salario integral diario';
-    EXEC sp_Nomina_SetVariable @SessionID, 'BASE_UTIL', @BaseUtil, 'Base utilidad %';
-    EXEC sp_Nomina_SetVariable @SessionID, 'ACUMULADO_ASIG', @AcumuladoAsignaciones, 'Acumulado asignaciones';
-    EXEC sp_Nomina_SetVariable @SessionID, 'DIAS_CALCULO', @Dias, 'Días de cálculo';
+  SET NOCOUNT ON;
+
+  DECLARE @SalarioDiario DECIMAL(18,6) = dbo.fn_Nomina_GetVariable(@SessionID, N'SALARIO_DIARIO');
+  DECLARE @BaseUtil DECIMAL(18,6) = dbo.fn_Nomina_GetVariable(@SessionID, N'DIAS_UTILIDADES_MIN');
+  DECLARE @SalarioNormal DECIMAL(18,6);
+  DECLARE @SalarioIntegral DECIMAL(18,6);
+  DECLARE @Dias INT = DATEDIFF(DAY, @FechaDesde, @FechaHasta) + 1;
+
+  IF @SalarioDiario <= 0 SET @SalarioDiario = 0;
+  IF @BaseUtil <= 0 SET @BaseUtil = 30;
+
+  SET @SalarioNormal = @SalarioDiario;
+  SET @SalarioIntegral = @SalarioDiario + (@SalarioDiario * (@BaseUtil / 360.0));
+
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, N'SALARIO_NORMAL', @SalarioNormal, N'Salario promedio diario';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, N'SALARIO_INTEGRAL', @SalarioIntegral, N'Salario integral diario';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, N'BASE_UTIL', @BaseUtil, N'Base de utilidad';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, N'DIAS_CALCULO', @Dias, N'Días del cálculo';
 END
 GO
 
--- =============================================
--- 2. SP: Calcular días de vacaciones según antigüedad
--- =============================================
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_Nomina_CalcularDiasVacaciones')
-    DROP PROCEDURE sp_Nomina_CalcularDiasVacaciones
+IF OBJECT_ID('dbo.sp_Nomina_CalcularDiasVacaciones','P') IS NOT NULL DROP PROCEDURE dbo.sp_Nomina_CalcularDiasVacaciones;
 GO
-
-CREATE PROCEDURE sp_Nomina_CalcularDiasVacaciones
-    @SessionID NVARCHAR(50),
-    @Cedula NVARCHAR(12),
-    @FechaRetiro DATE = NULL,
-    @DiasVacaciones DECIMAL(18,4) OUTPUT,
-    @DiasBonoVacacional DECIMAL(18,4) OUTPUT
+CREATE PROCEDURE dbo.sp_Nomina_CalcularDiasVacaciones
+  @SessionID NVARCHAR(80),
+  @Cedula NVARCHAR(32),
+  @FechaRetiro DATE = NULL,
+  @DiasVacaciones DECIMAL(18,6) OUTPUT,
+  @DiasBonoVacacional DECIMAL(18,6) OUTPUT
 AS
 BEGIN
-    SET NOCOUNT ON;
-    
-    DECLARE @FechaIngreso DATE
-    DECLARE @TotalMeses INT
-    DECLARE @TipoVacacion NVARCHAR(20)
-    
-    SELECT @FechaIngreso = INGRESO FROM Empleados WHERE CEDULA = @Cedula;
-    
-    IF @FechaRetiro IS NULL
-        SET @FechaRetiro = GETDATE();
-    
-    IF @FechaIngreso IS NULL
+  SET NOCOUNT ON;
+
+  IF @FechaRetiro IS NULL SET @FechaRetiro = CAST(GETDATE() AS DATE);
+
+  DECLARE @CompanyId INT;
+  DECLARE @BranchId INT;
+  DECLARE @HireDate DATE;
+  DECLARE @Years INT = 0;
+  DECLARE @BaseVac DECIMAL(18,6) = dbo.fn_Nomina_GetVariable(@SessionID, N'DIAS_VACACIONES_BASE');
+  DECLARE @BaseBono DECIMAL(18,6) = dbo.fn_Nomina_GetVariable(@SessionID, N'DIAS_BONO_VAC_BASE');
+
+  EXEC dbo.sp_Nomina_GetScope @CompanyId OUTPUT, @BranchId OUTPUT;
+
+  SELECT TOP 1 @HireDate = e.HireDate
+  FROM [master].Employee e
+  WHERE e.CompanyId = @CompanyId
+    AND e.EmployeeCode = @Cedula
+    AND e.IsDeleted = 0;
+
+  IF @BaseVac <= 0 SET @BaseVac = 15;
+  IF @BaseBono <= 0 SET @BaseBono = 15;
+
+  IF @HireDate IS NOT NULL
+    SET @Years = DATEDIFF(YEAR, @HireDate, @FechaRetiro);
+
+  IF @Years < 0 SET @Years = 0;
+
+  SET @DiasVacaciones = @BaseVac + CASE WHEN @Years > 0 THEN (@Years - 1) ELSE 0 END;
+  SET @DiasBonoVacacional = @BaseBono + CASE WHEN @Years > 0 THEN (@Years - 1) ELSE 0 END;
+
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, N'DIAS_VACACIONES', @DiasVacaciones, N'Días vacaciones calculados';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, N'DIAS_BONO_VAC', @DiasBonoVacacional, N'Días bono vacacional calculados';
+END
+GO
+
+IF OBJECT_ID('dbo.sp_Nomina_ProcesarVacaciones','P') IS NOT NULL DROP PROCEDURE dbo.sp_Nomina_ProcesarVacaciones;
+GO
+CREATE PROCEDURE dbo.sp_Nomina_ProcesarVacaciones
+  @VacacionID NVARCHAR(50),
+  @Cedula NVARCHAR(32),
+  @FechaInicio DATE,
+  @FechaHasta DATE,
+  @FechaReintegro DATE = NULL,
+  @CoUsuario NVARCHAR(50) = N'API',
+  @Resultado INT OUTPUT,
+  @Mensaje NVARCHAR(500) OUTPUT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  DECLARE @CompanyId INT;
+  DECLARE @BranchId INT;
+  DECLARE @UserId INT = NULL;
+  DECLARE @EmployeeId BIGINT;
+  DECLARE @EmployeeName NVARCHAR(120);
+  DECLARE @SessionID NVARCHAR(80) = (N'VAC_' + @VacacionID);
+  DECLARE @DiasVac DECIMAL(18,6);
+  DECLARE @DiasBono DECIMAL(18,6);
+  DECLARE @SalarioIntegral DECIMAL(18,6);
+  DECLARE @MontoVac DECIMAL(18,6);
+  DECLARE @MontoBono DECIMAL(18,6);
+  DECLARE @Total DECIMAL(18,6);
+  DECLARE @VacationProcessId BIGINT;
+  DECLARE @FechaDesdeSalarios DATE;
+
+  SET @Resultado = 0;
+  SET @Mensaje = N'';
+
+  BEGIN TRY
+    EXEC dbo.sp_Nomina_GetScope @CompanyId OUTPUT, @BranchId OUTPUT;
+
+    SELECT TOP 1 @UserId = u.UserId
+    FROM sec.[User] u
+    WHERE u.UserCode = @CoUsuario AND u.IsDeleted = 0;
+
+    SELECT TOP 1
+      @EmployeeId = e.EmployeeId,
+      @EmployeeName = e.EmployeeName
+    FROM [master].Employee e
+    WHERE e.CompanyId = @CompanyId
+      AND e.EmployeeCode = @Cedula
+      AND e.IsDeleted = 0
+      AND e.IsActive = 1;
+
+    IF @EmployeeId IS NULL
     BEGIN
-        SET @DiasVacaciones = 0;
-        SET @DiasBonoVacacional = 0;
-        RETURN;
+      SET @Mensaje = N'Empleado no encontrado o inactivo';
+      RETURN;
     END
-    
-    SET @TotalMeses = DATEDIFF(MONTH, @FechaIngreso, @FechaRetiro);
-    
-    -- Buscar en tabla de antigüedad
-    DECLARE @VacIndus FLOAT, @BonoVac FLOAT, @Normal FLOAT
-    
-    SELECT TOP 1 
-        @VacIndus = VAC_INDUS,
-        @BonoVac = BONO_VAC,
-        @Normal = NORMAL
-    FROM Antiguedad
-    WHERE MESES <= @TotalMeses
-    ORDER BY MESES DESC;
-    
-    -- Determinar tipo de vacaciones según sector
-    SELECT @TipoVacacion = ISNULL(NOMINA, 'NORMAL') FROM Empleados WHERE CEDULA = @Cedula;
-    
-    IF @TipoVacacion LIKE '%INDUS%' OR @TipoVacacion LIKE '%PETRO%'
+
+    SET @FechaDesdeSalarios = DATEADD(MONTH, -3, @FechaInicio);
+
+    EXEC dbo.sp_Nomina_PrepararVariablesBase @SessionID, @Cedula, N'VACACIONES', @FechaInicio, @FechaHasta;
+    EXEC dbo.sp_Nomina_CalcularSalariosPromedio @SessionID, @Cedula, @FechaDesdeSalarios, @FechaInicio;
+    EXEC dbo.sp_Nomina_CalcularDiasVacaciones @SessionID, @Cedula, NULL, @DiasVac OUTPUT, @DiasBono OUTPUT;
+
+    SET @SalarioIntegral = dbo.fn_Nomina_GetVariable(@SessionID, N'SALARIO_INTEGRAL');
+    IF @SalarioIntegral <= 0 SET @SalarioIntegral = dbo.fn_Nomina_GetVariable(@SessionID, N'SALARIO_DIARIO');
+
+    SET @MontoVac = @SalarioIntegral * ISNULL(@DiasVac,0);
+    SET @MontoBono = @SalarioIntegral * ISNULL(@DiasBono,0);
+    SET @Total = @MontoVac + @MontoBono;
+
+    BEGIN TRAN;
+
+    SELECT TOP 1 @VacationProcessId = vp.VacationProcessId
+    FROM hr.VacationProcess vp
+    WHERE vp.CompanyId = @CompanyId
+      AND vp.BranchId = @BranchId
+      AND vp.VacationCode = @VacacionID
+    ORDER BY vp.VacationProcessId DESC;
+
+    IF @VacationProcessId IS NULL
     BEGIN
-        SET @DiasVacaciones = ISNULL(@VacIndus, 15);
+      INSERT INTO hr.VacationProcess (
+        CompanyId, BranchId, VacationCode, EmployeeId, EmployeeCode, EmployeeName,
+        StartDate, EndDate, ReintegrationDate, ProcessDate,
+        TotalAmount, CalculatedAmount,
+        CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId
+      )
+      VALUES (
+        @CompanyId, @BranchId, @VacacionID, @EmployeeId, @Cedula, @EmployeeName,
+        @FechaInicio, @FechaHasta, @FechaReintegro, CAST(GETDATE() AS DATE),
+        @Total, @Total,
+        SYSUTCDATETIME(), SYSUTCDATETIME(), @UserId, @UserId
+      );
+
+      SET @VacationProcessId = SCOPE_IDENTITY();
     END
     ELSE
     BEGIN
-        SET @DiasVacaciones = ISNULL(@Normal, 15);
-    END
-    
-    SET @DiasBonoVacacional = ISNULL(@BonoVac, 0);
-    
-    -- Si es fraccionado (menos de un año), calcular proporcional
-    DECLARE @MesesPeriodo INT = @TotalMeses % 12;
-    IF @MesesPeriodo > 0 AND @MesesPeriodo < 12
-    BEGIN
-        SET @DiasVacaciones = (@DiasVacaciones / 12.0) * @MesesPeriodo;
-        SET @DiasBonoVacacional = (@DiasBonoVacacional / 12.0) * @MesesPeriodo;
-    END
-    
-    -- Guardar variables
-    EXEC sp_Nomina_SetVariable @SessionID, 'DIAS_VACACIONES', @DiasVacaciones, 'Días de vacaciones';
-    EXEC sp_Nomina_SetVariable @SessionID, 'DIAS_BONO_VAC', @DiasBonoVacacional, 'Días bono vacacional';
-END
-GO
+      UPDATE hr.VacationProcess
+      SET EmployeeId = @EmployeeId,
+          EmployeeCode = @Cedula,
+          EmployeeName = @EmployeeName,
+          StartDate = @FechaInicio,
+          EndDate = @FechaHasta,
+          ReintegrationDate = @FechaReintegro,
+          ProcessDate = CAST(GETDATE() AS DATE),
+          TotalAmount = @Total,
+          CalculatedAmount = @Total,
+          UpdatedAt = SYSUTCDATETIME(),
+          UpdatedByUserId = @UserId
+      WHERE VacationProcessId = @VacationProcessId;
 
--- =============================================
--- 3. SP: Procesar vacaciones
--- =============================================
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_Nomina_ProcesarVacaciones')
-    DROP PROCEDURE sp_Nomina_ProcesarVacaciones
-GO
+      DELETE FROM hr.VacationProcessLine WHERE VacationProcessId = @VacationProcessId;
+    END
 
-CREATE PROCEDURE sp_Nomina_ProcesarVacaciones
-    @VacacionID NVARCHAR(50),
-    @Cedula NVARCHAR(12),
-    @FechaInicio DATE,
-    @FechaHasta DATE,
-    @FechaReintegro DATE = NULL,
-    @CoUsuario NVARCHAR(20) = 'API',
-    @Resultado INT OUTPUT,
-    @Mensaje NVARCHAR(500) OUTPUT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-    
+    INSERT INTO hr.VacationProcessLine (VacationProcessId, ConceptCode, ConceptName, Amount, CreatedAt)
+    VALUES
+      (@VacationProcessId, N'VAC_PAGO', N'Pago vacaciones', @MontoVac, SYSUTCDATETIME()),
+      (@VacationProcessId, N'VAC_BONO', N'Bono vacacional', @MontoBono, SYSUTCDATETIME());
+
+    COMMIT;
+
+    EXEC dbo.sp_Nomina_LimpiarVariables @SessionID;
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Vacaciones procesadas. Total=' + CONVERT(NVARCHAR(40), @Total);
+  END TRY
+  BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    EXEC dbo.sp_Nomina_LimpiarVariables @SessionID;
     SET @Resultado = 0;
-    SET @Mensaje = '';
-    
-    DECLARE @SessionID NVARCHAR(50) = 'VAC_' + @VacacionID;
-    DECLARE @TipoNomina NVARCHAR(15);
-    DECLARE @DiasVacaciones DECIMAL(18,4);
-    DECLARE @DiasBonoVacacional DECIMAL(18,4);
-    
-    -- Verificar empleado
-    IF NOT EXISTS (SELECT 1 FROM Empleados WHERE CEDULA = @Cedula AND STATUS = 'A')
-    BEGIN
-        SET @Resultado = -1;
-        SET @Mensaje = 'Empleado no encontrado o inactivo';
-        RETURN;
-    END
-    
-    SELECT @TipoNomina = NOMINA FROM Empleados WHERE CEDULA = @Cedula;
-    
-    BEGIN TRY
-        BEGIN TRANSACTION;
-        
-        -- Limpiar previos
-        DELETE FROM DtllVacacion WHERE Vacacion = @VacacionID AND Cedula = @Cedula;
-        DELETE FROM Vacacion WHERE Vacacion = @VacacionID AND Cedula = @Cedula;
-        
-        -- Preparar variables base
-        EXEC sp_Nomina_PrepararVariablesBase @SessionID, @Cedula, @TipoNomina, @FechaInicio, @FechaHasta;
-        
-        -- Calcular salarios promedio (últimos 3 meses o lo que haya)
-        DECLARE @FechaDesdeSalarios DATE = DATEADD(MONTH, -3, @FechaInicio);
-        EXEC sp_Nomina_CalcularSalariosPromedio @SessionID, @Cedula, @FechaDesdeSalarios, @FechaInicio;
-        
-        -- Calcular días de vacaciones
-        EXEC sp_Nomina_CalcularDiasVacaciones @SessionID, @Cedula, NULL, @DiasVacaciones OUTPUT, @DiasBonoVacacional OUTPUT;
-        
-        -- Obtener salario integral
-        DECLARE @SalarioIntegral DECIMAL(18,4)
-        SELECT @SalarioIntegral = Valor FROM VariablesCalculadas WHERE SessionID = @SessionID AND Variable = 'SALARIO_INTEGRAL';
-        IF @SalarioIntegral IS NULL SET @SalarioIntegral = 0;
-        
-        -- Insertar vacaciones pagadas
-        IF @DiasVacaciones > 0 AND @SalarioIntegral > 0
-        BEGIN
-            INSERT INTO DtllVacacion (Vacacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-            VALUES (@VacacionID, @Cedula, 'VAC_PAG', @DiasVacaciones, @SalarioIntegral, 
-                    @DiasVacaciones * @SalarioIntegral, @CoUsuario, 'Vacaciones Pagadas');
-        END
-        
-        -- Insertar bono vacacional
-        IF @DiasBonoVacacional > 0 AND @SalarioIntegral > 0
-        BEGIN
-            INSERT INTO DtllVacacion (Vacacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-            VALUES (@VacacionID, @Cedula, 'BONO_VAC', @DiasBonoVacacional, @SalarioIntegral, 
-                    @DiasBonoVacacional * @SalarioIntegral, @CoUsuario, 'Bono Vacacional');
-        END
-        
-        -- Insertar cabecera
-        DECLARE @TotalVacaciones DECIMAL(18,4) = (@DiasVacaciones + @DiasBonoVacacional) * @SalarioIntegral;
-        
-        INSERT INTO Vacacion (Vacacion, Cedula, Inicio, Hasta, Reintegro, Fecha_Calculo, Total, Co_Usuario)
-        VALUES (@VacacionID, @Cedula, @FechaInicio, @FechaHasta, @FechaReintegro, GETDATE(), @TotalVacaciones, @CoUsuario);
-        
-        -- Limpiar
-        EXEC sp_Nomina_LimpiarVariables @SessionID;
-        
-        COMMIT TRANSACTION;
-        
-        SET @Resultado = 1;
-        SET @Mensaje = 'Vacaciones procesadas. Días: ' + CONVERT(NVARCHAR, @DiasVacaciones) + 
-                       ', Bono: ' + CONVERT(NVARCHAR, @DiasBonoVacacional) + 
-                       ', Total: ' + CONVERT(NVARCHAR, @TotalVacaciones);
-        
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-        
-        SET @Resultado = -99;
-        SET @Mensaje = ERROR_MESSAGE();
-        EXEC sp_Nomina_LimpiarVariables @SessionID;
-    END CATCH
+    SET @Mensaje = ERROR_MESSAGE();
+  END CATCH
 END
 GO
 
--- =============================================
--- 4. SP: Calcular liquidación (prestaciones)
--- =============================================
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_Nomina_CalcularLiquidacion')
-    DROP PROCEDURE sp_Nomina_CalcularLiquidacion
+IF OBJECT_ID('dbo.sp_Nomina_CalcularLiquidacion','P') IS NOT NULL DROP PROCEDURE dbo.sp_Nomina_CalcularLiquidacion;
 GO
-
-CREATE PROCEDURE sp_Nomina_CalcularLiquidacion
-    @LiquidacionID NVARCHAR(50),
-    @Cedula NVARCHAR(12),
-    @FechaRetiro DATE,
-    @CausaRetiro NVARCHAR(50) = 'RENUNCIA', -- RENUNCIA, DESPIDO, DESPIDO_JUSTIFICADO
-    @CoUsuario NVARCHAR(20) = 'API',
-    @Resultado INT OUTPUT,
-    @Mensaje NVARCHAR(500) OUTPUT
+CREATE PROCEDURE dbo.sp_Nomina_CalcularLiquidacion
+  @LiquidacionID NVARCHAR(50),
+  @Cedula NVARCHAR(32),
+  @FechaRetiro DATE,
+  @CausaRetiro NVARCHAR(50) = N'RENUNCIA',
+  @CoUsuario NVARCHAR(50) = N'API',
+  @Resultado INT OUTPUT,
+  @Mensaje NVARCHAR(500) OUTPUT
 AS
 BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-    
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  DECLARE @CompanyId INT;
+  DECLARE @BranchId INT;
+  DECLARE @UserId INT = NULL;
+  DECLARE @EmployeeId BIGINT;
+  DECLARE @EmployeeName NVARCHAR(120);
+  DECLARE @HireDate DATE;
+  DECLARE @SessionID NVARCHAR(80) = (N'LIQ_' + @LiquidacionID);
+  DECLARE @ServiceYears INT = 0;
+  DECLARE @SalarioDiario DECIMAL(18,6);
+  DECLARE @Prestaciones DECIMAL(18,6);
+  DECLARE @VacPendientes DECIMAL(18,6);
+  DECLARE @BonoSalida DECIMAL(18,6);
+  DECLARE @Total DECIMAL(18,6);
+  DECLARE @SettlementProcessId BIGINT;
+  DECLARE @FechaDesdeBase DATE;
+
+  SET @Resultado = 0;
+  SET @Mensaje = N'';
+
+  BEGIN TRY
+    EXEC dbo.sp_Nomina_GetScope @CompanyId OUTPUT, @BranchId OUTPUT;
+
+    SELECT TOP 1 @UserId = u.UserId
+    FROM sec.[User] u
+    WHERE u.UserCode = @CoUsuario AND u.IsDeleted = 0;
+
+    SELECT TOP 1
+      @EmployeeId = e.EmployeeId,
+      @EmployeeName = e.EmployeeName,
+      @HireDate = e.HireDate
+    FROM [master].Employee e
+    WHERE e.CompanyId = @CompanyId
+      AND e.EmployeeCode = @Cedula
+      AND e.IsDeleted = 0;
+
+    IF @EmployeeId IS NULL
+    BEGIN
+      SET @Mensaje = N'Empleado no encontrado';
+      RETURN;
+    END
+
+    SET @FechaDesdeBase = DATEADD(MONTH, -1, @FechaRetiro);
+    EXEC dbo.sp_Nomina_PrepararVariablesBase @SessionID, @Cedula, N'LIQUIDACION', @FechaDesdeBase, @FechaRetiro;
+    SET @SalarioDiario = dbo.fn_Nomina_GetVariable(@SessionID, N'SALARIO_DIARIO');
+
+    IF @HireDate IS NOT NULL
+      SET @ServiceYears = DATEDIFF(YEAR, @HireDate, @FechaRetiro);
+
+    IF @ServiceYears < 0 SET @ServiceYears = 0;
+    IF @SalarioDiario < 0 SET @SalarioDiario = 0;
+
+    SET @Prestaciones = (@ServiceYears * @SalarioDiario * 30);
+    SET @VacPendientes = (@SalarioDiario * 15);
+    SET @BonoSalida = CASE WHEN UPPER(@CausaRetiro) = N'DESPIDO' THEN (@SalarioDiario * 15) ELSE (@SalarioDiario * 10) END;
+    SET @Total = @Prestaciones + @VacPendientes + @BonoSalida;
+
+    BEGIN TRAN;
+
+    SELECT TOP 1 @SettlementProcessId = sp.SettlementProcessId
+    FROM hr.SettlementProcess sp
+    WHERE sp.CompanyId = @CompanyId
+      AND sp.BranchId = @BranchId
+      AND sp.SettlementCode = @LiquidacionID
+    ORDER BY sp.SettlementProcessId DESC;
+
+    IF @SettlementProcessId IS NULL
+    BEGIN
+      INSERT INTO hr.SettlementProcess (
+        CompanyId, BranchId, SettlementCode, EmployeeId, EmployeeCode, EmployeeName,
+        RetirementDate, RetirementCause, TotalAmount,
+        CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId
+      )
+      VALUES (
+        @CompanyId, @BranchId, @LiquidacionID, @EmployeeId, @Cedula, @EmployeeName,
+        @FechaRetiro, @CausaRetiro, @Total,
+        SYSUTCDATETIME(), SYSUTCDATETIME(), @UserId, @UserId
+      );
+
+      SET @SettlementProcessId = SCOPE_IDENTITY();
+    END
+    ELSE
+    BEGIN
+      UPDATE hr.SettlementProcess
+      SET EmployeeId = @EmployeeId,
+          EmployeeCode = @Cedula,
+          EmployeeName = @EmployeeName,
+          RetirementDate = @FechaRetiro,
+          RetirementCause = @CausaRetiro,
+          TotalAmount = @Total,
+          UpdatedAt = SYSUTCDATETIME(),
+          UpdatedByUserId = @UserId
+      WHERE SettlementProcessId = @SettlementProcessId;
+
+      DELETE FROM hr.SettlementProcessLine WHERE SettlementProcessId = @SettlementProcessId;
+    END
+
+    INSERT INTO hr.SettlementProcessLine (SettlementProcessId, ConceptCode, ConceptName, Amount, CreatedAt)
+    VALUES
+      (@SettlementProcessId, N'LIQ_PREST', N'Prestaciones', @Prestaciones, SYSUTCDATETIME()),
+      (@SettlementProcessId, N'LIQ_VAC', N'Vacaciones pendientes', @VacPendientes, SYSUTCDATETIME()),
+      (@SettlementProcessId, N'LIQ_BONO', N'Bono de salida', @BonoSalida, SYSUTCDATETIME());
+
+    COMMIT;
+
+    EXEC dbo.sp_Nomina_LimpiarVariables @SessionID;
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Liquidación calculada. Total=' + CONVERT(NVARCHAR(40), @Total);
+  END TRY
+  BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    EXEC dbo.sp_Nomina_LimpiarVariables @SessionID;
     SET @Resultado = 0;
-    SET @Mensaje = '';
-    
-    DECLARE @SessionID NVARCHAR(50) = 'LIQ_' + @LiquidacionID;
-    DECLARE @TipoNomina NVARCHAR(15);
-    DECLARE @FechaIngreso DATE;
-    DECLARE @SalarioMensual FLOAT;
-    
-    -- Verificar empleado
-    IF NOT EXISTS (SELECT 1 FROM Empleados WHERE CEDULA = @Cedula)
-    BEGIN
-        SET @Resultado = -1;
-        SET @Mensaje = 'Empleado no encontrado';
-        RETURN;
-    END
-    
-    SELECT 
-        @TipoNomina = NOMINA, 
-        @FechaIngreso = INGRESO,
-        @SalarioMensual = ISNULL(SUELDO, 0)
-    FROM Empleados 
-    WHERE CEDULA = @Cedula;
-    
-    IF @FechaIngreso IS NULL
-    BEGIN
-        SET @Resultado = -2;
-        SET @Mensaje = 'Empleado no tiene fecha de ingreso';
-        RETURN;
-    END
-    
-    BEGIN TRY
-        BEGIN TRANSACTION;
-        
-        -- Limpiar previos
-        DELETE FROM DtllLiquidacion WHERE Liquidacion = @LiquidacionID AND Cedula = @Cedula;
-        
-        -- Preparar variables base (usar último mes)
-        DECLARE @FechaDesde DATE = DATEADD(MONTH, -1, @FechaRetiro);
-        EXEC sp_Nomina_PrepararVariablesBase @SessionID, @Cedula, @TipoNomina, @FechaDesde, @FechaRetiro;
-        
-        -- Calcular salarios promedio (últimos 3 meses)
-        EXEC sp_Nomina_CalcularSalariosPromedio @SessionID, @Cedula, DATEADD(MONTH, -3, @FechaRetiro), @FechaRetiro;
-        
-        DECLARE @SalarioIntegral DECIMAL(18,4), @SalarioNormal DECIMAL(18,4);
-        SELECT @SalarioIntegral = Valor FROM VariablesCalculadas WHERE SessionID = @SessionID AND Variable = 'SALARIO_INTEGRAL';
-        SELECT @SalarioNormal = Valor FROM VariablesCalculadas WHERE SessionID = @SessionID AND Variable = 'SALARIO_NORMAL';
-        
-        IF @SalarioIntegral IS NULL SET @SalarioIntegral = @SalarioMensual / 30;
-        IF @SalarioNormal IS NULL SET @SalarioNormal = @SalarioMensual / 30;
-        
-        -- Calcular antigüedad completa
-        DECLARE @Anios INT, @Meses INT, @Dias INT;
-        DECLARE @DiasTotales INT = DATEDIFF(DAY, @FechaIngreso, @FechaRetiro);
-        SET @Anios = @DiasTotales / 365;
-        SET @Meses = (@DiasTotales % 365) / 30;
-        SET @Dias = (@DiasTotales % 365) % 30;
-        
-        -- Días de prestaciones según antigüedad
-        DECLARE @PreavisoDias INT = 0;
-        DECLARE @VacacionesPendientes DECIMAL(18,4) = 0;
-        DECLARE @BonoVacacionalPendiente DECIMAL(18,4) = 0;
-        
-        -- Obtener valores de antigüedad
-        DECLARE @TotalMeses INT = DATEDIFF(MONTH, @FechaIngreso, @FechaRetiro);
-        DECLARE @Legal FLOAT, @VacIndus FLOAT, @BonoVac FLOAT, @Adicional FLOAT;
-        
-        SELECT TOP 1 
-            @Legal = LEGAL,
-            @VacIndus = VAC_INDUS,
-            @BonoVac = BONO_VAC,
-            @Adicional = ADICIONAL
-        FROM Antiguedad
-        WHERE MESES <= @TotalMeses
-        ORDER BY MESES DESC;
-        
-        -- Preaviso según antigüedad (solo si es despido sin justificación)
-        IF @CausaRetiro = 'DESPIDO'
-        BEGIN
-            IF @TotalMeses >= 3 AND @TotalMeses < 6 SET @PreavisoDias = 7;
-            ELSE IF @TotalMeses >= 6 AND @TotalMeses < 12 SET @PreavisoDias = 15;
-            ELSE IF @TotalMeses >= 12 SET @PreavisoDias = ISNULL(@Legal, 30);
-        END
-        
-        -- Vacaciones proporcionales (año en curso)
-        DECLARE @MesesAnio INT = @TotalMeses % 12;
-        SET @VacacionesPendientes = (ISNULL(@VacIndus, 15) / 12.0) * @MesesAnio;
-        SET @BonoVacacionalPendiente = (ISNULL(@BonoVac, 15) / 12.0) * @MesesAnio;
-        
-        -- Insertar detalles de liquidación
-        
-        -- 1. Preaviso (si aplica)
-        IF @PreavisoDias > 0
-        BEGIN
-            INSERT INTO DtllLiquidacion (Liquidacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-            VALUES (@LiquidacionID, @Cedula, 'PREAVISO', @PreavisoDias, @SalarioIntegral, 
-                    @PreavisoDias * @SalarioIntegral, @CoUsuario, 'Preaviso');
-        END
-        
-        -- 2. Vacaciones proporcionales
-        IF @VacacionesPendientes > 0
-        BEGIN
-            INSERT INTO DtllLiquidacion (Liquidacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-            VALUES (@LiquidacionID, @Cedula, 'VAC_PROP', @VacacionesPendientes, @SalarioIntegral, 
-                    @VacacionesPendientes * @SalarioIntegral, @CoUsuario, 'Vacaciones Proporcionales');
-        END
-        
-        -- 3. Bono vacacional proporcional
-        IF @BonoVacacionalPendiente > 0
-        BEGIN
-            INSERT INTO DtllLiquidacion (Liquidacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-            VALUES (@LiquidacionID, @Cedula, 'BONO_VAC_PROP', @BonoVacacionalPendiente, @SalarioIntegral, 
-                    @BonoVacacionalPendiente * @SalarioIntegral, @CoUsuario, 'Bono Vacacional Proporcional');
-        END
-        
-        -- 4. Utilidades proporcionales (días del año trabajados)
-        DECLARE @DiasAnio INT = DATEDIFF(DAY, DATEADD(YEAR, DATEDIFF(YEAR, @FechaIngreso, @FechaRetiro), @FechaIngreso), @FechaRetiro);
-        IF @DiasAnio < 0 SET @DiasAnio = @DiasTotales; -- Primer año
-        
-        DECLARE @Utilidades DECIMAL(18,4) = 0;
-        SELECT @Utilidades = Utilidad FROM Empleados WHERE CEDULA = @Cedula;
-        IF @Utilidades IS NULL SET @Utilidades = 0;
-        
-        IF @Utilidades > 0 AND @DiasAnio > 0
-        BEGIN
-            DECLARE @MontoUtilidades DECIMAL(18,4) = (@Utilidades / 360) * @DiasAnio;
-            INSERT INTO DtllLiquidacion (Liquidacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-            VALUES (@LiquidacionID, @Cedula, 'UTIL_PROP', @DiasAnio, @MontoUtilidades / @DiasAnio, 
-                    @MontoUtilidades, @CoUsuario, 'Utilidades Proporcionales');
-        END
-        
-        -- 5. Indemnización (si aplica - solo despido sin justificación)
-        IF @CausaRetiro = 'DESPIDO' AND @TotalMeses >= 3
-        BEGIN
-            DECLARE @Indemnizacion DECIMAL(18,4) = @SalarioIntegral * @Anios;
-            IF @Meses >= 6 SET @Indemnizacion = @Indemnizacion + @SalarioIntegral;
-            
-            IF @Indemnizacion > 0
-            BEGIN
-                INSERT INTO DtllLiquidacion (Liquidacion, Cedula, Co_Concepto, Cantidad, Monto, Total, Co_Usuario, NB_CONCEPTO)
-                VALUES (@LiquidacionID, @Cedula, 'INDEMNIZ', @Anios + CASE WHEN @Meses >= 6 THEN 1 ELSE 0 END, 
-                        @SalarioIntegral, @Indemnizacion, @CoUsuario, 'Indemnización por Antigüedad');
-            END
-        END
-        
-        -- Calcular total
-        DECLARE @TotalLiquidacion DECIMAL(18,4);
-        SELECT @TotalLiquidacion = ISNULL(SUM(Total), 0) FROM DtllLiquidacion WHERE Liquidacion = @LiquidacionID AND Cedula = @Cedula;
-        
-        -- Limpiar
-        EXEC sp_Nomina_LimpiarVariables @SessionID;
-        
-        COMMIT TRANSACTION;
-        
-        SET @Resultado = 1;
-        SET @Mensaje = 'Liquidación calculada exitosamente. Total: ' + CONVERT(NVARCHAR, @TotalLiquidacion);
-        
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-        
-        SET @Resultado = -99;
-        SET @Mensaje = ERROR_MESSAGE();
-        EXEC sp_Nomina_LimpiarVariables @SessionID;
-    END CATCH
+    SET @Mensaje = ERROR_MESSAGE();
+  END CATCH
 END
 GO
 
--- =============================================
--- 5. SP: Consultar detalle de liquidación
--- =============================================
-IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_Nomina_GetLiquidacion')
-    DROP PROCEDURE sp_Nomina_GetLiquidacion
+IF OBJECT_ID('dbo.sp_Nomina_GetLiquidacion','P') IS NOT NULL DROP PROCEDURE dbo.sp_Nomina_GetLiquidacion;
 GO
-
-CREATE PROCEDURE sp_Nomina_GetLiquidacion
-    @LiquidacionID NVARCHAR(50)
+CREATE PROCEDURE dbo.sp_Nomina_GetLiquidacion
+  @LiquidacionID NVARCHAR(50)
 AS
 BEGIN
-    SET NOCOUNT ON;
-    
-    -- Cabecera
-    SELECT 
-        l.*,
-        e.NOMBRE as NombreEmpleado,
-        e.CARGO,
-        e.INGRESO as FechaIngreso
-    FROM DtllLiquidacion l
-    INNER JOIN Empleados e ON l.Cedula = e.CEDULA
-    WHERE l.Liquidacion = @LiquidacionID
-    ORDER BY l.Co_Concepto;
-    
-    -- Totales
-    SELECT 
-        SUM(CASE WHEN l.Total > 0 THEN l.Total ELSE 0 END) as TotalAsignaciones,
-        SUM(CASE WHEN l.Total < 0 THEN l.Total ELSE 0 END) as TotalDeducciones,
-        SUM(l.Total) as TotalNeto
-    FROM DtllLiquidacion l
-    WHERE l.Liquidacion = @LiquidacionID;
-END
-GO
+  SET NOCOUNT ON;
 
-PRINT 'SPs de vacaciones y liquidación creados exitosamente';
+  SELECT TOP 1
+    sp.SettlementProcessId,
+    sp.SettlementCode,
+    sp.EmployeeCode AS Cedula,
+    sp.EmployeeName AS NombreEmpleado,
+    sp.RetirementDate,
+    sp.RetirementCause,
+    sp.TotalAmount,
+    sp.CreatedAt,
+    sp.UpdatedAt
+  FROM hr.SettlementProcess sp
+  WHERE sp.SettlementCode = @LiquidacionID
+  ORDER BY sp.SettlementProcessId DESC;
+
+  SELECT
+    sl.SettlementProcessLineId,
+    sl.ConceptCode,
+    sl.ConceptName,
+    sl.Amount,
+    sl.CreatedAt
+  FROM hr.SettlementProcessLine sl
+  INNER JOIN hr.SettlementProcess sp ON sp.SettlementProcessId = sl.SettlementProcessId
+  WHERE sp.SettlementCode = @LiquidacionID
+  ORDER BY sl.SettlementProcessLineId;
+
+  SELECT
+    SUM(CASE WHEN sl.Amount > 0 THEN sl.Amount ELSE 0 END) AS TotalAsignaciones,
+    SUM(CASE WHEN sl.Amount < 0 THEN sl.Amount ELSE 0 END) AS TotalDeducciones,
+    SUM(sl.Amount) AS TotalNeto
+  FROM hr.SettlementProcessLine sl
+  INNER JOIN hr.SettlementProcess sp ON sp.SettlementProcessId = sl.SettlementProcessId
+  WHERE sp.SettlementCode = @LiquidacionID;
+END
 GO

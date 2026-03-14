@@ -168,8 +168,7 @@ async function hasContabilidadInfra(): Promise<boolean> {
   const rows = await query<{ ok: number }>(
     `
     SELECT CASE WHEN
-      OBJECT_ID('dbo.usp_Contabilidad_Asiento_Crear', 'P') IS NOT NULL
-      AND OBJECT_ID('acct.Account', 'U') IS NOT NULL
+      OBJECT_ID('acct.Account', 'U') IS NOT NULL
       AND OBJECT_ID('acct.JournalEntry', 'U') IS NOT NULL
       AND OBJECT_ID('acct.JournalEntryLine', 'U') IS NOT NULL
     THEN 1 ELSE 0 END AS ok

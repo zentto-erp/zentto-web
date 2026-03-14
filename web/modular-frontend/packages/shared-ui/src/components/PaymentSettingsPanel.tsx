@@ -147,9 +147,9 @@ export default function PaymentSettingsPanel({
               <Typography variant="overline" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                 {group === 'VE' ? '🇻🇪 Venezuela' : group === 'ES' ? '🇪🇸 España' : '🌐 Global / Internacional'}
               </Typography>
-              {provs.map(p => (
+              {provs.map((p, index) => (
                 <ProviderConfigCard
-                  key={p.code}
+                  key={`${group}-${p.code}-${index}`}
                   provider={p}
                   existingConfig={configMap.get(p.code)}
                   configFields={fieldsMap.get(p.code) || []}
