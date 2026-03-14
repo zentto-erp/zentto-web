@@ -16,11 +16,13 @@ import {
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import { usePrinterStatus } from '../hooks';
+import { usePosStore } from '@datqbox/shared-api';
 import { PosSettingsModal } from './PosSettingsModal';
 
 const SearchIcon = dynamic(() => import('@mui/icons-material/Search'), { ssr: false });
 const HomeIcon = dynamic(() => import('@mui/icons-material/Home'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+const RestartAltIcon = dynamic(() => import('@mui/icons-material/RestartAlt'), { ssr: false });
 const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
 const ChevronLeftIcon = dynamic(() => import('@mui/icons-material/ChevronLeft'), { ssr: false });
 const ChevronRightIcon = dynamic(() => import('@mui/icons-material/ChevronRight'), { ssr: false });
@@ -58,12 +60,43 @@ export function PosHeader({
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const itemsPerPage = isDesktop ? 6 : 3;
     const isDark = theme.palette.mode === 'dark';
+    const [agentActionLoading, setAgentActionLoading] = useState(false);
+    const [agentActionMessage, setAgentActionMessage] = useState<string | null>(null);
+    const startFiscalAgentService = usePosStore((s) => s.startFiscalAgentService);
+    const stopFiscalAgentService = usePosStore((s) => s.stopFiscalAgentService);
+    const restartFiscalAgentService = usePosStore((s) => s.restartFiscalAgentService);
+    const fetchPrinterStatus = usePosStore((s) => s.fetchPrinterStatus);
 
     // Hook para monitorear el Estatus de Impresora Local en Background
-    const { data: printerStatus, isError, isFetching } = usePrinterStatus("PNP", "EMULADOR", "emulador");
+    const { data: printerStatus, refetch: refetchPrinterStatus } = usePrinterStatus("PNP", "EMULADOR", "emulador");
 
     // UI Global States
     const [settingsOpen, setSettingsOpen] = useState(false);
+
+    const runAgentAction = async (action: 'start' | 'stop' | 'restart') => {
+        setAgentActionLoading(true);
+        setAgentActionMessage(null);
+        try {
+            const result = action === 'start'
+                ? await startFiscalAgentService()
+                : action === 'stop'
+                    ? await stopFiscalAgentService()
+                    : await restartFiscalAgentService();
+
+            await fetchPrinterStatus();
+            await refetchPrinterStatus();
+
+            if (result.success) {
+                setAgentActionMessage(result.message || (action === 'start' ? 'Agente Fiscal iniciado.' : action === 'stop' ? 'Agente Fiscal detenido.' : 'Agente Fiscal reiniciado.'));
+            } else {
+                setAgentActionMessage(result.message || 'No se pudo gestionar el servicio del Agente Fiscal.');
+            }
+        } catch (e) {
+            setAgentActionMessage(e instanceof Error ? e.message : 'Error al gestionar el servicio del Agente Fiscal.');
+        } finally {
+            setAgentActionLoading(false);
+        }
+    };
 
     return (
         <Box sx={{
@@ -89,15 +122,43 @@ export function PosHeader({
                             <Typography component="div" color="text.primary" fontWeight="medium" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {cajaName}
                                 {printerStatus && (
-                                    <Tooltip title={printerStatus.message || "Estado de la impresora"}>
-                                        <Chip
-                                            icon={<PrintIcon style={{ fontSize: 14 }} />}
-                                            label={printerStatus.success ? "Fiscal OK" : "Error Fiscal"}
-                                            size="small"
-                                            color={printerStatus.success ? "success" : "error"}
-                                            variant={printerStatus.success ? "outlined" : "filled"}
-                                            sx={{ height: 20, fontSize: '0.65rem' }}
-                                        />
+                                    <Tooltip title={
+                                        agentActionMessage
+                                            ? agentActionMessage
+                                            : printerStatus.success
+                                                ? 'Agente Fiscal activo — click para detener'
+                                                : 'Agente Fiscal apagado — click para iniciar'
+                                    }>
+                                        <span>
+                                            <Chip
+                                                icon={<PrintIcon style={{ fontSize: 14 }} />}
+                                                label={agentActionLoading ? '...' : printerStatus.success ? 'Fiscal OK' : 'Error Fiscal'}
+                                                size="small"
+                                                color={agentActionLoading ? 'default' : printerStatus.success ? 'success' : 'error'}
+                                                variant="outlined"
+                                                disabled={agentActionLoading}
+                                                onClick={() => !agentActionLoading && runAgentAction(printerStatus.success ? 'stop' : 'start')}
+                                                sx={{
+                                                    height: 20,
+                                                    fontSize: '0.65rem',
+                                                    cursor: agentActionLoading ? 'default' : 'pointer',
+                                                }}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                {printerStatus && (
+                                    <Tooltip title="Reiniciar Agente Fiscal">
+                                        <span>
+                                            <IconButton
+                                                size="small"
+                                                disabled={agentActionLoading}
+                                                onClick={() => !agentActionLoading && runAgentAction('restart')}
+                                                sx={{ p: 0.25, color: 'text.secondary' }}
+                                            >
+                                                <RestartAltIcon sx={{ fontSize: 16 }} />
+                                            </IconButton>
+                                        </span>
                                     </Tooltip>
                                 )}
                                 <IconButton size="small" onClick={() => setSettingsOpen(true)}>

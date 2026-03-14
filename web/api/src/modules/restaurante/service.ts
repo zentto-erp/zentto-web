@@ -3,6 +3,7 @@ import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessRestauranteAccounting } from "../contabilidad/integracion.service.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { consumeSupervisorOverride, createSupervisorOverride, validateSupervisorCredentials } from "../_shared/supervisor-override.service.js";
 
 interface DefaultScope {
   companyId: number;
@@ -517,6 +518,248 @@ export async function agregarItemPedido(params: {
     ok: true,
     itemId: Number(inserted[0]?.lineId ?? 0),
     executionMode: "ts_canonical" as const,
+  };
+}
+
+export async function cancelarItemPedido(params: {
+  pedidoId: number;
+  itemId: number;
+  motivo?: string;
+  supervisorUser: string;
+  supervisorPassword: string;
+  requestedByUser?: string | null;
+  biometricBypass?: boolean;
+  biometricCredentialId?: string | null;
+}) {
+  const orderRows = await query<any>(
+    `
+    SELECT TOP 1
+      OrderTicketId AS orderId,
+      CompanyId AS companyId,
+      BranchId AS branchId,
+      Status AS status
+    FROM rest.OrderTicket
+    WHERE OrderTicketId = @pedidoId
+    `,
+    { pedidoId: params.pedidoId }
+  );
+
+  const order = orderRows[0];
+  if (!order) {
+    return { ok: false, error: "pedido_not_found", executionMode: "ts_canonical" as const };
+  }
+
+  const status = String(order.status ?? "").toUpperCase();
+  if (status === "CLOSED" || status === "VOIDED") {
+    return { ok: false, error: "pedido_not_open", executionMode: "ts_canonical" as const };
+  }
+
+  const priorVoidRows = await query<{ alreadyVoided: number }>(
+    `
+    SELECT TOP 1 1 AS alreadyVoided
+    FROM sec.SupervisorOverride
+    WHERE ModuleCode = N'RESTAURANTE'
+      AND ActionCode = N'ORDER_LINE_VOID'
+      AND Status = N'CONSUMED'
+      AND SourceDocumentId = @pedidoId
+      AND SourceLineId = @itemId
+    `,
+    { pedidoId: params.pedidoId, itemId: params.itemId }
+  );
+
+  if (priorVoidRows[0]?.alreadyVoided === 1) {
+    return { ok: false, error: "item_already_voided", executionMode: "ts_canonical" as const };
+  }
+
+  const itemRows = await query<any>(
+    `
+    SELECT TOP 1
+      OrderTicketLineId AS itemId,
+      LineNumber AS lineNumber,
+      CountryCode AS countryCode,
+      ProductId AS productId,
+      ProductCode AS productCode,
+      ProductName AS nombre,
+      Quantity AS cantidad,
+      UnitPrice AS unitPrice,
+      TaxCode AS taxCode,
+      TaxRate AS taxRate,
+      NetAmount AS netAmount,
+      TaxAmount AS taxAmount,
+      TotalAmount AS totalAmount
+    FROM rest.OrderTicketLine
+    WHERE OrderTicketId = @pedidoId
+      AND OrderTicketLineId = @itemId
+    `,
+    {
+      pedidoId: params.pedidoId,
+      itemId: params.itemId,
+    }
+  );
+
+  const item = itemRows[0];
+  if (!item) {
+    return { ok: false, error: "item_not_found", executionMode: "ts_canonical" as const };
+  }
+
+  const supervisorValidation = await validateSupervisorCredentials({
+    supervisorUser: params.supervisorUser,
+    supervisorPassword: params.supervisorPassword,
+    requestedByUser: params.requestedByUser,
+    biometricBypass: params.biometricBypass,
+    biometricCredentialId: params.biometricCredentialId,
+  });
+
+  if (!supervisorValidation.ok) {
+    return {
+      ok: false,
+      error: supervisorValidation.error,
+      message: supervisorValidation.message,
+      executionMode: "ts_canonical" as const,
+    };
+  }
+
+  const reason = String(params.motivo ?? "Cliente no desea el producto").trim() || "Cliente no desea el producto";
+
+  const override = await createSupervisorOverride({
+    moduleCode: "RESTAURANTE",
+    actionCode: "ORDER_LINE_VOID",
+    reason,
+    supervisorUser: supervisorValidation.supervisorUser,
+    requestedByUser: params.requestedByUser,
+    companyId: Number(order.companyId ?? 0) || null,
+    branchId: Number(order.branchId ?? 0) || null,
+    payload: {
+      pedidoId: params.pedidoId,
+      itemId: params.itemId,
+      itemNombre: item.nombre,
+      cantidad: Number(item.cantidad ?? 0),
+      netAmount: Number(item.netAmount ?? 0),
+      taxAmount: Number(item.taxAmount ?? 0),
+      totalAmount: Number(item.totalAmount ?? 0),
+    },
+  });
+
+  const nextLineRows = await query<{ nextLine: number }>(
+    `
+    SELECT ISNULL(MAX(LineNumber), 0) + 1 AS nextLine
+    FROM rest.OrderTicketLine
+    WHERE OrderTicketId = @pedidoId
+    `,
+    { pedidoId: params.pedidoId }
+  );
+
+  const nextLine = Number(nextLineRows[0]?.nextLine ?? 1);
+  const voidNotes = [
+    `ANULACION_LINEA_REF:${Number(item.itemId ?? 0)}`,
+    `OVERRIDE:${override.overrideId}`,
+    `SUP:${supervisorValidation.supervisorUser}`,
+    `MOTIVO:${reason}`,
+  ].join(" | ").slice(0, 600);
+
+  const reversalRows = await query<{ reversalLineId: number }>(
+    `
+    INSERT INTO rest.OrderTicketLine (
+      OrderTicketId,
+      LineNumber,
+      CountryCode,
+      ProductId,
+      ProductCode,
+      ProductName,
+      Quantity,
+      UnitPrice,
+      TaxCode,
+      TaxRate,
+      NetAmount,
+      TaxAmount,
+      TotalAmount,
+      Notes,
+      SupervisorApprovalId,
+      CreatedAt,
+      UpdatedAt
+    )
+    OUTPUT INSERTED.OrderTicketLineId AS reversalLineId
+    VALUES (
+      @pedidoId,
+      @lineNumber,
+      @countryCode,
+      @productId,
+      @productCode,
+      @productName,
+      @quantity,
+      @unitPrice,
+      @taxCode,
+      @taxRate,
+      @netAmount,
+      @taxAmount,
+      @totalAmount,
+      @notes,
+      @supervisorApprovalId,
+      SYSUTCDATETIME(),
+      SYSUTCDATETIME()
+    )
+    `,
+    {
+      pedidoId: params.pedidoId,
+      lineNumber: nextLine,
+      countryCode: String(item.countryCode ?? "VE"),
+      productId: item.productId ? Number(item.productId) : null,
+      productCode: String(item.productCode ?? ""),
+      productName: `ANULACION ${String(item.nombre ?? "")}`.slice(0, 250),
+      quantity: round2(-Number(item.cantidad ?? 0)),
+      unitPrice: round2(Number(item.unitPrice ?? 0)),
+      taxCode: String(item.taxCode ?? "EXENTO"),
+      taxRate: Number(item.taxRate ?? 0),
+      netAmount: round2(-Number(item.netAmount ?? 0)),
+      taxAmount: round2(-Number(item.taxAmount ?? 0)),
+      totalAmount: round2(-Number(item.totalAmount ?? 0)),
+      notes: voidNotes,
+      supervisorApprovalId: override.overrideId,
+    }
+  );
+
+  const reversalLineId = Number(reversalRows[0]?.reversalLineId ?? 0);
+  if (!Number.isFinite(reversalLineId) || reversalLineId <= 0) {
+    return { ok: false, error: "void_line_not_created", executionMode: "ts_canonical" as const };
+  }
+
+  await recalcOrderTotals(params.pedidoId);
+
+  await query(
+    `
+    UPDATE rest.OrderTicket
+    SET UpdatedAt = SYSUTCDATETIME()
+    WHERE OrderTicketId = @pedidoId
+    `,
+    { pedidoId: params.pedidoId }
+  );
+
+  const consumed = await consumeSupervisorOverride({
+    overrideId: override.overrideId,
+    moduleCode: "RESTAURANTE",
+    actionCode: "ORDER_LINE_VOID",
+    consumedByUser: params.requestedByUser,
+    sourceDocumentId: params.pedidoId,
+    sourceLineId: Number(item.itemId ?? 0),
+    reversalLineId,
+  });
+
+  if (!consumed.ok) {
+    return { ok: false, error: "override_not_available", executionMode: "ts_canonical" as const };
+  }
+
+  return {
+    ok: true,
+    executionMode: "ts_canonical" as const,
+    canceledItem: {
+      itemId: Number(item.itemId ?? 0),
+      nombre: String(item.nombre ?? ""),
+      cantidad: Number(item.cantidad ?? 0),
+      motivo: params.motivo ? String(params.motivo) : null,
+      reversalLineId,
+      supervisorUser: supervisorValidation.supervisorUser,
+      overrideId: override.overrideId,
+    },
   };
 }
 

@@ -2,7 +2,7 @@
 // Tabla de artículos con filtros avanzados: selectores, rangos, comodines
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -212,7 +212,7 @@ export default function ArticulosTable() {
   };
 
   // Resetear página al cambiar un filtro
-  const onFilterChange = (setter: (v: unknown) => void) => (val: unknown) => {
+  const onFilterChange = <T,>(setter: Dispatch<SetStateAction<T>>) => (val: T) => {
     setter(val);
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };

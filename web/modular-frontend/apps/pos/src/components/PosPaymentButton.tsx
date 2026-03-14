@@ -28,12 +28,13 @@ export function PosPaymentButton({ total, onClick, disabled }: PosPaymentButtonP
                 bgcolor: '#7B5A8B', // Color púrpura/morado tipo Odoo
                 color: '#fff',
                 display: 'flex',
-                flexDirection: { xs: 'row', md: 'column' },
+                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 textTransform: 'none',
-                py: { xs: 1, md: 3 },
-                minHeight: { xs: 50, md: 'auto' },
+                gap: 0.75,
+                py: 0.5,
+                minHeight: { xs: 42, md: 46 },
                 '&:hover': {
                     bgcolor: '#6a4d78',
                 },
@@ -43,8 +44,8 @@ export function PosPaymentButton({ total, onClick, disabled }: PosPaymentButtonP
                 },
             }}
         >
-            <NavigateNextIcon sx={{ fontSize: { xs: 24, md: 32 }, mb: { xs: 0, md: 0.5 } }} />
-            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+            <NavigateNextIcon sx={{ fontSize: { xs: 20, md: 22 }, mb: 0 }} />
+            <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: { xs: '0.95rem', md: '1rem' }, lineHeight: 1 }}>
                 Pago
             </Typography>
         </Button>

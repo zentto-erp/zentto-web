@@ -36,6 +36,15 @@ export interface PrinterStatus {
     lastCheck: number; // timestamp
 }
 
+export interface FiscalAgentServiceStatus {
+    success: boolean;
+    serviceName: string;
+    displayName?: string;
+    status: string;
+    running: boolean;
+    message?: string;
+}
+
 export interface CajaConfig {
     id: string;
     nombre: string;
@@ -69,6 +78,12 @@ export interface CartItem {
     totalBase: number;
     totalIva: number;
     totalRenglon: number;
+    esAnulacion?: boolean;
+    anulaItemId?: string;
+    motivoAnulacion?: string;
+    supervisorUser?: string;
+    supervisorApprovalId?: number;
+    bloqueadoPorAnulacion?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -149,6 +164,10 @@ interface PosState {
     removeKitchenPrinter: (nombre: string) => void;
     setPrinterStatus: (status: PrinterStatus | null) => void;
     fetchPrinterStatus: () => Promise<void>;
+    getFiscalAgentServiceStatus: () => Promise<FiscalAgentServiceStatus>;
+    startFiscalAgentService: () => Promise<FiscalAgentServiceStatus>;
+    stopFiscalAgentService: () => Promise<FiscalAgentServiceStatus>;
+    restartFiscalAgentService: () => Promise<FiscalAgentServiceStatus>;
 
     // --- Actions: Caja y Configuración ---
     setCaja: (caja: Partial<CajaConfig>) => void;
@@ -162,6 +181,16 @@ interface PosState {
     addToCart: (item: Omit<CartItem, 'id' | 'totalBase' | 'totalIva' | 'totalRenglon'>) => void;
     updateCartItem: (id: string, updates: Partial<Pick<CartItem, 'cantidad' | 'precio' | 'descuento'>>) => void;
     removeFromCart: (id: string) => void;
+    voidCartItemWithSupervisor: (
+        id: string,
+        auth: {
+            supervisorUser: string;
+            supervisorPassword?: string;
+            reason: string;
+            biometricBypass?: boolean;
+            biometricCredentialId?: string;
+        }
+    ) => Promise<{ success: boolean; message: string }>;
     clearCart: () => void;
     setSelectedCartItem: (id: string | null) => void;
 
@@ -323,6 +352,65 @@ export const usePosStore = create<PosState>()(
                 }
             },
 
+            getFiscalAgentServiceStatus: async () => {
+                const data = await apiGet('/v1/pos/fiscal/agent/service-status');
+                return {
+                    success: Boolean(data.success),
+                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    displayName: data.displayName ? String(data.displayName) : undefined,
+                    status: String(data.status ?? 'Unknown'),
+                    running: Boolean(data.running),
+                    message: data.message ? String(data.message) : undefined,
+                };
+            },
+
+            startFiscalAgentService: async () => {
+                const data = await apiPost('/v1/pos/fiscal/agent/start', {});
+                const result: FiscalAgentServiceStatus = {
+                    success: Boolean(data.success),
+                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    displayName: data.displayName ? String(data.displayName) : undefined,
+                    status: String(data.status ?? 'Unknown'),
+                    running: Boolean(data.running),
+                    message: data.message ? String(data.message) : undefined,
+                };
+
+                if (result.running) {
+                    await get().fetchPrinterStatus();
+                }
+
+                return result;
+            },
+
+            stopFiscalAgentService: async () => {
+                const data = await apiPost('/v1/pos/fiscal/agent/stop', {});
+                const result: FiscalAgentServiceStatus = {
+                    success: Boolean(data.success),
+                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    displayName: data.displayName ? String(data.displayName) : undefined,
+                    status: String(data.status ?? 'Unknown'),
+                    running: Boolean(data.running),
+                    message: data.message ? String(data.message) : undefined,
+                };
+
+                await get().fetchPrinterStatus();
+                return result;
+            },
+
+            restartFiscalAgentService: async () => {
+                const data = await apiPost('/v1/pos/fiscal/agent/restart', {});
+                const result: FiscalAgentServiceStatus = {
+                    success: Boolean(data.success),
+                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    displayName: data.displayName ? String(data.displayName) : undefined,
+                    status: String(data.status ?? 'Unknown'),
+                    running: Boolean(data.running),
+                    message: data.message ? String(data.message) : undefined,
+                };
+                await get().fetchPrinterStatus();
+                return result;
+            },
+
             // ─── Caja ───
             setCaja: (caja) => set((s) => ({ caja: { ...s.caja, ...caja } })),
             setLocalizacion: (loc) => set((s) => ({ localizacion: { ...s.localizacion, ...loc } })),
@@ -356,6 +444,7 @@ export const usePosStore = create<PosState>()(
                 set((s) => ({
                     cart: s.cart.map((c) => {
                         if (c.id !== id) return c;
+                        if (c.esAnulacion || c.bloqueadoPorAnulacion) return c;
                         const cantidad = updates.cantidad ?? c.cantidad;
                         const precio = updates.precio ?? c.precio;
                         const descuento = updates.descuento ?? c.descuento;
@@ -363,7 +452,84 @@ export const usePosStore = create<PosState>()(
                     }),
                 })),
 
-            removeFromCart: (id) => set((s) => ({ cart: s.cart.filter((c) => c.id !== id) })),
+            removeFromCart: (id) =>
+                set((s) => ({
+                    cart: s.cart.filter((c) => c.id !== id && !c.bloqueadoPorAnulacion),
+                })),
+
+            voidCartItemWithSupervisor: async (id, auth) => {
+                const { cart } = get();
+                const item = cart.find((c) => c.id === id);
+                if (!item) return { success: false, message: 'Ítem no encontrado en el carrito.' };
+                if (item.esAnulacion) return { success: false, message: 'La línea ya es una anulación.' };
+                if (item.bloqueadoPorAnulacion) return { success: false, message: 'La línea ya fue anulada previamente.' };
+                if (item.cantidad <= 0) return { success: false, message: 'No se puede anular una línea con cantidad no positiva.' };
+
+                const supervisorUser = String(auth.supervisorUser ?? '').trim();
+                const supervisorPassword = String(auth.supervisorPassword ?? '');
+                const reason = String(auth.reason ?? '').trim();
+                const biometricBypass = Boolean(auth.biometricBypass);
+                const biometricCredentialId = String(auth.biometricCredentialId ?? '').trim();
+                if (!supervisorUser || !reason) {
+                    return { success: false, message: 'Debe indicar supervisor y motivo de anulación.' };
+                }
+                if (!biometricBypass && !supervisorPassword) {
+                    return { success: false, message: 'Debe indicar clave de supervisor.' };
+                }
+                if (biometricBypass && !biometricCredentialId) {
+                    return { success: false, message: 'Debe validar huella del supervisor.' };
+                }
+
+                try {
+                    const approval = await apiPost('/v1/pos/supervision/authorize-void', {
+                        supervisorUser,
+                        supervisorPassword: biometricBypass ? '' : supervisorPassword,
+                        biometricBypass,
+                        biometricCredentialId: biometricBypass ? biometricCredentialId : undefined,
+                        reason,
+                        item: {
+                            productoId: item.productoId,
+                            codigo: item.codigo,
+                            nombre: item.nombre,
+                            cantidad: item.cantidad,
+                            precioUnitario: item.precio,
+                            iva: item.iva,
+                            subtotal: item.totalBase,
+                        },
+                    });
+
+                    if (!approval?.ok || !approval?.approvalId) {
+                        return { success: false, message: String(approval?.message ?? approval?.error ?? 'No se pudo autorizar la anulación.') };
+                    }
+
+                    const negativeQty = -Math.abs(item.cantidad);
+                    const voidLine: CartItem = {
+                        id: `void-${item.id}-${Date.now()}`,
+                        productoId: item.productoId,
+                        codigo: item.codigo,
+                        nombre: `ANULACION ${item.nombre}`.slice(0, 250),
+                        cantidad: negativeQty,
+                        precio: item.precio,
+                        descuento: item.descuento,
+                        iva: item.iva,
+                        ...calcTotals(negativeQty, item.precio, item.descuento, item.iva, get().localizacion),
+                        esAnulacion: true,
+                        anulaItemId: item.id,
+                            motivoAnulacion: reason,
+                            supervisorUser: String(approval.supervisorUser ?? supervisorUser).toUpperCase(),
+                            supervisorApprovalId: Number(approval.approvalId),
+                            bloqueadoPorAnulacion: true
+                        };
+
+                    set((s) => ({
+                        cart: s.cart.map((c) => (c.id === item.id ? { ...c, bloqueadoPorAnulacion: true } : c)).concat(voidLine),
+                    }));
+
+                    return { success: true, message: `Línea anulada con autorización de ${voidLine.supervisorUser}.` };
+                } catch (e: unknown) {
+                    return { success: false, message: e instanceof Error ? e.message : 'No se pudo autorizar la anulación.' };
+                }
+            },
 
             clearCart: () => set({ cart: [], selectedCartItemId: null }),
 
@@ -467,6 +633,11 @@ export const usePosStore = create<PosState>()(
                                 descuento: c.descuento,
                                 iva: c.iva,
                                 subtotal: c.totalBase,
+                                esAnulacion: Boolean(c.esAnulacion),
+                                anulaItemId: c.anulaItemId,
+                                motivoAnulacion: c.motivoAnulacion,
+                                supervisorUser: c.supervisorUser,
+                                supervisorApprovalId: c.supervisorApprovalId,
                             })),
                         }),
                     });
@@ -531,6 +702,12 @@ export const usePosStore = create<PosState>()(
                         const precio = Number(i.precioUnitario);
                         const descuento = Number(i.descuento ?? 0);
                         const iva = Number(i.iva ?? 16);
+                        let lineMeta: Record<string, unknown> = {};
+                        try {
+                            lineMeta = typeof i.lineMetaJson === 'string' ? JSON.parse(i.lineMetaJson) : {};
+                        } catch {
+                            lineMeta = {};
+                        }
                         return {
                             id: `${i.productoId}-${Date.now()}-${Math.random()}`,
                             productoId: String(i.productoId),
@@ -541,6 +718,12 @@ export const usePosStore = create<PosState>()(
                             descuento,
                             iva,
                             ...calcTotals(cantidad, precio, descuento, iva, get().localizacion),
+                            esAnulacion: Boolean(lineMeta.isVoid),
+                            anulaItemId: typeof lineMeta.voidOfItemId === 'string' ? lineMeta.voidOfItemId : undefined,
+                            motivoAnulacion: typeof lineMeta.reason === 'string' ? lineMeta.reason : undefined,
+                            supervisorUser: typeof lineMeta.supervisorUser === 'string' ? lineMeta.supervisorUser : undefined,
+                            supervisorApprovalId: Number(i.supervisorApprovalId ?? 0) > 0 ? Number(i.supervisorApprovalId) : undefined,
+                            bloqueadoPorAnulacion: Boolean(lineMeta.isVoid),
                         };
                     });
 
@@ -648,6 +831,11 @@ export const usePosStore = create<PosState>()(
                                 descuento: c.descuento,
                                 iva: c.iva,
                                 subtotal: c.totalBase,
+                                esAnulacion: Boolean(c.esAnulacion),
+                                anulaItemId: c.anulaItemId,
+                                motivoAnulacion: c.motivoAnulacion,
+                                supervisorUser: c.supervisorUser,
+                                supervisorApprovalId: c.supervisorApprovalId,
                             })),
                         }),
                     });

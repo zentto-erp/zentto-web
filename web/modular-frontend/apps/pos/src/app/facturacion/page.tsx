@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
     Box,
     Paper,
@@ -20,6 +20,9 @@ import {
     DialogContent,
     DialogActions,
     TextField,
+    Tabs,
+    Tab,
+    CircularProgress,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import {
@@ -34,13 +37,21 @@ import {
     type Customer,
 } from '@/components';
 import { useBuscarProductos, useCategoriasPOS, useBarcodeScanner } from '@/hooks';
-import { usePosStore } from '@datqbox/shared-api';
+import {
+    authenticateSupervisorBiometricCredential,
+    enrollSupervisorBiometricCredential,
+    isWebAuthnSupported,
+    usePosStore,
+} from '@datqbox/shared-api';
 
 // Iconos dinámicos
 const PersonIcon = dynamic(() => import('@mui/icons-material/Person'), { ssr: false });
 const DeleteSweepIcon = dynamic(() => import('@mui/icons-material/DeleteSweep'), { ssr: false });
 const PauseCircleIcon = dynamic(() => import('@mui/icons-material/PauseCircle'), { ssr: false });
 const AccessTimeIcon = dynamic(() => import('@mui/icons-material/AccessTime'), { ssr: false });
+const FingerprintIcon = dynamic(() => import('@mui/icons-material/Fingerprint'), { ssr: false });
+const CloseIcon = dynamic(() => import('@mui/icons-material/Close'), { ssr: false });
+const CheckCircleOutlineIcon = dynamic(() => import('@mui/icons-material/CheckCircleOutline'), { ssr: false });
 
 const MAX_CATEGORY_TABS = 24;
 
@@ -69,6 +80,17 @@ export default function PosFacturacionPage() {
         open: false, message: '', severity: 'success',
     });
     const [customerModalOpen, setCustomerModalOpen] = useState(false);
+    const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+    const [voidTargetItemId, setVoidTargetItemId] = useState<string | null>(null);
+    const [voidAuthMode, setVoidAuthMode] = useState<'password' | 'biometric'>('biometric');
+    const [biometricBusy, setBiometricBusy] = useState(false);
+    const biometricAutoStartedRef = useRef(false);
+    const [voidAuth, setVoidAuth] = useState({
+        motivo: 'Cliente no desea el producto',
+        supervisorUser: '',
+        supervisorPassword: '',
+        biometricCredentialId: '',
+    });
 
     // ─── Zustand Store (source of truth) ───
     const cart = usePosStore(s => s.cart);
@@ -79,7 +101,7 @@ export default function PosFacturacionPage() {
     const esperaOrigenId = usePosStore(s => s.esperaOrigenId);
     const addToCart = usePosStore(s => s.addToCart);
     const updateCartItem = usePosStore(s => s.updateCartItem);
-    const removeFromCart = usePosStore(s => s.removeFromCart);
+    const voidCartItemWithSupervisor = usePosStore(s => s.voidCartItemWithSupervisor);
     const clearCart = usePosStore(s => s.clearCart);
     const setCliente = usePosStore(s => s.setCliente);
     const resetCliente = usePosStore(s => s.resetCliente);
@@ -319,6 +341,130 @@ export default function PosFacturacionPage() {
         });
     };
 
+    const resetVoidDialog = () => {
+        biometricAutoStartedRef.current = false;
+        setVoidDialogOpen(false);
+        setVoidTargetItemId(null);
+        setVoidAuthMode('biometric');
+        setVoidAuth({
+            motivo: 'Cliente no desea el producto',
+            supervisorUser: '',
+            supervisorPassword: '',
+            biometricCredentialId: '',
+        });
+    };
+
+    const handleRequestSupervisorVoid = (itemId: string) => {
+        const target = cart.find((item) => item.id === itemId);
+        if (!target) {
+            showMsg('Item no encontrado en el carrito.', 'warning');
+            return;
+        }
+        if (target.esAnulacion) {
+            showMsg('La linea ya es una anulacion y no puede eliminarse.', 'warning');
+            return;
+        }
+        if (target.bloqueadoPorAnulacion) {
+            showMsg('La linea ya fue anulada previamente.', 'warning');
+            return;
+        }
+        setVoidTargetItemId(itemId);
+        setVoidDialogOpen(true);
+    };
+
+    const handleEnrollBiometric = async () => {
+        const supervisorUser = String(voidAuth.supervisorUser ?? '').trim().toUpperCase();
+        const supervisorPassword = String(voidAuth.supervisorPassword ?? '');
+        if (!supervisorUser || !supervisorPassword) {
+            showMsg('Para registrar huella indique usuario y clave del supervisor.', 'warning');
+            return;
+        }
+
+        setBiometricBusy(true);
+        try {
+            await enrollSupervisorBiometricCredential({
+                supervisorUser,
+                supervisorPassword,
+                credentialLabel: `POS ${window.location.hostname}`,
+            });
+            showMsg(`Huella registrada para ${supervisorUser}.`, 'success');
+        } catch (error) {
+            showMsg(error instanceof Error ? error.message : 'No se pudo registrar huella.', 'error');
+        } finally {
+            setBiometricBusy(false);
+        }
+    };
+
+    const handleReadBiometric = async () => {
+        if (!voidTargetItemId) {
+            showMsg('No hay item seleccionado para anular.', 'warning');
+            return;
+        }
+        const reason = String(voidAuth.motivo ?? '').trim();
+        if (!reason) {
+            showMsg('Indique el motivo de anulacion.', 'warning');
+            return;
+        }
+        if (!isWebAuthnSupported()) {
+            showMsg('Este equipo no soporta WebAuthn/huella.', 'error');
+            return;
+        }
+
+        setBiometricBusy(true);
+        try {
+            const result = await authenticateSupervisorBiometricCredential();
+            setVoidAuth((prev) => ({
+                ...prev,
+                supervisorUser: result.supervisorUser,
+                biometricCredentialId: result.credentialId,
+            }));
+            const authResult = await voidCartItemWithSupervisor(voidTargetItemId, {
+                supervisorUser: result.supervisorUser,
+                supervisorPassword: '',
+                biometricBypass: true,
+                biometricCredentialId: result.credentialId,
+                reason,
+            });
+            showMsg(authResult.message, authResult.success ? 'success' : 'error');
+            if (authResult.success) {
+                resetVoidDialog();
+            }
+        } catch (error) {
+            showMsg(error instanceof Error ? error.message : 'No se pudo validar huella.', 'error');
+        } finally {
+            setBiometricBusy(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!voidDialogOpen || voidAuthMode !== 'biometric') {
+            biometricAutoStartedRef.current = false;
+            return;
+        }
+        if (biometricAutoStartedRef.current) return;
+        if (biometricBusy || syncing) return;
+        if (!String(voidAuth.motivo ?? '').trim()) return;
+        if (!isWebAuthnSupported()) return;
+
+        biometricAutoStartedRef.current = true;
+        void handleReadBiometric();
+    }, [voidDialogOpen, voidAuthMode, biometricBusy, syncing, voidAuth.motivo]);
+
+    const handleConfirmSupervisorVoid = async () => {
+        if (!voidTargetItemId) return;
+        const result = await voidCartItemWithSupervisor(voidTargetItemId, {
+            supervisorUser: voidAuth.supervisorUser,
+            supervisorPassword: voidAuthMode === 'password' ? voidAuth.supervisorPassword : '',
+            biometricBypass: voidAuthMode === 'biometric',
+            biometricCredentialId: voidAuthMode === 'biometric' ? voidAuth.biometricCredentialId : '',
+            reason: voidAuth.motivo,
+        });
+        showMsg(result.message, result.success ? 'success' : 'error');
+        if (result.success) {
+            resetVoidDialog();
+        }
+    };
+
     return (
         <Box sx={{
             height: 'calc(100vh - 64px)',
@@ -343,7 +489,7 @@ export default function PosFacturacionPage() {
                 height: '100%',
             }}>
                 {/* Header del Carrito con Cliente */}
-                <Paper sx={{ p: 2, borderRadius: 0, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Paper sx={{ p: 1, borderRadius: 0, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <PersonIcon color="action" />
@@ -408,7 +554,7 @@ export default function PosFacturacionPage() {
                             descuento: item.descuento || 0,
                             total: item.totalRenglon,
                         }))}
-                        onRemoveItem={removeFromCart}
+                        onRemoveItem={handleRequestSupervisorVoid}
                         onUpdateQuantity={() => { }}
                         subtotal={subtotal}
                         impuestos={impuestos}
@@ -422,7 +568,7 @@ export default function PosFacturacionPage() {
                 </Box>
 
                 {/* Numpad */}
-                <Box sx={{ height: { xs: 180, md: 280 }, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ height: { xs: 160, md: 220 }, borderTop: '1px solid', borderColor: 'divider' }}>
                     <PosNumpad
                         onNumberPress={handleNumberPress}
                         onBackspace={handleBackspace}
@@ -435,7 +581,7 @@ export default function PosFacturacionPage() {
                 </Box>
 
                 {/* Botones de acción */}
-                <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5, height: { xs: 52, md: 56 } }}>
                     <PosPaymentButton
                         total={totalConImpuesto}
                         onClick={() => setPaymentModal(true)}
@@ -512,9 +658,15 @@ export default function PosFacturacionPage() {
             />
 
             {/* Dialog Motivo de Espera */}
-            <Dialog open={esperaMotiveDialog} onClose={() => setEsperaMotiveDialog(false)} maxWidth="xs" fullWidth>
-                <DialogTitle>⏸️ Poner Venta en Espera</DialogTitle>
-                <DialogContent>
+            <Dialog
+                open={esperaMotiveDialog}
+                onClose={() => setEsperaMotiveDialog(false)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 2.5 } }}
+            >
+                <DialogTitle sx={{ pb: 1, fontWeight: 700 }}>⏸️ Poner Venta en Espera</DialogTitle>
+                <DialogContent sx={{ pt: 1 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         El carrito completo ({cart.length} items, ${totalConImpuesto.toFixed(2)}) será
                         guardado y podrá ser recuperado desde cualquier caja.
@@ -527,6 +679,8 @@ export default function PosFacturacionPage() {
                         onChange={(e) => setEsperaMotive(e.target.value)}
                         multiline
                         rows={2}
+                        InputLabelProps={{ shrink: true }}
+                        InputProps={{ sx: { borderRadius: 1.5 } }}
                     />
                 </DialogContent>
                 <DialogActions>
@@ -537,6 +691,185 @@ export default function PosFacturacionPage() {
                 </DialogActions>
             </Dialog>
 
+            <Dialog
+                open={voidDialogOpen}
+                onClose={resetVoidDialog}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 3 } }}
+            >
+                <DialogTitle sx={{ pb: 1, pt: 2.5, fontWeight: 600, fontSize: 20 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>Anulacion Supervisada</span>
+                        <IconButton onClick={resetVoidDialog} size="small" sx={{ color: 'text.secondary' }}>
+                            <CloseIcon />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 1 }}>
+                    <TextField
+                        fullWidth
+                        sx={{ mt: 1, mb: 2 }}
+                        label="Motivo de anulacion"
+                        value={voidAuth.motivo}
+                        onChange={(e) => setVoidAuth((prev) => ({ ...prev, motivo: e.target.value }))}
+                        InputLabelProps={{ shrink: true }}
+                        InputProps={{ sx: { borderRadius: 1.5 } }}
+                    />
+                    <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                            Supervisor Detectado automaticamente
+                        </Typography>
+                        {voidAuth.supervisorUser ? (
+                            <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 400 }}>
+                                {voidAuth.supervisorUser}
+                            </Typography>
+                        ) : null}
+                    </Box>
+                    <Tabs
+                        value={voidAuthMode}
+                        onChange={(_e, value) => {
+                            const next = value as 'password' | 'biometric';
+                            biometricAutoStartedRef.current = false;
+                            setVoidAuthMode(next);
+                            setVoidAuth((prev) => ({
+                                ...prev,
+                                supervisorPassword: next === 'password' ? prev.supervisorPassword : '',
+                                biometricCredentialId: next === 'biometric' ? prev.biometricCredentialId : '',
+                            }));
+                        }}
+                        variant="fullWidth"
+                        sx={{
+                            mb: 2,
+                            p: 0.5,
+                            borderRadius: 999,
+                            bgcolor: 'action.hover',
+                            minHeight: 46,
+                            '& .MuiTabs-indicator': { display: 'none' },
+                        }}
+                    >
+                        <Tab
+                            value="biometric"
+                            label="Huella"
+                            sx={{
+                                minHeight: 40,
+                                borderRadius: 999,
+                                textTransform: 'none',
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                '&.Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText' },
+                            }}
+                        />
+                        <Tab
+                            value="password"
+                            label="Clave"
+                            sx={{
+                                minHeight: 40,
+                                borderRadius: 999,
+                                textTransform: 'none',
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                '&.Mui-selected': { bgcolor: 'primary.main', color: 'primary.contrastText' },
+                            }}
+                        />
+                    </Tabs>
+
+                    {voidAuthMode === 'password' ? (
+                        <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: 'action.hover' }}>
+                            <TextField
+                                fullWidth
+                                label="Codigo supervisor (alternativo)"
+                                value={voidAuth.supervisorUser}
+                                onChange={(e) => setVoidAuth((prev) => ({ ...prev, supervisorUser: e.target.value.toUpperCase() }))}
+                                InputLabelProps={{ shrink: true }}
+                                InputProps={{ sx: { borderRadius: 1.5 } }}
+                                sx={{ mb: 1.5 }}
+                            />
+                            <TextField
+                                fullWidth
+                                type="password"
+                                label="Clave supervisor"
+                                value={voidAuth.supervisorPassword}
+                                onChange={(e) => setVoidAuth((prev) => ({ ...prev, supervisorPassword: e.target.value }))}
+                                InputLabelProps={{ shrink: true }}
+                                InputProps={{ sx: { borderRadius: 1.5 } }}
+                            />
+                            <Box sx={{ mt: 2, textAlign: 'center' }}>
+                                <IconButton
+                                    onClick={handleEnrollBiometric}
+                                    disabled={biometricBusy || syncing}
+                                    sx={{
+                                        width: 76,
+                                        height: 76,
+                                        borderRadius: '50%',
+                                        color: 'common.white',
+                                        background: 'linear-gradient(135deg, #4f8fe8, #2f6dd3)',
+                                        boxShadow: '0 8px 20px rgba(47,109,211,0.30)',
+                                        '&:hover': { background: 'linear-gradient(135deg, #3f7ed8, #245cc0)' },
+                                    }}
+                                >
+                                    {biometricBusy ? <CircularProgress size={28} color="inherit" /> : <FingerprintIcon sx={{ fontSize: 38 }} />}
+                                </IconButton>
+                                <Typography variant="body1" sx={{ mt: 1, fontWeight: 600 }}>
+                                    {biometricBusy ? 'Registrando huella...' : 'Registrar huella en este equipo'}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    ) : (
+                        <Box sx={{ p: 2.5, borderRadius: 2.5, bgcolor: 'action.hover' }}>
+                            {!isWebAuthnSupported() && (
+                                <Alert severity="warning" sx={{ mb: 1.5 }}>
+                                    Este equipo/navegador no soporta validacion biometrica WebAuthn.
+                                </Alert>
+                            )}
+                            <Box sx={{ textAlign: 'center', mb: 2 }}>
+                                <IconButton
+                                    disableRipple
+                                    disableFocusRipple
+                                    disabled
+                                    sx={{
+                                        width: 132,
+                                        height: 132,
+                                        borderRadius: '50%',
+                                        color: 'common.white',
+                                        background: 'linear-gradient(135deg, #4f8fe8, #2f6dd3)',
+                                        boxShadow: '0 10px 24px rgba(47,109,211,0.35)',
+                                        '&:hover': { background: 'linear-gradient(135deg, #3f7ed8, #245cc0)' },
+                                    }}
+                                >
+                                    {biometricBusy ? <CircularProgress size={42} color="inherit" /> : <FingerprintIcon sx={{ fontSize: 64 }} />}
+                                </IconButton>
+                                <Typography variant="h4" sx={{ mt: 1.5, fontWeight: 400 }}>
+                                    {biometricBusy ? 'Esperando huella' : 'Listo para huella'}
+                                </Typography>
+                                <Typography variant="h5" color="text.secondary">
+                                    {biometricBusy ? 'presione el lector para autorizar' : 'se activa automaticamente al entrar'}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={resetVoidDialog} sx={{ textTransform: 'none', fontSize: '1rem' }}>Cancelar</Button>
+                    {voidAuthMode === 'password' && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<CheckCircleOutlineIcon />}
+                            onClick={handleConfirmSupervisorVoid}
+                            sx={{ textTransform: 'none' }}
+                            disabled={
+                                syncing
+                                || !voidAuth.supervisorUser.trim()
+                                || !voidAuth.motivo.trim()
+                                || !voidAuth.supervisorPassword.trim()
+                            }
+                        >
+                            Autorizar anulacion
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
             {/* Mobile Floating Bar */}
             {isMobileLayout && (
                 <Paper elevation={8} sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200, display: 'flex', height: 50, borderRadius: 0 }}>
@@ -607,3 +940,4 @@ export default function PosFacturacionPage() {
         </Box>
     );
 }
+

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { crearEspera, listEspera, recuperarEspera, anularEspera, registrarVenta, contabilizarVentaExistente } from "./espera.service.js";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
 
 export const posEsperaRouter = Router();
 
@@ -25,11 +26,16 @@ const esperaSchema = z.object({
         productoId: z.string().min(1),
         codigo: z.string().optional(),
         nombre: z.string().min(1),
-        cantidad: z.number().min(0.001),
+        cantidad: z.number().refine((value) => value !== 0, { message: "cantidad_no_puede_ser_cero" }),
         precioUnitario: z.number().min(0),
         descuento: z.number().optional(),
         iva: z.number().optional(),
         subtotal: z.number(),
+        esAnulacion: z.boolean().optional(),
+        anulaItemId: z.string().optional(),
+        motivoAnulacion: z.string().optional(),
+        supervisorUser: z.string().optional(),
+        supervisorApprovalId: z.number().int().positive().optional(),
     })).min(1),
 });
 
@@ -37,7 +43,11 @@ posEsperaRouter.post("/espera", async (req, res) => {
     const parsed = esperaSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     try {
-        const result = await crearEspera(parsed.data);
+        const user = (req as AuthenticatedRequest).user;
+        const result = await crearEspera({
+            ...parsed.data,
+            codUsuario: parsed.data.codUsuario ?? user?.sub,
+        });
         res.status(201).json(result);
     } catch (err) {
         res.status(400).json({ error: String(err) });
@@ -86,11 +96,16 @@ const ventaSchema = z.object({
         productoId: z.string().min(1),
         codigo: z.string().optional(),
         nombre: z.string().min(1),
-        cantidad: z.number().min(0.001),
+        cantidad: z.number().refine((value) => value !== 0, { message: "cantidad_no_puede_ser_cero" }),
         precioUnitario: z.number().min(0),
         descuento: z.number().optional(),
         iva: z.number().optional(),
         subtotal: z.number(),
+        esAnulacion: z.boolean().optional(),
+        anulaItemId: z.string().optional(),
+        motivoAnulacion: z.string().optional(),
+        supervisorUser: z.string().optional(),
+        supervisorApprovalId: z.number().int().positive().optional(),
     })).min(1),
 });
 
@@ -98,7 +113,11 @@ posEsperaRouter.post("/ventas", async (req, res) => {
     const parsed = ventaSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     try {
-        const result = await registrarVenta(parsed.data);
+        const user = (req as AuthenticatedRequest).user;
+        const result = await registrarVenta({
+            ...parsed.data,
+            codUsuario: parsed.data.codUsuario ?? user?.sub,
+        });
         res.status(201).json(result);
     } catch (err) {
         res.status(400).json({ error: String(err) });

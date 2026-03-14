@@ -108,17 +108,19 @@ export default function DataGrid<T extends Record<string, unknown>>({
     }
 
     switch (column.type) {
-      case 'date':
-        return new Date(value).toLocaleDateString('es-ES');
+      case 'date': {
+        const parsed = value instanceof Date ? value : new Date(String(value ?? ''));
+        return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleDateString('es-ES');
+      }
       case 'currency':
         return new Intl.NumberFormat('es-ES', {
           style: 'currency',
           currency: 'USD',
-        }).format(value);
+        }).format(Number(value ?? 0));
       case 'percentage':
-        return `${(value * 100).toFixed(2)}%`;
+        return `${(Number(value ?? 0) * 100).toFixed(2)}%`;
       case 'status':
-        return getStatusBadge(value);
+        return getStatusBadge(String(value ?? ''));
       default:
         return String(value ?? '-');
     }

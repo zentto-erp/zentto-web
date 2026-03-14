@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { listMesas, abrirPedido, agregarItemPedido, enviarComanda, cerrarPedido, getPedidoByMesa, contabilizarPedidoExistente } from "./service.js";
+import { listMesas, abrirPedido, agregarItemPedido, enviarComanda, cerrarPedido, getPedidoByMesa, contabilizarPedidoExistente, cancelarItemPedido } from "./service.js";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
 
 export const restauranteRouter = Router();
 
@@ -52,6 +53,40 @@ restauranteRouter.post("/pedidos/item", async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     const result = await agregarItemPedido(parsed.data);
     res.status(result.ok ? 201 : 400).json(result);
+});
+
+const cancelarItemSchema = z.object({
+    motivo: z.string().trim().max(200).optional(),
+    supervisorUser: z.string().trim().min(1),
+    supervisorPassword: z.string().optional(),
+    biometricBypass: z.boolean().optional(),
+    biometricCredentialId: z.string().trim().max(512).optional(),
+});
+
+restauranteRouter.post("/pedidos/:pedidoId/items/:itemId/cancelar", async (req, res) => {
+    const pedidoId = Number(req.params.pedidoId);
+    const itemId = Number(req.params.itemId);
+    if (!Number.isFinite(pedidoId) || pedidoId <= 0) return res.status(400).json({ error: "pedidoId invalido" });
+    if (!Number.isFinite(itemId) || itemId <= 0) return res.status(400).json({ error: "itemId invalido" });
+
+    const parsed = cancelarItemSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+
+    const result = await cancelarItemPedido({
+        pedidoId,
+        itemId,
+        motivo: parsed.data.motivo,
+        supervisorUser: parsed.data.supervisorUser,
+        supervisorPassword: parsed.data.supervisorPassword ?? "",
+        biometricBypass: Boolean(parsed.data.biometricBypass),
+        biometricCredentialId: parsed.data.biometricCredentialId ?? null,
+        requestedByUser: (req as AuthenticatedRequest).user?.sub,
+    });
+
+    if (!result.ok && (result.error === "pedido_not_found" || result.error === "item_not_found")) {
+        return res.status(404).json(result);
+    }
+    return res.status(result.ok ? 200 : 400).json(result);
 });
 
 // Enviar comanda a cocina

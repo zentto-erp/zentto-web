@@ -91,10 +91,21 @@ const providers: Provider[] = [
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
+          let backendErrorCode = response.status.toString();
+          let backendErrorMessage = 'Error de autenticacion';
+
+          try {
+            const payload = (await response.json()) as { error?: string; message?: string };
+            backendErrorCode = String(payload?.error || backendErrorCode);
+            backendErrorMessage = String(payload?.message || backendErrorMessage);
+          } catch {
+            const errorText = await response.text();
+            backendErrorMessage = errorText || backendErrorMessage;
+          }
+
           throw new CustomAuthError(
-            response.status.toString(),
-            `Error de autenticacion: ${errorText}`
+            backendErrorCode,
+            `Error de autenticacion: ${backendErrorMessage}`
           );
         }
 

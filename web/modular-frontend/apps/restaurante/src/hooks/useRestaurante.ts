@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { usePosStore, calcTotals, apiGet, apiPost } from '@datqbox/shared-api';
+import { usePosStore, calcTotals, apiGet, apiPost, resolveAssetUrl } from '@datqbox/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS — Modelo de datos del Restaurante
@@ -42,6 +42,7 @@ export interface Pedido {
     dbId?: number;           // ID asignado por la BD al persistir
     mesaId: string;
     cliente?: ClienteMesa;
+    clienteNombre?: string;  // Compatibilidad con payload legado de API
     items: ItemPedido[];
     estado: 'abierto' | 'en_preparacion' | 'listo' | 'cerrado';
     fechaApertura: Date;
@@ -149,6 +150,26 @@ function calcIvaAmount(baseAmount: number, ivaPercent: number) {
     return round2(baseAmount * (ivaPercent / 100));
 }
 
+function asTrimmedString(value: unknown, fallback = ''): string {
+    if (value === null || value === undefined) return fallback;
+    return String(value).trim();
+}
+
+function asOptionalTrimmedString(value: unknown): string | undefined {
+    if (value === null || value === undefined) return undefined;
+    const normalized = String(value).trim();
+    return normalized || undefined;
+}
+
+function toDateOrUndefined(value: unknown): Date | undefined {
+    if (value === null || value === undefined || value === '') return undefined;
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? undefined : value;
+    }
+    const parsed = new Date(String(value));
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
 function resolveAmbienteActivo(current: string, ambientes: Ambiente[]): string {
     if (current === 'todos') return 'todos';
     if (ambientes.some((amb) => amb.id === current)) return current;
@@ -176,6 +197,17 @@ interface RestauranteState {
     abrirPedido: (mesaId: string, cliente?: ClienteMesa) => void;
     agregarItem: (mesaId: string, item: Omit<ItemPedido, 'id' | 'dbId'>) => void;
     quitarItem: (mesaId: string, itemId: string) => void;
+    anularItemEnviado: (
+        mesaId: string,
+        itemId: string,
+        auth: {
+            motivo: string;
+            supervisorUser: string;
+            supervisorPassword?: string;
+            biometricBypass?: boolean;
+            biometricCredentialId?: string;
+        }
+    ) => Promise<{ success: boolean; message: string }>;
     editarItem: (mesaId: string, itemId: string, updates: Partial<Pick<ItemPedido, 'cantidad' | 'comentarios'>>) => void;
 
     // ─── Actions: Persistencia (estos SÍ tocan la BD) ───
@@ -222,7 +254,7 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
             const mesas: Mesa[] = (mesasRes.rows ?? []).map((r: ApiRow) => ({
                 id: String(r.id),
                 numero: r.numero,
-                nombre: r.nombre?.trim(),
+                nombre: asTrimmedString(r.nombre),
                 capacidad: r.capacidad,
                 ambienteId: String(r.ambienteId),
                 posicionX: r.posicionX,
@@ -247,18 +279,18 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                                     id: uuidv4(),
                                     dbId: i.id,
                                     productoId: i.productoId,
-                                    nombre: i.nombre?.trim(),
+                                    nombre: asTrimmedString(i.nombre),
                                     cantidad: Number(i.cantidad),
                                     precioUnitario: Number(i.precioUnitario),
                                     subtotal: Number(i.subtotal),
                                     estado: i.estado || 'entregado',
                                     esCompuesto: Boolean(i.esCompuesto),
                                     enviadoACocina: Boolean(i.enviadoACocina),
-                                    horaEnvio: i.horaEnvio ? new Date(i.horaEnvio) : undefined,
+                                    horaEnvio: toDateOrUndefined(i.horaEnvio),
                                     comentarios: i.comentarios,
                                 })),
                                 estado: data.pedido.estado || 'abierto',
-                                fechaApertura: new Date(data.pedido.fechaApertura),
+                                fechaApertura: toDateOrUndefined(data.pedido.fechaApertura) ?? new Date(),
                                 total: Number(data.pedido.total ?? 0),
                                 subtotal: Number(data.pedido.subtotal ?? 0),
                                 impuestos: Number(data.pedido.impuestos ?? 0),
@@ -286,15 +318,15 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
 
             const productos: ProductoMenu[] = (prodsRes.rows ?? []).map((r: ApiRow) => ({
                 id: String(r.id),
-                codigo: r.codigo?.trim() ?? '',
-                nombre: r.nombre?.trim() ?? '',
-                descripcion: r.descripcion?.trim(),
+                codigo: asTrimmedString(r.codigo),
+                nombre: asTrimmedString(r.nombre),
+                descripcion: asOptionalTrimmedString(r.descripcion),
                 precio: Number(r.precio ?? 0),
                 iva: Number(r.iva ?? r.PORCENTAJE ?? 16),
-                categoria: r.categoria?.trim() ?? '',
+                categoria: asTrimmedString(r.categoria),
                 esCompuesto: Boolean(r.esCompuesto),
                 tiempoPreparacion: Number(r.tiempoPreparacion ?? 0),
-                imagen: r.imagen,
+                imagen: resolveAssetUrl(r.imagen ?? r.IMAGEN ?? r.image),
                 esSugerenciaDelDia: Boolean(r.esSugerenciaDelDia),
                 disponible: r.disponible !== false,
             }));
@@ -430,6 +462,118 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                 subtotal, impuestos, servicio, total,
             },
         });
+    },
+
+    anularItemEnviado: async (mesaId, itemId, auth) => {
+        const mesa = get().getMesaById(mesaId);
+        if (!mesa?.pedidoActual) return { success: false, message: 'No hay pedido activo' };
+
+        const pedido = mesa.pedidoActual;
+        const item = pedido.items.find((i) => i.id === itemId);
+        if (!item) return { success: false, message: 'Item no encontrado en el pedido' };
+
+        const motivo = String(auth?.motivo ?? '').trim() || 'Cliente no desea el producto';
+        const supervisorUser = String(auth?.supervisorUser ?? '').trim();
+        const supervisorPassword = String(auth?.supervisorPassword ?? '');
+        const biometricBypass = Boolean(auth?.biometricBypass);
+        const biometricCredentialId = String(auth?.biometricCredentialId ?? '').trim();
+        if (!supervisorUser) {
+            return { success: false, message: 'Debe indicar usuario supervisor.' };
+        }
+        if (!biometricBypass && !supervisorPassword) {
+            return { success: false, message: 'Debe indicar clave de supervisor para anular.' };
+        }
+        if (biometricBypass && !biometricCredentialId) {
+            return { success: false, message: 'Debe validar huella del supervisor.' };
+        }
+
+        if (!item.enviadoACocina) {
+            get().quitarItem(mesaId, itemId);
+            return { success: true, message: 'Item pendiente eliminado del pedido.' };
+        }
+
+        if (!pedido.dbId || !item.dbId) {
+            return { success: false, message: 'No se pudo anular: item enviado sin referencia de BD.' };
+        }
+
+        set({ syncing: true });
+
+        try {
+            const cancelData = await apiPost(`/v1/restaurante/pedidos/${pedido.dbId}/items/${item.dbId}/cancelar`, {
+                motivo,
+                supervisorUser,
+                supervisorPassword: biometricBypass ? '' : supervisorPassword,
+                biometricBypass,
+                biometricCredentialId: biometricBypass ? biometricCredentialId : undefined,
+            });
+
+            if (!cancelData.ok) {
+                const errorCode = String(cancelData.error ?? '').trim().toLowerCase();
+                if (errorCode === 'item_already_voided') {
+                    const nuevosItems = pedido.items.filter((i) => i.id !== itemId);
+                    const subtotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+                    const impuestos = nuevosItems.reduce((sum, i) => sum + i.montoIva, 0);
+                    const servicio = Math.round((subtotal * 0.10) * 100) / 100;
+                    const total = subtotal + impuestos + servicio;
+
+                    get().actualizarMesa(mesaId, {
+                        pedidoActual: {
+                            ...pedido,
+                            items: nuevosItems,
+                            subtotal,
+                            impuestos,
+                            servicio,
+                            total,
+                        },
+                    });
+
+                    set({ syncing: false });
+                    return { success: true, message: 'El item ya estaba anulado. Pedido actualizado.' };
+                }
+
+                set({ syncing: false });
+                return { success: false, message: `Error anulando item: ${cancelData.error || 'desconocido'}` };
+            }
+
+            const printResult = await usePosStore.getState().printKitchenOrder('Cocina Principal', {
+                texto: `ANULAR - Mesa: ${mesa.nombre}\n${item.cantidad}x ${item.nombre}${motivo ? ` >> ${motivo}` : ''}`,
+                renglones: [
+                    {
+                        articulo: `ANULAR ${item.nombre}`,
+                        cantidad: item.cantidad,
+                        nota: motivo || '',
+                    },
+                ],
+            });
+
+            const nuevosItems = pedido.items.filter((i) => i.id !== itemId);
+            const subtotal = nuevosItems.reduce((sum, i) => sum + i.subtotal, 0);
+            const impuestos = nuevosItems.reduce((sum, i) => sum + i.montoIva, 0);
+            const servicio = Math.round((subtotal * 0.10) * 100) / 100;
+            const total = subtotal + impuestos + servicio;
+
+            get().actualizarMesa(mesaId, {
+                pedidoActual: {
+                    ...pedido,
+                    items: nuevosItems,
+                    subtotal,
+                    impuestos,
+                    servicio,
+                    total,
+                },
+            });
+
+            set({ syncing: false });
+            return {
+                success: true,
+                message: printResult.success
+                    ? 'Item anulado y notificado a cocina.'
+                    : `Item anulado, pero no se pudo imprimir aviso de anulación: ${printResult.message}`,
+            };
+        } catch (e: unknown) {
+            set({ syncing: false });
+            return { success: false, message: `Error anulando item: ${e instanceof Error ? e.message : 'desconocido'}` };
+        }
     },
 
     editarItem: (mesaId, itemId, updates) => {
@@ -851,6 +995,7 @@ export function useRestaurante() {
         abrirPedido,
         agregarItemAPedido,
         quitarItem: store.quitarItem,
+        anularItemEnviado: store.anularItemEnviado,
         editarItem: store.editarItem,
         enviarComandaACocina,
 

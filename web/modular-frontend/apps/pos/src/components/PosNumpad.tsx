@@ -41,7 +41,7 @@ export function PosNumpad({
             borderColor: 'divider',
             fontWeight: isActive ? 'bold' : 'normal',
             fontSize: { xs: '0.8rem', md: '1rem' },
-            minHeight: { xs: 40, md: 'auto' },
+            minHeight: { xs: 34, md: 36 },
             '&:hover': {
                 bgcolor: 'action.hover',
             },
@@ -67,7 +67,7 @@ export function PosNumpad({
                                 fontWeight: 'medium',
                                 bgcolor: 'background.paper',
                                 color: 'text.primary',
-                                minHeight: { xs: 40, md: 56 },
+                                minHeight: { xs: 34, md: 44 },
                                 '&:hover': {
                                     bgcolor: 'action.hover',
                                 },

@@ -3,6 +3,7 @@ import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessPosAccounting } from "../contabilidad/integracion.service.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { consumeSupervisorOverride } from "../_shared/supervisor-override.service.js";
 
 interface CartItem {
   productoId: string;
@@ -13,6 +14,11 @@ interface CartItem {
   descuento?: number;
   iva?: number;
   subtotal: number;
+  esAnulacion?: boolean;
+  anulaItemId?: string;
+  motivoAnulacion?: string;
+  supervisorUser?: string;
+  supervisorApprovalId?: number;
 }
 
 interface DefaultScope {
@@ -319,6 +325,11 @@ async function buildCanonicalLines(scope: DefaultScope, items: CartItem[]) {
     netAmount: number;
     taxAmount: number;
     totalAmount: number;
+    isVoid: boolean;
+    voidOfItemId: string | null;
+    voidReason: string | null;
+    supervisorUser: string | null;
+    supervisorApprovalId: number | null;
   }> = [];
 
   for (let index = 0; index < items.length; index += 1) {
@@ -338,6 +349,10 @@ async function buildCanonicalLines(scope: DefaultScope, items: CartItem[]) {
 
     const taxAmount = round2(netAmount * tax.taxRate);
     const totalAmount = round2(netAmount + taxAmount);
+    const isVoid = Boolean(item.esAnulacion) || quantity < 0;
+    const voidReason = item.motivoAnulacion ? String(item.motivoAnulacion).trim().slice(0, 250) : null;
+    const supervisorUser = item.supervisorUser ? String(item.supervisorUser).trim().toUpperCase() : null;
+    const supervisorApprovalId = Number(item.supervisorApprovalId ?? 0);
 
     lines.push({
       lineNumber: index + 1,
@@ -352,6 +367,11 @@ async function buildCanonicalLines(scope: DefaultScope, items: CartItem[]) {
       netAmount,
       taxAmount,
       totalAmount,
+      isVoid,
+      voidOfItemId: item.anulaItemId ? String(item.anulaItemId).trim() : null,
+      voidReason,
+      supervisorUser,
+      supervisorApprovalId: Number.isFinite(supervisorApprovalId) && supervisorApprovalId > 0 ? supervisorApprovalId : null,
     });
   }
 
@@ -451,6 +471,19 @@ export async function crearEspera(data: {
   }
 
   for (const line of lines) {
+    if (line.isVoid && !line.supervisorApprovalId) {
+      throw new Error(`void_line_requires_supervisor_approval:line_${line.lineNumber}`);
+    }
+
+    const lineMetaJson = line.isVoid
+      ? JSON.stringify({
+          isVoid: true,
+          reason: line.voidReason,
+          supervisorUser: line.supervisorUser,
+          voidOfItemId: line.voidOfItemId,
+        })
+      : null;
+
     await query(
       `
       INSERT INTO pos.WaitTicketLine (
@@ -468,6 +501,8 @@ export async function crearEspera(data: {
         NetAmount,
         TaxAmount,
         TotalAmount,
+        SupervisorApprovalId,
+        LineMetaJson,
         CreatedAt
       )
       VALUES (
@@ -485,6 +520,8 @@ export async function crearEspera(data: {
         @netAmount,
         @taxAmount,
         @totalAmount,
+        @supervisorApprovalId,
+        @lineMetaJson,
         SYSUTCDATETIME()
       )
       `,
@@ -503,6 +540,8 @@ export async function crearEspera(data: {
         netAmount: line.netAmount,
         taxAmount: line.taxAmount,
         totalAmount: line.totalAmount,
+        supervisorApprovalId: line.supervisorApprovalId,
+        lineMetaJson,
       }
     );
   }
@@ -608,7 +647,9 @@ export async function recuperarEspera(id: number, recuperadoPor?: string, recupe
       DiscountAmount AS descuento,
       CASE WHEN TaxRate > 1 THEN TaxRate ELSE TaxRate * 100 END AS iva,
       NetAmount AS subtotal,
-      TotalAmount AS total
+      TotalAmount AS total,
+      SupervisorApprovalId AS supervisorApprovalId,
+      LineMetaJson AS lineMetaJson
     FROM pos.WaitTicketLine
     WHERE WaitTicketId = @waitTicketId
     ORDER BY LineNumber
@@ -754,7 +795,20 @@ export async function registrarVenta(data: {
   }
 
   for (const line of lines) {
-    await query(
+    if (line.isVoid && !line.supervisorApprovalId) {
+      throw new Error(`void_line_requires_supervisor_approval:line_${line.lineNumber}`);
+    }
+
+    const lineMetaJson = line.isVoid
+      ? JSON.stringify({
+          isVoid: true,
+          reason: line.voidReason,
+          supervisorUser: line.supervisorUser,
+          voidOfItemId: line.voidOfItemId,
+        })
+      : null;
+
+    const insertedLine = await query<{ saleTicketLineId: number }>(
       `
       INSERT INTO pos.SaleTicketLine (
         SaleTicketId,
@@ -770,8 +824,11 @@ export async function registrarVenta(data: {
         TaxRate,
         NetAmount,
         TaxAmount,
-        TotalAmount
+        TotalAmount,
+        SupervisorApprovalId,
+        LineMetaJson
       )
+      OUTPUT INSERTED.SaleTicketLineId AS saleTicketLineId
       VALUES (
         @saleTicketId,
         @lineNumber,
@@ -786,7 +843,9 @@ export async function registrarVenta(data: {
         @taxRate,
         @netAmount,
         @taxAmount,
-        @totalAmount
+        @totalAmount,
+        @supervisorApprovalId,
+        @lineMetaJson
       )
       `,
       {
@@ -804,8 +863,26 @@ export async function registrarVenta(data: {
         netAmount: line.netAmount,
         taxAmount: line.taxAmount,
         totalAmount: line.totalAmount,
+        supervisorApprovalId: line.supervisorApprovalId,
+        lineMetaJson,
       }
     );
+
+    if (line.isVoid && line.supervisorApprovalId) {
+      const saleTicketLineId = Number(insertedLine[0]?.saleTicketLineId ?? 0);
+      const consumed = await consumeSupervisorOverride({
+        overrideId: line.supervisorApprovalId,
+        moduleCode: "POS",
+        actionCode: "CART_LINE_VOID",
+        consumedByUser: data.codUsuario,
+        sourceDocumentId: ventaId,
+        sourceLineId: saleTicketLineId > 0 ? saleTicketLineId : null,
+      });
+
+      if (!consumed.ok) {
+        throw new Error(`supervisor_override_not_available:${line.supervisorApprovalId}`);
+      }
+    }
   }
 
   if (Number.isFinite(Number(data.esperaOrigenId)) && Number(data.esperaOrigenId) > 0) {

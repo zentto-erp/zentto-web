@@ -20,22 +20,28 @@ export function useBarcodeScanner(onScan: (barcode: string) => void) {
         const handleKeyDown = (e: KeyboardEvent) => {
             const currentTime = performance.now();
             const timeDiff = currentTime - lastKeyTime.current;
+            const key = typeof e.key === 'string' ? e.key : '';
 
             // Si pasa más de 100ms entre teclas, es escritura humana normal, limpiamos buffer
             if (timeDiff > 100 && buffer.current.length > 0) {
                 buffer.current = '';
             }
 
-            if (e.key === 'Enter') {
+            if (!key) {
+                lastKeyTime.current = currentTime;
+                return;
+            }
+
+            if (key === 'Enter') {
                 // Si tenemos un texto lo suficientemente largo capturado a alta velocidad, es un escáner
                 if (buffer.current.length >= 3) {
                     onScanRef.current(buffer.current);
                     // Opcionalmente podríamos hacer e.preventDefault() aquí
                 }
                 buffer.current = '';
-            } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            } else if (key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 // Capturamos solo caracteres imprimibles
-                buffer.current += e.key;
+                buffer.current += key;
             }
 
             lastKeyTime.current = currentTime;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPut, usePosStore } from '@datqbox/shared-api';
+import { apiGet, apiPut, resolveAssetUrl, usePosStore } from '@datqbox/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS
@@ -124,6 +124,7 @@ export function useBuscarProductos(filtro?: string) {
                 precioMayor: Number(row.precioMayor ?? row.PRECIO_VENTA2 ?? 0),
                 precioDistribuidor: Number(row.precioDistribuidor ?? row.PRECIO_VENTA3 ?? 0),
                 existencia: Number(row.existencia ?? row.EXISTENCIA ?? 0),
+                imagen: resolveAssetUrl(row.imagen ?? row.IMAGEN ?? row.image),
                 categoria: row.categoria?.toString().trim() ?? '',
                 iva: Number(row.iva ?? row.PORCENTAJE ?? 16),
             }));

@@ -57,6 +57,7 @@ import { fiscalRouter } from "./modules/fiscal/routes.js";
 import { paymentsRouter } from "./modules/payments/routes.js";
 import { settingsRouter } from "./modules/settings/routes.js";
 import { mediaRouter } from "./modules/media/routes.js";
+import { supervisionRouter } from "./modules/supervision/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -143,6 +144,10 @@ export async function createApp() {
       fallthrough: true,
       setHeaders(res) {
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        // Allow media embedding from modular frontends running on other localhost ports.
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.removeHeader("Content-Security-Policy");
       },
     })
   );
@@ -242,6 +247,7 @@ export async function createApp() {
   app.use("/v1/config", configRouter);
   app.use("/v1/settings", settingsRouter);
   app.use("/v1/media", mediaRouter);
+  app.use("/v1/supervision", supervisionRouter);
   app.use("/v1/fiscal", fiscalRouter);
   app.use("/v1/sistema", sistemaRouter); // Added this line
   app.use("/api/v1/config", configRouter);
@@ -295,6 +301,7 @@ export async function createApp() {
   app.use("/api/v1/reportes", reportesRouter);
   app.use("/api/v1/payments", paymentsRouter);
   app.use("/api/v1/media", mediaRouter);
+  app.use("/api/v1/supervision", supervisionRouter);
   app.use("/api/v1/fiscal", fiscalRouter);
   app.use("/api/v1/sistema", sistemaRouter); // Added this line
 

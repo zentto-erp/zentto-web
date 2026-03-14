@@ -102,3 +102,30 @@ try {
 }
 
 Write-Host "Verificacion recomendada: abrir $Url/ y $Url/api/status?marca=PNP&puerto=COM1&conexion=emulador" -ForegroundColor Green
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAREAS PROGRAMADAS: permiten iniciar/detener el servicio SIN elevacion UAC
+# La API Node.js llama a: schtasks /run /tn DatqBoxAgentStart
+# ─────────────────────────────────────────────────────────────────────────────
+Write-Host "[Extra] Registrando tareas programadas de control sin UAC..." -ForegroundColor Cyan
+
+$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest -LogonType ServiceAccount
+$settingsTask = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -MultipleInstances IgnoreNew
+
+$actionStart = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -Command `"Start-Service -Name '$ServiceName' -ErrorAction SilentlyContinue`""
+
+$actionStop = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -Command `"Stop-Service -Name '$ServiceName' -Force -ErrorAction SilentlyContinue`""
+
+$actionRestart = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -Command `"Stop-Service -Name '$ServiceName' -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 3; Start-Service -Name '$ServiceName' -ErrorAction SilentlyContinue`""
+
+Register-ScheduledTask -TaskName "DatqBoxAgentStart"   -Action $actionStart   -Principal $principal -Settings $settingsTask -Force | Out-Null
+Register-ScheduledTask -TaskName "DatqBoxAgentStop"    -Action $actionStop    -Principal $principal -Settings $settingsTask -Force | Out-Null
+Register-ScheduledTask -TaskName "DatqBoxAgentRestart" -Action $actionRestart -Principal $principal -Settings $settingsTask -Force | Out-Null
+
+Write-Host "Tareas registradas: DatqBoxAgentStart / DatqBoxAgentStop / DatqBoxAgentRestart (SYSTEM, sin UAC)" -ForegroundColor Green

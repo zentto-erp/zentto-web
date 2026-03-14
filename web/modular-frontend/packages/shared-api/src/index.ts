@@ -1,6 +1,13 @@
 'use client';
 
-export { apiGet, apiPost, apiPut, apiPatch, apiDelete } from './api';
+export { apiGet, apiPost, apiPut, apiPatch, apiDelete, resolveAssetUrl } from './api';
+export {
+  isWebAuthnSupported,
+  listSupervisorBiometricCredentials,
+  enrollSupervisorBiometricCredential,
+  authenticateSupervisorBiometricCredential,
+} from './supervisorBiometric';
+export type { SupervisorBiometricCredential } from './supervisorBiometric';
 export { formatCurrency, formatDate, formatName, formatPercent, truncateText, getStatusColor } from './formatters';
 export { requestLogger } from './requestLogger';
 export { default as QueryProvider } from './QueryProvider';

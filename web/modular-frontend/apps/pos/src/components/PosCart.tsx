@@ -141,7 +141,7 @@ export function PosCart({
             </Box>
 
             {/* Sección de Totales */}
-            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
+            <Box sx={{ p: 1.25, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="body2">Subtotal:</Typography>
                     <Typography variant="body2">{symP} {subtotal.toFixed(2)}</Typography>
@@ -172,7 +172,7 @@ export function PosCart({
                     startIcon={<UndoIcon />}
                     sx={{
                         flex: 1,
-                        py: 1.5,
+                        py: 0.75,
                         borderRadius: 0,
                         color: 'text.primary',
                         '&:hover': { bgcolor: 'action.hover' }
@@ -185,7 +185,7 @@ export function PosCart({
                     startIcon={<ReceiptIcon />}
                     sx={{
                         flex: 1,
-                        py: 1.5,
+                        py: 0.75,
                         borderRadius: 0,
                         color: 'text.primary',
                         '&:hover': { bgcolor: 'action.hover' }
@@ -198,7 +198,7 @@ export function PosCart({
                     startIcon={<BarcodeIcon />}
                     sx={{
                         flex: 1,
-                        py: 1.5,
+                        py: 0.75,
                         borderRadius: 0,
                         color: 'text.primary',
                         '&:hover': { bgcolor: 'action.hover' }

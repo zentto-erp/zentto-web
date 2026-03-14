@@ -7,7 +7,6 @@ import {
     Typography,
     Grid,
 } from '@mui/material';
-import Image from 'next/image';
 
 export interface Product {
     id: string;
@@ -24,6 +23,7 @@ interface PosProductGridProps {
 }
 
 export function PosProductGrid({ products, onProductClick, selectedCategory }: PosProductGridProps) {
+    const [imageErrors, setImageErrors] = React.useState<Record<string, boolean>>({});
     const filteredProducts = selectedCategory 
         ? products.filter(p => p.categoria === selectedCategory)
         : products;
@@ -33,6 +33,10 @@ export function PosProductGrid({ products, onProductClick, selectedCategory }: P
             <Grid container spacing={1}>
                 {filteredProducts.map((product) => (
                     <Grid item xs={6} sm={4} md={2.4} lg={2} key={product.id}>
+                        {/*
+                          Use native img to avoid Next/Image remote host restrictions
+                          in modular MFEs while keeping graceful fallback.
+                        */}
                         <Paper
                             onClick={() => onProductClick(product)}
                             elevation={1}
@@ -66,12 +70,21 @@ export function PosProductGrid({ products, onProductClick, selectedCategory }: P
                                     overflow: 'hidden',
                                 }}
                             >
-                                {product.imagen ? (
-                                    <Image
+                                {product.imagen && !imageErrors[product.id] ? (
+                                    <Box
+                                        component="img"
                                         src={product.imagen}
                                         alt={product.nombre}
-                                        fill
-                                        style={{ objectFit: 'cover' }}
+                                        onError={() =>
+                                            setImageErrors((prev) => ({ ...prev, [product.id]: true }))
+                                        }
+                                        sx={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                            objectPosition: 'center',
+                                            padding: 0.5,
+                                        }}
                                     />
                                 ) : (
                                     <Box

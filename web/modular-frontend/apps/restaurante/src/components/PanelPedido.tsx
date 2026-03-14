@@ -31,6 +31,7 @@ import {
     InputAdornment,
     useTheme,
     useMediaQuery,
+    Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -42,6 +43,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
 import { Mesa, ProductoMenu, ItemPedido, ComponenteProducto } from '@/hooks/useRestaurante';
 import { usePosStore } from '@datqbox/shared-api';
 
@@ -50,6 +52,7 @@ interface PanelPedidoProps {
     productos: ProductoMenu[];
     onAgregarItem: (item: Omit<ItemPedido, 'id'>) => void;
     onQuitarItem?: (mesaId: string, itemId: string) => void;
+    onAnularItemEnviado?: (mesaId: string, itemId: string) => void | Promise<void>;
     onEditarItem?: (mesaId: string, itemId: string, cambios: Partial<ItemPedido>) => void;
     onEnviarComanda: () => void;
     onImprimirCuenta?: () => void;
@@ -63,6 +66,7 @@ export function PanelPedido({
     productos,
     onAgregarItem,
     onQuitarItem,
+    onAnularItemEnviado,
     onEditarItem,
     onEnviarComanda,
     onImprimirCuenta,
@@ -91,6 +95,7 @@ export function PanelPedido({
     });
 
     const [categoriaPage, setCategoriaPage] = useState(0);
+    const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
     const productosFiltradosBusqueda = productos.filter(p =>
         p.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -270,9 +275,25 @@ export function PanelPedido({
                                                 secondary={`${item.cantidad}x - ${item.estado}`}
                                                 sx={{ opacity: 0.7 }}
                                             />
-                                            <Typography variant="body2">
-                                                {symP} {item.subtotal.toFixed(2)}
-                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <Typography variant="body2">
+                                                    {symP} {item.subtotal.toFixed(2)}
+                                                </Typography>
+                                                {onAnularItemEnviado && (
+                                                    <Tooltip title="Anular producto enviado a cocina">
+                                                        <span>
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                disabled={syncing}
+                                                                onClick={() => onAnularItemEnviado(mesa.id, item.id)}
+                                                            >
+                                                                <CancelPresentationIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </span>
+                                                    </Tooltip>
+                                                )}
+                                            </Box>
                                         </ListItem>
                                     ))}
                                 </List>
@@ -352,7 +373,7 @@ export function PanelPedido({
                 {/* Panel derecho - Menú táctil */}
                 <Paper sx={{
                     flexGrow: 1,
-                    p: isMobileLayout ? 0 : 2,
+                    p: isMobileLayout ? 0 : 1,
                     display: isMobileLayout ? (showMobileMenu ? 'flex' : 'none') : 'flex',
                     flexDirection: 'column',
                     minHeight: 0,
@@ -363,12 +384,12 @@ export function PanelPedido({
                 }}>
                     {/* Sugerencias del día */}
                     {sugerencias.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="subtitle2" color="primary" gutterBottom>
+                        <Box sx={{ mb: 1 }}>
+                            <Typography variant="caption" color="primary" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
                                 <LocalOfferIcon sx={{ fontSize: 16, mr: 0.5 }} />
                                 Sugerencias del día
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap', overflowX: 'auto', pb: 1, '::-webkit-scrollbar': { height: 6 }, '::-webkit-scrollbar-thumb': { bgcolor: 'action.hover', borderRadius: 1 } }}>
+                            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'nowrap', overflowX: 'auto', pb: 0.5, '::-webkit-scrollbar': { height: 5 }, '::-webkit-scrollbar-thumb': { bgcolor: 'action.hover', borderRadius: 1 } }}>
                                 {sugerencias.map(p => (
                                     <Chip
                                         key={p.id}
@@ -376,6 +397,7 @@ export function PanelPedido({
                                         onClick={() => handleAgregarProducto(p)}
                                         color="primary"
                                         variant="outlined"
+                                        size="small"
                                         sx={{ cursor: 'pointer', flexShrink: 0 }}
                                     />
                                 ))}
@@ -383,7 +405,7 @@ export function PanelPedido({
                         </Box>
                     )}
 
-                    <Divider sx={{ my: 1 }} />
+                    <Divider sx={{ my: 0.5 }} />
 
                     {/* VISTA MINIMALISTA (Estilo Odoo POS) */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
@@ -401,19 +423,19 @@ export function PanelPedido({
                                         <SearchIcon color="action" />
                                     </InputAdornment>
                                 ),
-                                sx: { borderRadius: 2, bgcolor: 'background.default', mb: 2 }
+                                sx: { borderRadius: 2, bgcolor: 'background.default', mb: 1 }
                             }}
                         />
 
                         {/* Paginación de Categorías estilo Tablero Clásico (Odoo) */}
-                        <Box sx={{ display: 'flex', alignItems: 'stretch', mb: 2, height: 55 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'stretch', mb: 1, height: 44 }}>
 
                             {/* Botón Izquierda */}
                             <Button
                                 variant="outlined"
                                 disabled={categoriaPage === 0}
                                 onClick={() => setCategoriaPage(Math.max(0, categoriaPage - 1))}
-                                sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', bgcolor: '#ffffff' }}
+                                sx={{ minWidth: 34, width: 34, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', bgcolor: '#ffffff' }}
                             >
                                 <ChevronLeftIcon />
                             </Button>
@@ -445,7 +467,7 @@ export function PanelPedido({
                                                 borderLeft: 0,
                                                 textTransform: 'capitalize',
                                                 boxShadow: 'none',
-                                                px: 1,
+                                                px: 0.75,
                                                 '&:hover': { bgcolor: isActive ? '#ffffff' : '#e0e0e0' },
                                                 // truncate text si es muy largo
                                                 whiteSpace: 'nowrap',
@@ -465,7 +487,7 @@ export function PanelPedido({
                                 variant="outlined"
                                 disabled={(categoriaPage + 1) * itemsPerPage >= categorias.length}
                                 onClick={() => setCategoriaPage(categoriaPage + 1)}
-                                sx={{ minWidth: 40, width: 40, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', borderLeft: 0, bgcolor: '#ffffff' }}
+                                sx={{ minWidth: 34, width: 34, p: 0, borderRadius: 0, border: '1px solid #e0e0e0', borderLeft: 0, bgcolor: '#ffffff' }}
                             >
                                 <ChevronRightIcon />
                             </Button>
@@ -473,18 +495,20 @@ export function PanelPedido({
                         </Box>
 
                         {/* Grid de productos cuadrado y limpio */}
-                        <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0.5, pb: 2 }}>
-                            <Grid container spacing={1.5}>
+                        <Box sx={{ flexGrow: 1, overflow: 'auto', p: 0.25, pb: 1 }}>
+                            <Grid container spacing={1}>
                                 {productosFiltradosBusqueda.filter(p => categoriaActiva === 'todos' || p.categoria === categoriaActiva).map((producto) => (
                                     <Grid item xs={4} sm={3} md={3} lg={2} key={producto.id}>
                                         <Button
                                             onClick={() => handleAgregarProducto(producto)}
                                             sx={{
                                                 width: '100%',
+                                                height: '100%',
                                                 p: 0,
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 alignItems: 'stretch',
+                                                justifyContent: 'flex-start',
                                                 border: '1px solid',
                                                 borderColor: '#e0e0e0',
                                                 bgcolor: '#ffffff',
@@ -496,18 +520,38 @@ export function PanelPedido({
                                         >
                                             {/* "Imagen" del Producto */}
                                             <Box sx={{
-                                                height: { xs: 80, md: 110 },
+                                                width: '100%',
+                                                aspectRatio: '1 / 1',
                                                 bgcolor: '#f5f5f5',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                borderBottom: '1px solid #f0f0f0'
+                                                borderBottom: '1px solid #f0f0f0',
+                                                overflow: 'hidden',
                                             }}>
-                                                <LocalOfferIcon sx={{ color: '#e0e0e0', fontSize: 40 }} />
+                                                {producto.imagen && !imageErrors[producto.id] ? (
+                                                    <Box
+                                                        component="img"
+                                                        src={producto.imagen}
+                                                        alt={producto.nombre}
+                                                        onError={() =>
+                                                            setImageErrors((prev) => ({ ...prev, [producto.id]: true }))
+                                                        }
+                                                        sx={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'contain',
+                                                            objectPosition: 'center',
+                                                            padding: 0.35,
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <LocalOfferIcon sx={{ color: '#e0e0e0', fontSize: 44 }} />
+                                                )}
                                             </Box>
 
                                             {/* Textos y Precios */}
-                                            <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '60px', width: '100%' }}>
+                                            <Box sx={{ p: 0.75, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: 50, width: '100%' }}>
                                                 <Typography
                                                     variant="caption"
                                                     sx={{
@@ -517,7 +561,7 @@ export function PanelPedido({
                                                         WebkitLineClamp: 2,
                                                         WebkitBoxOrient: 'vertical',
                                                         overflow: 'hidden',
-                                                        mb: 0.5,
+                                                        mb: 0.35,
                                                         color: '#333'
                                                     }}
                                                 >

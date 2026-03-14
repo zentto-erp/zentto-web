@@ -56,6 +56,8 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [emailNotVerified, setEmailNotVerified] = React.useState(false);
+  const [resendBusy, setResendBusy] = React.useState(false);
   const [loadingCompanies, setLoadingCompanies] = React.useState(false);
   const [companyOptions, setCompanyOptions] = React.useState<CompanyOption[]>([]);
   const [selectedScope, setSelectedScope] = React.useState<string>('');
@@ -76,6 +78,15 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
 
   const usernameInput = watch('email');
 
+  const backendUrl = React.useMemo(
+    () =>
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      'http://localhost:4000',
+    []
+  );
+
   React.useEffect(() => {
     const error = searchParams.get('error');
     if (error) {
@@ -84,6 +95,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       } else {
         setErrorMsg('Error al iniciar sesion. Intente nuevamente.');
       }
+        setEmailNotVerified(false);
     }
   }, [searchParams]);
 
@@ -94,12 +106,6 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       setSelectedScope('');
       return;
     }
-
-    const backendUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      process.env.NEXT_PUBLIC_BACKEND_URL ||
-      'http://localhost:4000';
 
     const loginUser = normalized.includes('@') ? normalized.split('@')[0] : normalized;
 
@@ -139,11 +145,39 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [usernameInput]);
+  }, [usernameInput, backendUrl]);
+
+  const handleResendVerification = React.useCallback(async () => {
+    const identifier = String(usernameInput ?? '').trim();
+    if (!identifier) {
+      setErrorMsg('Indica el usuario para reenviar la verificacion.');
+      return;
+    }
+
+    setResendBusy(true);
+    try {
+      const response = await fetch(`${backendUrl}/v1/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setErrorMsg(String(data?.message || 'No se pudo reenviar la verificacion.'));
+        return;
+      }
+      showToast('Si la cuenta esta pendiente, se envio un nuevo enlace de verificacion.', 'success');
+    } catch {
+      setErrorMsg('Error de red al reenviar verificacion.');
+    } finally {
+      setResendBusy(false);
+    }
+  }, [backendUrl, showToast, usernameInput]);
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     setErrorMsg(null);
+    setEmailNotVerified(false);
 
     let companyId: number | undefined;
     let branchId: number | undefined;
@@ -165,7 +199,13 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       });
 
       if (result?.error) {
-        setErrorMsg('Usuario o contrasena incorrectos');
+        const lowerError = String(result.error).toLowerCase();
+        if (lowerError.includes('email_not_verified')) {
+          setEmailNotVerified(true);
+          setErrorMsg('Debes verificar tu correo antes de iniciar sesion.');
+        } else {
+          setErrorMsg('Usuario o contrasena incorrectos');
+        }
         setIsSubmitting(false);
       } else if (result?.ok) {
         showToast('Inicio de sesion exitoso', 'success');
@@ -191,6 +231,20 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       {errorMsg && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {errorMsg}
+        </Alert>
+      )}
+
+      {emailNotVerified && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleResendVerification} disabled={resendBusy}>
+              {resendBusy ? 'Enviando...' : 'Reenviar verificacion'}
+            </Button>
+          }
+        >
+          Tu cuenta existe pero el correo aun no esta verificado.
         </Alert>
       )}
 

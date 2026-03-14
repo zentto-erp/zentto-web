@@ -3,7 +3,19 @@
 import { getSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
+
+export function resolveAssetUrl(url?: unknown): string | undefined {
+  if (typeof url !== 'string') return undefined;
+  const value = url.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:')) return value;
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith('//')) return `https:${value}`;
+  if (value.startsWith('/')) return `${API_BASE}${value}`;
+  return `${API_BASE}/${value.replace(/^\.?\//, '')}`;
+}
 
 async function getAuthToken(): Promise<string | null> {
   try {
