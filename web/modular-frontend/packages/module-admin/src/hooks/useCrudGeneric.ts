@@ -16,17 +16,13 @@ interface CrudGenericOptions {
   endpoint: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface UseCrudGenericReturn<T, CreateDTO> {
-  // Queries
-  list: (filters?: Record<string, unknown>) => unknown;
-  getById: (id: string) => unknown;
-
-  // Mutations
-  create: () => unknown;
-  update: (id: string) => unknown;
-  delete: (id: string) => unknown;
-
-  // Utils
+  list: (filters?: Record<string, unknown>) => any;
+  getById: (id: string) => any;
+  create: () => any;
+  update: (id: string) => any;
+  delete: (id: string) => any;
   invalidateList: () => void;
 }
 
@@ -38,7 +34,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
   const url = `${baseUrl}/${endpoint}`;
 
   const normalizeRow = (row: Record<string, unknown> | null | undefined): T => {
-    if (!row || typeof row !== 'object') return row as T;
+    if (!row || typeof row !== 'object') return row as unknown as T;
     const get = (...keys: string[]) => {
       for (const key of keys) {
         if (row[key] !== undefined && row[key] !== null) return row[key];
@@ -56,7 +52,7 @@ export function useCrudGeneric<T extends { codigo?: string; id?: string }, Creat
       direccion: get('direccion', 'DIRECCION', 'Direccion'),
       estado: get('estado', 'ESTADO', 'Estado'),
       saldo: Number(get('saldo', 'SALDO', 'SALDO_TOT') ?? 0),
-    } as T;
+    } as unknown as T;
   };
 
   const normalizeListPayload = (raw: Record<string, unknown>, filters?: Record<string, unknown>) => {

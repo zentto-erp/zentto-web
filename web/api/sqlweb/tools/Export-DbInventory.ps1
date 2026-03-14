@@ -1,8 +1,8 @@
 param(
-    [string]$Server = "DELLXEONE31545\SQLEXPRESS",
-    [string]$Database = "DatqBoxExpress",
+    [string]$Server = "DELLXEONE31545",
+    [string]$Database = "DatqBoxWeb",
     [string]$User = "sa",
-    [string]$Password = "e!334011"
+    [string]$Password = "1234"
 )
 
 Set-StrictMode -Version Latest

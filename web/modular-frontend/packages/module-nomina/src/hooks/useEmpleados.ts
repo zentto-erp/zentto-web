@@ -12,6 +12,7 @@ export interface EmpleadoFilter {
   nomina?: string;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 /**

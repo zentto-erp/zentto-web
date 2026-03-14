@@ -17,6 +17,7 @@ export interface AsientoFilter {
   origenDocumento?: string;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 export interface AsientoDetalle {

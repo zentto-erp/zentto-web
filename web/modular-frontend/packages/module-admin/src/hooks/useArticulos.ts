@@ -9,7 +9,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
 
 const QUERY_KEY = "articulos";
 const API_BASE = "/api/v1/articulos";
-type RawArticuloRow = Record<string, unknown>;
+type RawArticuloRow = Record<string, any>;
 
 /**
  * Convierte una fila cruda del API (nombres SQL como CODIGO, DESCRIPCION, etc.)

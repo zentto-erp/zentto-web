@@ -53,7 +53,7 @@ type FormaPagoLine = {
   numCheque?: string;
   fechaVencimiento?: string;
 };
-type ProveedorRow = Record<string, unknown>;
+type ProveedorRow = Record<string, any>;
 
 // ─── Componente Principal ─────────────────────────────────────
 
@@ -65,7 +65,7 @@ export default function CxpMasterPage() {
 
   // ─── Datos de proveedores ─────────────────────────────────
   const provQuery = useProveedoresList({ search, limit: 50 });
-  const proveedores = (provQuery.data?.items || provQuery.data?.data || []) as ProveedorRow[];
+  const proveedores = (provQuery.data?.items || provQuery.data?.data || []) as unknown as ProveedorRow[];
 
   // ─── Datos CxP del proveedor seleccionado ─────────────────
   const docsQuery = useCxpDocumentosPendientes(selectedCod);
@@ -74,9 +74,9 @@ export default function CxpMasterPage() {
   const saldoData = saldoQuery.data?.data as Record<string, unknown> | null;
 
   const handleSelectProveedor = useCallback((prov: ProveedorRow) => {
-    const cod = prov.codigo || prov.CODIGO || "";
+    const cod = String(prov.codigo || prov.CODIGO || "");
     setSelectedCod(cod);
-    setSelectedNombre(prov.nombre || prov.NOMBRE || cod);
+    setSelectedNombre(String(prov.nombre || prov.NOMBRE || cod));
     setTabValue(0);
   }, []);
 

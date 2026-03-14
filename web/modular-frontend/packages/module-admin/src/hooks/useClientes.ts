@@ -21,7 +21,7 @@ export interface ClienteFilter {
   estado?: string;
 }
 
-type RawRow = Record<string, unknown>;
+type RawRow = Record<string, any>;
 
 function mapRowToCliente(row: RawRow): ClienteListItem {
   return {

@@ -52,7 +52,7 @@ type FormaPagoLine = {
   numCheque?: string;
   fechaVencimiento?: string;
 };
-type ClienteRow = Record<string, unknown>;
+type ClienteRow = Record<string, any>;
 
 // ─── Componente Principal ─────────────────────────────────────
 
@@ -64,7 +64,7 @@ export default function CxcMasterPage() {
 
   // ─── Datos de clientes ────────────────────────────────────
   const clientesQuery = useClientesList({ search, limit: 50 });
-  const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as ClienteRow[];
+  const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as unknown as ClienteRow[];
 
   // ─── Datos CxC del cliente seleccionado ───────────────────
   const docsQuery = useCxcDocumentosPendientes(selectedCod);
@@ -73,9 +73,9 @@ export default function CxcMasterPage() {
   const saldoData = saldoQuery.data?.data as Record<string, unknown> | null;
 
   const handleSelectCliente = useCallback((cli: ClienteRow) => {
-    const cod = cli.codigo || cli.CODIGO || "";
+    const cod = String(cli.codigo || cli.CODIGO || "");
     setSelectedCod(cod);
-    setSelectedNombre(cli.nombre || cli.NOMBRE || cod);
+    setSelectedNombre(String(cli.nombre || cli.NOMBRE || cod));
     setTabValue(0);
   }, []);
 

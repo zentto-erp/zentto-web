@@ -29,9 +29,9 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
   const detalle = useDetalleCompra(numFact);
   const indicadores = useIndicadoresCompra(numFact);
 
-  const row = compra.data ?? null;
+  const row = (compra.data ?? null) as Record<string, any> | null;
   const detRows = (detalle.data ?? []) as CompraDetalleRow[];
-  const ind = indicadores.data ?? null;
+  const ind = (indicadores.data ?? null) as Record<string, any> | null;
 
   return (
     <Box>

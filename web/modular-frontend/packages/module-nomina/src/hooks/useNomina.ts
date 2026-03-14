@@ -17,6 +17,7 @@ export interface ConceptoFilter {
   search?: string;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 export interface ConceptoInput {
@@ -43,6 +44,7 @@ export interface NominaFilter {
   soloAbiertas?: boolean;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 export interface ProcesarEmpleadoInput {

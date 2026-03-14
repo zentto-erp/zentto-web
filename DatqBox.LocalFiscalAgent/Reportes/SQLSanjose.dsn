@@ -1,7 +1,0 @@
-[ODBC]
-DRIVER=SQL Server Native Client 10.0
-UID=Administrador
-DATABASE=Sanjose
-WSID=SANJOSEML110G6
-Trusted_Connection=Yes
-SERVER=SANJOSESQLI3

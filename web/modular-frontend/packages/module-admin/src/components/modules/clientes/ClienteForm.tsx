@@ -144,7 +144,7 @@ export default function ClienteForm({
     : null;
 
   // Handler para guardar
-  const handleSave = async (data: CreateClienteDTO) => {
+  const handleSave = async (data: Record<string, unknown>) => {
     try {
       if (clienteCodigo && updateMutation) {
         // Actualizar
