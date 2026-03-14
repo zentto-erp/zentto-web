@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 import {
   createRow,
   deleteRow,
@@ -6,7 +6,8 @@ import {
   getByKey,
   updateRow,
 } from "../crud/crud.service.js";
-import { getTableMetadata, quoteIdent, safeQualifiedTable, type TableMetadata } from "../crud/metadata.js";
+import { getTableMetadata, type TableMetadata } from "../crud/metadata.js";
+import { queryTable } from "../crud/crud.service.js";
 
 type MasterTableConfig = {
   schema: string;
@@ -26,23 +27,10 @@ export const MASTER_TABLES: Record<string, MasterTableConfig> = {
   "linea-proveedores": { schema: "master", table: "SupplierLine" },
 };
 
-const STRING_TYPES = new Set([
-  "varchar",
-  "nvarchar",
-  "char",
-  "nchar",
-  "text",
-  "ntext",
-]);
-
 function validPage(value: unknown, fallback: number) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return fallback;
   return Math.floor(n);
-}
-
-function getSortColumn(meta: TableMetadata) {
-  return meta.primaryKeys[0] ?? meta.columns[0]?.columnName ?? "";
 }
 
 function resolveMasterTable(slug: string): MasterTableConfig | null {
@@ -87,39 +75,19 @@ export async function listMaestroRows(slug: string, params: { search?: string; p
 
   const page = validPage(params.page, 1);
   const limit = Math.min(validPage(params.limit, 50), 500);
-  const offset = (page - 1) * limit;
 
-  const whereParts: string[] = [];
-  const sqlParams: Record<string, unknown> = {};
-  const search = (params.search || "").trim();
-
-  if (search.length > 0) {
-    const stringColumns = meta.columns
-      .filter((c) => !c.isComputed && !c.isRowVersion)
-      .filter((c) => STRING_TYPES.has(c.dataType.toLowerCase()));
-    if (stringColumns.length > 0) {
-      const likeParts = stringColumns.map((c) => `${quoteIdent(c.columnName)} LIKE @search`);
-      whereParts.push(`(${likeParts.join(" OR ")})`);
-      sqlParams.search = `%${search}%`;
-    }
-  }
-
-  const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(" AND ")}` : "";
-  const sortColumn = getSortColumn(meta);
-  const tableName = safeQualifiedTable(meta.schema, meta.table);
-
-  const rows = await query<any>(
-    `SELECT * FROM ${tableName} ${whereClause} ORDER BY ${quoteIdent(sortColumn)} ASC OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`,
-    sqlParams
-  );
-  const totalRows = await query<{ total: number }>(
-    `SELECT COUNT(1) AS total FROM ${tableName} ${whereClause}`,
-    sqlParams
-  );
+  // Delegate to the generic CRUD queryTable which uses SPs internally
+  const result = await queryTable({
+    schema: config.schema,
+    table: config.table,
+    page,
+    pageSize: limit,
+    filters: params.search ? { _search: params.search } : undefined,
+  });
 
   return {
-    rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    rows: result.rows,
+    total: result.total,
     page,
     limit,
     table: meta.table,

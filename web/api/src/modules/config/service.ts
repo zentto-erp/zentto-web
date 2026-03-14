@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp } from "../../db/query.js";
 
 // Necesario ya que la web del Banco Central de Venezuela (bcv.org.ve)
 // frecuentemente tiene errores en su cadena de certificados SSL (UNABLE_TO_VERIFY_LEAF_SIGNATURE).
@@ -65,48 +65,12 @@ export async function fetchTasasBcvWeb(): Promise<TasasBCV | null> {
  */
 export async function saveTasasToDB(tasas: TasasBCV): Promise<boolean> {
     try {
-        const pool = await getPool();
-        await pool.request()
-            .input('RateDate', sql.Date, new Date())
-            .input('TasaUSD', sql.Decimal(18, 6), tasas.USD)
-            .input('TasaEUR', sql.Decimal(18, 6), tasas.EUR)
-            .input('SourceName', sql.NVarChar(120), 'BCV_WEB_AUTO')
-            .query(`
-                IF EXISTS (
-                    SELECT 1
-                    FROM cfg.ExchangeRateDaily
-                    WHERE CurrencyCode = 'USD' AND RateDate = @RateDate
-                )
-                BEGIN
-                    UPDATE cfg.ExchangeRateDaily
-                    SET RateToBase = @TasaUSD,
-                        SourceName = @SourceName
-                    WHERE CurrencyCode = 'USD' AND RateDate = @RateDate;
-                END
-                ELSE
-                BEGIN
-                    INSERT INTO cfg.ExchangeRateDaily (CurrencyCode, RateToBase, RateDate, SourceName)
-                    VALUES ('USD', @TasaUSD, @RateDate, @SourceName);
-                END;
-
-                IF EXISTS (
-                    SELECT 1
-                    FROM cfg.ExchangeRateDaily
-                    WHERE CurrencyCode = 'EUR' AND RateDate = @RateDate
-                )
-                BEGIN
-                    UPDATE cfg.ExchangeRateDaily
-                    SET RateToBase = @TasaEUR,
-                        SourceName = @SourceName
-                    WHERE CurrencyCode = 'EUR' AND RateDate = @RateDate;
-                END
-                ELSE
-                BEGIN
-                    INSERT INTO cfg.ExchangeRateDaily (CurrencyCode, RateToBase, RateDate, SourceName)
-                    VALUES ('EUR', @TasaEUR, @RateDate, @SourceName);
-                END;
-            `);
-
+        await callSp('usp_Cfg_ExchangeRate_Upsert', {
+            RateDate: new Date(),
+            TasaUSD: tasas.USD,
+            TasaEUR: tasas.EUR,
+            SourceName: 'BCV_WEB_AUTO'
+        });
         return true;
     } catch (e) {
         console.error('Failed to save BCV Tasas to database:', e);

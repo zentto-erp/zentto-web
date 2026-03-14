@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 import { procesarNominaEmpleado, procesarVacaciones, calcularLiquidacion } from "./service.js";
 import { getActiveScope } from "../_shared/scope.js";
 
@@ -31,13 +31,8 @@ export interface NominaResult {
 async function getDefaultCompanyId() {
   const activeScope = getActiveScope();
   if (activeScope?.companyId) return activeScope.companyId;
-  const rows = await query<{ companyId: number }>(
-    `
-    SELECT TOP 1 CompanyId AS companyId
-    FROM cfg.Company
-    WHERE CompanyCode = N'DEFAULT'
-    ORDER BY CompanyId
-    `
+  const rows = await callSp<{ companyId: number }>(
+    "usp_Cfg_ResolveContext"
   );
   return Number(rows[0]?.companyId ?? 1);
 }
@@ -49,45 +44,16 @@ export async function listConceptosLegales(params: {
   activo?: boolean;
 }) {
   const companyId = await getDefaultCompanyId();
-  const where: string[] = ["CompanyId = @companyId", "ConventionCode IS NOT NULL"];
-  const sqlParams: Record<string, unknown> = { companyId };
 
-  if (params.activo !== false) where.push("IsActive = 1");
-  if (params.convencion?.trim()) {
-    where.push("ConventionCode = @conventionCode");
-    sqlParams.conventionCode = params.convencion.trim().toUpperCase();
-  }
-  if (params.tipoCalculo?.trim()) {
-    where.push("CalculationType = @calculationType");
-    sqlParams.calculationType = params.tipoCalculo.trim().toUpperCase();
-  }
-  if (params.tipo?.trim()) {
-    where.push("ConceptType = @conceptType");
-    sqlParams.conceptType = params.tipo.trim().toUpperCase();
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<ConceptoLegal>(
-    `
-    SELECT
-      PayrollConceptId AS id,
-      ConventionCode AS convencion,
-      CalculationType AS tipoCalculo,
-      ConceptCode AS coConcept,
-      ConceptName AS nbConcepto,
-      Formula AS formula,
-      BaseExpression AS sobre,
-      ConceptType AS tipo,
-      CASE WHEN IsBonifiable = 1 THEN N'S' ELSE N'N' END AS bonificable,
-      LotttArticle AS lotttArticulo,
-      CcpClause AS ccpClausula,
-      SortOrder AS orden,
-      IsActive AS activo
-    FROM hr.PayrollConcept
-    ${clause}
-    ORDER BY ConventionCode, CalculationType, SortOrder, ConceptCode
-    `,
-    sqlParams
+  const rows = await callSp<ConceptoLegal>(
+    "usp_HR_LegalConcept_List",
+    {
+      CompanyId: companyId,
+      ConventionCode: params.convencion?.trim().toUpperCase() || null,
+      CalculationType: params.tipoCalculo?.trim().toUpperCase() || null,
+      ConceptType: params.tipo?.trim().toUpperCase() || null,
+      SoloActivos: params.activo !== false ? 1 : 0,
+    }
   );
 
   return { rows };
@@ -133,35 +99,19 @@ export async function validarFormulasConceptos(params: {
   tipoCalculo?: string;
 }) {
   const companyId = await getDefaultCompanyId();
-  const where: string[] = ["CompanyId = @companyId", "ConventionCode IS NOT NULL", "IsActive = 1"];
-  const sqlParams: Record<string, unknown> = { companyId };
 
-  if (params.convencion?.trim()) {
-    where.push("ConventionCode = @conventionCode");
-    sqlParams.conventionCode = params.convencion.trim().toUpperCase();
-  }
-  if (params.tipoCalculo?.trim()) {
-    where.push("CalculationType = @calculationType");
-    sqlParams.calculationType = params.tipoCalculo.trim().toUpperCase();
-  }
-
-  const concepts = await query<{
+  const concepts = await callSp<{
     coConcept: string;
     nbConcepto: string;
     formula: string | null;
     defaultValue: number;
   }>(
-    `
-    SELECT
-      ConceptCode AS coConcept,
-      ConceptName AS nbConcepto,
-      Formula AS formula,
-      DefaultValue AS defaultValue
-    FROM hr.PayrollConcept
-    WHERE ${where.join(" AND ")}
-    ORDER BY SortOrder, ConceptCode
-    `,
-    sqlParams
+    "usp_HR_LegalConcept_ValidateFormulas",
+    {
+      CompanyId: companyId,
+      ConventionCode: params.convencion?.trim().toUpperCase() || null,
+      CalculationType: params.tipoCalculo?.trim().toUpperCase() || null,
+    }
   );
 
   const formulaPattern = /^[A-Za-z0-9_+\-*/().\s]*$/;
@@ -226,23 +176,8 @@ export async function procesarLiquidacionConceptoLegal(payload: {
 
 export async function getConvencionesDisponibles() {
   const companyId = await getDefaultCompanyId();
-  return query<any>(
-    `
-    SELECT
-      ConventionCode AS Convencion,
-      COUNT(1) AS TotalConceptos,
-      COUNT(CASE WHEN CalculationType = 'MENSUAL' THEN 1 END) AS ConceptosMensual,
-      COUNT(CASE WHEN CalculationType = 'VACACIONES' THEN 1 END) AS ConceptosVacaciones,
-      COUNT(CASE WHEN CalculationType = 'LIQUIDACION' THEN 1 END) AS ConceptosLiquidacion,
-      MIN(SortOrder) AS OrdenInicio,
-      MAX(SortOrder) AS OrdenFin
-    FROM hr.PayrollConcept
-    WHERE CompanyId = @companyId
-      AND IsActive = 1
-      AND ConventionCode IS NOT NULL
-    GROUP BY ConventionCode
-    ORDER BY ConventionCode
-    `,
-    { companyId }
+  return callSp<any>(
+    "usp_HR_LegalConcept_ListConventions",
+    { CompanyId: companyId }
   );
 }

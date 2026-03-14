@@ -12,10 +12,15 @@ import {
   libroMayor,
   listAsientos,
   mayorAnalitico,
-  seedPlanCuentas
+  seedPlanCuentas,
+  getDefaultCompanyId,
+  normalizeTipoCuenta,
+  listCuentas,
+  getCuenta,
+  insertCuenta,
+  updateCuenta,
+  deleteCuenta
 } from "./service.js";
-import { getPool, sql } from "../../db/mssql.js";
-import { getActiveScope } from "../_shared/scope.js";
 
 export const contabilidadRouter = Router();
 
@@ -84,33 +89,6 @@ const mayorAnaliticoSchema = z.object({
 const balanceGeneralSchema = z.object({
   fechaCorte: z.string().min(1)
 });
-
-let defaultCompanyIdCache: number | null = null;
-
-async function getDefaultCompanyId() {
-  const activeScope = getActiveScope();
-  if (activeScope?.companyId) return activeScope.companyId;
-  if (defaultCompanyIdCache) return defaultCompanyIdCache;
-  const pool = await getPool();
-  const rs = await pool
-    .request()
-    .query(`
-      SELECT TOP 1 CompanyId
-      FROM cfg.Company
-      WHERE CompanyCode = N'DEFAULT'
-      ORDER BY CompanyId
-    `);
-  defaultCompanyIdCache = Number(rs.recordset?.[0]?.CompanyId ?? 1);
-  return defaultCompanyIdCache;
-}
-
-function normalizeTipoCuenta(value: string | undefined) {
-  const tipo = String(value ?? "").trim().toUpperCase();
-  if (!tipo) return null;
-  const normalized = tipo.charAt(0);
-  if (!["A", "P", "C", "I", "G"].includes(normalized)) return null;
-  return normalized;
-}
 
 contabilidadRouter.get("/asientos", async (req, res) => {
   const parsed = listSchema.safeParse(req.query);
@@ -266,67 +244,22 @@ contabilidadRouter.get("/cuentas", async (req, res) => {
       return res.status(400).json({ error: "invalid_tipo", message: "Tipo debe ser A/P/C/I/G" });
     }
 
-    const page = Math.max(1, Number(parsed.data.page ?? "1") || 1);
-    const limit = Math.min(200, Math.max(1, Number(parsed.data.limit ?? "50") || 50));
-    const offset = (page - 1) * limit;
-    const activo = String(parsed.data.activo ?? "true").toLowerCase() === "false" ? 0 : 1;
-
-    const where: string[] = ["CompanyId = @CompanyId", "IsDeleted = 0", "IsActive = @IsActive"];
-    if (parsed.data.search?.trim()) where.push("(AccountCode LIKE @Search OR AccountName LIKE @Search)");
-    if (tipo) where.push("AccountType = @Tipo");
-    if (parsed.data.nivel) where.push("AccountLevel = @Nivel");
-    const whereClause = `WHERE ${where.join(" AND ")}`;
-
-    const pool = await getPool();
-    const countReq = pool.request().input("CompanyId", sql.Int, companyId).input("IsActive", sql.Bit, activo);
-    const dataReq = pool.request().input("CompanyId", sql.Int, companyId).input("IsActive", sql.Bit, activo);
-
-    if (parsed.data.search?.trim()) {
-      const search = `%${parsed.data.search.trim()}%`;
-      countReq.input("Search", sql.NVarChar(120), search);
-      dataReq.input("Search", sql.NVarChar(120), search);
-    }
-    if (tipo) {
-      countReq.input("Tipo", sql.NChar(1), tipo);
-      dataReq.input("Tipo", sql.NChar(1), tipo);
-    }
     if (parsed.data.nivel) {
       const nivel = Number(parsed.data.nivel);
       if (!Number.isFinite(nivel) || nivel < 1) return res.status(400).json({ error: "invalid_nivel" });
-      countReq.input("Nivel", sql.Int, nivel);
-      dataReq.input("Nivel", sql.Int, nivel);
     }
-    dataReq.input("Offset", sql.Int, offset).input("Limit", sql.Int, limit);
 
-    const countRs = await countReq.query(`
-      SELECT COUNT(1) AS total
-      FROM acct.Account
-      ${whereClause}
-    `);
-    const total = Number(countRs.recordset?.[0]?.total ?? 0);
+    const result = await listCuentas({
+      companyId,
+      search: parsed.data.search,
+      tipo: tipo || undefined,
+      nivel: parsed.data.nivel ? Number(parsed.data.nivel) : undefined,
+      activo: String(parsed.data.activo ?? "true").toLowerCase() !== "false",
+      page: Number(parsed.data.page ?? "1") || 1,
+      limit: Number(parsed.data.limit ?? "50") || 50
+    });
 
-    const rs = await dataReq.query(`
-      SELECT
-        AccountCode,
-        AccountName,
-        AccountType,
-        AccountLevel,
-        IsActive
-      FROM acct.Account
-      ${whereClause}
-      ORDER BY AccountCode
-      OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
-    `);
-
-    const rows = (rs.recordset || []).map((row: any) => ({
-      codCuenta: row.AccountCode,
-      descripcion: row.AccountName,
-      tipo: row.AccountType,
-      nivel: row.AccountLevel,
-      activo: row.IsActive,
-    }));
-
-    return res.json({ data: rows, page, limit, total });
+    return res.json(result);
   } catch (err: any) {
     return res.status(500).json({ error: String(err) });
   }
@@ -336,34 +269,10 @@ contabilidadRouter.get("/cuentas", async (req, res) => {
 contabilidadRouter.get("/cuentas/:codCuenta", async (req, res) => {
   try {
     const companyId = await getDefaultCompanyId();
-    const pool = await getPool();
-    const rs = await pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), req.params.codCuenta)
-      .query(`
-        SELECT TOP 1
-          AccountCode,
-          AccountName,
-          AccountType,
-          AccountLevel,
-          IsActive
-        FROM acct.Account
-        WHERE CompanyId = @CompanyId
-          AND AccountCode = @CodCuenta
-          AND IsDeleted = 0
-      `);
+    const cuenta = await getCuenta(companyId, req.params.codCuenta);
 
-    const row = rs.recordset?.[0];
-    if (!row) return res.status(404).json({ error: "not_found" });
-
-    return res.json({
-      codCuenta: row.AccountCode,
-      descripcion: row.AccountName,
-      tipo: row.AccountType,
-      nivel: row.AccountLevel,
-      activo: row.IsActive,
-    });
+    if (!cuenta) return res.status(404).json({ error: "not_found" });
+    return res.json(cuenta);
   } catch (err: any) {
     return res.status(500).json({ error: String(err) });
   }
@@ -391,60 +300,21 @@ contabilidadRouter.post("/cuentas", async (req, res) => {
       return res.status(400).json({ error: "invalid_tipo", message: "Tipo debe ser A/P/C/I/G" });
     }
 
-    const pool = await getPool();
-    const exists = await pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), codCuenta)
-      .query(`
-        SELECT 1
-        FROM acct.Account
-        WHERE CompanyId = @CompanyId
-          AND AccountCode = @CodCuenta
-          AND IsDeleted = 0
-      `);
+    const result = await insertCuenta({
+      companyId,
+      codCuenta,
+      descripcion,
+      tipo: normalizedTipo,
+      nivel
+    });
 
-    if (exists.recordset.length > 0) {
-      return res.status(409).json({ error: "duplicate", message: `La cuenta ${codCuenta} ya existe` });
+    if (!result.ok) {
+      // El SP retorna mensaje indicando duplicado
+      if (result.mensaje.includes("Ya existe")) {
+        return res.status(409).json({ error: "duplicate", message: result.mensaje });
+      }
+      return res.status(400).json({ error: "insert_failed", message: result.mensaje });
     }
-
-    await pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), codCuenta)
-      .input("Descripcion", sql.NVarChar(200), descripcion)
-      .input("Tipo", sql.NChar(1), normalizedTipo)
-      .input("Nivel", sql.Int, nivel)
-      .query(`
-        INSERT INTO acct.Account (
-          CompanyId,
-          AccountCode,
-          AccountName,
-          AccountType,
-          AccountLevel,
-          ParentAccountId,
-          AllowsPosting,
-          RequiresAuxiliary,
-          IsActive,
-          CreatedAt,
-          UpdatedAt,
-          IsDeleted
-        )
-        VALUES (
-          @CompanyId,
-          @CodCuenta,
-          @Descripcion,
-          @Tipo,
-          @Nivel,
-          NULL,
-          1,
-          0,
-          1,
-          SYSUTCDATETIME(),
-          SYSUTCDATETIME(),
-          0
-        )
-      `);
 
     return res.status(201).json({ ok: true, codCuenta });
   } catch (err: any) {
@@ -473,54 +343,24 @@ contabilidadRouter.put("/cuentas/:codCuenta", async (req, res) => {
       return res.status(400).json({ error: "invalid_tipo", message: "Tipo debe ser A/P/C/I/G" });
     }
 
-    const pool = await getPool();
-    const exists = await pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), codCuenta)
-      .query(`
-        SELECT 1
-        FROM acct.Account
-        WHERE CompanyId = @CompanyId
-          AND AccountCode = @CodCuenta
-          AND IsDeleted = 0
-      `);
-
-    if (exists.recordset.length === 0) {
-      return res.status(404).json({ error: "not_found", message: `Cuenta ${codCuenta} no encontrada` });
-    }
-
-    const sets: string[] = [];
-    const request = pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), codCuenta);
-
-    if (parsed.data.descripcion !== undefined) {
-      sets.push("AccountName = @Descripcion");
-      request.input("Descripcion", sql.NVarChar(200), parsed.data.descripcion);
-    }
-    if (parsed.data.tipo !== undefined && normalizedTipo) {
-      sets.push("AccountType = @Tipo");
-      request.input("Tipo", sql.NChar(1), normalizedTipo);
-    }
-    if (parsed.data.nivel !== undefined) {
-      sets.push("AccountLevel = @Nivel");
-      request.input("Nivel", sql.Int, parsed.data.nivel);
-    }
-
-    if (sets.length === 0) {
+    if (!parsed.data.descripcion && !parsed.data.tipo && parsed.data.nivel === undefined) {
       return res.status(400).json({ error: "no_fields", message: "No se proporcionaron campos para actualizar" });
     }
 
-    sets.push("UpdatedAt = SYSUTCDATETIME()");
-    await request.query(`
-      UPDATE acct.Account
-      SET ${sets.join(", ")}
-      WHERE CompanyId = @CompanyId
-        AND AccountCode = @CodCuenta
-        AND IsDeleted = 0
-    `);
+    const result = await updateCuenta({
+      companyId,
+      codCuenta,
+      descripcion: parsed.data.descripcion,
+      tipo: normalizedTipo || undefined,
+      nivel: parsed.data.nivel
+    });
+
+    if (!result.ok) {
+      if (result.mensaje.includes("No se encontro")) {
+        return res.status(404).json({ error: "not_found", message: result.mensaje });
+      }
+      return res.status(400).json({ error: "update_failed", message: result.mensaje });
+    }
 
     return res.json({ ok: true, codCuenta });
   } catch (err: any) {
@@ -533,55 +373,18 @@ contabilidadRouter.delete("/cuentas/:codCuenta", async (req, res) => {
   try {
     const companyId = await getDefaultCompanyId();
     const codCuenta = req.params.codCuenta;
-    const pool = await getPool();
 
-    const exists = await pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), codCuenta)
-      .query(`
-        SELECT TOP 1 AccountId
-        FROM acct.Account
-        WHERE CompanyId = @CompanyId
-          AND AccountCode = @CodCuenta
-          AND IsDeleted = 0
-      `);
+    const result = await deleteCuenta({ companyId, codCuenta });
 
-    if (exists.recordset.length === 0) {
-      return res.status(404).json({ error: "not_found", message: `Cuenta ${codCuenta} no encontrada` });
+    if (!result.ok) {
+      if (result.mensaje.includes("No se encontro") || result.mensaje.includes("ya fue eliminada")) {
+        return res.status(404).json({ error: "not_found", message: result.mensaje });
+      }
+      if (result.mensaje.includes("cuentas hijas")) {
+        return res.status(409).json({ error: "has_children", message: result.mensaje });
+      }
+      return res.status(400).json({ error: "delete_failed", message: result.mensaje });
     }
-
-    const accountId = Number(exists.recordset[0]?.AccountId ?? 0);
-    const hasMovements = await pool
-      .request()
-      .input("AccountId", sql.BigInt, accountId)
-      .query(`
-        SELECT TOP 1 1
-        FROM acct.JournalEntryLine
-        WHERE AccountId = @AccountId
-      `);
-
-    if (hasMovements.recordset.length > 0) {
-      return res.status(409).json({
-        error: "has_movements",
-        message: "No se puede eliminar: la cuenta tiene movimientos contables",
-      });
-    }
-
-    await pool
-      .request()
-      .input("CompanyId", sql.Int, companyId)
-      .input("CodCuenta", sql.NVarChar(40), codCuenta)
-      .query(`
-        UPDATE acct.Account
-        SET IsDeleted = 1,
-            IsActive = 0,
-            DeletedAt = SYSUTCDATETIME(),
-            UpdatedAt = SYSUTCDATETIME()
-        WHERE CompanyId = @CompanyId
-          AND AccountCode = @CodCuenta
-          AND IsDeleted = 0
-      `);
 
     return res.json({ ok: true, codCuenta });
   } catch (err: any) {

@@ -21,6 +21,7 @@ BEGIN TRY
   IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'pos') EXEC('CREATE SCHEMA pos');
   IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'rest') EXEC('CREATE SCHEMA rest');
   IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'fiscal') EXEC('CREATE SCHEMA fiscal');
+  IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'doc') EXEC('CREATE SCHEMA doc');
 
   IF OBJECT_ID('sec.[User]', 'U') IS NULL
   BEGIN

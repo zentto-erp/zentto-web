@@ -1,4 +1,4 @@
-import { execute, query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 
 export interface EmpleadoRow {
   CEDULA?: string;
@@ -44,12 +44,7 @@ export interface SpResult {
 }
 
 async function getDefaultCompanyId() {
-  const rows = await query<{ CompanyId: number }>(
-    `SELECT TOP 1 CompanyId
-       FROM cfg.Company
-      WHERE IsDeleted = 0
-      ORDER BY CASE WHEN CompanyCode = 'DEFAULT' THEN 0 ELSE 1 END, CompanyId`
-  );
+  const rows = await callSp<{ CompanyId: number }>('usp_HR_Employee_GetDefaultCompany');
   const companyId = Number(rows[0]?.CompanyId ?? 0);
   if (!Number.isFinite(companyId) || companyId <= 0) throw new Error("company_not_found");
   return companyId;
@@ -74,37 +69,23 @@ export async function listEmpleadosSP(params: ListEmpleadosParams = {}): Promise
   const limit = Math.min(Math.max(1, Number(params.limit || 50)), 500);
   const offset = (page - 1) * limit;
 
-  const where: string[] = ["CompanyId = @companyId", "ISNULL(IsDeleted,0) = 0"];
-  const sqlParams: Record<string, unknown> = { companyId };
+  const statusNormalized = params.status
+    ? String(params.status).trim().toUpperCase()
+    : null;
 
-  if (params.search) {
-    where.push("(EmployeeCode LIKE @search OR EmployeeName LIKE @search OR FiscalId LIKE @search)");
-    sqlParams.search = `%${params.search}%`;
-  }
+  const rows = await callSp<any>('usp_HR_Employee_List', {
+    CompanyId: companyId,
+    Search: params.search || null,
+    Status: statusNormalized === 'ACTIVO' || statusNormalized === 'INACTIVO' ? statusNormalized : null,
+    Offset: offset,
+    Limit: limit
+  });
 
-  if (params.status) {
-    const normalized = String(params.status).trim().toUpperCase();
-    if (normalized === "ACTIVO") where.push("IsActive = 1");
-    if (normalized === "INACTIVO") where.push("IsActive = 0");
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-
-  const rows = await query<any>(
-    `SELECT EmployeeCode, EmployeeName, FiscalId, HireDate, TerminationDate, IsActive
-       FROM [master].Employee
-       ${clause}
-      ORDER BY EmployeeCode
-      OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`,
-    sqlParams
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `SELECT COUNT(1) AS total
-       FROM [master].Employee
-      ${clause}`,
-    sqlParams
-  );
+  const totalRows = await callSp<{ total: number }>('usp_HR_Employee_Count', {
+    CompanyId: companyId,
+    Search: params.search || null,
+    Status: statusNormalized === 'ACTIVO' || statusNormalized === 'INACTIVO' ? statusNormalized : null
+  });
 
   return {
     rows: rows.map(mapEmployeeRow),
@@ -117,14 +98,10 @@ export async function listEmpleadosSP(params: ListEmpleadosParams = {}): Promise
 export async function getEmpleadoByCedulaSP(cedula: string): Promise<EmpleadoRow | null> {
   const companyId = await getDefaultCompanyId();
 
-  const rows = await query<any>(
-    `SELECT TOP 1 EmployeeCode, EmployeeName, FiscalId, HireDate, TerminationDate, IsActive
-       FROM [master].Employee
-      WHERE CompanyId = @companyId
-        AND EmployeeCode = @cedula
-        AND ISNULL(IsDeleted,0) = 0`,
-    { companyId, cedula }
-  );
+  const rows = await callSp<any>('usp_HR_Employee_GetByCode', {
+    CompanyId: companyId,
+    Cedula: cedula
+  });
 
   return rows[0] ? mapEmployeeRow(rows[0]) : null;
 }
@@ -137,14 +114,10 @@ export async function insertEmpleadoSP(row: EmpleadoRow): Promise<SpResult> {
   if (!code) return { success: false, message: "CEDULA requerida" };
   if (!name) return { success: false, message: "NOMBRE requerido" };
 
-  const exists = await query<{ EmployeeId: number }>(
-    `SELECT TOP 1 EmployeeId
-       FROM [master].Employee
-      WHERE CompanyId = @companyId
-        AND EmployeeCode = @code
-        AND ISNULL(IsDeleted,0) = 0`,
-    { companyId, code }
-  );
+  const exists = await callSp<{ EmployeeId: number }>('usp_HR_Employee_ExistsByCode', {
+    CompanyId: companyId,
+    Code: code
+  });
 
   if (exists[0]?.EmployeeId) {
     return { success: false, message: "El empleado ya existe" };
@@ -152,21 +125,15 @@ export async function insertEmpleadoSP(row: EmpleadoRow): Promise<SpResult> {
 
   const isActive = String(row.STATUS ?? "ACTIVO").trim().toUpperCase() !== "INACTIVO";
 
-  await execute(
-    `INSERT INTO [master].Employee
-      (CompanyId, EmployeeCode, EmployeeName, FiscalId, HireDate, TerminationDate, IsActive, CreatedAt, UpdatedAt, IsDeleted)
-     VALUES
-      (@companyId, @code, @name, @fiscalId, @hireDate, @terminationDate, @isActive, SYSUTCDATETIME(), SYSUTCDATETIME(), 0)`,
-    {
-      companyId,
-      code,
-      name,
-      fiscalId: row.CEDULA ?? null,
-      hireDate: row.INGRESO ?? new Date(),
-      terminationDate: row.RETIRO ?? null,
-      isActive: isActive ? 1 : 0,
-    }
-  );
+  await callSp('usp_HR_Employee_Insert', {
+    CompanyId: companyId,
+    Code: code,
+    Name: name,
+    FiscalId: row.CEDULA ?? null,
+    HireDate: row.INGRESO ?? null,
+    TerminationDate: row.RETIRO ?? null,
+    IsActive: isActive ? 1 : 0
+  });
 
   return { success: true, message: "Empleado creado" };
 }
@@ -174,14 +141,10 @@ export async function insertEmpleadoSP(row: EmpleadoRow): Promise<SpResult> {
 export async function updateEmpleadoSP(cedula: string, row: Partial<EmpleadoRow>): Promise<SpResult> {
   const companyId = await getDefaultCompanyId();
 
-  const exists = await query<{ EmployeeId: number }>(
-    `SELECT TOP 1 EmployeeId
-       FROM [master].Employee
-      WHERE CompanyId = @companyId
-        AND EmployeeCode = @cedula
-        AND ISNULL(IsDeleted,0) = 0`,
-    { companyId, cedula }
-  );
+  const exists = await callSp<{ EmployeeId: number }>('usp_HR_Employee_ExistsByCode', {
+    CompanyId: companyId,
+    Code: cedula
+  });
 
   if (!exists[0]?.EmployeeId) {
     return { success: false, message: "Empleado no encontrado" };
@@ -192,27 +155,15 @@ export async function updateEmpleadoSP(cedula: string, row: Partial<EmpleadoRow>
     ? (String(row.STATUS ?? "").trim().toUpperCase() !== "INACTIVO" ? 1 : 0)
     : null;
 
-  await execute(
-    `UPDATE [master].Employee
-        SET EmployeeName = COALESCE(@name, EmployeeName),
-            FiscalId = COALESCE(@fiscalId, FiscalId),
-            HireDate = COALESCE(@hireDate, HireDate),
-            TerminationDate = COALESCE(@terminationDate, TerminationDate),
-            IsActive = COALESCE(@isActive, IsActive),
-            UpdatedAt = SYSUTCDATETIME()
-      WHERE CompanyId = @companyId
-        AND EmployeeCode = @cedula
-        AND ISNULL(IsDeleted,0) = 0`,
-    {
-      companyId,
-      cedula,
-      name: row.NOMBRE ?? null,
-      fiscalId: row.CEDULA ?? null,
-      hireDate: row.INGRESO ?? null,
-      terminationDate: row.RETIRO ?? null,
-      isActive,
-    }
-  );
+  await callSp('usp_HR_Employee_Update', {
+    CompanyId: companyId,
+    Cedula: cedula,
+    Name: row.NOMBRE ?? null,
+    FiscalId: row.CEDULA ?? null,
+    HireDate: row.INGRESO ?? null,
+    TerminationDate: row.RETIRO ?? null,
+    IsActive: isActive
+  });
 
   return { success: true, message: "Empleado actualizado" };
 }
@@ -220,17 +171,10 @@ export async function updateEmpleadoSP(cedula: string, row: Partial<EmpleadoRow>
 export async function deleteEmpleadoSP(cedula: string): Promise<SpResult> {
   const companyId = await getDefaultCompanyId();
 
-  await execute(
-    `UPDATE [master].Employee
-        SET IsDeleted = 1,
-            IsActive = 0,
-            DeletedAt = SYSUTCDATETIME(),
-            UpdatedAt = SYSUTCDATETIME()
-      WHERE CompanyId = @companyId
-        AND EmployeeCode = @cedula
-        AND ISNULL(IsDeleted,0) = 0`,
-    { companyId, cedula }
-  );
+  await callSp('usp_HR_Employee_Delete', {
+    CompanyId: companyId,
+    Cedula: cedula
+  });
 
   return { success: true, message: "Empleado eliminado" };
 }

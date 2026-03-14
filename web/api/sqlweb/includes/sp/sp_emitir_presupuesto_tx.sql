@@ -1,12 +1,12 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
--- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode).
--- Referencias a dbo.Clientes actualizadas a master.Customer (TotalBalance, CustomerCode).
--- Tablas legacy sin migrar (P_Cobrar, P_CobrarC, Presupuestos, Detalle_Presupuestos, etc.)
--- mantienen sus nombres originales — ver TODOs en el codigo.
 -- =============================================
--- Stored Procedure: Emitir Presupuesto (transaccional)
--- Misma logica que facturas: clientes, CxC, formas de pago, inventario, MovInvent
--- Tablas: Presupuestos, Detalle_Presupuestos. Compatible SQL Server 2012+
+-- Stored Procedure: Emitir Presupuesto (100% canónico)
+-- Tablas: ar.SalesDocument, ar.SalesDocumentLine, ar.SalesDocumentPayment
+-- CxC: ar.ReceivableDocument
+-- Inventario: master.Product, master.InventoryMovement, master.AlternateStock
+-- Depósitos: acct.BankDeposit
+-- Clientes: master.Customer
+-- OperationType: PRESUP
+-- Compatible con: SQL Server 2012+
 -- =============================================
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_emitir_presupuesto_tx')
@@ -19,8 +19,6 @@ CREATE PROCEDURE [dbo].[sp_emitir_presupuesto_tx]
     @FormasPagoXml NVARCHAR(MAX) = NULL,
     @ActualizarInventario BIT = 1,
     @GenerarCxC BIT = 1,
-    @CxcTable NVARCHAR(20) = N'P_Cobrar',
-    @FormaPagoTable NVARCHAR(128) = N'Detalle_FormaPagoCotizacion',
     @ActualizarSaldosCliente BIT = 1
 AS
 BEGIN
@@ -36,6 +34,7 @@ BEGIN
     IF @FormasPagoXml IS NOT NULL AND LTRIM(RTRIM(@FormasPagoXml)) <> ''
         SET @px = CAST(@FormasPagoXml AS XML);
 
+    -- Parsear cabecera (soporta nodos <presupuesto> y <factura> por compat)
     DECLARE @NumFact NVARCHAR(60), @Codigo NVARCHAR(60), @Pago NVARCHAR(30), @CodUsuario NVARCHAR(60);
     DECLARE @SerialTipo NVARCHAR(60), @TipoOrden NVARCHAR(80), @Observ NVARCHAR(4000);
     DECLARE @FechaStr NVARCHAR(50), @FechaReporteStr NVARCHAR(50), @Fecha DATETIME, @FechaReporte DATETIME, @Total DECIMAL(18,4);
@@ -48,12 +47,11 @@ BEGIN
     IF @Pago = '' SET @Pago = UPPER(ISNULL(NULLIF(@fx.value('(/factura/@PAGO)[1]', 'nvarchar(30)'), ''), ''));
     SET @CodUsuario = ISNULL(NULLIF(@fx.value('(/presupuesto/@COD_USUARIO)[1]', 'nvarchar(60)'), ''), 'API');
     IF @CodUsuario = 'API' SET @CodUsuario = ISNULL(NULLIF(@fx.value('(/factura/@COD_USUARIO)[1]', 'nvarchar(60)'), ''), 'API');
-    -- SERIALTIPO = serial maquina fiscal; Tipo_Orden = numero de memoria fisica (1, 2, ... si se reemplaza la memoria)
     SET @SerialTipo = ISNULL(NULLIF(@fx.value('(/presupuesto/@SERIALTIPO)[1]', 'nvarchar(60)'), ''), '');
     IF @SerialTipo = '' SET @SerialTipo = ISNULL(NULLIF(@fx.value('(/factura/@SERIALTIPO)[1]', 'nvarchar(60)'), ''), '');
     SET @TipoOrden = ISNULL(NULLIF(@fx.value('(/presupuesto/@Tipo_orden)[1]', 'nvarchar(80)'), ''), '');
     IF @TipoOrden = '' SET @TipoOrden = ISNULL(NULLIF(@fx.value('(/presupuesto/@TIPO_ORDEN)[1]', 'nvarchar(80)'), ''), '');
-    IF @TipoOrden = '' SET @TipoOrden = ISNULL(NULLIF(@fx.value('(/factura/@TIPO_ORDEN)[1]', 'nvarchar(80)'), ''), '');
+    IF @TipoOrden = '' SET @TipoOrden = ISNULL(NULLIF(@fx.value('(/factura/@TIPO_ORDEN)[1]', 'nvarchar(80)'), ''), '1');
     SET @Observ = NULLIF(@fx.value('(/presupuesto/@OBSERV)[1]', 'nvarchar(4000)'), '');
     IF @Observ IS NULL SET @Observ = NULLIF(@fx.value('(/factura/@OBSERV)[1]', 'nvarchar(4000)'), '');
     SET @FechaStr = NULLIF(@fx.value('(/presupuesto/@FECHA)[1]', 'nvarchar(50)'), '');
@@ -67,27 +65,40 @@ BEGIN
         ELSE CAST(@fx.value('(/presupuesto/@TOTAL)[1]', 'nvarchar(50)') AS DECIMAL(18,4)) END;
 
     IF @NumFact IS NULL OR LTRIM(RTRIM(@NumFact)) = ''
-    BEGIN
-        RAISERROR('missing_num_fact', 16, 1);
-        RETURN;
-    END
+    BEGIN RAISERROR('missing_num_fact', 16, 1); RETURN; END
 
-    IF @CxcTable NOT IN (N'P_Cobrar', N'P_CobrarC') SET @CxcTable = N'P_Cobrar';
-    IF @FormaPagoTable NOT IN (N'Detalle_FormaPagoFacturas', N'Detalle_FormaPagoCotizacion') SET @FormaPagoTable = N'Detalle_FormaPagoCotizacion';
+    -- Resolver IDs canónicos
+    DECLARE @DefaultCompanyId INT = 1, @DefaultBranchId INT = 1, @CustomerId BIGINT;
+    SELECT TOP 1 @DefaultCompanyId = CompanyId FROM cfg.Company WHERE CompanyCode = N'DEFAULT';
+    SELECT TOP 1 @DefaultBranchId = BranchId FROM cfg.Branch WHERE CompanyId = @DefaultCompanyId AND BranchCode = N'MAIN';
+    IF @Codigo IS NOT NULL
+        SELECT TOP 1 @CustomerId = CustomerId FROM master.Customer WHERE CustomerCode = @Codigo AND ISNULL(IsDeleted, 0) = 0;
 
     BEGIN TRY
         IF @@TRANCOUNT = 0 BEGIN BEGIN TRAN; SET @StartedTran = 1; END
         ELSE SAVE TRANSACTION @SaveName;
 
-        -- TODO: tabla dbo.Presupuestos es legacy; migrar a tabla canonica en el API
-        INSERT INTO dbo.Presupuestos (NUM_FACT, CODIGO, FECHA, FECHA_REPORTE, PAGO, TOTAL, COD_USUARIO, SERIALTIPO, Tipo_orden, OBSERV)
-        VALUES (@NumFact, @Codigo, @Fecha, @FechaReporte, @Pago, @Total, @CodUsuario, @SerialTipo, @TipoOrden, @Observ);
+        -- 1. Cabecera → ar.SalesDocument (OperationType='PRESUP')
+        INSERT INTO ar.SalesDocument (
+            DocumentNumber, SerialType, OperationType,
+            CustomerCode, DocumentDate, ReportDate, PaymentTerms,
+            TotalAmount, UserCode, Notes
+        )
+        VALUES (
+            @NumFact, @SerialTipo, 'PRESUP',
+            @Codigo, @Fecha, @FechaReporte, @Pago,
+            @Total, @CodUsuario, @Observ
+        );
 
-        -- TODO: tabla dbo.Detalle_Presupuestos es legacy; migrar a tabla canonica en el API
-        INSERT INTO dbo.Detalle_Presupuestos (NUM_FACT, SERIALTIPO, COD_SERV, CANTIDAD, PRECIO, ALICUOTA, TOTAL, PRECIO_DESCUENTO, Relacionada, Cod_Alterno)
+        -- 2. Detalle → ar.SalesDocumentLine
+        INSERT INTO ar.SalesDocumentLine (
+            DocumentNumber, OperationType,
+            ProductCode, Quantity, UnitPrice, TaxRate, TotalAmount,
+            DiscountedPrice, RelatedRef, AlternateCode
+        )
         SELECT
             CASE WHEN NULLIF(T.X.value('@NUM_FACT', 'nvarchar(60)'), '') IS NULL THEN @NumFact ELSE T.X.value('@NUM_FACT', 'nvarchar(60)') END,
-            CASE WHEN NULLIF(T.X.value('@SERIALTIPO', 'nvarchar(60)'), '') IS NULL THEN @SerialTipo ELSE T.X.value('@SERIALTIPO', 'nvarchar(60)') END,
+            'PRESUP',
             NULLIF(T.X.value('@COD_SERV', 'nvarchar(60)'), ''),
             CASE WHEN NULLIF(T.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END,
             CASE WHEN NULLIF(T.X.value('@PRECIO', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@PRECIO', 'nvarchar(50)') AS DECIMAL(18,4)) END,
@@ -96,32 +107,38 @@ BEGIN
                  THEN (CASE WHEN NULLIF(T.X.value('@PRECIO', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@PRECIO', 'nvarchar(50)') AS DECIMAL(18,4)) END) * (CASE WHEN NULLIF(T.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END)
                  ELSE CAST(T.X.value('@TOTAL', 'nvarchar(50)') AS DECIMAL(18,4)) END,
             CASE WHEN NULLIF(T.X.value('@PRECIO_DESCUENTO', 'nvarchar(50)'), '') IS NULL THEN CASE WHEN NULLIF(T.X.value('@PRECIO', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@PRECIO', 'nvarchar(50)') AS DECIMAL(18,4)) END ELSE CAST(T.X.value('@PRECIO_DESCUENTO', 'nvarchar(50)') AS DECIMAL(18,4)) END,
-            CASE WHEN NULLIF(T.X.value('@RELACIONADA', 'nvarchar(10)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@RELACIONADA', 'nvarchar(10)') AS INT) END,
+            CASE WHEN NULLIF(T.X.value('@RELACIONADA', 'nvarchar(10)'), '') IS NULL THEN '0' ELSE T.X.value('@RELACIONADA', 'nvarchar(10)') END,
             NULLIF(T.X.value('@COD_ALTERNO', 'nvarchar(60)'), '')
         FROM @dx.nodes('/detalles/row') T(X);
 
+        -- 3. Formas de pago
         DECLARE @Memoria NVARCHAR(80) = @TipoOrden;
-        DECLARE @MontoEfectivo DECIMAL(18,4) = 0, @MontoCheque DECIMAL(18,4) = 0, @MontoTarjeta DECIMAL(18,4) = 0, @SaldoPendiente DECIMAL(18,4) = 0;
-        DECLARE @NumTarjeta NVARCHAR(60) = N'0', @Cta NVARCHAR(80) = N' ', @BancoCheque NVARCHAR(120) = N' ', @BancoTarjeta NVARCHAR(120) = N' ';
+        DECLARE @MontoEfectivo DECIMAL(18,4) = 0, @MontoCheque DECIMAL(18,4) = 0;
+        DECLARE @MontoTarjeta DECIMAL(18,4) = 0, @SaldoPendiente DECIMAL(18,4) = 0;
+        DECLARE @NumTarjeta NVARCHAR(60) = N'0', @Cta NVARCHAR(80) = N' ';
+        DECLARE @BancoCheque NVARCHAR(120) = N' ', @BancoTarjeta NVARCHAR(120) = N' ';
 
         IF @px IS NOT NULL
         BEGIN
-            DECLARE @sqlForma NVARCHAR(MAX) = N'
-                DELETE FROM dbo.' + QUOTENAME(@FormaPagoTable) + N' WHERE NUM_FACT = @pNumFact AND MEMORIA = @pMemoria AND SERIALFISCAL = @pSerial;
-                INSERT INTO dbo.' + QUOTENAME(@FormaPagoTable) + N' (tasacambio, TIPO, NUM_FACT, MONTO, BANCO, CUENTA, FECHA_RETENCION, NUMERO, MEMORIA, SERIALFISCAL)
-                SELECT
-                    CASE WHEN NULLIF(N.X.value(''@tasacambio'', ''nvarchar(50)''), '''') IS NULL THEN 1 ELSE CAST(N.X.value(''@tasacambio'', ''nvarchar(50)'') AS DECIMAL(18,6)) END,
-                    NULLIF(N.X.value(''@tipo'', ''nvarchar(60)''), ''''),
-                    @pNumFact,
-                    CASE WHEN NULLIF(N.X.value(''@monto'', ''nvarchar(50)''), '''') IS NULL THEN 0 ELSE CAST(N.X.value(''@monto'', ''nvarchar(50)'') AS DECIMAL(18,4)) END,
-                    CASE WHEN NULLIF(N.X.value(''@banco'', ''nvarchar(120)''), '''') IS NULL THEN '' '' ELSE N.X.value(''@banco'', ''nvarchar(120)'') END,
-                    CASE WHEN NULLIF(N.X.value(''@cuenta'', ''nvarchar(120)''), '''') IS NULL THEN '' '' ELSE N.X.value(''@cuenta'', ''nvarchar(120)'') END,
-                    @pFecha,
-                    CASE WHEN NULLIF(N.X.value(''@numero'', ''nvarchar(80)''), '''') IS NULL THEN ''0'' ELSE N.X.value(''@numero'', ''nvarchar(80)'') END,
-                    @pMemoria, @pSerial
-                FROM @pXml.nodes(''/formasPago/row'') N(X);';
-            EXEC sp_executesql @sqlForma, N'@pNumFact nvarchar(60), @pMemoria nvarchar(80), @pSerial nvarchar(60), @pFecha datetime, @pXml xml',
-                @pNumFact = @NumFact, @pMemoria = @Memoria, @pSerial = @SerialTipo, @pFecha = @Fecha, @pXml = @px;
+            DELETE FROM doc.SalesDocumentPayment
+             WHERE DocumentNumber = @NumFact AND FiscalMemoryNumber = @Memoria
+               AND SerialType = @SerialTipo AND OperationType = 'PRESUP';
+
+            INSERT INTO doc.SalesDocumentPayment (
+                ExchangeRate, PaymentMethod, DocumentNumber, Amount,
+                BankCode, ReferenceNumber, PaymentDate, PaymentNumber,
+                FiscalMemoryNumber, SerialType, OperationType
+            )
+            SELECT
+                CASE WHEN NULLIF(N.X.value('@tasacambio', 'nvarchar(50)'), '') IS NULL THEN 1 ELSE CAST(N.X.value('@tasacambio', 'nvarchar(50)') AS DECIMAL(18,6)) END,
+                NULLIF(N.X.value('@tipo', 'nvarchar(60)'), ''), @NumFact,
+                CASE WHEN NULLIF(N.X.value('@monto', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@monto', 'nvarchar(50)') AS DECIMAL(18,4)) END,
+                CASE WHEN NULLIF(N.X.value('@banco', 'nvarchar(120)'), '') IS NULL THEN ' ' ELSE N.X.value('@banco', 'nvarchar(120)') END,
+                CASE WHEN NULLIF(N.X.value('@cuenta', 'nvarchar(120)'), '') IS NULL THEN ' ' ELSE N.X.value('@cuenta', 'nvarchar(120)') END,
+                @Fecha,
+                CASE WHEN NULLIF(N.X.value('@numero', 'nvarchar(80)'), '') IS NULL THEN '0' ELSE N.X.value('@numero', 'nvarchar(80)') END,
+                @Memoria, @SerialTipo, 'PRESUP'
+            FROM @px.nodes('/formasPago/row') N(X);
 
             ;WITH FP AS (
                 SELECT UPPER(CASE WHEN NULLIF(N.X.value('@tipo', 'nvarchar(60)'), '') IS NULL THEN '' ELSE N.X.value('@tipo', 'nvarchar(60)') END) AS Tipo,
@@ -140,8 +157,9 @@ BEGIN
                 @NumTarjeta = ISNULL(MAX(CASE WHEN Tipo LIKE 'TARJETA%' OR Tipo LIKE 'TICKET%' THEN Numero END), @NumTarjeta)
             FROM FP;
 
-            INSERT INTO dbo.DETALLE_DEPOSITO (TOTAL, CHEQUE, CTA_BANCO, CLIENTE, RELACIONADA, BANCO)
-            SELECT FP.Monto, FP.Numero, FP.Cuenta, @Codigo, 0, FP.Banco
+            -- Depósitos cheque → acct.BankDeposit
+            INSERT INTO acct.BankDeposit (Amount, CheckNumber, BankAccount, CustomerCode, IsRelated, BankName, DocumentRef, OperationType)
+            SELECT FP.Monto, FP.Numero, FP.Cuenta, @Codigo, 0, FP.Banco, @NumFact, 'PRESUP'
             FROM (SELECT UPPER(CASE WHEN NULLIF(N.X.value('@tipo', 'nvarchar(60)'), '') IS NULL THEN '' ELSE N.X.value('@tipo', 'nvarchar(60)') END) AS Tipo,
                 CASE WHEN NULLIF(N.X.value('@monto', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@monto', 'nvarchar(50)') AS DECIMAL(18,4)) END AS Monto,
                 CASE WHEN NULLIF(N.X.value('@banco', 'nvarchar(120)'), '') IS NULL THEN ' ' ELSE N.X.value('@banco', 'nvarchar(120)') END AS Banco,
@@ -154,41 +172,39 @@ BEGIN
         DECLARE @Abono DECIMAL(18,4) = @Total - @SaldoPendiente;
         DECLARE @Cancelada CHAR(1) = CASE WHEN @SaldoPendiente > 0 THEN 'N' ELSE 'S' END;
 
-        UPDATE dbo.Presupuestos
-        SET Monto_Efect = @MontoEfectivo, Monto_Cheque = @MontoCheque, Monto_Tarjeta = @MontoTarjeta,
-            Abono = @Abono, Saldo = @SaldoPendiente, Tarjeta = @NumTarjeta, Cta = @Cta,
-            BANCO_CHEQUE = @BancoCheque, Banco_Tarjeta = @BancoTarjeta,
-            CANCELADA = @Cancelada, FECHA_REPORTE = @FechaReporte
-        WHERE NUM_FACT = @NumFact;
+        UPDATE doc.SalesDocument
+           SET IsPaid = @Cancelada, ReportDate = @FechaReporte, UpdatedAt = SYSUTCDATETIME()
+         WHERE DocumentNumber = @NumFact AND OperationType = 'PRESUP';
 
-        -- TODO: tablas P_Cobrar / P_CobrarC son legacy; migrar a tabla canonica en el API
-        IF @GenerarCxC = 1 AND (@Pago = 'CREDITO' OR @SaldoPendiente > 0)
+        -- 4. CxC → ar.ReceivableDocument
+        IF @GenerarCxC = 1 AND @CustomerId IS NOT NULL AND (@Pago = 'CREDITO' OR @SaldoPendiente > 0)
         BEGIN
-            DECLARE @SaldoPrevio DECIMAL(18,4) = 0;
-            DECLARE @sqlCxc NVARCHAR(MAX) = N'
-                DELETE FROM dbo.' + QUOTENAME(@CxcTable) + N' WHERE CODIGO = @codigo AND DOCUMENTO = @numFact AND TIPO = ''PRESUP'';
-                SELECT TOP 1 @saldoPrevioOut = ISNULL(SALDO, 0) FROM dbo.' + QUOTENAME(@CxcTable) + N' WHERE CODIGO = @codigo ORDER BY FECHA DESC;
-                INSERT INTO dbo.' + QUOTENAME(@CxcTable) + N' (CODIGO, COD_USUARIO, FECHA, DOCUMENTO, DEBE, PEND, SALDO, TIPO, SERIALTIPO, Tipo_Orden)
-                VALUES (@codigo, @codUsuario, @fecha, @numFact, @debe, @pend, ISNULL(@saldoPrevioOut,0) + @pend, ''PRESUP'', @serialTipo, @tipoOrden);';
-            EXEC sp_executesql @sqlCxc, N'@codigo nvarchar(60), @numFact nvarchar(60), @codUsuario nvarchar(60), @fecha datetime, @debe decimal(18,4), @pend decimal(18,4), @saldoPrevioOut decimal(18,4) OUTPUT, @serialTipo nvarchar(60), @tipoOrden nvarchar(80)',
-                @codigo = @Codigo, @numFact = @NumFact, @codUsuario = @CodUsuario, @fecha = @Fecha, @debe = @SaldoPendiente, @pend = @SaldoPendiente, @saldoPrevioOut = @SaldoPrevio OUTPUT, @serialTipo = @SerialTipo, @tipoOrden = @TipoOrden;
+            DELETE FROM ar.ReceivableDocument
+             WHERE CompanyId = @DefaultCompanyId AND BranchId = @DefaultBranchId
+               AND DocumentType = 'PRESUP' AND DocumentNumber = @NumFact;
+
+            INSERT INTO ar.ReceivableDocument (
+                CompanyId, BranchId, CustomerId, DocumentType, DocumentNumber,
+                IssueDate, CurrencyCode, TotalAmount, PendingAmount, PaidFlag, Status
+            )
+            VALUES (
+                @DefaultCompanyId, @DefaultBranchId, @CustomerId, 'PRESUP', @NumFact,
+                CAST(@Fecha AS DATE), 'VES', @SaldoPendiente, @SaldoPendiente, 0, 'PENDING'
+            );
         END
 
+        -- 5. Inventario → master.Product + master.InventoryMovement
         IF @ActualizarInventario = 1
         BEGIN
-            -- Insertar en MovInvent usando master.Product (antes dbo.Inventario)
-            INSERT INTO dbo.MovInvent (CODIGO, PRODUCT, DOCUMENTO, FECHA, MOTIVO, TIPO, CANTIDAD_ACTUAL, CANTIDAD, CANTIDAD_NUEVA, CO_USUARIO, PRECIO_COMPRA, ALICUOTA, PRECIO_VENTA)
-            SELECT D.COD_SERV, D.COD_SERV, @NumFact, @Fecha, 'Presup:' + @NumFact, 'Egreso',
-                ISNULL(I.StockQty, 0), D.CANTIDAD, ISNULL(I.StockQty, 0) - D.CANTIDAD, @CodUsuario, ISNULL(I.COSTO_REFERENCIA, 0), D.ALICUOTA, D.PRECIO
+            INSERT INTO master.InventoryMovement (CompanyId, ProductCode, DocumentRef, MovementType, MovementDate, Quantity, UnitCost, TotalCost, Notes)
+            SELECT @DefaultCompanyId, D.COD_SERV, @NumFact, 'SALIDA', CAST(@Fecha AS DATE),
+                D.CANTIDAD, ISNULL(I.COSTO_REFERENCIA, 0), D.CANTIDAD * ISNULL(I.COSTO_REFERENCIA, 0),
+                'Presup:' + @NumFact
             FROM (SELECT NULLIF(X.value('@COD_SERV', 'nvarchar(60)'), '') AS COD_SERV,
-                CASE WHEN NULLIF(X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD,
-                CASE WHEN NULLIF(X.value('@PRECIO', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@PRECIO', 'nvarchar(50)') AS DECIMAL(18,4)) END AS PRECIO,
-                CASE WHEN NULLIF(X.value('@ALICUOTA', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@ALICUOTA', 'nvarchar(50)') AS DECIMAL(18,4)) END AS ALICUOTA
+                CASE WHEN NULLIF(X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD
                 FROM @dx.nodes('/detalles/row') N(X)) D
-            -- Ahora se usa master.Product (antes dbo.Inventario)
             INNER JOIN master.Product I ON I.ProductCode = D.COD_SERV WHERE D.COD_SERV IS NOT NULL AND D.CANTIDAD > 0;
 
-            -- Descontar StockQty en master.Product (columna canonica, antes dbo.Inventario.EXISTENCIA)
             ;WITH RawD AS (SELECT NULLIF(N.X.value('@COD_SERV', 'nvarchar(60)'), '') AS COD_SERV,
                 CASE WHEN NULLIF(N.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD FROM @dx.nodes('/detalles/row') N(X)),
             X AS (SELECT COD_SERV, SUM(CANTIDAD) AS TOTAL FROM RawD GROUP BY COD_SERV)
@@ -198,22 +214,18 @@ BEGIN
                 CASE WHEN NULLIF(N.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD,
                 CASE WHEN NULLIF(N.X.value('@RELACIONADA', 'nvarchar(10)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@RELACIONADA', 'nvarchar(10)') AS INT) END AS RELACIONADA FROM @dx.nodes('/detalles/row') N(X)),
             X AS (SELECT COD_ALTERNO, SUM(CANTIDAD) AS TOTAL FROM RawA WHERE RELACIONADA = 1 GROUP BY COD_ALTERNO)
-            UPDATE IA SET IA.CANTIDAD = ISNULL(IA.CANTIDAD, 0) - X.TOTAL FROM dbo.Inventario_Aux IA INNER JOIN X ON X.COD_ALTERNO = IA.CODIGO;
+            UPDATE A SET A.StockQty = ISNULL(A.StockQty, 0) - X.TOTAL FROM master.AlternateStock A INNER JOIN X ON X.COD_ALTERNO = A.ProductCode;
         END
 
-        -- Actualizar saldos del cliente en master.Customer (tabla canonica)
-        -- Antes usaba dbo.Clientes con SALDO_TOT; ahora usa master.Customer con TotalBalance
-        IF @ActualizarSaldosCliente = 1 AND @Codigo IS NOT NULL AND LTRIM(RTRIM(@Codigo)) <> ''
+        -- 6. Saldos → master.Customer.TotalBalance
+        IF @ActualizarSaldosCliente = 1 AND @CustomerId IS NOT NULL
         BEGIN
-            DECLARE @sqlSaldo NVARCHAR(MAX);
-            -- TODO: tablas P_CobrarC / P_Cobrar son legacy
-            IF @CxcTable = N'P_CobrarC'
-                SET @sqlSaldo = N';WITH A AS (SELECT ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' THEN PEND ELSE 0 END), 0) AS SALDO_TOT FROM dbo.P_CobrarC WHERE CODIGO = @codigo)
-                    UPDATE C SET C.TotalBalance = A.SALDO_TOT FROM master.Customer C CROSS JOIN A WHERE C.CustomerCode = @codigo AND ISNULL(C.IsDeleted, 0) = 0;';
-            ELSE
-                SET @sqlSaldo = N';WITH A AS (SELECT ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' THEN PEND ELSE 0 END), 0) AS SALDO_TOT FROM dbo.P_Cobrar WHERE CODIGO = @codigo)
-                    UPDATE C SET C.TotalBalance = A.SALDO_TOT FROM master.Customer C CROSS JOIN A WHERE C.CustomerCode = @codigo AND ISNULL(C.IsDeleted, 0) = 0;';
-            EXEC sp_executesql @sqlSaldo, N'@codigo nvarchar(60)', @codigo = @Codigo;
+            UPDATE master.Customer
+               SET TotalBalance = ISNULL((
+                   SELECT SUM(PendingAmount) FROM ar.ReceivableDocument
+                   WHERE CustomerId = @CustomerId AND Status <> 'VOIDED' AND PaidFlag = 0
+               ), 0)
+             WHERE CustomerId = @CustomerId AND ISNULL(IsDeleted, 0) = 0;
         END
 
         IF @StartedTran = 1 AND XACT_STATE() = 1 COMMIT TRAN;

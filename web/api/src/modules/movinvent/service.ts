@@ -1,40 +1,34 @@
-import { query } from "../../db/query.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import { createRow, deleteRow, encodeKeyObject, updateRow } from "../crud/crud.service.js";
-
-const MOVEMENT_TABLE = "master.InventoryMovement";
-const SUMMARY_TABLE  = "master.InventoryPeriodSummary";
 
 export async function listMovInvent(params: { search?: string; tipo?: string; page?: string; limit?: string }) {
   const page = Math.max(Number(params.page || 1), 1);
   const limit = Math.min(Math.max(Number(params.limit || 50), 1), 500);
   const offset = (page - 1) * limit;
-  const where: string[] = ["IsDeleted = 0"];
-  const sqlParams: Record<string, unknown> = {};
-  if (params.search) {
-    where.push("(ProductCode LIKE @search OR ProductName LIKE @search OR DocumentRef LIKE @search)");
-    sqlParams.search = `%${params.search}%`;
-  }
-  if (params.tipo) { where.push("MovementType = @tipo"); sqlParams.tipo = params.tipo; }
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<any>(
-    `SELECT MovementId, ProductCode AS Codigo, ProductName AS Product, DocumentRef AS Documento,
-            MovementType AS Tipo, MovementDate AS Fecha, Quantity, UnitCost, TotalCost, Notes
-     FROM ${MOVEMENT_TABLE} ${clause}
-     ORDER BY MovementDate DESC, MovementId DESC
-     OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`,
-    sqlParams
+
+  const search = params.search ? `%${params.search}%` : null;
+  const tipo = params.tipo || null;
+
+  const { rows, output } = await callSpOut<any>(
+    "usp_Inv_Movement_List",
+    {
+      Search: search,
+      Tipo: tipo,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
-  const total = await query<{ total: number }>(`SELECT COUNT(1) AS total FROM ${MOVEMENT_TABLE} ${clause}`, sqlParams);
-  return { page, limit, total: Number(total[0]?.total ?? 0), rows };
+
+  return { page, limit, total: Number(output.TotalCount ?? 0), rows };
 }
 
 export async function getMovInvent(id: string) {
-  const rows = await query<any>(
-    `SELECT MovementId, ProductCode AS Codigo, ProductName AS Product, DocumentRef AS Documento,
-            MovementType AS Tipo, MovementDate AS Fecha, Quantity, UnitCost, TotalCost, Notes
-     FROM ${MOVEMENT_TABLE} WHERE MovementId = @id AND IsDeleted = 0`,
-    { id: Number(id) }
+  const rows = await callSp<any>(
+    "usp_Inv_Movement_GetById",
+    { Id: Number(id) }
   );
+
   return rows[0] ?? null;
 }
 
@@ -54,19 +48,20 @@ export async function listMovInventMes(params: { periodo?: string; codigo?: stri
   const page = Math.max(Number(params.page || 1), 1);
   const limit = Math.min(Math.max(Number(params.limit || 50), 1), 500);
   const offset = (page - 1) * limit;
-  const where: string[] = [];
-  const sqlParams: Record<string, unknown> = {};
-  if (params.periodo) { where.push("Period = @periodo"); sqlParams.periodo = params.periodo; }
-  if (params.codigo)  { where.push("ProductCode = @codigo"); sqlParams.codigo = params.codigo; }
-  const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
-  const rows = await query<any>(
-    `SELECT SummaryId, Period AS Periodo, ProductCode AS Codigo,
-            OpeningQty, InboundQty, OutboundQty, ClosingQty, SummaryDate AS fecha, IsClosed
-     FROM ${SUMMARY_TABLE} ${clause}
-     ORDER BY Period DESC, ProductCode
-     OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`,
-    sqlParams
+
+  const periodo = params.periodo || null;
+  const codigo = params.codigo || null;
+
+  const { rows, output } = await callSpOut<any>(
+    "usp_Inv_Movement_ListPeriodSummary",
+    {
+      Periodo: periodo,
+      Codigo: codigo,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
-  const total = await query<{ total: number }>(`SELECT COUNT(1) AS total FROM ${SUMMARY_TABLE} ${clause}`, sqlParams);
-  return { page, limit, total: Number(total[0]?.total ?? 0), rows };
+
+  return { page, limit, total: Number(output.TotalCount ?? 0), rows };
 }

@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessRestauranteAccounting } from "../contabilidad/integracion.service.js";
@@ -52,18 +52,8 @@ async function getDefaultScope(): Promise<DefaultScope> {
   }
   if (defaultScopeCache) return defaultScopeCache;
 
-  const rows = await query<{ companyId: number; branchId: number; countryCode: string }>(
-    `
-    SELECT TOP 1
-      c.CompanyId AS companyId,
-      b.BranchId AS branchId,
-      UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode)) AS countryCode
-    FROM cfg.Company c
-    INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
-    WHERE c.CompanyCode = N'DEFAULT'
-      AND b.BranchCode = N'MAIN'
-    ORDER BY c.CompanyId, b.BranchId
-    `
+  const rows = await callSp<{ companyId: number; branchId: number; countryCode: string }>(
+    "usp_POS_ResolveDefaultScope"
   );
 
   const row = rows[0];
@@ -87,15 +77,9 @@ async function resolveUserId(userCode?: string | null) {
   const normalized = String(userCode ?? "").trim();
   if (!normalized) return null;
 
-  const rows = await query<{ userId: number }>(
-    `
-    SELECT TOP 1 UserId AS userId
-    FROM sec.[User]
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-      AND IsDeleted = 0
-      AND IsActive = 1
-    `,
-    { userCode: normalized }
+  const rows = await callSp<{ userId: number }>(
+    "usp_POS_ResolveUserId",
+    { UserCode: normalized }
   );
 
   const userId = Number(rows[0]?.userId ?? 0);
@@ -106,18 +90,9 @@ async function loadCountryTaxRates(countryCode: CountryCode) {
   const cached = taxRateCache.get(countryCode);
   if (cached) return cached;
 
-  const rows = await query<{ taxCode: string; rate: number; isDefault: boolean }>(
-    `
-    SELECT
-      TaxCode AS taxCode,
-      Rate AS rate,
-      IsDefault AS isDefault
-    FROM fiscal.TaxRate
-    WHERE CountryCode = @countryCode
-      AND IsActive = 1
-    ORDER BY IsDefault DESC, SortOrder, TaxCode
-    `,
-    { countryCode }
+  const rows = await callSp<{ taxCode: string; rate: number; isDefault: boolean }>(
+    "usp_POS_LoadCountryTaxRates",
+    { CountryCode: countryCode }
   );
 
   const normalized = rows.map((row) => ({
@@ -166,25 +141,9 @@ async function resolveProduct(companyId: number, identifier: string) {
   const normalized = String(identifier ?? "").trim();
   if (!normalized) return null;
 
-  const rows = await query<any>(
-    `
-    SELECT TOP 1
-      ProductId AS productId,
-      ProductCode AS productCode,
-      ProductName AS productName,
-      DefaultTaxCode AS defaultTaxCode,
-      DefaultTaxRate AS defaultTaxRate
-    FROM [master].Product
-    WHERE CompanyId = @companyId
-      AND IsDeleted = 0
-      AND IsActive = 1
-      AND (
-        ProductCode = @identifier
-        OR CAST(ProductId AS NVARCHAR(50)) = @identifier
-      )
-    ORDER BY ProductId DESC
-    `,
-    { companyId, identifier: normalized }
+  const rows = await callSp<any>(
+    "usp_POS_ResolveProduct",
+    { CompanyId: companyId, Identifier: normalized }
   );
 
   const row = rows[0];
@@ -200,27 +159,12 @@ async function resolveProduct(companyId: number, identifier: string) {
 }
 
 async function getDiningTableById(scope: DefaultScope, mesaId: number) {
-  const rows = await query<any>(
-    `
-    SELECT TOP 1
-      DiningTableId AS id,
-      TableNumber AS tableNumber,
-      TableName AS tableName,
-      Capacity AS capacity,
-      EnvironmentCode AS ambienteId,
-      EnvironmentName AS ambiente,
-      PositionX AS posicionX,
-      PositionY AS posicionY
-    FROM rest.DiningTable
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND DiningTableId = @mesaId
-      AND IsActive = 1
-    `,
+  const rows = await callSp<any>(
+    "usp_Rest_DiningTable_GetById",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      mesaId,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      MesaId: mesaId,
     }
   );
 
@@ -228,22 +172,12 @@ async function getDiningTableById(scope: DefaultScope, mesaId: number) {
 }
 
 async function getOpenOrderByTable(scope: DefaultScope, tableNumber: string) {
-  const rows = await query<any>(
-    `
-    SELECT TOP 1
-      OrderTicketId AS id,
-      Status AS status
-    FROM rest.OrderTicket
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND TableNumber = @tableNumber
-      AND Status IN (N'OPEN', N'SENT')
-    ORDER BY OrderTicketId DESC
-    `,
+  const rows = await callSp<any>(
+    "usp_Rest_OrderTicket_GetOpenByTable",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      tableNumber,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      TableNumber: tableNumber,
     }
   );
 
@@ -251,74 +185,19 @@ async function getOpenOrderByTable(scope: DefaultScope, tableNumber: string) {
 }
 
 async function recalcOrderTotals(orderId: number) {
-  const rows = await query<{ netAmount: number; taxAmount: number; totalAmount: number }>(
-    `
-    SELECT
-      ISNULL(SUM(NetAmount), 0) AS netAmount,
-      ISNULL(SUM(TaxAmount), 0) AS taxAmount,
-      ISNULL(SUM(TotalAmount), 0) AS totalAmount
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @orderId
-    `,
-    { orderId }
-  );
-
-  const totals = rows[0] ?? { netAmount: 0, taxAmount: 0, totalAmount: 0 };
-
-  await query(
-    `
-    UPDATE rest.OrderTicket
-    SET NetAmount = @netAmount,
-        TaxAmount = @taxAmount,
-        TotalAmount = @totalAmount,
-        UpdatedAt = SYSUTCDATETIME()
-    WHERE OrderTicketId = @orderId
-    `,
-    {
-      orderId,
-      netAmount: round2(Number(totals.netAmount ?? 0)),
-      taxAmount: round2(Number(totals.taxAmount ?? 0)),
-      totalAmount: round2(Number(totals.totalAmount ?? 0)),
-    }
-  );
+  await callSp("usp_Rest_OrderTicket_RecalcTotals", { OrderId: orderId });
 }
 
 // Mesas
 export async function listMesas(ambienteId?: string) {
   const scope = await getDefaultScope();
-  const rows = await query<any>(
-    `
-    SELECT
-      dt.DiningTableId AS id,
-      dt.TableNumber AS numero,
-      ISNULL(NULLIF(dt.TableName, N''), N'Mesa ' + dt.TableNumber) AS nombre,
-      dt.Capacity AS capacidad,
-      dt.EnvironmentCode AS ambienteId,
-      dt.EnvironmentName AS ambiente,
-      dt.PositionX AS posicionX,
-      dt.PositionY AS posicionY,
-      CASE
-        WHEN EXISTS (
-          SELECT 1
-          FROM rest.OrderTicket o
-          WHERE o.CompanyId = dt.CompanyId
-            AND o.BranchId = dt.BranchId
-            AND o.TableNumber = dt.TableNumber
-            AND o.Status IN (N'OPEN', N'SENT')
-        ) THEN N'ocupada'
-        ELSE N'libre'
-      END AS estado
-    FROM rest.DiningTable dt
-    WHERE dt.CompanyId = @companyId
-      AND dt.BranchId = @branchId
-      AND dt.IsActive = 1
-      AND (@ambienteId IS NULL OR dt.EnvironmentCode = @ambienteId)
-    ORDER BY dt.EnvironmentCode, TRY_CONVERT(INT, dt.TableNumber), dt.TableNumber
-    `,
+
+  const rows = await callSp<any>(
+    "usp_Rest_DiningTable_List",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      ambienteId: ambienteId ?? null,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      AmbienteId: ambienteId ?? null,
     }
   );
 
@@ -345,50 +224,21 @@ export async function abrirPedido(mesaId: number, clienteNombre?: string, client
 
   const openedByUserId = await resolveUserId(codUsuario);
 
-  const insert = await query<{ orderTicketId: number }>(
-    `
-    INSERT INTO rest.OrderTicket (
-      CompanyId,
-      BranchId,
-      CountryCode,
-      TableNumber,
-      OpenedByUserId,
-      CustomerName,
-      CustomerFiscalId,
-      Status,
-      NetAmount,
-      TaxAmount,
-      TotalAmount,
-      OpenedAt
-    )
-    OUTPUT INSERTED.OrderTicketId AS orderTicketId
-    VALUES (
-      @companyId,
-      @branchId,
-      @countryCode,
-      @tableNumber,
-      @openedByUserId,
-      @customerName,
-      @customerFiscalId,
-      N'OPEN',
-      0,
-      0,
-      0,
-      SYSUTCDATETIME()
-    )
-    `,
+  const { output } = await callSpOut(
+    "usp_Rest_OrderTicket_Create",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      countryCode: scope.countryCode,
-      tableNumber: String(table.tableNumber),
-      openedByUserId,
-      customerName: clienteNombre ?? null,
-      customerFiscalId: clienteRif ?? null,
-    }
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      CountryCode: scope.countryCode,
+      TableNumber: String(table.tableNumber),
+      OpenedByUserId: openedByUserId,
+      CustomerName: clienteNombre ?? null,
+      CustomerFiscalId: clienteRif ?? null,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
-  const pedidoId = Number(insert[0]?.orderTicketId ?? 0);
+  const pedidoId = Number(output.Resultado ?? 0);
   if (!Number.isFinite(pedidoId) || pedidoId <= 0) {
     return { ok: false, error: "pedido_not_created", executionMode: "ts_canonical" as const };
   }
@@ -407,18 +257,9 @@ export async function agregarItemPedido(params: {
   componentes?: string;
   comentarios?: string;
 }) {
-  const orderRows = await query<any>(
-    `
-    SELECT TOP 1
-      OrderTicketId AS orderId,
-      CompanyId AS companyId,
-      BranchId AS branchId,
-      CountryCode AS countryCode,
-      Status AS status
-    FROM rest.OrderTicket
-    WHERE OrderTicketId = @pedidoId
-    `,
-    { pedidoId: params.pedidoId }
+  const orderRows = await callSp<any>(
+    "usp_Rest_OrderTicket_GetById",
+    { PedidoId: params.pedidoId }
   );
 
   const order = orderRows[0];
@@ -447,76 +288,39 @@ export async function agregarItemPedido(params: {
   const taxAmount = round2(netAmount * taxProfile.taxRate);
   const totalAmount = round2(netAmount + taxAmount);
 
-  const lineNoRows = await query<{ nextLine: number }>(
-    `
-    SELECT ISNULL(MAX(LineNumber), 0) + 1 AS nextLine
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @orderId
-    `,
-    { orderId: Number(order.orderId) }
+  const lineNoRows = await callSp<{ nextLine: number }>(
+    "usp_Rest_OrderTicketLine_NextLineNumber",
+    { OrderId: Number(order.orderId) }
   );
 
   const lineNumber = Number(lineNoRows[0]?.nextLine ?? 1);
 
-  const inserted = await query<{ lineId: number }>(
-    `
-    INSERT INTO rest.OrderTicketLine (
-      OrderTicketId,
-      LineNumber,
-      CountryCode,
-      ProductId,
-      ProductCode,
-      ProductName,
-      Quantity,
-      UnitPrice,
-      TaxCode,
-      TaxRate,
-      NetAmount,
-      TaxAmount,
-      TotalAmount,
-      Notes
-    )
-    OUTPUT INSERTED.OrderTicketLineId AS lineId
-    VALUES (
-      @orderId,
-      @lineNumber,
-      @countryCode,
-      @productId,
-      @productCode,
-      @productName,
-      @quantity,
-      @unitPrice,
-      @taxCode,
-      @taxRate,
-      @netAmount,
-      @taxAmount,
-      @totalAmount,
-      @notes
-    )
-    `,
+  const { output } = await callSpOut(
+    "usp_Rest_OrderTicketLine_Insert",
     {
-      orderId: Number(order.orderId),
-      lineNumber,
-      countryCode,
-      productId: product?.productId ?? null,
-      productCode: product?.productCode ?? String(params.productoId ?? ""),
-      productName: product?.productName ?? params.nombre,
-      quantity,
-      unitPrice,
-      taxCode: taxProfile.taxCode,
-      taxRate: taxProfile.taxRate,
-      netAmount,
-      taxAmount,
-      totalAmount,
-      notes: params.comentarios ?? null,
-    }
+      OrderId: Number(order.orderId),
+      LineNumber: lineNumber,
+      CountryCode: countryCode,
+      ProductId: product?.productId ?? null,
+      ProductCode: product?.productCode ?? String(params.productoId ?? ""),
+      ProductName: product?.productName ?? params.nombre,
+      Quantity: quantity,
+      UnitPrice: unitPrice,
+      TaxCode: taxProfile.taxCode,
+      TaxRate: taxProfile.taxRate,
+      NetAmount: netAmount,
+      TaxAmount: taxAmount,
+      TotalAmount: totalAmount,
+      Notes: params.comentarios ?? null,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
   await recalcOrderTotals(Number(order.orderId));
 
   return {
     ok: true,
-    itemId: Number(inserted[0]?.lineId ?? 0),
+    itemId: Number(output.Resultado ?? 0),
     executionMode: "ts_canonical" as const,
   };
 }
@@ -531,17 +335,9 @@ export async function cancelarItemPedido(params: {
   biometricBypass?: boolean;
   biometricCredentialId?: string | null;
 }) {
-  const orderRows = await query<any>(
-    `
-    SELECT TOP 1
-      OrderTicketId AS orderId,
-      CompanyId AS companyId,
-      BranchId AS branchId,
-      Status AS status
-    FROM rest.OrderTicket
-    WHERE OrderTicketId = @pedidoId
-    `,
-    { pedidoId: params.pedidoId }
+  const orderRows = await callSp<any>(
+    "usp_Rest_OrderTicket_GetById",
+    { PedidoId: params.pedidoId }
   );
 
   const order = orderRows[0];
@@ -554,47 +350,18 @@ export async function cancelarItemPedido(params: {
     return { ok: false, error: "pedido_not_open", executionMode: "ts_canonical" as const };
   }
 
-  const priorVoidRows = await query<{ alreadyVoided: number }>(
-    `
-    SELECT TOP 1 1 AS alreadyVoided
-    FROM sec.SupervisorOverride
-    WHERE ModuleCode = N'RESTAURANTE'
-      AND ActionCode = N'ORDER_LINE_VOID'
-      AND Status = N'CONSUMED'
-      AND SourceDocumentId = @pedidoId
-      AND SourceLineId = @itemId
-    `,
-    { pedidoId: params.pedidoId, itemId: params.itemId }
+  const priorVoidRows = await callSp<{ alreadyVoided: number }>(
+    "usp_Rest_OrderTicket_CheckPriorVoid",
+    { PedidoId: params.pedidoId, ItemId: params.itemId }
   );
 
   if (priorVoidRows[0]?.alreadyVoided === 1) {
     return { ok: false, error: "item_already_voided", executionMode: "ts_canonical" as const };
   }
 
-  const itemRows = await query<any>(
-    `
-    SELECT TOP 1
-      OrderTicketLineId AS itemId,
-      LineNumber AS lineNumber,
-      CountryCode AS countryCode,
-      ProductId AS productId,
-      ProductCode AS productCode,
-      ProductName AS nombre,
-      Quantity AS cantidad,
-      UnitPrice AS unitPrice,
-      TaxCode AS taxCode,
-      TaxRate AS taxRate,
-      NetAmount AS netAmount,
-      TaxAmount AS taxAmount,
-      TotalAmount AS totalAmount
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @pedidoId
-      AND OrderTicketLineId = @itemId
-    `,
-    {
-      pedidoId: params.pedidoId,
-      itemId: params.itemId,
-    }
+  const itemRows = await callSp<any>(
+    "usp_Rest_OrderTicketLine_GetById",
+    { PedidoId: params.pedidoId, ItemId: params.itemId }
   );
 
   const item = itemRows[0];
@@ -640,13 +407,9 @@ export async function cancelarItemPedido(params: {
     },
   });
 
-  const nextLineRows = await query<{ nextLine: number }>(
-    `
-    SELECT ISNULL(MAX(LineNumber), 0) + 1 AS nextLine
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @pedidoId
-    `,
-    { pedidoId: params.pedidoId }
+  const nextLineRows = await callSp<{ nextLine: number }>(
+    "usp_Rest_OrderTicketLine_NextLineNumber",
+    { OrderId: params.pedidoId }
   );
 
   const nextLine = Number(nextLineRows[0]?.nextLine ?? 1);
@@ -657,82 +420,36 @@ export async function cancelarItemPedido(params: {
     `MOTIVO:${reason}`,
   ].join(" | ").slice(0, 600);
 
-  const reversalRows = await query<{ reversalLineId: number }>(
-    `
-    INSERT INTO rest.OrderTicketLine (
-      OrderTicketId,
-      LineNumber,
-      CountryCode,
-      ProductId,
-      ProductCode,
-      ProductName,
-      Quantity,
-      UnitPrice,
-      TaxCode,
-      TaxRate,
-      NetAmount,
-      TaxAmount,
-      TotalAmount,
-      Notes,
-      SupervisorApprovalId,
-      CreatedAt,
-      UpdatedAt
-    )
-    OUTPUT INSERTED.OrderTicketLineId AS reversalLineId
-    VALUES (
-      @pedidoId,
-      @lineNumber,
-      @countryCode,
-      @productId,
-      @productCode,
-      @productName,
-      @quantity,
-      @unitPrice,
-      @taxCode,
-      @taxRate,
-      @netAmount,
-      @taxAmount,
-      @totalAmount,
-      @notes,
-      @supervisorApprovalId,
-      SYSUTCDATETIME(),
-      SYSUTCDATETIME()
-    )
-    `,
+  const { output: reversalOut } = await callSpOut(
+    "usp_Rest_OrderTicketLine_Insert",
     {
-      pedidoId: params.pedidoId,
-      lineNumber: nextLine,
-      countryCode: String(item.countryCode ?? "VE"),
-      productId: item.productId ? Number(item.productId) : null,
-      productCode: String(item.productCode ?? ""),
-      productName: `ANULACION ${String(item.nombre ?? "")}`.slice(0, 250),
-      quantity: round2(-Number(item.cantidad ?? 0)),
-      unitPrice: round2(Number(item.unitPrice ?? 0)),
-      taxCode: String(item.taxCode ?? "EXENTO"),
-      taxRate: Number(item.taxRate ?? 0),
-      netAmount: round2(-Number(item.netAmount ?? 0)),
-      taxAmount: round2(-Number(item.taxAmount ?? 0)),
-      totalAmount: round2(-Number(item.totalAmount ?? 0)),
-      notes: voidNotes,
-      supervisorApprovalId: override.overrideId,
-    }
+      OrderId: params.pedidoId,
+      LineNumber: nextLine,
+      CountryCode: String(item.countryCode ?? "VE"),
+      ProductId: item.productId ? Number(item.productId) : null,
+      ProductCode: String(item.productCode ?? ""),
+      ProductName: `ANULACION ${String(item.nombre ?? "")}`.slice(0, 250),
+      Quantity: round2(-Number(item.cantidad ?? 0)),
+      UnitPrice: round2(Number(item.unitPrice ?? 0)),
+      TaxCode: String(item.taxCode ?? "EXENTO"),
+      TaxRate: Number(item.taxRate ?? 0),
+      NetAmount: round2(-Number(item.netAmount ?? 0)),
+      TaxAmount: round2(-Number(item.taxAmount ?? 0)),
+      TotalAmount: round2(-Number(item.totalAmount ?? 0)),
+      Notes: voidNotes,
+      SupervisorApprovalId: override.overrideId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
-  const reversalLineId = Number(reversalRows[0]?.reversalLineId ?? 0);
+  const reversalLineId = Number(reversalOut.Resultado ?? 0);
   if (!Number.isFinite(reversalLineId) || reversalLineId <= 0) {
     return { ok: false, error: "void_line_not_created", executionMode: "ts_canonical" as const };
   }
 
   await recalcOrderTotals(params.pedidoId);
 
-  await query(
-    `
-    UPDATE rest.OrderTicket
-    SET UpdatedAt = SYSUTCDATETIME()
-    WHERE OrderTicketId = @pedidoId
-    `,
-    { pedidoId: params.pedidoId }
-  );
+  await callSp("usp_Rest_OrderTicket_UpdateTimestamp", { PedidoId: params.pedidoId });
 
   const consumed = await consumeSupervisorOverride({
     overrideId: override.overrideId,
@@ -764,61 +481,28 @@ export async function cancelarItemPedido(params: {
 }
 
 export async function enviarComanda(pedidoId: number) {
-  await query(
-    `
-    UPDATE rest.OrderTicket
-    SET Status = CASE WHEN Status = N'OPEN' THEN N'SENT' ELSE Status END,
-        UpdatedAt = SYSUTCDATETIME()
-    WHERE OrderTicketId = @pedidoId
-    `,
-    { pedidoId }
+  await callSpOut(
+    "usp_Rest_OrderTicket_SendToKitchen",
+    { PedidoId: pedidoId },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
   return { ok: true, executionMode: "ts_canonical" as const };
 }
 
 async function inferCountryCodeFromFiscalConfig(empresaId: number, sucursalId: number): Promise<CountryCode> {
-  const rows = await query<{ countryCode: string }>(
-    `
-    SELECT TOP 1 CountryCode AS countryCode
-    FROM fiscal.CountryConfig
-    WHERE CompanyId = @empresaId
-      AND BranchId = @sucursalId
-      AND IsActive = 1
-    ORDER BY UpdatedAt DESC, CountryConfigId DESC
-    `,
-    { empresaId, sucursalId }
+  const rows = await callSp<{ countryCode: string }>(
+    "usp_Rest_OrderTicket_InferCountryCode",
+    { EmpresaId: empresaId, SucursalId: sucursalId }
   );
 
   return String(rows[0]?.countryCode ?? "VE").toUpperCase() === "ES" ? "ES" : "VE";
 }
 
 async function getPedidoHeaderForClose(pedidoId: number) {
-  const rows = await query<any>(
-    `
-    SELECT TOP 1
-      o.OrderTicketId AS id,
-      o.CompanyId AS empresaId,
-      o.BranchId AS sucursalId,
-      o.CountryCode AS countryCode,
-      dt.DiningTableId AS mesaId,
-      o.CustomerName AS clienteNombre,
-      o.CustomerFiscalId AS clienteRif,
-      o.Status AS estado,
-      o.TotalAmount AS total,
-      o.ClosedAt AS fechaCierre,
-      COALESCE(uClose.UserCode, uOpen.UserCode) AS codUsuario
-    FROM rest.OrderTicket o
-    LEFT JOIN rest.DiningTable dt
-      ON dt.CompanyId = o.CompanyId
-     AND dt.BranchId = o.BranchId
-     AND dt.TableNumber = o.TableNumber
-    LEFT JOIN sec.[User] uOpen ON uOpen.UserId = o.OpenedByUserId
-    LEFT JOIN sec.[User] uClose ON uClose.UserId = o.ClosedByUserId
-    WHERE o.OrderTicketId = @pedidoId
-    ORDER BY o.OrderTicketId DESC
-    `,
-    { pedidoId }
+  const rows = await callSp<any>(
+    "usp_Rest_OrderTicket_GetHeaderForClose",
+    { PedidoId: pedidoId }
   );
 
   return rows[0] ?? null;
@@ -851,27 +535,12 @@ interface RestaurantFiscalBreakdown {
 }
 
 async function buildRestaurantFiscalBreakdown(pedidoId: number, sourceTotal: number): Promise<RestaurantFiscalBreakdown> {
-  const rows = await query<any>(
-    `
-    SELECT
-      OrderTicketLineId AS itemId,
-      ProductCode AS productoId,
-      ProductName AS nombre,
-      Quantity AS quantity,
-      UnitPrice AS unitPrice,
-      NetAmount AS baseAmount,
-      TaxCode AS taxCode,
-      TaxRate AS taxRate,
-      TaxAmount AS taxAmount,
-      TotalAmount AS totalAmount
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @pedidoId
-    ORDER BY LineNumber
-    `,
-    { pedidoId }
+  const rows = await callSp<any>(
+    "usp_Rest_OrderTicketLine_GetFiscalBreakdown",
+    { PedidoId: pedidoId }
   );
 
-  const lines = rows.map((row) => ({
+  const lines = rows.map((row: any) => ({
     itemId: Number(row.itemId ?? 0),
     productoId: String(row.productoId ?? ""),
     nombre: String(row.nombre ?? ""),
@@ -884,9 +553,9 @@ async function buildRestaurantFiscalBreakdown(pedidoId: number, sourceTotal: num
     totalAmount: round2(Number(row.totalAmount ?? 0)),
   }));
 
-  const baseAmount = round2(lines.reduce((acc, line) => acc + line.baseAmount, 0));
-  const taxAmount = round2(lines.reduce((acc, line) => acc + line.taxAmount, 0));
-  const totalAmount = round2(lines.reduce((acc, line) => acc + line.totalAmount, 0));
+  const baseAmount = round2(lines.reduce((acc: number, line: any) => acc + line.baseAmount, 0));
+  const taxAmount = round2(lines.reduce((acc: number, line: any) => acc + line.taxAmount, 0));
+  const totalAmount = round2(lines.reduce((acc: number, line: any) => acc + line.totalAmount, 0));
 
   const summaryMap = new Map<string, { taxCode: string; taxRate: number; baseAmount: number; taxAmount: number; totalAmount: number }>();
   for (const line of lines) {
@@ -937,19 +606,13 @@ export async function cerrarPedido(params: {
 
     if (!alreadyClosed) {
       const closedByUserId = await resolveUserId(params.codUsuario ?? pedidoActual.codUsuario ?? null);
-      await query(
-        `
-        UPDATE rest.OrderTicket
-        SET Status = N'CLOSED',
-            ClosedByUserId = @closedByUserId,
-            ClosedAt = SYSUTCDATETIME(),
-            UpdatedAt = SYSUTCDATETIME()
-        WHERE OrderTicketId = @pedidoId
-        `,
+      await callSpOut(
+        "usp_Rest_OrderTicket_Close",
         {
-          pedidoId: params.pedidoId,
-          closedByUserId,
-        }
+          PedidoId: params.pedidoId,
+          ClosedByUserId: closedByUserId,
+        },
+        { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
       );
     }
 
@@ -1070,25 +733,12 @@ export async function getPedidoByMesa(mesaId: number) {
     return { pedido: null, items: [], executionMode: "ts_canonical" as const };
   }
 
-  const pedidos = await query<any>(
-    `
-    SELECT TOP 1
-      OrderTicketId AS id,
-      CustomerName AS clienteNombre,
-      CustomerFiscalId AS clienteRif,
-      Status AS estado,
-      TotalAmount AS total
-    FROM rest.OrderTicket
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND TableNumber = @tableNumber
-      AND Status IN (N'OPEN', N'SENT')
-    ORDER BY OrderTicketId DESC
-    `,
+  const pedidos = await callSp<any>(
+    "usp_Rest_OrderTicket_GetByMesaHeader",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      tableNumber: String(table.tableNumber),
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      TableNumber: String(table.tableNumber),
     }
   );
 
@@ -1097,28 +747,13 @@ export async function getPedidoByMesa(mesaId: number) {
     return { pedido: null, items: [], executionMode: "ts_canonical" as const };
   }
 
-  const itemsRows = await query<any>(
-    `
-    SELECT
-      OrderTicketLineId AS id,
-      ProductCode AS productoId,
-      ProductName AS nombre,
-      Quantity AS cantidad,
-      UnitPrice AS precioUnitario,
-      NetAmount AS subtotal,
-      CASE WHEN TaxRate > 1 THEN TaxRate ELSE TaxRate * 100 END AS iva,
-      TaxCode AS taxCode,
-      TaxAmount AS impuesto,
-      TotalAmount AS total
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @pedidoId
-    ORDER BY LineNumber
-    `,
-    { pedidoId: Number(pedido.id) }
+  const itemsRows = await callSp<any>(
+    "usp_Rest_OrderTicketLine_GetByPedido",
+    { PedidoId: Number(pedido.id) }
   );
 
   const legacyEstado = mapOrderStatusToLegacy(String(pedido.estado ?? ""));
-  const items = itemsRows.map((item) => ({
+  const items = itemsRows.map((item: any) => ({
     ...item,
     estado: legacyEstado,
     enviadoACocina: legacyEstado === "enviado" || legacyEstado === "cerrado",

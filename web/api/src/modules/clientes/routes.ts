@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { createCliente, deleteCliente, getCliente, listClientes, updateCliente } from "./service.js";
+import {
+  listClientesSP as listClientes,
+  getClienteByCodigoSP,
+  insertClienteSP,
+  updateClienteSP,
+  deleteClienteSP,
+} from "./clientes-sp.service.js";
 
 export const clientesRouter = Router();
 
@@ -15,19 +21,29 @@ const qSchema = z.object({
 clientesRouter.get("/", async (req, res) => {
   const parsed = qSchema.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
-  res.json(await listClientes(parsed.data));
+  res.json(await listClientes({
+    search: parsed.data.search,
+    estado: parsed.data.estado,
+    vendedor: parsed.data.vendedor,
+    page: parsed.data.page ? parseInt(parsed.data.page) : undefined,
+    limit: parsed.data.limit ? parseInt(parsed.data.limit) : undefined,
+  }));
 });
 
 clientesRouter.get("/:codigo", async (req, res) => {
-  const data = await getCliente(req.params.codigo);
-  if (!data.row) return res.status(404).json({ error: "not_found" });
-  res.json(data.row);
+  const row = await getClienteByCodigoSP(req.params.codigo);
+  if (!row) return res.status(404).json({ error: "not_found" });
+  res.json(row);
 });
 
 clientesRouter.post("/", async (req, res) => {
   try {
-    const data = await createCliente(req.body ?? {});
-    res.status(201).json({ ok: true, data });
+    const result = await insertClienteSP(req.body ?? {});
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -35,8 +51,12 @@ clientesRouter.post("/", async (req, res) => {
 
 clientesRouter.put("/:codigo", async (req, res) => {
   try {
-    const data = await updateCliente(req.params.codigo, req.body ?? {});
-    res.json({ ok: true, data });
+    const result = await updateClienteSP(req.params.codigo, req.body ?? {});
+    if (result.success) {
+      res.json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -44,8 +64,12 @@ clientesRouter.put("/:codigo", async (req, res) => {
 
 clientesRouter.delete("/:codigo", async (req, res) => {
   try {
-    const data = await deleteCliente(req.params.codigo);
-    res.json({ ok: true, data });
+    const result = await deleteClienteSP(req.params.codigo);
+    if (result.success) {
+      res.json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 import { isBcryptHash, verifyPassword } from "../../auth/password.js";
 import {
   hasActiveSupervisorBiometricCredential,
@@ -65,19 +65,9 @@ export async function validateSupervisorCredentials(input: {
     };
   }
 
-  const rows = await query<SupervisorRecord>(
-    `
-    SELECT TOP 1
-      Cod_Usuario AS codUsuario,
-      Nombre AS nombre,
-      Tipo AS tipo,
-      IsAdmin AS isAdmin,
-      Deletes AS canDelete,
-      Password AS passwordHash
-    FROM dbo.Usuarios
-    WHERE UPPER(Cod_Usuario) = @supervisorUser
-    `,
-    { supervisorUser }
+  const rows = await callSp<SupervisorRecord>(
+    'usp_Sec_Supervisor_GetRecord',
+    { SupervisorUser: supervisorUser }
   );
 
   const supervisor = rows[0];
@@ -182,44 +172,18 @@ export async function createSupervisorOverride(input: {
   const supervisorUser = normalizeCode(input.supervisorUser);
   const payloadJson = input.payload === undefined ? null : JSON.stringify(input.payload);
 
-  const rows = await query<{ overrideId: number }>(
-    `
-    INSERT INTO sec.SupervisorOverride (
-      ModuleCode,
-      ActionCode,
-      Status,
-      CompanyId,
-      BranchId,
-      RequestedByUserCode,
-      SupervisorUserCode,
-      Reason,
-      PayloadJson,
-      ApprovedAtUtc
-    )
-    OUTPUT INSERTED.OverrideId AS overrideId
-    VALUES (
-      @moduleCode,
-      @actionCode,
-      @status,
-      @companyId,
-      @branchId,
-      @requestedByUserCode,
-      @supervisorUserCode,
-      @reason,
-      @payloadJson,
-      SYSUTCDATETIME()
-    )
-    `,
+  const rows = await callSp<{ overrideId: number }>(
+    'usp_Sec_Supervisor_Override_Create',
     {
-      moduleCode,
-      actionCode,
-      status: "APPROVED" as OverrideStatus,
-      companyId: input.companyId ?? null,
-      branchId: input.branchId ?? null,
-      requestedByUserCode: requestedByUser,
-      supervisorUserCode: supervisorUser,
-      reason,
-      payloadJson,
+      ModuleCode: moduleCode,
+      ActionCode: actionCode,
+      Status: "APPROVED" as OverrideStatus,
+      CompanyId: input.companyId ?? null,
+      BranchId: input.branchId ?? null,
+      RequestedByUserCode: requestedByUser,
+      SupervisorUserCode: supervisorUser,
+      Reason: reason,
+      PayloadJson: payloadJson,
     }
   );
 
@@ -249,30 +213,16 @@ export async function consumeSupervisorOverride(input: {
     return { ok: false as const, error: "override_id_invalid" };
   }
 
-  const rows = await query<{ overrideId: number }>(
-    `
-    UPDATE sec.SupervisorOverride
-    SET
-      Status = N'CONSUMED',
-      ConsumedAtUtc = SYSUTCDATETIME(),
-      ConsumedByUserCode = @consumedByUserCode,
-      SourceDocumentId = @sourceDocumentId,
-      SourceLineId = @sourceLineId,
-      ReversalLineId = @reversalLineId
-    OUTPUT INSERTED.OverrideId AS overrideId
-    WHERE OverrideId = @overrideId
-      AND Status = N'APPROVED'
-      AND UPPER(ModuleCode) = @moduleCode
-      AND UPPER(ActionCode) = @actionCode
-    `,
+  const rows = await callSp<{ overrideId: number }>(
+    'usp_Sec_Supervisor_Override_Consume',
     {
-      overrideId,
-      moduleCode,
-      actionCode,
-      consumedByUserCode: consumedByUser,
-      sourceDocumentId: input.sourceDocumentId ?? null,
-      sourceLineId: input.sourceLineId ?? null,
-      reversalLineId: input.reversalLineId ?? null,
+      OverrideId: overrideId,
+      ModuleCode: moduleCode,
+      ActionCode: actionCode,
+      ConsumedByUserCode: consumedByUser,
+      SourceDocumentId: input.sourceDocumentId ?? null,
+      SourceLineId: input.sourceLineId ?? null,
+      ReversalLineId: input.reversalLineId ?? null,
     }
   );
 
@@ -280,4 +230,3 @@ export async function consumeSupervisorOverride(input: {
     ? { ok: true as const, overrideId: Number(rows[0].overrideId) }
     : { ok: false as const, error: "override_not_available" };
 }
-

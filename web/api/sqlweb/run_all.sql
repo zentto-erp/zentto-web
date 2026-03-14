@@ -7,7 +7,6 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\06_seed_reference_data.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\07_pos_rest_extensions.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\08_fin_hr_rest_admin_extensions.sql
-:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\09_legacy_api_tables_compat.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\10_legacy_api_sps_compat.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\11_legacy_cleanup_upsize_ts.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\12_seed_smoke_test_data.sql
@@ -32,3 +31,19 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\26_fiscal_tables.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\27_seeds_additional.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\28_extra_tables.sql
+
+-- ====================================================================
+-- Stored Procedures: API REST -> SP (sin SQL directo en TypeScript)
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_sys.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_cfg.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_sec.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_master_balance.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_doc_sales.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_doc_purchase.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ar.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ap.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_acct.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_pay.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_misc.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_util.sql

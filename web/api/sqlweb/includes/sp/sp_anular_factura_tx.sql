@@ -1,11 +1,9 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
--- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode).
--- Referencias a dbo.Clientes actualizadas a master.Customer (TotalBalance, CustomerCode).
--- Tablas legacy sin migrar (P_Cobrar, Facturas, Detalle_Facturas, etc.)
--- mantienen sus nombres originales — ver TODOs en el codigo.
 -- =============================================
--- Stored Procedure: Anular Factura
--- Descripcion: Anula una factura revertiendo inventario y CxC
+-- Stored Procedure: Anular Factura (100% canónico)
+-- Tablas: ar.SalesDocument, ar.SalesDocumentLine
+-- CxC: ar.ReceivableDocument
+-- Inventario: master.Product, master.InventoryMovement, master.AlternateStock
+-- Clientes: master.Customer
 -- Compatible con: SQL Server 2012+
 -- =============================================
 
@@ -22,178 +20,107 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @FechaAnulacion DATETIME;
+    DECLARE @FechaAnulacion DATETIME = GETDATE();
     DECLARE @CodCliente NVARCHAR(60);
-    DECLARE @FechaFactura DATETIME;
+    DECLARE @CustomerId BIGINT;
     DECLARE @YaAnulada BIT;
+    DECLARE @DefaultCompanyId INT = 1;
+    DECLARE @DefaultBranchId INT = 1;
+
+    SELECT TOP 1 @DefaultCompanyId = CompanyId FROM cfg.Company WHERE CompanyCode = N'DEFAULT';
+    SELECT TOP 1 @DefaultBranchId = BranchId FROM cfg.Branch WHERE CompanyId = @DefaultCompanyId AND BranchCode = N'MAIN';
 
     BEGIN TRY
-        SET @FechaAnulacion = GETDATE();
-
-        -- ============================================
-        -- 1. Validar que la factura existe
-        -- TODO: tabla Facturas es legacy; migrar a tabla canonica en el API
-        -- ============================================
+        -- 1. Validar factura en ar.SalesDocument
         SELECT
-            @CodCliente = CODIGO,
-            @FechaFactura = FECHA,
-            @YaAnulada = CASE WHEN ANULADA = 1 OR ANULADA = '1' THEN 1 ELSE 0 END
-        FROM Facturas
-        WHERE NUM_FACT = @NumFact;
+            @CodCliente = CustomerCode,
+            @YaAnulada = CASE WHEN IsVoided = 1 THEN 1 ELSE 0 END
+        FROM ar.SalesDocument
+        WHERE DocumentNumber = @NumFact AND OperationType = 'FACT' AND IsDeleted = 0;
 
         IF @CodCliente IS NULL
-        BEGIN
-            RAISERROR('factura_not_found', 16, 1);
-            RETURN;
-        END
+        BEGIN RAISERROR('factura_not_found', 16, 1); RETURN; END
 
         IF @YaAnulada = 1
-        BEGIN
-            RAISERROR('factura_already_anulled', 16, 1);
-            RETURN;
-        END
+        BEGIN RAISERROR('factura_already_anulled', 16, 1); RETURN; END
+
+        -- Resolver CustomerId
+        SELECT TOP 1 @CustomerId = CustomerId FROM master.Customer
+         WHERE CustomerCode = @CodCliente AND ISNULL(IsDeleted, 0) = 0;
 
         BEGIN TRANSACTION;
 
-        -- ============================================
-        -- 2. Marcar factura como anulada
-        -- TODO: tabla Facturas es legacy
-        -- ============================================
-        UPDATE Facturas
-        SET ANULADA = 1,
-            OBSERV = ISNULL(OBSERV, '') + ' [ANULADA: ' + CONVERT(NVARCHAR(20), @FechaAnulacion, 120) + ']'
-        WHERE NUM_FACT = @NumFact;
+        -- 2. Marcar anulada → ar.SalesDocument
+        UPDATE ar.SalesDocument
+        SET IsVoided = 1,
+            Notes = ISNULL(Notes, '') + ' [ANULADA: ' + CONVERT(NVARCHAR(20), @FechaAnulacion, 120) + ']',
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE DocumentNumber = @NumFact AND OperationType = 'FACT';
 
-        -- ============================================
-        -- 3. Anular detalle
-        -- TODO: tabla Detalle_Facturas es legacy
-        -- ============================================
-        UPDATE Detalle_Facturas
-        SET ANULADA = 1
-        WHERE NUM_FACT = @NumFact;
+        -- 3. Anular detalle → ar.SalesDocumentLine
+        UPDATE ar.SalesDocumentLine
+        SET IsVoided = 1, UpdatedAt = SYSUTCDATETIME()
+        WHERE DocumentNumber = @NumFact AND OperationType = 'FACT';
 
-        -- ============================================
-        -- 4. Revertir master.Product (antes dbo.Inventario)
-        -- ============================================
-        -- Obtener detalles de la factura para revertir
-        DECLARE @Detalles TABLE (
-            COD_SERV NVARCHAR(60),
-            CANTIDAD FLOAT,
-            RELACIONADA INT,
-            COD_ALTERNO NVARCHAR(60)
-        );
+        -- 4. Revertir inventario
+        DECLARE @Detalles TABLE (COD_SERV NVARCHAR(60), CANTIDAD DECIMAL(18,4), RELACIONADA INT, COD_ALTERNO NVARCHAR(60));
 
-        -- TODO: tabla Detalle_Facturas es legacy
         INSERT INTO @Detalles (COD_SERV, CANTIDAD, RELACIONADA, COD_ALTERNO)
-        SELECT
-            COD_SERV,
-            ISNULL(CANTIDAD, 0),
-            CASE WHEN Relacionada = 1 THEN 1 ELSE 0 END,
-            Cod_Alterno
-        FROM Detalle_Facturas
-        WHERE NUM_FACT = @NumFact
-          AND ISNULL(ANULADA, 0) = 0;
+        SELECT ProductCode, ISNULL(Quantity, 0),
+            CASE WHEN RelatedRef = '1' THEN 1 ELSE 0 END, AlternateCode
+        FROM ar.SalesDocumentLine
+        WHERE DocumentNumber = @NumFact AND OperationType = 'FACT' AND ISNULL(IsVoided, 0) = 0;
 
-        -- Insertar movimiento de anulacion en MovInvent
-        INSERT INTO MovInvent (
-            DOCUMENTO, CODIGO, PRODUCT, FECHA, MOTIVO, TIPO,
-            CANTIDAD_ACTUAL, CANTIDAD, CANTIDAD_NUEVA, CO_USUARIO,
-            PRECIO_COMPRA, ALICUOTA, PRECIO_VENTA, ANULADA
-        )
-        SELECT
-            @NumFact + '_ANUL',
-            D.COD_SERV,
-            D.COD_SERV,
-            @FechaAnulacion,
-            'Anulacion Factura:' + @NumFact + ' - ' + @Motivo,
-            'Anulacion Egreso',
-            ISNULL(I.StockQty, 0),          -- columna canonica master.Product
-            D.CANTIDAD,
-            ISNULL(I.StockQty, 0) + D.CANTIDAD,
-            @CodUsuario,
-            ISNULL(I.COSTO_REFERENCIA, 0),
-            0,
-            ISNULL(I.SalesPrice, 0),        -- columna canonica master.Product
-            0
+        -- Movimiento de anulación → master.InventoryMovement
+        INSERT INTO master.InventoryMovement (CompanyId, ProductCode, DocumentRef, MovementType, MovementDate, Quantity, UnitCost, TotalCost, Notes)
+        SELECT @DefaultCompanyId, D.COD_SERV, @NumFact + '_ANUL', 'ENTRADA',
+            CAST(@FechaAnulacion AS DATE), D.CANTIDAD,
+            ISNULL(I.COSTO_REFERENCIA, 0), D.CANTIDAD * ISNULL(I.COSTO_REFERENCIA, 0),
+            'Anulacion Factura:' + @NumFact + ' - ' + @Motivo
         FROM @Detalles D
-        -- Ahora se usa master.Product (antes dbo.Inventario)
         INNER JOIN master.Product I ON I.ProductCode = D.COD_SERV
         WHERE D.COD_SERV IS NOT NULL AND D.CANTIDAD > 0;
 
-        -- Sumar de vuelta al inventario en master.Product
-        ;WITH Totales AS (
-            SELECT COD_SERV, SUM(CANTIDAD) AS TOTAL
-            FROM @Detalles
-            WHERE COD_SERV IS NOT NULL
-            GROUP BY COD_SERV
-        )
-        -- Actualizar master.Product.StockQty (columna canonica, antes dbo.Inventario.EXISTENCIA)
-        UPDATE I
-        SET StockQty = ISNULL(I.StockQty, 0) + T.TOTAL
-        FROM master.Product I
-        INNER JOIN Totales T ON T.COD_SERV = I.ProductCode;
+        -- Sumar de vuelta stock → master.Product
+        ;WITH Totales AS (SELECT COD_SERV, SUM(CANTIDAD) AS TOTAL FROM @Detalles WHERE COD_SERV IS NOT NULL GROUP BY COD_SERV)
+        UPDATE I SET StockQty = ISNULL(I.StockQty, 0) + T.TOTAL
+        FROM master.Product I INNER JOIN Totales T ON T.COD_SERV = I.ProductCode;
 
-        -- Sumar de vuelta a Inventario_Aux si es relacionada
-        ;WITH AuxTotales AS (
-            SELECT COD_ALTERNO, SUM(CANTIDAD) AS TOTAL
-            FROM @Detalles
-            WHERE RELACIONADA = 1 AND COD_ALTERNO IS NOT NULL
-            GROUP BY COD_ALTERNO
-        )
-        UPDATE IA
-        SET CANTIDAD = ISNULL(IA.CANTIDAD, 0) + A.TOTAL
-        FROM Inventario_Aux IA
-        INNER JOIN AuxTotales A ON A.COD_ALTERNO = IA.CODIGO;
+        -- Sumar de vuelta stock auxiliar → master.AlternateStock
+        ;WITH AuxTotales AS (SELECT COD_ALTERNO, SUM(CANTIDAD) AS TOTAL FROM @Detalles WHERE RELACIONADA = 1 AND COD_ALTERNO IS NOT NULL GROUP BY COD_ALTERNO)
+        UPDATE A SET A.StockQty = ISNULL(A.StockQty, 0) + AT.TOTAL
+        FROM master.AlternateStock A INNER JOIN AuxTotales AT ON AT.COD_ALTERNO = A.ProductCode;
 
-        -- ============================================
-        -- 5. Anular CxC (marcar como anulada en P_Cobrar)
-        -- TODO: tabla P_Cobrar es legacy; migrar a tabla canonica en el API
-        -- ============================================
-        UPDATE P_Cobrar
-        SET PAID = 1,
-            PEND = 0,
-            SALDO = 0
-        WHERE DOCUMENTO = @NumFact
-          AND TIPO = 'FACT'
-          AND CODIGO = @CodCliente;
+        -- 5. Anular CxC → ar.ReceivableDocument
+        UPDATE ar.ReceivableDocument
+        SET PaidFlag = 1, PendingAmount = 0, Status = 'VOIDED', UpdatedAt = SYSUTCDATETIME()
+        WHERE DocumentNumber = @NumFact AND DocumentType = 'FACT'
+          AND CompanyId = @DefaultCompanyId AND BranchId = @DefaultBranchId;
 
-        -- ============================================
-        -- 6. Recalcular saldos del cliente en master.Customer (tabla canonica)
-        -- Antes actualizaba dbo.Clientes.SALDO_TOT; ahora actualiza master.Customer.TotalBalance
-        -- ============================================
-        DECLARE @SaldoTotal FLOAT;
-
-        -- TODO: tabla P_Cobrar es legacy
-        SELECT @SaldoTotal = ISNULL(SUM(ISNULL(PEND, 0)), 0)
-        FROM P_Cobrar
-        WHERE CODIGO = @CodCliente
-        AND PAID = 0;
-
-        UPDATE master.Customer
-        SET TotalBalance = @SaldoTotal
-        WHERE CustomerCode = @CodCliente
-          AND ISNULL(IsDeleted, 0) = 0;
+        -- 6. Recalcular saldos → master.Customer.TotalBalance
+        IF @CustomerId IS NOT NULL
+        BEGIN
+            UPDATE master.Customer
+               SET TotalBalance = ISNULL((
+                   SELECT SUM(PendingAmount)
+                   FROM ar.ReceivableDocument
+                   WHERE CustomerId = @CustomerId AND Status <> 'VOIDED' AND PaidFlag = 0
+               ), 0)
+             WHERE CustomerId = @CustomerId AND ISNULL(IsDeleted, 0) = 0;
+        END
 
         COMMIT TRANSACTION;
 
-        -- Retornar resultado
-        SELECT
-            CAST(1 AS BIT) AS ok,
-            @NumFact AS numFact,
-            @CodCliente AS codCliente,
+        SELECT CAST(1 AS BIT) AS ok, @NumFact AS numFact, @CodCliente AS codCliente,
             'Factura anulada exitosamente' AS mensaje;
 
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @Err NVARCHAR(4000);
-        SET @Err = ERROR_MESSAGE();
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        DECLARE @Err NVARCHAR(4000) = ERROR_MESSAGE();
         RAISERROR(@Err, 16, 1);
     END CATCH
 END
 GO
 
--- Verificar creacion
 SELECT name, create_date FROM sys.objects WHERE type = 'P' AND name = 'sp_anular_factura_tx';

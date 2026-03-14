@@ -1,4 +1,4 @@
-﻿import { query, execute } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 import {
   hashPassword,
   verifyPassword,
@@ -24,13 +24,9 @@ function normalizeTimeZone(value: unknown): string {
  * Plaintext or legacy ciphered passwords are rejected.
  */
 export async function authenticateUsuario(usuario: string, clave: string) {
-  const rows = await query<UsuarioRecord>(
-    `SELECT TOP 1
-       Cod_Usuario, Password, Nombre, Tipo,
-       Updates, Addnews, Deletes, Creador, Cambiar, PrecioMinimo, Credito
-     FROM Usuarios
-     WHERE Cod_Usuario = @usuario`,
-    { usuario }
+  const rows = await callSp<UsuarioRecord>(
+    "usp_Sec_User_Authenticate",
+    { CodUsuario: usuario }
   );
 
   if (rows.length === 0) return null;
@@ -44,13 +40,9 @@ export async function authenticateUsuario(usuario: string, clave: string) {
 }
 
 export async function getUsuarioTipo(codUsuario: string): Promise<{ codUsuario: string; tipo: string | null } | null> {
-  const rows = await query<{ Cod_Usuario: string; Tipo: string | null }>(
-    `
-    SELECT TOP 1 Cod_Usuario, Tipo
-    FROM Usuarios
-    WHERE Cod_Usuario = @codUsuario
-    `,
-    { codUsuario }
+  const rows = await callSp<{ Cod_Usuario: string; Tipo: string | null }>(
+    "usp_Sec_User_GetType",
+    { CodUsuario: codUsuario }
   );
 
   if (rows.length === 0) return null;
@@ -72,15 +64,15 @@ export function extractPermisos(record: UsuarioRecord): UsuarioPermisos {
 
 /** Get module access list for a user from AccesoUsuarios table */
 export async function getModulosAcceso(codUsuario: string): Promise<ModuloAcceso[]> {
-  const rows = await query<{ Modulo: string; Permitido: boolean }>(
-    "SELECT Modulo, Permitido FROM AccesoUsuarios WHERE Cod_Usuario = @cod",
-    { cod: codUsuario }
+  const rows = await callSp<{ Modulo: string; Permitido: boolean }>(
+    "usp_Sec_User_GetModuleAccess",
+    { CodUsuario: codUsuario }
   );
   return rows.map((r) => ({ modulo: r.Modulo, permitido: r.Permitido }));
 }
 
 async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
-  const rows = await query<{
+  const rows = await callSp<{
     companyId: number;
     companyCode: string;
     companyName: string;
@@ -90,38 +82,7 @@ async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
     countryCode: string;
     timeZone: string;
     isDefault: boolean;
-  }>(
-    `
-    SELECT
-      c.CompanyId AS companyId,
-      c.CompanyCode AS companyCode,
-      ISNULL(NULLIF(c.TradeName, N''), c.LegalName) AS companyName,
-      b.BranchId AS branchId,
-      b.BranchCode AS branchCode,
-      b.BranchName AS branchName,
-      UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode)) AS countryCode,
-      COALESCE(NULLIF(ct.TimeZoneIana, N''), CASE UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode))
-        WHEN 'ES' THEN 'Europe/Madrid'
-        WHEN 'VE' THEN 'America/Caracas'
-        ELSE 'UTC'
-      END) AS timeZone,
-      CAST(CASE WHEN c.CompanyCode = N'DEFAULT' AND b.BranchCode = N'MAIN' THEN 1 ELSE 0 END AS bit) AS isDefault
-    FROM cfg.Company c
-    INNER JOIN cfg.Branch b
-      ON b.CompanyId = c.CompanyId
-    LEFT JOIN cfg.Country ct
-      ON ct.CountryCode = UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode))
-     AND ct.IsActive = 1
-    WHERE c.IsActive = 1
-      AND c.IsDeleted = 0
-      AND b.IsActive = 1
-      AND b.IsDeleted = 0
-    ORDER BY
-      CASE WHEN c.CompanyCode = N'DEFAULT' AND b.BranchCode = N'MAIN' THEN 0 ELSE 1 END,
-      c.CompanyId,
-      b.BranchId
-    `
-  );
+  }>("usp_Sec_User_ListCompanyAccesses_Default");
 
   return rows.map((row) => ({
     companyId: Number(row.companyId),
@@ -145,7 +106,7 @@ export async function getUserCompanyAccesses(
   }
 
   try {
-    const rows = await query<{
+    const rows = await callSp<{
       companyId: number;
       companyCode: string;
       companyName: string;
@@ -156,42 +117,8 @@ export async function getUserCompanyAccesses(
       timeZone: string;
       isDefault: boolean;
     }>(
-      `
-      SELECT
-        a.CompanyId AS companyId,
-        c.CompanyCode AS companyCode,
-        ISNULL(NULLIF(c.TradeName, N''), c.LegalName) AS companyName,
-        a.BranchId AS branchId,
-        b.BranchCode AS branchCode,
-        b.BranchName AS branchName,
-        UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode)) AS countryCode,
-        COALESCE(NULLIF(ct.TimeZoneIana, N''), CASE UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode))
-          WHEN 'ES' THEN 'Europe/Madrid'
-          WHEN 'VE' THEN 'America/Caracas'
-          ELSE 'UTC'
-        END) AS timeZone,
-        a.IsDefault AS isDefault
-      FROM sec.UserCompanyAccess a
-      INNER JOIN cfg.Company c
-        ON c.CompanyId = a.CompanyId
-       AND c.IsActive = 1
-       AND c.IsDeleted = 0
-      INNER JOIN cfg.Branch b
-        ON b.BranchId = a.BranchId
-       AND b.CompanyId = a.CompanyId
-       AND b.IsActive = 1
-       AND b.IsDeleted = 0
-      LEFT JOIN cfg.Country ct
-        ON ct.CountryCode = UPPER(ISNULL(NULLIF(b.CountryCode, ''), c.FiscalCountryCode))
-       AND ct.IsActive = 1
-      WHERE UPPER(a.CodUsuario) = UPPER(@codUsuario)
-        AND a.IsActive = 1
-      ORDER BY
-        CASE WHEN a.IsDefault = 1 THEN 0 ELSE 1 END,
-        a.CompanyId,
-        a.BranchId
-      `,
-      { codUsuario }
+      "usp_Sec_User_GetCompanyAccesses",
+      { CodUsuario: codUsuario }
     );
 
     const mapped = rows.map((row) => ({
@@ -245,72 +172,7 @@ export async function ensureUserDefaultCompanyAccess(codUsuario: string): Promis
   const normalizedUser = String(codUsuario ?? "").trim();
   if (!normalizedUser) return;
 
-  await execute(
-    `
-    IF OBJECT_ID(N'sec.UserCompanyAccess', N'U') IS NULL
-      RETURN;
-
-    DECLARE @companyId INT = (
-      SELECT TOP (1) CompanyId
-      FROM cfg.Company
-      WHERE CompanyCode = N'DEFAULT'
-        AND IsActive = 1
-        AND IsDeleted = 0
-      ORDER BY CompanyId
-    );
-
-    IF @companyId IS NULL
-      SET @companyId = (
-        SELECT TOP (1) CompanyId
-        FROM cfg.Company
-        WHERE IsActive = 1
-          AND IsDeleted = 0
-        ORDER BY CompanyId
-      );
-
-    DECLARE @branchId INT = (
-      SELECT TOP (1) BranchId
-      FROM cfg.Branch
-      WHERE CompanyId = @companyId
-        AND BranchCode = N'MAIN'
-        AND IsActive = 1
-        AND IsDeleted = 0
-      ORDER BY BranchId
-    );
-
-    IF @branchId IS NULL
-      SET @branchId = (
-        SELECT TOP (1) BranchId
-        FROM cfg.Branch
-        WHERE CompanyId = @companyId
-          AND IsActive = 1
-          AND IsDeleted = 0
-        ORDER BY BranchId
-      );
-
-    IF @companyId IS NULL OR @branchId IS NULL
-      RETURN;
-
-    MERGE sec.UserCompanyAccess AS tgt
-    USING (
-      SELECT
-        @codUsuario AS CodUsuario,
-        @companyId AS CompanyId,
-        @branchId AS BranchId
-    ) AS src
-      ON tgt.CodUsuario = src.CodUsuario
-     AND tgt.CompanyId = src.CompanyId
-     AND tgt.BranchId = src.BranchId
-    WHEN MATCHED THEN
-      UPDATE SET
-        IsActive = 1,
-        UpdatedAt = SYSUTCDATETIME()
-    WHEN NOT MATCHED THEN
-      INSERT (CodUsuario, CompanyId, BranchId, IsDefault, IsActive)
-      VALUES (src.CodUsuario, src.CompanyId, src.BranchId, 1, 1);
-    `,
-    { codUsuario: normalizedUser }
-  );
+  await callSp("usp_Sec_User_EnsureDefaultCompanyAccess", { CodUsuario: normalizedUser });
 }
 
 /** Set module access for a user (upsert) */
@@ -318,15 +180,11 @@ export async function setModulosAcceso(
   codUsuario: string,
   modulos: { modulo: string; permitido: boolean }[]
 ): Promise<void> {
-  await execute("DELETE FROM AccesoUsuarios WHERE Cod_Usuario = @cod", {
-    cod: codUsuario,
+  const modulesJson = JSON.stringify(modulos);
+  await callSp("usp_Sec_User_SetModuleAccess", {
+    CodUsuario: codUsuario,
+    ModulesJson: modulesJson,
   });
-  for (const m of modulos) {
-    await execute(
-      "INSERT INTO AccesoUsuarios (Cod_Usuario, Modulo, Permitido) VALUES (@cod, @modulo, @perm)",
-      { cod: codUsuario, modulo: m.modulo, perm: m.permitido ? 1 : 0 }
-    );
-  }
 }
 
 /** Change own password (requires current password) */
@@ -340,39 +198,37 @@ export async function changePassword(
     return { success: false, message: "Contraseña actual incorrecta" };
   }
   const bcryptHash = await hashPassword(newPassword);
-  await execute("UPDATE Usuarios SET Password = @hash WHERE Cod_Usuario = @cod", {
-    hash: bcryptHash,
-    cod: codUsuario,
+  await callSp("usp_Sec_User_UpdatePassword", {
+    CodUsuario: codUsuario,
+    PasswordHash: bcryptHash,
   });
   return { success: true, message: "Contraseña actualizada correctamente" };
 }
 
-/** Get avatar data URL for a user (reads directly, bypasses SP).
+/** Get avatar data URL for a user.
  * Returns null if the Avatar column doesn't exist yet (migration not yet run). */
 export async function getUserAvatar(codUsuario: string): Promise<string | null> {
   try {
-    const rows = await query<{ Avatar: string | null }>(
-      "SELECT TOP 1 Avatar FROM Usuarios WHERE Cod_Usuario = @cod",
-      { cod: codUsuario }
+    const rows = await callSp<{ Avatar: string | null }>(
+      "usp_Sec_User_GetAvatar",
+      { CodUsuario: codUsuario }
     );
     return rows[0]?.Avatar ?? null;
   } catch {
-    // Column doesn't exist yet – silently return null until migration is applied
     return null;
   }
 }
 
-/** Set avatar data URL for a user (writes directly, bypasses SP).
+/** Set avatar data URL for a user.
  * Silently skips if the Avatar column doesn't exist yet. */
 export async function setUserAvatar(codUsuario: string, dataUrl: string | null): Promise<void> {
   try {
-    await execute(
-      "UPDATE Usuarios SET Avatar = @avatar WHERE Cod_Usuario = @cod",
-      { avatar: dataUrl, cod: codUsuario }
-    );
+    await callSp("usp_Sec_User_SetAvatar", {
+      CodUsuario: codUsuario,
+      Avatar: dataUrl,
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    // Re-throw everything except missing-column errors so callers still surface real failures
     if (!msg.includes("Invalid column name")) throw err;
   }
 }
@@ -382,17 +238,17 @@ export async function resetPassword(
   codUsuario: string,
   newPassword: string
 ): Promise<{ success: boolean; message: string }> {
-  const rows = await query<{ Cod_Usuario: string }>(
-    "SELECT TOP 1 Cod_Usuario FROM Usuarios WHERE Cod_Usuario = @cod",
-    { cod: codUsuario }
+  const rows = await callSp<{ Cod_Usuario: string }>(
+    "usp_Sec_User_CheckExists",
+    { CodUsuario: codUsuario }
   );
   if (rows.length === 0) {
     return { success: false, message: "Usuario no encontrado" };
   }
   const bcryptHash = await hashPassword(newPassword);
-  await execute("UPDATE Usuarios SET Password = @hash WHERE Cod_Usuario = @cod", {
-    hash: bcryptHash,
-    cod: codUsuario,
+  await callSp("usp_Sec_User_UpdatePassword", {
+    CodUsuario: codUsuario,
+    PasswordHash: bcryptHash,
   });
   return { success: true, message: "Contraseña restablecida correctamente" };
 }

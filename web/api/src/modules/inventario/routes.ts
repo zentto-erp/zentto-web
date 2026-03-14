@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { createInventario, deleteInventario, getInventario, updateInventario } from "./service.js";
+import {
+  insertInventarioSP,
+  updateInventarioSP,
+  deleteInventarioSP,
+  getInventarioByCodigoSP,
+} from "./inventario-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 
 export const inventarioRouter = Router();
@@ -94,10 +99,13 @@ inventarioRouter.get("/:codigo", async (req, res) => {
 // ========== POST: Crear artículo + invalidar caché ==========
 inventarioRouter.post("/", async (req, res) => {
   try {
-    const data = await createInventario(req.body ?? {});
-    // Invalidar caché tras mutación
+    const result = await insertInventarioSP(req.body ?? {});
     invalidateAndReload().catch(() => {});
-    res.status(201).json({ ok: true, data });
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -106,10 +114,13 @@ inventarioRouter.post("/", async (req, res) => {
 // ========== PUT: Actualizar artículo + invalidar caché ==========
 inventarioRouter.put("/:codigo", async (req, res) => {
   try {
-    const data = await updateInventario(req.params.codigo, req.body ?? {});
-    // Invalidar caché tras mutación
+    const result = await updateInventarioSP(req.params.codigo, req.body ?? {});
     invalidateAndReload().catch(() => {});
-    res.json({ ok: true, data });
+    if (result.success) {
+      res.json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -118,10 +129,13 @@ inventarioRouter.put("/:codigo", async (req, res) => {
 // ========== DELETE: Eliminar artículo + invalidar caché ==========
 inventarioRouter.delete("/:codigo", async (req, res) => {
   try {
-    const data = await deleteInventario(req.params.codigo);
-    // Invalidar caché tras mutación
+    const result = await deleteInventarioSP(req.params.codigo);
     invalidateAndReload().catch(() => {});
-    res.json({ ok: true, data });
+    if (result.success) {
+      res.json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

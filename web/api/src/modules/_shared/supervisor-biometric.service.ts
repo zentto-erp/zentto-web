@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 
 interface BiometricCredentialRow {
   biometricCredentialId: number;
@@ -39,17 +39,11 @@ export async function hasActiveSupervisorBiometricCredential(input: {
     return { ok: false as const };
   }
 
-  const rows = await query<{ biometricCredentialId: number }>(
-    `
-    SELECT TOP 1 BiometricCredentialId AS biometricCredentialId
-    FROM sec.SupervisorBiometricCredential
-    WHERE SupervisorUserCode = @supervisorUser
-      AND CredentialHash = @credentialHash
-      AND IsActive = 1
-    `,
+  const rows = await callSp<{ biometricCredentialId: number }>(
+    'usp_Sec_Supervisor_Biometric_HasActive',
     {
-      supervisorUser,
-      credentialHash: credentialHash(normalizedCredentialId),
+      SupervisorUser: supervisorUser,
+      CredentialHash: credentialHash(normalizedCredentialId),
     }
   );
 
@@ -69,21 +63,10 @@ export async function touchSupervisorBiometricCredential(input: {
   const normalizedCredentialId = normalizeCredentialId(input.credentialId);
   if (!supervisorUser || !normalizedCredentialId) return;
 
-  await query(
-    `
-    UPDATE sec.SupervisorBiometricCredential
-    SET
-      LastValidatedAtUtc = SYSUTCDATETIME(),
-      UpdatedAtUtc = SYSUTCDATETIME()
-    WHERE SupervisorUserCode = @supervisorUser
-      AND CredentialHash = @credentialHash
-      AND IsActive = 1
-    `,
-    {
-      supervisorUser,
-      credentialHash: credentialHash(normalizedCredentialId),
-    }
-  );
+  await callSp('usp_Sec_Supervisor_Biometric_Touch', {
+    SupervisorUser: supervisorUser,
+    CredentialHash: credentialHash(normalizedCredentialId),
+  });
 }
 
 export async function enrollSupervisorBiometricCredential(input: {
@@ -105,60 +88,15 @@ export async function enrollSupervisorBiometricCredential(input: {
 
   const hash = credentialHash(normalizedCredentialId);
 
-  const rows = await query<{ biometricCredentialId: number }>(
-    `
-    MERGE sec.SupervisorBiometricCredential AS target
-    USING (
-      SELECT
-        @supervisorUser AS SupervisorUserCode,
-        @credentialHash AS CredentialHash
-    ) AS source
-      ON target.SupervisorUserCode = source.SupervisorUserCode
-      AND target.CredentialHash = source.CredentialHash
-    WHEN MATCHED THEN
-      UPDATE SET
-        CredentialId = @credentialId,
-        CredentialLabel = @credentialLabel,
-        DeviceInfo = @deviceInfo,
-        IsActive = 1,
-        UpdatedAtUtc = SYSUTCDATETIME(),
-        UpdatedByUserCode = @actorUser
-    WHEN NOT MATCHED THEN
-      INSERT (
-        SupervisorUserCode,
-        CredentialHash,
-        CredentialId,
-        CredentialLabel,
-        DeviceInfo,
-        IsActive,
-        LastValidatedAtUtc,
-        CreatedAtUtc,
-        UpdatedAtUtc,
-        CreatedByUserCode,
-        UpdatedByUserCode
-      )
-      VALUES (
-        @supervisorUser,
-        @credentialHash,
-        @credentialId,
-        @credentialLabel,
-        @deviceInfo,
-        1,
-        NULL,
-        SYSUTCDATETIME(),
-        SYSUTCDATETIME(),
-        @actorUser,
-        @actorUser
-      )
-    OUTPUT inserted.BiometricCredentialId AS biometricCredentialId;
-    `,
+  const rows = await callSp<{ biometricCredentialId: number }>(
+    'usp_Sec_Supervisor_Biometric_Enroll',
     {
-      supervisorUser,
-      credentialHash: hash,
-      credentialId: normalizedCredentialId,
-      credentialLabel,
-      deviceInfo,
-      actorUser,
+      SupervisorUser: supervisorUser,
+      CredentialHash: hash,
+      CredentialId: normalizedCredentialId,
+      CredentialLabel: credentialLabel,
+      DeviceInfo: deviceInfo,
+      ActorUser: actorUser,
     }
   );
 
@@ -175,22 +113,9 @@ export async function listSupervisorBiometricCredentials(input: {
 }) {
   const supervisorUser = normalizeUserCode(input.supervisorUser);
 
-  const rows = await query<BiometricCredentialRow>(
-    `
-    SELECT
-      BiometricCredentialId AS biometricCredentialId,
-      SupervisorUserCode AS supervisorUserCode,
-      CredentialId AS credentialId,
-      CredentialLabel AS credentialLabel,
-      DeviceInfo AS deviceInfo,
-      IsActive AS isActive,
-      CONVERT(varchar(33), LastValidatedAtUtc, 127) AS lastValidatedAtUtc
-    FROM sec.SupervisorBiometricCredential
-    WHERE IsActive = 1
-      AND (@supervisorUser = '' OR SupervisorUserCode = @supervisorUser)
-    ORDER BY BiometricCredentialId DESC
-    `,
-    { supervisorUser }
+  const rows = await callSp<BiometricCredentialRow>(
+    'usp_Sec_Supervisor_Biometric_List',
+    { SupervisorUser: supervisorUser }
   );
 
   return rows.map((row) => ({
@@ -216,22 +141,12 @@ export async function deactivateSupervisorBiometricCredential(input: {
     return { ok: false as const, error: "biometric_credential_required" };
   }
 
-  const rows = await query<{ biometricCredentialId: number }>(
-    `
-    UPDATE sec.SupervisorBiometricCredential
-    SET
-      IsActive = 0,
-      UpdatedAtUtc = SYSUTCDATETIME(),
-      UpdatedByUserCode = @actorUser
-    OUTPUT inserted.BiometricCredentialId AS biometricCredentialId
-    WHERE SupervisorUserCode = @supervisorUser
-      AND CredentialHash = @credentialHash
-      AND IsActive = 1
-    `,
+  const rows = await callSp<{ biometricCredentialId: number }>(
+    'usp_Sec_Supervisor_Biometric_Deactivate',
     {
-      supervisorUser,
-      credentialHash: credentialHash(normalizedCredentialId),
-      actorUser,
+      SupervisorUser: supervisorUser,
+      CredentialHash: credentialHash(normalizedCredentialId),
+      ActorUser: actorUser,
     }
   );
 

@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import { crearAsiento, type AsientoDetalleInput } from "./service.js";
 import { getActiveScope } from "../_shared/scope.js";
 
@@ -120,22 +120,13 @@ async function getDefaultScope(): Promise<{ companyId: number; branchId: number 
   }
   if (defaultScopeCache) return defaultScopeCache;
 
-  const rows = await query<{ companyId: number; branchId: number }>(
-    `
-    SELECT TOP 1
-      c.CompanyId AS companyId,
-      b.BranchId AS branchId
-    FROM cfg.Company c
-    INNER JOIN cfg.Branch b ON b.CompanyId = c.CompanyId
-    WHERE c.CompanyCode = N'DEFAULT'
-      AND b.BranchCode = N'MAIN'
-    ORDER BY c.CompanyId, b.BranchId
-    `
+  const rows = await callSp<{ CompanyId: number; BranchId: number }>(
+    "dbo.usp_Acct_Scope_GetDefault"
   );
 
   defaultScopeCache = {
-    companyId: Number(rows[0]?.companyId ?? 1),
-    branchId: Number(rows[0]?.branchId ?? 1)
+    companyId: Number(rows[0]?.CompanyId ?? 1),
+    branchId: Number(rows[0]?.BranchId ?? 1)
   };
   if (activeScope) {
     return {
@@ -165,33 +156,17 @@ function isBankPayment(paymentMethod?: string): boolean {
 }
 
 async function hasContabilidadInfra(): Promise<boolean> {
-  const rows = await query<{ ok: number }>(
-    `
-    SELECT CASE WHEN
-      OBJECT_ID('acct.Account', 'U') IS NOT NULL
-      AND OBJECT_ID('acct.JournalEntry', 'U') IS NOT NULL
-      AND OBJECT_ID('acct.JournalEntryLine', 'U') IS NOT NULL
-    THEN 1 ELSE 0 END AS ok
-    `
-  );
+  const rows = await callSp<{ ok: number }>("dbo.usp_Acct_Infra_Check");
   return Number(rows[0]?.ok ?? 0) === 1;
 }
 
 async function accountExists(accountCode: string): Promise<boolean> {
   const scope = await getDefaultScope();
-  const rows = await query<{ ok: number }>(
-    `
-    SELECT CASE WHEN EXISTS (
-      SELECT 1
-      FROM acct.Account
-      WHERE CompanyId = @companyId
-        AND LTRIM(RTRIM(AccountCode)) = LTRIM(RTRIM(@accountCode))
-        AND IsDeleted = 0
-    ) THEN 1 ELSE 0 END AS ok
-    `,
+  const rows = await callSp<{ ok: number }>(
+    "dbo.usp_Acct_Account_Exists",
     {
-      companyId: scope.companyId,
-      accountCode
+      CompanyId: scope.companyId,
+      AccountCode: accountCode
     }
   );
   return Number(rows[0]?.ok ?? 0) === 1;
@@ -208,24 +183,11 @@ async function pickFirstExistingAccount(candidates: Array<string | null | undefi
 
 async function loadConfigRows(module: SalesModule): Promise<ConfigRow[]> {
   const scope = await getDefaultScope();
-  const rows = await query<ConfigRow>(
-    `
-    SELECT
-      p.ProcessCode AS Proceso,
-      CASE WHEN p.Nature = 'DEBIT' THEN N'DEBE' ELSE N'HABER' END AS Naturaleza,
-      a.AccountCode AS CuentaContable,
-      CAST(NULL AS NVARCHAR(20)) AS CentroCostoDefault
-    FROM acct.AccountingPolicy p
-    INNER JOIN acct.Account a ON a.AccountId = p.AccountId
-    WHERE p.CompanyId = @companyId
-      AND p.ModuleCode = @module
-      AND p.IsActive = 1
-      AND p.ProcessCode IN ('VENTA_TOTAL', 'VENTA_TOTAL_CAJA', 'VENTA_TOTAL_BANCO', 'VENTA_BASE', 'VENTA_IVA')
-    ORDER BY p.PriorityOrder, p.AccountingPolicyId
-    `,
+  const rows = await callSp<ConfigRow>(
+    "dbo.usp_Acct_Policy_Load",
     {
-      companyId: scope.companyId,
-      module
+      CompanyId: scope.companyId,
+      Module: module
     }
   );
   return rows ?? [];
@@ -288,25 +250,13 @@ async function resolveMapping(module: SalesModule, paymentMethod?: string) {
 
 async function findExistingAsientoByOrigin(module: SalesModule, originDocument: string): Promise<ExistingAsientoRow | null> {
   const scope = await getDefaultScope();
-  const rows = await query<ExistingAsientoRow>(
-    `
-    SELECT TOP 1
-      je.JournalEntryId AS asientoId,
-      je.EntryNumber AS numeroAsiento
-    FROM acct.JournalEntry je
-    WHERE je.CompanyId = @companyId
-      AND je.BranchId = @branchId
-      AND je.SourceModule = @module
-      AND je.SourceDocumentNo = @originDocument
-      AND je.IsDeleted = 0
-    ORDER BY je.JournalEntryId DESC
-    `
-    ,
+  const rows = await callSp<ExistingAsientoRow>(
+    "dbo.usp_Acct_Entry_FindByOrigin",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      module,
-      originDocument
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Module: module,
+      OriginDocument: originDocument
     }
   );
   return rows[0] ?? null;
@@ -314,23 +264,13 @@ async function findExistingAsientoByOrigin(module: SalesModule, originDocument: 
 
 async function resolveJournalEntryIdBySource(module: SalesModule, originDocument: string): Promise<number | null> {
   const scope = await getDefaultScope();
-  const rows = await query<{ journalEntryId: number | null }>(
-    `
-    SELECT TOP 1
-      CAST(je.JournalEntryId AS BIGINT) AS journalEntryId
-    FROM acct.JournalEntry je
-    WHERE je.CompanyId = @companyId
-      AND je.BranchId = @branchId
-      AND je.SourceModule = @module
-      AND je.SourceDocumentNo = @originDocument
-      AND je.IsDeleted = 0
-    ORDER BY je.JournalEntryId DESC
-    `,
+  const rows = await callSp<{ journalEntryId: number | null }>(
+    "dbo.usp_Acct_Entry_ResolveIdBySource",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      module,
-      originDocument
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Module: module,
+      OriginDocument: originDocument
     }
   );
   const journalEntryId = Number(rows[0]?.journalEntryId ?? 0);
@@ -344,45 +284,19 @@ async function upsertDocumentLink(params: {
   journalEntryId: number;
 }) {
   const scope = await getDefaultScope();
-  await query(
-    `
-    IF NOT EXISTS (
-      SELECT 1
-      FROM acct.DocumentLink
-      WHERE CompanyId = @companyId
-        AND BranchId = @branchId
-        AND ModuleCode = @module
-        AND DocumentType = @documentType
-        AND DocumentNumber = @originDocument
-    )
-    BEGIN
-      INSERT INTO acct.DocumentLink (
-        CompanyId,
-        BranchId,
-        ModuleCode,
-        DocumentType,
-        DocumentNumber,
-        NativeDocumentId,
-        JournalEntryId
-      )
-      VALUES (
-        @companyId,
-        @branchId,
-        @module,
-        @documentType,
-        @originDocument,
-        NULL,
-        @journalEntryId
-      )
-    END
-    `,
+  await callSpOut(
+    "dbo.usp_Acct_DocumentLink_Upsert",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      module: params.module,
-      documentType: "VENTA",
-      originDocument: params.originDocument,
-      journalEntryId: params.journalEntryId
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Module: params.module,
+      DocumentType: "VENTA",
+      OriginDocument: params.originDocument,
+      JournalEntryId: params.journalEntryId
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
     }
   );
 }
@@ -567,22 +481,9 @@ function buildTaxSummary(rows: TaxSummaryRow[]): AccountingTaxSummaryItem[] {
 }
 
 export async function reprocessPosAccounting(input: ReprocessPosAccountingInput): Promise<EmitSaleAccountingEntryResult> {
-  const rows = await query<PosHeaderRow>(
-    `
-    SELECT TOP 1
-      v.SaleTicketId AS id,
-      v.InvoiceNumber AS numFactura,
-      v.SoldAt AS fechaVenta,
-      v.PaymentMethod AS metodoPago,
-      u.UserCode AS codUsuario,
-      v.NetAmount AS subtotal,
-      v.TaxAmount AS impuestos,
-      v.TotalAmount AS total
-    FROM pos.SaleTicket v
-    LEFT JOIN sec.[User] u ON u.UserId = v.SoldByUserId
-    WHERE v.SaleTicketId = @ventaId
-    `,
-    { ventaId: input.ventaId }
+  const rows = await callSp<PosHeaderRow>(
+    "dbo.usp_Acct_Pos_GetHeader",
+    { SaleTicketId: input.ventaId }
   );
 
   const header = rows[0];
@@ -590,18 +491,9 @@ export async function reprocessPosAccounting(input: ReprocessPosAccountingInput)
     return { ok: false, skipped: true, reason: "venta_not_found" };
   }
 
-  const taxRows = await query<TaxSummaryRow>(
-    `
-    SELECT
-      TaxRate AS taxRate,
-      SUM(NetAmount) AS baseAmount,
-      SUM(TaxAmount) AS taxAmount,
-      SUM(TotalAmount) AS totalAmount
-    FROM pos.SaleTicketLine
-    WHERE SaleTicketId = @ventaId
-    GROUP BY TaxRate
-    `,
-    { ventaId: input.ventaId }
+  const taxRows = await callSp<TaxSummaryRow>(
+    "dbo.usp_Acct_Pos_GetTaxSummary",
+    { SaleTicketId: input.ventaId }
   );
 
   const taxSummary = buildTaxSummary(taxRows);
@@ -634,19 +526,9 @@ export async function reprocessPosAccounting(input: ReprocessPosAccountingInput)
 export async function reprocessRestauranteAccounting(
   input: ReprocessRestauranteAccountingInput
 ): Promise<EmitSaleAccountingEntryResult> {
-  const rows = await query<RestauranteHeaderRow>(
-    `
-    SELECT TOP 1
-      o.OrderTicketId AS id,
-      o.TotalAmount AS total,
-      o.ClosedAt AS fechaCierre,
-      COALESCE(uClose.UserCode, uOpen.UserCode) AS codUsuario
-    FROM rest.OrderTicket o
-    LEFT JOIN sec.[User] uOpen ON uOpen.UserId = o.OpenedByUserId
-    LEFT JOIN sec.[User] uClose ON uClose.UserId = o.ClosedByUserId
-    WHERE o.OrderTicketId = @pedidoId
-    `,
-    { pedidoId: input.pedidoId }
+  const rows = await callSp<RestauranteHeaderRow>(
+    "dbo.usp_Acct_Rest_GetHeader",
+    { OrderTicketId: input.pedidoId }
   );
 
   const header = rows[0];
@@ -654,18 +536,9 @@ export async function reprocessRestauranteAccounting(
     return { ok: false, skipped: true, reason: "pedido_not_found" };
   }
 
-  const taxRows = await query<TaxSummaryRow>(
-    `
-    SELECT
-      TaxRate AS taxRate,
-      SUM(NetAmount) AS baseAmount,
-      SUM(TaxAmount) AS taxAmount,
-      SUM(TotalAmount) AS totalAmount
-    FROM rest.OrderTicketLine
-    WHERE OrderTicketId = @pedidoId
-    GROUP BY TaxRate
-    `,
-    { pedidoId: input.pedidoId }
+  const taxRows = await callSp<TaxSummaryRow>(
+    "dbo.usp_Acct_Rest_GetTaxSummary",
+    { OrderTicketId: input.pedidoId }
   );
 
   const taxSummary = buildTaxSummary(taxRows);

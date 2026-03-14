@@ -2,7 +2,7 @@
  * Inventario Service - Stored Procedures
  * Usa SPs: usp_Inventario_List, GetByCodigo, Insert, Update, Delete
  */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export interface InventarioRow {
   CODIGO?: string;
@@ -63,103 +63,78 @@ function rowToXml(row: Record<string, unknown>): string {
   return `<row ${attrs}/>`;
 }
 
-/**
- * usp_Inventario_List - Listado paginado con filtros
- */
+/** usp_Inventario_List - Listado paginado con filtros */
 export async function listInventarioSP(params: ListInventarioParams = {}): Promise<ListInventarioResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
 
-  request.input("Search", sql.NVarChar(100), params.search || null);
-  request.input("Categoria", sql.NVarChar(50), params.categoria || null);
-  request.input("Marca", sql.NVarChar(50), params.marca || null);
-  request.input("Page", sql.Int, page);
-  request.input("Limit", sql.Int, limit);
-  request.output("TotalCount", sql.Int);
-
-  const result = await request.execute("usp_Inventario_List");
+  const { rows, output } = await callSpOut<InventarioRow>(
+    "usp_Inventario_List",
+    {
+      Search: params.search || null,
+      Categoria: params.categoria || null,
+      Marca: params.marca || null,
+      Page: page,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: result.output.TotalCount || 0,
+    rows: rows || [],
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
   };
 }
 
-/**
- * usp_Inventario_GetByCodigo - Obtener artículo por código
- */
+/** usp_Inventario_GetByCodigo - Obtener artículo por código */
 export async function getInventarioByCodigoSP(codigo: string): Promise<InventarioRow | null> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("Codigo", sql.NVarChar(15), codigo);
-
-  const result = await request.execute("usp_Inventario_GetByCodigo");
-  return result.recordset?.[0] || null;
+  const rows = await callSp<InventarioRow>(
+    "usp_Inventario_GetByCodigo",
+    { Codigo: codigo }
+  );
+  return rows[0] || null;
 }
 
-/**
- * usp_Inventario_Insert - Insertar artículo
- */
+/** usp_Inventario_Insert - Insertar artículo */
 export async function insertInventarioSP(row: InventarioRow): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<never>(
+    "usp_Inventario_Insert",
+    { RowXml: rowToXml(row) },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_Inventario_Insert");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Number(output.Resultado) === 1,
+    message: String(output.Mensaje ?? "OK"),
   };
 }
 
-/**
- * usp_Inventario_Update - Actualizar artículo
- */
+/** usp_Inventario_Update - Actualizar artículo */
 export async function updateInventarioSP(codigo: string, row: Partial<InventarioRow>): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<never>(
+    "usp_Inventario_Update",
+    { Codigo: codigo, RowXml: rowToXml(row) },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("Codigo", sql.NVarChar(15), codigo);
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_Inventario_Update");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Number(output.Resultado) === 1,
+    message: String(output.Mensaje ?? "OK"),
   };
 }
 
-/**
- * usp_Inventario_Delete - Eliminar artículo
- */
+/** usp_Inventario_Delete - Eliminar artículo */
 export async function deleteInventarioSP(codigo: string): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<never>(
+    "usp_Inventario_Delete",
+    { Codigo: codigo },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("Codigo", sql.NVarChar(15), codigo);
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_Inventario_Delete");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Number(output.Resultado) === 1,
+    message: String(output.Mensaje ?? "OK"),
   };
 }

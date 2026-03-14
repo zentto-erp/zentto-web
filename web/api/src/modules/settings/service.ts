@@ -1,4 +1,4 @@
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export interface AppSetting {
   settingId: number;
@@ -42,18 +42,14 @@ function serializeValue(val: any, type: string): string {
  * Returns: { general: { pais: 'VE', ... }, contabilidad: { ... }, ... }
  */
 export async function getAllSettings(companyId: number): Promise<Record<string, Record<string, any>>> {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input("companyId", sql.Int, companyId)
-    .query(`SELECT Module, SettingKey, SettingValue, ValueType
-            FROM cfg.AppSetting
-            WHERE CompanyId = @companyId
-            ORDER BY Module, SettingKey`);
+  const rows = await callSp<{ Module: string; SettingKey: string; SettingValue: string; ValueType: string }>(
+    "usp_Cfg_AppSetting_List",
+    { CompanyId: companyId }
+  );
 
   const grouped: Record<string, Record<string, any>> = {};
-  for (const row of result.recordset) {
-    const mod = row.Module as string;
+  for (const row of rows) {
+    const mod = row.Module;
     if (!grouped[mod]) grouped[mod] = {};
     grouped[mod][row.SettingKey] = parseValue(row.SettingValue, row.ValueType);
   }
@@ -64,18 +60,13 @@ export async function getAllSettings(companyId: number): Promise<Record<string, 
  * Get settings for a specific module.
  */
 export async function getModuleSettings(companyId: number, moduleName: string): Promise<Record<string, any>> {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input("companyId", sql.Int, companyId)
-    .input("module", sql.NVarChar(60), moduleName)
-    .query(`SELECT SettingKey, SettingValue, ValueType, Description, IsReadOnly
-            FROM cfg.AppSetting
-            WHERE CompanyId = @companyId AND Module = @module
-            ORDER BY SettingKey`);
+  const rows = await callSp<{ SettingKey: string; SettingValue: string; ValueType: string }>(
+    "usp_Cfg_AppSetting_ListByModule",
+    { CompanyId: companyId, Module: moduleName }
+  );
 
   const settings: Record<string, any> = {};
-  for (const row of result.recordset) {
+  for (const row of rows) {
     settings[row.SettingKey] = parseValue(row.SettingValue, row.ValueType);
   }
   return settings;
@@ -85,24 +76,22 @@ export async function getModuleSettings(companyId: number, moduleName: string): 
  * Get settings with full metadata (for admin panel).
  */
 export async function getModuleSettingsWithMeta(companyId: number, moduleName: string): Promise<AppSetting[]> {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input("companyId", sql.Int, companyId)
-    .input("module", sql.NVarChar(60), moduleName)
-    .query(`SELECT SettingId, CompanyId, Module, SettingKey, SettingValue, ValueType,
-                   Description, IsReadOnly, UpdatedAt
-            FROM cfg.AppSetting
-            WHERE CompanyId = @companyId AND Module = @module
-            ORDER BY SettingKey`);
+  const rows = await callSp<{
+    SettingId: number; CompanyId: number; Module: string; SettingKey: string;
+    SettingValue: string; ValueType: string; Description: string | null;
+    IsReadOnly: boolean; UpdatedAt: string;
+  }>(
+    "usp_Cfg_AppSetting_ListWithMeta",
+    { CompanyId: companyId, Module: moduleName }
+  );
 
-  return result.recordset.map((r: any) => ({
+  return rows.map((r) => ({
     settingId: r.SettingId,
     companyId: r.CompanyId,
     module: r.Module,
     settingKey: r.SettingKey,
     settingValue: r.SettingValue,
-    valueType: r.ValueType,
+    valueType: r.ValueType as AppSetting["valueType"],
     description: r.Description,
     isReadOnly: r.IsReadOnly,
     updatedAt: r.UpdatedAt,
@@ -119,19 +108,16 @@ export async function saveModuleSettings(
   settings: Record<string, any>,
   userId?: number
 ): Promise<{ saved: number }> {
-  const pool = await getPool();
   let saved = 0;
 
-  // Fetch existing keys for type info
-  const existing = await pool
-    .request()
-    .input("companyId", sql.Int, companyId)
-    .input("module", sql.NVarChar(60), moduleName)
-    .query(`SELECT SettingKey, ValueType, IsReadOnly FROM cfg.AppSetting
-            WHERE CompanyId = @companyId AND Module = @module`);
+  // Fetch existing keys for type info via SP
+  const existing = await callSp<{ SettingKey: string; ValueType: string; IsReadOnly: boolean }>(
+    "usp_Cfg_AppSetting_ListWithMeta",
+    { CompanyId: companyId, Module: moduleName }
+  );
 
   const typeMap = new Map<string, { valueType: string; isReadOnly: boolean }>();
-  for (const r of existing.recordset) {
+  for (const r of existing) {
     typeMap.set(r.SettingKey, { valueType: r.ValueType, isReadOnly: r.IsReadOnly });
   }
 
@@ -144,23 +130,18 @@ export async function saveModuleSettings(
     const vt = meta?.valueType || inferValueType(value);
     const serialized = serializeValue(value, vt);
 
-    await pool
-      .request()
-      .input("companyId", sql.Int, companyId)
-      .input("module", sql.NVarChar(60), moduleName)
-      .input("key", sql.NVarChar(120), key)
-      .input("value", sql.NVarChar(sql.MAX), serialized)
-      .input("valueType", sql.NVarChar(20), vt)
-      .input("userId", sql.Int, userId ?? null)
-      .query(`
-        IF EXISTS (SELECT 1 FROM cfg.AppSetting WHERE CompanyId = @companyId AND Module = @module AND SettingKey = @key)
-          UPDATE cfg.AppSetting
-          SET SettingValue = @value, ValueType = @valueType, UpdatedAt = SYSUTCDATETIME(), UpdatedByUserId = @userId
-          WHERE CompanyId = @companyId AND Module = @module AND SettingKey = @key
-        ELSE
-          INSERT INTO cfg.AppSetting (CompanyId, Module, SettingKey, SettingValue, ValueType, UpdatedByUserId)
-          VALUES (@companyId, @module, @key, @value, @valueType, @userId)
-      `);
+    await callSpOut(
+      "usp_Cfg_AppSetting_Upsert",
+      {
+        CompanyId: companyId,
+        Module: moduleName,
+        SettingKey: key,
+        SettingValue: serialized,
+        ValueType: vt,
+        UserId: userId ?? null,
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
     saved++;
   }
 
@@ -169,12 +150,11 @@ export async function saveModuleSettings(
 
 /** List distinct module names that have settings */
 export async function listSettingModules(companyId: number): Promise<string[]> {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input("companyId", sql.Int, companyId)
-    .query(`SELECT DISTINCT Module FROM cfg.AppSetting WHERE CompanyId = @companyId ORDER BY Module`);
-  return result.recordset.map((r: any) => r.Module);
+  const rows = await callSp<{ Module: string }>(
+    "usp_Cfg_AppSetting_ListModules",
+    { CompanyId: companyId }
+  );
+  return rows.map((r) => r.Module);
 }
 
 function inferValueType(val: any): string {

@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 
 export interface CachedArticulo {
   CODIGO: string;
@@ -92,12 +92,7 @@ let _ready = false;
 let _refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 async function getDefaultCompanyId() {
-  const rows = await query<{ CompanyId: number }>(
-    `SELECT TOP 1 CompanyId
-       FROM cfg.Company
-      WHERE IsDeleted = 0
-      ORDER BY CASE WHEN CompanyCode = 'DEFAULT' THEN 0 ELSE 1 END, CompanyId`
-  );
+  const rows = await callSp<{ CompanyId: number }>('usp_HR_Employee_GetDefaultCompany');
   const companyId = Number(rows[0]?.CompanyId ?? 0);
   if (!Number.isFinite(companyId) || companyId <= 0) throw new Error("company_not_found");
   return companyId;
@@ -151,25 +146,9 @@ function rowToCache(r: Record<string, any>): CachedArticulo {
 
 async function loadAllFromDB(): Promise<CachedArticulo[]> {
   const companyId = await getDefaultCompanyId();
-  const rows = await query<Record<string, any>>(
-    `SELECT
-        ProductId,
-        ProductCode,
-        ProductName,
-        CategoryCode,
-        UnitCode,
-        SalesPrice,
-        CostPrice,
-        DefaultTaxRate,
-        StockQty,
-        IsService,
-        IsDeleted,
-        UpdatedAt
-       FROM [master].Product
-      WHERE CompanyId = @companyId
-      ORDER BY ProductCode`,
-    { companyId }
-  );
+  const rows = await callSp<Record<string, any>>('usp_Inventario_CacheLoad', {
+    CompanyId: companyId
+  });
 
   return rows.map(rowToCache);
 }
@@ -240,7 +219,7 @@ export async function warmUp(): Promise<number> {
   rebuildIndexes(rows);
   startAutoRefresh();
   const elapsed = Date.now() - start;
-  console.log(`${LOG_PREFIX} Cargados ${rows.length} productos canónicos en ${elapsed}ms`);
+  console.log(`${LOG_PREFIX} Cargados ${rows.length} productos canonicos en ${elapsed}ms`);
   return rows.length;
 }
 
@@ -316,25 +295,10 @@ export async function getByCode(codigo: string): Promise<CachedArticulo | null> 
   if (found) return found;
 
   const companyId = await getDefaultCompanyId();
-  const rows = await query<Record<string, any>>(
-    `SELECT TOP 1
-        ProductId,
-        ProductCode,
-        ProductName,
-        CategoryCode,
-        UnitCode,
-        SalesPrice,
-        CostPrice,
-        DefaultTaxRate,
-        StockQty,
-        IsService,
-        IsDeleted,
-        UpdatedAt
-       FROM [master].Product
-      WHERE CompanyId = @companyId
-        AND ProductCode = @codigo`,
-    { companyId, codigo: normalized }
-  );
+  const rows = await callSp<Record<string, any>>('usp_Inventario_GetByCode', {
+    CompanyId: companyId,
+    Codigo: normalized
+  });
 
   return rows[0] ? rowToCache(rows[0]) : null;
 }

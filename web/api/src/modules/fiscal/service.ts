@@ -1,4 +1,4 @@
-import { execute, query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 import { getFiscalPlugin } from "./engine.js";
 import { fiscalKnowledgeByCountry, getCountryKnowledge, getDefaultFiscalConfig } from "./knowledge-base.js";
 import { CountryCode, FiscalConfig, FiscalRecord, FiscalTransactionInput, FiscalTransactionResult } from "./types.js";
@@ -10,32 +10,12 @@ function buildStoreKey(empresaId: number, sucursalId: number, countryCode: Count
 }
 
 async function hasFiscalConfigTable(): Promise<boolean> {
-  const rows = await query<{ hasTable: number }>(
-    `
-      SELECT CASE WHEN EXISTS(
-          SELECT 1
-          FROM sys.tables t
-          INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
-          WHERE t.name = 'CountryConfig'
-            AND s.name = 'fiscal'
-      ) THEN 1 ELSE 0 END AS hasTable
-    `
-  );
+  const rows = await callSp<{ hasTable: number }>('usp_Cfg_Fiscal_HasTable');
   return Number(rows?.[0]?.hasTable ?? 0) === 1;
 }
 
 async function hasFiscalRecordsTable(): Promise<boolean> {
-  const rows = await query<{ hasTable: number }>(
-    `
-      SELECT CASE WHEN EXISTS(
-          SELECT 1
-          FROM sys.tables t
-          INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
-          WHERE t.name = 'Record'
-            AND s.name = 'fiscal'
-      ) THEN 1 ELSE 0 END AS hasTable
-    `
-  );
+  const rows = await callSp<{ hasTable: number }>('usp_Cfg_Fiscal_HasRecordsTable');
   return Number(rows?.[0]?.hasTable ?? 0) === 1;
 }
 
@@ -126,35 +106,11 @@ async function getLatestFiscalRecord(params: {
   sucursalId: number;
   countryCode: CountryCode;
 }): Promise<FiscalRecord | null> {
-  if (!(await hasFiscalRecordsTable())) return null;
-
-  const rows = await query<Record<string, unknown>>(
-    `
-      SELECT TOP 1
-        FiscalRecordId AS Id,
-        InvoiceId,
-        CountryCode,
-        InvoiceType,
-        XmlContent,
-        RecordHash,
-        PreviousRecordHash,
-        DigitalSignature,
-        QRCodeData,
-        SentToAuthority,
-        AuthorityResponse,
-        CreatedAt
-      FROM fiscal.Record
-      WHERE CompanyId = @empresaId
-        AND BranchId = @sucursalId
-        AND CountryCode = @countryCode
-      ORDER BY FiscalRecordId DESC
-    `,
-    {
-      empresaId: params.empresaId,
-      sucursalId: params.sucursalId,
-      countryCode: params.countryCode
-    }
-  );
+  const rows = await callSp<Record<string, unknown>>('usp_Cfg_Fiscal_GetLatestRecord', {
+    EmpresaId: params.empresaId,
+    SucursalId: params.sucursalId,
+    CountryCode: params.countryCode
+  });
 
   const row = rows[0];
   if (!row) return null;
@@ -176,18 +132,10 @@ async function getLatestFiscalRecord(params: {
 }
 
 async function inferCountryCodeFromConfig(empresaId: number, sucursalId: number): Promise<CountryCode> {
-  if (!(await hasFiscalConfigTable())) return "VE";
-  const rows = await query<{ CountryCode: string }>(
-    `
-      SELECT TOP 1 CountryCode
-      FROM fiscal.CountryConfig
-      WHERE CompanyId = @empresaId
-        AND BranchId = @sucursalId
-        AND IsActive = 1
-      ORDER BY UpdatedAt DESC, CountryConfigId DESC
-    `,
-    { empresaId, sucursalId }
-  );
+  const rows = await callSp<{ CountryCode: string }>('usp_Cfg_Fiscal_InferCountry', {
+    EmpresaId: empresaId,
+    SucursalId: sucursalId
+  });
   return normalizeCountryCode(rows[0]?.CountryCode);
 }
 
@@ -236,38 +184,11 @@ export async function getFiscalConfig(params: {
     return memoryConfig ? mergeDefaults(memoryConfig) : { ...defaultConfig, empresaId, sucursalId };
   }
 
-  const rows = await query<Record<string, unknown>>(
-    `
-      SELECT TOP 1
-        CompanyId AS EmpresaId,
-        BranchId AS SucursalId,
-        CountryCode,
-        Currency,
-        TaxRegime,
-        DefaultTaxCode,
-        DefaultTaxRate,
-        FiscalPrinterEnabled,
-        PrinterBrand,
-        PrinterPort,
-        VerifactuEnabled,
-        VerifactuMode,
-        CertificatePath,
-        CertificatePassword,
-        AEATEndpoint,
-        SenderNIF,
-        SenderRIF,
-        SoftwareId,
-        SoftwareName,
-        SoftwareVersion,
-        PosEnabled,
-        RestaurantEnabled
-      FROM fiscal.CountryConfig
-      WHERE CompanyId = @empresaId
-        AND BranchId = @sucursalId
-        AND CountryCode = @countryCode
-    `,
-    { empresaId, sucursalId, countryCode }
-  );
+  const rows = await callSp<Record<string, unknown>>('usp_Cfg_Fiscal_GetConfig', {
+    EmpresaId: empresaId,
+    SucursalId: sucursalId,
+    CountryCode: countryCode
+  });
 
   if (!rows.length) {
     return { ...defaultConfig, empresaId, sucursalId };
@@ -294,119 +215,30 @@ export async function upsertFiscalConfig(input: Partial<FiscalConfig> & {
     return normalized;
   }
 
-  await execute(
-    `
-      MERGE fiscal.CountryConfig AS target
-      USING (
-        SELECT
-          @empresaId AS CompanyId,
-          @sucursalId AS BranchId,
-          @countryCode AS CountryCode
-      ) AS src
-      ON target.CompanyId = src.CompanyId
-         AND target.BranchId = src.BranchId
-         AND target.CountryCode = src.CountryCode
-      WHEN MATCHED THEN
-        UPDATE SET
-          Currency = @currency,
-          TaxRegime = @taxRegime,
-          DefaultTaxCode = @defaultTaxCode,
-          DefaultTaxRate = @defaultTaxRate,
-          FiscalPrinterEnabled = @fiscalPrinterEnabled,
-          PrinterBrand = @printerBrand,
-          PrinterPort = @printerPort,
-          VerifactuEnabled = @verifactuEnabled,
-          VerifactuMode = @verifactuMode,
-          CertificatePath = @certificatePath,
-          CertificatePassword = @certificatePassword,
-          AEATEndpoint = @aeatEndpoint,
-          SenderNIF = @senderNIF,
-          SenderRIF = @senderRIF,
-          SoftwareId = @softwareId,
-          SoftwareName = @softwareName,
-          SoftwareVersion = @softwareVersion,
-          PosEnabled = @posEnabled,
-          RestaurantEnabled = @restaurantEnabled,
-          UpdatedAt = SYSUTCDATETIME()
-      WHEN NOT MATCHED THEN
-        INSERT (
-          CompanyId,
-          BranchId,
-          CountryCode,
-          Currency,
-          TaxRegime,
-          DefaultTaxCode,
-          DefaultTaxRate,
-          FiscalPrinterEnabled,
-          PrinterBrand,
-          PrinterPort,
-          VerifactuEnabled,
-          VerifactuMode,
-          CertificatePath,
-          CertificatePassword,
-          AEATEndpoint,
-          SenderNIF,
-          SenderRIF,
-          SoftwareId,
-          SoftwareName,
-          SoftwareVersion,
-          PosEnabled,
-          RestaurantEnabled,
-          CreatedAt,
-          UpdatedAt
-        )
-        VALUES (
-          @empresaId,
-          @sucursalId,
-          @countryCode,
-          @currency,
-          @taxRegime,
-          @defaultTaxCode,
-          @defaultTaxRate,
-          @fiscalPrinterEnabled,
-          @printerBrand,
-          @printerPort,
-          @verifactuEnabled,
-          @verifactuMode,
-          @certificatePath,
-          @certificatePassword,
-          @aeatEndpoint,
-          @senderNIF,
-          @senderRIF,
-          @softwareId,
-          @softwareName,
-          @softwareVersion,
-          @posEnabled,
-          @restaurantEnabled,
-          SYSUTCDATETIME(),
-          SYSUTCDATETIME()
-        );
-    `,
-    {
-      empresaId: normalized.empresaId,
-      sucursalId: normalized.sucursalId,
-      countryCode: normalized.countryCode,
-      currency: normalized.currency,
-      taxRegime: normalized.taxRegime,
-      defaultTaxCode: normalized.defaultTaxCode,
-      defaultTaxRate: normalized.defaultTaxRate,
-      fiscalPrinterEnabled: normalized.fiscalPrinterEnabled ? 1 : 0,
-      printerBrand: normalized.printerBrand ?? null,
-      printerPort: normalized.printerPort ?? null,
-      verifactuEnabled: normalized.verifactuEnabled ? 1 : 0,
-      verifactuMode: normalized.verifactuMode,
-      certificatePath: normalized.certificatePath ?? null,
-      certificatePassword: normalized.certificatePassword ?? null,
-      aeatEndpoint: normalized.aeatEndpoint ?? null,
-      senderNIF: normalized.senderNIF ?? null,
-      senderRIF: normalized.senderRIF ?? null,
-      softwareId: normalized.softwareId ?? null,
-      softwareName: normalized.softwareName ?? null,
-      softwareVersion: normalized.softwareVersion ?? null,
-      posEnabled: normalized.posEnabled ? 1 : 0,
-      restaurantEnabled: normalized.restaurantEnabled ? 1 : 0
-    }
-  );
+  await callSp('usp_Cfg_Fiscal_UpsertConfig', {
+    EmpresaId: normalized.empresaId,
+    SucursalId: normalized.sucursalId,
+    CountryCode: normalized.countryCode,
+    Currency: normalized.currency,
+    TaxRegime: normalized.taxRegime,
+    DefaultTaxCode: normalized.defaultTaxCode,
+    DefaultTaxRate: normalized.defaultTaxRate,
+    FiscalPrinterEnabled: normalized.fiscalPrinterEnabled ? 1 : 0,
+    PrinterBrand: normalized.printerBrand ?? null,
+    PrinterPort: normalized.printerPort ?? null,
+    VerifactuEnabled: normalized.verifactuEnabled ? 1 : 0,
+    VerifactuMode: normalized.verifactuMode,
+    CertificatePath: normalized.certificatePath ?? null,
+    CertificatePassword: normalized.certificatePassword ?? null,
+    AEATEndpoint: normalized.aeatEndpoint ?? null,
+    SenderNIF: normalized.senderNIF ?? null,
+    SenderRIF: normalized.senderRIF ?? null,
+    SoftwareId: normalized.softwareId ?? null,
+    SoftwareName: normalized.softwareName ?? null,
+    SoftwareVersion: normalized.softwareVersion ?? null,
+    PosEnabled: normalized.posEnabled ? 1 : 0,
+    RestaurantEnabled: normalized.restaurantEnabled ? 1 : 0
+  });
 
   return normalized;
 }
@@ -484,80 +316,29 @@ export async function emitFiscalRecordFromTransaction(input: FiscalTransactionIn
   const zReportNumberRaw = metadata["zReportNumber"];
   const zReportNumber = Number.isFinite(Number(zReportNumberRaw)) ? Number(zReportNumberRaw) : null;
 
-  await execute(
-    `
-      INSERT INTO fiscal.Record (
-        CompanyId,
-        BranchId,
-        CountryCode,
-        InvoiceId,
-        InvoiceType,
-        InvoiceNumber,
-        InvoiceDate,
-        RecipientId,
-        TotalAmount,
-        RecordHash,
-        PreviousRecordHash,
-        XmlContent,
-        DigitalSignature,
-        QRCodeData,
-        SentToAuthority,
-        SentAt,
-        AuthorityResponse,
-        AuthorityStatus,
-        FiscalPrinterSerial,
-        FiscalControlNumber,
-        ZReportNumber,
-        CreatedAt
-      ) VALUES (
-        @empresaId,
-        @sucursalId,
-        @countryCode,
-        @invoiceId,
-        @invoiceType,
-        @invoiceNumber,
-        @invoiceDate,
-        @recipientId,
-        @totalAmount,
-        @recordHash,
-        @previousRecordHash,
-        @xmlContent,
-        @digitalSignature,
-        @qrCodeData,
-        @sentToAuthority,
-        @sentAt,
-        @authorityResponse,
-        @authorityStatus,
-        @fiscalPrinterSerial,
-        @fiscalControlNumber,
-        @zReportNumber,
-        SYSUTCDATETIME()
-      )
-    `,
-    {
-      empresaId,
-      sucursalId,
-      countryCode,
-      invoiceId: input.invoiceId,
-      invoiceType,
-      invoiceNumber: input.invoiceNumber,
-      invoiceDate,
-      recipientId: input.recipientId ?? null,
-      totalAmount,
-      recordHash: builtRecord.hash,
-      previousRecordHash: builtRecord.previousHash ?? null,
-      xmlContent: builtRecord.xmlContent ?? null,
-      digitalSignature: builtRecord.signature ?? null,
-      qrCodeData: builtRecord.qrCode ?? null,
-      sentToAuthority: sentToAuthority ? 1 : 0,
-      sentAt: sentToAuthority ? new Date() : null,
-      authorityResponse: authorityResponse || null,
-      authorityStatus,
-      fiscalPrinterSerial,
-      fiscalControlNumber,
-      zReportNumber
-    }
-  );
+  await callSp('usp_Cfg_Fiscal_InsertRecord', {
+    EmpresaId: empresaId,
+    SucursalId: sucursalId,
+    CountryCode: countryCode,
+    InvoiceId: input.invoiceId,
+    InvoiceType: invoiceType,
+    InvoiceNumber: input.invoiceNumber,
+    InvoiceDate: invoiceDate,
+    RecipientId: input.recipientId ?? null,
+    TotalAmount: totalAmount,
+    RecordHash: builtRecord.hash,
+    PreviousRecordHash: builtRecord.previousHash ?? null,
+    XmlContent: builtRecord.xmlContent ?? null,
+    DigitalSignature: builtRecord.signature ?? null,
+    QRCodeData: builtRecord.qrCode ?? null,
+    SentToAuthority: sentToAuthority ? 1 : 0,
+    SentAt: sentToAuthority ? new Date() : null,
+    AuthorityResponse: authorityResponse || null,
+    AuthorityStatus: authorityStatus,
+    FiscalPrinterSerial: fiscalPrinterSerial,
+    FiscalControlNumber: fiscalControlNumber,
+    ZReportNumber: zReportNumber
+  });
 
   return {
     ok: true,

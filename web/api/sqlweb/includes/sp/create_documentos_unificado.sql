@@ -1,328 +1,854 @@
 -- =============================================
--- Creación de tablas unificadas para documentos
--- Variante 2: DocumentosVenta y DocumentosCompra
+-- Creacion de tablas y vistas de documentos unificados
+-- Tablas reales: ar.SalesDocument*, ap.PurchaseDocument*
+-- Vistas legacy: dbo.DocumentosVenta*, dbo.DocumentosCompra*
+-- Vistas alias:  doc.SalesDocument*, doc.PurchaseDocument*
+-- Cadena: doc.* (VIEW) -> dbo.* (VIEW) -> ar.*/ap.* (TABLE)
 -- =============================================
 
--- =============================================
--- 1. TABLA: DocumentosVenta (Clientes)
--- TIPOS: FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENTREGA
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DocumentosVenta')
-BEGIN
-    CREATE TABLE DocumentosVenta (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        NUM_DOC NVARCHAR(60) NOT NULL,                    -- Número de documento
-        SERIALTIPO NVARCHAR(60) NOT NULL DEFAULT '',      -- Serie/Tipo fiscal
-        TIPO_OPERACION NVARCHAR(20) NOT NULL,             -- FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENTREGA
-        CODIGO NVARCHAR(60) NULL,                         -- Código del cliente
-        NOMBRE NVARCHAR(255) NULL,                        -- Nombre del cliente
-        RIF NVARCHAR(20) NULL,                            -- RIF del cliente
-        FECHA DATETIME NULL DEFAULT GETDATE(),
-        FECHA_VENCE DATETIME NULL,                        -- Fecha de vencimiento
-        HORA NVARCHAR(20) NULL DEFAULT CONVERT(NVARCHAR(8), GETDATE(), 108),
-        
-        -- Montos
-        SUBTOTAL FLOAT NULL DEFAULT 0,
-        MONTO_GRA FLOAT NULL DEFAULT 0,                   -- Monto gravado
-        MONTO_EXE FLOAT NULL DEFAULT 0,                   -- Monto exento
-        IVA FLOAT NULL DEFAULT 0,
-        ALICUOTA FLOAT NULL DEFAULT 0,                    -- % de alícuota IVA
-        TOTAL FLOAT NULL DEFAULT 0,
-        DESCUENTO FLOAT NULL DEFAULT 0,                   -- Descuento global
-        
-        -- Estados
-        ANULADA BIT NULL DEFAULT 0,
-        CANCELADA NVARCHAR(1) NULL DEFAULT 'N',           -- S/N si está cancelada (pagada)
-        FACTURADA NVARCHAR(1) NULL DEFAULT 'N',           -- Para pedidos/presupuestos facturados
-        ENTREGADA NVARCHAR(1) NULL DEFAULT 'N',           -- Para notas de entrega
-        
-        -- Documentos relacionados
-        DOC_ORIGEN NVARCHAR(60) NULL,                     -- Documento origen (ej: pedido que genera factura)
-        TIPO_DOC_ORIGEN NVARCHAR(20) NULL,                -- Tipo del doc origen
-        
-        -- Información fiscal
-        NUM_CONTROL NVARCHAR(60) NULL,                    -- Número de control fiscal
-        LEGAL BIT NULL DEFAULT 0,                         -- Es documento fiscal legal
-        IMPRESA BIT NULL DEFAULT 0,                       -- Ya fue impresa fiscalmente
-        
-        -- Información adicional
-        OBSERV NVARCHAR(500) NULL,
-        CONCEPTO NVARCHAR(255) NULL,
-        TERMINOS NVARCHAR(255) NULL,                      -- Términos de pago
-        DESPACHAR NVARCHAR(255) NULL,                     -- Lugar de despacho
-        
-        -- Vendedor y ubicación
-        VENDEDOR NVARCHAR(60) NULL,
-        DEPARTAMENTO NVARCHAR(50) NULL,
-        LOCACION NVARCHAR(100) NULL,
-        
-        -- Moneda
-        MONEDA NVARCHAR(20) NULL DEFAULT 'BS',
-        TASA_CAMBIO FLOAT NULL DEFAULT 1,
-        
-        -- Auditoría
-        COD_USUARIO NVARCHAR(60) NULL DEFAULT 'API',
-        FECHA_REPORTE DATETIME NULL DEFAULT GETDATE(),
-        COMPUTER NVARCHAR(255) NULL DEFAULT HOST_NAME(),
-        
-        -- Campos específicos por tipo (nullable)
-        PLACAS NVARCHAR(20) NULL,                         -- Cotizaciones/Pedidos (taller)
-        KILOMETROS INT NULL,
-        PEAJE FLOAT NULL DEFAULT 0,
-        
-        CONSTRAINT UQ_DocumentosVenta_NUM_DOC_TIPO UNIQUE (NUM_DOC, TIPO_OPERACION)
-    );
-    
-    CREATE INDEX IX_DocumentosVenta_CODIGO ON DocumentosVenta(CODIGO);
-    CREATE INDEX IX_DocumentosVenta_FECHA ON DocumentosVenta(FECHA);
-    CREATE INDEX IX_DocumentosVenta_TIPO ON DocumentosVenta(TIPO_OPERACION);
-    CREATE INDEX IX_DocumentosVenta_DOC_ORIGEN ON DocumentosVenta(DOC_ORIGEN);
-END
-GO
+-- =============================================================================
+-- SECCION 1: TABLAS ar.* (Documentos de Venta)
+-- =============================================================================
 
--- =============================================
--- 2. TABLA: DocumentosVentaDetalle
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DocumentosVentaDetalle')
+-- 1.1 ar.SalesDocument
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('ar') AND name = 'SalesDocument')
 BEGIN
-    CREATE TABLE DocumentosVentaDetalle (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        NUM_DOC NVARCHAR(60) NOT NULL,
-        TIPO_OPERACION NVARCHAR(20) NOT NULL,
-        RENGLON INT NULL DEFAULT 0,
-        
-        -- Producto
-        COD_SERV NVARCHAR(60) NULL,                       -- Código del producto/servicio
-        DESCRIPCION NVARCHAR(255) NULL,                   -- Descripción
-        COD_ALTERNO NVARCHAR(60) NULL,                    -- Código alterno
-        
-        -- Cantidades y precios
-        CANTIDAD FLOAT NULL DEFAULT 0,
-        PRECIO FLOAT NULL DEFAULT 0,                      -- Precio unitario
-        PRECIO_DESCUENTO FLOAT NULL DEFAULT 0,            -- Precio con descuento
-        COSTO FLOAT NULL DEFAULT 0,                       -- Costo (para utilidad)
-        
-        -- Totales
-        SUBTOTAL FLOAT NULL DEFAULT 0,
-        DESCUENTO FLOAT NULL DEFAULT 0,                   -- % descuento línea
-        TOTAL FLOAT NULL DEFAULT 0,
-        
-        -- IVA
-        ALICUOTA FLOAT NULL DEFAULT 0,
-        MONTO_IVA FLOAT NULL DEFAULT 0,
-        
-        -- Estados
-        ANULADA BIT NULL DEFAULT 0,
-        RELACIONADA NVARCHAR(10) NULL DEFAULT '0',        -- Ítem relacionado con otro doc
-        
-        -- Auditoría
-        CO_USUARIO NVARCHAR(60) NULL DEFAULT 'API',
-        FECHA DATETIME NULL DEFAULT GETDATE(),
-        
-        CONSTRAINT FK_DocVentaDet_DocVenta FOREIGN KEY (NUM_DOC, TIPO_OPERACION) 
-            REFERENCES DocumentosVenta(NUM_DOC, TIPO_OPERACION)
-    );
-    
-    CREATE INDEX IX_DocVentaDet_NUM_DOC ON DocumentosVentaDetalle(NUM_DOC, TIPO_OPERACION);
-    CREATE INDEX IX_DocVentaDet_COD_SERV ON DocumentosVentaDetalle(COD_SERV);
-END
-GO
+    CREATE TABLE ar.SalesDocument (
+        DocumentId          INT IDENTITY(1,1) NOT NULL,
+        DocumentNumber      NVARCHAR(60)  NOT NULL,
+        SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        OperationType       NVARCHAR(20)  NOT NULL,
 
--- =============================================
--- 3. TABLA: DocumentosVentaPago (Formas de pago)
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DocumentosVentaPago')
-BEGIN
-    CREATE TABLE DocumentosVentaPago (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        NUM_DOC NVARCHAR(60) NOT NULL,
-        TIPO_OPERACION NVARCHAR(20) NOT NULL DEFAULT 'FACT',
-        
-        -- Forma de pago
-        TIPO_PAGO NVARCHAR(30) NULL,                      -- EFECTIVO, CHEQUE, TARJETA, TRANSFERENCIA, etc.
-        BANCO NVARCHAR(60) NULL,
-        NUMERO NVARCHAR(60) NULL,                         -- Número de cheque/tarjeta
-        
-        -- Montos
-        MONTO FLOAT NULL DEFAULT 0,
-        MONTO_BS FLOAT NULL DEFAULT 0,                    -- En bolívares si es divisa
-        TASA_CAMBIO FLOAT NULL DEFAULT 1,                 -- Tasa del día para este pago (tasa_moneda/tasa_dolar)
-        
+        -- Cliente
+        CustomerCode        NVARCHAR(60)  NULL,
+        CustomerName        NVARCHAR(255) NULL,
+        FiscalId            NVARCHAR(20)  NULL,
+
         -- Fechas
-        FECHA DATETIME NULL DEFAULT GETDATE(),
-        FECHA_VENCE DATETIME NULL,                        -- Para cheques
-        
-        -- Referencias
-        REFERENCIA NVARCHAR(100) NULL,
-        CO_USUARIO NVARCHAR(60) NULL DEFAULT 'API',
-        
-        CONSTRAINT FK_DocVentaPago_DocVenta FOREIGN KEY (NUM_DOC, TIPO_OPERACION) 
-            REFERENCES DocumentosVenta(NUM_DOC, TIPO_OPERACION)
-    );
-    
-    CREATE INDEX IX_DocVentaPago_NUM_DOC ON DocumentosVentaPago(NUM_DOC, TIPO_OPERACION);
-END
-GO
+        DocumentDate        DATETIME      NULL DEFAULT GETDATE(),
+        DueDate             DATETIME      NULL,
+        DocumentTime        NVARCHAR(20)  NULL DEFAULT CONVERT(NVARCHAR(8), GETDATE(), 108),
 
--- =============================================
--- 4. TABLA: DocumentosCompra (Proveedores)
--- TIPOS: ORDEN, COMPRA
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DocumentosCompra')
-BEGIN
-    CREATE TABLE DocumentosCompra (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        NUM_DOC NVARCHAR(60) NOT NULL,                    -- Número de documento
-        SERIALTIPO NVARCHAR(60) NOT NULL DEFAULT '',      -- Serie
-        TIPO_OPERACION NVARCHAR(20) NOT NULL DEFAULT 'COMPRA', -- ORDEN, COMPRA
-        COD_PROVEEDOR NVARCHAR(60) NULL,                  -- Código del proveedor
-        NOMBRE NVARCHAR(255) NULL,                        -- Nombre del proveedor
-        RIF NVARCHAR(15) NULL,                            -- RIF del proveedor
-        
-        FECHA DATETIME NULL DEFAULT GETDATE(),
-        FECHA_VENCE DATETIME NULL,                        -- Fecha de vencimiento
-        FECHA_RECIBO DATETIME NULL,                       -- Fecha de recepción
-        FECHA_PAGO DATETIME NULL,                         -- Fecha de pago
-        HORA NVARCHAR(20) NULL DEFAULT CONVERT(NVARCHAR(8), GETDATE(), 108),
-        
         -- Montos
-        SUBTOTAL FLOAT NULL DEFAULT 0,
-        MONTO_GRA FLOAT NULL DEFAULT 0,                   -- Monto gravado
-        MONTO_EXE FLOAT NULL DEFAULT 0,                   -- Monto exento
-        IVA FLOAT NULL DEFAULT 0,
-        ALICUOTA FLOAT NULL DEFAULT 0,
-        TOTAL FLOAT NULL DEFAULT 0,
-        EXENTO FLOAT NULL DEFAULT 0,
-        DESCUENTO FLOAT NULL DEFAULT 0,
-        
+        SubTotal            DECIMAL(18,4) NULL DEFAULT 0,
+        TaxableAmount       DECIMAL(18,4) NULL DEFAULT 0,
+        ExemptAmount        DECIMAL(18,4) NULL DEFAULT 0,
+        TaxAmount           DECIMAL(18,4) NULL DEFAULT 0,
+        TaxRate             DECIMAL(8,4)  NULL DEFAULT 0,
+        TotalAmount         DECIMAL(18,4) NULL DEFAULT 0,
+        DiscountAmount      DECIMAL(18,4) NULL DEFAULT 0,
+
         -- Estados
-        ANULADA BIT NULL DEFAULT 0,
-        CANCELADA NVARCHAR(1) NULL DEFAULT 'N',           -- S/N pagada
-        RECIBIDA NVARCHAR(1) NULL DEFAULT 'N',            -- Para órdenes recibidas
-        LEGAL BIT NULL DEFAULT 0,                         -- Es factura fiscal legal
-        
+        IsVoided            BIT           NULL DEFAULT 0,
+        IsPaid              NVARCHAR(1)   NULL DEFAULT 'N',
+        IsInvoiced          NVARCHAR(1)   NULL DEFAULT 'N',
+        IsDelivered         NVARCHAR(1)   NULL DEFAULT 'N',
+
         -- Documentos relacionados
-        DOC_ORIGEN NVARCHAR(60) NULL,                     -- Orden que genera compra
-        
-        -- Información fiscal compra
-        NUM_CONTROL NVARCHAR(60) NULL,
-        NRO_COMPROBANTE NVARCHAR(50) NULL,                -- Número de comprobante
-        FECHA_COMPROBANTE DATETIME NULL,
-        
-        -- Retenciones
-        IVA_RETENIDO FLOAT NULL DEFAULT 0,
-        ISLR NVARCHAR(50) NULL,
-        MONTO_ISLR FLOAT NULL DEFAULT 0,
-        CODIGO_ISLR NVARCHAR(50) NULL,
-        SUJETO_ISLR FLOAT NULL DEFAULT 0,
-        TASA_RETENCION FLOAT NULL DEFAULT 0,
-        
-        -- Importación
-        IMPORTACION FLOAT NULL DEFAULT 0,
-        IVA_IMPORT FLOAT NULL DEFAULT 0,
-        BASE_IMPORT FLOAT NULL DEFAULT 0,
-        FLETE FLOAT NULL DEFAULT 0,
-        
-        -- Información adicional
-        CONCEPTO NVARCHAR(255) NULL,
-        OBSERV NVARCHAR(500) NULL,
-        PEDIDO NVARCHAR(20) NULL,
-        RECIBIDO NVARCHAR(20) NULL,
-        ALMACEN NVARCHAR(50) NULL,
-        
-        -- Moneda y tasa del día (valor de tasa_moneda/tasa_dolar al momento de la operación)
-        MONEDA NVARCHAR(20) NULL DEFAULT 'BS',
-        TASA_CAMBIO FLOAT NULL DEFAULT 1,                 -- Tasa de cambio del día (ej. dólar)
-        PRECIO_DOLLAR FLOAT NULL DEFAULT 0,
-        
-        -- Auditoría
-        COD_USUARIO NVARCHAR(60) NULL DEFAULT 'API',
-        CO_USUARIO NVARCHAR(10) NULL,
-        FECHA_REPORTE DATETIME NULL DEFAULT GETDATE(),
-        COMPUTER NVARCHAR(255) NULL DEFAULT HOST_NAME(),
-        
-        CONSTRAINT UQ_DocumentosCompra_NUM_DOC_TIPO UNIQUE (NUM_DOC, TIPO_OPERACION)
+        OriginDocumentNumber NVARCHAR(60) NULL,
+        OriginDocumentType  NVARCHAR(20)  NULL,
+
+        -- Informacion fiscal
+        ControlNumber       NVARCHAR(60)  NULL,
+        IsLegal             BIT           NULL DEFAULT 0,
+        IsPrinted           BIT           NULL DEFAULT 0,
+
+        -- Informacion adicional
+        Notes               NVARCHAR(500) NULL,
+        Concept             NVARCHAR(255) NULL,
+        PaymentTerms        NVARCHAR(255) NULL,
+        ShipToAddress       NVARCHAR(255) NULL,
+
+        -- Vendedor y ubicacion
+        SellerCode          NVARCHAR(60)  NULL,
+        DepartmentCode      NVARCHAR(50)  NULL,
+        LocationCode        NVARCHAR(100) NULL,
+
+        -- Moneda
+        CurrencyCode        NVARCHAR(20)  NULL DEFAULT 'BS',
+        ExchangeRate        DECIMAL(18,6) NULL DEFAULT 1,
+
+        -- Auditoria
+        UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
+        ReportDate          DATETIME      NULL DEFAULT GETDATE(),
+        HostName            NVARCHAR(255) NULL DEFAULT HOST_NAME(),
+
+        -- Campos especificos (taller/lubricantes)
+        VehiclePlate        NVARCHAR(20)  NULL,
+        Mileage             INT           NULL,
+        TollAmount          DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- Audit trail
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        UpdatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        DeletedAt           DATETIME2(0)  NULL,
+        DeletedByUserId     INT           NULL,
+        RowVer              ROWVERSION    NOT NULL,
+
+        CONSTRAINT PK_SalesDocument PRIMARY KEY (DocumentId),
+        CONSTRAINT UQ_SalesDocument_NumDocOp UNIQUE (DocumentNumber, OperationType)
     );
-    
-    CREATE INDEX IX_DocumentosCompra_PROV ON DocumentosCompra(COD_PROVEEDOR);
-    CREATE INDEX IX_DocumentosCompra_FECHA ON DocumentosCompra(FECHA);
-    CREATE INDEX IX_DocumentosCompra_TIPO ON DocumentosCompra(TIPO_OPERACION);
+
+    CREATE INDEX IX_SalesDocument_Customer ON ar.SalesDocument(CustomerCode);
+    CREATE INDEX IX_SalesDocument_OpDate ON ar.SalesDocument(OperationType, DocumentDate DESC) WHERE IsDeleted = 0;
 END
 GO
 
--- =============================================
--- 5. TABLA: DocumentosCompraDetalle
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DocumentosCompraDetalle')
+-- 1.2 ar.SalesDocumentLine
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('ar') AND name = 'SalesDocumentLine')
 BEGIN
-    CREATE TABLE DocumentosCompraDetalle (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        NUM_DOC NVARCHAR(60) NOT NULL,
-        TIPO_OPERACION NVARCHAR(20) NOT NULL DEFAULT 'COMPRA',
-        RENGLON INT NULL DEFAULT 0,
-        
+    CREATE TABLE ar.SalesDocumentLine (
+        LineId              INT IDENTITY(1,1) NOT NULL,
+        DocumentNumber      NVARCHAR(60)  NOT NULL,
+        OperationType       NVARCHAR(20)  NOT NULL,
+        LineNumber          INT           NULL DEFAULT 0,
+
         -- Producto
-        COD_SERV NVARCHAR(60) NULL,
-        DESCRIPCION NVARCHAR(255) NULL,
-        
+        ProductCode         NVARCHAR(60)  NULL,
+        Description         NVARCHAR(255) NULL,
+        AlternateCode       NVARCHAR(60)  NULL,
+
         -- Cantidades y precios
-        CANTIDAD FLOAT NULL DEFAULT 0,
-        PRECIO FLOAT NULL DEFAULT 0,                      -- Precio de compra
-        COSTO FLOAT NULL DEFAULT 0,                       -- Costo calculado
-        
+        Quantity            DECIMAL(18,4) NULL DEFAULT 0,
+        UnitPrice           DECIMAL(18,4) NULL DEFAULT 0,
+        DiscountedPrice     DECIMAL(18,4) NULL DEFAULT 0,
+        UnitCost            DECIMAL(18,4) NULL DEFAULT 0,
+
         -- Totales
-        SUBTOTAL FLOAT NULL DEFAULT 0,
-        DESCUENTO FLOAT NULL DEFAULT 0,
-        TOTAL FLOAT NULL DEFAULT 0,
-        
+        SubTotal            DECIMAL(18,4) NULL DEFAULT 0,
+        DiscountAmount      DECIMAL(18,4) NULL DEFAULT 0,
+        TotalAmount         DECIMAL(18,4) NULL DEFAULT 0,
+
         -- IVA
-        ALICUOTA FLOAT NULL DEFAULT 0,
-        MONTO_IVA FLOAT NULL DEFAULT 0,
-        
+        TaxRate             DECIMAL(8,4)  NULL DEFAULT 0,
+        TaxAmount           DECIMAL(18,4) NULL DEFAULT 0,
+
         -- Estados
-        ANULADA BIT NULL DEFAULT 0,
-        
-        -- Auditoría
-        CO_USUARIO NVARCHAR(60) NULL DEFAULT 'API',
-        FECHA DATETIME NULL DEFAULT GETDATE(),
-        
-        CONSTRAINT FK_DocCompraDet_DocCompra FOREIGN KEY (NUM_DOC, TIPO_OPERACION) 
-            REFERENCES DocumentosCompra(NUM_DOC, TIPO_OPERACION)
+        IsVoided            BIT           NULL DEFAULT 0,
+        RelatedRef          NVARCHAR(10)  NULL DEFAULT '0',
+
+        -- Auditoria
+        UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
+        LineDate            DATETIME      NULL DEFAULT GETDATE(),
+
+        -- Audit trail
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        UpdatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        DeletedAt           DATETIME2(0)  NULL,
+        DeletedByUserId     INT           NULL,
+        RowVer              ROWVERSION    NOT NULL,
+
+        CONSTRAINT PK_SalesDocumentLine PRIMARY KEY (LineId)
     );
-    
-    CREATE INDEX IX_DocCompraDet_NUM_DOC ON DocumentosCompraDetalle(NUM_DOC, TIPO_OPERACION);
-    CREATE INDEX IX_DocCompraDet_COD_SERV ON DocumentosCompraDetalle(COD_SERV);
+
+    CREATE INDEX IX_SalesDocLine_DocKey ON ar.SalesDocumentLine(DocumentNumber, OperationType) WHERE IsDeleted = 0;
+    CREATE INDEX IX_SalesDocLine_Product ON ar.SalesDocumentLine(ProductCode);
 END
 GO
 
--- =============================================
--- 6. TABLA: DocumentosCompraPago (Formas de pago)
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DocumentosCompraPago')
+-- 1.3 ar.SalesDocumentPayment
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('ar') AND name = 'SalesDocumentPayment')
 BEGIN
-    CREATE TABLE DocumentosCompraPago (
-        ID INT IDENTITY(1,1) PRIMARY KEY,
-        NUM_DOC NVARCHAR(60) NOT NULL,
-        TIPO_OPERACION NVARCHAR(20) NOT NULL DEFAULT 'COMPRA',
-        
-        TIPO_PAGO NVARCHAR(30) NULL,                      -- EFECTIVO, CHEQUE, TRANSFERENCIA
-        BANCO NVARCHAR(60) NULL,
-        NUMERO NVARCHAR(60) NULL,
-        
-        MONTO FLOAT NULL DEFAULT 0,
-        FECHA DATETIME NULL DEFAULT GETDATE(),
-        FECHA_VENCE DATETIME NULL,
-        
-        REFERENCIA NVARCHAR(100) NULL,
-        CO_USUARIO NVARCHAR(60) NULL DEFAULT 'API',
-        
-        CONSTRAINT FK_DocCompraPago_DocCompra FOREIGN KEY (NUM_DOC, TIPO_OPERACION) 
-            REFERENCES DocumentosCompra(NUM_DOC, TIPO_OPERACION)
+    CREATE TABLE ar.SalesDocumentPayment (
+        PaymentId           INT IDENTITY(1,1) NOT NULL,
+        DocumentNumber      NVARCHAR(60)  NOT NULL,
+        OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'FACT',
+
+        -- Forma de pago
+        PaymentMethod       NVARCHAR(30)  NULL,
+        BankCode            NVARCHAR(60)  NULL,
+        PaymentNumber       NVARCHAR(60)  NULL,
+
+        -- Montos
+        Amount              DECIMAL(18,4) NULL DEFAULT 0,
+        AmountBs            DECIMAL(18,4) NULL DEFAULT 0,
+        ExchangeRate        DECIMAL(18,6) NULL DEFAULT 1,
+
+        -- Fechas
+        PaymentDate         DATETIME      NULL DEFAULT GETDATE(),
+        DueDate             DATETIME      NULL,
+
+        -- Referencias
+        ReferenceNumber     NVARCHAR(100) NULL,
+        UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
+
+        -- Audit trail
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        UpdatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        DeletedAt           DATETIME2(0)  NULL,
+        DeletedByUserId     INT           NULL,
+        RowVer              ROWVERSION    NOT NULL,
+
+        CONSTRAINT PK_SalesDocumentPayment PRIMARY KEY (PaymentId)
     );
-    
-    CREATE INDEX IX_DocCompraPago_NUM_DOC ON DocumentosCompraPago(NUM_DOC, TIPO_OPERACION);
+
+    CREATE INDEX IX_SalesDocPay_DocKey ON ar.SalesDocumentPayment(DocumentNumber, OperationType) WHERE IsDeleted = 0;
 END
 GO
 
-SELECT 'Tablas unificadas creadas exitosamente' AS mensaje;
-SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME LIKE 'Documentos%';
+-- =============================================================================
+-- SECCION 2: TABLAS ap.* (Documentos de Compra)
+-- =============================================================================
+
+-- 2.1 ap.PurchaseDocument
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('ap') AND name = 'PurchaseDocument')
+BEGIN
+    CREATE TABLE ap.PurchaseDocument (
+        DocumentId          INT IDENTITY(1,1) NOT NULL,
+        DocumentNumber      NVARCHAR(60)  NOT NULL,
+        SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
+
+        -- Proveedor
+        SupplierCode        NVARCHAR(60)  NULL,
+        SupplierName        NVARCHAR(255) NULL,
+        FiscalId            NVARCHAR(15)  NULL,
+
+        -- Fechas
+        DocumentDate        DATETIME      NULL DEFAULT GETDATE(),
+        DueDate             DATETIME      NULL,
+        ReceiptDate         DATETIME      NULL,
+        PaymentDate         DATETIME      NULL,
+        DocumentTime        NVARCHAR(20)  NULL DEFAULT CONVERT(NVARCHAR(8), GETDATE(), 108),
+
+        -- Montos
+        SubTotal            DECIMAL(18,4) NULL DEFAULT 0,
+        TaxableAmount       DECIMAL(18,4) NULL DEFAULT 0,
+        ExemptAmount        DECIMAL(18,4) NULL DEFAULT 0,
+        TaxAmount           DECIMAL(18,4) NULL DEFAULT 0,
+        TaxRate             DECIMAL(8,4)  NULL DEFAULT 0,
+        TotalAmount         DECIMAL(18,4) NULL DEFAULT 0,
+        ExemptTotalAmount   DECIMAL(18,4) NULL DEFAULT 0,
+        DiscountAmount      DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- Estados
+        IsVoided            BIT           NULL DEFAULT 0,
+        IsPaid              NVARCHAR(1)   NULL DEFAULT 'N',
+        IsReceived          NVARCHAR(1)   NULL DEFAULT 'N',
+        IsLegal             BIT           NULL DEFAULT 0,
+
+        -- Documentos relacionados
+        OriginDocumentNumber NVARCHAR(60) NULL,
+
+        -- Informacion fiscal compra
+        ControlNumber       NVARCHAR(60)  NULL,
+        VoucherNumber       NVARCHAR(50)  NULL,
+        VoucherDate         DATETIME      NULL,
+
+        -- Retenciones
+        RetainedTax         DECIMAL(18,4) NULL DEFAULT 0,
+        IsrCode             NVARCHAR(50)  NULL,
+        IsrAmount           DECIMAL(18,4) NULL DEFAULT 0,
+        IsrSubjectAmount    DECIMAL(18,4) NULL DEFAULT 0,
+        RetentionRate       DECIMAL(8,4)  NULL DEFAULT 0,
+
+        -- Importacion
+        ImportAmount        DECIMAL(18,4) NULL DEFAULT 0,
+        ImportTax           DECIMAL(18,4) NULL DEFAULT 0,
+        ImportBase          DECIMAL(18,4) NULL DEFAULT 0,
+        FreightAmount       DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- Informacion adicional
+        Concept             NVARCHAR(255) NULL,
+        Notes               NVARCHAR(500) NULL,
+        OrderNumber         NVARCHAR(20)  NULL,
+        ReceivedBy          NVARCHAR(20)  NULL,
+        WarehouseCode       NVARCHAR(50)  NULL,
+
+        -- Moneda
+        CurrencyCode        NVARCHAR(20)  NULL DEFAULT 'BS',
+        ExchangeRate        DECIMAL(18,6) NULL DEFAULT 1,
+        UsdAmount           DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- Auditoria
+        UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
+        ShortUserCode       NVARCHAR(10)  NULL,
+        ReportDate          DATETIME      NULL DEFAULT GETDATE(),
+        HostName            NVARCHAR(255) NULL DEFAULT HOST_NAME(),
+
+        -- Audit trail
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        UpdatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        DeletedAt           DATETIME2(0)  NULL,
+        DeletedByUserId     INT           NULL,
+        RowVer              ROWVERSION    NOT NULL,
+
+        CONSTRAINT PK_PurchaseDocument PRIMARY KEY (DocumentId),
+        CONSTRAINT UQ_PurchaseDocument_NumDocOp UNIQUE (DocumentNumber, OperationType)
+    );
+
+    CREATE INDEX IX_PurchaseDocument_Supplier ON ap.PurchaseDocument(SupplierCode);
+    CREATE INDEX IX_PurchaseDocument_OpDate ON ap.PurchaseDocument(OperationType, DocumentDate) WHERE IsDeleted = 0;
+END
+GO
+
+-- 2.2 ap.PurchaseDocumentLine
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('ap') AND name = 'PurchaseDocumentLine')
+BEGIN
+    CREATE TABLE ap.PurchaseDocumentLine (
+        LineId              INT IDENTITY(1,1) NOT NULL,
+        DocumentNumber      NVARCHAR(60)  NOT NULL,
+        OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
+        LineNumber          INT           NULL DEFAULT 0,
+
+        -- Producto
+        ProductCode         NVARCHAR(60)  NULL,
+        Description         NVARCHAR(255) NULL,
+
+        -- Cantidades y precios
+        Quantity            DECIMAL(18,4) NULL DEFAULT 0,
+        UnitPrice           DECIMAL(18,4) NULL DEFAULT 0,
+        UnitCost            DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- Totales
+        SubTotal            DECIMAL(18,4) NULL DEFAULT 0,
+        DiscountAmount      DECIMAL(18,4) NULL DEFAULT 0,
+        TotalAmount         DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- IVA
+        TaxRate             DECIMAL(8,4)  NULL DEFAULT 0,
+        TaxAmount           DECIMAL(18,4) NULL DEFAULT 0,
+
+        -- Estados
+        IsVoided            BIT           NULL DEFAULT 0,
+
+        -- Auditoria
+        UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
+        LineDate            DATETIME      NULL DEFAULT GETDATE(),
+
+        -- Audit trail
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        UpdatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        DeletedAt           DATETIME2(0)  NULL,
+        DeletedByUserId     INT           NULL,
+        RowVer              ROWVERSION    NOT NULL,
+
+        CONSTRAINT PK_PurchaseDocumentLine PRIMARY KEY (LineId)
+    );
+
+    CREATE INDEX IX_PurchDocLine_DocKey ON ap.PurchaseDocumentLine(DocumentNumber, OperationType) WHERE IsDeleted = 0;
+    CREATE INDEX IX_PurchDocLine_Product ON ap.PurchaseDocumentLine(ProductCode);
+END
+GO
+
+-- 2.3 ap.PurchaseDocumentPayment
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('ap') AND name = 'PurchaseDocumentPayment')
+BEGIN
+    CREATE TABLE ap.PurchaseDocumentPayment (
+        PaymentId           INT IDENTITY(1,1) NOT NULL,
+        DocumentNumber      NVARCHAR(60)  NOT NULL,
+        OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
+
+        PaymentMethod       NVARCHAR(30)  NULL,
+        BankCode            NVARCHAR(60)  NULL,
+        PaymentNumber       NVARCHAR(60)  NULL,
+
+        Amount              DECIMAL(18,4) NULL DEFAULT 0,
+        PaymentDate         DATETIME      NULL DEFAULT GETDATE(),
+        DueDate             DATETIME      NULL,
+
+        ReferenceNumber     NVARCHAR(100) NULL,
+        UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
+
+        -- Audit trail
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        UpdatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        DeletedAt           DATETIME2(0)  NULL,
+        DeletedByUserId     INT           NULL,
+        RowVer              ROWVERSION    NOT NULL,
+
+        CONSTRAINT PK_PurchaseDocumentPayment PRIMARY KEY (PaymentId)
+    );
+
+    CREATE INDEX IX_PurchDocPay_DocKey ON ap.PurchaseDocumentPayment(DocumentNumber, OperationType) WHERE IsDeleted = 0;
+END
+GO
+
+-- =============================================================================
+-- SECCION 3: VISTAS dbo.Documentos* (compatibilidad legacy, alias espanol)
+-- Cadena: dbo.DocumentosVenta -> ar.SalesDocument
+-- =============================================================================
+
+IF OBJECT_ID('dbo.DocumentosVenta', 'V') IS NOT NULL DROP VIEW dbo.DocumentosVenta;
+GO
+CREATE VIEW dbo.DocumentosVenta AS
+SELECT
+    DocumentId                     AS ID,
+    DocumentNumber                 AS NUM_DOC,
+    SerialType                     AS SERIALTIPO,
+    OperationType                  AS TIPO_OPERACION,
+    CustomerCode                   AS CODIGO,
+    CustomerName                   AS NOMBRE,
+    FiscalId                       AS RIF,
+    DocumentDate                   AS FECHA,
+    DueDate                        AS FECHA_VENCE,
+    DocumentTime                   AS HORA,
+    CAST(SubTotal       AS FLOAT)  AS SUBTOTAL,
+    CAST(TaxableAmount  AS FLOAT)  AS MONTO_GRA,
+    CAST(ExemptAmount   AS FLOAT)  AS MONTO_EXE,
+    CAST(TaxAmount      AS FLOAT)  AS IVA,
+    CAST(TaxRate        AS FLOAT)  AS ALICUOTA,
+    CAST(TotalAmount    AS FLOAT)  AS TOTAL,
+    CAST(DiscountAmount AS FLOAT)  AS DESCUENTO,
+    IsVoided                       AS ANULADA,
+    IsPaid                         AS CANCELADA,
+    IsInvoiced                     AS FACTURADA,
+    IsDelivered                    AS ENTREGADA,
+    OriginDocumentNumber           AS DOC_ORIGEN,
+    OriginDocumentType             AS TIPO_DOC_ORIGEN,
+    ControlNumber                  AS NUM_CONTROL,
+    IsLegal                        AS LEGAL,
+    IsPrinted                      AS IMPRESA,
+    Notes                          AS OBSERV,
+    Concept                        AS CONCEPTO,
+    PaymentTerms                   AS TERMINOS,
+    ShipToAddress                  AS DESPACHAR,
+    SellerCode                     AS VENDEDOR,
+    DepartmentCode                 AS DEPARTAMENTO,
+    LocationCode                   AS LOCACION,
+    CurrencyCode                   AS MONEDA,
+    CAST(ExchangeRate   AS FLOAT)  AS TASA_CAMBIO,
+    UserCode                       AS COD_USUARIO,
+    ReportDate                     AS FECHA_REPORTE,
+    HostName                       AS COMPUTER,
+    VehiclePlate                   AS PLACAS,
+    Mileage                        AS KILOMETROS,
+    CAST(TollAmount     AS FLOAT)  AS PEAJE,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
+    IsDeleted, DeletedAt, DeletedByUserId,
+    RowVer
+FROM ar.SalesDocument;
+GO
+
+IF OBJECT_ID('dbo.DocumentosVentaDetalle', 'V') IS NOT NULL DROP VIEW dbo.DocumentosVentaDetalle;
+GO
+CREATE VIEW dbo.DocumentosVentaDetalle AS
+SELECT
+    LineId                             AS ID,
+    DocumentNumber                     AS NUM_DOC,
+    OperationType                      AS TIPO_OPERACION,
+    LineNumber                         AS RENGLON,
+    ProductCode                        AS COD_SERV,
+    Description                        AS DESCRIPCION,
+    AlternateCode                      AS COD_ALTERNO,
+    CAST(Quantity       AS FLOAT)      AS CANTIDAD,
+    CAST(UnitPrice      AS FLOAT)      AS PRECIO,
+    CAST(DiscountedPrice AS FLOAT)     AS PRECIO_DESCUENTO,
+    CAST(UnitCost       AS FLOAT)      AS COSTO,
+    CAST(SubTotal       AS FLOAT)      AS SUBTOTAL,
+    CAST(DiscountAmount AS FLOAT)      AS DESCUENTO,
+    CAST(TotalAmount    AS FLOAT)      AS TOTAL,
+    CAST(TaxRate        AS FLOAT)      AS ALICUOTA,
+    CAST(TaxAmount      AS FLOAT)      AS MONTO_IVA,
+    IsVoided                           AS ANULADA,
+    RelatedRef                         AS RELACIONADA,
+    UserCode                           AS CO_USUARIO,
+    LineDate                           AS FECHA,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
+    IsDeleted, DeletedAt, DeletedByUserId,
+    RowVer
+FROM ar.SalesDocumentLine;
+GO
+
+IF OBJECT_ID('dbo.DocumentosVentaPago', 'V') IS NOT NULL DROP VIEW dbo.DocumentosVentaPago;
+GO
+CREATE VIEW dbo.DocumentosVentaPago AS
+SELECT
+    PaymentId                          AS ID,
+    DocumentNumber                     AS NUM_DOC,
+    OperationType                      AS TIPO_OPERACION,
+    PaymentMethod                      AS TIPO_PAGO,
+    BankCode                           AS BANCO,
+    PaymentNumber                      AS NUMERO,
+    CAST(Amount         AS FLOAT)      AS MONTO,
+    CAST(AmountBs       AS FLOAT)      AS MONTO_BS,
+    CAST(ExchangeRate   AS FLOAT)      AS TASA_CAMBIO,
+    PaymentDate                        AS FECHA,
+    DueDate                            AS FECHA_VENCE,
+    ReferenceNumber                    AS REFERENCIA,
+    UserCode                           AS CO_USUARIO,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
+    IsDeleted, DeletedAt, DeletedByUserId,
+    RowVer
+FROM ar.SalesDocumentPayment;
+GO
+
+IF OBJECT_ID('dbo.DocumentosCompra', 'V') IS NOT NULL DROP VIEW dbo.DocumentosCompra;
+GO
+CREATE VIEW dbo.DocumentosCompra AS
+SELECT
+    DocumentId                     AS ID,
+    DocumentNumber                 AS NUM_DOC,
+    SerialType                     AS SERIALTIPO,
+    OperationType                  AS TIPO_OPERACION,
+    SupplierCode                   AS COD_PROVEEDOR,
+    SupplierName                   AS NOMBRE,
+    FiscalId                       AS RIF,
+    DocumentDate                   AS FECHA,
+    DueDate                        AS FECHA_VENCE,
+    ReceiptDate                    AS FECHA_RECIBO,
+    PaymentDate                    AS FECHA_PAGO,
+    DocumentTime                   AS HORA,
+    CAST(SubTotal           AS FLOAT)  AS SUBTOTAL,
+    CAST(TaxableAmount      AS FLOAT)  AS MONTO_GRA,
+    CAST(ExemptAmount       AS FLOAT)  AS MONTO_EXE,
+    CAST(TaxAmount          AS FLOAT)  AS IVA,
+    CAST(TaxRate            AS FLOAT)  AS ALICUOTA,
+    CAST(TotalAmount        AS FLOAT)  AS TOTAL,
+    CAST(ExemptTotalAmount  AS FLOAT)  AS EXENTO,
+    CAST(DiscountAmount     AS FLOAT)  AS DESCUENTO,
+    IsVoided                           AS ANULADA,
+    IsPaid                             AS CANCELADA,
+    IsReceived                         AS RECIBIDA,
+    IsLegal                            AS LEGAL,
+    OriginDocumentNumber               AS DOC_ORIGEN,
+    ControlNumber                      AS NUM_CONTROL,
+    VoucherNumber                      AS NRO_COMPROBANTE,
+    VoucherDate                        AS FECHA_COMPROBANTE,
+    CAST(RetainedTax        AS FLOAT)  AS IVA_RETENIDO,
+    IsrCode                            AS ISLR,
+    CAST(IsrAmount          AS FLOAT)  AS MONTO_ISLR,
+    IsrCode                            AS CODIGO_ISLR,
+    CAST(IsrSubjectAmount   AS FLOAT)  AS SUJETO_ISLR,
+    CAST(RetentionRate      AS FLOAT)  AS TASA_RETENCION,
+    CAST(ImportAmount       AS FLOAT)  AS IMPORTACION,
+    CAST(ImportTax          AS FLOAT)  AS IVA_IMPORT,
+    CAST(ImportBase         AS FLOAT)  AS BASE_IMPORT,
+    CAST(FreightAmount      AS FLOAT)  AS FLETE,
+    Concept                            AS CONCEPTO,
+    Notes                              AS OBSERV,
+    OrderNumber                        AS PEDIDO,
+    ReceivedBy                         AS RECIBIDO,
+    WarehouseCode                      AS ALMACEN,
+    CurrencyCode                       AS MONEDA,
+    CAST(ExchangeRate       AS FLOAT)  AS TASA_CAMBIO,
+    CAST(UsdAmount          AS FLOAT)  AS PRECIO_DOLLAR,
+    UserCode                           AS COD_USUARIO,
+    ShortUserCode                      AS CO_USUARIO,
+    ReportDate                         AS FECHA_REPORTE,
+    HostName                           AS COMPUTER,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
+    IsDeleted, DeletedAt, DeletedByUserId,
+    RowVer
+FROM ap.PurchaseDocument;
+GO
+
+IF OBJECT_ID('dbo.DocumentosCompraDetalle', 'V') IS NOT NULL DROP VIEW dbo.DocumentosCompraDetalle;
+GO
+CREATE VIEW dbo.DocumentosCompraDetalle AS
+SELECT
+    LineId                         AS ID,
+    DocumentNumber                 AS NUM_DOC,
+    OperationType                  AS TIPO_OPERACION,
+    LineNumber                     AS RENGLON,
+    ProductCode                    AS COD_SERV,
+    Description                    AS DESCRIPCION,
+    CAST(Quantity       AS FLOAT)  AS CANTIDAD,
+    CAST(UnitPrice      AS FLOAT)  AS PRECIO,
+    CAST(UnitCost       AS FLOAT)  AS COSTO,
+    CAST(SubTotal       AS FLOAT)  AS SUBTOTAL,
+    CAST(DiscountAmount AS FLOAT)  AS DESCUENTO,
+    CAST(TotalAmount    AS FLOAT)  AS TOTAL,
+    CAST(TaxRate        AS FLOAT)  AS ALICUOTA,
+    CAST(TaxAmount      AS FLOAT)  AS MONTO_IVA,
+    IsVoided                       AS ANULADA,
+    UserCode                       AS CO_USUARIO,
+    LineDate                       AS FECHA,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
+    IsDeleted, DeletedAt, DeletedByUserId,
+    RowVer
+FROM ap.PurchaseDocumentLine;
+GO
+
+IF OBJECT_ID('dbo.DocumentosCompraPago', 'V') IS NOT NULL DROP VIEW dbo.DocumentosCompraPago;
+GO
+CREATE VIEW dbo.DocumentosCompraPago AS
+SELECT
+    PaymentId                      AS ID,
+    DocumentNumber                 AS NUM_DOC,
+    OperationType                  AS TIPO_OPERACION,
+    PaymentMethod                  AS TIPO_PAGO,
+    BankCode                       AS BANCO,
+    PaymentNumber                  AS NUMERO,
+    CAST(Amount         AS FLOAT)  AS MONTO,
+    PaymentDate                    AS FECHA,
+    DueDate                        AS FECHA_VENCE,
+    ReferenceNumber                AS REFERENCIA,
+    UserCode                       AS CO_USUARIO,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
+    IsDeleted, DeletedAt, DeletedByUserId,
+    RowVer
+FROM ap.PurchaseDocumentPayment;
+GO
+
+-- =============================================================================
+-- SECCION 4: VISTAS doc.* (alias ingles sobre dbo.*)
+-- Cadena: doc.SalesDocument -> dbo.DocumentosVenta -> ar.SalesDocument
+-- =============================================================================
+
+IF OBJECT_ID('doc.SalesDocument', 'V') IS NOT NULL DROP VIEW doc.SalesDocument;
+IF OBJECT_ID('doc.SalesDocument', 'U') IS NOT NULL DROP TABLE doc.SalesDocumentPayment, doc.SalesDocumentLine, doc.SalesDocument;
+GO
+CREATE VIEW doc.SalesDocument AS
+SELECT
+    dv.ID              AS DocumentId,
+    dv.NUM_DOC         AS DocumentNumber,
+    dv.SERIALTIPO      AS SerialType,
+    dv.TIPO_OPERACION  AS OperationType,
+    dv.CODIGO          AS CustomerCode,
+    dv.NOMBRE          AS CustomerName,
+    dv.RIF             AS FiscalId,
+    dv.FECHA           AS IssueDate,
+    dv.FECHA_VENCE     AS DueDate,
+    dv.HORA            AS DocumentTime,
+    dv.SUBTOTAL        AS Subtotal,
+    dv.MONTO_GRA       AS TaxableAmount,
+    dv.MONTO_EXE       AS ExemptAmount,
+    dv.IVA             AS TaxAmount,
+    dv.ALICUOTA        AS TaxRate,
+    dv.TOTAL           AS TotalAmount,
+    dv.DESCUENTO       AS DiscountAmount,
+    dv.ANULADA         AS IsVoided,
+    dv.CANCELADA       AS IsCanceled,
+    dv.FACTURADA       AS IsInvoiced,
+    dv.ENTREGADA       AS IsDelivered,
+    dv.DOC_ORIGEN      AS SourceDocumentNumber,
+    dv.TIPO_DOC_ORIGEN AS SourceDocumentType,
+    dv.NUM_CONTROL     AS ControlNumber,
+    dv.OBSERV          AS Notes,
+    dv.CONCEPTO        AS Concept,
+    dv.MONEDA          AS CurrencyCode,
+    dv.TASA_CAMBIO     AS ExchangeRate,
+    dv.COD_USUARIO     AS LegacyUserCode,
+    dv.CreatedAt,
+    dv.UpdatedAt,
+    dv.CreatedByUserId,
+    dv.UpdatedByUserId,
+    dv.IsDeleted,
+    dv.DeletedAt,
+    dv.DeletedByUserId,
+    dv.RowVer
+FROM dbo.DocumentosVenta dv;
+GO
+
+IF OBJECT_ID('doc.SalesDocumentLine', 'V') IS NOT NULL DROP VIEW doc.SalesDocumentLine;
+IF OBJECT_ID('doc.SalesDocumentLine', 'U') IS NOT NULL DROP TABLE doc.SalesDocumentLine;
+GO
+CREATE VIEW doc.SalesDocumentLine AS
+SELECT
+    d.ID               AS LineId,
+    d.NUM_DOC          AS DocumentNumber,
+    d.TIPO_OPERACION   AS DocumentType,
+    d.RENGLON          AS LineNumber,
+    d.COD_SERV         AS ProductCode,
+    d.DESCRIPCION      AS Description,
+    d.COD_ALTERNO      AS AlternateCode,
+    d.CANTIDAD         AS Quantity,
+    d.PRECIO           AS UnitPrice,
+    d.PRECIO_DESCUENTO AS DiscountUnitPrice,
+    d.COSTO            AS UnitCost,
+    d.SUBTOTAL         AS Subtotal,
+    d.DESCUENTO        AS DiscountAmount,
+    d.TOTAL            AS LineTotal,
+    d.ALICUOTA         AS TaxRate,
+    d.MONTO_IVA        AS TaxAmount,
+    d.ANULADA          AS IsVoided,
+    d.CreatedAt,
+    d.UpdatedAt,
+    d.CreatedByUserId,
+    d.UpdatedByUserId,
+    d.IsDeleted,
+    d.DeletedAt,
+    d.DeletedByUserId,
+    d.RowVer
+FROM dbo.DocumentosVentaDetalle d;
+GO
+
+IF OBJECT_ID('doc.SalesDocumentPayment', 'V') IS NOT NULL DROP VIEW doc.SalesDocumentPayment;
+IF OBJECT_ID('doc.SalesDocumentPayment', 'U') IS NOT NULL DROP TABLE doc.SalesDocumentPayment;
+GO
+CREATE VIEW doc.SalesDocumentPayment AS
+SELECT
+    p.ID               AS PaymentId,
+    p.NUM_DOC          AS DocumentNumber,
+    p.TIPO_OPERACION   AS DocumentType,
+    p.TIPO_PAGO        AS PaymentType,
+    p.BANCO            AS BankCode,
+    p.NUMERO           AS ReferenceNumber,
+    p.MONTO            AS Amount,
+    p.MONTO_BS         AS AmountLocal,
+    p.TASA_CAMBIO      AS ExchangeRate,
+    p.FECHA            AS ApplyDate,
+    p.FECHA_VENCE      AS DueDate,
+    p.REFERENCIA       AS PaymentReference,
+    p.CreatedAt,
+    p.UpdatedAt,
+    p.CreatedByUserId,
+    p.UpdatedByUserId,
+    p.IsDeleted,
+    p.DeletedAt,
+    p.DeletedByUserId,
+    p.RowVer
+FROM dbo.DocumentosVentaPago p;
+GO
+
+IF OBJECT_ID('doc.PurchaseDocument', 'V') IS NOT NULL DROP VIEW doc.PurchaseDocument;
+IF OBJECT_ID('doc.PurchaseDocument', 'U') IS NOT NULL DROP TABLE doc.PurchaseDocumentPayment, doc.PurchaseDocumentLine, doc.PurchaseDocument;
+GO
+CREATE VIEW doc.PurchaseDocument AS
+SELECT
+    dc.ID              AS DocumentId,
+    dc.NUM_DOC         AS DocumentNumber,
+    dc.SERIALTIPO      AS SerialType,
+    dc.TIPO_OPERACION  AS DocumentType,
+    dc.COD_PROVEEDOR   AS SupplierCode,
+    dc.NOMBRE          AS SupplierName,
+    dc.RIF             AS FiscalId,
+    dc.FECHA           AS IssueDate,
+    dc.FECHA_VENCE     AS DueDate,
+    dc.SUBTOTAL        AS Subtotal,
+    dc.MONTO_GRA       AS TaxableAmount,
+    dc.MONTO_EXE       AS ExemptAmount,
+    dc.IVA             AS TaxAmount,
+    dc.ALICUOTA        AS TaxRate,
+    dc.TOTAL           AS TotalAmount,
+    dc.DESCUENTO       AS DiscountAmount,
+    dc.ANULADA         AS IsVoided,
+    dc.CANCELADA       AS IsCanceled,
+    dc.OBSERV          AS Notes,
+    dc.CONCEPTO        AS Concept,
+    dc.MONEDA          AS CurrencyCode,
+    dc.TASA_CAMBIO     AS ExchangeRate,
+    dc.COD_USUARIO     AS LegacyUserCode,
+    dc.CreatedAt,
+    dc.UpdatedAt,
+    dc.CreatedByUserId,
+    dc.UpdatedByUserId,
+    dc.IsDeleted,
+    dc.DeletedAt,
+    dc.DeletedByUserId,
+    dc.RowVer
+FROM dbo.DocumentosCompra dc;
+GO
+
+IF OBJECT_ID('doc.PurchaseDocumentLine', 'V') IS NOT NULL DROP VIEW doc.PurchaseDocumentLine;
+IF OBJECT_ID('doc.PurchaseDocumentLine', 'U') IS NOT NULL DROP TABLE doc.PurchaseDocumentLine;
+GO
+CREATE VIEW doc.PurchaseDocumentLine AS
+SELECT
+    d.ID               AS LineId,
+    d.NUM_DOC          AS DocumentNumber,
+    d.TIPO_OPERACION   AS DocumentType,
+    d.RENGLON          AS LineNumber,
+    d.COD_SERV         AS ProductCode,
+    d.DESCRIPCION      AS Description,
+    d.CANTIDAD         AS Quantity,
+    d.PRECIO           AS UnitPrice,
+    d.COSTO            AS UnitCost,
+    d.SUBTOTAL         AS Subtotal,
+    d.DESCUENTO        AS DiscountAmount,
+    d.TOTAL            AS LineTotal,
+    d.ALICUOTA         AS TaxRate,
+    d.MONTO_IVA        AS TaxAmount,
+    d.ANULADA          AS IsVoided,
+    d.CreatedAt,
+    d.UpdatedAt,
+    d.CreatedByUserId,
+    d.UpdatedByUserId,
+    d.IsDeleted,
+    d.DeletedAt,
+    d.DeletedByUserId,
+    d.RowVer
+FROM dbo.DocumentosCompraDetalle d;
+GO
+
+IF OBJECT_ID('doc.PurchaseDocumentPayment', 'V') IS NOT NULL DROP VIEW doc.PurchaseDocumentPayment;
+IF OBJECT_ID('doc.PurchaseDocumentPayment', 'U') IS NOT NULL DROP TABLE doc.PurchaseDocumentPayment;
+GO
+CREATE VIEW doc.PurchaseDocumentPayment AS
+SELECT
+    p.ID               AS PaymentId,
+    p.NUM_DOC          AS DocumentNumber,
+    p.TIPO_OPERACION   AS DocumentType,
+    p.TIPO_PAGO        AS PaymentType,
+    p.BANCO            AS BankCode,
+    p.NUMERO           AS ReferenceNumber,
+    p.MONTO            AS Amount,
+    p.FECHA            AS ApplyDate,
+    p.FECHA_VENCE      AS DueDate,
+    p.REFERENCIA       AS PaymentReference,
+    p.CreatedAt,
+    p.UpdatedAt,
+    p.CreatedByUserId,
+    p.UpdatedByUserId,
+    p.IsDeleted,
+    p.DeletedAt,
+    p.DeletedByUserId,
+    p.RowVer
+FROM dbo.DocumentosCompraPago p;
+GO
+
+-- =============================================================================
+-- SECCION 5: TABLAS AUXILIARES (canonicas nuevas)
+-- =============================================================================
+
+-- 5.1 acct.BankDeposit (reemplaza dbo.DETALLE_DEPOSITO)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('acct') AND name = 'BankDeposit')
+BEGIN
+    CREATE TABLE acct.BankDeposit (
+        BankDepositId       INT IDENTITY(1,1) PRIMARY KEY,
+        Amount              DECIMAL(18,4) NOT NULL DEFAULT 0,
+        CheckNumber         NVARCHAR(80)  NULL,
+        BankAccount         NVARCHAR(120) NULL,
+        CustomerCode        NVARCHAR(60)  NULL,
+        IsRelated           BIT           NOT NULL DEFAULT 0,
+        BankName            NVARCHAR(120) NULL,
+        DocumentRef         NVARCHAR(60)  NULL,
+        OperationType       NVARCHAR(20)  NULL,
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedByUserId     INT           NULL,
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        RowVer              ROWVERSION    NOT NULL
+    );
+
+    CREATE INDEX IX_BankDeposit_Customer ON acct.BankDeposit(CustomerCode) WHERE IsDeleted = 0;
+END
+GO
+
+-- 5.2 master.AlternateStock (reemplaza dbo.Inventario_Aux)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE schema_id = SCHEMA_ID('master') AND name = 'AlternateStock')
+BEGIN
+    CREATE TABLE master.AlternateStock (
+        AlternateStockId    INT IDENTITY(1,1) PRIMARY KEY,
+        ProductCode         NVARCHAR(80)  NOT NULL,
+        StockQty            DECIMAL(18,4) NOT NULL DEFAULT 0,
+        CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
+        IsDeleted           BIT           NOT NULL DEFAULT 0,
+        RowVer              ROWVERSION    NOT NULL,
+        CONSTRAINT UQ_AlternateStock_ProductCode UNIQUE (ProductCode)
+    );
+END
+GO
+
+SELECT 'Tablas ar.*, ap.*, vistas dbo.*, doc.*, tablas auxiliares creadas exitosamente' AS mensaje;
+GO

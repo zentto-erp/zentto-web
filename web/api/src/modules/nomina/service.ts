@@ -1,6 +1,5 @@
 
-import { getPool, sql } from "../../db/mssql.js";
-import { query } from "../../db/query.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 export interface ConceptoNomina {
@@ -89,21 +88,8 @@ async function getDefaultScope(): Promise<DefaultScope> {
   }
   if (defaultScopeCache) return defaultScopeCache;
 
-  const rows = await query<{ companyId: number; branchId: number; systemUserId: number | null }>(
-    `
-    SELECT TOP 1
-      c.CompanyId AS companyId,
-      b.BranchId AS branchId,
-      su.UserId AS systemUserId
-    FROM cfg.Company c
-    INNER JOIN cfg.Branch b
-      ON b.CompanyId = c.CompanyId
-     AND b.BranchCode = N'MAIN'
-    LEFT JOIN sec.[User] su
-      ON su.UserCode = N'SYSTEM'
-    WHERE c.CompanyCode = N'DEFAULT'
-    ORDER BY c.CompanyId, b.BranchId
-    `
+  const rows = await callSp<{ companyId: number; branchId: number; systemUserId: number | null }>(
+    "usp_HR_Payroll_ResolveScope"
   );
 
   const row = rows[0];
@@ -126,16 +112,9 @@ async function getDefaultScope(): Promise<DefaultScope> {
 
 async function resolveUserId(codUsuario?: string): Promise<number | null> {
   const code = String(codUsuario ?? "").trim();
-  if (!code) return (await getDefaultScope()).systemUserId;
-
-  const rows = await query<{ userId: number }>(
-    `
-    SELECT TOP 1 UserId AS userId
-    FROM sec.[User]
-    WHERE UPPER(UserCode) = UPPER(@code)
-    ORDER BY UserId
-    `,
-    { code }
+  const rows = await callSp<{ userId: number }>(
+    "usp_HR_Payroll_ResolveUser",
+    { UserCode: code || null }
   );
 
   if (rows[0]?.userId != null) return Number(rows[0].userId);
@@ -165,19 +144,9 @@ function dayDiffInclusive(from: Date, to: Date) {
 
 async function getConstantValue(code: string, fallback = 0): Promise<number> {
   const scope = await getDefaultScope();
-  const rows = await query<{ value: number }>(
-    `
-    SELECT TOP 1 ConstantValue AS value
-    FROM hr.PayrollConstant
-    WHERE CompanyId = @companyId
-      AND ConstantCode = @code
-      AND IsActive = 1
-    ORDER BY PayrollConstantId DESC
-    `,
-    {
-      companyId: scope.companyId,
-      code,
-    }
+  const rows = await callSp<{ value: number }>(
+    "usp_HR_Payroll_GetConstant",
+    { CompanyId: scope.companyId, Code: code }
   );
 
   const value = Number(rows[0]?.value ?? fallback);
@@ -188,43 +157,11 @@ async function ensurePayrollType(companyId: number, payrollCode: string, userId:
   const code = String(payrollCode ?? "").trim().toUpperCase();
   if (!code) return;
 
-  const found = await query<{ id: number }>(
-    `
-    SELECT TOP 1 PayrollTypeId AS id
-    FROM hr.PayrollType
-    WHERE CompanyId = @companyId
-      AND PayrollCode = @code
-    `,
-    { companyId, code }
-  );
-  if (found[0]?.id) return;
-
-  await query(
-    `
-    INSERT INTO hr.PayrollType (
-      CompanyId,
-      PayrollCode,
-      PayrollName,
-      IsActive,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    VALUES (
-      @companyId,
-      @code,
-      @name,
-      1,
-      @userId,
-      @userId
-    )
-    `,
-    {
-      companyId,
-      code,
-      name: `Nomina ${code}`,
-      userId,
-    }
-  );
+  await callSp("usp_HR_Payroll_EnsureType", {
+    CompanyId: companyId,
+    PayrollCode: code,
+    UserId: userId,
+  });
 }
 
 async function ensureEmployee(cedula: string, userId: number | null): Promise<EmployeeRef> {
@@ -232,75 +169,21 @@ async function ensureEmployee(cedula: string, userId: number | null): Promise<Em
   const document = String(cedula ?? "").trim();
   if (!document) throw new Error("cedula obligatoria");
 
-  const existing = await query<EmployeeRef>(
-    `
-    SELECT TOP 1
-      EmployeeId AS employeeId,
-      EmployeeCode AS employeeCode,
-      EmployeeName AS employeeName,
-      HireDate AS hireDate
-    FROM [master].Employee
-    WHERE CompanyId = @companyId
-      AND IsDeleted = 0
-      AND (
-        EmployeeCode = @document
-        OR FiscalId = @document
-      )
-    ORDER BY EmployeeId
-    `,
+  const rows = await callSp<EmployeeRef>(
+    "usp_HR_Payroll_EnsureEmployee",
     {
-      companyId: scope.companyId,
-      document,
+      CompanyId: scope.companyId,
+      Document: document,
+      UserId: userId,
     }
   );
 
-  if (existing[0]) {
-    return {
-      employeeId: Number(existing[0].employeeId),
-      employeeCode: String(existing[0].employeeCode),
-      employeeName: String(existing[0].employeeName),
-      hireDate: existing[0].hireDate ? new Date(existing[0].hireDate) : null,
-    };
-  }
-
-  const created = await query<{ employeeId: number }>(
-    `
-    INSERT INTO [master].Employee (
-      CompanyId,
-      EmployeeCode,
-      EmployeeName,
-      FiscalId,
-      HireDate,
-      IsActive,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    OUTPUT INSERTED.EmployeeId AS employeeId
-    VALUES (
-      @companyId,
-      @code,
-      @name,
-      @fiscalId,
-      CAST(GETDATE() AS DATE),
-      1,
-      @userId,
-      @userId
-    )
-    `,
-    {
-      companyId: scope.companyId,
-      code: document,
-      name: `Empleado ${document}`,
-      fiscalId: document,
-      userId,
-    }
-  );
-
+  const row = rows[0];
   return {
-    employeeId: Number(created[0]?.employeeId ?? 0),
-    employeeCode: document,
-    employeeName: `Empleado ${document}`,
-    hireDate: new Date(),
+    employeeId: Number(row?.employeeId ?? 0),
+    employeeCode: String(row?.employeeCode ?? document),
+    employeeName: String(row?.employeeName ?? `Empleado ${document}`),
+    hireDate: row?.hireDate ? new Date(row.hireDate) : new Date(),
   };
 }
 
@@ -316,65 +199,22 @@ export async function listConceptos(params: {
   const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
   const offset = (page - 1) * limit;
 
-  const where: string[] = ["CompanyId = @companyId", "IsActive = 1"];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    offset,
-    limit,
-  };
-
-  if (params.coNomina?.trim()) {
-    where.push("PayrollCode = @payrollCode");
-    sqlParams.payrollCode = params.coNomina.trim().toUpperCase();
-  }
-
-  if (params.tipo?.trim()) {
-    where.push("ConceptType = @conceptType");
-    sqlParams.conceptType = params.tipo.trim().toUpperCase();
-  }
-
-  if (params.search?.trim()) {
-    where.push("(ConceptCode LIKE @search OR ConceptName LIKE @search)");
-    sqlParams.search = `%${params.search.trim()}%`;
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<ConceptoNomina>(
-    `
-    SELECT
-      ConceptCode AS codigo,
-      PayrollCode AS codigoNomina,
-      ConceptName AS nombre,
-      Formula AS formula,
-      BaseExpression AS sobre,
-      ConceptClass AS clase,
-      ConceptType AS tipo,
-      UsageType AS uso,
-      CASE WHEN IsBonifiable = 1 THEN N'S' ELSE N'N' END AS bonificable,
-      CASE WHEN IsSeniority = 1 THEN N'S' ELSE N'N' END AS esAntiguedad,
-      AccountingAccountCode AS cuentaContable,
-      CASE WHEN AppliesFlag = 1 THEN N'S' ELSE N'N' END AS aplica,
-      DefaultValue AS valorDefecto
-    FROM hr.PayrollConcept
-    ${clause}
-    ORDER BY PayrollCode, SortOrder, ConceptCode
-    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-    `,
-    sqlParams
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `
-    SELECT COUNT(1) AS total
-    FROM hr.PayrollConcept
-    ${clause}
-    `,
-    sqlParams
+  const { rows, output } = await callSpOut<ConceptoNomina>(
+    "usp_HR_Payroll_ListConcepts",
+    {
+      CompanyId: scope.companyId,
+      PayrollCode: params.coNomina?.trim().toUpperCase() || null,
+      ConceptType: params.tipo?.trim().toUpperCase() || null,
+      Search: params.search?.trim() || null,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
 
   return {
     rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    total: Number(output.TotalCount ?? 0),
   };
 }
 
@@ -391,122 +231,31 @@ export async function saveConcepto(data: Partial<ConceptoNomina>) {
 
   await ensurePayrollType(scope.companyId, payrollCode, userId);
 
-  const existing = await query<{ id: number }>(
-    `
-    SELECT TOP 1 PayrollConceptId AS id
-    FROM hr.PayrollConcept
-    WHERE CompanyId = @companyId
-      AND PayrollCode = @payrollCode
-      AND ConceptCode = @conceptCode
-      AND ConventionCode IS NULL
-      AND CalculationType IS NULL
-    ORDER BY PayrollConceptId
-    `,
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_SaveConcept",
     {
-      companyId: scope.companyId,
-      payrollCode,
-      conceptCode,
-    }
+      CompanyId: scope.companyId,
+      PayrollCode: payrollCode,
+      ConceptCode: conceptCode,
+      ConceptName: conceptName,
+      Formula: data.formula ?? null,
+      BaseExpression: data.sobre ?? null,
+      ConceptClass: data.clase ?? null,
+      ConceptType: String(data.tipo ?? "ASIGNACION").toUpperCase(),
+      UsageType: data.uso ?? null,
+      IsBonifiable: toFlag(data.bonificable, false),
+      IsSeniority: toFlag(data.esAntiguedad, false),
+      AccountingAccountCode: data.cuentaContable ?? null,
+      AppliesFlag: toFlag(data.aplica, true),
+      DefaultValue: Number(data.valorDefecto ?? 0),
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
-
-  const payload = {
-    companyId: scope.companyId,
-    payrollCode,
-    conceptCode,
-    conceptName,
-    formula: data.formula ?? null,
-    baseExpression: data.sobre ?? null,
-    conceptClass: data.clase ?? null,
-    conceptType: String(data.tipo ?? "ASIGNACION").toUpperCase(),
-    usageType: data.uso ?? null,
-    isBonifiable: toFlag(data.bonificable, false),
-    isSeniority: toFlag(data.esAntiguedad, false),
-    accountingAccountCode: data.cuentaContable ?? null,
-    appliesFlag: toFlag(data.aplica, true),
-    defaultValue: Number(data.valorDefecto ?? 0),
-    userId,
-  };
-
-  if (existing[0]?.id) {
-    await query(
-      `
-      UPDATE hr.PayrollConcept
-      SET
-        ConceptName = @conceptName,
-        Formula = @formula,
-        BaseExpression = @baseExpression,
-        ConceptClass = @conceptClass,
-        ConceptType = @conceptType,
-        UsageType = @usageType,
-        IsBonifiable = @isBonifiable,
-        IsSeniority = @isSeniority,
-        AccountingAccountCode = @accountingAccountCode,
-        AppliesFlag = @appliesFlag,
-        DefaultValue = @defaultValue,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE PayrollConceptId = @id
-      `,
-      {
-        ...payload,
-        id: Number(existing[0].id),
-      }
-    );
-  } else {
-    await query(
-      `
-      INSERT INTO hr.PayrollConcept (
-        CompanyId,
-        PayrollCode,
-        ConceptCode,
-        ConceptName,
-        Formula,
-        BaseExpression,
-        ConceptClass,
-        ConceptType,
-        UsageType,
-        IsBonifiable,
-        IsSeniority,
-        AccountingAccountCode,
-        AppliesFlag,
-        DefaultValue,
-        ConventionCode,
-        CalculationType,
-        SortOrder,
-        IsActive,
-        CreatedByUserId,
-        UpdatedByUserId
-      )
-      VALUES (
-        @companyId,
-        @payrollCode,
-        @conceptCode,
-        @conceptName,
-        @formula,
-        @baseExpression,
-        @conceptClass,
-        @conceptType,
-        @usageType,
-        @isBonifiable,
-        @isSeniority,
-        @accountingAccountCode,
-        @appliesFlag,
-        @defaultValue,
-        NULL,
-        NULL,
-        0,
-        1,
-        @userId,
-        @userId
-      )
-      `,
-      payload
-    );
-  }
 
   return {
     success: true,
-    message: "Concepto guardado",
+    message: String(output.Mensaje ?? "Concepto guardado"),
   };
 }
 
@@ -516,42 +265,8 @@ async function loadConceptsForRun(
   options?: ProcessOptions
 ) {
   const scope = await getDefaultScope();
-  const where: string[] = [
-    "CompanyId = @companyId",
-    "PayrollCode = @payrollCode",
-    "IsActive = 1",
-    "AppliesFlag = 1",
-  ];
 
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    payrollCode,
-  };
-
-  if (conceptTypeFilter?.trim()) {
-    where.push("ConceptType = @conceptType");
-    sqlParams.conceptType = conceptTypeFilter.trim().toUpperCase();
-  }
-
-  if (options?.soloConceptosLegales) {
-    if (options.conventionCode?.trim()) {
-      where.push("ConventionCode = @conventionCode");
-      sqlParams.conventionCode = options.conventionCode.trim().toUpperCase();
-    } else {
-      where.push("ConventionCode IS NOT NULL");
-    }
-  } else if (options?.conventionCode?.trim()) {
-    where.push("(ConventionCode = @conventionCode OR ConventionCode IS NULL)");
-    sqlParams.conventionCode = options.conventionCode.trim().toUpperCase();
-  }
-
-  if (options?.calculationType?.trim()) {
-    where.push("(CalculationType = @calculationType OR CalculationType IS NULL)");
-    sqlParams.calculationType = options.calculationType.trim().toUpperCase();
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  return query<{
+  return callSp<{
     conceptCode: string;
     conceptName: string;
     conceptType: string;
@@ -559,19 +274,15 @@ async function loadConceptsForRun(
     formula: string | null;
     accountingAccountCode: string | null;
   }>(
-    `
-    SELECT
-      ConceptCode AS conceptCode,
-      ConceptName AS conceptName,
-      ConceptType AS conceptType,
-      DefaultValue AS defaultValue,
-      Formula AS formula,
-      AccountingAccountCode AS accountingAccountCode
-    FROM hr.PayrollConcept
-    ${clause}
-    ORDER BY SortOrder, ConceptCode
-    `,
-    sqlParams
+    "usp_HR_Payroll_LoadConceptsForRun",
+    {
+      CompanyId: scope.companyId,
+      PayrollCode: payrollCode,
+      ConceptType: conceptTypeFilter?.trim().toUpperCase() || null,
+      ConventionCode: options?.conventionCode?.trim().toUpperCase() || null,
+      CalculationType: options?.calculationType?.trim().toUpperCase() || null,
+      SoloLegales: options?.soloConceptosLegales ? 1 : 0,
+    }
   );
 }
 
@@ -597,169 +308,31 @@ async function upsertRunWithLines(input: {
   calculationType?: string;
 }) {
   const scope = await getDefaultScope();
-  const pool = await getPool();
-  const tx = new sql.Transaction(pool);
-  await tx.begin();
 
-  try {
-    const reqGet = new sql.Request(tx);
-    reqGet.input("companyId", sql.Int, scope.companyId);
-    reqGet.input("branchId", sql.Int, scope.branchId);
-    reqGet.input("payrollCode", sql.NVarChar(15), input.payrollCode);
-    reqGet.input("employeeCode", sql.NVarChar(24), input.employee.employeeCode);
-    reqGet.input("fromDate", sql.Date, input.fromDate);
-    reqGet.input("toDate", sql.Date, input.toDate);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_UpsertRun",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      PayrollCode: input.payrollCode,
+      EmployeeId: input.employee.employeeId,
+      EmployeeCode: input.employee.employeeCode,
+      EmployeeName: input.employee.employeeName,
+      FromDate: input.fromDate,
+      ToDate: input.toDate,
+      TotalAssignments: input.totalAsignaciones,
+      TotalDeductions: input.totalDeducciones,
+      NetTotal: input.totalNeto,
+      PayrollTypeName: input.calculationType ?? null,
+      UserId: input.userId,
+      LinesJson: JSON.stringify(input.lines),
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-    const existing = await reqGet.query<{ id: number }>(
-      `
-      SELECT TOP 1 PayrollRunId AS id
-      FROM hr.PayrollRun
-      WHERE CompanyId = @companyId
-        AND BranchId = @branchId
-        AND PayrollCode = @payrollCode
-        AND EmployeeCode = @employeeCode
-        AND DateFrom = @fromDate
-        AND DateTo = @toDate
-        AND RunSource = N'MANUAL'
-      ORDER BY PayrollRunId DESC
-      `
-    );
-
-    let runId = Number(existing.recordset?.[0]?.id ?? 0);
-    if (runId > 0) {
-      const reqUpdate = new sql.Request(tx);
-      reqUpdate.input("runId", sql.BigInt, runId);
-      reqUpdate.input("processDate", sql.Date, new Date());
-      reqUpdate.input("totalAsignaciones", sql.Decimal(18, 2), input.totalAsignaciones);
-      reqUpdate.input("totalDeducciones", sql.Decimal(18, 2), input.totalDeducciones);
-      reqUpdate.input("totalNeto", sql.Decimal(18, 2), input.totalNeto);
-      reqUpdate.input("payrollTypeName", sql.NVarChar(50), input.calculationType ?? null);
-      reqUpdate.input("updatedByUserId", sql.Int, input.userId ?? null);
-      await reqUpdate.query(
-        `
-        UPDATE hr.PayrollRun
-        SET
-          ProcessDate = @processDate,
-          TotalAssignments = @totalAsignaciones,
-          TotalDeductions = @totalDeducciones,
-          NetTotal = @totalNeto,
-          PayrollTypeName = COALESCE(@payrollTypeName, PayrollTypeName),
-          UpdatedAt = SYSUTCDATETIME(),
-          UpdatedByUserId = @updatedByUserId
-        WHERE PayrollRunId = @runId
-        `
-      );
-
-      const reqDelete = new sql.Request(tx);
-      reqDelete.input("runId", sql.BigInt, runId);
-      await reqDelete.query("DELETE FROM hr.PayrollRunLine WHERE PayrollRunId = @runId");
-    } else {
-      const reqInsert = new sql.Request(tx);
-      reqInsert.input("companyId", sql.Int, scope.companyId);
-      reqInsert.input("branchId", sql.Int, scope.branchId);
-      reqInsert.input("payrollCode", sql.NVarChar(15), input.payrollCode);
-      reqInsert.input("employeeId", sql.BigInt, input.employee.employeeId);
-      reqInsert.input("employeeCode", sql.NVarChar(24), input.employee.employeeCode);
-      reqInsert.input("employeeName", sql.NVarChar(200), input.employee.employeeName);
-      reqInsert.input("positionName", sql.NVarChar(120), null);
-      reqInsert.input("processDate", sql.Date, new Date());
-      reqInsert.input("fromDate", sql.Date, input.fromDate);
-      reqInsert.input("toDate", sql.Date, input.toDate);
-      reqInsert.input("totalAsignaciones", sql.Decimal(18, 2), input.totalAsignaciones);
-      reqInsert.input("totalDeducciones", sql.Decimal(18, 2), input.totalDeducciones);
-      reqInsert.input("totalNeto", sql.Decimal(18, 2), input.totalNeto);
-      reqInsert.input("payrollTypeName", sql.NVarChar(50), input.calculationType ?? null);
-      reqInsert.input("createdByUserId", sql.Int, input.userId ?? null);
-      const inserted = await reqInsert.query<{ id: number }>(
-        `
-        INSERT INTO hr.PayrollRun (
-          CompanyId,
-          BranchId,
-          PayrollCode,
-          EmployeeId,
-          EmployeeCode,
-          EmployeeName,
-          PositionName,
-          ProcessDate,
-          DateFrom,
-          DateTo,
-          TotalAssignments,
-          TotalDeductions,
-          NetTotal,
-          PayrollTypeName,
-          RunSource,
-          CreatedByUserId,
-          UpdatedByUserId
-        )
-        OUTPUT INSERTED.PayrollRunId AS id
-        VALUES (
-          @companyId,
-          @branchId,
-          @payrollCode,
-          @employeeId,
-          @employeeCode,
-          @employeeName,
-          @positionName,
-          @processDate,
-          @fromDate,
-          @toDate,
-          @totalAsignaciones,
-          @totalDeducciones,
-          @totalNeto,
-          @payrollTypeName,
-          N'MANUAL',
-          @createdByUserId,
-          @createdByUserId
-        )
-        `
-      );
-      runId = Number(inserted.recordset?.[0]?.id ?? 0);
-    }
-
-    for (const line of input.lines) {
-      const reqLine = new sql.Request(tx);
-      reqLine.input("runId", sql.BigInt, runId);
-      reqLine.input("code", sql.NVarChar(20), line.code);
-      reqLine.input("name", sql.NVarChar(120), line.name);
-      reqLine.input("type", sql.NVarChar(15), line.type);
-      reqLine.input("quantity", sql.Decimal(18, 4), line.quantity);
-      reqLine.input("amount", sql.Decimal(18, 4), line.amount);
-      reqLine.input("total", sql.Decimal(18, 2), line.total);
-      reqLine.input("description", sql.NVarChar(255), line.description ?? null);
-      reqLine.input("account", sql.NVarChar(50), line.account ?? null);
-      await reqLine.query(
-        `
-        INSERT INTO hr.PayrollRunLine (
-          PayrollRunId,
-          ConceptCode,
-          ConceptName,
-          ConceptType,
-          Quantity,
-          Amount,
-          Total,
-          DescriptionText,
-          AccountingAccountCode
-        )
-        VALUES (
-          @runId,
-          @code,
-          @name,
-          @type,
-          @quantity,
-          @amount,
-          @total,
-          @description,
-          @account
-        )
-        `
-      );
-    }
-
-    await tx.commit();
-    return runId;
-  } catch (error) {
-    await tx.rollback();
-    throw error;
+  const resultado = Number(output.Resultado ?? -99);
+  if (resultado < 0) {
+    throw new Error(String(output.Mensaje ?? "Error en upsert run"));
   }
 }
 
@@ -852,19 +425,13 @@ export async function procesarNominaCompleta(payload: {
   codUsuario?: string;
 }) {
   const scope = await getDefaultScope();
-  const where = ["CompanyId = @companyId", "IsDeleted = 0"];
-  if (payload.soloActivos ?? true) {
-    where.push("IsActive = 1");
-  }
 
-  const employees = await query<{ employeeCode: string }>(
-    `
-    SELECT EmployeeCode AS employeeCode
-    FROM [master].Employee
-    WHERE ${where.join(" AND ")}
-    ORDER BY EmployeeCode
-    `,
-    { companyId: scope.companyId }
+  const employees = await callSp<{ employeeCode: string }>(
+    "usp_HR_Payroll_ListActiveEmployees",
+    {
+      CompanyId: scope.companyId,
+      SoloActivos: (payload.soloActivos ?? true) ? 1 : 0,
+    }
   );
 
   let procesados = 0;
@@ -907,75 +474,27 @@ export async function listNominas(params: {
   const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
   const offset = (page - 1) * limit;
 
-  const where: string[] = ["CompanyId = @companyId"];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    offset,
-    limit,
-  };
+  const fromDate = params.fechaDesde ? normalizeDate(params.fechaDesde) : null;
+  const toDate = params.fechaHasta ? normalizeDate(params.fechaHasta) : null;
 
-  if (params.nomina?.trim()) {
-    where.push("PayrollCode = @payrollCode");
-    sqlParams.payrollCode = params.nomina.trim().toUpperCase();
-  }
-  if (params.cedula?.trim()) {
-    where.push("EmployeeCode = @employeeCode");
-    sqlParams.employeeCode = params.cedula.trim();
-  }
-  if (params.fechaDesde) {
-    const fromDate = normalizeDate(params.fechaDesde);
-    if (fromDate) {
-      where.push("DateFrom >= @fromDate");
-      sqlParams.fromDate = fromDate;
-    }
-  }
-  if (params.fechaHasta) {
-    const toDate = normalizeDate(params.fechaHasta);
-    if (toDate) {
-      where.push("DateTo <= @toDate");
-      sqlParams.toDate = toDate;
-    }
-  }
-  if (params.soloAbiertas) {
-    where.push("IsClosed = 0");
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<NominaCabecera>(
-    `
-    SELECT
-      PayrollCode AS nomina,
-      EmployeeCode AS cedula,
-      EmployeeName AS nombreEmpleado,
-      PositionName AS cargo,
-      ProcessDate AS fechaProceso,
-      DateFrom AS fechaInicio,
-      DateTo AS fechaHasta,
-      TotalAssignments AS totalAsignaciones,
-      TotalDeductions AS totalDeducciones,
-      NetTotal AS totalNeto,
-      IsClosed AS cerrada,
-      PayrollTypeName AS tipoNomina
-    FROM hr.PayrollRun
-    ${clause}
-    ORDER BY ProcessDate DESC, PayrollRunId DESC
-    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-    `,
-    sqlParams
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `
-    SELECT COUNT(1) AS total
-    FROM hr.PayrollRun
-    ${clause}
-    `,
-    sqlParams
+  const { rows, output } = await callSpOut<NominaCabecera>(
+    "usp_HR_Payroll_ListRuns",
+    {
+      CompanyId: scope.companyId,
+      PayrollCode: params.nomina?.trim().toUpperCase() || null,
+      EmployeeCode: params.cedula?.trim() || null,
+      FromDate: fromDate,
+      ToDate: toDate,
+      SoloAbiertas: params.soloAbiertas ? 1 : 0,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
 
   return {
     rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    total: Number(output.TotalCount ?? 0),
   };
 }
 
@@ -984,32 +503,12 @@ export async function getNomina(nomina: string, cedula: string) {
   const payrollCode = String(nomina ?? "").trim().toUpperCase();
   const employeeCode = String(cedula ?? "").trim();
 
-  const cabeceraRows = await query<NominaCabecera & { runId: number }>(
-    `
-    SELECT TOP 1
-      PayrollRunId AS runId,
-      PayrollCode AS nomina,
-      EmployeeCode AS cedula,
-      EmployeeName AS nombreEmpleado,
-      PositionName AS cargo,
-      ProcessDate AS fechaProceso,
-      DateFrom AS fechaInicio,
-      DateTo AS fechaHasta,
-      TotalAssignments AS totalAsignaciones,
-      TotalDeductions AS totalDeducciones,
-      NetTotal AS totalNeto,
-      IsClosed AS cerrada,
-      PayrollTypeName AS tipoNomina
-    FROM hr.PayrollRun
-    WHERE CompanyId = @companyId
-      AND PayrollCode = @payrollCode
-      AND EmployeeCode = @employeeCode
-    ORDER BY ProcessDate DESC, PayrollRunId DESC
-    `,
+  const cabeceraRows = await callSp<NominaCabecera & { runId: number }>(
+    "usp_HR_Payroll_GetRunHeader",
     {
-      companyId: scope.companyId,
-      payrollCode,
-      employeeCode,
+      CompanyId: scope.companyId,
+      PayrollCode: payrollCode,
+      EmployeeCode: employeeCode,
     }
   );
 
@@ -1018,24 +517,9 @@ export async function getNomina(nomina: string, cedula: string) {
     return { cabecera: null, detalle: [] as NominaDetalle[] };
   }
 
-  const detalle = await query<NominaDetalle>(
-    `
-    SELECT
-      ConceptCode AS coConcepto,
-      ConceptName AS nombreConcepto,
-      ConceptType AS tipoConcepto,
-      Quantity AS cantidad,
-      Amount AS monto,
-      Total AS total,
-      DescriptionText AS descripcion,
-      AccountingAccountCode AS cuentaContable
-    FROM hr.PayrollRunLine
-    WHERE PayrollRunId = @runId
-    ORDER BY PayrollRunLineId
-    `,
-    {
-      runId: (cabecera as any).runId,
-    }
+  const detalle = await callSp<NominaDetalle>(
+    "usp_HR_Payroll_GetRunLines",
+    { RunId: (cabecera as any).runId }
   );
 
   return {
@@ -1065,34 +549,21 @@ export async function cerrarNomina(payload: {
   const scope = await getDefaultScope();
   const userId = await resolveUserId(payload.codUsuario);
 
-  const affectedRows = await query<{ affected: number }>(
-    `
-    UPDATE hr.PayrollRun
-    SET
-      IsClosed = 1,
-      ClosedAt = SYSUTCDATETIME(),
-      ClosedByUserId = @userId,
-      UpdatedAt = SYSUTCDATETIME(),
-      UpdatedByUserId = @userId
-    WHERE CompanyId = @companyId
-      AND PayrollCode = @payrollCode
-      AND IsClosed = 0
-      AND (@employeeCode IS NULL OR EmployeeCode = @employeeCode);
-
-    SELECT @@ROWCOUNT AS affected;
-    `,
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_CloseRun",
     {
-      companyId: scope.companyId,
-      payrollCode: String(payload.nomina ?? "").trim().toUpperCase(),
-      employeeCode: payload.cedula ? String(payload.cedula).trim() : null,
-      userId,
-    }
+      CompanyId: scope.companyId,
+      PayrollCode: String(payload.nomina ?? "").trim().toUpperCase(),
+      EmployeeCode: payload.cedula ? String(payload.cedula).trim() : null,
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
-  const affected = Number(affectedRows[0]?.affected ?? 0);
+  const affected = Number(output.Resultado ?? 0);
   return {
     success: affected > 0,
-    message: affected > 0 ? "Nomina cerrada" : "No se encontraron registros abiertos",
+    message: String(output.Mensaje ?? (affected > 0 ? "Nomina cerrada" : "No se encontraron registros abiertos")),
   };
 }
 
@@ -1119,119 +590,22 @@ export async function procesarVacaciones(payload: {
   const days = dayDiffInclusive(startDate, endDate);
   const total = Number((dailySalary * days).toFixed(2));
 
-  const existing = await query<{ id: number }>(
-    `
-    SELECT TOP 1 VacationProcessId AS id
-    FROM hr.VacationProcess
-    WHERE CompanyId = @companyId
-      AND VacationCode = @vacationCode
-    `,
+  await callSpOut(
+    "usp_HR_Payroll_UpsertVacation",
     {
-      companyId: scope.companyId,
-      vacationCode: String(payload.vacacionId ?? "").trim(),
-    }
-  );
-
-  let vacationProcessId = Number(existing[0]?.id ?? 0);
-  if (vacationProcessId > 0) {
-    await query(
-      `
-      UPDATE hr.VacationProcess
-      SET
-        EmployeeId = @employeeId,
-        EmployeeCode = @employeeCode,
-        EmployeeName = @employeeName,
-        StartDate = @startDate,
-        EndDate = @endDate,
-        ReintegrationDate = @reintegrationDate,
-        ProcessDate = CAST(GETDATE() AS DATE),
-        TotalAmount = @total,
-        CalculatedAmount = @total,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE VacationProcessId = @id
-      `,
-      {
-        id: vacationProcessId,
-        employeeId: employee.employeeId,
-        employeeCode: employee.employeeCode,
-        employeeName: employee.employeeName,
-        startDate,
-        endDate,
-        reintegrationDate,
-        total,
-        userId,
-      }
-    );
-  } else {
-    const inserted = await query<{ id: number }>(
-      `
-      INSERT INTO hr.VacationProcess (
-        CompanyId,
-        BranchId,
-        VacationCode,
-        EmployeeId,
-        EmployeeCode,
-        EmployeeName,
-        StartDate,
-        EndDate,
-        ReintegrationDate,
-        ProcessDate,
-        TotalAmount,
-        CalculatedAmount,
-        CreatedByUserId,
-        UpdatedByUserId
-      )
-      OUTPUT INSERTED.VacationProcessId AS id
-      VALUES (
-        @companyId,
-        @branchId,
-        @vacationCode,
-        @employeeId,
-        @employeeCode,
-        @employeeName,
-        @startDate,
-        @endDate,
-        @reintegrationDate,
-        CAST(GETDATE() AS DATE),
-        @total,
-        @total,
-        @userId,
-        @userId
-      )
-      `,
-      {
-        companyId: scope.companyId,
-        branchId: scope.branchId,
-        vacationCode: String(payload.vacacionId ?? "").trim(),
-        employeeId: employee.employeeId,
-        employeeCode: employee.employeeCode,
-        employeeName: employee.employeeName,
-        startDate,
-        endDate,
-        reintegrationDate,
-        total,
-        userId,
-      }
-    );
-    vacationProcessId = Number(inserted[0]?.id ?? 0);
-  }
-
-  await query("DELETE FROM hr.VacationProcessLine WHERE VacationProcessId = @id", { id: vacationProcessId });
-  await query(
-    `
-    INSERT INTO hr.VacationProcessLine (
-      VacationProcessId,
-      ConceptCode,
-      ConceptName,
-      Amount
-    )
-    VALUES (@id, N'VACACIONES', N'Pago de vacaciones', @amount)
-    `,
-    {
-      id: vacationProcessId,
-      amount: total,
-    }
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      VacationCode: String(payload.vacacionId ?? "").trim(),
+      EmployeeId: employee.employeeId,
+      EmployeeCode: employee.employeeCode,
+      EmployeeName: employee.employeeName,
+      StartDate: startDate,
+      EndDate: endDate,
+      ReintegrationDate: reintegrationDate,
+      TotalAmount: total,
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
   return {
@@ -1250,50 +624,20 @@ export async function listVacaciones(params: {
   const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
   const offset = (page - 1) * limit;
 
-  const where: string[] = ["CompanyId = @companyId"];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    offset,
-    limit,
-  };
-  if (params.cedula?.trim()) {
-    where.push("EmployeeCode = @employeeCode");
-    sqlParams.employeeCode = params.cedula.trim();
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<Vacacion>(
-    `
-    SELECT
-      VacationCode AS vacacion,
-      EmployeeCode AS cedula,
-      EmployeeName AS nombreEmpleado,
-      StartDate AS inicio,
-      EndDate AS hasta,
-      ReintegrationDate AS reintegro,
-      ProcessDate AS fechaCalculo,
-      TotalAmount AS total,
-      CalculatedAmount AS totalCalculado
-    FROM hr.VacationProcess
-    ${clause}
-    ORDER BY VacationProcessId DESC
-    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-    `,
-    sqlParams
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `
-    SELECT COUNT(1) AS total
-    FROM hr.VacationProcess
-    ${clause}
-    `,
-    sqlParams
+  const { rows, output } = await callSpOut<Vacacion>(
+    "usp_HR_Payroll_ListVacations",
+    {
+      CompanyId: scope.companyId,
+      EmployeeCode: params.cedula?.trim() || null,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
 
   return {
     rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    total: Number(output.TotalCount ?? 0),
   };
 }
 
@@ -1301,43 +645,20 @@ export async function getVacaciones(vacacionId: string) {
   const scope = await getDefaultScope();
   const code = String(vacacionId ?? "").trim();
 
-  const cabeceraRows = await query<any>(
-    `
-    SELECT TOP 1
-      VacationProcessId AS id,
-      VacationCode AS vacacion,
-      EmployeeCode AS cedula,
-      EmployeeName AS nombreEmpleado,
-      StartDate AS inicio,
-      EndDate AS hasta,
-      ReintegrationDate AS reintegro,
-      ProcessDate AS fechaCalculo,
-      TotalAmount AS total,
-      CalculatedAmount AS totalCalculado
-    FROM hr.VacationProcess
-    WHERE CompanyId = @companyId
-      AND VacationCode = @code
-    `,
+  const cabeceraRows = await callSp<any>(
+    "usp_HR_Payroll_GetVacationHeader",
     {
-      companyId: scope.companyId,
-      code,
+      CompanyId: scope.companyId,
+      VacationCode: code,
     }
   );
 
   const cabecera = cabeceraRows[0] ?? null;
   if (!cabecera) return { cabecera: null, detalle: [] };
 
-  const detalle = await query<any>(
-    `
-    SELECT
-      ConceptCode AS codigo,
-      ConceptName AS nombre,
-      Amount AS monto
-    FROM hr.VacationProcessLine
-    WHERE VacationProcessId = @id
-    ORDER BY VacationProcessLineId
-    `,
-    { id: Number(cabecera.id) }
+  const detalle = await callSp<any>(
+    "usp_HR_Payroll_GetVacationLines",
+    { VacationProcessId: Number(cabecera.id) }
   );
 
   return { cabecera, detalle };
@@ -1368,106 +689,24 @@ export async function calcularLiquidacion(payload: {
   const bonoSalida = Number((salarioDiario * 10).toFixed(2));
   const total = Number((prestaciones + vacPendientes + bonoSalida).toFixed(2));
 
-  const code = String(payload.liquidacionId ?? "").trim();
-  const existing = await query<{ id: number }>(
-    `
-    SELECT TOP 1 SettlementProcessId AS id
-    FROM hr.SettlementProcess
-    WHERE CompanyId = @companyId
-      AND SettlementCode = @code
-    `,
-    { companyId: scope.companyId, code }
-  );
-
-  let settlementId = Number(existing[0]?.id ?? 0);
-  if (settlementId > 0) {
-    await query(
-      `
-      UPDATE hr.SettlementProcess
-      SET
-        EmployeeId = @employeeId,
-        EmployeeCode = @employeeCode,
-        EmployeeName = @employeeName,
-        RetirementDate = @retirementDate,
-        RetirementCause = @retirementCause,
-        TotalAmount = @total,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE SettlementProcessId = @id
-      `,
-      {
-        id: settlementId,
-        employeeId: employee.employeeId,
-        employeeCode: employee.employeeCode,
-        employeeName: employee.employeeName,
-        retirementDate: retiro,
-        retirementCause: payload.causaRetiro ?? null,
-        total,
-        userId,
-      }
-    );
-  } else {
-    const inserted = await query<{ id: number }>(
-      `
-      INSERT INTO hr.SettlementProcess (
-        CompanyId,
-        BranchId,
-        SettlementCode,
-        EmployeeId,
-        EmployeeCode,
-        EmployeeName,
-        RetirementDate,
-        RetirementCause,
-        TotalAmount,
-        CreatedByUserId,
-        UpdatedByUserId
-      )
-      OUTPUT INSERTED.SettlementProcessId AS id
-      VALUES (
-        @companyId,
-        @branchId,
-        @settlementCode,
-        @employeeId,
-        @employeeCode,
-        @employeeName,
-        @retirementDate,
-        @retirementCause,
-        @total,
-        @userId,
-        @userId
-      )
-      `,
-      {
-        companyId: scope.companyId,
-        branchId: scope.branchId,
-        settlementCode: code,
-        employeeId: employee.employeeId,
-        employeeCode: employee.employeeCode,
-        employeeName: employee.employeeName,
-        retirementDate: retiro,
-        retirementCause: payload.causaRetiro ?? null,
-        total,
-        userId,
-      }
-    );
-    settlementId = Number(inserted[0]?.id ?? 0);
-  }
-
-  await query("DELETE FROM hr.SettlementProcessLine WHERE SettlementProcessId = @id", { id: settlementId });
-  await query(
-    `
-    INSERT INTO hr.SettlementProcessLine (SettlementProcessId, ConceptCode, ConceptName, Amount)
-    VALUES
-      (@id, N'PRESTACIONES', N'Prestaciones sociales', @prestaciones),
-      (@id, N'VACACIONES_PEND', N'Vacaciones pendientes', @vacPendientes),
-      (@id, N'BONO_SALIDA', N'Bono de salida', @bonoSalida)
-    `,
+  await callSpOut(
+    "usp_HR_Payroll_UpsertSettlement",
     {
-      id: settlementId,
-      prestaciones,
-      vacPendientes,
-      bonoSalida,
-    }
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      SettlementCode: String(payload.liquidacionId ?? "").trim(),
+      EmployeeId: employee.employeeId,
+      EmployeeCode: employee.employeeCode,
+      EmployeeName: employee.employeeName,
+      RetirementDate: retiro,
+      RetirementCause: payload.causaRetiro ?? null,
+      TotalAmount: total,
+      Prestaciones: prestaciones,
+      VacPendientes: vacPendientes,
+      BonoSalida: bonoSalida,
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
   return {
@@ -1486,47 +725,20 @@ export async function listLiquidaciones(params: {
   const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
   const offset = (page - 1) * limit;
 
-  const where: string[] = ["CompanyId = @companyId"];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    offset,
-    limit,
-  };
-  if (params.cedula?.trim()) {
-    where.push("EmployeeCode = @employeeCode");
-    sqlParams.employeeCode = params.cedula.trim();
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<any>(
-    `
-    SELECT
-      SettlementCode AS liquidacion,
-      EmployeeCode AS cedula,
-      EmployeeName AS nombreEmpleado,
-      RetirementDate AS fechaRetiro,
-      RetirementCause AS causaRetiro,
-      TotalAmount AS total
-    FROM hr.SettlementProcess
-    ${clause}
-    ORDER BY SettlementProcessId DESC
-    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-    `,
-    sqlParams
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `
-    SELECT COUNT(1) AS total
-    FROM hr.SettlementProcess
-    ${clause}
-    `,
-    sqlParams
+  const { rows, output } = await callSpOut<any>(
+    "usp_HR_Payroll_ListSettlements",
+    {
+      CompanyId: scope.companyId,
+      EmployeeCode: params.cedula?.trim() || null,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
 
   return {
     rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    total: Number(output.TotalCount ?? 0),
   };
 }
 
@@ -1534,18 +746,11 @@ export async function getLiquidacion(liquidacionId: string) {
   const scope = await getDefaultScope();
   const code = String(liquidacionId ?? "").trim();
 
-  const header = await query<{ id: number; total: number }>(
-    `
-    SELECT TOP 1
-      SettlementProcessId AS id,
-      TotalAmount AS total
-    FROM hr.SettlementProcess
-    WHERE CompanyId = @companyId
-      AND SettlementCode = @code
-    `,
+  const header = await callSp<{ id: number; total: number }>(
+    "usp_HR_Payroll_GetSettlementHeader",
     {
-      companyId: scope.companyId,
-      code,
+      CompanyId: scope.companyId,
+      SettlementCode: code,
     }
   );
 
@@ -1554,17 +759,9 @@ export async function getLiquidacion(liquidacionId: string) {
     return { detalle: [], totales: null };
   }
 
-  const detalle = await query<any>(
-    `
-    SELECT
-      ConceptCode AS codigo,
-      ConceptName AS nombre,
-      Amount AS monto
-    FROM hr.SettlementProcessLine
-    WHERE SettlementProcessId = @id
-    ORDER BY SettlementProcessLineId
-    `,
-    { id }
+  const detalle = await callSp<any>(
+    "usp_HR_Payroll_GetSettlementLines",
+    { SettlementProcessId: id }
   );
 
   return {
@@ -1579,38 +776,19 @@ export async function listConstantes(params: { page?: number; limit?: number }) 
   const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
   const offset = (page - 1) * limit;
 
-  const rows = await query<any>(
-    `
-    SELECT
-      ConstantCode AS codigo,
-      ConstantName AS nombre,
-      ConstantValue AS valor,
-      SourceName AS origen,
-      IsActive AS activo
-    FROM hr.PayrollConstant
-    WHERE CompanyId = @companyId
-    ORDER BY ConstantCode
-    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-    `,
+  const { rows, output } = await callSpOut<any>(
+    "usp_HR_Payroll_ListConstants",
     {
-      companyId: scope.companyId,
-      offset,
-      limit,
-    }
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `
-    SELECT COUNT(1) AS total
-    FROM hr.PayrollConstant
-    WHERE CompanyId = @companyId
-    `,
-    { companyId: scope.companyId }
+      CompanyId: scope.companyId,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
 
   return {
     rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    total: Number(output.TotalCount ?? 0),
   };
 }
 
@@ -1625,76 +803,21 @@ export async function saveConstante(data: {
   const code = String(data.codigo ?? "").trim().toUpperCase();
   if (!code) return { success: false, message: "codigo obligatorio" };
 
-  const found = await query<{ id: number }>(
-    `
-    SELECT TOP 1 PayrollConstantId AS id
-    FROM hr.PayrollConstant
-    WHERE CompanyId = @companyId
-      AND ConstantCode = @code
-    `,
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_SaveConstant",
     {
-      companyId: scope.companyId,
-      code,
-    }
+      CompanyId: scope.companyId,
+      Code: code,
+      Name: data.nombre ?? null,
+      Value: data.valor == null ? null : Number(data.valor),
+      SourceName: data.origen ?? null,
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
-
-  if (found[0]?.id) {
-    await query(
-      `
-      UPDATE hr.PayrollConstant
-      SET
-        ConstantName = COALESCE(@name, ConstantName),
-        ConstantValue = COALESCE(@value, ConstantValue),
-        SourceName = COALESCE(@sourceName, SourceName),
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE PayrollConstantId = @id
-      `,
-      {
-        id: Number(found[0].id),
-        name: data.nombre ?? null,
-        value: data.valor == null ? null : Number(data.valor),
-        sourceName: data.origen ?? null,
-        userId,
-      }
-    );
-  } else {
-    await query(
-      `
-      INSERT INTO hr.PayrollConstant (
-        CompanyId,
-        ConstantCode,
-        ConstantName,
-        ConstantValue,
-        SourceName,
-        IsActive,
-        CreatedByUserId,
-        UpdatedByUserId
-      )
-      VALUES (
-        @companyId,
-        @code,
-        @name,
-        @value,
-        @sourceName,
-        1,
-        @userId,
-        @userId
-      )
-      `,
-      {
-        companyId: scope.companyId,
-        code,
-        name: data.nombre ?? code,
-        value: Number(data.valor ?? 0),
-        sourceName: data.origen ?? null,
-        userId,
-      }
-    );
-  }
 
   return {
     success: true,
-    message: "Constante guardada",
+    message: String(output.Mensaje ?? "Constante guardada"),
   };
 }
