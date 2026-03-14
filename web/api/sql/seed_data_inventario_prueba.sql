@@ -1,7 +1,8 @@
 -- =============================================
--- Datos de prueba: productos en Inventario y movimientos (entradas/salidas) en MovInvent.
+-- Datos de prueba: productos en master.Product y movimientos (entradas/salidas) en MovInvent.
 -- Para probar sp_CerrarMesInventario y sp_MovUnidades cuando las tablas están vacías.
 -- Códigos: PRUEBA01, PRUEBA02, PRUEBA03. Fechas: mes actual.
+-- Antes usaba dbo.Inventario; ahora usa master.Product (ProductCode, ProductName, StockQty, CostPrice, SalesPrice).
 -- =============================================
 
 SET NOCOUNT ON;
@@ -11,18 +12,22 @@ DECLARE @Dia1 DATE = @IniMes;
 DECLARE @Dia5 DATE = DATEADD(DAY, 4, @IniMes);
 DECLARE @Dia10 DATE = DATEADD(DAY, 9, @IniMes);
 
--- 1) Productos en Inventario (insertar solo si no existen)
-IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE CODIGO = 'PRUEBA01')
+-- 1) Productos en master.Product (insertar solo si no existen)
+-- Antes: IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE CODIGO = 'PRUEBA01')
+IF NOT EXISTS (SELECT 1 FROM master.Product WHERE ProductCode = 'PRUEBA01' AND ISNULL(IsDeleted, 0) = 0)
 BEGIN
-    INSERT INTO dbo.Inventario (CODIGO, DESCRIPCION, EXISTENCIA, COSTO_REFERENCIA, COSTO_PROMEDIO, PRECIO_COMPRA, PRECIO_VENTA, Alicuota)
+    DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+
+    INSERT INTO master.Product (ProductCode, ProductName, StockQty, COSTO_REFERENCIA, COSTO_PROMEDIO, CostPrice, SalesPrice, Alicuota, CompanyId)
+    -- ProductCode = CODIGO, ProductName = DESCRIPCION, StockQty = EXISTENCIA, CostPrice = COSTO, SalesPrice = PRECIO
     VALUES
-        ('PRUEBA01', N'Producto prueba 1', 55, 10.50, 10.50, 10.50, 18.00, 16),
-        ('PRUEBA02', N'Producto prueba 2', 35, 25.00, 25.00, 25.00, 42.00, 16),
-        ('PRUEBA03', N'Producto prueba 3', 25, 8.00, 8.00, 8.00, 14.00, 16);
-    PRINT N'Inventario: 3 productos de prueba insertados (PRUEBA01, PRUEBA02, PRUEBA03).';
+        ('PRUEBA01', N'Producto prueba 1', 55, 10.50, 10.50, 10.50, 18.00, 16, @CompanyId),
+        ('PRUEBA02', N'Producto prueba 2', 35, 25.00, 25.00, 25.00, 42.00, 16, @CompanyId),
+        ('PRUEBA03', N'Producto prueba 3', 25, 8.00, 8.00, 8.00, 14.00, 16, @CompanyId);
+    PRINT N'master.Product: 3 productos de prueba insertados (PRUEBA01, PRUEBA02, PRUEBA03).';
 END
 ELSE
-    PRINT N'Inventario: productos PRUEBA01/02/03 ya existen, se omiten.';
+    PRINT N'master.Product: productos PRUEBA01/02/03 ya existen, se omiten.';
 
 -- 2) Movimientos iniciales (entradas) - solo si MovInvent no tiene datos del mes actual
 IF NOT EXISTS (SELECT 1 FROM dbo.MovInvent WHERE CAST(Fecha AS DATE) >= @IniMes)
@@ -50,10 +55,11 @@ BEGIN
 
     PRINT N'MovInvent: 9 movimientos de prueba insertados (3 iniciales + 3 compras + 3 ventas).';
 
-    -- Sincronizar existencias en Inventario con el saldo final de MovInvent
-    UPDATE i SET i.EXISTENCIA = 55 FROM dbo.Inventario i WHERE i.CODIGO = 'PRUEBA01';
-    UPDATE i SET i.EXISTENCIA = 35 FROM dbo.Inventario i WHERE i.CODIGO = 'PRUEBA02';
-    UPDATE i SET i.EXISTENCIA = 25 FROM dbo.Inventario i WHERE i.CODIGO = 'PRUEBA03';
+    -- Sincronizar existencias en master.Product.StockQty con el saldo final de MovInvent
+    -- Antes: UPDATE dbo.Inventario SET EXISTENCIA = ...
+    UPDATE i SET i.StockQty = 55 FROM master.Product i WHERE i.ProductCode = 'PRUEBA01' AND ISNULL(i.IsDeleted, 0) = 0;
+    UPDATE i SET i.StockQty = 35 FROM master.Product i WHERE i.ProductCode = 'PRUEBA02' AND ISNULL(i.IsDeleted, 0) = 0;
+    UPDATE i SET i.StockQty = 25 FROM master.Product i WHERE i.ProductCode = 'PRUEBA03' AND ISNULL(i.IsDeleted, 0) = 0;
 END
 ELSE
     PRINT N'MovInvent: ya hay movimientos en el mes actual, no se insertan datos de prueba.';

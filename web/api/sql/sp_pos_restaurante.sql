@@ -1,6 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════════
 -- DatqBox POS & Restaurante — Stored Procedures
 -- Productos para POS, Clientes POS, Mesas, Pedidos y Facturación
+-- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode, ProductName, SalesPrice, CostPrice, IsService).
+-- Referencias a dbo.Clientes actualizadas a master.Customer (CustomerCode, CustomerName, FiscalId, CreditLimit).
 -- ═══════════════════════════════════════════════════════════════════
 
 -- =============================================
@@ -22,12 +24,14 @@ BEGIN
   DECLARE @Offset INT = (@Page - 1) * @Limit;
 
   -- Contar total
+  -- Ahora se usa master.Product (antes dbo.Inventario)
   SELECT @TotalCount = COUNT(1)
-  FROM Inventario i
-  WHERE (i.EXISTENCIA > 0 OR i.Servicio = 1)
+  FROM master.Product i
+  WHERE ISNULL(i.IsDeleted, 0) = 0
+    AND (i.StockQty > 0 OR i.IsService = 1)          -- StockQty = EXISTENCIA, IsService = Servicio
     AND (@Search IS NULL
-         OR i.CODIGO LIKE '%' + @Search + '%'
-         OR i.DESCRIPCION LIKE '%' + @Search + '%'
+         OR i.ProductCode LIKE '%' + @Search + '%'   -- ProductCode = CODIGO
+         OR i.ProductName LIKE '%' + @Search + '%'   -- ProductName = DESCRIPCION
          OR i.Referencia LIKE '%' + @Search + '%'
          OR i.Barra LIKE '%' + @Search + '%'
          OR i.Categoria LIKE '%' + @Search + '%')
@@ -35,35 +39,36 @@ BEGIN
 
   -- Resultados paginados con precios y DescripcionCompleta
   SELECT
-    i.CODIGO        AS id,
-    i.CODIGO        AS codigo,
+    i.ProductCode   AS id,                            -- ProductCode = CODIGO
+    i.ProductCode   AS codigo,
     LTRIM(RTRIM(
       ISNULL(RTRIM(i.Categoria), '') +
       CASE WHEN RTRIM(ISNULL(i.Tipo, '')) <> '' THEN ' ' + RTRIM(i.Tipo) ELSE '' END +
-      CASE WHEN RTRIM(ISNULL(i.DESCRIPCION, '')) <> '' THEN ' ' + RTRIM(i.DESCRIPCION) ELSE '' END +
+      CASE WHEN RTRIM(ISNULL(i.ProductName, '')) <> '' THEN ' ' + RTRIM(i.ProductName) ELSE '' END +  -- ProductName = DESCRIPCION
       CASE WHEN RTRIM(ISNULL(i.Marca, '')) <> '' THEN ' ' + RTRIM(i.Marca) ELSE '' END +
       CASE WHEN RTRIM(ISNULL(i.Clase, '')) <> '' THEN ' ' + RTRIM(i.Clase) ELSE '' END
     )) AS nombre,
-    i.PRECIO_VENTA       AS precioDetal,
-    ISNULL(i.PRECIO_VENTA2, i.PRECIO_VENTA * 0.90) AS precioMayor,
-    ISNULL(i.PRECIO_VENTA3, i.PRECIO_VENTA * 0.80) AS precioDistribuidor,
-    i.EXISTENCIA         AS existencia,
+    i.SalesPrice         AS precioDetal,              -- SalesPrice = PRECIO_VENTA
+    ISNULL(i.PRECIO_VENTA2, i.SalesPrice * 0.90) AS precioMayor,
+    ISNULL(i.PRECIO_VENTA3, i.SalesPrice * 0.80) AS precioDistribuidor,
+    i.StockQty           AS existencia,               -- StockQty = EXISTENCIA
     i.Categoria          AS categoria,
     ISNULL(i.PORCENTAJE, 16) AS iva,
     i.Barra              AS barra,
     i.Referencia         AS referencia,
-    i.Servicio           AS esServicio,
-    ISNULL(i.PRECIO_COMPRA, 0) AS costoPromedio
-  FROM Inventario i
-  WHERE (i.EXISTENCIA > 0 OR i.Servicio = 1)
+    i.IsService          AS esServicio,               -- IsService = Servicio
+    ISNULL(i.CostPrice, 0) AS costoPromedio           -- CostPrice = COSTO
+  FROM master.Product i
+  WHERE ISNULL(i.IsDeleted, 0) = 0
+    AND (i.StockQty > 0 OR i.IsService = 1)
     AND (@Search IS NULL
-         OR i.CODIGO LIKE '%' + @Search + '%'
-         OR i.DESCRIPCION LIKE '%' + @Search + '%'
+         OR i.ProductCode LIKE '%' + @Search + '%'
+         OR i.ProductName LIKE '%' + @Search + '%'
          OR i.Referencia LIKE '%' + @Search + '%'
          OR i.Barra LIKE '%' + @Search + '%'
          OR i.Categoria LIKE '%' + @Search + '%')
     AND (@Categoria IS NULL OR i.Categoria = @Categoria)
-  ORDER BY i.CODIGO
+  ORDER BY i.ProductCode
   OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO
@@ -79,28 +84,32 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
+  -- Ahora se usa master.Product (antes dbo.Inventario)
   SELECT TOP 1
-    i.CODIGO        AS id,
-    i.CODIGO        AS codigo,
+    i.ProductCode   AS id,                            -- ProductCode = CODIGO
+    i.ProductCode   AS codigo,
     LTRIM(RTRIM(
       ISNULL(RTRIM(i.Categoria), '') +
       CASE WHEN RTRIM(ISNULL(i.Tipo, '')) <> '' THEN ' ' + RTRIM(i.Tipo) ELSE '' END +
-      CASE WHEN RTRIM(ISNULL(i.DESCRIPCION, '')) <> '' THEN ' ' + RTRIM(i.DESCRIPCION) ELSE '' END +
+      CASE WHEN RTRIM(ISNULL(i.ProductName, '')) <> '' THEN ' ' + RTRIM(i.ProductName) ELSE '' END +  -- ProductName = DESCRIPCION
       CASE WHEN RTRIM(ISNULL(i.Marca, '')) <> '' THEN ' ' + RTRIM(i.Marca) ELSE '' END +
       CASE WHEN RTRIM(ISNULL(i.Clase, '')) <> '' THEN ' ' + RTRIM(i.Clase) ELSE '' END
     )) AS nombre,
-    i.PRECIO_VENTA       AS precioDetal,
-    ISNULL(i.PRECIO_VENTA2, i.PRECIO_VENTA * 0.90) AS precioMayor,
-    ISNULL(i.PRECIO_VENTA3, i.PRECIO_VENTA * 0.80) AS precioDistribuidor,
-    i.EXISTENCIA         AS existencia,
+    i.SalesPrice         AS precioDetal,              -- SalesPrice = PRECIO_VENTA
+    ISNULL(i.PRECIO_VENTA2, i.SalesPrice * 0.90) AS precioMayor,
+    ISNULL(i.PRECIO_VENTA3, i.SalesPrice * 0.80) AS precioDistribuidor,
+    i.StockQty           AS existencia,               -- StockQty = EXISTENCIA
     i.Categoria          AS categoria,
     ISNULL(i.PORCENTAJE, 16) AS iva,
     i.Barra              AS barra,
     i.Referencia         AS referencia
-  FROM Inventario i
-  WHERE i.CODIGO = @Codigo
-     OR i.Barra = @Codigo
-     OR i.Referencia = @Codigo;
+  FROM master.Product i
+  WHERE ISNULL(i.IsDeleted, 0) = 0
+    AND (
+         i.ProductCode = @Codigo
+      OR i.Barra = @Codigo
+      OR i.Referencia = @Codigo
+    );
 END
 GO
 
@@ -116,22 +125,26 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
+  -- Ahora se usa master.Customer (antes dbo.Clientes)
   SELECT TOP (@Limit)
-    c.CODIGO     AS id,
-    c.CODIGO     AS codigo,
-    c.NOMBRE     AS nombre,
-    c.RIF        AS rif,
-    c.TELEFONO   AS telefono,
-    c.EMAIL      AS email,
-    c.DIRECCION  AS direccion,
+    c.CustomerCode  AS id,                            -- CustomerCode = CODIGO
+    c.CustomerCode  AS codigo,
+    c.CustomerName  AS nombre,                        -- CustomerName = NOMBRE
+    c.FiscalId      AS rif,                           -- FiscalId = RIF
+    c.TELEFONO      AS telefono,
+    c.EMAIL         AS email,
+    c.DIRECCION     AS direccion,
     ISNULL(c.LISTA_PRECIO, 'Detal') AS tipoPrecio,
-    ISNULL(c.LIMITE, 0) AS credito
-  FROM Clientes c
-  WHERE @Search IS NULL
-     OR c.CODIGO LIKE '%' + @Search + '%'
-     OR c.NOMBRE LIKE '%' + @Search + '%'
-     OR c.RIF LIKE '%' + @Search + '%'
-  ORDER BY c.NOMBRE;
+    ISNULL(c.CreditLimit, 0) AS credito              -- CreditLimit = LIMITE
+  FROM master.Customer c
+  WHERE ISNULL(c.IsDeleted, 0) = 0
+    AND (
+         @Search IS NULL
+      OR c.CustomerCode LIKE '%' + @Search + '%'
+      OR c.CustomerName LIKE '%' + @Search + '%'
+      OR c.FiscalId LIKE '%' + @Search + '%'
+    )
+  ORDER BY c.CustomerName;
 END
 GO
 
@@ -145,12 +158,14 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
+  -- Ahora se usa master.Product (antes dbo.Inventario)
   SELECT
     RTRIM(ISNULL(i.Categoria, '(Sin Categoría)')) AS id,
     RTRIM(ISNULL(i.Categoria, '(Sin Categoría)')) AS nombre,
     COUNT(1) AS productCount
-  FROM Inventario i
-  WHERE i.EXISTENCIA > 0 OR i.Servicio = 1
+  FROM master.Product i
+  WHERE ISNULL(i.IsDeleted, 0) = 0
+    AND (i.StockQty > 0 OR i.IsService = 1)          -- StockQty = EXISTENCIA, IsService = Servicio
   GROUP BY i.Categoria
   ORDER BY i.Categoria;
 END
@@ -175,7 +190,7 @@ BEGIN
     Activa       BIT NOT NULL DEFAULT 1,
     FechaCreacion DATETIME NOT NULL DEFAULT GETDATE()
   );
-  
+
   -- Seed: mesas iniciales
   INSERT INTO RestauranteMesas (Numero, Nombre, Capacidad, AmbienteId, Ambiente, PosicionX, PosicionY) VALUES
   (1, 'Mesa 1', 4, '1', N'Salón Principal', 20, 20),
@@ -320,13 +335,15 @@ BEGIN
 
   IF @IvaPct IS NULL
   BEGIN
+    -- Ahora se usa master.Product (antes dbo.Inventario)
     SELECT TOP 1
       @IvaPct = CASE
                   WHEN ISNULL(inv.PORCENTAJE, 0) > 1 THEN CAST(inv.PORCENTAJE / 100.0 AS DECIMAL(9,4))
                   ELSE CAST(ISNULL(inv.PORCENTAJE, 0) AS DECIMAL(9,4))
                 END
-    FROM Inventario inv
-    WHERE LTRIM(RTRIM(inv.CODIGO)) = LTRIM(RTRIM(@ProductoId));
+    FROM master.Product inv
+    WHERE ISNULL(inv.IsDeleted, 0) = 0
+      AND LTRIM(RTRIM(inv.ProductCode)) = LTRIM(RTRIM(@ProductoId));   -- ProductCode = CODIGO
   END
 
   IF @IvaPct IS NULL
@@ -441,5 +458,5 @@ BEGIN
 END
 GO
 
-PRINT '✅ SP POS y Restaurante creados exitosamente.'
+PRINT 'SP POS y Restaurante creados exitosamente.'
 GO

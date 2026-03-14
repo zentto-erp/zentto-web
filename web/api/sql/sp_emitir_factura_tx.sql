@@ -1,11 +1,16 @@
+-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+-- Referencias a dbo.Inventario actualizadas a master.Product.
+-- Referencias a dbo.Clientes actualizadas a master.Customer.
+-- Tablas legacy sin migrar (P_Cobrar, P_CobrarC, Facturas, Detalle_Facturas, Pagos, etc.)
+-- mantienen sus nombres originales — ver TODOs en el codigo.
 -- =============================================
--- Stored Procedure: Anular Factura
--- Descripción: Anula una factura revertiendo inventario y CxC
+-- Stored Procedure: Emitir Factura
+-- Descripcion: Emite una factura generando inventario y CxC
 -- Compatible con: SQL Server 2012+
 -- =============================================
 
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_emitir_factura_tx')
-    DROP PROCEDURE sp_anular_factura_tx
+    DROP PROCEDURE sp_emitir_factura_tx
 GO
 
 USE [Sanjose]
@@ -61,7 +66,7 @@ BEGIN
     SET @Codigo = NULLIF(@fx.value('(/factura/@CODIGO)[1]', 'nvarchar(60)'), '');
     SET @Pago = UPPER(ISNULL(NULLIF(@fx.value('(/factura/@PAGO)[1]', 'nvarchar(30)'), ''), ''));
     SET @CodUsuario = ISNULL(NULLIF(@fx.value('(/factura/@COD_USUARIO)[1]', 'nvarchar(60)'), ''), 'API');
-    -- SERIALTIPO = serial de la máquina fiscal; Tipo_Orden = número de memoria física (1, 2, ... si se reemplaza la memoria)
+    -- SERIALTIPO = serial de la maquina fiscal; Tipo_Orden = numero de memoria fisica (1, 2, ... si se reemplaza la memoria)
     SET @SerialTipo = ISNULL(NULLIF(@fx.value('(/factura/@SERIALTIPO)[1]', 'nvarchar(60)'), ''), '');
     SET @TipoOrden = ISNULL(NULLIF(@fx.value('(/factura/@TIPO_ORDEN)[1]', 'nvarchar(80)'), ''), '');
     SET @Observ = NULLIF(@fx.value('(/factura/@OBSERV)[1]', 'nvarchar(4000)'), '');
@@ -95,9 +100,11 @@ BEGIN
             SAVE TRANSACTION @SaveName;
         END
 
+        -- TODO: tabla dbo.Facturas es legacy; migrar a tabla canonica en el API
         INSERT INTO dbo.Facturas (NUM_FACT, CODIGO, FECHA, FECHA_REPORTE, PAGO, TOTAL, COD_USUARIO, SERIALTIPO, TIPO_ORDEN, OBSERV)
         VALUES (@NumFact, @Codigo, @Fecha, @FechaReporte, @Pago, @Total, @CodUsuario, @SerialTipo, @TipoOrden, @Observ);
 
+        -- TODO: tabla dbo.Detalle_facturas es legacy; migrar a tabla canonica en el API
         INSERT INTO dbo.Detalle_facturas (NUM_FACT, SERIALTIPO, COD_SERV, CANTIDAD, PRECIO, ALICUOTA, TOTAL, PRECIO_DESCUENTO, Relacionada, Cod_Alterno)
         SELECT
             CASE WHEN NULLIF(T.X.value('@NUM_FACT', 'nvarchar(60)'), '') IS NULL THEN @NumFact ELSE T.X.value('@NUM_FACT', 'nvarchar(60)') END,
@@ -231,6 +238,7 @@ BEGIN
                FECHA_RETENCION = NULL
          WHERE NUM_FACT = @NumFact;
 
+        -- TODO: tablas P_Cobrar / P_CobrarC son legacy; migrar a tabla canonica en el API
         IF @GenerarCxC = 1 AND (@Pago = 'CREDITO' OR @SaldoPendiente > 0)
         BEGIN
             DECLARE @SaldoPrevio DECIMAL(18,4);
@@ -266,6 +274,7 @@ BEGIN
 
         IF @ActualizarInventario = 1
         BEGIN
+            -- Insertar movimiento en MovInvent
             INSERT INTO dbo.MovInvent (CODIGO, PRODUCT, DOCUMENTO, FECHA, MOTIVO, TIPO, CANTIDAD_ACTUAL, CANTIDAD, CANTIDAD_NUEVA, CO_USUARIO, PRECIO_COMPRA, ALICUOTA, PRECIO_VENTA)
             SELECT
                 D.COD_SERV,
@@ -274,9 +283,9 @@ BEGIN
                 @Fecha,
                 'Doc:' + @NumFact,
                 'Egreso',
-                ISNULL(I.EXISTENCIA, 0),
+                ISNULL(I.StockQty, 0),      -- columna canonica master.Product
                 D.CANTIDAD,
-                ISNULL(I.EXISTENCIA, 0) - D.CANTIDAD,
+                ISNULL(I.StockQty, 0) - D.CANTIDAD,
                 @CodUsuario,
                 ISNULL(I.COSTO_REFERENCIA, 0),
                 D.ALICUOTA,
@@ -289,9 +298,11 @@ BEGIN
                     CASE WHEN NULLIF(X.value('@ALICUOTA', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@ALICUOTA', 'nvarchar(50)') AS DECIMAL(18,4)) END AS ALICUOTA
                 FROM @dx.nodes('/detalles/row') N(X)
             ) D
-            INNER JOIN dbo.Inventario I ON I.CODIGO = D.COD_SERV
+            -- Ahora se usa master.Product (antes dbo.Inventario)
+            INNER JOIN master.Product I ON I.ProductCode = D.COD_SERV
             WHERE D.COD_SERV IS NOT NULL AND D.CANTIDAD > 0;
 
+            -- Descontar StockQty en master.Product (antes EXISTENCIA en dbo.Inventario)
             ;WITH RawD AS (
                 SELECT
                     NULLIF(N.X.value('@COD_SERV', 'nvarchar(60)'), '') AS COD_SERV,
@@ -303,10 +314,11 @@ BEGIN
                 FROM RawD
                 GROUP BY COD_SERV
             )
+            -- Actualizar master.Product.StockQty (columna canonica, antes dbo.Inventario.EXISTENCIA)
             UPDATE I
-               SET I.EXISTENCIA = ISNULL(I.EXISTENCIA, 0) - X.TOTAL
-            FROM dbo.Inventario I
-            INNER JOIN X ON X.COD_SERV = I.CODIGO;
+               SET I.StockQty = ISNULL(I.StockQty, 0) - X.TOTAL
+            FROM master.Product I
+            INNER JOIN X ON X.COD_SERV = I.ProductCode;
 
             ;WITH RawA AS (
                 SELECT
@@ -327,6 +339,8 @@ BEGIN
             INNER JOIN X ON X.COD_ALTERNO = IA.CODIGO;
         END
 
+        -- Actualizar saldos del cliente en master.Customer (tabla canonica)
+        -- Antes usaba dbo.Clientes con SALDO_TOT; ahora usa master.Customer con TotalBalance
         IF @ActualizarSaldosCliente = 1 AND @Codigo IS NOT NULL AND LTRIM(RTRIM(@Codigo)) <> ''
         BEGIN
             DECLARE @sqlSaldo NVARCHAR(MAX);
@@ -334,6 +348,7 @@ BEGIN
 
             IF @CxcTable = N'P_CobrarC'
             BEGIN
+                -- TODO: tabla P_CobrarC es legacy
                 SET @sqlSaldo = N'
                     ;WITH A AS (
                         SELECT
@@ -346,18 +361,16 @@ BEGIN
                         WHERE CODIGO = @codigo
                     )
                     UPDATE C
-                       SET SALDO_TOTC = A.SALDO_TOT,
-                           SALDO_30C = A.SALDO_30,
-                           SALDO_60C = A.SALDO_60,
-                           SALDO_90C = A.SALDO_90,
-                           SALDO_91C = A.SALDO_91
-                    FROM dbo.Clientes C
+                       SET C.TotalBalance = A.SALDO_TOT
+                    FROM master.Customer C
                     CROSS JOIN A
-                    WHERE C.CODIGO = @codigo;
+                    WHERE C.CustomerCode = @codigo
+                      AND ISNULL(C.IsDeleted, 0) = 0;
                 ';
             END
             ELSE
             BEGIN
+                -- TODO: tabla P_Cobrar es legacy
                 SET @sqlSaldo = N'
                     ;WITH A AS (
                         SELECT
@@ -370,14 +383,11 @@ BEGIN
                         WHERE CODIGO = @codigo
                     )
                     UPDATE C
-                       SET SALDO_TOT = A.SALDO_TOT,
-                           SALDO_30 = A.SALDO_30,
-                           SALDO_60 = A.SALDO_60,
-                           SALDO_90 = A.SALDO_90,
-                           SALDO_91 = A.SALDO_91
-                    FROM dbo.Clientes C
+                       SET C.TotalBalance = A.SALDO_TOT
+                    FROM master.Customer C
                     CROSS JOIN A
-                    WHERE C.CODIGO = @codigo;
+                    WHERE C.CustomerCode = @codigo
+                      AND ISNULL(C.IsDeleted, 0) = 0;
                 ';
             END
 
@@ -412,5 +422,5 @@ BEGIN
 END
 
 
--- Verificar creación
+-- Verificar creacion
 SELECT name, create_date FROM sys.objects WHERE type = 'P' AND name = 'sp_emitir_factura_tx';

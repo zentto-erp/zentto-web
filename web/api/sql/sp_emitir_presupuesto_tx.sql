@@ -1,6 +1,11 @@
+-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+-- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode).
+-- Referencias a dbo.Clientes actualizadas a master.Customer (TotalBalance, CustomerCode).
+-- Tablas legacy sin migrar (P_Cobrar, P_CobrarC, Presupuestos, Detalle_Presupuestos, etc.)
+-- mantienen sus nombres originales — ver TODOs en el codigo.
 -- =============================================
 -- Stored Procedure: Emitir Presupuesto (transaccional)
--- Misma lógica que facturas: clientes, CxC, formas de pago, inventario, MovInvent
+-- Misma logica que facturas: clientes, CxC, formas de pago, inventario, MovInvent
 -- Tablas: Presupuestos, Detalle_Presupuestos. Compatible SQL Server 2012+
 -- =============================================
 
@@ -43,7 +48,7 @@ BEGIN
     IF @Pago = '' SET @Pago = UPPER(ISNULL(NULLIF(@fx.value('(/factura/@PAGO)[1]', 'nvarchar(30)'), ''), ''));
     SET @CodUsuario = ISNULL(NULLIF(@fx.value('(/presupuesto/@COD_USUARIO)[1]', 'nvarchar(60)'), ''), 'API');
     IF @CodUsuario = 'API' SET @CodUsuario = ISNULL(NULLIF(@fx.value('(/factura/@COD_USUARIO)[1]', 'nvarchar(60)'), ''), 'API');
-    -- SERIALTIPO = serial máquina fiscal; Tipo_Orden = número de memoria física (1, 2, ... si se reemplaza la memoria)
+    -- SERIALTIPO = serial maquina fiscal; Tipo_Orden = numero de memoria fisica (1, 2, ... si se reemplaza la memoria)
     SET @SerialTipo = ISNULL(NULLIF(@fx.value('(/presupuesto/@SERIALTIPO)[1]', 'nvarchar(60)'), ''), '');
     IF @SerialTipo = '' SET @SerialTipo = ISNULL(NULLIF(@fx.value('(/factura/@SERIALTIPO)[1]', 'nvarchar(60)'), ''), '');
     SET @TipoOrden = ISNULL(NULLIF(@fx.value('(/presupuesto/@Tipo_orden)[1]', 'nvarchar(80)'), ''), '');
@@ -74,9 +79,11 @@ BEGIN
         IF @@TRANCOUNT = 0 BEGIN BEGIN TRAN; SET @StartedTran = 1; END
         ELSE SAVE TRANSACTION @SaveName;
 
+        -- TODO: tabla dbo.Presupuestos es legacy; migrar a tabla canonica en el API
         INSERT INTO dbo.Presupuestos (NUM_FACT, CODIGO, FECHA, FECHA_REPORTE, PAGO, TOTAL, COD_USUARIO, SERIALTIPO, Tipo_orden, OBSERV)
         VALUES (@NumFact, @Codigo, @Fecha, @FechaReporte, @Pago, @Total, @CodUsuario, @SerialTipo, @TipoOrden, @Observ);
 
+        -- TODO: tabla dbo.Detalle_Presupuestos es legacy; migrar a tabla canonica en el API
         INSERT INTO dbo.Detalle_Presupuestos (NUM_FACT, SERIALTIPO, COD_SERV, CANTIDAD, PRECIO, ALICUOTA, TOTAL, PRECIO_DESCUENTO, Relacionada, Cod_Alterno)
         SELECT
             CASE WHEN NULLIF(T.X.value('@NUM_FACT', 'nvarchar(60)'), '') IS NULL THEN @NumFact ELSE T.X.value('@NUM_FACT', 'nvarchar(60)') END,
@@ -154,6 +161,7 @@ BEGIN
             CANCELADA = @Cancelada, FECHA_REPORTE = @FechaReporte
         WHERE NUM_FACT = @NumFact;
 
+        -- TODO: tablas P_Cobrar / P_CobrarC son legacy; migrar a tabla canonica en el API
         IF @GenerarCxC = 1 AND (@Pago = 'CREDITO' OR @SaldoPendiente > 0)
         BEGIN
             DECLARE @SaldoPrevio DECIMAL(18,4) = 0;
@@ -168,20 +176,23 @@ BEGIN
 
         IF @ActualizarInventario = 1
         BEGIN
+            -- Insertar en MovInvent usando master.Product (antes dbo.Inventario)
             INSERT INTO dbo.MovInvent (CODIGO, PRODUCT, DOCUMENTO, FECHA, MOTIVO, TIPO, CANTIDAD_ACTUAL, CANTIDAD, CANTIDAD_NUEVA, CO_USUARIO, PRECIO_COMPRA, ALICUOTA, PRECIO_VENTA)
             SELECT D.COD_SERV, D.COD_SERV, @NumFact, @Fecha, 'Presup:' + @NumFact, 'Egreso',
-                ISNULL(I.EXISTENCIA, 0), D.CANTIDAD, ISNULL(I.EXISTENCIA, 0) - D.CANTIDAD, @CodUsuario, ISNULL(I.COSTO_REFERENCIA, 0), D.ALICUOTA, D.PRECIO
+                ISNULL(I.StockQty, 0), D.CANTIDAD, ISNULL(I.StockQty, 0) - D.CANTIDAD, @CodUsuario, ISNULL(I.COSTO_REFERENCIA, 0), D.ALICUOTA, D.PRECIO
             FROM (SELECT NULLIF(X.value('@COD_SERV', 'nvarchar(60)'), '') AS COD_SERV,
                 CASE WHEN NULLIF(X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD,
                 CASE WHEN NULLIF(X.value('@PRECIO', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@PRECIO', 'nvarchar(50)') AS DECIMAL(18,4)) END AS PRECIO,
                 CASE WHEN NULLIF(X.value('@ALICUOTA', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(X.value('@ALICUOTA', 'nvarchar(50)') AS DECIMAL(18,4)) END AS ALICUOTA
                 FROM @dx.nodes('/detalles/row') N(X)) D
-            INNER JOIN dbo.Inventario I ON I.CODIGO = D.COD_SERV WHERE D.COD_SERV IS NOT NULL AND D.CANTIDAD > 0;
+            -- Ahora se usa master.Product (antes dbo.Inventario)
+            INNER JOIN master.Product I ON I.ProductCode = D.COD_SERV WHERE D.COD_SERV IS NOT NULL AND D.CANTIDAD > 0;
 
+            -- Descontar StockQty en master.Product (columna canonica, antes dbo.Inventario.EXISTENCIA)
             ;WITH RawD AS (SELECT NULLIF(N.X.value('@COD_SERV', 'nvarchar(60)'), '') AS COD_SERV,
                 CASE WHEN NULLIF(N.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD FROM @dx.nodes('/detalles/row') N(X)),
             X AS (SELECT COD_SERV, SUM(CANTIDAD) AS TOTAL FROM RawD GROUP BY COD_SERV)
-            UPDATE I SET I.EXISTENCIA = ISNULL(I.EXISTENCIA, 0) - X.TOTAL FROM dbo.Inventario I INNER JOIN X ON X.COD_SERV = I.CODIGO;
+            UPDATE I SET I.StockQty = ISNULL(I.StockQty, 0) - X.TOTAL FROM master.Product I INNER JOIN X ON X.COD_SERV = I.ProductCode;
 
             ;WITH RawA AS (SELECT NULLIF(N.X.value('@COD_ALTERNO', 'nvarchar(60)'), '') AS COD_ALTERNO,
                 CASE WHEN NULLIF(N.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(N.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END AS CANTIDAD,
@@ -190,23 +201,18 @@ BEGIN
             UPDATE IA SET IA.CANTIDAD = ISNULL(IA.CANTIDAD, 0) - X.TOTAL FROM dbo.Inventario_Aux IA INNER JOIN X ON X.COD_ALTERNO = IA.CODIGO;
         END
 
+        -- Actualizar saldos del cliente en master.Customer (tabla canonica)
+        -- Antes usaba dbo.Clientes con SALDO_TOT; ahora usa master.Customer con TotalBalance
         IF @ActualizarSaldosCliente = 1 AND @Codigo IS NOT NULL AND LTRIM(RTRIM(@Codigo)) <> ''
         BEGIN
             DECLARE @sqlSaldo NVARCHAR(MAX);
+            -- TODO: tablas P_CobrarC / P_Cobrar son legacy
             IF @CxcTable = N'P_CobrarC'
-                SET @sqlSaldo = N';WITH A AS (SELECT ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' THEN PEND ELSE 0 END), 0) AS SALDO_TOT,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) <= 30 THEN PEND ELSE 0 END), 0) AS SALDO_30,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) > 30 AND DATEDIFF(DAY, FECHA, GETDATE()) <= 60 THEN PEND ELSE 0 END), 0) AS SALDO_60,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) > 60 AND DATEDIFF(DAY, FECHA, GETDATE()) <= 90 THEN PEND ELSE 0 END), 0) AS SALDO_90,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) > 90 THEN PEND ELSE 0 END), 0) AS SALDO_91 FROM dbo.P_CobrarC WHERE CODIGO = @codigo)
-                    UPDATE C SET SALDO_TOTC = A.SALDO_TOT, SALDO_30C = A.SALDO_30, SALDO_60C = A.SALDO_60, SALDO_90C = A.SALDO_90, SALDO_91C = A.SALDO_91 FROM dbo.Clientes C CROSS JOIN A WHERE C.CODIGO = @codigo;';
+                SET @sqlSaldo = N';WITH A AS (SELECT ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' THEN PEND ELSE 0 END), 0) AS SALDO_TOT FROM dbo.P_CobrarC WHERE CODIGO = @codigo)
+                    UPDATE C SET C.TotalBalance = A.SALDO_TOT FROM master.Customer C CROSS JOIN A WHERE C.CustomerCode = @codigo AND ISNULL(C.IsDeleted, 0) = 0;';
             ELSE
-                SET @sqlSaldo = N';WITH A AS (SELECT ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' THEN PEND ELSE 0 END), 0) AS SALDO_TOT,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) <= 30 THEN PEND ELSE 0 END), 0) AS SALDO_30,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) > 30 AND DATEDIFF(DAY, FECHA, GETDATE()) <= 60 THEN PEND ELSE 0 END), 0) AS SALDO_60,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) > 60 AND DATEDIFF(DAY, FECHA, GETDATE()) <= 90 THEN PEND ELSE 0 END), 0) AS SALDO_90,
-                    ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' AND DATEDIFF(DAY, FECHA, GETDATE()) > 90 THEN PEND ELSE 0 END), 0) AS SALDO_91 FROM dbo.P_Cobrar WHERE CODIGO = @codigo)
-                    UPDATE C SET SALDO_TOT = A.SALDO_TOT, SALDO_30 = A.SALDO_30, SALDO_60 = A.SALDO_60, SALDO_90 = A.SALDO_90, SALDO_91 = A.SALDO_91 FROM dbo.Clientes C CROSS JOIN A WHERE C.CODIGO = @codigo;';
+                SET @sqlSaldo = N';WITH A AS (SELECT ISNULL(SUM(CASE WHEN TIPO = ''PRESUP'' THEN PEND ELSE 0 END), 0) AS SALDO_TOT FROM dbo.P_Cobrar WHERE CODIGO = @codigo)
+                    UPDATE C SET C.TotalBalance = A.SALDO_TOT FROM master.Customer C CROSS JOIN A WHERE C.CustomerCode = @codigo AND ISNULL(C.IsDeleted, 0) = 0;';
             EXEC sp_executesql @sqlSaldo, N'@codigo nvarchar(60)', @codigo = @Codigo;
         END
 

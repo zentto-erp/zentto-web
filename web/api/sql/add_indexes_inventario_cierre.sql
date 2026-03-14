@@ -41,19 +41,21 @@ ELSE
 
 -- 4) CierreMensualInventario: ya tiene PK (Periodo, Codigo) e IX en Periodo; no hace falta mas.
 
--- 5) Inventario: indice por CODIGO solo si no hay ningun indice que use CODIGO (muchas bases tienen PK en CODIGO)
+-- 5) master.Product: indice por ProductCode solo si no hay ningun indice que use ProductCode
+-- Antes: CREATE NONCLUSTERED INDEX IX_Inventario_CODIGO ON dbo.Inventario (CODIGO)
 IF NOT EXISTS (
     SELECT 1 FROM sys.index_columns ic
     INNER JOIN sys.indexes i ON i.object_id = ic.object_id AND i.index_id = ic.index_id
     INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-    WHERE i.object_id = OBJECT_ID('dbo.Inventario') AND c.name = 'CODIGO'
+    WHERE i.object_id = OBJECT_ID('master.Product') AND c.name = 'ProductCode'
 )
 BEGIN
-    CREATE NONCLUSTERED INDEX IX_Inventario_CODIGO ON dbo.Inventario (CODIGO) INCLUDE (DESCRIPCION, EXISTENCIA, COSTO_REFERENCIA, COSTO_PROMEDIO);
-    PRINT N'Inventario: indice IX_Inventario_CODIGO creado.';
+    -- Ahora se usa master.Product (antes dbo.Inventario); ProductCode = CODIGO, ProductName = DESCRIPCION, StockQty = EXISTENCIA
+    CREATE NONCLUSTERED INDEX IX_Product_ProductCode ON master.Product (ProductCode) INCLUDE (ProductName, StockQty, COSTO_REFERENCIA, COSTO_PROMEDIO);
+    PRINT N'master.Product: indice IX_Product_ProductCode creado.';
 END
 ELSE
-    PRINT N'Inventario: ya existe indice con CODIGO (PK u otro).';
+    PRINT N'master.Product: ya existe indice con ProductCode (PK u otro).';
 
-PRINT N'Fin add_indexes_inventario_cierre.sql';
+PRINT N'Fin add_indexes_inventario_cierre.sql — Inventario migrado a master.Product.';
 GO

@@ -1,7 +1,11 @@
+-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+-- Este SP (v1) ha sido supersedido por sp_cxp_aplicar_pago_v2.sql
+-- que ya usa master.Supplier directamente desde el API TypeScript.
+-- Mantener solo como referencia historica.
 -- =============================================
 -- Stored Procedure: Aplicar Pago (CxP)
--- Descripción: Aplica un pago a documentos de proveedores
---              Genera movimientos bancarios automáticamente
+-- Descripcion: Aplica un pago a documentos de proveedores
+--              Genera movimientos bancarios automaticamente
 -- Compatible con: SQL Server 2012+
 -- =============================================
 
@@ -25,45 +29,51 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
-    
+
     DECLARE @dx XML;
     DECLARE @px XML;
     DECLARE @FechaDate DATETIME;
     DECLARE @Timestamp VARCHAR(20);
     DECLARE @ProxRecnum INT;
     DECLARE @NombreProveedor NVARCHAR(255);
-    
+
     -- Inicializar salidas
     SET @Resultado = 0;
     SET @Mensaje = '';
     SET @NumPago = '';
-    
+
     BEGIN TRY
         -- Convertir XML
         SET @dx = CAST(@DocumentosXml AS XML);
         SET @px = CAST(@FormasPagoXml AS XML);
         SET @FechaDate = CAST(@Fecha AS DATETIME);
-        
-        -- Generar número de pago
+
+        -- Generar numero de pago
         SET @Timestamp = REPLACE(REPLACE(REPLACE(CONVERT(VARCHAR(20), GETDATE(), 120), '-', ''), ' ', ''), ':', '');
         SET @NumPago = 'PG' + LEFT(@Timestamp, 12);
-        
-        -- Obtener próximo RECNUM para Abonos
+
+        -- Obtener proximo RECNUM para Abonos
+        -- TODO: tabla Abonos es legacy; migrar a tabla canonica en el API
         SELECT @ProxRecnum = ISNULL(MAX(CAST(RECNUM AS INT)), 0) + 1 FROM Abonos;
-        
-        -- Validar que el proveedor existe
-        SELECT @NombreProveedor = NOMBRE FROM Proveedores WHERE CODIGO = @CodProveedor;
+
+        -- Validar que el proveedor existe en master.Supplier (tabla canonica)
+        SELECT @NombreProveedor = SupplierName
+        FROM master.Supplier
+        WHERE SupplierCode = @CodProveedor
+          AND ISNULL(IsDeleted, 0) = 0;
+
         IF @NombreProveedor IS NULL
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = 'Proveedor no encontrado: ' + @CodProveedor;
             RETURN;
         END
-        
+
         BEGIN TRANSACTION;
-        
+
         -- ============================================
         -- 1. Insertar cabecera en Abonos (Pago)
+        -- TODO: tabla Abonos es legacy; migrar a tabla canonica en el API
         -- ============================================
         INSERT INTO Abonos (
             CODIGO, RECNUM, FECHA, DOCUMENTO, PEND, APLICADO, SALDO, CANC,
@@ -91,12 +101,12 @@ BEGIN
             '',  -- CONTROL
             0   -- PorcentajeDescuento
         );
-        
+
         -- ============================================
         -- 2. Insertar formas de pago en Abonos_Detalle
         --    Y generar movimientos bancarios si aplica
         -- ============================================
-        
+
         -- Tabla temporal para procesar formas de pago
         DECLARE @FormasPago TABLE (
             RowNum INT IDENTITY(1,1),
@@ -107,27 +117,28 @@ BEGIN
             FechaVencimiento NVARCHAR(20),
             EsBancaria BIT
         );
-        
+
         INSERT INTO @FormasPago (FormaPago, Monto, Banco, NumCheque, FechaVencimiento, EsBancaria)
-        SELECT 
+        SELECT
             ISNULL(NULLIF(T.X.value('@formaPago', 'nvarchar(60)'), ''), 'EFECTIVO'),
             ISNULL(CAST(NULLIF(T.X.value('@monto', 'nvarchar(50)'), '') AS DECIMAL(18,2)), 0),
             ISNULL(NULLIF(T.X.value('@banco', 'nvarchar(120)'), ''), ''),
             ISNULL(NULLIF(T.X.value('@numCheque', 'nvarchar(80)'), ''), ''),
             NULLIF(T.X.value('@fechaVencimiento', 'nvarchar(20)'), ''),
-            CASE 
-                WHEN ISNULL(NULLIF(T.X.value('@formaPago', 'nvarchar(60)'), ''), 'EFECTIVO') 
+            CASE
+                WHEN ISNULL(NULLIF(T.X.value('@formaPago', 'nvarchar(60)'), ''), 'EFECTIVO')
                     IN ('CHEQUE', 'TRANSFERENCIA', 'DEPOSITO', 'TARJETA', 'ACH')
-                THEN 1 ELSE 0 
+                THEN 1 ELSE 0
             END
         FROM @px.nodes('/formasPago/row') T(X);
-        
+
+        -- TODO: tabla Abonos_Detalle es legacy; migrar a tabla canonica en el API
         -- Insertar en Abonos_Detalle
         INSERT INTO Abonos_Detalle (
             RECNUM, FECHA, TIPO, CUENTA, NUMERO, MONTO,
             ANULADO, BANCO, codigo
         )
-        SELECT 
+        SELECT
             @ProxRecnum,
             @FechaDate,
             f.FormaPago,
@@ -138,9 +149,9 @@ BEGIN
             f.Banco,
             @CodProveedor
         FROM @FormasPago f;
-        
+
         -- ============================================
-        -- 3. Generar movimientos bancarios automáticos
+        -- 3. Generar movimientos bancarios automaticos
         -- ============================================
         DECLARE @FpRowNum INT = 1;
         DECLARE @FpFormaPago NVARCHAR(60);
@@ -150,30 +161,30 @@ BEGIN
         DECLARE @FpEsBancaria BIT;
         DECLARE @NroCta NVARCHAR(20);
         DECLARE @TipoMovBank NVARCHAR(10);
-        
+
         WHILE EXISTS (SELECT 1 FROM @FormasPago WHERE RowNum = @FpRowNum)
         BEGIN
-            SELECT 
+            SELECT
                 @FpFormaPago = FormaPago,
                 @FpMonto = Monto,
                 @FpBanco = Banco,
                 @FpNumCheque = NumCheque,
                 @FpEsBancaria = EsBancaria
-            FROM @FormasPago 
+            FROM @FormasPago
             WHERE RowNum = @FpRowNum;
-            
+
             -- Si es forma de pago bancaria, generar movimiento
             IF @FpEsBancaria = 1 AND @FpMonto > 0
             BEGIN
                 -- Buscar cuenta bancaria por banco
-                SELECT TOP 1 @NroCta = Nro_Cta 
-                FROM CuentasBank 
+                SELECT TOP 1 @NroCta = Nro_Cta
+                FROM CuentasBank
                 WHERE Banco LIKE '%' + @FpBanco + '%' OR Descripcion LIKE '%' + @FpBanco + '%';
-                
-                -- Si no se encontró por nombre, buscar cualquier cuenta activa
+
+                -- Si no se encontro por nombre, buscar cualquier cuenta activa
                 IF @NroCta IS NULL
                     SELECT TOP 1 @NroCta = Nro_Cta FROM CuentasBank WHERE Activa = 1;
-                
+
                 IF @NroCta IS NOT NULL
                 BEGIN
                     -- Determinar tipo de movimiento bancario
@@ -185,9 +196,9 @@ BEGIN
                         WHEN 'TARJETA' THEN 'PCH'
                         ELSE 'PCH'
                     END;
-                    
+
                     -- Generar movimiento bancario (egreso)
-                    EXEC sp_GenerarMovimientoBancario 
+                    EXEC sp_GenerarMovimientoBancario
                         @Nro_Cta = @NroCta,
                         @Tipo = @TipoMovBank,
                         @Nro_Ref = ISNULL(NULLIF(@FpNumCheque, ''), @NumPago),
@@ -200,19 +211,20 @@ BEGIN
                         @Tipo_Doc_Rel = 'PAGO_PROV';
                 END
             END
-            
+
             SET @FpRowNum = @FpRowNum + 1;
         END
-        
+
         -- ============================================
         -- 4. Procesar documentos (P_Pagar)
+        -- TODO: tabla P_Pagar es legacy; migrar a tabla canonica en el API
         -- ============================================
         DECLARE @TipoDoc VARCHAR(10);
         DECLARE @NumDoc VARCHAR(20);
         DECLARE @MontoAplicar DECIMAL(18,2);
         DECLARE @PendienteActual FLOAT;
         DECLARE @NuevoPendiente FLOAT;
-        
+
         -- Crear tabla temporal para iterar documentos
         DECLARE @Docs TABLE (
             RowNum INT IDENTITY(1,1),
@@ -220,30 +232,30 @@ BEGIN
             NumDoc VARCHAR(20),
             MontoAplicar DECIMAL(18,2)
         );
-        
+
         INSERT INTO @Docs (TipoDoc, NumDoc, MontoAplicar)
-        SELECT 
+        SELECT
             NULLIF(T.X.value('@tipoDoc', 'nvarchar(10)'), ''),
             NULLIF(T.X.value('@numDoc', 'nvarchar(20)'), ''),
             ISNULL(CAST(NULLIF(T.X.value('@montoAplicar', 'nvarchar(50)'), '') AS DECIMAL(18,2)), 0)
         FROM @dx.nodes('/documentos/row') T(X);
-        
+
         -- Iterar sobre cada documento
         DECLARE @RowIdx INT = 1;
-        
+
         WHILE EXISTS (SELECT 1 FROM @Docs WHERE RowNum = @RowIdx)
         BEGIN
-            SELECT 
+            SELECT
                 @TipoDoc = TipoDoc,
                 @NumDoc = NumDoc,
                 @MontoAplicar = MontoAplicar
-            FROM @Docs 
+            FROM @Docs
             WHERE RowNum = @RowIdx;
-            
+
             -- Verificar que el documento existe en P_Pagar
             IF NOT EXISTS (
-                SELECT 1 FROM P_Pagar 
-                WHERE DOCUMENTO = @NumDoc 
+                SELECT 1 FROM P_Pagar
+                WHERE DOCUMENTO = @NumDoc
                 AND TIPO = @TipoDoc
                 AND CODIGO = @CodProveedor
             )
@@ -253,23 +265,23 @@ BEGIN
                 ROLLBACK TRANSACTION;
                 RETURN;
             END
-            
+
             -- Obtener pendiente actual
             SELECT @PendienteActual = ISNULL(PEND, ISNULL(SALDO, 0))
-            FROM P_Pagar 
-            WHERE DOCUMENTO = @NumDoc 
+            FROM P_Pagar
+            WHERE DOCUMENTO = @NumDoc
             AND TIPO = @TipoDoc
             AND CODIGO = @CodProveedor;
-            
+
             -- Validar saldo
             IF @PendienteActual <= 0
             BEGIN
                 SET @Resultado = -3;
-                SET @Mensaje = 'Documento ' + @TipoDoc + '-' + @NumDoc + ' ya está cancelado';
+                SET @Mensaje = 'Documento ' + @TipoDoc + '-' + @NumDoc + ' ya esta cancelado';
                 ROLLBACK TRANSACTION;
                 RETURN;
             END
-            
+
             IF CAST(@MontoAplicar AS FLOAT) > @PendienteActual
             BEGIN
                 SET @Resultado = -4;
@@ -277,19 +289,20 @@ BEGIN
                 ROLLBACK TRANSACTION;
                 RETURN;
             END
-            
+
             SET @NuevoPendiente = @PendienteActual - CAST(@MontoAplicar AS FLOAT);
-            
+
             -- Actualizar P_Pagar
-            UPDATE P_Pagar 
+            UPDATE P_Pagar
             SET PEND = @NuevoPendiente,
                 SALDO = @NuevoPendiente,
                 PAID = CASE WHEN @NuevoPendiente <= 0 THEN 1 ELSE 0 END,
                 DEBE = ISNULL(DEBE, 0) + CAST(@MontoAplicar AS FLOAT)
-            WHERE DOCUMENTO = @NumDoc 
+            WHERE DOCUMENTO = @NumDoc
             AND TIPO = @TipoDoc
             AND CODIGO = @CodProveedor;
-            
+
+            -- TODO: tabla Movimiento_Cuenta es legacy; migrar a tabla canonica en el API
             -- Insertar en Movimiento_Cuenta (por cada documento)
             INSERT INTO Movimiento_Cuenta (
                 COD_CUENTA, COD_OPER, FECHA, DEBE, HABER, COD_USUARIO,
@@ -314,40 +327,41 @@ BEGIN
                 '',
                 0
             );
-            
+
             SET @RowIdx = @RowIdx + 1;
         END
-        
+
         -- ============================================
-        -- 5. Recalcular saldos del proveedor
+        -- 5. Recalcular saldos del proveedor en master.Supplier (tabla canonica)
         -- ============================================
         DECLARE @SaldoTotal FLOAT;
-        
+
         SELECT @SaldoTotal = ISNULL(SUM(ISNULL(PEND, 0)), 0)
-        FROM P_Pagar 
-        WHERE CODIGO = @CodProveedor 
+        FROM P_Pagar
+        WHERE CODIGO = @CodProveedor
         AND PAID = 0;
-        
-        UPDATE Proveedores 
-        SET SALDO_TOT = @SaldoTotal,
-            SALDO_30 = @SaldoTotal
-        WHERE CODIGO = @CodProveedor;
-        
+
+        -- Actualizar TotalBalance en master.Supplier (columna canonica)
+        UPDATE master.Supplier
+        SET TotalBalance = @SaldoTotal
+        WHERE SupplierCode = @CodProveedor
+          AND ISNULL(IsDeleted, 0) = 0;
+
         COMMIT TRANSACTION;
-        
+
         SET @Resultado = 1;
         SET @Mensaje = 'Pago aplicado exitosamente. Pago: ' + @NumPago;
-        
+
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
-        
+
         SET @Resultado = -99;
         SET @Mensaje = ERROR_MESSAGE();
     END CATCH
 END
 GO
 
--- Verificar creación
+-- Verificar creacion
 SELECT name, create_date FROM sys.objects WHERE type = 'P' AND name = 'usp_CxP_AplicarPago';

@@ -2,6 +2,8 @@
 -- DatqBox Restaurante — Subsistema Administrativo Completo
 -- Tablas: Ambientes, Productos del Menú, Categorías, Componentes,
 --         Compras Restaurante y Proveedores (usa Proveedores comunes)
+-- Referencias a dbo.Proveedores actualizadas a master.Supplier (SupplierCode, SupplierName).
+-- Referencias a dbo.Inventario actualizadas a master.Product (ProductCode, ProductName).
 -- ═══════════════════════════════════════════════════════════════════
 
 -- =============================================
@@ -80,7 +82,7 @@ BEGIN
     Disponible          BIT NOT NULL DEFAULT 1,
     Activo              BIT NOT NULL DEFAULT 1,
     -- Referencia cruzada: si este plato consume artículos del inventario principal
-    ArticuloInventarioId NVARCHAR(15) NULL,            -- FK opcional a Inventario.CODIGO
+    ArticuloInventarioId NVARCHAR(15) NULL,            -- FK opcional a master.Product.ProductCode
     FechaCreacion       DATETIME NOT NULL DEFAULT GETDATE(),
     FechaModificacion   DATETIME NULL,
     CONSTRAINT FK_RestProd_Cat FOREIGN KEY (CategoriaId) REFERENCES RestauranteCategorias(Id),
@@ -127,7 +129,7 @@ BEGIN
   CREATE TABLE dbo.RestauranteRecetas (
     Id            INT IDENTITY(1,1) PRIMARY KEY,
     ProductoId    INT NOT NULL,               -- Plato del menú
-    InventarioId  NVARCHAR(15) NOT NULL,      -- Materia prima del inventario principal
+    InventarioId  NVARCHAR(15) NOT NULL,      -- Materia prima del inventario principal (= master.Product.ProductCode)
     Cantidad      DECIMAL(10,3) NOT NULL,     -- Cantidad por porción
     Unidad        NVARCHAR(20) NULL,          -- KG, LT, UNID, etc.
     Comentario    NVARCHAR(200) NULL,
@@ -137,14 +139,14 @@ END
 GO
 
 -- =============================================
--- 7. COMPRAS DEL RESTAURANTE (usa Proveedores comunes + generación de compras)
+-- 7. COMPRAS DEL RESTAURANTE (usa master.Supplier + generación de compras)
 -- =============================================
 IF OBJECT_ID('dbo.RestauranteCompras', 'U') IS NULL
 BEGIN
   CREATE TABLE dbo.RestauranteCompras (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
     NumCompra       NVARCHAR(20) NOT NULL,
-    ProveedorId     NVARCHAR(12) NULL,    -- FK a Proveedores.CODIGO (tabla compartida)
+    ProveedorId     NVARCHAR(12) NULL,    -- FK a master.Supplier.SupplierCode (tabla canonica)
     FechaCompra     DATETIME NOT NULL DEFAULT GETDATE(),
     FechaRecepcion  DATETIME NULL,
     Estado          NVARCHAR(20) NOT NULL DEFAULT 'pendiente', -- pendiente, recibida, anulada
@@ -163,7 +165,7 @@ BEGIN
   CREATE TABLE dbo.RestauranteComprasDetalle (
     Id            INT IDENTITY(1,1) PRIMARY KEY,
     CompraId      INT NOT NULL,
-    InventarioId  NVARCHAR(15) NULL,    -- Material del inventario
+    InventarioId  NVARCHAR(15) NULL,    -- Material del inventario (= master.Product.ProductCode)
     Descripcion   NVARCHAR(200) NOT NULL,
     Cantidad      DECIMAL(10,3) NOT NULL,
     PrecioUnit    DECIMAL(18,2) NOT NULL,
@@ -393,12 +395,13 @@ BEGIN
   ORDER BY comp.Orden, opc.Orden;
 
   -- Receta (ingredientes del inventario)
+  -- Ahora se usa master.Product (antes dbo.Inventario)
   SELECT
     r.Id AS id, r.InventarioId AS inventarioId,
-    i.DESCRIPCION AS inventarioNombre,
+    i.ProductName AS inventarioNombre,                -- ProductName = DESCRIPCION
     r.Cantidad AS cantidad, r.Unidad AS unidad, r.Comentario AS comentario
   FROM RestauranteRecetas r
-  LEFT JOIN Inventario i ON i.CODIGO = r.InventarioId
+  LEFT JOIN master.Product i ON i.ProductCode = r.InventarioId   -- ProductCode = CODIGO
   WHERE r.ProductoId = @Id;
 END
 GO
@@ -519,13 +522,15 @@ BEGIN
   SELECT
     c.Id AS id, c.NumCompra AS numCompra,
     c.ProveedorId AS proveedorId,
-    p.NOMBRE AS proveedorNombre,
+    p.SupplierName AS proveedorNombre,              -- SupplierName = NOMBRE; ahora se usa master.Supplier
     c.FechaCompra AS fechaCompra, c.FechaRecepcion AS fechaRecepcion,
     c.Estado AS estado, c.Subtotal AS subtotal, c.IVA AS iva, c.Total AS total,
     c.Observaciones AS observaciones
   FROM RestauranteCompras c
-  LEFT JOIN Proveedores p ON p.CODIGO = c.ProveedorId
-  WHERE (@Estado IS NULL OR c.Estado = @Estado)
+  -- Ahora se usa master.Supplier (antes dbo.Proveedores)
+  LEFT JOIN master.Supplier p ON p.SupplierCode = c.ProveedorId   -- SupplierCode = CODIGO
+  WHERE ISNULL(p.IsDeleted, 0) = 0 OR p.SupplierCode IS NULL
+    AND (@Estado IS NULL OR c.Estado = @Estado)
     AND (@From IS NULL OR c.FechaCompra >= @From)
     AND (@To IS NULL OR c.FechaCompra <= @To)
   ORDER BY c.FechaCompra DESC;
@@ -611,5 +616,5 @@ BEGIN
 END
 GO
 
-PRINT N'✅ Subsistema Administrativo Restaurante creado exitosamente.'
+PRINT N'Subsistema Administrativo Restaurante creado exitosamente.'
 GO

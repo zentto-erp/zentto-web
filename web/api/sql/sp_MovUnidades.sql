@@ -136,14 +136,15 @@ BEGIN
     ),
     InicialDesdeInventario AS (
         SELECT
-            i.CODIGO AS Codigo,
-            ISNULL(i.EXISTENCIA, 0) AS InicialCant,
+            i.ProductCode AS Codigo,                            -- ProductCode = CODIGO (master.Product)
+            ISNULL(i.StockQty, 0) AS InicialCant,              -- StockQty = EXISTENCIA (master.Product)
             ISNULL(i.COSTO_REFERENCIA, i.COSTO_PROMEDIO) AS CostoUnit
-        FROM dbo.Inventario i
-        WHERE ISNULL(i.EXISTENCIA, 0) > 0
-          AND i.CODIGO IS NOT NULL AND LTRIM(RTRIM(i.CODIGO)) <> ''
-          AND NOT EXISTS (SELECT 1 FROM InicialDesdeCierre c WHERE c.Codigo = i.CODIGO)
-          AND NOT EXISTS (SELECT 1 FROM InicialDesdeMov m WHERE m.Codigo = i.CODIGO)
+        FROM master.Product i                                   -- antes dbo.Inventario
+        WHERE ISNULL(i.IsDeleted, 0) = 0
+          AND ISNULL(i.StockQty, 0) > 0
+          AND i.ProductCode IS NOT NULL AND LTRIM(RTRIM(i.ProductCode)) <> ''
+          AND NOT EXISTS (SELECT 1 FROM InicialDesdeCierre c WHERE c.Codigo = i.ProductCode)
+          AND NOT EXISTS (SELECT 1 FROM InicialDesdeMov m WHERE m.Codigo = i.ProductCode)
     ),
     InicialPorProducto AS (
         SELECT Codigo, InicialCant, CostoUnit FROM InicialDesdeCierre
@@ -193,7 +194,7 @@ BEGIN
     SELECT
         @Periodo,
         s.Codigo,
-        ISNULL(inv.DESCRIPCION, s.Codigo),
+        ISNULL(inv.ProductName, s.Codigo),      -- ProductName = DESCRIPCION (master.Product)
         ISNULL(s.CostoInicial, 0),
         s.InicialDelDia,
         ISNULL(s.EntradasCant, 0),
@@ -204,7 +205,9 @@ BEGIN
         s.FinalDelDia,
         s.FechaDia
     FROM ConSaldo s
-    LEFT JOIN dbo.Inventario inv ON inv.CODIGO = s.Codigo;
+    -- Ahora se usa master.Product (antes dbo.Inventario)
+    LEFT JOIN master.Product inv ON inv.ProductCode = s.Codigo   -- ProductCode = CODIGO, ProductName = DESCRIPCION
+    WHERE ISNULL(inv.IsDeleted, 0) = 0 OR inv.ProductCode IS NULL;
 
     -- Fila resumen INVENTARIO INICIAL MES ANTERIOR (suma Inicial*Costo al primer dia)
     DECLARE @InventarioInicialTotal FLOAT;
