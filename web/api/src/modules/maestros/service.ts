@@ -14,16 +14,16 @@ type MasterTableConfig = {
 };
 
 export const MASTER_TABLES: Record<string, MasterTableConfig> = {
-  correlativo: { schema: "dbo", table: "Correlativo" },
-  empresa: { schema: "dbo", table: "Empresa" },
-  feriados: { schema: "dbo", table: "Feriados" },
-  moneda: { schema: "dbo", table: "Moneda" },
-  monedas: { schema: "dbo", table: "Monedas" },
-  "tasa-moneda": { schema: "dbo", table: "Tasa_moneda" },
-  reportes: { schema: "dbo", table: "QueryReport" },
-  "query-reporte": { schema: "dbo", table: "QueryReporte" },
-  reportez: { schema: "dbo", table: "ReporteZ" },
-  "linea-proveedores": { schema: "dbo", table: "Linea_proveedores" },
+  correlativo: { schema: "cfg", table: "DocumentSequence" },
+  empresa: { schema: "cfg", table: "CompanyProfile" },
+  feriados: { schema: "cfg", table: "Holiday" },
+  moneda: { schema: "cfg", table: "Currency" },
+  monedas: { schema: "cfg", table: "Currency" },
+  "tasa-moneda": { schema: "cfg", table: "ExchangeRateDaily" },
+  reportes: { schema: "cfg", table: "ReportTemplate" },
+  "query-reporte": { schema: "cfg", table: "ReportTemplate" },
+  reportez: { schema: "cfg", table: "ReportTemplate" },
+  "linea-proveedores": { schema: "master", table: "SupplierLine" },
 };
 
 const STRING_TYPES = new Set([

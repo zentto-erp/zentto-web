@@ -1,7 +1,7 @@
 -- =============================================
 -- Stored Procedures CRUD: Proveedores
 -- Compatible con: SQL Server 2012+
--- Estructura según snapshot: CODIGO nvarchar(10), VENDEDOR nvarchar(2), CPOSTAL, LIMITE, FAX, NOTAS
+-- Tabla canonica: master.Supplier (antes dbo.Proveedores)
 -- =============================================
 
 -- ---------- 1. List (paginado con filtros) ----------
@@ -28,23 +28,39 @@ BEGIN
     DECLARE @Sql NVARCHAR(MAX);
     DECLARE @Params NVARCHAR(500) = N'@Search NVARCHAR(100), @Estado NVARCHAR(60), @Vendedor NVARCHAR(2), @Offset INT, @Limit INT, @TotalCount INT OUTPUT';
 
+    -- Filtro base: solo registros activos no eliminados
+    SET @Where = N' AND ISNULL(IsDeleted, 0) = 0';
+
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
-        SET @Where = @Where + N' AND (CODIGO LIKE @Search OR NOMBRE LIKE @Search OR RIF LIKE @Search)';
+        SET @Where = @Where + N' AND (SupplierCode LIKE @Search OR SupplierName LIKE @Search OR FiscalId LIKE @Search)';
     IF @Estado IS NOT NULL AND LTRIM(RTRIM(@Estado)) <> N''
         SET @Where = @Where + N' AND ESTADO = @Estado';
     IF @Vendedor IS NOT NULL AND LTRIM(RTRIM(@Vendedor)) <> N''
         SET @Where = @Where + N' AND VENDEDOR = @Vendedor';
 
-    IF LEN(@Where) > 0 SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
+    SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
 
     DECLARE @SearchParam NVARCHAR(100) = NULL;
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
         SET @SearchParam = N'%' + @Search + N'%';
 
     SET @Sql = N'
-    SELECT @TotalCount = COUNT(1) FROM [dbo].[Proveedores] ' + @Where + N';
-    SELECT * FROM [dbo].[Proveedores] ' + @Where + N'
-    ORDER BY CODIGO
+    SELECT @TotalCount = COUNT(1) FROM [master].[Supplier] ' + @Where + N';
+    SELECT
+        SupplierCode  AS CODIGO,
+        SupplierName  AS NOMBRE,
+        FiscalId      AS RIF,
+        TotalBalance  AS SALDO_TOT,
+        CreditLimit   AS LIMITE,
+        IsActive,
+        IsDeleted,
+        CompanyId,
+        SupplierCode, SupplierName, FiscalId, TotalBalance, CreditLimit,
+        NIT, Direccion, Direccion1, Sucursal, Telefono, Fax,
+        Contacto, VENDEDOR, ESTADO, Ciudad, CodPostal, Email, PaginaWww,
+        CodUsuario, Credito, ListaPrecio, Notas
+    FROM [master].[Supplier] ' + @Where + N'
+    ORDER BY SupplierCode
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';
 
     EXEC sp_executesql @Sql, @Params,
@@ -66,7 +82,22 @@ CREATE PROCEDURE usp_Proveedores_GetByCodigo
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT * FROM [dbo].[Proveedores] WHERE CODIGO = @Codigo;
+    SELECT
+        SupplierCode  AS CODIGO,
+        SupplierName  AS NOMBRE,
+        FiscalId      AS RIF,
+        TotalBalance  AS SALDO_TOT,
+        CreditLimit   AS LIMITE,
+        IsActive,
+        IsDeleted,
+        CompanyId,
+        SupplierCode, SupplierName, FiscalId, TotalBalance, CreditLimit,
+        NIT, Direccion, Direccion1, Sucursal, Telefono, Fax,
+        Contacto, VENDEDOR, ESTADO, Ciudad, CodPostal, Email, PaginaWww,
+        CodUsuario, Credito, ListaPrecio, Notas
+    FROM [master].[Supplier]
+    WHERE SupplierCode = @Codigo
+      AND ISNULL(IsDeleted, 0) = 0;
 END
 GO
 
@@ -86,19 +117,22 @@ BEGIN
     SET @Mensaje = N'';
 
     DECLARE @xml XML = CAST(@RowXml AS XML);
+    DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+    IF @CompanyId IS NULL SET @CompanyId = 1;
 
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM [dbo].[Proveedores] WHERE CODIGO = @xml.value('(/row/@CODIGO)[1]', 'NVARCHAR(10)'))
+        IF EXISTS (SELECT 1 FROM [master].[Supplier] WHERE SupplierCode = @xml.value('(/row/@CODIGO)[1]', 'NVARCHAR(10)') AND CompanyId = @CompanyId)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Proveedor ya existe';
             RETURN;
         END
 
-        INSERT INTO [dbo].[Proveedores] (
-            CODIGO, NOMBRE, RIF, NIT, DIRECCION, DIRECCION1, SUCURSAL, TELEFONO, FAX,
-            CONTACTO, VENDEDOR, ESTADO, CIUDAD, CPOSTAL, EMAIL, PAGINA_WWW,
-            COD_USUARIO, LIMITE, CREDITO, LISTA_PRECIO, NOTAS
+        INSERT INTO [master].[Supplier] (
+            SupplierCode, SupplierName, FiscalId, NIT, Direccion, Direccion1, Sucursal, Telefono, Fax,
+            Contacto, VENDEDOR, ESTADO, Ciudad, CodPostal, Email, PaginaWww,
+            CodUsuario, CreditLimit, Credito, ListaPrecio, Notas,
+            IsActive, IsDeleted, CompanyId
         )
         SELECT
             NULLIF(r.value('@CODIGO', 'NVARCHAR(10)'), N''),
@@ -121,7 +155,10 @@ BEGIN
             CASE WHEN r.value('@LIMITE', 'NVARCHAR(50)') IS NULL OR r.value('@LIMITE', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@LIMITE', 'NVARCHAR(50)') AS FLOAT) END,
             CASE WHEN r.value('@CREDITO', 'NVARCHAR(50)') IS NULL OR r.value('@CREDITO', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@CREDITO', 'NVARCHAR(50)') AS FLOAT) END,
             CASE WHEN r.value('@LISTA_PRECIO', 'NVARCHAR(50)') IS NULL OR r.value('@LISTA_PRECIO', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@LISTA_PRECIO', 'NVARCHAR(50)') AS INT) END,
-            NULLIF(r.value('@NOTAS', 'NVARCHAR(50)'), N'')
+            NULLIF(r.value('@NOTAS', 'NVARCHAR(50)'), N''),
+            1,  -- IsActive
+            0,  -- IsDeleted
+            @CompanyId
         FROM @xml.nodes('/row') T(r);
 
         SET @Resultado = 1;
@@ -152,7 +189,7 @@ BEGIN
     DECLARE @xml XML = CAST(@RowXml AS XML);
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Proveedores] WHERE CODIGO = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Supplier] WHERE SupplierCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Proveedor no encontrado';
@@ -160,29 +197,29 @@ BEGIN
         END
 
         UPDATE c SET
-            NOMBRE = COALESCE(NULLIF(r.value('@NOMBRE', 'NVARCHAR(255)'), N''), c.NOMBRE),
-            RIF = COALESCE(NULLIF(r.value('@RIF', 'NVARCHAR(20)'), N''), c.RIF),
+            SupplierName = COALESCE(NULLIF(r.value('@NOMBRE', 'NVARCHAR(255)'), N''), c.SupplierName),
+            FiscalId = COALESCE(NULLIF(r.value('@RIF', 'NVARCHAR(20)'), N''), c.FiscalId),
             NIT = COALESCE(NULLIF(r.value('@NIT', 'NVARCHAR(20)'), N''), c.NIT),
-            DIRECCION = COALESCE(NULLIF(r.value('@DIRECCION', 'NVARCHAR(255)'), N''), c.DIRECCION),
-            DIRECCION1 = COALESCE(NULLIF(r.value('@DIRECCION1', 'NVARCHAR(255)'), N''), c.DIRECCION1),
-            SUCURSAL = COALESCE(NULLIF(r.value('@SUCURSAL', 'NVARCHAR(50)'), N''), c.SUCURSAL),
-            TELEFONO = COALESCE(NULLIF(r.value('@TELEFONO', 'NVARCHAR(60)'), N''), c.TELEFONO),
-            FAX = COALESCE(NULLIF(r.value('@FAX', 'NVARCHAR(10)'), N''), c.FAX),
-            CONTACTO = COALESCE(NULLIF(r.value('@CONTACTO', 'NVARCHAR(30)'), N''), c.CONTACTO),
+            Direccion = COALESCE(NULLIF(r.value('@DIRECCION', 'NVARCHAR(255)'), N''), c.Direccion),
+            Direccion1 = COALESCE(NULLIF(r.value('@DIRECCION1', 'NVARCHAR(255)'), N''), c.Direccion1),
+            Sucursal = COALESCE(NULLIF(r.value('@SUCURSAL', 'NVARCHAR(50)'), N''), c.Sucursal),
+            Telefono = COALESCE(NULLIF(r.value('@TELEFONO', 'NVARCHAR(60)'), N''), c.Telefono),
+            Fax = COALESCE(NULLIF(r.value('@FAX', 'NVARCHAR(10)'), N''), c.Fax),
+            Contacto = COALESCE(NULLIF(r.value('@CONTACTO', 'NVARCHAR(30)'), N''), c.Contacto),
             VENDEDOR = COALESCE(NULLIF(r.value('@VENDEDOR', 'NVARCHAR(2)'), N''), c.VENDEDOR),
             ESTADO = COALESCE(NULLIF(r.value('@ESTADO', 'NVARCHAR(60)'), N''), c.ESTADO),
-            CIUDAD = COALESCE(NULLIF(r.value('@CIUDAD', 'NVARCHAR(30)'), N''), c.CIUDAD),
-            CPOSTAL = COALESCE(NULLIF(r.value('@CPOSTAL', 'NVARCHAR(10)'), N''), c.CPOSTAL),
-            EMAIL = COALESCE(NULLIF(r.value('@EMAIL', 'NVARCHAR(50)'), N''), c.EMAIL),
-            PAGINA_WWW = COALESCE(NULLIF(r.value('@PAGINA_WWW', 'NVARCHAR(50)'), N''), c.PAGINA_WWW),
-            COD_USUARIO = COALESCE(NULLIF(r.value('@COD_USUARIO', 'NVARCHAR(10)'), N''), c.COD_USUARIO),
-            LIMITE = CASE WHEN r.value('@LIMITE', 'NVARCHAR(50)') IS NULL OR r.value('@LIMITE', 'NVARCHAR(50)') = '' THEN c.LIMITE ELSE CAST(r.value('@LIMITE', 'NVARCHAR(50)') AS FLOAT) END,
-            CREDITO = CASE WHEN r.value('@CREDITO', 'NVARCHAR(50)') IS NULL OR r.value('@CREDITO', 'NVARCHAR(50)') = '' THEN c.CREDITO ELSE CAST(r.value('@CREDITO', 'NVARCHAR(50)') AS FLOAT) END,
-            LISTA_PRECIO = CASE WHEN r.value('@LISTA_PRECIO', 'NVARCHAR(50)') IS NULL OR r.value('@LISTA_PRECIO', 'NVARCHAR(50)') = '' THEN c.LISTA_PRECIO ELSE CAST(r.value('@LISTA_PRECIO', 'NVARCHAR(50)') AS INT) END,
-            NOTAS = COALESCE(NULLIF(r.value('@NOTAS', 'NVARCHAR(50)'), N''), c.NOTAS)
-        FROM [dbo].[Proveedores] c
+            Ciudad = COALESCE(NULLIF(r.value('@CIUDAD', 'NVARCHAR(30)'), N''), c.Ciudad),
+            CodPostal = COALESCE(NULLIF(r.value('@CPOSTAL', 'NVARCHAR(10)'), N''), c.CodPostal),
+            Email = COALESCE(NULLIF(r.value('@EMAIL', 'NVARCHAR(50)'), N''), c.Email),
+            PaginaWww = COALESCE(NULLIF(r.value('@PAGINA_WWW', 'NVARCHAR(50)'), N''), c.PaginaWww),
+            CodUsuario = COALESCE(NULLIF(r.value('@COD_USUARIO', 'NVARCHAR(10)'), N''), c.CodUsuario),
+            CreditLimit = CASE WHEN r.value('@LIMITE', 'NVARCHAR(50)') IS NULL OR r.value('@LIMITE', 'NVARCHAR(50)') = '' THEN c.CreditLimit ELSE CAST(r.value('@LIMITE', 'NVARCHAR(50)') AS FLOAT) END,
+            Credito = CASE WHEN r.value('@CREDITO', 'NVARCHAR(50)') IS NULL OR r.value('@CREDITO', 'NVARCHAR(50)') = '' THEN c.Credito ELSE CAST(r.value('@CREDITO', 'NVARCHAR(50)') AS FLOAT) END,
+            ListaPrecio = CASE WHEN r.value('@LISTA_PRECIO', 'NVARCHAR(50)') IS NULL OR r.value('@LISTA_PRECIO', 'NVARCHAR(50)') = '' THEN c.ListaPrecio ELSE CAST(r.value('@LISTA_PRECIO', 'NVARCHAR(50)') AS INT) END,
+            Notas = COALESCE(NULLIF(r.value('@NOTAS', 'NVARCHAR(50)'), N''), c.Notas)
+        FROM [master].[Supplier] c
         CROSS JOIN @xml.nodes('/row') T(r)
-        WHERE c.CODIGO = @Codigo;
+        WHERE c.SupplierCode = @Codigo AND ISNULL(c.IsDeleted, 0) = 0;
 
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
@@ -194,7 +231,7 @@ BEGIN
 END
 GO
 
--- ---------- 5. Delete ----------
+-- ---------- 5. Delete (soft delete via IsDeleted) ----------
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Proveedores_Delete')
     DROP PROCEDURE usp_Proveedores_Delete
 GO
@@ -209,14 +246,17 @@ BEGIN
     SET @Mensaje = N'';
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Proveedores] WHERE CODIGO = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Supplier] WHERE SupplierCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Proveedor no encontrado';
             RETURN;
         END
 
-        DELETE FROM [dbo].[Proveedores] WHERE CODIGO = @Codigo;
+        UPDATE [master].[Supplier]
+        SET IsDeleted = 1, IsActive = 0
+        WHERE SupplierCode = @Codigo;
+
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
     END TRY

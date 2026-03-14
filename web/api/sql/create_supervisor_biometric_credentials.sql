@@ -28,7 +28,7 @@ BEGIN
     UpdatedByUserCode NVARCHAR(10) NULL,
     RowVer ROWVERSION NOT NULL,
     CONSTRAINT FK_SupervisorBiometricCredential_SupervisorUser
-      FOREIGN KEY (SupervisorUserCode) REFERENCES dbo.Usuarios(Cod_Usuario)
+      FOREIGN KEY (SupervisorUserCode) REFERENCES sec.[User](UserCode)
   );
 END
 GO

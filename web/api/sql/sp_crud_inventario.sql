@@ -1,15 +1,16 @@
 -- =============================================
--- Stored Procedures CRUD: Inventario
+-- Stored Procedures CRUD: Inventario (Productos)
 -- Compatible con: SQL Server 2012+
--- PK: CODIGO nvarchar(15)
+-- Tabla canonica: master.Product (antes dbo.Inventario)
+-- PK: ProductCode NVARCHAR(15) unico por CompanyId
 -- Filtros: Search, Categoria, Marca, Linea, Tipo, Clase
 --
--- La descripción completa de un artículo se compone de:
---   Categoria + Tipo + DESCRIPCION + Marca + Clase
--- El campo Linea actúa como departamento (ej: REPUESTOS)
+-- La descripcion completa de un articulo se compone de:
+--   Categoria + Tipo + ProductName + Marca + Clase
+-- El campo Linea actua como departamento (ej: REPUESTOS)
 -- =============================================
 
--- ---------- 1. List (paginado con filtros y descripción compuesta) ----------
+-- ---------- 1. List (paginado con filtros y descripcion compuesta) ----------
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_List')
     DROP PROCEDURE usp_Inventario_List
 GO
@@ -32,14 +33,17 @@ BEGIN
     IF @Limit < 1  SET @Limit = 50;
     IF @Limit > 500 SET @Limit = 500;
 
-    -- Construir cláusula WHERE dinámica
+    -- Construir clausula WHERE dinamica
     DECLARE @Where NVARCHAR(MAX) = N'';
     DECLARE @Sql   NVARCHAR(MAX);
     DECLARE @Params NVARCHAR(1000) = N'@Search NVARCHAR(100), @Categoria NVARCHAR(50), @Marca NVARCHAR(50), @Linea NVARCHAR(30), @Tipo NVARCHAR(50), @Clase NVARCHAR(25), @Offset INT, @Limit INT, @TotalCount INT OUTPUT';
 
-    -- Búsqueda libre: busca en CODIGO, Referencia y todos los campos descriptivos
+    -- Filtro base: solo registros no eliminados
+    SET @Where = N' AND ISNULL(IsDeleted, 0) = 0';
+
+    -- Busqueda libre: busca en ProductCode, Referencia y todos los campos descriptivos
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
-        SET @Where = @Where + N' AND (CODIGO LIKE @Search OR Referencia LIKE @Search OR DESCRIPCION LIKE @Search OR Categoria LIKE @Search OR Tipo LIKE @Search OR Marca LIKE @Search OR Clase LIKE @Search OR Linea LIKE @Search)';
+        SET @Where = @Where + N' AND (ProductCode LIKE @Search OR Referencia LIKE @Search OR ProductName LIKE @Search OR Categoria LIKE @Search OR Tipo LIKE @Search OR Marca LIKE @Search OR Clase LIKE @Search OR Linea LIKE @Search)';
 
     -- Filtros exactos por campo
     IF @Categoria IS NOT NULL AND LTRIM(RTRIM(@Categoria)) <> N''
@@ -53,33 +57,39 @@ BEGIN
     IF @Clase IS NOT NULL AND LTRIM(RTRIM(@Clase)) <> N''
         SET @Where = @Where + N' AND Clase = @Clase';
 
-    IF LEN(@Where) > 0 SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
+    SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
 
-    -- Preparar parámetro de búsqueda con comodines
+    -- Preparar parametro de busqueda con comodines
     DECLARE @SearchParam NVARCHAR(100) = NULL;
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
         SET @SearchParam = N'%' + @Search + N'%';
 
-    -- Descripción compuesta: CATEGORIA + TIPO + DESCRIPCION + MARCA + CLASE
+    -- Descripcion compuesta: CATEGORIA + TIPO + ProductName + MARCA + CLASE
     -- Se usa LTRIM/RTRIM para eliminar espacios sobrantes
     DECLARE @DescExpr NVARCHAR(500) = N'
         LTRIM(RTRIM(
             ISNULL(RTRIM(Categoria), '''') +
             CASE WHEN RTRIM(ISNULL(Tipo, '''')) <> '''' THEN '' '' + RTRIM(Tipo) ELSE '''' END +
-            CASE WHEN RTRIM(ISNULL(DESCRIPCION, '''')) <> '''' THEN '' '' + RTRIM(DESCRIPCION) ELSE '''' END +
+            CASE WHEN RTRIM(ISNULL(ProductName, '''')) <> '''' THEN '' '' + RTRIM(ProductName) ELSE '''' END +
             CASE WHEN RTRIM(ISNULL(Marca, '''')) <> '''' THEN '' '' + RTRIM(Marca) ELSE '''' END +
             CASE WHEN RTRIM(ISNULL(Clase, '''')) <> '''' THEN '' '' + RTRIM(Clase) ELSE '''' END
         ))';
 
     -- Contar total
-    SET @Sql = N'SELECT @TotalCount = COUNT(1) FROM [dbo].[Inventario] ' + @Where + N';';
+    SET @Sql = N'SELECT @TotalCount = COUNT(1) FROM [master].[Product] ' + @Where + N';';
 
-    -- Seleccionar con campo DescripcionCompleta calculado
+    -- Seleccionar con campo DescripcionCompleta calculado y aliases para compatibilidad
     SET @Sql = @Sql + N'
     SELECT *,
+           ProductCode   AS CODIGO,
+           ProductName   AS DESCRIPCION,
+           StockQty      AS EXISTENCIA,
+           SalesPrice    AS PRECIO,
+           CostPrice     AS COSTO,
+           IsService     AS Servicio,
            ' + @DescExpr + N' AS DescripcionCompleta
-    FROM [dbo].[Inventario] ' + @Where + N'
-    ORDER BY CODIGO
+    FROM [master].[Product] ' + @Where + N'
+    ORDER BY ProductCode
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';
 
     EXEC sp_executesql @Sql, @Params,
@@ -106,19 +116,26 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT *,
+           ProductCode  AS CODIGO,
+           ProductName  AS DESCRIPCION,
+           StockQty     AS EXISTENCIA,
+           SalesPrice   AS PRECIO,
+           CostPrice    AS COSTO,
+           IsService    AS Servicio,
            LTRIM(RTRIM(
                ISNULL(RTRIM(Categoria), '') +
                CASE WHEN RTRIM(ISNULL(Tipo, '')) <> '' THEN ' ' + RTRIM(Tipo) ELSE '' END +
-               CASE WHEN RTRIM(ISNULL(DESCRIPCION, '')) <> '' THEN ' ' + RTRIM(DESCRIPCION) ELSE '' END +
+               CASE WHEN RTRIM(ISNULL(ProductName, '')) <> '' THEN ' ' + RTRIM(ProductName) ELSE '' END +
                CASE WHEN RTRIM(ISNULL(Marca, '')) <> '' THEN ' ' + RTRIM(Marca) ELSE '' END +
                CASE WHEN RTRIM(ISNULL(Clase, '')) <> '' THEN ' ' + RTRIM(Clase) ELSE '' END
            )) AS DescripcionCompleta
-    FROM [dbo].[Inventario]
-    WHERE CODIGO = @Codigo;
+    FROM [master].[Product]
+    WHERE ProductCode = @Codigo
+      AND ISNULL(IsDeleted, 0) = 0;
 END
 GO
 
--- ---------- 3. Insert (columnas principales según snapshot) ----------
+-- ---------- 3. Insert (columnas principales segun schema canonico) ----------
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_Insert')
     DROP PROCEDURE usp_Inventario_Insert
 GO
@@ -134,19 +151,22 @@ BEGIN
     SET @Mensaje = N'';
 
     DECLARE @xml XML = CAST(@RowXml AS XML);
+    DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+    IF @CompanyId IS NULL SET @CompanyId = 1;
 
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM [dbo].[Inventario] WHERE CODIGO = @xml.value('(/row/@CODIGO)[1]', 'NVARCHAR(15)'))
+        IF EXISTS (SELECT 1 FROM [master].[Product] WHERE ProductCode = @xml.value('(/row/@CODIGO)[1]', 'NVARCHAR(15)') AND CompanyId = @CompanyId)
         BEGIN
             SET @Resultado = -1;
-            SET @Mensaje = N'Artículo ya existe';
+            SET @Mensaje = N'Articulo ya existe';
             RETURN;
         END
 
-        INSERT INTO [dbo].[Inventario] (
-            CODIGO, Referencia, Categoria, Marca, Tipo, Unidad, Clase, DESCRIPCION,
-            EXISTENCIA, VENTA, MINIMO, MAXIMO, PRECIO_COMPRA, PRECIO_VENTA, PORCENTAJE,
-            UBICACION, Co_Usuario, Linea, N_PARTE, Barra
+        INSERT INTO [master].[Product] (
+            ProductCode, Referencia, Categoria, Marca, Tipo, Unidad, Clase, ProductName,
+            StockQty, VENTA, MINIMO, MAXIMO, CostPrice, SalesPrice, PORCENTAJE,
+            UBICACION, Co_Usuario, Linea, N_PARTE, Barra,
+            IsService, IsActive, IsDeleted, CompanyId
         )
         SELECT
             NULLIF(r.value('@CODIGO', 'NVARCHAR(15)'), N''),
@@ -168,7 +188,11 @@ BEGIN
             NULLIF(r.value('@Co_Usuario', 'NVARCHAR(10)'), N''),
             NULLIF(r.value('@Linea', 'NVARCHAR(30)'), N''),
             NULLIF(r.value('@N_PARTE', 'NVARCHAR(18)'), N''),
-            NULLIF(r.value('@Barra', 'NVARCHAR(50)'), N'')
+            NULLIF(r.value('@Barra', 'NVARCHAR(50)'), N''),
+            ISNULL(CAST(NULLIF(r.value('@Servicio', 'NVARCHAR(5)'), '') AS BIT), 0),  -- IsService
+            1,  -- IsActive
+            0,  -- IsDeleted
+            @CompanyId
         FROM @xml.nodes('/row') T(r);
 
         SET @Resultado = 1;
@@ -199,10 +223,10 @@ BEGIN
     DECLARE @xml XML = CAST(@RowXml AS XML);
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Inventario] WHERE CODIGO = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Product] WHERE ProductCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
-            SET @Mensaje = N'Artículo no encontrado';
+            SET @Mensaje = N'Articulo no encontrado';
             RETURN;
         END
 
@@ -213,22 +237,22 @@ BEGIN
             Tipo = COALESCE(NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N''), c.Tipo),
             Unidad = COALESCE(NULLIF(r.value('@Unidad', 'NVARCHAR(30)'), N''), c.Unidad),
             Clase = COALESCE(NULLIF(r.value('@Clase', 'NVARCHAR(25)'), N''), c.Clase),
-            DESCRIPCION = COALESCE(NULLIF(r.value('@DESCRIPCION', 'NVARCHAR(255)'), N''), c.DESCRIPCION),
-            EXISTENCIA = CASE WHEN r.value('@EXISTENCIA', 'NVARCHAR(50)') IS NULL OR r.value('@EXISTENCIA', 'NVARCHAR(50)') = '' THEN c.EXISTENCIA ELSE CAST(r.value('@EXISTENCIA', 'NVARCHAR(50)') AS FLOAT) END,
+            ProductName = COALESCE(NULLIF(r.value('@DESCRIPCION', 'NVARCHAR(255)'), N''), c.ProductName),
+            StockQty = CASE WHEN r.value('@EXISTENCIA', 'NVARCHAR(50)') IS NULL OR r.value('@EXISTENCIA', 'NVARCHAR(50)') = '' THEN c.StockQty ELSE CAST(r.value('@EXISTENCIA', 'NVARCHAR(50)') AS FLOAT) END,
             VENTA = CASE WHEN r.value('@VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@VENTA', 'NVARCHAR(50)') = '' THEN c.VENTA ELSE CAST(r.value('@VENTA', 'NVARCHAR(50)') AS FLOAT) END,
             MINIMO = CASE WHEN r.value('@MINIMO', 'NVARCHAR(50)') IS NULL OR r.value('@MINIMO', 'NVARCHAR(50)') = '' THEN c.MINIMO ELSE CAST(r.value('@MINIMO', 'NVARCHAR(50)') AS FLOAT) END,
             MAXIMO = CASE WHEN r.value('@MAXIMO', 'NVARCHAR(50)') IS NULL OR r.value('@MAXIMO', 'NVARCHAR(50)') = '' THEN c.MAXIMO ELSE CAST(r.value('@MAXIMO', 'NVARCHAR(50)') AS FLOAT) END,
-            PRECIO_COMPRA = CASE WHEN r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') = '' THEN c.PRECIO_COMPRA ELSE CAST(r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') AS FLOAT) END,
-            PRECIO_VENTA = CASE WHEN r.value('@PRECIO_VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_VENTA', 'NVARCHAR(50)') = '' THEN c.PRECIO_VENTA ELSE CAST(r.value('@PRECIO_VENTA', 'NVARCHAR(50)') AS FLOAT) END,
+            CostPrice = CASE WHEN r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') = '' THEN c.CostPrice ELSE CAST(r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') AS FLOAT) END,
+            SalesPrice = CASE WHEN r.value('@PRECIO_VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_VENTA', 'NVARCHAR(50)') = '' THEN c.SalesPrice ELSE CAST(r.value('@PRECIO_VENTA', 'NVARCHAR(50)') AS FLOAT) END,
             PORCENTAJE = CASE WHEN r.value('@PORCENTAJE', 'NVARCHAR(50)') IS NULL OR r.value('@PORCENTAJE', 'NVARCHAR(50)') = '' THEN c.PORCENTAJE ELSE CAST(r.value('@PORCENTAJE', 'NVARCHAR(50)') AS FLOAT) END,
             UBICACION = COALESCE(NULLIF(r.value('@UBICACION', 'NVARCHAR(40)'), N''), c.UBICACION),
             Co_Usuario = COALESCE(NULLIF(r.value('@Co_Usuario', 'NVARCHAR(10)'), N''), c.Co_Usuario),
             Linea = COALESCE(NULLIF(r.value('@Linea', 'NVARCHAR(30)'), N''), c.Linea),
             N_PARTE = COALESCE(NULLIF(r.value('@N_PARTE', 'NVARCHAR(18)'), N''), c.N_PARTE),
             Barra = COALESCE(NULLIF(r.value('@Barra', 'NVARCHAR(50)'), N''), c.Barra)
-        FROM [dbo].[Inventario] c
+        FROM [master].[Product] c
         CROSS JOIN @xml.nodes('/row') T(r)
-        WHERE c.CODIGO = @Codigo;
+        WHERE c.ProductCode = @Codigo AND ISNULL(c.IsDeleted, 0) = 0;
 
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
@@ -240,7 +264,7 @@ BEGIN
 END
 GO
 
--- ---------- 5. Delete ----------
+-- ---------- 5. Delete (soft delete via IsDeleted) ----------
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_Delete')
     DROP PROCEDURE usp_Inventario_Delete
 GO
@@ -255,14 +279,17 @@ BEGIN
     SET @Mensaje = N'';
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Inventario] WHERE CODIGO = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Product] WHERE ProductCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
-            SET @Mensaje = N'Artículo no encontrado';
+            SET @Mensaje = N'Articulo no encontrado';
             RETURN;
         END
 
-        DELETE FROM [dbo].[Inventario] WHERE CODIGO = @Codigo;
+        UPDATE [master].[Product]
+        SET IsDeleted = 1, IsActive = 0
+        WHERE ProductCode = @Codigo;
+
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
     END TRY

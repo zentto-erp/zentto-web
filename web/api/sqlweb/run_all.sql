@@ -22,3 +22,7 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\004_country_timezone_support.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\005_auth_security_hardening.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sql\sqlweb\002_seed_multicompany_demo.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\19_canonical_maestros_and_missing.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\20_rebuild_maestros_sps.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\21_canonical_document_tables.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\22_canonical_usuarios_fiscal.sql

@@ -1,7 +1,8 @@
 -- =============================================
 -- Stored Procedures CRUD: Almacen
 -- Compatible con: SQL Server 2012+
--- PK: Codigo nvarchar
+-- Tabla canonica: master.Warehouse (antes dbo.Almacen / dbo.Almacenes)
+-- PK: WarehouseCode unico por CompanyId
 -- =============================================
 
 -- ---------- 1. List (paginado con filtros) ----------
@@ -27,21 +28,32 @@ BEGIN
     DECLARE @Sql NVARCHAR(MAX);
     DECLARE @Params NVARCHAR(500) = N'@Search NVARCHAR(100), @Tipo NVARCHAR(50), @Offset INT, @Limit INT, @TotalCount INT OUTPUT';
 
-    IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
-        SET @Where = @Where + N' AND (Codigo LIKE @Search OR Descripcion LIKE @Search)';
-    IF @Tipo IS NOT NULL AND LTRIM(RTRIM(@Tipo)) <> N''
-        SET @Where = @Where + N' AND Tipo = @Tipo';
+    -- Filtro base: solo registros no eliminados
+    SET @Where = N' AND ISNULL(IsDeleted, 0) = 0';
 
-    IF LEN(@Where) > 0 SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
+    IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
+        SET @Where = @Where + N' AND (WarehouseCode LIKE @Search OR Description LIKE @Search)';
+    IF @Tipo IS NOT NULL AND LTRIM(RTRIM(@Tipo)) <> N''
+        SET @Where = @Where + N' AND WarehouseType = @Tipo';
+
+    SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
 
     DECLARE @SearchParam NVARCHAR(100) = NULL;
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
         SET @SearchParam = N'%' + @Search + N'%';
 
     SET @Sql = N'
-    SELECT @TotalCount = COUNT(1) FROM [dbo].[Almacen] ' + @Where + N';
-    SELECT * FROM [dbo].[Almacen] ' + @Where + N'
-    ORDER BY Codigo
+    SELECT @TotalCount = COUNT(1) FROM [master].[Warehouse] ' + @Where + N';
+    SELECT
+        WarehouseCode  AS Codigo,
+        Description    AS Descripcion,
+        WarehouseType  AS Tipo,
+        IsActive,
+        IsDeleted,
+        CompanyId,
+        WarehouseCode, Description, WarehouseType
+    FROM [master].[Warehouse] ' + @Where + N'
+    ORDER BY WarehouseCode
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';
 
     EXEC sp_executesql @Sql, @Params,
@@ -62,7 +74,17 @@ CREATE PROCEDURE usp_Almacen_GetByCodigo
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT * FROM [dbo].[Almacen] WHERE Codigo = @Codigo;
+    SELECT
+        WarehouseCode  AS Codigo,
+        Description    AS Descripcion,
+        WarehouseType  AS Tipo,
+        IsActive,
+        IsDeleted,
+        CompanyId,
+        WarehouseCode, Description, WarehouseType
+    FROM [master].[Warehouse]
+    WHERE WarehouseCode = @Codigo
+      AND ISNULL(IsDeleted, 0) = 0;
 END
 GO
 
@@ -82,22 +104,28 @@ BEGIN
     SET @Mensaje = N'';
 
     DECLARE @xml XML = CAST(@RowXml AS XML);
+    DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+    IF @CompanyId IS NULL SET @CompanyId = 1;
 
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM [dbo].[Almacen] WHERE Codigo = @xml.value('(/row/@Codigo)[1]', 'NVARCHAR(10)'))
+        IF EXISTS (SELECT 1 FROM [master].[Warehouse] WHERE WarehouseCode = @xml.value('(/row/@Codigo)[1]', 'NVARCHAR(10)') AND CompanyId = @CompanyId)
         BEGIN
             SET @Resultado = -1;
-            SET @Mensaje = N'Almacén ya existe';
+            SET @Mensaje = N'Almacen ya existe';
             RETURN;
         END
 
-        INSERT INTO [dbo].[Almacen] (
-            Codigo, Descripcion, Tipo
+        INSERT INTO [master].[Warehouse] (
+            WarehouseCode, Description, WarehouseType,
+            IsActive, IsDeleted, CompanyId
         )
         SELECT
             NULLIF(r.value('@Codigo', 'NVARCHAR(10)'), N''),
             NULLIF(r.value('@Descripcion', 'NVARCHAR(100)'), N''),
-            NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N'')
+            NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N''),
+            1,  -- IsActive
+            0,  -- IsDeleted
+            @CompanyId
         FROM @xml.nodes('/row') T(r);
 
         SET @Resultado = 1;
@@ -128,19 +156,19 @@ BEGIN
     DECLARE @xml XML = CAST(@RowXml AS XML);
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Almacen] WHERE Codigo = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Warehouse] WHERE WarehouseCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
-            SET @Mensaje = N'Almacén no encontrado';
+            SET @Mensaje = N'Almacen no encontrado';
             RETURN;
         END
 
         UPDATE a SET
-            Descripcion = COALESCE(NULLIF(r.value('@Descripcion', 'NVARCHAR(100)'), N''), a.Descripcion),
-            Tipo = COALESCE(NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N''), a.Tipo)
-        FROM [dbo].[Almacen] a
+            Description = COALESCE(NULLIF(r.value('@Descripcion', 'NVARCHAR(100)'), N''), a.Description),
+            WarehouseType = COALESCE(NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N''), a.WarehouseType)
+        FROM [master].[Warehouse] a
         CROSS JOIN @xml.nodes('/row') T(r)
-        WHERE a.Codigo = @Codigo;
+        WHERE a.WarehouseCode = @Codigo AND ISNULL(a.IsDeleted, 0) = 0;
 
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
@@ -152,7 +180,7 @@ BEGIN
 END
 GO
 
--- ---------- 5. Delete ----------
+-- ---------- 5. Delete (soft delete via IsDeleted) ----------
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Almacen_Delete')
     DROP PROCEDURE usp_Almacen_Delete
 GO
@@ -167,14 +195,17 @@ BEGIN
     SET @Mensaje = N'';
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Almacen] WHERE Codigo = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Warehouse] WHERE WarehouseCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
-            SET @Mensaje = N'Almacén no encontrado';
+            SET @Mensaje = N'Almacen no encontrado';
             RETURN;
         END
 
-        DELETE FROM [dbo].[Almacen] WHERE Codigo = @Codigo;
+        UPDATE [master].[Warehouse]
+        SET IsDeleted = 1, IsActive = 0
+        WHERE WarehouseCode = @Codigo;
+
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
     END TRY

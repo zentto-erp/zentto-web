@@ -1,7 +1,8 @@
 -- =============================================
 -- Stored Procedures CRUD: Vendedores
 -- Compatible con: SQL Server 2012+
--- PK: Codigo nvarchar
+-- Tabla canonica: master.Seller (antes dbo.Vendedor)
+-- PK: SellerCode unico por CompanyId
 -- =============================================
 
 -- ---------- 1. List (paginado con filtros) ----------
@@ -28,23 +29,38 @@ BEGIN
     DECLARE @Sql NVARCHAR(MAX);
     DECLARE @Params NVARCHAR(600) = N'@Search NVARCHAR(100), @Status BIT, @Tipo NVARCHAR(50), @Offset INT, @Limit INT, @TotalCount INT OUTPUT';
 
+    -- Filtro base: solo registros no eliminados
+    SET @Where = N' AND ISNULL(IsDeleted, 0) = 0';
+
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
-        SET @Where = @Where + N' AND (Codigo LIKE @Search OR Nombre LIKE @Search OR Email LIKE @Search)';
+        SET @Where = @Where + N' AND (SellerCode LIKE @Search OR SellerName LIKE @Search OR Email LIKE @Search)';
     IF @Status IS NOT NULL
-        SET @Where = @Where + N' AND Status = @Status';
+        SET @Where = @Where + N' AND IsActive = @Status';
     IF @Tipo IS NOT NULL AND LTRIM(RTRIM(@Tipo)) <> N''
         SET @Where = @Where + N' AND Tipo = @Tipo';
 
-    IF LEN(@Where) > 0 SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
+    SET @Where = N' WHERE ' + STUFF(@Where, 1, 5, N'');
 
     DECLARE @SearchParam NVARCHAR(100) = NULL;
     IF @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N''
         SET @SearchParam = N'%' + @Search + N'%';
 
     SET @Sql = N'
-    SELECT @TotalCount = COUNT(1) FROM [dbo].[Vendedor] ' + @Where + N';
-    SELECT * FROM [dbo].[Vendedor] ' + @Where + N'
-    ORDER BY Codigo
+    SELECT @TotalCount = COUNT(1) FROM [master].[Seller] ' + @Where + N';
+    SELECT
+        SellerCode  AS Codigo,
+        SellerName  AS Nombre,
+        Commission  AS Comision,
+        IsActive    AS Status,
+        IsActive, IsDeleted, CompanyId,
+        SellerCode, SellerName, Commission,
+        Direccion, Telefonos, Email, Tipo, Clave,
+        RangoVentasUno, ComisionVentasUno,
+        RangoVentasDos, ComisionVentasDos,
+        RangoVentasTres, ComisionVentasTres,
+        RangoVentasCuatro, ComisionVentasCuatro
+    FROM [master].[Seller] ' + @Where + N'
+    ORDER BY SellerCode
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';
 
     EXEC sp_executesql @Sql, @Params,
@@ -66,7 +82,21 @@ CREATE PROCEDURE usp_Vendedores_GetByCodigo
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT * FROM [dbo].[Vendedor] WHERE Codigo = @Codigo;
+    SELECT
+        SellerCode  AS Codigo,
+        SellerName  AS Nombre,
+        Commission  AS Comision,
+        IsActive    AS Status,
+        IsActive, IsDeleted, CompanyId,
+        SellerCode, SellerName, Commission,
+        Direccion, Telefonos, Email, Tipo, Clave,
+        RangoVentasUno, ComisionVentasUno,
+        RangoVentasDos, ComisionVentasDos,
+        RangoVentasTres, ComisionVentasTres,
+        RangoVentasCuatro, ComisionVentasCuatro
+    FROM [master].[Seller]
+    WHERE SellerCode = @Codigo
+      AND ISNULL(IsDeleted, 0) = 0;
 END
 GO
 
@@ -86,22 +116,24 @@ BEGIN
     SET @Mensaje = N'';
 
     DECLARE @xml XML = CAST(@RowXml AS XML);
+    DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+    IF @CompanyId IS NULL SET @CompanyId = 1;
 
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM [dbo].[Vendedor] WHERE Codigo = @xml.value('(/row/@Codigo)[1]', 'NVARCHAR(10)'))
+        IF EXISTS (SELECT 1 FROM [master].[Seller] WHERE SellerCode = @xml.value('(/row/@Codigo)[1]', 'NVARCHAR(10)') AND CompanyId = @CompanyId)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Vendedor ya existe';
             RETURN;
         END
 
-        INSERT INTO [dbo].[Vendedor] (
-            Codigo, Nombre, Comision, Direccion, Telefonos, Email,
-            [Rango_ventas_Uno], [Comision_ ventas_Uno],
-            [Rango_ventas_dos], [Comision_ ventas_dos],
-            [Rango_ventas_tres], [Comision_ ventas_tres],
-            [Rango_ventas_Cuatro], [Comision_ ventas_Cuatro],
-            Status, Tipo, clave
+        INSERT INTO [master].[Seller] (
+            SellerCode, SellerName, Commission, Direccion, Telefonos, Email,
+            RangoVentasUno, ComisionVentasUno,
+            RangoVentasDos, ComisionVentasDos,
+            RangoVentasTres, ComisionVentasTres,
+            RangoVentasCuatro, ComisionVentasCuatro,
+            IsActive, Tipo, Clave, IsDeleted, CompanyId
         )
         SELECT
             NULLIF(r.value('@Codigo', 'NVARCHAR(10)'), N''),
@@ -120,7 +152,9 @@ BEGIN
             CASE WHEN r.value('@Comision_ventas_Cuatro', 'NVARCHAR(50)') IS NULL OR r.value('@Comision_ventas_Cuatro', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@Comision_ventas_Cuatro', 'NVARCHAR(50)') AS FLOAT) END,
             ISNULL(r.value('@Status', 'BIT'), 1),
             NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N''),
-            NULLIF(r.value('@clave', 'NVARCHAR(50)'), N'')
+            NULLIF(r.value('@clave', 'NVARCHAR(50)'), N''),
+            0,  -- IsDeleted
+            @CompanyId
         FROM @xml.nodes('/row') T(r);
 
         SET @Resultado = 1;
@@ -151,7 +185,7 @@ BEGIN
     DECLARE @xml XML = CAST(@RowXml AS XML);
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Vendedor] WHERE Codigo = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Seller] WHERE SellerCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Vendedor no encontrado';
@@ -159,17 +193,17 @@ BEGIN
         END
 
         UPDATE v SET
-            Nombre = COALESCE(NULLIF(r.value('@Nombre', 'NVARCHAR(100)'), N''), v.Nombre),
-            Comision = CASE WHEN r.value('@Comision', 'NVARCHAR(50)') IS NULL OR r.value('@Comision', 'NVARCHAR(50)') = '' THEN v.Comision ELSE CAST(r.value('@Comision', 'NVARCHAR(50)') AS FLOAT) END,
+            SellerName = COALESCE(NULLIF(r.value('@Nombre', 'NVARCHAR(100)'), N''), v.SellerName),
+            Commission = CASE WHEN r.value('@Comision', 'NVARCHAR(50)') IS NULL OR r.value('@Comision', 'NVARCHAR(50)') = '' THEN v.Commission ELSE CAST(r.value('@Comision', 'NVARCHAR(50)') AS FLOAT) END,
             Direccion = COALESCE(NULLIF(r.value('@Direccion', 'NVARCHAR(255)'), N''), v.Direccion),
             Telefonos = COALESCE(NULLIF(r.value('@Telefonos', 'NVARCHAR(60)'), N''), v.Telefonos),
             Email = COALESCE(NULLIF(r.value('@Email', 'NVARCHAR(100)'), N''), v.Email),
-            Status = ISNULL(r.value('@Status', 'BIT'), v.Status),
+            IsActive = ISNULL(r.value('@Status', 'BIT'), v.IsActive),
             Tipo = COALESCE(NULLIF(r.value('@Tipo', 'NVARCHAR(50)'), N''), v.Tipo),
-            clave = COALESCE(NULLIF(r.value('@clave', 'NVARCHAR(50)'), N''), v.clave)
-        FROM [dbo].[Vendedor] v
+            Clave = COALESCE(NULLIF(r.value('@clave', 'NVARCHAR(50)'), N''), v.Clave)
+        FROM [master].[Seller] v
         CROSS JOIN @xml.nodes('/row') T(r)
-        WHERE v.Codigo = @Codigo;
+        WHERE v.SellerCode = @Codigo AND ISNULL(v.IsDeleted, 0) = 0;
 
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
@@ -181,7 +215,7 @@ BEGIN
 END
 GO
 
--- ---------- 5. Delete ----------
+-- ---------- 5. Delete (soft delete via IsDeleted) ----------
 IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Vendedores_Delete')
     DROP PROCEDURE usp_Vendedores_Delete
 GO
@@ -196,14 +230,17 @@ BEGIN
     SET @Mensaje = N'';
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM [dbo].[Vendedor] WHERE Codigo = @Codigo)
+        IF NOT EXISTS (SELECT 1 FROM [master].[Seller] WHERE SellerCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Vendedor no encontrado';
             RETURN;
         END
 
-        DELETE FROM [dbo].[Vendedor] WHERE Codigo = @Codigo;
+        UPDATE [master].[Seller]
+        SET IsDeleted = 1, IsActive = 0
+        WHERE SellerCode = @Codigo;
+
         SET @Resultado = 1;
         SET @Mensaje = N'OK';
     END TRY
