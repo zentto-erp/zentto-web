@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { execute, query } from "../../db/query.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import { hashPassword } from "../../auth/password.js";
 import { env } from "../../config/env.js";
 import { ensureUserDefaultCompanyAccess } from "./usuarios.service.js";
@@ -98,17 +98,7 @@ async function ensureAuthStore() {
   if (authStoreStatus !== "unknown") return authStoreStatus === "available";
 
   try {
-    const rows = await query<{ hasStore: number }>(
-      `
-      SELECT
-        CASE
-          WHEN OBJECT_ID(N'sec.AuthIdentity', N'U') IS NOT NULL
-           AND OBJECT_ID(N'sec.AuthToken', N'U') IS NOT NULL
-          THEN 1
-          ELSE 0
-        END AS hasStore
-      `
-    );
+    const rows = await callSp<{ hasStore: number }>("usp_Sec_AuthStore_Check");
     authStoreStatus = rows[0]?.hasStore === 1 ? "available" : "missing";
   } catch {
     authStoreStatus = "missing";
@@ -122,13 +112,9 @@ function hashToken(rawToken: string) {
 }
 
 async function userExists(userCode: string) {
-  const rows = await query<{ existsFlag: number }>(
-    `
-    SELECT CASE WHEN EXISTS (
-      SELECT 1 FROM dbo.Usuarios WHERE UPPER(Cod_Usuario) = UPPER(@userCode)
-    ) THEN 1 ELSE 0 END AS existsFlag
-    `,
-    { userCode }
+  const rows = await callSp<{ existsFlag: number }>(
+    "usp_Sec_Auth_UserExistsLegacy",
+    { UserCode: userCode }
   );
   return rows[0]?.existsFlag === 1;
 }
@@ -137,15 +123,9 @@ async function emailExists(emailNormalized: string) {
   const ready = await ensureAuthStore();
   if (!ready) return false;
 
-  const rows = await query<{ existsFlag: number }>(
-    `
-    SELECT CASE WHEN EXISTS (
-      SELECT 1
-      FROM sec.AuthIdentity
-      WHERE EmailNormalized = @emailNormalized
-    ) THEN 1 ELSE 0 END AS existsFlag
-    `,
-    { emailNormalized }
+  const rows = await callSp<{ existsFlag: number }>(
+    "usp_Sec_Auth_EmailExists",
+    { EmailNormalized: emailNormalized }
   );
   return rows[0]?.existsFlag === 1;
 }
@@ -156,50 +136,13 @@ async function upsertAuthIdentity(
   emailNormalized: string,
   pending: boolean
 ) {
-  await execute(
-    `
-    MERGE sec.AuthIdentity AS tgt
-    USING (
-      SELECT
-        @userCode AS UserCode,
-        @email AS Email,
-        @emailNormalized AS EmailNormalized
-    ) AS src
-      ON tgt.UserCode = src.UserCode
-    WHEN MATCHED THEN
-      UPDATE SET
-        Email = src.Email,
-        EmailNormalized = src.EmailNormalized,
-        IsRegistrationPending = @pending,
-        EmailVerifiedAtUtc = CASE WHEN @pending = 1 THEN NULL ELSE ISNULL(tgt.EmailVerifiedAtUtc, SYSUTCDATETIME()) END,
-        UpdatedAtUtc = SYSUTCDATETIME()
-    WHEN NOT MATCHED THEN
-      INSERT (
-        UserCode,
-        Email,
-        EmailNormalized,
-        EmailVerifiedAtUtc,
-        IsRegistrationPending,
-        FailedLoginCount,
-        CreatedAtUtc,
-        UpdatedAtUtc
-      )
-      VALUES (
-        src.UserCode,
-        src.Email,
-        src.EmailNormalized,
-        CASE WHEN @pending = 1 THEN NULL ELSE SYSUTCDATETIME() END,
-        @pending,
-        0,
-        SYSUTCDATETIME(),
-        SYSUTCDATETIME()
-      );
-    `,
+  await callSp(
+    "usp_Sec_AuthIdentity_Upsert",
     {
-      userCode,
-      email,
-      emailNormalized,
-      pending: pending ? 1 : 0,
+      UserCode: userCode,
+      Email: email,
+      EmailNormalized: emailNormalized,
+      Pending: pending ? 1 : 0,
     }
   );
 }
@@ -208,35 +151,16 @@ async function issueToken(input: SendTokenInput) {
   const rawToken = randomBytes(32).toString("hex");
   const tokenHash = hashToken(rawToken);
 
-  await execute(
-    `
-    INSERT INTO sec.AuthToken (
-      UserCode,
-      TokenType,
-      TokenHash,
-      EmailNormalized,
-      ExpiresAtUtc,
-      MetaIp,
-      MetaUserAgent
-    )
-    VALUES (
-      @userCode,
-      @tokenType,
-      @tokenHash,
-      @emailNormalized,
-      DATEADD(minute, @ttlMinutes, SYSUTCDATETIME()),
-      @ip,
-      @userAgent
-    );
-    `,
+  await callSp(
+    "usp_Sec_AuthToken_Issue",
     {
-      userCode: input.userCode,
-      tokenType: input.tokenType,
-      tokenHash,
-      emailNormalized: input.emailNormalized,
-      ttlMinutes: input.ttlMinutes,
-      ip: input.ip ?? null,
-      userAgent: input.userAgent ?? null,
+      UserCode: input.userCode,
+      TokenType: input.tokenType,
+      TokenHash: tokenHash,
+      EmailNormalized: input.emailNormalized,
+      TtlMinutes: input.ttlMinutes,
+      Ip: input.ip ?? null,
+      UserAgent: input.userAgent ?? null,
     }
   );
 
@@ -298,20 +222,13 @@ export async function getLoginSecurityState(userCode: string): Promise<LoginSecu
   if (!ready) return { allowed: true };
 
   const normalizedCode = normalizeUserCode(userCode);
-  const rows = await query<{
+  const rows = await callSp<{
     IsRegistrationPending: boolean;
     EmailVerifiedAtUtc: Date | null;
     LockoutUntilUtc: Date | null;
   }>(
-    `
-    SELECT TOP 1
-      IsRegistrationPending,
-      EmailVerifiedAtUtc,
-      LockoutUntilUtc
-    FROM sec.AuthIdentity
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-    `,
-    { userCode: normalizedCode }
+    "usp_Sec_Auth_GetLoginSecurityState",
+    { UserCode: normalizedCode }
   );
 
   const row = rows[0];
@@ -337,26 +254,13 @@ export async function registerLoginFailure(userCode: string, ip?: string) {
   if (!ready) return;
 
   const normalizedCode = normalizeUserCode(userCode);
-  await execute(
-    `
-    UPDATE sec.AuthIdentity
-    SET
-      FailedLoginCount = ISNULL(FailedLoginCount, 0) + 1,
-      LastFailedLoginAtUtc = SYSUTCDATETIME(),
-      LastFailedLoginIp = @ip,
-      LockoutUntilUtc = CASE
-        WHEN ISNULL(FailedLoginCount, 0) + 1 >= @maxAttempts
-          THEN DATEADD(minute, @lockoutMinutes, SYSUTCDATETIME())
-        ELSE LockoutUntilUtc
-      END,
-      UpdatedAtUtc = SYSUTCDATETIME()
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-    `,
+  await callSp(
+    "usp_Sec_Auth_RegisterLoginFailure",
     {
-      userCode: normalizedCode,
-      ip: ip ?? null,
-      maxAttempts: getLoginMaxAttempts(),
-      lockoutMinutes: getLockoutMinutes(),
+      UserCode: normalizedCode,
+      Ip: ip ?? null,
+      MaxAttempts: getLoginMaxAttempts(),
+      LockoutMinutes: getLockoutMinutes(),
     }
   );
 }
@@ -366,17 +270,9 @@ export async function registerLoginSuccess(userCode: string) {
   if (!ready) return;
 
   const normalizedCode = normalizeUserCode(userCode);
-  await execute(
-    `
-    UPDATE sec.AuthIdentity
-    SET
-      FailedLoginCount = 0,
-      LastLoginAtUtc = SYSUTCDATETIME(),
-      LockoutUntilUtc = NULL,
-      UpdatedAtUtc = SYSUTCDATETIME()
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-    `,
-    { userCode: normalizedCode }
+  await callSp(
+    "usp_Sec_Auth_RegisterLoginSuccess",
+    { UserCode: normalizedCode }
   );
 }
 
@@ -403,41 +299,12 @@ export async function registerUser(input: RegisterUserInput) {
 
   const passwordHash = await hashPassword(input.password);
 
-  await execute(
-    `
-    INSERT INTO dbo.Usuarios (
-      Cod_Usuario,
-      Password,
-      Nombre,
-      Tipo,
-      Updates,
-      Addnews,
-      Deletes,
-      Creador,
-      Cambiar,
-      PrecioMinimo,
-      Credito,
-      IsAdmin
-    )
-    VALUES (
-      @userCode,
-      @passwordHash,
-      @nombre,
-      N'USER',
-      1,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0
-    )
-    `,
+  await callSp(
+    "usp_Sec_Auth_RegisterUser",
     {
-      userCode,
-      passwordHash,
-      nombre: input.nombre,
+      UserCode: userCode,
+      PasswordHash: passwordHash,
+      Nombre: input.nombre,
     }
   );
 
@@ -474,24 +341,9 @@ export async function verifyEmailWithToken(token: string) {
   }
 
   const tokenHash = hashToken(String(token ?? "").trim());
-  const consumed = await query<{ UserCode: string; EmailNormalized: string }>(
-    `
-    ;WITH target AS (
-      SELECT TOP 1 TokenId
-      FROM sec.AuthToken
-      WHERE TokenHash = @tokenHash
-        AND TokenType = 'VERIFY_EMAIL'
-        AND ConsumedAtUtc IS NULL
-        AND ExpiresAtUtc >= SYSUTCDATETIME()
-      ORDER BY TokenId DESC
-    )
-    UPDATE t
-    SET ConsumedAtUtc = SYSUTCDATETIME()
-    OUTPUT inserted.UserCode AS UserCode, inserted.EmailNormalized AS EmailNormalized
-    FROM sec.AuthToken t
-    INNER JOIN target x ON x.TokenId = t.TokenId;
-    `,
-    { tokenHash }
+  const consumed = await callSp<{ UserCode: string; EmailNormalized: string }>(
+    "usp_Sec_Auth_ConsumeToken",
+    { TokenHash: tokenHash, TokenType: "VERIFY_EMAIL" }
   );
 
   if (consumed.length === 0) {
@@ -499,18 +351,9 @@ export async function verifyEmailWithToken(token: string) {
   }
 
   const userCode = normalizeUserCode(consumed[0].UserCode);
-  await execute(
-    `
-    UPDATE sec.AuthIdentity
-    SET
-      IsRegistrationPending = 0,
-      EmailVerifiedAtUtc = SYSUTCDATETIME(),
-      FailedLoginCount = 0,
-      LockoutUntilUtc = NULL,
-      UpdatedAtUtc = SYSUTCDATETIME()
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-    `,
-    { userCode }
+  await callSp(
+    "usp_Sec_Auth_VerifyEmail",
+    { UserCode: userCode }
   );
 
   return { success: true, userCode };
@@ -535,28 +378,18 @@ async function resolveUserByIdentifier(identifier: string): Promise<ResolveUserR
   const userCode = normalizeUserCode(normalized);
   const emailNormalized = normalizeEmail(normalized);
 
-  const rows = await query<{
+  const rows = await callSp<{
     UserCode: string;
     Email: string | null;
     EmailNormalized: string | null;
     IsRegistrationPending: boolean;
     EmailVerifiedAtUtc: Date | null;
   }>(
-    `
-    SELECT TOP 1
-      ai.UserCode AS UserCode,
-      ai.Email AS Email,
-      ai.EmailNormalized AS EmailNormalized,
-      ai.IsRegistrationPending AS IsRegistrationPending,
-      ai.EmailVerifiedAtUtc AS EmailVerifiedAtUtc
-    FROM sec.AuthIdentity ai
-    WHERE
-      (${isEmail ? "ai.EmailNormalized = @emailNormalized" : "UPPER(ai.UserCode) = UPPER(@userCode)"})
-    `
-    ,
+    "usp_Sec_Auth_ResolveByIdentifier",
     {
-      userCode,
-      emailNormalized,
+      UserCode: userCode,
+      EmailNormalized: emailNormalized,
+      IsEmail: isEmail ? 1 : 0,
     }
   );
 
@@ -582,15 +415,9 @@ export async function resendVerification(identifier: string, ip?: string, userAg
     return { success: true };
   }
 
-  await execute(
-    `
-    UPDATE sec.AuthToken
-    SET ConsumedAtUtc = ISNULL(ConsumedAtUtc, SYSUTCDATETIME())
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-      AND TokenType = 'VERIFY_EMAIL'
-      AND ConsumedAtUtc IS NULL
-    `,
-    { userCode: resolved.userCode }
+  await callSp(
+    "usp_Sec_Auth_InvalidateTokens",
+    { UserCode: resolved.userCode, TokenType: "VERIFY_EMAIL" }
   );
 
   const rawToken = await issueToken({
@@ -611,15 +438,9 @@ export async function requestPasswordReset(identifier: string, ip?: string, user
     return { success: true };
   }
 
-  await execute(
-    `
-    UPDATE sec.AuthToken
-    SET ConsumedAtUtc = ISNULL(ConsumedAtUtc, SYSUTCDATETIME())
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-      AND TokenType = 'RESET_PASSWORD'
-      AND ConsumedAtUtc IS NULL
-    `,
-    { userCode: resolved.userCode }
+  await callSp(
+    "usp_Sec_Auth_InvalidateTokens",
+    { UserCode: resolved.userCode, TokenType: "RESET_PASSWORD" }
   );
 
   const rawToken = await issueToken({
@@ -641,24 +462,9 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   }
 
   const tokenHash = hashToken(String(token ?? "").trim());
-  const consumed = await query<{ UserCode: string }>(
-    `
-    ;WITH target AS (
-      SELECT TOP 1 TokenId
-      FROM sec.AuthToken
-      WHERE TokenHash = @tokenHash
-        AND TokenType = 'RESET_PASSWORD'
-        AND ConsumedAtUtc IS NULL
-        AND ExpiresAtUtc >= SYSUTCDATETIME()
-      ORDER BY TokenId DESC
-    )
-    UPDATE t
-    SET ConsumedAtUtc = SYSUTCDATETIME()
-    OUTPUT inserted.UserCode AS UserCode
-    FROM sec.AuthToken t
-    INNER JOIN target x ON x.TokenId = t.TokenId;
-    `,
-    { tokenHash }
+  const consumed = await callSp<{ UserCode: string }>(
+    "usp_Sec_Auth_ConsumeToken",
+    { TokenHash: tokenHash, TokenType: "RESET_PASSWORD" }
   );
 
   if (consumed.length === 0) {
@@ -668,29 +474,14 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   const userCode = normalizeUserCode(consumed[0].UserCode);
   const passwordHash = await hashPassword(newPassword);
 
-  await execute(
-    `
-    UPDATE dbo.Usuarios
-    SET Password = @passwordHash
-    WHERE UPPER(Cod_Usuario) = UPPER(@userCode)
-    `,
-    {
-      userCode,
-      passwordHash,
-    }
+  await callSp(
+    "usp_Sec_Auth_UpdatePassword",
+    { UserCode: userCode, PasswordHash: passwordHash }
   );
 
-  await execute(
-    `
-    UPDATE sec.AuthIdentity
-    SET
-      FailedLoginCount = 0,
-      LockoutUntilUtc = NULL,
-      PasswordChangedAtUtc = SYSUTCDATETIME(),
-      UpdatedAtUtc = SYSUTCDATETIME()
-    WHERE UPPER(UserCode) = UPPER(@userCode)
-    `,
-    { userCode }
+  await callSp(
+    "usp_Sec_Auth_ResetLockout",
+    { UserCode: userCode }
   );
 
   return { success: true, userCode };

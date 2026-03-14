@@ -1,4 +1,4 @@
-import { query } from "../../db/query.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 export interface BancoRow {
@@ -45,17 +45,8 @@ async function getScope(): Promise<Scope> {
   }
   if (scopeCache) return scopeCache;
 
-  const rows = await query<{ companyId: number; systemUserId: number | null }>(
-    `
-    SELECT TOP 1
-      c.CompanyId AS companyId,
-      su.UserId AS systemUserId
-    FROM cfg.Company c
-    LEFT JOIN sec.[User] su
-      ON su.UserCode = N'SYSTEM'
-    WHERE c.CompanyCode = N'DEFAULT'
-    ORDER BY c.CompanyId
-    `
+  const rows = await callSp<{ companyId: number; systemUserId: number | null }>(
+    "usp_Cfg_Scope_GetDefaultCompanyUser"
   );
 
   const first = rows[0];
@@ -78,14 +69,9 @@ async function resolveUserId(userCode?: string): Promise<number | null> {
     return (await getScope()).systemUserId;
   }
 
-  const rows = await query<{ userId: number }>(
-    `
-    SELECT TOP 1 UserId AS userId
-    FROM sec.[User]
-    WHERE UPPER(UserCode) = UPPER(@code)
-    ORDER BY UserId
-    `,
-    { code }
+  const rows = await callSp<{ userId: number }>(
+    "usp_Sec_User_ResolveByCode",
+    { Code: code }
   );
 
   if (rows[0]?.userId != null) return Number(rows[0].userId);
@@ -108,46 +94,22 @@ export async function listBancosSP(params: ListBancosParams = {}): Promise<ListB
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
   const offset = (page - 1) * limit;
 
-  const where: string[] = ["CompanyId = @companyId", "IsActive = 1"];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    offset,
-    limit,
-  };
+  const search = params.search?.trim() ? `%${params.search.trim()}%` : null;
 
-  if (params.search?.trim()) {
-    where.push("(BankName LIKE @search OR ContactName LIKE @search)");
-    sqlParams.search = `%${params.search.trim()}%`;
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<BancoRow>(
-    `
-    SELECT
-      BankName AS Nombre,
-      ContactName AS Contacto,
-      AddressLine AS Direccion,
-      Phones AS Telefonos
-    FROM fin.Bank
-    ${clause}
-    ORDER BY BankName
-    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-    `,
-    sqlParams
-  );
-
-  const totalRows = await query<{ total: number }>(
-    `
-    SELECT COUNT(1) AS total
-    FROM fin.Bank
-    ${clause}
-    `,
-    sqlParams
+  const { rows, output } = await callSpOut<BancoRow>(
+    "usp_Fin_Bank_List",
+    {
+      CompanyId: scope.companyId,
+      Search: search,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
   );
 
   return {
     rows,
-    total: Number(totalRows[0]?.total ?? 0),
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
   };
@@ -155,22 +117,11 @@ export async function listBancosSP(params: ListBancosParams = {}): Promise<ListB
 
 export async function getBancoByNombreSP(nombre: string): Promise<BancoRow | null> {
   const scope = await getScope();
-  const rows = await query<BancoRow>(
-    `
-    SELECT TOP 1
-      BankName AS Nombre,
-      ContactName AS Contacto,
-      AddressLine AS Direccion,
-      Phones AS Telefonos
-    FROM fin.Bank
-    WHERE CompanyId = @companyId
-      AND IsActive = 1
-      AND BankName = @nombre
-    ORDER BY BankId DESC
-    `,
+  const rows = await callSp<BancoRow>(
+    "usp_Fin_Bank_GetByName",
     {
-      companyId: scope.companyId,
-      nombre: String(nombre ?? "").trim(),
+      CompanyId: scope.companyId,
+      BankName: String(nombre ?? "").trim(),
     }
   );
 
@@ -182,57 +133,26 @@ export async function insertBancoSP(row: BancoRow): Promise<SpResult> {
   const bankName = String(row.Nombre ?? "").trim();
   if (!bankName) return { success: false, message: "Nombre es obligatorio" };
 
-  const exists = await query<{ found: number }>(
-    `
-    SELECT TOP 1 1 AS found
-    FROM fin.Bank
-    WHERE CompanyId = @companyId
-      AND BankName = @bankName
-    `,
-    { companyId: scope.companyId, bankName }
-  );
-  if (exists[0]?.found === 1) {
-    return { success: false, message: "Banco ya existe" };
-  }
-
   const userId = await resolveUserId(String(row.Co_Usuario ?? ""));
-  await query(
-    `
-    INSERT INTO fin.Bank (
-      CompanyId,
-      BankCode,
-      BankName,
-      ContactName,
-      AddressLine,
-      Phones,
-      IsActive,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    VALUES (
-      @companyId,
-      @bankCode,
-      @bankName,
-      @contacto,
-      @direccion,
-      @telefonos,
-      1,
-      @userId,
-      @userId
-    )
-    `,
+
+  const { output } = await callSpOut(
+    "usp_Fin_Bank_Insert",
     {
-      companyId: scope.companyId,
-      bankCode: toBankCode(bankName),
-      bankName,
-      contacto: row.Contacto ?? null,
-      direccion: row.Direccion ?? null,
-      telefonos: row.Telefonos ?? null,
-      userId,
-    }
+      CompanyId: scope.companyId,
+      BankCode: toBankCode(bankName),
+      BankName: bankName,
+      ContactName: row.Contacto ?? null,
+      AddressLine: row.Direccion ?? null,
+      Phones: row.Telefonos ?? null,
+      UserId: userId,
+    },
+    { Success: sql.Bit, Message: sql.NVarChar(200) }
   );
 
-  return { success: true, message: "Banco creado" };
+  return {
+    success: Boolean(output.Success),
+    message: String(output.Message ?? ""),
+  };
 }
 
 export async function updateBancoSP(nombre: string, row: Partial<BancoRow>): Promise<SpResult> {
@@ -241,35 +161,24 @@ export async function updateBancoSP(nombre: string, row: Partial<BancoRow>): Pro
   if (!currentName) return { success: false, message: "Nombre invalido" };
 
   const userId = await resolveUserId(String(row.Co_Usuario ?? ""));
-  const affected = await query<{ affected: number }>(
-    `
-    UPDATE fin.Bank
-    SET
-      ContactName = COALESCE(@contacto, ContactName),
-      AddressLine = COALESCE(@direccion, AddressLine),
-      Phones = COALESCE(@telefonos, Phones),
-      UpdatedAt = SYSUTCDATETIME(),
-      UpdatedByUserId = @userId
-    WHERE CompanyId = @companyId
-      AND BankName = @bankName
-      AND IsActive = 1;
 
-    SELECT @@ROWCOUNT AS affected;
-    `,
+  const { output } = await callSpOut(
+    "usp_Fin_Bank_Update",
     {
-      companyId: scope.companyId,
-      bankName: currentName,
-      contacto: row.Contacto ?? null,
-      direccion: row.Direccion ?? null,
-      telefonos: row.Telefonos ?? null,
-      userId,
-    }
+      CompanyId: scope.companyId,
+      BankName: currentName,
+      ContactName: row.Contacto ?? null,
+      AddressLine: row.Direccion ?? null,
+      Phones: row.Telefonos ?? null,
+      UserId: userId,
+    },
+    { Success: sql.Bit, Message: sql.NVarChar(200) }
   );
 
-  if (Number(affected[0]?.affected ?? 0) <= 0) {
-    return { success: false, message: "Banco no encontrado" };
-  }
-  return { success: true, message: "Banco actualizado" };
+  return {
+    success: Boolean(output.Success),
+    message: String(output.Message ?? ""),
+  };
 }
 
 export async function deleteBancoSP(nombre: string): Promise<SpResult> {
@@ -278,28 +187,19 @@ export async function deleteBancoSP(nombre: string): Promise<SpResult> {
   if (!bankName) return { success: false, message: "Nombre invalido" };
 
   const userId = (await getScope()).systemUserId;
-  const affected = await query<{ affected: number }>(
-    `
-    UPDATE fin.Bank
-    SET
-      IsActive = 0,
-      UpdatedAt = SYSUTCDATETIME(),
-      UpdatedByUserId = @userId
-    WHERE CompanyId = @companyId
-      AND BankName = @bankName
-      AND IsActive = 1;
 
-    SELECT @@ROWCOUNT AS affected;
-    `,
+  const { output } = await callSpOut(
+    "usp_Fin_Bank_Delete",
     {
-      companyId: scope.companyId,
-      bankName,
-      userId,
-    }
+      CompanyId: scope.companyId,
+      BankName: bankName,
+      UserId: userId,
+    },
+    { Success: sql.Bit, Message: sql.NVarChar(200) }
   );
 
-  if (Number(affected[0]?.affected ?? 0) <= 0) {
-    return { success: false, message: "Banco no encontrado" };
-  }
-  return { success: true, message: "Banco eliminado" };
+  return {
+    success: Boolean(output.Success),
+    message: String(output.Message ?? ""),
+  };
 }

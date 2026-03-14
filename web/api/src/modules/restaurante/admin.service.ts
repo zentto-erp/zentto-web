@@ -1,5 +1,6 @@
 
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
+import { getPool } from "../../db/mssql.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 interface DefaultScope {
@@ -21,21 +22,8 @@ async function getDefaultScope(): Promise<DefaultScope> {
   }
   if (scopeCache) return scopeCache;
 
-  const rows = await query<{ companyId: number; branchId: number; systemUserId: number | null }>(
-    `
-    SELECT TOP 1
-      c.CompanyId AS companyId,
-      b.BranchId AS branchId,
-      su.UserId AS systemUserId
-    FROM cfg.Company c
-    INNER JOIN cfg.Branch b
-      ON b.CompanyId = c.CompanyId
-     AND b.BranchCode = N'MAIN'
-    LEFT JOIN sec.[User] su
-      ON su.UserCode = N'SYSTEM'
-    WHERE c.CompanyCode = N'DEFAULT'
-    ORDER BY c.CompanyId, b.BranchId
-    `
+  const rows = await callSp<{ companyId: number; branchId: number; systemUserId: number | null }>(
+    "usp_Cfg_Scope_GetDefault"
   );
 
   const row = rows[0];
@@ -58,14 +46,9 @@ async function resolveUserId(codUsuario?: string): Promise<number | null> {
   const code = String(codUsuario ?? "").trim();
   if (!code) return (await getDefaultScope()).systemUserId;
 
-  const rows = await query<{ userId: number }>(
-    `
-    SELECT TOP 1 UserId AS userId
-    FROM sec.[User]
-    WHERE UPPER(UserCode) = UPPER(@code)
-    ORDER BY UserId
-    `,
-    { code }
+  const rows = await callSp<{ userId: number }>(
+    "usp_Sec_User_ResolveByCode",
+    { Code: code }
   );
 
   if (rows[0]?.userId != null) return Number(rows[0].userId);
@@ -77,23 +60,9 @@ async function resolveSupplierId(value?: string) {
   const key = String(value ?? "").trim();
   if (!key) return null;
 
-  const rows = await query<{ supplierId: number }>(
-    `
-    SELECT TOP 1 SupplierId AS supplierId
-    FROM [master].Supplier
-    WHERE CompanyId = @companyId
-      AND IsDeleted = 0
-      AND IsActive = 1
-      AND (
-        SupplierCode = @key
-        OR CAST(SupplierId AS NVARCHAR(30)) = @key
-      )
-    ORDER BY SupplierId
-    `,
-    {
-      companyId: scope.companyId,
-      key,
-    }
+  const rows = await callSp<{ supplierId: number }>(
+    "usp_Rest_Admin_ResolveSupplier",
+    { CompanyId: scope.companyId, Key: key }
   );
 
   return rows[0]?.supplierId == null ? null : Number(rows[0].supplierId);
@@ -104,23 +73,9 @@ async function resolveInventoryProductId(value?: string) {
   const key = String(value ?? "").trim();
   if (!key) return null;
 
-  const rows = await query<{ productId: number }>(
-    `
-    SELECT TOP 1 ProductId AS productId
-    FROM [master].Product
-    WHERE CompanyId = @companyId
-      AND IsDeleted = 0
-      AND IsActive = 1
-      AND (
-        ProductCode = @key
-        OR CAST(ProductId AS NVARCHAR(30)) = @key
-      )
-    ORDER BY ProductId
-    `,
-    {
-      companyId: scope.companyId,
-      key,
-    }
+  const rows = await callSp<{ productId: number }>(
+    "usp_Rest_Admin_ResolveProduct",
+    { CompanyId: scope.companyId, Key: key }
   );
 
   return rows[0]?.productId == null ? null : Number(rows[0].productId);
@@ -128,53 +83,24 @@ async function resolveInventoryProductId(value?: string) {
 
 async function resolveMenuCategoryId(value?: number) {
   if (!value || value <= 0) return null;
-  const rows = await query<{ id: number }>(
-    `SELECT TOP 1 MenuCategoryId AS id FROM rest.MenuCategory WHERE MenuCategoryId = @id`,
-    { id: value }
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_ResolveMenuCategory",
+    { MenuCategoryId: value }
   );
   return rows[0]?.id == null ? null : Number(rows[0].id);
 }
 
 async function recalcPurchaseTotals(purchaseId: number) {
-  await query(
-    `
-    UPDATE p
-    SET
-      SubtotalAmount = x.subtotal,
-      TaxAmount = x.tax,
-      TotalAmount = x.total,
-      UpdatedAt = SYSUTCDATETIME()
-    FROM rest.Purchase p
-    CROSS APPLY (
-      SELECT
-        COALESCE(SUM(SubtotalAmount), 0) AS subtotal,
-        COALESCE(SUM(SubtotalAmount * TaxRatePercent / 100.0), 0) AS tax,
-        COALESCE(SUM(SubtotalAmount + (SubtotalAmount * TaxRatePercent / 100.0)), 0) AS total
-      FROM rest.PurchaseLine
-      WHERE PurchaseId = @purchaseId
-    ) x
-    WHERE p.PurchaseId = @purchaseId
-    `,
-    { purchaseId }
-  );
+  await callSp("usp_Rest_Admin_Compra_RecalcTotals", { PurchaseId: purchaseId });
 }
 
 async function adjustStock(inventoryProductId: number | null, deltaQty: number) {
   if (!inventoryProductId || !Number.isFinite(deltaQty) || deltaQty === 0) return;
 
-  await query(
-    `
-    UPDATE [master].Product
-    SET
-      StockQty = COALESCE(StockQty, 0) + @deltaQty,
-      UpdatedAt = SYSUTCDATETIME()
-    WHERE ProductId = @productId
-    `,
-    {
-      productId: inventoryProductId,
-      deltaQty,
-    }
-  );
+  await callSp("usp_Rest_Admin_AdjustStock", {
+    ProductId: inventoryProductId,
+    DeltaQty: deltaQty,
+  });
 }
 
 function toCode(name: string, fallback: string) {
@@ -205,120 +131,20 @@ async function syncMenuProductImageLink(
   const storageKey = extractStorageKeyFromUrl(imageUrl);
   if (!storageKey) return;
 
-  const mediaRows = await query<{ mediaAssetId: number }>(
-    `
-    SELECT TOP 1 MediaAssetId AS mediaAssetId
-    FROM cfg.MediaAsset
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND StorageKey = @storageKey
-      AND IsDeleted = 0
-      AND IsActive = 1
-    ORDER BY MediaAssetId DESC
-    `,
-    {
-      companyId,
-      branchId,
-      storageKey,
-    }
-  );
-
-  const mediaAssetId = Number(mediaRows[0]?.mediaAssetId ?? 0);
-  if (!Number.isFinite(mediaAssetId) || mediaAssetId <= 0) return;
-
-  await query(
-    `
-    UPDATE cfg.EntityImage
-    SET
-      IsPrimary = 0,
-      UpdatedAt = SYSUTCDATETIME(),
-      UpdatedByUserId = @userId
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND EntityType = N'REST_MENU_PRODUCT'
-      AND EntityId = @entityId
-      AND IsDeleted = 0
-      AND IsActive = 1;
-
-    IF EXISTS (
-      SELECT 1
-      FROM cfg.EntityImage
-      WHERE CompanyId = @companyId
-        AND BranchId = @branchId
-        AND EntityType = N'REST_MENU_PRODUCT'
-        AND EntityId = @entityId
-        AND MediaAssetId = @mediaAssetId
-    )
-    BEGIN
-      UPDATE cfg.EntityImage
-      SET
-        IsPrimary = 1,
-        SortOrder = 0,
-        IsActive = 1,
-        IsDeleted = 0,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE CompanyId = @companyId
-        AND BranchId = @branchId
-        AND EntityType = N'REST_MENU_PRODUCT'
-        AND EntityId = @entityId
-        AND MediaAssetId = @mediaAssetId;
-    END
-    ELSE
-    BEGIN
-      INSERT INTO cfg.EntityImage (
-        CompanyId,
-        BranchId,
-        EntityType,
-        EntityId,
-        MediaAssetId,
-        SortOrder,
-        IsPrimary,
-        CreatedByUserId,
-        UpdatedByUserId
-      )
-      VALUES (
-        @companyId,
-        @branchId,
-        N'REST_MENU_PRODUCT',
-        @entityId,
-        @mediaAssetId,
-        0,
-        1,
-        @userId,
-        @userId
-      );
-    END
-    `,
-    {
-      companyId,
-      branchId,
-      entityId: menuProductId,
-      mediaAssetId,
-      userId,
-    }
-  );
+  await callSp("usp_Rest_Admin_SyncMenuProductImage", {
+    CompanyId: companyId,
+    BranchId: branchId,
+    MenuProductId: menuProductId,
+    StorageKey: storageKey,
+    UserId: userId,
+  });
 }
 
 export async function listAmbientes() {
   const scope = await getDefaultScope();
-  const rows = await query<any>(
-    `
-    SELECT
-      MenuEnvironmentId AS id,
-      EnvironmentName AS nombre,
-      ColorHex AS color,
-      SortOrder AS orden
-    FROM rest.MenuEnvironment
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND IsActive = 1
-    ORDER BY SortOrder, EnvironmentName
-    `,
-    {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-    }
+  const rows = await callSp<any>(
+    "usp_Rest_Admin_Ambiente_List",
+    { CompanyId: scope.companyId, BranchId: scope.branchId }
   );
 
   return { rows, executionMode: "ts_canonical" as const };
@@ -330,89 +156,28 @@ export async function upsertAmbiente(data: { id?: number; nombre: string; color?
   const nombre = String(data.nombre ?? "").trim();
   if (!nombre) throw new Error("nombre obligatorio");
 
-  if (data.id && data.id > 0) {
-    await query(
-      `
-      UPDATE rest.MenuEnvironment
-      SET
-        EnvironmentName = @nombre,
-        ColorHex = @color,
-        SortOrder = @orden,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE MenuEnvironmentId = @id
-      `,
-      {
-        id: data.id,
-        nombre,
-        color: data.color ?? null,
-        orden: Number(data.orden ?? 0),
-        userId,
-      }
-    );
-    return { ok: true, id: data.id };
-  }
-
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.MenuEnvironment (
-      CompanyId,
-      BranchId,
-      EnvironmentCode,
-      EnvironmentName,
-      ColorHex,
-      SortOrder,
-      IsActive,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    OUTPUT INSERTED.MenuEnvironmentId AS id
-    VALUES (
-      @companyId,
-      @branchId,
-      @code,
-      @nombre,
-      @color,
-      @orden,
-      1,
-      @userId,
-      @userId
-    )
-    `,
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Ambiente_Upsert",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      code: toCode(nombre, "AMBIENTE"),
-      nombre,
-      color: data.color ?? null,
-      orden: Number(data.orden ?? 0),
-      userId,
+      Id: data.id && data.id > 0 ? data.id : 0,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Code: toCode(nombre, "AMBIENTE"),
+      Nombre: nombre,
+      Color: data.color ?? null,
+      Orden: Number(data.orden ?? 0),
+      UserId: userId,
     }
   );
 
-  return { ok: true, id: Number(inserted[0]?.id ?? 0) };
+  return { ok: true, id: Number(rows[0]?.id ?? data.id ?? 0) };
 }
 
 export async function listCategoriasMenu() {
   const scope = await getDefaultScope();
-  const rows = await query<any>(
-    `
-    SELECT
-      MenuCategoryId AS id,
-      CategoryName AS nombre,
-      DescriptionText AS descripcion,
-      ColorHex AS color,
-      SortOrder AS orden
-    FROM rest.MenuCategory
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND IsActive = 1
-    ORDER BY SortOrder, CategoryName
-    `,
-    {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-    }
+  const rows = await callSp<any>(
+    "usp_Rest_Admin_Categoria_List",
+    { CompanyId: scope.companyId, BranchId: scope.branchId }
   );
 
   return { rows, executionMode: "ts_canonical" as const };
@@ -424,137 +189,37 @@ export async function upsertCategoriaMenu(data: { id?: number; nombre: string; d
   const nombre = String(data.nombre ?? "").trim();
   if (!nombre) throw new Error("nombre obligatorio");
 
-  if (data.id && data.id > 0) {
-    await query(
-      `
-      UPDATE rest.MenuCategory
-      SET
-        CategoryName = @nombre,
-        DescriptionText = @descripcion,
-        ColorHex = @color,
-        SortOrder = @orden,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE MenuCategoryId = @id
-      `,
-      {
-        id: data.id,
-        nombre,
-        descripcion: data.descripcion ?? null,
-        color: data.color ?? null,
-        orden: Number(data.orden ?? 0),
-        userId,
-      }
-    );
-    return { ok: true, id: data.id };
-  }
-
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.MenuCategory (
-      CompanyId,
-      BranchId,
-      CategoryCode,
-      CategoryName,
-      DescriptionText,
-      ColorHex,
-      SortOrder,
-      IsActive,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    OUTPUT INSERTED.MenuCategoryId AS id
-    VALUES (
-      @companyId,
-      @branchId,
-      @code,
-      @nombre,
-      @descripcion,
-      @color,
-      @orden,
-      1,
-      @userId,
-      @userId
-    )
-    `,
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Categoria_Upsert",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      code: toCode(nombre, "CATEGORIA"),
-      nombre,
-      descripcion: data.descripcion ?? null,
-      color: data.color ?? null,
-      orden: Number(data.orden ?? 0),
-      userId,
+      Id: data.id && data.id > 0 ? data.id : 0,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Code: toCode(nombre, "CATEGORIA"),
+      Nombre: nombre,
+      Descripcion: data.descripcion ?? null,
+      Color: data.color ?? null,
+      Orden: Number(data.orden ?? 0),
+      UserId: userId,
     }
   );
 
-  return { ok: true, id: Number(inserted[0]?.id ?? 0) };
+  return { ok: true, id: Number(rows[0]?.id ?? data.id ?? 0) };
 }
 
 export async function listProductosMenu(params: { categoriaId?: number; search?: string; soloDisponibles?: boolean }) {
   const scope = await getDefaultScope();
-  const where: string[] = [
-    "mp.CompanyId = @companyId",
-    "mp.BranchId = @branchId",
-    "mp.IsActive = 1",
-  ];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-  };
+  const search = params.search?.trim() ? `%${params.search.trim()}%` : null;
 
-  if (params.soloDisponibles ?? true) {
-    where.push("mp.IsAvailable = 1");
-  }
-  if (params.categoriaId && params.categoriaId > 0) {
-    where.push("mp.MenuCategoryId = @menuCategoryId");
-    sqlParams.menuCategoryId = params.categoriaId;
-  }
-  if (params.search?.trim()) {
-    where.push("(mp.ProductCode LIKE @search OR mp.ProductName LIKE @search)");
-    sqlParams.search = `%${params.search.trim()}%`;
-  }
-
-  const rows = await query<any>(
-    `
-    SELECT
-      mp.MenuProductId AS id,
-      mp.ProductCode AS codigo,
-      mp.ProductName AS nombre,
-      mp.DescriptionText AS descripcion,
-      mp.MenuCategoryId AS categoriaId,
-      mc.CategoryName AS categoriaNombre,
-      mp.PriceAmount AS precio,
-      mp.EstimatedCost AS costoEstimado,
-      mp.TaxRatePercent AS iva,
-      mp.IsComposite AS esCompuesto,
-      mp.PrepMinutes AS tiempoPreparacion,
-      COALESCE(img.PublicUrl, mp.ImageUrl) AS imagen,
-      mp.IsDailySuggestion AS esSugerenciaDelDia,
-      mp.IsAvailable AS disponible,
-      inv.ProductCode AS articuloInventarioId
-    FROM rest.MenuProduct mp
-    LEFT JOIN rest.MenuCategory mc ON mc.MenuCategoryId = mp.MenuCategoryId
-    LEFT JOIN [master].Product inv ON inv.ProductId = mp.InventoryProductId
-    OUTER APPLY (
-      SELECT TOP 1 ma.PublicUrl
-      FROM cfg.EntityImage ei
-      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
-      WHERE ei.CompanyId = mp.CompanyId
-        AND ei.BranchId = mp.BranchId
-        AND ei.EntityType = N'REST_MENU_PRODUCT'
-        AND ei.EntityId = mp.MenuProductId
-        AND ei.IsDeleted = 0
-        AND ei.IsActive = 1
-        AND ma.IsDeleted = 0
-        AND ma.IsActive = 1
-      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
-    ) img
-    WHERE ${where.join(" AND ")}
-    ORDER BY mp.ProductName
-    `,
-    sqlParams
+  const rows = await callSp<any>(
+    "usp_Rest_Admin_Producto_List",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      MenuCategoryId: params.categoriaId && params.categoriaId > 0 ? params.categoriaId : null,
+      Search: search,
+      SoloDisponibles: (params.soloDisponibles ?? true) ? 1 : 0,
+    }
   );
 
   return { rows, executionMode: "ts_canonical" as const };
@@ -562,71 +227,22 @@ export async function listProductosMenu(params: { categoriaId?: number; search?:
 
 export async function getProductoMenu(id: number) {
   const scope = await getDefaultScope();
-  const rows = await query<any>(
-    `
-    SELECT TOP 1
-      mp.MenuProductId AS id,
-      mp.ProductCode AS codigo,
-      mp.ProductName AS nombre,
-      mp.DescriptionText AS descripcion,
-      mp.MenuCategoryId AS categoriaId,
-      mp.PriceAmount AS precio,
-      mp.EstimatedCost AS costoEstimado,
-      mp.TaxRatePercent AS iva,
-      mp.IsComposite AS esCompuesto,
-      mp.PrepMinutes AS tiempoPreparacion,
-      COALESCE(img.PublicUrl, mp.ImageUrl) AS imagen,
-      mp.IsDailySuggestion AS esSugerenciaDelDia,
-      mp.IsAvailable AS disponible,
-      inv.ProductCode AS articuloInventarioId
-    FROM rest.MenuProduct mp
-    LEFT JOIN [master].Product inv ON inv.ProductId = mp.InventoryProductId
-    OUTER APPLY (
-      SELECT TOP 1 ma.PublicUrl
-      FROM cfg.EntityImage ei
-      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
-      WHERE ei.CompanyId = mp.CompanyId
-        AND ei.BranchId = mp.BranchId
-        AND ei.EntityType = N'REST_MENU_PRODUCT'
-        AND ei.EntityId = mp.MenuProductId
-        AND ei.IsDeleted = 0
-        AND ei.IsActive = 1
-        AND ma.IsDeleted = 0
-        AND ma.IsActive = 1
-      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
-    ) img
-    WHERE mp.MenuProductId = @id
-      AND mp.IsActive = 1
-    `,
-    { id }
-  );
 
-  const producto = rows[0] ?? null;
+  const pool = await getPool();
+  const request = pool.request();
+  request.input("Id", id);
+  request.input("BranchId", scope.branchId);
+  const result = await request.execute("usp_Rest_Admin_Producto_Get");
+
+  const recordsets = result.recordsets as any[];
+  const productoRows = (recordsets[0] ?? []) as any[];
+  const componentRows = (recordsets[1] ?? []) as any[];
+  const receta = (recordsets[2] ?? []) as any[];
+
+  const producto = productoRows[0] ?? null;
   if (!producto) {
     return { producto: null, componentes: [], receta: [], executionMode: "ts_canonical" as const };
   }
-
-  const componentRows = await query<any>(
-    `
-    SELECT
-      c.MenuComponentId AS id,
-      c.ComponentName AS nombre,
-      c.IsRequired AS obligatorio,
-      c.SortOrder AS orden,
-      o.MenuOptionId AS opcionId,
-      o.OptionName AS opcionNombre,
-      o.ExtraPrice AS precioExtra,
-      o.SortOrder AS opcionOrden
-    FROM rest.MenuComponent c
-    LEFT JOIN rest.MenuOption o
-      ON o.MenuComponentId = c.MenuComponentId
-     AND o.IsActive = 1
-    WHERE c.MenuProductId = @id
-      AND c.IsActive = 1
-    ORDER BY c.SortOrder, c.MenuComponentId, o.SortOrder, o.MenuOptionId
-    `,
-    { id }
-  );
 
   const componentMap: Record<number, any> = {};
   for (const row of componentRows) {
@@ -649,40 +265,6 @@ export async function getProductoMenu(id: number) {
       });
     }
   }
-
-  const receta = await query<any>(
-    `
-    SELECT
-      r.MenuRecipeId AS id,
-      r.MenuProductId AS productoId,
-      p.ProductCode AS inventarioId,
-      p.ProductName AS descripcion,
-      img.PublicUrl AS imagen,
-      r.Quantity AS cantidad,
-      r.UnitCode AS unidad,
-      r.Notes AS comentario
-    FROM rest.MenuRecipe r
-    INNER JOIN [master].Product p ON p.ProductId = r.IngredientProductId
-    OUTER APPLY (
-      SELECT TOP 1 ma.PublicUrl
-      FROM cfg.EntityImage ei
-      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
-      WHERE ei.CompanyId = p.CompanyId
-        AND ei.BranchId = @branchId
-        AND ei.EntityType = N'MASTER_PRODUCT'
-        AND ei.EntityId = p.ProductId
-        AND ei.IsDeleted = 0
-        AND ei.IsActive = 1
-        AND ma.IsDeleted = 0
-        AND ma.IsActive = 1
-      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
-    ) img
-    WHERE r.MenuProductId = @id
-      AND r.IsActive = 1
-    ORDER BY r.MenuRecipeId
-    `,
-    { id, branchId: scope.branchId }
-  );
 
   return {
     producto,
@@ -717,122 +299,38 @@ export async function upsertProductoMenu(data: {
   const menuCategoryId = await resolveMenuCategoryId(data.categoriaId);
   const inventoryProductId = await resolveInventoryProductId(data.articuloInventarioId);
 
-  const payload = {
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-    code,
-    name,
-    description: data.descripcion ?? null,
-    menuCategoryId,
-    price: Number(data.precio ?? 0),
-    estimatedCost: Number(data.costoEstimado ?? 0),
-    taxRatePercent: Number(data.iva ?? 16),
-    isComposite: Boolean(data.esCompuesto ?? false),
-    prepMinutes: Number(data.tiempoPreparacion ?? 0),
-    imageUrl: data.imagen ?? null,
-    isDailySuggestion: Boolean(data.esSugerenciaDelDia ?? false),
-    isAvailable: data.disponible !== false,
-    inventoryProductId,
-    userId,
-  };
-
-  if (data.id && data.id > 0) {
-    await query(
-      `
-      UPDATE rest.MenuProduct
-      SET
-        ProductCode = @code,
-        ProductName = @name,
-        DescriptionText = @description,
-        MenuCategoryId = @menuCategoryId,
-        PriceAmount = @price,
-        EstimatedCost = @estimatedCost,
-        TaxRatePercent = @taxRatePercent,
-        IsComposite = @isComposite,
-        PrepMinutes = @prepMinutes,
-        ImageUrl = @imageUrl,
-        IsDailySuggestion = @isDailySuggestion,
-        IsAvailable = @isAvailable,
-        InventoryProductId = @inventoryProductId,
-        UpdatedAt = SYSUTCDATETIME(),
-        UpdatedByUserId = @userId
-      WHERE MenuProductId = @id
-      `,
-      {
-        ...payload,
-        id: data.id,
-      }
-    );
-    await syncMenuProductImageLink(scope.companyId, scope.branchId, data.id, payload.imageUrl, userId);
-    return { ok: true, id: data.id };
-  }
-
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.MenuProduct (
-      CompanyId,
-      BranchId,
-      ProductCode,
-      ProductName,
-      DescriptionText,
-      MenuCategoryId,
-      PriceAmount,
-      EstimatedCost,
-      TaxRatePercent,
-      IsComposite,
-      PrepMinutes,
-      ImageUrl,
-      IsDailySuggestion,
-      IsAvailable,
-      InventoryProductId,
-      IsActive,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    OUTPUT INSERTED.MenuProductId AS id
-    VALUES (
-      @companyId,
-      @branchId,
-      @code,
-      @name,
-      @description,
-      @menuCategoryId,
-      @price,
-      @estimatedCost,
-      @taxRatePercent,
-      @isComposite,
-      @prepMinutes,
-      @imageUrl,
-      @isDailySuggestion,
-      @isAvailable,
-      @inventoryProductId,
-      1,
-      @userId,
-      @userId
-    )
-    `,
-    payload
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Producto_Upsert",
+    {
+      Id: data.id && data.id > 0 ? data.id : 0,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Code: code,
+      Name: name,
+      Description: data.descripcion ?? null,
+      MenuCategoryId: menuCategoryId,
+      Price: Number(data.precio ?? 0),
+      EstimatedCost: Number(data.costoEstimado ?? 0),
+      TaxRatePercent: Number(data.iva ?? 16),
+      IsComposite: Boolean(data.esCompuesto ?? false) ? 1 : 0,
+      PrepMinutes: Number(data.tiempoPreparacion ?? 0),
+      ImageUrl: data.imagen ?? null,
+      IsDailySuggestion: Boolean(data.esSugerenciaDelDia ?? false) ? 1 : 0,
+      IsAvailable: (data.disponible !== false) ? 1 : 0,
+      InventoryProductId: inventoryProductId,
+      UserId: userId,
+    }
   );
 
-  const insertedId = Number(inserted[0]?.id ?? 0);
-  if (insertedId > 0) {
-    await syncMenuProductImageLink(scope.companyId, scope.branchId, insertedId, payload.imageUrl, userId);
+  const resultId = Number(rows[0]?.id ?? data.id ?? 0);
+  if (resultId > 0) {
+    await syncMenuProductImageLink(scope.companyId, scope.branchId, resultId, data.imagen ?? null, userId);
   }
-  return { ok: true, id: insertedId };
+  return { ok: true, id: resultId };
 }
 
 export async function deleteProductoMenu(id: number) {
-  await query(
-    `
-    UPDATE rest.MenuProduct
-    SET
-      IsActive = 0,
-      IsAvailable = 0,
-      UpdatedAt = SYSUTCDATETIME()
-    WHERE MenuProductId = @id
-    `,
-    { id }
-  );
+  await callSp("usp_Rest_Admin_Producto_Delete", { Id: id });
   return { ok: true };
 }
 
@@ -840,108 +338,36 @@ export async function upsertComponente(data: { id?: number; productoId: number; 
   const nombre = String(data.nombre ?? "").trim();
   if (!nombre) throw new Error("nombre obligatorio");
 
-  if (data.id && data.id > 0) {
-    await query(
-      `
-      UPDATE rest.MenuComponent
-      SET
-        ComponentName = @nombre,
-        IsRequired = @obligatorio,
-        SortOrder = @orden,
-        UpdatedAt = SYSUTCDATETIME()
-      WHERE MenuComponentId = @id
-      `,
-      {
-        id: data.id,
-        nombre,
-        obligatorio: Boolean(data.obligatorio ?? false),
-        orden: Number(data.orden ?? 0),
-      }
-    );
-    return { ok: true, id: data.id };
-  }
-
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.MenuComponent (
-      MenuProductId,
-      ComponentName,
-      IsRequired,
-      SortOrder,
-      IsActive
-    )
-    OUTPUT INSERTED.MenuComponentId AS id
-    VALUES (
-      @productoId,
-      @nombre,
-      @obligatorio,
-      @orden,
-      1
-    )
-    `,
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Componente_Upsert",
     {
-      productoId: data.productoId,
-      nombre,
-      obligatorio: Boolean(data.obligatorio ?? false),
-      orden: Number(data.orden ?? 0),
+      Id: data.id && data.id > 0 ? data.id : 0,
+      ProductoId: data.productoId,
+      Nombre: nombre,
+      Obligatorio: Boolean(data.obligatorio ?? false) ? 1 : 0,
+      Orden: Number(data.orden ?? 0),
     }
   );
 
-  return { ok: true, id: Number(inserted[0]?.id ?? 0) };
+  return { ok: true, id: Number(rows[0]?.id ?? data.id ?? 0) };
 }
 
 export async function upsertOpcion(data: { id?: number; componenteId: number; nombre: string; precioExtra?: number; orden?: number }) {
   const nombre = String(data.nombre ?? "").trim();
   if (!nombre) throw new Error("nombre obligatorio");
 
-  if (data.id && data.id > 0) {
-    await query(
-      `
-      UPDATE rest.MenuOption
-      SET
-        OptionName = @nombre,
-        ExtraPrice = @precioExtra,
-        SortOrder = @orden,
-        UpdatedAt = SYSUTCDATETIME()
-      WHERE MenuOptionId = @id
-      `,
-      {
-        id: data.id,
-        nombre,
-        precioExtra: Number(data.precioExtra ?? 0),
-        orden: Number(data.orden ?? 0),
-      }
-    );
-    return { ok: true, id: data.id };
-  }
-
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.MenuOption (
-      MenuComponentId,
-      OptionName,
-      ExtraPrice,
-      SortOrder,
-      IsActive
-    )
-    OUTPUT INSERTED.MenuOptionId AS id
-    VALUES (
-      @componenteId,
-      @nombre,
-      @precioExtra,
-      @orden,
-      1
-    )
-    `,
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Opcion_Upsert",
     {
-      componenteId: data.componenteId,
-      nombre,
-      precioExtra: Number(data.precioExtra ?? 0),
-      orden: Number(data.orden ?? 0),
+      Id: data.id && data.id > 0 ? data.id : 0,
+      ComponenteId: data.componenteId,
+      Nombre: nombre,
+      PrecioExtra: Number(data.precioExtra ?? 0),
+      Orden: Number(data.orden ?? 0),
     }
   );
 
-  return { ok: true, id: Number(inserted[0]?.id ?? 0) };
+  return { ok: true, id: Number(rows[0]?.id ?? data.id ?? 0) };
 }
 
 export async function upsertRecetaItem(data: { id?: number; productoId: number; inventarioId: string; cantidad: number; unidad?: string; comentario?: string }) {
@@ -950,168 +376,63 @@ export async function upsertRecetaItem(data: { id?: number; productoId: number; 
     throw new Error("Insumo no encontrado");
   }
 
-  if (data.id && data.id > 0) {
-    await query(
-      `
-      UPDATE rest.MenuRecipe
-      SET
-        IngredientProductId = @ingredientProductId,
-        Quantity = @quantity,
-        UnitCode = @unitCode,
-        Notes = @notes,
-        IsActive = 1,
-        UpdatedAt = SYSUTCDATETIME()
-      WHERE MenuRecipeId = @id
-      `,
-      {
-        id: data.id,
-        ingredientProductId,
-        quantity: Number(data.cantidad ?? 0),
-        unitCode: data.unidad ?? null,
-        notes: data.comentario ?? null,
-      }
-    );
-    return { ok: true, id: data.id };
-  }
-
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.MenuRecipe (
-      MenuProductId,
-      IngredientProductId,
-      Quantity,
-      UnitCode,
-      Notes,
-      IsActive
-    )
-    OUTPUT INSERTED.MenuRecipeId AS id
-    VALUES (
-      @productoId,
-      @ingredientProductId,
-      @quantity,
-      @unitCode,
-      @notes,
-      1
-    )
-    `,
+  const rows = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Receta_Upsert",
     {
-      productoId: data.productoId,
-      ingredientProductId,
-      quantity: Number(data.cantidad ?? 0),
-      unitCode: data.unidad ?? null,
-      notes: data.comentario ?? null,
+      Id: data.id && data.id > 0 ? data.id : 0,
+      ProductoId: data.productoId,
+      IngredientProductId: ingredientProductId,
+      Quantity: Number(data.cantidad ?? 0),
+      UnitCode: data.unidad ?? null,
+      Notes: data.comentario ?? null,
     }
   );
 
-  return { ok: true, id: Number(inserted[0]?.id ?? 0) };
+  return { ok: true, id: Number(rows[0]?.id ?? data.id ?? 0) };
 }
 
 export async function deleteRecetaItem(id: number) {
-  await query(
-    `
-    UPDATE rest.MenuRecipe
-    SET
-      IsActive = 0,
-      UpdatedAt = SYSUTCDATETIME()
-    WHERE MenuRecipeId = @id
-    `,
-    { id }
-  );
+  await callSp("usp_Rest_Admin_Receta_Delete", { Id: id });
   return { ok: true };
 }
 
 export async function listCompras(params: { estado?: string; from?: string; to?: string }) {
   const scope = await getDefaultScope();
-  const where: string[] = ["p.CompanyId = @companyId", "p.BranchId = @branchId"];
-  const sqlParams: Record<string, unknown> = {
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-  };
 
-  if (params.estado?.trim()) {
-    where.push("p.Status = @status");
-    sqlParams.status = params.estado.trim().toUpperCase();
-  }
+  let fromDate: Date | null = null;
+  let toDate: Date | null = null;
   if (params.from) {
-    const fromDate = new Date(params.from);
-    if (!Number.isNaN(fromDate.getTime())) {
-      where.push("p.PurchaseDate >= @fromDate");
-      sqlParams.fromDate = fromDate;
-    }
+    const d = new Date(params.from);
+    if (!Number.isNaN(d.getTime())) fromDate = d;
   }
   if (params.to) {
-    const toDate = new Date(params.to);
-    if (!Number.isNaN(toDate.getTime())) {
-      where.push("p.PurchaseDate <= @toDate");
-      sqlParams.toDate = toDate;
-    }
+    const d = new Date(params.to);
+    if (!Number.isNaN(d.getTime())) toDate = d;
   }
 
-  const rows = await query<any>(
-    `
-    SELECT
-      p.PurchaseId AS id,
-      p.PurchaseNumber AS numCompra,
-      s.SupplierCode AS proveedorId,
-      s.SupplierName AS proveedorNombre,
-      p.PurchaseDate AS fechaCompra,
-      p.Status AS estado,
-      p.SubtotalAmount AS subtotal,
-      p.TaxAmount AS iva,
-      p.TotalAmount AS total,
-      p.Notes AS observaciones
-    FROM rest.Purchase p
-    LEFT JOIN [master].Supplier s ON s.SupplierId = p.SupplierId
-    WHERE ${where.join(" AND ")}
-    ORDER BY p.PurchaseDate DESC, p.PurchaseId DESC
-    `,
-    sqlParams
+  const rows = await callSp<any>(
+    "usp_Rest_Admin_Compra_List",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Status: params.estado?.trim() ? params.estado.trim().toUpperCase() : null,
+      FromDate: fromDate,
+      ToDate: toDate,
+    }
   );
 
   return { rows, executionMode: "ts_canonical" as const };
 }
 
 export async function getCompraDetalle(compraId: number) {
-  const headerRows = await query<any>(
-    `
-    SELECT TOP 1
-      p.PurchaseId AS id,
-      p.PurchaseNumber AS numCompra,
-      s.SupplierCode AS proveedorId,
-      s.SupplierName AS proveedorNombre,
-      p.PurchaseDate AS fechaCompra,
-      p.Status AS estado,
-      p.SubtotalAmount AS subtotal,
-      p.TaxAmount AS iva,
-      p.TotalAmount AS total,
-      p.Notes AS observaciones,
-      u.UserCode AS codUsuario
-    FROM rest.Purchase p
-    LEFT JOIN [master].Supplier s ON s.SupplierId = p.SupplierId
-    LEFT JOIN sec.[User] u ON u.UserId = p.CreatedByUserId
-    WHERE p.PurchaseId = @compraId
-    `,
-    { compraId }
-  );
+  const pool = await getPool();
+  const request = pool.request();
+  request.input("CompraId", compraId);
+  const result = await request.execute("usp_Rest_Admin_Compra_GetDetalle");
 
-  const detalle = await query<any>(
-    `
-    SELECT
-      pl.PurchaseLineId AS id,
-      pl.PurchaseId AS compraId,
-      p.ProductCode AS inventarioId,
-      pl.DescriptionText AS descripcion,
-      pl.Quantity AS cantidad,
-      pl.UnitPrice AS precioUnit,
-      pl.SubtotalAmount AS subtotal,
-      pl.TaxRatePercent AS iva
-    FROM rest.PurchaseLine pl
-    LEFT JOIN [master].Product p ON p.ProductId = pl.IngredientProductId
-    WHERE pl.PurchaseId = @compraId
-    ORDER BY pl.PurchaseLineId
-    `,
-    { compraId }
-  );
+  const recordsets2 = result.recordsets as any[];
+  const headerRows = (recordsets2[0] ?? []) as any[];
+  const detalle = (recordsets2[1] ?? []) as any[];
 
   return {
     compra: headerRows[0] ?? null,
@@ -1135,44 +456,22 @@ export async function upsertCompraDetalle(data: {
   const subtotal = Number((quantity * unitPrice).toFixed(2));
 
   if (data.id && data.id > 0) {
-    const prev = await query<{ ingredientProductId: number | null; quantity: number }>(
-      `
-      SELECT TOP 1
-        IngredientProductId AS ingredientProductId,
-        Quantity AS quantity
-      FROM rest.PurchaseLine
-      WHERE PurchaseLineId = @id
-        AND PurchaseId = @compraId
-      `,
-      {
-        id: data.id,
-        compraId: data.compraId,
-      }
+    const prev = await callSp<{ ingredientProductId: number | null; quantity: number }>(
+      "usp_Rest_Admin_CompraLinea_GetPrev",
+      { Id: data.id, CompraId: data.compraId }
     );
 
-    await query(
-      `
-      UPDATE rest.PurchaseLine
-      SET
-        IngredientProductId = @ingredientProductId,
-        DescriptionText = @descripcion,
-        Quantity = @quantity,
-        UnitPrice = @unitPrice,
-        TaxRatePercent = @iva,
-        SubtotalAmount = @subtotal,
-        UpdatedAt = SYSUTCDATETIME()
-      WHERE PurchaseLineId = @id
-        AND PurchaseId = @compraId
-      `,
+    const rows = await callSp<{ id: number }>(
+      "usp_Rest_Admin_CompraLinea_Upsert",
       {
-        id: data.id,
-        compraId: data.compraId,
-        ingredientProductId,
-        descripcion: String(data.descripcion ?? "").trim() || "SIN DESCRIPCION",
-        quantity,
-        unitPrice,
-        iva,
-        subtotal,
+        Id: data.id,
+        CompraId: data.compraId,
+        IngredientProductId: ingredientProductId,
+        Descripcion: String(data.descripcion ?? "").trim() || "SIN DESCRIPCION",
+        Quantity: quantity,
+        UnitPrice: unitPrice,
+        TaxRatePercent: iva,
+        Subtotal: subtotal,
       }
     );
 
@@ -1190,36 +489,17 @@ export async function upsertCompraDetalle(data: {
     return { ok: true, id: data.id, compraId: data.compraId };
   }
 
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.PurchaseLine (
-      PurchaseId,
-      IngredientProductId,
-      DescriptionText,
-      Quantity,
-      UnitPrice,
-      TaxRatePercent,
-      SubtotalAmount
-    )
-    OUTPUT INSERTED.PurchaseLineId AS id
-    VALUES (
-      @compraId,
-      @ingredientProductId,
-      @descripcion,
-      @quantity,
-      @unitPrice,
-      @iva,
-      @subtotal
-    )
-    `,
+  const inserted = await callSp<{ id: number }>(
+    "usp_Rest_Admin_CompraLinea_Upsert",
     {
-      compraId: data.compraId,
-      ingredientProductId,
-      descripcion: String(data.descripcion ?? "").trim() || "SIN DESCRIPCION",
-      quantity,
-      unitPrice,
-      iva,
-      subtotal,
+      Id: 0,
+      CompraId: data.compraId,
+      IngredientProductId: ingredientProductId,
+      Descripcion: String(data.descripcion ?? "").trim() || "SIN DESCRIPCION",
+      Quantity: quantity,
+      UnitPrice: unitPrice,
+      TaxRatePercent: iva,
+      Subtotal: subtotal,
     }
   );
 
@@ -1234,32 +514,13 @@ export async function upsertCompraDetalle(data: {
 }
 
 export async function deleteCompraDetalle(compraId: number, detalleId: number) {
-  const prev = await query<{ ingredientProductId: number | null; quantity: number }>(
-    `
-    SELECT TOP 1
-      IngredientProductId AS ingredientProductId,
-      Quantity AS quantity
-    FROM rest.PurchaseLine
-    WHERE PurchaseLineId = @detalleId
-      AND PurchaseId = @compraId
-    `,
-    {
-      compraId,
-      detalleId,
-    }
-  );
+  const pool = await getPool();
+  const request = pool.request();
+  request.input("CompraId", compraId);
+  request.input("DetalleId", detalleId);
+  const result = await request.execute("usp_Rest_Admin_CompraLinea_Delete");
 
-  await query(
-    `
-    DELETE FROM rest.PurchaseLine
-    WHERE PurchaseLineId = @detalleId
-      AND PurchaseId = @compraId
-    `,
-    {
-      compraId,
-      detalleId,
-    }
-  );
+  const prev = (result.recordset ?? []) as Array<{ ingredientProductId: number | null; quantity: number }>;
 
   const prevProductId = prev[0]?.ingredientProductId == null ? null : Number(prev[0].ingredientProductId);
   const prevQty = Number(prev[0]?.quantity ?? 0);
@@ -1279,56 +540,24 @@ export async function crearCompra(data: {
   const userId = await resolveUserId(data.codUsuario);
   const supplierId = await resolveSupplierId(data.proveedorId);
 
-  const seq = await query<{ seq: number }>(
-    `
-    SELECT COALESCE(MAX(PurchaseId), 0) + 1 AS seq
-    FROM rest.Purchase
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-    `,
-    {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-    }
+  const seqRows = await callSp<{ seq: number }>(
+    "usp_Rest_Admin_Compra_GetNextSeq",
+    { CompanyId: scope.companyId, BranchId: scope.branchId }
   );
 
   const now = new Date();
   const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const purchaseNumber = `RC-${yyyymm}-${String(Number(seq[0]?.seq ?? 1)).padStart(4, "0")}`;
+  const purchaseNumber = `RC-${yyyymm}-${String(Number(seqRows[0]?.seq ?? 1)).padStart(4, "0")}`;
 
-  const inserted = await query<{ id: number }>(
-    `
-    INSERT INTO rest.Purchase (
-      CompanyId,
-      BranchId,
-      PurchaseNumber,
-      SupplierId,
-      PurchaseDate,
-      Status,
-      Notes,
-      CreatedByUserId,
-      UpdatedByUserId
-    )
-    OUTPUT INSERTED.PurchaseId AS id
-    VALUES (
-      @companyId,
-      @branchId,
-      @purchaseNumber,
-      @supplierId,
-      SYSUTCDATETIME(),
-      N'PENDIENTE',
-      @notes,
-      @userId,
-      @userId
-    )
-    `,
+  const inserted = await callSp<{ id: number }>(
+    "usp_Rest_Admin_Compra_Insert",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      purchaseNumber,
-      supplierId,
-      notes: data.observaciones ?? null,
-      userId,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      PurchaseNumber: purchaseNumber,
+      SupplierId: supplierId,
+      Notes: data.observaciones ?? null,
+      UserId: userId,
     }
   );
 
@@ -1355,21 +584,13 @@ export async function updateCompra(
 ) {
   const supplierId = await resolveSupplierId(data.proveedorId);
 
-  await query(
-    `
-    UPDATE rest.Purchase
-    SET
-      SupplierId = COALESCE(@supplierId, SupplierId),
-      Status = COALESCE(@status, Status),
-      Notes = COALESCE(@notes, Notes),
-      UpdatedAt = SYSUTCDATETIME()
-    WHERE PurchaseId = @compraId
-    `,
+  await callSp(
+    "usp_Rest_Admin_Compra_Update",
     {
-      compraId,
-      supplierId,
-      status: data.estado ? String(data.estado).trim().toUpperCase() : null,
-      notes: data.observaciones ?? null,
+      CompraId: compraId,
+      SupplierId: supplierId,
+      Status: data.estado ? String(data.estado).trim().toUpperCase() : null,
+      Notes: data.observaciones ?? null,
     }
   );
 
@@ -1380,30 +601,12 @@ export async function searchProveedores(search?: string, limit = 20) {
   const scope = await getDefaultScope();
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(100, Number(limit))) : 20;
 
-  const rows = await query<any>(
-    `
-    SELECT TOP (${safeLimit})
-      SupplierId AS id,
-      SupplierCode AS codigo,
-      SupplierName AS nombre,
-      FiscalId AS rif,
-      Phone AS telefono,
-      AddressLine AS direccion
-    FROM [master].Supplier
-    WHERE CompanyId = @companyId
-      AND IsDeleted = 0
-      AND IsActive = 1
-      AND (
-        @search IS NULL
-        OR SupplierCode LIKE @search
-        OR SupplierName LIKE @search
-        OR FiscalId LIKE @search
-      )
-    ORDER BY SupplierName
-    `,
+  const rows = await callSp<any>(
+    "usp_Rest_Admin_Proveedor_Search",
     {
-      companyId: scope.companyId,
-      search: search?.trim() ? `%${search.trim()}%` : null,
+      CompanyId: scope.companyId,
+      Search: search?.trim() ? `%${search.trim()}%` : null,
+      Limit: safeLimit,
     }
   );
 
@@ -1414,43 +617,13 @@ export async function searchInsumosRestaurante(search?: string, limit = 30) {
   const scope = await getDefaultScope();
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(100, Number(limit))) : 30;
 
-  const rows = await query<any>(
-    `
-    SELECT TOP (${safeLimit})
-      p.ProductCode AS codigo,
-      p.ProductName AS descripcion,
-      img.PublicUrl AS imagen,
-      p.UnitCode AS unidad,
-      p.StockQty AS existencia
-    FROM [master].Product p
-    OUTER APPLY (
-      SELECT TOP 1 ma.PublicUrl
-      FROM cfg.EntityImage ei
-      INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
-      WHERE ei.CompanyId = p.CompanyId
-        AND ei.BranchId = @branchId
-        AND ei.EntityType = N'MASTER_PRODUCT'
-        AND ei.EntityId = p.ProductId
-        AND ei.IsDeleted = 0
-        AND ei.IsActive = 1
-        AND ma.IsDeleted = 0
-        AND ma.IsActive = 1
-      ORDER BY CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END, ei.SortOrder, ei.EntityImageId
-    ) img
-    WHERE p.CompanyId = @companyId
-      AND p.IsDeleted = 0
-      AND p.IsActive = 1
-      AND (
-        @search IS NULL
-        OR p.ProductCode LIKE @search
-        OR p.ProductName LIKE @search
-      )
-    ORDER BY p.ProductCode
-    `,
+  const rows = await callSp<any>(
+    "usp_Rest_Admin_Insumo_Search",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      search: search?.trim() ? `%${search.trim()}%` : null,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      Search: search?.trim() ? `%${search.trim()}%` : null,
+      Limit: safeLimit,
     }
   );
 

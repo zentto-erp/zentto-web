@@ -516,7 +516,8 @@ CREATE OR ALTER PROCEDURE dbo.usp_Master_Generic_List
     @Search      NVARCHAR(200)  = NULL,
     @SortColumn  NVARCHAR(128),
     @Offset      INT            = 0,
-    @Limit       INT            = 50
+    @Limit       INT            = 50,
+    @TotalCount  INT            = 0 OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -544,20 +545,18 @@ BEGIN
             SET @WhereClause = ' WHERE (' + @SearchColumns + ')';
     END;
 
-    -- Count query
-    SET @CountSql = 'SELECT COUNT(1) AS total FROM ' + @FullTable + @WhereClause;
+    -- Count into OUTPUT param
+    SET @CountSql = N'SELECT @cnt = COUNT(1) FROM ' + @FullTable + @WhereClause;
+    EXEC sp_executesql @CountSql,
+        N'@Search NVARCHAR(200), @cnt INT OUTPUT',
+        @Search = CASE WHEN @Search IS NOT NULL THEN '%' + @Search + '%' ELSE NULL END,
+        @cnt = @TotalCount OUTPUT;
 
-    -- Data query
+    -- Data query (single resultset)
     SET @Sql = 'SELECT * FROM ' + @FullTable + @WhereClause
         + ' ORDER BY ' + @SafeSort + ' ASC'
         + ' OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY';
 
-    -- Execute count first (resultset 1)
-    EXEC sp_executesql @CountSql,
-        N'@Search NVARCHAR(200)',
-        @Search = CASE WHEN @Search IS NOT NULL THEN '%' + @Search + '%' ELSE NULL END;
-
-    -- Execute data (resultset 2)
     EXEC sp_executesql @Sql,
         N'@Search NVARCHAR(200), @Offset INT, @Limit INT',
         @Search = CASE WHEN @Search IS NOT NULL THEN '%' + @Search + '%' ELSE NULL END,
@@ -1534,5 +1533,1069 @@ BEGIN
         ROLLBACK TRANSACTION;
         THROW;
     END CATCH;
+END;
+GO
+
+-- ============================================================================
+-- 13. METADATA: usp_Sys_Metadata_Tables
+--     Lista tablas base del catalogo INFORMATION_SCHEMA.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sys_Metadata_Tables
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TABLE_SCHEMA, TABLE_NAME
+    FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_TYPE = 'BASE TABLE'
+    ORDER BY TABLE_SCHEMA, TABLE_NAME;
+END;
+GO
+
+-- ============================================================================
+-- 13b. METADATA: usp_Sys_Metadata_Columns
+--      Lista columnas con propiedades IsIdentity / IsComputed.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sys_Metadata_Columns
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        c.TABLE_SCHEMA,
+        c.TABLE_NAME,
+        c.COLUMN_NAME,
+        c.DATA_TYPE,
+        c.IS_NULLABLE,
+        CONVERT(int, COLUMNPROPERTY(
+            OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME),
+            c.COLUMN_NAME, 'IsIdentity'
+        )) AS is_identity,
+        CONVERT(int, COLUMNPROPERTY(
+            OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME),
+            c.COLUMN_NAME, 'IsComputed'
+        )) AS is_computed
+    FROM INFORMATION_SCHEMA.COLUMNS c
+    ORDER BY c.TABLE_SCHEMA, c.TABLE_NAME, c.ORDINAL_POSITION;
+END;
+GO
+
+-- ============================================================================
+-- 13c. METADATA: usp_Sys_Metadata_PrimaryKeys
+--      Lista columnas de primary key por tabla.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sys_Metadata_PrimaryKeys
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ku.TABLE_SCHEMA,
+        ku.TABLE_NAME,
+        ku.COLUMN_NAME,
+        ku.ORDINAL_POSITION
+    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku
+      ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
+      AND tc.TABLE_SCHEMA = ku.TABLE_SCHEMA
+      AND tc.TABLE_NAME = ku.TABLE_NAME
+    WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    ORDER BY ku.TABLE_SCHEMA, ku.TABLE_NAME, ku.ORDINAL_POSITION;
+END;
+GO
+
+-- ============================================================================
+-- 14. META: usp_Sys_Meta_Relations
+--     Lista relaciones FK de la base de datos.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sys_Meta_Relations
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        fk.name            AS fkName,
+        schParent.name     AS parentSchema,
+        tabParent.name     AS parentTable,
+        colParent.name     AS parentColumn,
+        schRef.name        AS refSchema,
+        tabRef.name        AS refTable,
+        colRef.name        AS refColumn
+    FROM sys.foreign_key_columns fkc
+    JOIN sys.foreign_keys fk      ON fk.object_id  = fkc.constraint_object_id
+    JOIN sys.tables tabParent     ON tabParent.object_id = fkc.parent_object_id
+    JOIN sys.schemas schParent    ON schParent.schema_id = tabParent.schema_id
+    JOIN sys.columns colParent    ON colParent.object_id = fkc.parent_object_id
+                                  AND colParent.column_id = fkc.parent_column_id
+    JOIN sys.tables tabRef        ON tabRef.object_id = fkc.referenced_object_id
+    JOIN sys.schemas schRef       ON schRef.schema_id = tabRef.schema_id
+    JOIN sys.columns colRef       ON colRef.object_id = fkc.referenced_object_id
+                                  AND colRef.column_id = fkc.referenced_column_id
+    ORDER BY schParent.name, tabParent.name;
+END;
+GO
+
+-- ============================================================================
+-- 14b. META: usp_Sys_Meta_TablesAndColumns
+--      Lista tablas y columnas para el endpoint /meta/schema.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sys_Meta_TablesAndColumns
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Resultset 1: tablas
+    SELECT TABLE_SCHEMA AS [schema], TABLE_NAME AS [table]
+    FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_TYPE = 'BASE TABLE'
+    ORDER BY TABLE_SCHEMA, TABLE_NAME;
+
+    -- Resultset 2: columnas
+    SELECT
+        TABLE_SCHEMA AS [schema],
+        TABLE_NAME   AS [table],
+        COLUMN_NAME  AS [column],
+        DATA_TYPE    AS [type],
+        IS_NULLABLE  AS nullable
+    FROM INFORMATION_SCHEMA.COLUMNS
+    ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION;
+END;
+GO
+
+-- ============================================================================
+-- 15. SCOPE: usp_Cfg_Scope_GetDefault
+--     Resuelve CompanyId/BranchId/SystemUserId por defecto.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_Scope_GetDefault
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        c.CompanyId  AS companyId,
+        b.BranchId   AS branchId,
+        su.UserId    AS systemUserId
+    FROM cfg.Company c
+    INNER JOIN cfg.Branch b
+      ON b.CompanyId = c.CompanyId
+     AND b.BranchCode = N'MAIN'
+    LEFT JOIN sec.[User] su
+      ON su.UserCode = N'SYSTEM'
+    WHERE c.CompanyCode = N'DEFAULT'
+    ORDER BY c.CompanyId, b.BranchId;
+END;
+GO
+
+-- ============================================================================
+-- 15b. SCOPE: usp_Cfg_Scope_GetDefaultCompanyUser
+--      Resuelve CompanyId y SystemUserId (sin Branch).
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_Scope_GetDefaultCompanyUser
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        c.CompanyId AS companyId,
+        su.UserId   AS systemUserId
+    FROM cfg.Company c
+    LEFT JOIN sec.[User] su
+      ON su.UserCode = N'SYSTEM'
+    WHERE c.CompanyCode = N'DEFAULT'
+    ORDER BY c.CompanyId;
+END;
+GO
+
+-- ============================================================================
+-- 15c. USER: usp_Sec_User_ResolveByCode
+--      Resuelve UserId dado un UserCode.
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_User_ResolveByCode
+    @Code NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1 UserId AS userId
+    FROM sec.[User]
+    WHERE UPPER(UserCode) = UPPER(@Code)
+    ORDER BY UserId;
+END;
+GO
+
+-- ============================================================================
+-- 15d. USER: usp_Sec_User_ResolveByCodeActive
+--      Resuelve UserId dado un UserCode (solo activos, no borrados).
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_User_ResolveByCodeActive
+    @Code NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1 UserId AS userId
+    FROM sec.[User]
+    WHERE UPPER(UserCode) = UPPER(@Code)
+      AND IsDeleted = 0
+      AND IsActive = 1
+    ORDER BY UserId;
+END;
+GO
+
+-- ============================================================================
+-- 16. BANCOS (fin.Bank): usp_Fin_Bank_List
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Fin_Bank_List
+    @CompanyId INT,
+    @Search    NVARCHAR(100) = NULL,
+    @Offset    INT = 0,
+    @Limit     INT = 50,
+    @TotalCount INT = 0 OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT @TotalCount = COUNT(1)
+    FROM fin.Bank
+    WHERE CompanyId = @CompanyId
+      AND IsActive = 1
+      AND (@Search IS NULL OR BankName LIKE @Search OR ContactName LIKE @Search);
+
+    SELECT
+        BankName    AS Nombre,
+        ContactName AS Contacto,
+        AddressLine AS Direccion,
+        Phones      AS Telefonos
+    FROM fin.Bank
+    WHERE CompanyId = @CompanyId
+      AND IsActive = 1
+      AND (@Search IS NULL OR BankName LIKE @Search OR ContactName LIKE @Search)
+    ORDER BY BankName
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+END;
+GO
+
+-- ============================================================================
+-- 16b. BANCOS: usp_Fin_Bank_GetByName
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Fin_Bank_GetByName
+    @CompanyId INT,
+    @BankName  NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        BankName    AS Nombre,
+        ContactName AS Contacto,
+        AddressLine AS Direccion,
+        Phones      AS Telefonos
+    FROM fin.Bank
+    WHERE CompanyId = @CompanyId
+      AND IsActive = 1
+      AND BankName = @BankName
+    ORDER BY BankId DESC;
+END;
+GO
+
+-- ============================================================================
+-- 16c. BANCOS: usp_Fin_Bank_Insert
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Fin_Bank_Insert
+    @CompanyId  INT,
+    @BankCode   NVARCHAR(30),
+    @BankName   NVARCHAR(100),
+    @ContactName NVARCHAR(100) = NULL,
+    @AddressLine NVARCHAR(255) = NULL,
+    @Phones     NVARCHAR(100) = NULL,
+    @UserId     INT = NULL,
+    @Success    BIT = 0 OUTPUT,
+    @Message    NVARCHAR(200) = N'' OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1 FROM fin.Bank
+        WHERE CompanyId = @CompanyId AND BankName = @BankName
+    )
+    BEGIN
+        SET @Success = 0;
+        SET @Message = N'Banco ya existe';
+        RETURN;
+    END;
+
+    INSERT INTO fin.Bank (
+        CompanyId, BankCode, BankName, ContactName, AddressLine, Phones,
+        IsActive, CreatedByUserId, UpdatedByUserId
+    )
+    VALUES (
+        @CompanyId, @BankCode, @BankName, @ContactName, @AddressLine, @Phones,
+        1, @UserId, @UserId
+    );
+
+    SET @Success = 1;
+    SET @Message = N'Banco creado';
+END;
+GO
+
+-- ============================================================================
+-- 16d. BANCOS: usp_Fin_Bank_Update
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Fin_Bank_Update
+    @CompanyId   INT,
+    @BankName    NVARCHAR(100),
+    @ContactName NVARCHAR(100) = NULL,
+    @AddressLine NVARCHAR(255) = NULL,
+    @Phones      NVARCHAR(100) = NULL,
+    @UserId      INT = NULL,
+    @Success     BIT = 0 OUTPUT,
+    @Message     NVARCHAR(200) = N'' OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE fin.Bank
+    SET
+        ContactName = COALESCE(@ContactName, ContactName),
+        AddressLine = COALESCE(@AddressLine, AddressLine),
+        Phones      = COALESCE(@Phones, Phones),
+        UpdatedAt   = SYSUTCDATETIME(),
+        UpdatedByUserId = @UserId
+    WHERE CompanyId = @CompanyId
+      AND BankName = @BankName
+      AND IsActive = 1;
+
+    IF @@ROWCOUNT <= 0
+    BEGIN
+        SET @Success = 0;
+        SET @Message = N'Banco no encontrado';
+        RETURN;
+    END;
+
+    SET @Success = 1;
+    SET @Message = N'Banco actualizado';
+END;
+GO
+
+-- ============================================================================
+-- 16e. BANCOS: usp_Fin_Bank_Delete (soft-delete)
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Fin_Bank_Delete
+    @CompanyId INT,
+    @BankName  NVARCHAR(100),
+    @UserId    INT = NULL,
+    @Success   BIT = 0 OUTPUT,
+    @Message   NVARCHAR(200) = N'' OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE fin.Bank
+    SET
+        IsActive = 0,
+        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedByUserId = @UserId
+    WHERE CompanyId = @CompanyId
+      AND BankName = @BankName
+      AND IsActive = 1;
+
+    IF @@ROWCOUNT <= 0
+    BEGIN
+        SET @Success = 0;
+        SET @Message = N'Banco no encontrado';
+        RETURN;
+    END;
+
+    SET @Success = 1;
+    SET @Message = N'Banco eliminado';
+END;
+GO
+
+-- ============================================================================
+-- 17. MEDIA: usp_Cfg_MediaAsset_Insert
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_MediaAsset_Insert
+    @CompanyId        INT,
+    @BranchId         INT,
+    @StorageKey       NVARCHAR(500),
+    @PublicUrl         NVARCHAR(1000),
+    @OriginalFileName  NVARCHAR(255) = NULL,
+    @MimeType          NVARCHAR(100),
+    @FileExtension     NVARCHAR(20) = NULL,
+    @FileSizeBytes     BIGINT = 0,
+    @ChecksumSha256    NVARCHAR(64) = NULL,
+    @AltText           NVARCHAR(500) = NULL,
+    @ActorUserId       INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO cfg.MediaAsset (
+        CompanyId, BranchId, StorageProvider, StorageKey, PublicUrl,
+        OriginalFileName, MimeType, FileExtension, FileSizeBytes,
+        ChecksumSha256, AltText, CreatedByUserId, UpdatedByUserId
+    )
+    OUTPUT INSERTED.MediaAssetId AS mediaAssetId
+    VALUES (
+        @CompanyId, @BranchId, N'LOCAL', @StorageKey, @PublicUrl,
+        @OriginalFileName, @MimeType, @FileExtension, @FileSizeBytes,
+        @ChecksumSha256, @AltText, @ActorUserId, @ActorUserId
+    );
+END;
+GO
+
+-- ============================================================================
+-- 17b. MEDIA: usp_Cfg_MediaAsset_GetById
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_MediaAsset_GetById
+    @CompanyId    INT,
+    @BranchId     INT,
+    @MediaAssetId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        MediaAssetId    AS mediaAssetId,
+        StorageKey      AS storageKey,
+        PublicUrl        AS publicUrl,
+        MimeType         AS mimeType,
+        OriginalFileName AS originalFileName,
+        FileSizeBytes    AS fileSizeBytes,
+        IsActive         AS isActive,
+        IsDeleted        AS isDeleted
+    FROM cfg.MediaAsset
+    WHERE CompanyId = @CompanyId
+      AND BranchId  = @BranchId
+      AND MediaAssetId = @MediaAssetId;
+END;
+GO
+
+-- ============================================================================
+-- 17c. MEDIA: usp_Cfg_MediaAsset_GetByStorageKey
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_MediaAsset_GetByStorageKey
+    @CompanyId   INT,
+    @BranchId    INT,
+    @StorageKey  NVARCHAR(500)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1 MediaAssetId AS mediaAssetId
+    FROM cfg.MediaAsset
+    WHERE CompanyId = @CompanyId
+      AND BranchId  = @BranchId
+      AND StorageKey = @StorageKey
+      AND IsDeleted = 0
+      AND IsActive = 1
+    ORDER BY MediaAssetId DESC;
+END;
+GO
+
+-- ============================================================================
+-- 17d. MEDIA: usp_Cfg_EntityImage_Link
+--      Upsert de vinculo entidad-imagen (con opcion isPrimary).
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_EntityImage_Link
+    @CompanyId    INT,
+    @BranchId     INT,
+    @EntityType   NVARCHAR(50),
+    @EntityId     INT,
+    @MediaAssetId INT,
+    @RoleCode     NVARCHAR(30)  = NULL,
+    @SortOrder    INT           = 0,
+    @IsPrimary    BIT           = 0,
+    @ActorUserId  INT           = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Si es primary, quitar el flag de los demas
+    IF @IsPrimary = 1
+    BEGIN
+        UPDATE cfg.EntityImage
+        SET IsPrimary = 0,
+            UpdatedAt = SYSUTCDATETIME(),
+            UpdatedByUserId = @ActorUserId
+        WHERE CompanyId = @CompanyId
+          AND BranchId  = @BranchId
+          AND EntityType = @EntityType
+          AND EntityId   = @EntityId
+          AND IsDeleted  = 0
+          AND IsActive   = 1;
+    END;
+
+    IF EXISTS (
+        SELECT 1 FROM cfg.EntityImage
+        WHERE CompanyId = @CompanyId
+          AND BranchId  = @BranchId
+          AND EntityType = @EntityType
+          AND EntityId   = @EntityId
+          AND MediaAssetId = @MediaAssetId
+    )
+    BEGIN
+        UPDATE cfg.EntityImage
+        SET RoleCode  = @RoleCode,
+            SortOrder = @SortOrder,
+            IsPrimary = CASE WHEN @IsPrimary = 1 THEN 1 ELSE IsPrimary END,
+            IsActive  = 1,
+            IsDeleted = 0,
+            UpdatedAt = SYSUTCDATETIME(),
+            UpdatedByUserId = @ActorUserId
+        WHERE CompanyId = @CompanyId
+          AND BranchId  = @BranchId
+          AND EntityType = @EntityType
+          AND EntityId   = @EntityId
+          AND MediaAssetId = @MediaAssetId;
+    END
+    ELSE
+    BEGIN
+        INSERT INTO cfg.EntityImage (
+            CompanyId, BranchId, EntityType, EntityId, MediaAssetId,
+            RoleCode, SortOrder, IsPrimary, CreatedByUserId, UpdatedByUserId
+        )
+        VALUES (
+            @CompanyId, @BranchId, @EntityType, @EntityId, @MediaAssetId,
+            @RoleCode, @SortOrder, @IsPrimary, @ActorUserId, @ActorUserId
+        );
+    END;
+
+    -- Devolver el registro vinculado
+    SELECT TOP 1
+        ei.EntityImageId AS entityImageId,
+        ei.EntityType    AS entityType,
+        ei.EntityId      AS entityId,
+        ei.MediaAssetId  AS mediaAssetId,
+        ei.RoleCode      AS roleCode,
+        ei.SortOrder     AS sortOrder,
+        ei.IsPrimary     AS isPrimary,
+        ma.PublicUrl     AS publicUrl,
+        ma.MimeType      AS mimeType
+    FROM cfg.EntityImage ei
+    INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+    WHERE ei.CompanyId = @CompanyId
+      AND ei.BranchId  = @BranchId
+      AND ei.EntityType = @EntityType
+      AND ei.EntityId   = @EntityId
+      AND ei.MediaAssetId = @MediaAssetId
+      AND ei.IsDeleted = 0
+      AND ei.IsActive  = 1
+      AND ma.IsDeleted = 0
+      AND ma.IsActive  = 1
+    ORDER BY ei.EntityImageId DESC;
+END;
+GO
+
+-- ============================================================================
+-- 17e. MEDIA: usp_Cfg_EntityImage_List
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_EntityImage_List
+    @CompanyId   INT,
+    @BranchId    INT,
+    @EntityType  NVARCHAR(50),
+    @EntityId    INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ei.EntityImageId    AS entityImageId,
+        ei.EntityType       AS entityType,
+        ei.EntityId         AS entityId,
+        ei.MediaAssetId     AS mediaAssetId,
+        ei.RoleCode         AS roleCode,
+        ei.SortOrder        AS sortOrder,
+        ei.IsPrimary        AS isPrimary,
+        ma.PublicUrl        AS publicUrl,
+        ma.OriginalFileName AS originalFileName,
+        ma.MimeType         AS mimeType,
+        ma.FileSizeBytes    AS fileSizeBytes,
+        ma.AltText          AS altText,
+        ma.CreatedAt        AS createdAt
+    FROM cfg.EntityImage ei
+    INNER JOIN cfg.MediaAsset ma ON ma.MediaAssetId = ei.MediaAssetId
+    WHERE ei.CompanyId = @CompanyId
+      AND ei.BranchId  = @BranchId
+      AND ei.EntityType = @EntityType
+      AND ei.EntityId   = @EntityId
+      AND ei.IsDeleted = 0
+      AND ei.IsActive  = 1
+      AND ma.IsDeleted = 0
+      AND ma.IsActive  = 1
+    ORDER BY
+        CASE WHEN ei.IsPrimary = 1 THEN 0 ELSE 1 END,
+        ei.SortOrder,
+        ei.EntityImageId;
+END;
+GO
+
+-- ============================================================================
+-- 17f. MEDIA: usp_Cfg_EntityImage_SetPrimary
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_EntityImage_SetPrimary
+    @CompanyId     INT,
+    @BranchId      INT,
+    @EntityType    NVARCHAR(50),
+    @EntityId      INT,
+    @EntityImageId INT,
+    @ActorUserId   INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Quitar primary de todos
+    UPDATE cfg.EntityImage
+    SET IsPrimary = 0,
+        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedByUserId = @ActorUserId
+    WHERE CompanyId = @CompanyId
+      AND BranchId  = @BranchId
+      AND EntityType = @EntityType
+      AND EntityId   = @EntityId
+      AND IsDeleted  = 0
+      AND IsActive   = 1;
+
+    -- Poner primary al indicado
+    UPDATE cfg.EntityImage
+    SET IsPrimary = 1,
+        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedByUserId = @ActorUserId
+    WHERE CompanyId = @CompanyId
+      AND BranchId  = @BranchId
+      AND EntityType = @EntityType
+      AND EntityId   = @EntityId
+      AND EntityImageId = @EntityImageId
+      AND IsDeleted  = 0
+      AND IsActive   = 1;
+
+    SELECT @@ROWCOUNT AS affected;
+END;
+GO
+
+-- ============================================================================
+-- 17g. MEDIA: usp_Cfg_EntityImage_Unlink (soft-delete + auto-promote)
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_EntityImage_Unlink
+    @CompanyId     INT,
+    @BranchId      INT,
+    @EntityType    NVARCHAR(50),
+    @EntityId      INT,
+    @EntityImageId INT,
+    @ActorUserId   INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE cfg.EntityImage
+    SET IsActive  = 0,
+        IsDeleted = 1,
+        IsPrimary = 0,
+        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedByUserId = @ActorUserId
+    WHERE CompanyId = @CompanyId
+      AND BranchId  = @BranchId
+      AND EntityType = @EntityType
+      AND EntityId   = @EntityId
+      AND EntityImageId = @EntityImageId
+      AND IsDeleted  = 0;
+
+    -- Auto-promote si no queda ninguno primary
+    IF NOT EXISTS (
+        SELECT 1 FROM cfg.EntityImage
+        WHERE CompanyId = @CompanyId
+          AND BranchId  = @BranchId
+          AND EntityType = @EntityType
+          AND EntityId   = @EntityId
+          AND IsDeleted  = 0
+          AND IsActive   = 1
+          AND IsPrimary  = 1
+    )
+    BEGIN
+        ;WITH FirstImage AS (
+            SELECT TOP 1 EntityImageId
+            FROM cfg.EntityImage
+            WHERE CompanyId = @CompanyId
+              AND BranchId  = @BranchId
+              AND EntityType = @EntityType
+              AND EntityId   = @EntityId
+              AND IsDeleted  = 0
+              AND IsActive   = 1
+            ORDER BY SortOrder, EntityImageId
+        )
+        UPDATE ei
+        SET IsPrimary = 1,
+            UpdatedAt = SYSUTCDATETIME(),
+            UpdatedByUserId = @ActorUserId
+        FROM cfg.EntityImage ei
+        INNER JOIN FirstImage f ON f.EntityImageId = ei.EntityImageId;
+    END;
+
+    SELECT 1 AS ok;
+END;
+GO
+
+-- ============================================================================
+-- 18. AUTH-SECURITY: usp_Sec_AuthStore_Check
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_AuthStore_Check
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        CASE
+          WHEN OBJECT_ID(N'sec.AuthIdentity', N'U') IS NOT NULL
+           AND OBJECT_ID(N'sec.AuthToken', N'U') IS NOT NULL
+          THEN 1
+          ELSE 0
+        END AS hasStore;
+END;
+GO
+
+-- ============================================================================
+-- 18b. AUTH-SECURITY: usp_Sec_Auth_UserExistsLegacy
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_UserExistsLegacy
+    @UserCode NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT CASE WHEN EXISTS (
+        SELECT 1 FROM dbo.Usuarios WHERE UPPER(Cod_Usuario) = UPPER(@UserCode)
+    ) THEN 1 ELSE 0 END AS existsFlag;
+END;
+GO
+
+-- ============================================================================
+-- 18c. AUTH-SECURITY: usp_Sec_Auth_EmailExists
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_EmailExists
+    @EmailNormalized NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT CASE WHEN EXISTS (
+        SELECT 1 FROM sec.AuthIdentity
+        WHERE EmailNormalized = @EmailNormalized
+    ) THEN 1 ELSE 0 END AS existsFlag;
+END;
+GO
+
+-- ============================================================================
+-- 18d. AUTH-SECURITY: usp_Sec_AuthIdentity_Upsert
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_AuthIdentity_Upsert
+    @UserCode        NVARCHAR(60),
+    @Email           NVARCHAR(200),
+    @EmailNormalized NVARCHAR(200),
+    @Pending         BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    MERGE sec.AuthIdentity AS tgt
+    USING (
+        SELECT
+            @UserCode        AS UserCode,
+            @Email           AS Email,
+            @EmailNormalized AS EmailNormalized
+    ) AS src
+      ON tgt.UserCode = src.UserCode
+    WHEN MATCHED THEN
+        UPDATE SET
+            Email = src.Email,
+            EmailNormalized = src.EmailNormalized,
+            IsRegistrationPending = @Pending,
+            EmailVerifiedAtUtc = CASE WHEN @Pending = 1 THEN NULL ELSE ISNULL(tgt.EmailVerifiedAtUtc, SYSUTCDATETIME()) END,
+            UpdatedAtUtc = SYSUTCDATETIME()
+    WHEN NOT MATCHED THEN
+        INSERT (
+            UserCode, Email, EmailNormalized, EmailVerifiedAtUtc,
+            IsRegistrationPending, FailedLoginCount, CreatedAtUtc, UpdatedAtUtc
+        )
+        VALUES (
+            src.UserCode, src.Email, src.EmailNormalized,
+            CASE WHEN @Pending = 1 THEN NULL ELSE SYSUTCDATETIME() END,
+            @Pending, 0, SYSUTCDATETIME(), SYSUTCDATETIME()
+        );
+END;
+GO
+
+-- ============================================================================
+-- 18e. AUTH-SECURITY: usp_Sec_AuthToken_Issue
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_AuthToken_Issue
+    @UserCode        NVARCHAR(60),
+    @TokenType       NVARCHAR(30),
+    @TokenHash       NVARCHAR(64),
+    @EmailNormalized NVARCHAR(200),
+    @TtlMinutes      INT,
+    @Ip              NVARCHAR(50)  = NULL,
+    @UserAgent       NVARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO sec.AuthToken (
+        UserCode, TokenType, TokenHash, EmailNormalized,
+        ExpiresAtUtc, MetaIp, MetaUserAgent
+    )
+    VALUES (
+        @UserCode, @TokenType, @TokenHash, @EmailNormalized,
+        DATEADD(minute, @TtlMinutes, SYSUTCDATETIME()),
+        @Ip, @UserAgent
+    );
+END;
+GO
+
+-- ============================================================================
+-- 18f. AUTH-SECURITY: usp_Sec_Auth_GetLoginSecurityState
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_GetLoginSecurityState
+    @UserCode NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        IsRegistrationPending,
+        EmailVerifiedAtUtc,
+        LockoutUntilUtc
+    FROM sec.AuthIdentity
+    WHERE UPPER(UserCode) = UPPER(@UserCode);
+END;
+GO
+
+-- ============================================================================
+-- 18g. AUTH-SECURITY: usp_Sec_Auth_RegisterLoginFailure
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_RegisterLoginFailure
+    @UserCode       NVARCHAR(60),
+    @Ip             NVARCHAR(50) = NULL,
+    @MaxAttempts    INT = 5,
+    @LockoutMinutes INT = 15
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE sec.AuthIdentity
+    SET
+        FailedLoginCount = ISNULL(FailedLoginCount, 0) + 1,
+        LastFailedLoginAtUtc = SYSUTCDATETIME(),
+        LastFailedLoginIp = @Ip,
+        LockoutUntilUtc = CASE
+            WHEN ISNULL(FailedLoginCount, 0) + 1 >= @MaxAttempts
+              THEN DATEADD(minute, @LockoutMinutes, SYSUTCDATETIME())
+            ELSE LockoutUntilUtc
+        END,
+        UpdatedAtUtc = SYSUTCDATETIME()
+    WHERE UPPER(UserCode) = UPPER(@UserCode);
+END;
+GO
+
+-- ============================================================================
+-- 18h. AUTH-SECURITY: usp_Sec_Auth_RegisterLoginSuccess
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_RegisterLoginSuccess
+    @UserCode NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE sec.AuthIdentity
+    SET
+        FailedLoginCount = 0,
+        LastLoginAtUtc = SYSUTCDATETIME(),
+        LockoutUntilUtc = NULL,
+        UpdatedAtUtc = SYSUTCDATETIME()
+    WHERE UPPER(UserCode) = UPPER(@UserCode);
+END;
+GO
+
+-- ============================================================================
+-- 18i. AUTH-SECURITY: usp_Sec_Auth_ConsumeToken
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_ConsumeToken
+    @TokenHash NVARCHAR(64),
+    @TokenType NVARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH target AS (
+        SELECT TOP 1 TokenId
+        FROM sec.AuthToken
+        WHERE TokenHash = @TokenHash
+          AND TokenType = @TokenType
+          AND ConsumedAtUtc IS NULL
+          AND ExpiresAtUtc >= SYSUTCDATETIME()
+        ORDER BY TokenId DESC
+    )
+    UPDATE t
+    SET ConsumedAtUtc = SYSUTCDATETIME()
+    OUTPUT inserted.UserCode AS UserCode, inserted.EmailNormalized AS EmailNormalized
+    FROM sec.AuthToken t
+    INNER JOIN target x ON x.TokenId = t.TokenId;
+END;
+GO
+
+-- ============================================================================
+-- 18j. AUTH-SECURITY: usp_Sec_Auth_VerifyEmail
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_VerifyEmail
+    @UserCode NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE sec.AuthIdentity
+    SET
+        IsRegistrationPending = 0,
+        EmailVerifiedAtUtc = SYSUTCDATETIME(),
+        FailedLoginCount = 0,
+        LockoutUntilUtc = NULL,
+        UpdatedAtUtc = SYSUTCDATETIME()
+    WHERE UPPER(UserCode) = UPPER(@UserCode);
+END;
+GO
+
+-- ============================================================================
+-- 18k. AUTH-SECURITY: usp_Sec_Auth_ResolveByIdentifier
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_ResolveByIdentifier
+    @UserCode        NVARCHAR(60),
+    @EmailNormalized NVARCHAR(200),
+    @IsEmail         BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        ai.UserCode             AS UserCode,
+        ai.Email                AS Email,
+        ai.EmailNormalized      AS EmailNormalized,
+        ai.IsRegistrationPending AS IsRegistrationPending,
+        ai.EmailVerifiedAtUtc    AS EmailVerifiedAtUtc
+    FROM sec.AuthIdentity ai
+    WHERE
+        CASE WHEN @IsEmail = 1
+             THEN CASE WHEN ai.EmailNormalized = @EmailNormalized THEN 1 ELSE 0 END
+             ELSE CASE WHEN UPPER(ai.UserCode) = UPPER(@UserCode) THEN 1 ELSE 0 END
+        END = 1;
+END;
+GO
+
+-- ============================================================================
+-- 18l. AUTH-SECURITY: usp_Sec_Auth_InvalidateTokens
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_InvalidateTokens
+    @UserCode  NVARCHAR(60),
+    @TokenType NVARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE sec.AuthToken
+    SET ConsumedAtUtc = ISNULL(ConsumedAtUtc, SYSUTCDATETIME())
+    WHERE UPPER(UserCode) = UPPER(@UserCode)
+      AND TokenType = @TokenType
+      AND ConsumedAtUtc IS NULL;
+END;
+GO
+
+-- ============================================================================
+-- 18m. AUTH-SECURITY: usp_Sec_Auth_RegisterUser
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_RegisterUser
+    @UserCode     NVARCHAR(60),
+    @PasswordHash NVARCHAR(200),
+    @Nombre       NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.Usuarios (
+        Cod_Usuario, Password, Nombre, Tipo, Updates, Addnews, Deletes,
+        Creador, Cambiar, PrecioMinimo, Credito, IsAdmin
+    )
+    VALUES (
+        @UserCode, @PasswordHash, @Nombre, N'USER', 1, 1, 0,
+        0, 1, 0, 0, 0
+    );
+END;
+GO
+
+-- ============================================================================
+-- 18n. AUTH-SECURITY: usp_Sec_Auth_UpdatePassword
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_UpdatePassword
+    @UserCode     NVARCHAR(60),
+    @PasswordHash NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE dbo.Usuarios
+    SET Password = @PasswordHash
+    WHERE UPPER(Cod_Usuario) = UPPER(@UserCode);
+END;
+GO
+
+-- ============================================================================
+-- 18o. AUTH-SECURITY: usp_Sec_Auth_ResetLockout
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sec_Auth_ResetLockout
+    @UserCode NVARCHAR(60)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE sec.AuthIdentity
+    SET
+        FailedLoginCount = 0,
+        LockoutUntilUtc = NULL,
+        PasswordChangedAtUtc = SYSUTCDATETIME(),
+        UpdatedAtUtc = SYSUTCDATETIME()
+    WHERE UPPER(UserCode) = UPPER(@UserCode);
 END;
 GO

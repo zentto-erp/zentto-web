@@ -5,7 +5,7 @@ import { Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { env } from "../../config/env.js";
-import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import {
   entityIdSchema,
@@ -283,21 +283,12 @@ mediaRouter.post("/link-by-url", async (req, res) => {
     return res.status(400).json({ error: "invalid_image_url", message: "La URL no pertenece al storage local de media" });
   }
 
-  const mediaRows = await query<{ mediaAssetId: number }>(
-    `
-    SELECT TOP 1 MediaAssetId AS mediaAssetId
-    FROM cfg.MediaAsset
-    WHERE CompanyId = @companyId
-      AND BranchId = @branchId
-      AND StorageKey = @storageKey
-      AND IsDeleted = 0
-      AND IsActive = 1
-    ORDER BY MediaAssetId DESC
-    `,
+  const mediaRows = await callSp<{ mediaAssetId: number }>(
+    "usp_Cfg_MediaAsset_GetByStorageKey",
     {
-      companyId: scope.companyId,
-      branchId: scope.branchId,
-      storageKey,
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      StorageKey: storageKey,
     }
   );
 

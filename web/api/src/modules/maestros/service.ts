@@ -1,4 +1,4 @@
-import { callSp } from "../../db/query.js";
+import { callSpOut, sql } from "../../db/query.js";
 import {
   createRow,
   deleteRow,
@@ -7,7 +7,6 @@ import {
   updateRow,
 } from "../crud/crud.service.js";
 import { getTableMetadata, type TableMetadata } from "../crud/metadata.js";
-import { queryTable } from "../crud/crud.service.js";
 
 type MasterTableConfig = {
   schema: string;
@@ -31,6 +30,10 @@ function validPage(value: unknown, fallback: number) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return fallback;
   return Math.floor(n);
+}
+
+function getSortColumn(meta: TableMetadata) {
+  return meta.primaryKeys[0] ?? meta.columns[0]?.columnName ?? "";
 }
 
 function resolveMasterTable(slug: string): MasterTableConfig | null {
@@ -75,19 +78,25 @@ export async function listMaestroRows(slug: string, params: { search?: string; p
 
   const page = validPage(params.page, 1);
   const limit = Math.min(validPage(params.limit, 50), 500);
+  const offset = (page - 1) * limit;
+  const sortColumn = getSortColumn(meta);
 
-  // Delegate to the generic CRUD queryTable which uses SPs internally
-  const result = await queryTable({
-    schema: config.schema,
-    table: config.table,
-    page,
-    pageSize: limit,
-    filters: params.search ? { _search: params.search } : undefined,
-  });
+  const { rows, output } = await callSpOut<any>(
+    'usp_Master_Generic_List',
+    {
+      SchemaName: config.schema,
+      TableName: config.table,
+      Search: params.search || null,
+      SortColumn: sortColumn,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.rows,
-    total: result.total,
+    rows,
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
     table: meta.table,

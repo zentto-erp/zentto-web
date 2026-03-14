@@ -76,18 +76,18 @@ BEGIN
 
         -- 1. Cabecera → ar.SalesDocument
         INSERT INTO ar.SalesDocument (
-            DocumentNumber, SerialType, OperationType,
+            DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
             CustomerCode, DocumentDate, ReportDate, PaymentTerms,
             TotalAmount, UserCode, Notes
         )
         VALUES (
-            @NumFact, @SerialTipo, 'FACT',
+            @NumFact, @SerialTipo, @TipoOrden, 'FACT',
             @Codigo, @Fecha, @FechaReporte, @Pago,
             @Total, @CodUsuario, @Observ
         );
 
-        -- 2. Detalle → doc.SalesDocumentLine
-        INSERT INTO doc.SalesDocumentLine (
+        -- 2. Detalle → ar.SalesDocumentLine
+        INSERT INTO ar.SalesDocumentLine (
             DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
             ProductCode, Quantity, UnitPrice, TaxRate, TotalAmount,
             DiscountedPrice, RelatedRef, AlternateCode
@@ -120,13 +120,12 @@ BEGIN
 
         IF @px IS NOT NULL
         BEGIN
-            -- Eliminar pagos previos → doc.SalesDocumentPayment
-            DELETE FROM doc.SalesDocumentPayment
-             WHERE DocumentNumber = @NumFact AND FiscalMemoryNumber = @Memoria
-               AND SerialType = @SerialTipo AND OperationType = 'FACT';
+            -- Eliminar pagos previos → ar.SalesDocumentPayment
+            DELETE FROM ar.SalesDocumentPayment
+             WHERE DocumentNumber = @NumFact AND OperationType = 'FACT';
 
-            -- Insertar pagos → doc.SalesDocumentPayment
-            INSERT INTO doc.SalesDocumentPayment (
+            -- Insertar pagos → ar.SalesDocumentPayment
+            INSERT INTO ar.SalesDocumentPayment (
                 ExchangeRate, PaymentMethod, DocumentNumber, Amount,
                 BankCode, ReferenceNumber, PaymentDate, PaymentNumber,
                 FiscalMemoryNumber, SerialType, OperationType
@@ -182,8 +181,8 @@ BEGIN
         DECLARE @Abono DECIMAL(18,4) = @Total - @SaldoPendiente;
         DECLARE @Cancelada CHAR(1) = CASE WHEN @SaldoPendiente > 0 THEN 'N' ELSE 'S' END;
 
-        -- Actualizar estado en doc.SalesDocument
-        UPDATE doc.SalesDocument
+        -- Actualizar estado en ar.SalesDocument
+        UPDATE ar.SalesDocument
            SET IsPaid = @Cancelada, ReportDate = @FechaReporte, UpdatedAt = SYSUTCDATETIME()
          WHERE DocumentNumber = @NumFact AND OperationType = 'FACT';
 

@@ -17,6 +17,7 @@ BEGIN
         DocumentId          INT IDENTITY(1,1) NOT NULL,
         DocumentNumber      NVARCHAR(60)  NOT NULL,
         SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        FiscalMemoryNumber  NVARCHAR(80)  NULL DEFAULT '',
         OperationType       NVARCHAR(20)  NOT NULL,
 
         -- Cliente
@@ -103,6 +104,8 @@ BEGIN
     CREATE TABLE ar.SalesDocumentLine (
         LineId              INT IDENTITY(1,1) NOT NULL,
         DocumentNumber      NVARCHAR(60)  NOT NULL,
+        SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        FiscalMemoryNumber  NVARCHAR(80)  NULL DEFAULT '',
         OperationType       NVARCHAR(20)  NOT NULL,
         LineNumber          INT           NULL DEFAULT 0,
 
@@ -158,6 +161,8 @@ BEGIN
     CREATE TABLE ar.SalesDocumentPayment (
         PaymentId           INT IDENTITY(1,1) NOT NULL,
         DocumentNumber      NVARCHAR(60)  NOT NULL,
+        SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        FiscalMemoryNumber  NVARCHAR(80)  NULL DEFAULT '',
         OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'FACT',
 
         -- Forma de pago
@@ -206,6 +211,7 @@ BEGIN
         DocumentId          INT IDENTITY(1,1) NOT NULL,
         DocumentNumber      NVARCHAR(60)  NOT NULL,
         SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        FiscalMemoryNumber  NVARCHAR(80)  NULL DEFAULT '',
         OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
 
         -- Proveedor
@@ -300,6 +306,8 @@ BEGIN
     CREATE TABLE ap.PurchaseDocumentLine (
         LineId              INT IDENTITY(1,1) NOT NULL,
         DocumentNumber      NVARCHAR(60)  NOT NULL,
+        SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        FiscalMemoryNumber  NVARCHAR(80)  NULL DEFAULT '',
         OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
         LineNumber          INT           NULL DEFAULT 0,
 
@@ -352,6 +360,8 @@ BEGIN
     CREATE TABLE ap.PurchaseDocumentPayment (
         PaymentId           INT IDENTITY(1,1) NOT NULL,
         DocumentNumber      NVARCHAR(60)  NOT NULL,
+        SerialType          NVARCHAR(60)  NOT NULL DEFAULT '',
+        FiscalMemoryNumber  NVARCHAR(80)  NULL DEFAULT '',
         OperationType       NVARCHAR(20)  NOT NULL DEFAULT 'COMPRA',
 
         PaymentMethod       NVARCHAR(30)  NULL,
@@ -394,6 +404,7 @@ SELECT
     DocumentId                     AS ID,
     DocumentNumber                 AS NUM_DOC,
     SerialType                     AS SERIALTIPO,
+    FiscalMemoryNumber             AS MEMORIA,
     OperationType                  AS TIPO_OPERACION,
     CustomerCode                   AS CODIGO,
     CustomerName                   AS NOMBRE,
@@ -444,6 +455,8 @@ CREATE VIEW dbo.DocumentosVentaDetalle AS
 SELECT
     LineId                             AS ID,
     DocumentNumber                     AS NUM_DOC,
+    SerialType                         AS SERIALTIPO,
+    FiscalMemoryNumber                 AS MEMORIA,
     OperationType                      AS TIPO_OPERACION,
     LineNumber                         AS RENGLON,
     ProductCode                        AS COD_SERV,
@@ -474,6 +487,8 @@ CREATE VIEW dbo.DocumentosVentaPago AS
 SELECT
     PaymentId                          AS ID,
     DocumentNumber                     AS NUM_DOC,
+    SerialType                         AS SERIALTIPO,
+    FiscalMemoryNumber                 AS MEMORIA,
     OperationType                      AS TIPO_OPERACION,
     PaymentMethod                      AS TIPO_PAGO,
     BankCode                           AS BANCO,
@@ -498,6 +513,7 @@ SELECT
     DocumentId                     AS ID,
     DocumentNumber                 AS NUM_DOC,
     SerialType                     AS SERIALTIPO,
+    FiscalMemoryNumber             AS MEMORIA,
     OperationType                  AS TIPO_OPERACION,
     SupplierCode                   AS COD_PROVEEDOR,
     SupplierName                   AS NOMBRE,
@@ -557,6 +573,8 @@ CREATE VIEW dbo.DocumentosCompraDetalle AS
 SELECT
     LineId                         AS ID,
     DocumentNumber                 AS NUM_DOC,
+    SerialType                     AS SERIALTIPO,
+    FiscalMemoryNumber             AS MEMORIA,
     OperationType                  AS TIPO_OPERACION,
     LineNumber                     AS RENGLON,
     ProductCode                    AS COD_SERV,
@@ -584,6 +602,8 @@ CREATE VIEW dbo.DocumentosCompraPago AS
 SELECT
     PaymentId                      AS ID,
     DocumentNumber                 AS NUM_DOC,
+    SerialType                     AS SERIALTIPO,
+    FiscalMemoryNumber             AS MEMORIA,
     OperationType                  AS TIPO_OPERACION,
     PaymentMethod                  AS TIPO_PAGO,
     BankCode                       AS BANCO,
@@ -612,6 +632,7 @@ SELECT
     dv.ID              AS DocumentId,
     dv.NUM_DOC         AS DocumentNumber,
     dv.SERIALTIPO      AS SerialType,
+    dv.MEMORIA         AS FiscalMemoryNumber,
     dv.TIPO_OPERACION  AS OperationType,
     dv.CODIGO          AS CustomerCode,
     dv.NOMBRE          AS CustomerName,
@@ -656,6 +677,8 @@ CREATE VIEW doc.SalesDocumentLine AS
 SELECT
     d.ID               AS LineId,
     d.NUM_DOC          AS DocumentNumber,
+    d.SERIALTIPO       AS SerialType,
+    d.MEMORIA          AS FiscalMemoryNumber,
     d.TIPO_OPERACION   AS DocumentType,
     d.RENGLON          AS LineNumber,
     d.COD_SERV         AS ProductCode,
@@ -689,6 +712,8 @@ CREATE VIEW doc.SalesDocumentPayment AS
 SELECT
     p.ID               AS PaymentId,
     p.NUM_DOC          AS DocumentNumber,
+    p.SERIALTIPO       AS SerialType,
+    p.MEMORIA          AS FiscalMemoryNumber,
     p.TIPO_OPERACION   AS DocumentType,
     p.TIPO_PAGO        AS PaymentType,
     p.BANCO            AS BankCode,
@@ -718,6 +743,7 @@ SELECT
     dc.ID              AS DocumentId,
     dc.NUM_DOC         AS DocumentNumber,
     dc.SERIALTIPO      AS SerialType,
+    dc.MEMORIA         AS FiscalMemoryNumber,
     dc.TIPO_OPERACION  AS DocumentType,
     dc.COD_PROVEEDOR   AS SupplierCode,
     dc.NOMBRE          AS SupplierName,
@@ -756,6 +782,8 @@ CREATE VIEW doc.PurchaseDocumentLine AS
 SELECT
     d.ID               AS LineId,
     d.NUM_DOC          AS DocumentNumber,
+    d.SERIALTIPO       AS SerialType,
+    d.MEMORIA          AS FiscalMemoryNumber,
     d.TIPO_OPERACION   AS DocumentType,
     d.RENGLON          AS LineNumber,
     d.COD_SERV         AS ProductCode,
@@ -787,6 +815,8 @@ CREATE VIEW doc.PurchaseDocumentPayment AS
 SELECT
     p.ID               AS PaymentId,
     p.NUM_DOC          AS DocumentNumber,
+    p.SERIALTIPO       AS SerialType,
+    p.MEMORIA          AS FiscalMemoryNumber,
     p.TIPO_OPERACION   AS DocumentType,
     p.TIPO_PAGO        AS PaymentType,
     p.BANCO            AS BankCode,

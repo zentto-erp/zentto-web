@@ -80,25 +80,26 @@ BEGIN
 
         -- 1. Cabecera → ar.SalesDocument (OperationType='PRESUP')
         INSERT INTO ar.SalesDocument (
-            DocumentNumber, SerialType, OperationType,
+            DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
             CustomerCode, DocumentDate, ReportDate, PaymentTerms,
             TotalAmount, UserCode, Notes
         )
         VALUES (
-            @NumFact, @SerialTipo, 'PRESUP',
+            @NumFact, @SerialTipo, @TipoOrden, 'PRESUP',
             @Codigo, @Fecha, @FechaReporte, @Pago,
             @Total, @CodUsuario, @Observ
         );
 
         -- 2. Detalle → ar.SalesDocumentLine
         INSERT INTO ar.SalesDocumentLine (
-            DocumentNumber, OperationType,
+            DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
             ProductCode, Quantity, UnitPrice, TaxRate, TotalAmount,
             DiscountedPrice, RelatedRef, AlternateCode
         )
         SELECT
             CASE WHEN NULLIF(T.X.value('@NUM_FACT', 'nvarchar(60)'), '') IS NULL THEN @NumFact ELSE T.X.value('@NUM_FACT', 'nvarchar(60)') END,
-            'PRESUP',
+            CASE WHEN NULLIF(T.X.value('@SERIALTIPO', 'nvarchar(60)'), '') IS NULL THEN @SerialTipo ELSE T.X.value('@SERIALTIPO', 'nvarchar(60)') END,
+            @TipoOrden, 'PRESUP',
             NULLIF(T.X.value('@COD_SERV', 'nvarchar(60)'), ''),
             CASE WHEN NULLIF(T.X.value('@CANTIDAD', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@CANTIDAD', 'nvarchar(50)') AS DECIMAL(18,4)) END,
             CASE WHEN NULLIF(T.X.value('@PRECIO', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(T.X.value('@PRECIO', 'nvarchar(50)') AS DECIMAL(18,4)) END,
@@ -120,11 +121,11 @@ BEGIN
 
         IF @px IS NOT NULL
         BEGIN
-            DELETE FROM doc.SalesDocumentPayment
+            DELETE FROM ar.SalesDocumentPayment
              WHERE DocumentNumber = @NumFact AND FiscalMemoryNumber = @Memoria
                AND SerialType = @SerialTipo AND OperationType = 'PRESUP';
 
-            INSERT INTO doc.SalesDocumentPayment (
+            INSERT INTO ar.SalesDocumentPayment (
                 ExchangeRate, PaymentMethod, DocumentNumber, Amount,
                 BankCode, ReferenceNumber, PaymentDate, PaymentNumber,
                 FiscalMemoryNumber, SerialType, OperationType
@@ -172,7 +173,7 @@ BEGIN
         DECLARE @Abono DECIMAL(18,4) = @Total - @SaldoPendiente;
         DECLARE @Cancelada CHAR(1) = CASE WHEN @SaldoPendiente > 0 THEN 'N' ELSE 'S' END;
 
-        UPDATE doc.SalesDocument
+        UPDATE ar.SalesDocument
            SET IsPaid = @Cancelada, ReportDate = @FechaReporte, UpdatedAt = SYSUTCDATETIME()
          WHERE DocumentNumber = @NumFact AND OperationType = 'PRESUP';
 
