@@ -46,7 +46,7 @@ export default function TasksMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'text.secondary' }}>
+            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={pendingTasks} color="warning" max={9}>
                     <FormatListBulletedIcon />
                 </Badge>

@@ -26,6 +26,7 @@ import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
 import { useTimezone } from "@datqbox/shared-auth";
+import { brandColors } from "@datqbox/shared-ui";
 import { useRouter } from "next/navigation";
 import { useDashboardResumen, useAsientosList } from "../hooks/useContabilidad";
 
@@ -35,28 +36,28 @@ const shortcuts = [
     description: "Crear y consultar",
     icon: <AccountBalanceWalletIcon sx={{ fontSize: 32 }} />,
     href: "/contabilidad/asientos",
-    bg: "#3b5998",
+    bg: brandColors.shortcutDark,
   },
   {
     title: "Plan de Cuentas",
     description: "Cat\u00E1logo contable",
     icon: <AccountTreeIcon sx={{ fontSize: 32 }} />,
     href: "/contabilidad/cuentas",
-    bg: "#00aced",
+    bg: brandColors.shortcutTeal,
   },
   {
     title: "Reportes",
     description: "Balances y libros",
     icon: <BarChartIcon sx={{ fontSize: 32 }} />,
     href: "/contabilidad/reportes",
-    bg: "#4875b4",
+    bg: brandColors.shortcutSlate,
   },
   {
     title: "Nuevo Asiento",
     description: "Registrar operaci\u00F3n",
     icon: <MenuBookIcon sx={{ fontSize: 32 }} />,
     href: "/contabilidad/asientos/new",
-    bg: "#2ecc71",
+    bg: brandColors.success,
   },
 ];
 
@@ -81,26 +82,26 @@ export default function ContabilidadHome() {
     {
       title: "Ingresos",
       value: resumen?.totalIngresos ?? 0,
-      color: "#321fdb",
+      color: brandColors.statBlue,
       icon: <TrendingUpIcon />,
     },
     {
       title: "Gastos",
       value: resumen?.totalGastos ?? 0,
-      color: "#39f",
+      color: brandColors.statTeal,
       icon: <TrendingDownIcon />,
     },
     {
       title: "Margen",
       value: resumen?.margenPorcentaje ?? 0,
       isPercent: true,
-      color: "#f9b115",
+      color: brandColors.statOrange,
       icon: <BarChartIcon />,
     },
     {
       title: "Ctas por Pagar",
       value: resumen?.cuentasPorPagar ?? 0,
-      color: "#e55353",
+      color: brandColors.statRed,
       icon: <ReceiptLongIcon />,
     },
   ];
@@ -215,9 +216,9 @@ export default function ContabilidadHome() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {ultimosAsientos.map((a: any) => (
+                  {ultimosAsientos.map((a: any, idx: number) => (
                     <TableRow
-                      key={a.id}
+                      key={a.asientoId ?? a.id ?? idx}
                       hover
                       sx={{ cursor: "pointer" }}
                       onClick={() => router.push("/contabilidad/asientos")}
@@ -256,19 +257,19 @@ export default function ContabilidadHome() {
             <Typography variant="h6" fontWeight={600} mb={2}>
               Resumen General
             </Typography>
-            <Box sx={{ borderLeft: "4px solid #321fdb", pl: 2, mb: 3 }}>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Total Asientos</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalAsientos ?? 0}
               </Typography>
             </Box>
-            <Box sx={{ borderLeft: "4px solid #2ecc71", pl: 2, mb: 3 }}>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.success}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Cuentas Activas</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalCuentas ?? 0}
               </Typography>
             </Box>
-            <Box sx={{ borderLeft: "4px solid #e55353", pl: 2 }}>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2 }}>
               <Typography variant="body2" color="text.secondary">Asientos Anulados</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalAnulados ?? 0}

@@ -216,34 +216,42 @@ BEGIN
     -- ============================================
     -- CONFIGURACION DE PERIODO FISCAL
     -- ============================================
-    IF NOT EXISTS (SELECT 1 FROM "Configuracion" WHERE "Clave" = 'PERIODO_FISCAL_INICIO') THEN
-        INSERT INTO "Configuracion" ("Clave", "Valor", "Descripcion", "Tipo", "Modificable")
-        VALUES
-            ('PERIODO_FISCAL_INICIO', TO_CHAR(DATE_TRUNC('year', NOW() AT TIME ZONE 'UTC'), 'YYYY-MM-DD HH24:MI:SS'), 'Fecha de inicio del periodo fiscal actual', 'FECHA', TRUE),
-            ('PERIODO_FISCAL_CIERRE', TO_CHAR(DATE_TRUNC('year', NOW() AT TIME ZONE 'UTC') + INTERVAL '1 year' - INTERVAL '1 day', 'YYYY-MM-DD HH24:MI:SS'), 'Fecha de cierre del periodo fiscal actual', 'FECHA', TRUE),
-            ('MONEDA_BASE', 'USD', 'Moneda base del sistema', 'TEXTO', FALSE),
-            ('DECIMALES_MONEDA', '2', 'Cantidad de decimales para moneda', 'NUMERO', TRUE),
-            ('ASIENTO_AUTOMATICO_VENTAS', '1', 'Generar asiento automatico desde ventas', 'BOOLEANO', TRUE),
-            ('ASIENTO_AUTOMATICO_COMPRAS', '1', 'Generar asiento automatico desde compras', 'BOOLEANO', TRUE),
-            ('INTEGRACION_CONTABLE', '1', 'Integracion contable activada', 'BOOLEANO', TRUE);
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Configuracion' AND table_schema = 'public' AND table_type = 'BASE TABLE') THEN
+        IF NOT EXISTS (SELECT 1 FROM "Configuracion" WHERE "Clave" = 'PERIODO_FISCAL_INICIO') THEN
+            INSERT INTO "Configuracion" ("Clave", "Valor", "Descripcion", "Tipo", "Modificable")
+            VALUES
+                ('PERIODO_FISCAL_INICIO', TO_CHAR(DATE_TRUNC('year', NOW() AT TIME ZONE 'UTC'), 'YYYY-MM-DD HH24:MI:SS'), 'Fecha de inicio del periodo fiscal actual', 'FECHA', TRUE),
+                ('PERIODO_FISCAL_CIERRE', TO_CHAR(DATE_TRUNC('year', NOW() AT TIME ZONE 'UTC') + INTERVAL '1 year' - INTERVAL '1 day', 'YYYY-MM-DD HH24:MI:SS'), 'Fecha de cierre del periodo fiscal actual', 'FECHA', TRUE),
+                ('MONEDA_BASE', 'USD', 'Moneda base del sistema', 'TEXTO', FALSE),
+                ('DECIMALES_MONEDA', '2', 'Cantidad de decimales para moneda', 'NUMERO', TRUE),
+                ('ASIENTO_AUTOMATICO_VENTAS', '1', 'Generar asiento automatico desde ventas', 'BOOLEANO', TRUE),
+                ('ASIENTO_AUTOMATICO_COMPRAS', '1', 'Generar asiento automatico desde compras', 'BOOLEANO', TRUE),
+                ('INTEGRACION_CONTABLE', '1', 'Integracion contable activada', 'BOOLEANO', TRUE);
 
-        RAISE NOTICE 'Configuracion de periodo fiscal creada';
+            RAISE NOTICE 'Configuracion de periodo fiscal creada';
+        ELSE
+            RAISE NOTICE 'La configuracion ya existe';
+        END IF;
     ELSE
-        RAISE NOTICE 'La configuracion ya existe';
+        RAISE NOTICE 'Tabla Configuracion no existe (legacy), omitida';
     END IF;
 
     -- ============================================
     -- CENTROS DE COSTO DE EJEMPLO
     -- ============================================
-    IF NOT EXISTS (SELECT 1 FROM "Centro_Costo" WHERE "Codigo" IN ('001', '002', '003')) THEN
-        INSERT INTO "Centro_Costo" ("Codigo", "Descripcion", "Presupuestado", "Saldo_Real", "Activo")
-        VALUES
-            ('001', 'ADMINISTRACION', 50000.00, 0, TRUE),
-            ('002', 'VENTAS', 30000.00, 0, TRUE),
-            ('003', 'PRODUCCION', 80000.00, 0, TRUE),
-            ('004', 'ALMACEN', 20000.00, 0, TRUE);
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Centro_Costo' AND table_schema = 'public' AND table_type = 'BASE TABLE') THEN
+        IF NOT EXISTS (SELECT 1 FROM "Centro_Costo" WHERE "Codigo" IN ('001', '002', '003')) THEN
+            INSERT INTO "Centro_Costo" ("Codigo", "Descripcion", "Presupuestado", "Saldo_Real", "Activo")
+            VALUES
+                ('001', 'ADMINISTRACION', 50000.00, 0, TRUE),
+                ('002', 'VENTAS', 30000.00, 0, TRUE),
+                ('003', 'PRODUCCION', 80000.00, 0, TRUE),
+                ('004', 'ALMACEN', 20000.00, 0, TRUE);
 
-        RAISE NOTICE 'Centros de costo creados';
+            RAISE NOTICE 'Centros de costo creados';
+        END IF;
+    ELSE
+        RAISE NOTICE 'Tabla Centro_Costo no existe (legacy), omitida';
     END IF;
 
     RAISE NOTICE 'SEED DE CONTABILIDAD COMPLETADO EXITOSAMENTE';

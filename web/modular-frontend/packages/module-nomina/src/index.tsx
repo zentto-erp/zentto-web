@@ -43,11 +43,37 @@ export {
   useProcesarPagoVacaciones,
 } from "./hooks/useVacacionesSolicitudes";
 
+export {
+  useBatchList,
+  useGenerateDraft,
+  useBatchSummary,
+  useBatchGrid,
+  useBatchEmployeeLines,
+  useSaveDraftLine,
+  useBatchAddLine,
+  useBatchRemoveLine,
+  useApproveDraft,
+  useProcessBatch,
+  useBatchBulkUpdate,
+} from "./hooks/useNominaBatch";
+
 export type {
   SolicitudVacacionesInput,
   SolicitudFilter,
   DiasDisponibles,
 } from "./hooks/useVacacionesSolicitudes";
+
+export type {
+  BatchDraftInput,
+  BatchFilter,
+  BatchGridFilter,
+  SaveDraftLineInput,
+  BatchAddLineInput,
+  BatchBulkUpdateInput,
+  BatchSummary,
+  BatchGridRow,
+  EmployeeLine,
+} from "./hooks/useNominaBatch";
 
 // ─── Types ────────────────────────────────────────────────────
 export type {
@@ -71,6 +97,10 @@ export { default as VacacionesSolicitudesPage } from "./components/VacacionesSol
 export { default as LiquidacionesPage } from "./components/LiquidacionesPage";
 export { default as ConstantesPage } from "./components/ConstantesPage";
 export { default as NominaWizard } from "./components/NominaWizard";
+export { default as NominaBatchWizard } from "./components/NominaBatchWizard";
+export { default as PayrollBatchGrid } from "./components/PayrollBatchGrid";
+export { default as PayrollPreview } from "./components/PayrollPreview";
+export { default as PayrollEmployeePanel } from "./components/PayrollEmployeePanel";
 export { default as LiquidacionesWizard } from "./components/LiquidacionesWizard";
 export { default as VacacionesWizard } from "./components/VacacionesWizard";
 

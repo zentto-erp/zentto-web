@@ -25,6 +25,14 @@ import HistoryIcon from '@mui/icons-material/History';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import HubIcon from '@mui/icons-material/Hub';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import LockIcon from '@mui/icons-material/Lock';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -49,10 +57,20 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // App: Contabilidad
     if (has(modulos, 'contabilidad') && isApp('/contabilidad')) {
-        nav.push({ kind: 'page', segment: 'contabilidad', title: 'Dashboard', icon: <AccountBalanceWalletIcon /> });
-        nav.push({ kind: 'page', segment: 'contabilidad/asientos', title: 'Asientos', icon: <AccountBalanceWalletIcon /> });
-        nav.push({ kind: 'page', segment: 'contabilidad/cuentas', title: 'Plan de Cuentas', icon: <AccountBalanceWalletIcon /> });
-        nav.push({ kind: 'page', segment: 'contabilidad/reportes', title: 'Reportes', icon: <AccountBalanceWalletIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'header', title: 'Diario' });
+        nav.push({ kind: 'page', segment: 'contabilidad/asientos', title: 'Asientos', icon: <ReceiptLongIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/asientos/nuevo', title: 'Nuevo Asiento', icon: <AddCircleOutlineIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/recurrentes', title: 'Recurrentes', icon: <RepeatIcon /> });
+        nav.push({ kind: 'header', title: 'Catálogos' });
+        nav.push({ kind: 'page', segment: 'contabilidad/cuentas', title: 'Plan de Cuentas', icon: <AccountTreeIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/centros-costo', title: 'Centros de Costo', icon: <HubIcon /> });
+        nav.push({ kind: 'header', title: 'Operaciones' });
+        nav.push({ kind: 'page', segment: 'contabilidad/conciliacion', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/presupuestos', title: 'Presupuestos', icon: <CalculateIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/cierre', title: 'Cierre Contable', icon: <LockIcon /> });
+        nav.push({ kind: 'header', title: 'Informes' });
+        nav.push({ kind: 'page', segment: 'contabilidad/reportes', title: 'Reportes', icon: <AssessmentIcon /> });
         return nav;
     }
 
@@ -69,6 +87,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'header', title: 'Administración' });
         nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <BadgeIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/feriados', title: 'Feriados', icon: <SettingsIcon /> });
         return nav;
     }
 
@@ -127,18 +146,18 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     }
 
     // App: Configuración Central (Ajustes) y Maestros
-    if (isAdmin && (isApp('/configuracion') || isApp('/maestros') || isApp('/empleados'))) {
+    if (isAdmin && (isApp('/configuracion') || isApp('/maestros'))) {
+        nav.push({ kind: 'header', title: 'Configuración' });
         nav.push({ kind: 'page', segment: 'configuracion', title: 'Configuración Global', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'configuracion/formas-pago', title: 'Formas de Pago', icon: <PaymentsIcon /> });
         if (has(modulos, 'usuarios')) {
             nav.push({ kind: 'page', segment: 'configuracion/usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
         }
-        nav.push({ kind: 'page', segment: 'maestros/correlativo', title: 'Correlativos', icon: <SettingsIcon /> });
+        nav.push({ kind: 'header', title: 'Maestros' });
         nav.push({ kind: 'page', segment: 'maestros/empresa', title: 'Empresa', icon: <SettingsIcon /> });
-        nav.push({ kind: 'page', segment: 'maestros/feriados', title: 'Feriados', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'maestros/correlativo', title: 'Correlativos', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'maestros/monedas', title: 'Monedas', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'maestros/tasa-moneda', title: 'Tasa Moneda', icon: <SettingsIcon /> });
-        nav.push({ kind: 'page', segment: 'empleados', title: 'Empleados', icon: <PeopleIcon /> });
         return nav;
     }
 

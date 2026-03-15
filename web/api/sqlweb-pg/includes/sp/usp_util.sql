@@ -1673,3 +1673,417 @@ BEGIN
     UPDATE "Usuarios" SET "Password" = p_password_hash WHERE UPPER("Cod_Usuario") = UPPER(p_user_code);
 END;
 $$;
+
+-- ============================================================================
+-- 18o. AUTH-SECURITY: usp_sec_auth_resetlockout
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sec_auth_resetlockout(p_user_code VARCHAR(60))
+RETURNS VOID
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE sec."AuthIdentity"
+    SET "FailedLoginCount" = 0,
+        "LockoutUntilUtc" = NULL,
+        "PasswordChangedAtUtc" = NOW() AT TIME ZONE 'UTC',
+        "UpdatedAtUtc" = NOW() AT TIME ZONE 'UTC'
+    WHERE UPPER("UserCode") = UPPER(p_user_code);
+END;
+$$;
+
+-- ============================================================================
+-- 19. MAESTROS: usp_master_generic_list
+--    Lista con paginacion, filtro de busqueda en columnas de texto.
+--    Usa SQL dinamico seguro con quote_ident para tabla y columnas.
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_master_generic_list(
+    p_schema_name  VARCHAR(128),
+    p_table_name   VARCHAR(128),
+    p_search       VARCHAR(200)  DEFAULT NULL,
+    p_sort_column  VARCHAR(128)  DEFAULT 'id',
+    p_offset       INT           DEFAULT 0,
+    p_limit        INT           DEFAULT 50
+)
+RETURNS TABLE("TotalCount" BIGINT, "JsonRow" JSONB)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_full_table  TEXT := quote_ident(p_schema_name) || '.' || quote_ident(p_table_name);
+    v_safe_sort   TEXT := quote_ident(p_sort_column);
+    v_where       TEXT := '';
+    v_search_cols TEXT := '';
+    v_total       BIGINT;
+    v_col         RECORD;
+BEGIN
+    -- Build dynamic LIKE search on string columns
+    IF p_search IS NOT NULL AND LENGTH(TRIM(p_search)) > 0 THEN
+        FOR v_col IN
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema = p_schema_name AND table_name = p_table_name
+              AND data_type IN ('character varying','varchar','text','character','char')
+        LOOP
+            IF v_search_cols <> '' THEN v_search_cols := v_search_cols || ' OR '; END IF;
+            v_search_cols := v_search_cols || quote_ident(v_col.column_name) || ' ILIKE ' || quote_literal('%' || p_search || '%');
+        END LOOP;
+
+        IF v_search_cols <> '' THEN
+            v_where := ' WHERE (' || v_search_cols || ')';
+        END IF;
+    END IF;
+
+    -- Count
+    EXECUTE 'SELECT COUNT(1) FROM ' || v_full_table || v_where INTO v_total;
+
+    -- Data
+    RETURN QUERY EXECUTE
+        'SELECT ' || v_total || '::BIGINT, to_jsonb(t.*) FROM ' || v_full_table || ' t' || v_where
+        || ' ORDER BY ' || v_safe_sort || ' ASC'
+        || ' LIMIT ' || p_limit || ' OFFSET ' || p_offset;
+END;
+$$;
+
+-- ============================================================================
+-- 20. CRUD GENERICO: usp_sys_genericlist
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_genericlist(
+    p_schema_name  VARCHAR(128),
+    p_table_name   VARCHAR(128),
+    p_sort_column  VARCHAR(128)  DEFAULT 'id',
+    p_sort_dir     VARCHAR(4)    DEFAULT 'ASC',
+    p_offset       INT           DEFAULT 0,
+    p_page_size    INT           DEFAULT 50,
+    p_filters_json JSONB         DEFAULT NULL
+)
+RETURNS TABLE("TotalCount" BIGINT, "JsonRow" JSONB)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_full_table TEXT := quote_ident(p_schema_name) || '.' || quote_ident(p_table_name);
+    v_safe_sort  TEXT := quote_ident(p_sort_column);
+    v_direction  TEXT := CASE WHEN UPPER(p_sort_dir) = 'DESC' THEN 'DESC' ELSE 'ASC' END;
+    v_where      TEXT := '';
+    v_key        TEXT;
+    v_val        TEXT;
+    v_total      BIGINT;
+BEGIN
+    -- Build WHERE from JSONB filters (key=value equality)
+    IF p_filters_json IS NOT NULL AND jsonb_typeof(p_filters_json) = 'object' THEN
+        FOR v_key, v_val IN SELECT * FROM jsonb_each_text(p_filters_json)
+        LOOP
+            IF v_where = '' THEN v_where := ' WHERE '; ELSE v_where := v_where || ' AND '; END IF;
+            v_where := v_where || quote_ident(v_key) || ' = ' || quote_literal(v_val);
+        END LOOP;
+    END IF;
+
+    -- Count
+    EXECUTE 'SELECT COUNT(1) FROM ' || v_full_table || v_where INTO v_total;
+
+    -- Data
+    RETURN QUERY EXECUTE
+        'SELECT ' || v_total || '::BIGINT, to_jsonb(t.*) FROM ' || v_full_table || ' t' || v_where
+        || ' ORDER BY ' || v_safe_sort || ' ' || v_direction
+        || ' LIMIT ' || p_page_size || ' OFFSET ' || p_offset;
+END;
+$$;
+
+-- ============================================================================
+-- 20b. CRUD GENERICO: usp_sys_genericgetbykey
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_genericgetbykey(
+    p_schema_name VARCHAR(128),
+    p_table_name  VARCHAR(128),
+    p_key_json    JSONB
+)
+RETURNS SETOF JSONB
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_full_table   TEXT := quote_ident(p_schema_name) || '.' || quote_ident(p_table_name);
+    v_where        TEXT := '';
+    v_key          TEXT;
+    v_val          TEXT;
+BEGIN
+    FOR v_key, v_val IN SELECT * FROM jsonb_each_text(p_key_json)
+    LOOP
+        IF v_where = '' THEN v_where := ' WHERE '; ELSE v_where := v_where || ' AND '; END IF;
+        v_where := v_where || quote_ident(v_key) || ' = ' || quote_literal(v_val);
+    END LOOP;
+
+    RETURN QUERY EXECUTE 'SELECT to_jsonb(t.*) FROM ' || v_full_table || ' t' || v_where;
+END;
+$$;
+
+-- ============================================================================
+-- 20c. CRUD GENERICO: usp_sys_genericinsert
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_genericinsert(
+    p_schema_name VARCHAR(128),
+    p_table_name  VARCHAR(128),
+    p_data_json   JSONB
+)
+RETURNS VOID
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_full_table TEXT := quote_ident(p_schema_name) || '.' || quote_ident(p_table_name);
+    v_cols       TEXT := '';
+    v_vals       TEXT := '';
+    v_key        TEXT;
+    v_val        TEXT;
+    v_type       TEXT;
+BEGIN
+    FOR v_key IN SELECT k FROM jsonb_object_keys(p_data_json) AS k
+    LOOP
+        IF v_cols <> '' THEN v_cols := v_cols || ', '; v_vals := v_vals || ', '; END IF;
+        v_cols := v_cols || quote_ident(v_key);
+        v_type := jsonb_typeof(p_data_json->v_key);
+        IF v_type = 'null' THEN
+            v_vals := v_vals || 'NULL';
+        ELSE
+            v_vals := v_vals || quote_literal(p_data_json->>v_key);
+        END IF;
+    END LOOP;
+
+    IF v_cols = '' THEN
+        RAISE EXCEPTION 'no_writable_fields';
+    END IF;
+
+    EXECUTE 'INSERT INTO ' || v_full_table || ' (' || v_cols || ') VALUES (' || v_vals || ')';
+END;
+$$;
+
+-- ============================================================================
+-- 20d. CRUD GENERICO: usp_sys_genericupdate
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_genericupdate(
+    p_schema_name VARCHAR(128),
+    p_table_name  VARCHAR(128),
+    p_key_json    JSONB,
+    p_data_json   JSONB
+)
+RETURNS TABLE("rowsAffected" INT)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_full_table   TEXT := quote_ident(p_schema_name) || '.' || quote_ident(p_table_name);
+    v_set_clause   TEXT := '';
+    v_where        TEXT := '';
+    v_key          TEXT;
+    v_val          TEXT;
+    v_type         TEXT;
+    v_rows         INT;
+BEGIN
+    -- Build SET clause
+    FOR v_key IN SELECT k FROM jsonb_object_keys(p_data_json) AS k
+    LOOP
+        IF v_set_clause <> '' THEN v_set_clause := v_set_clause || ', '; END IF;
+        v_type := jsonb_typeof(p_data_json->v_key);
+        IF v_type = 'null' THEN
+            v_set_clause := v_set_clause || quote_ident(v_key) || ' = NULL';
+        ELSE
+            v_set_clause := v_set_clause || quote_ident(v_key) || ' = ' || quote_literal(p_data_json->>v_key);
+        END IF;
+    END LOOP;
+
+    IF v_set_clause = '' THEN
+        RAISE EXCEPTION 'no_writable_fields';
+    END IF;
+
+    -- Build WHERE from key
+    FOR v_key, v_val IN SELECT * FROM jsonb_each_text(p_key_json)
+    LOOP
+        IF v_where = '' THEN v_where := ' WHERE '; ELSE v_where := v_where || ' AND '; END IF;
+        v_where := v_where || quote_ident(v_key) || ' = ' || quote_literal(v_val);
+    END LOOP;
+
+    EXECUTE 'UPDATE ' || v_full_table || ' SET ' || v_set_clause || v_where;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+
+    RETURN QUERY SELECT v_rows;
+END;
+$$;
+
+-- ============================================================================
+-- 20e. CRUD GENERICO: usp_sys_genericdelete
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_genericdelete(
+    p_schema_name VARCHAR(128),
+    p_table_name  VARCHAR(128),
+    p_key_json    JSONB
+)
+RETURNS TABLE("rowsAffected" INT)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_full_table   TEXT := quote_ident(p_schema_name) || '.' || quote_ident(p_table_name);
+    v_where        TEXT := '';
+    v_key          TEXT;
+    v_val          TEXT;
+    v_rows         INT;
+BEGIN
+    FOR v_key, v_val IN SELECT * FROM jsonb_each_text(p_key_json)
+    LOOP
+        IF v_where = '' THEN v_where := ' WHERE '; ELSE v_where := v_where || ' AND '; END IF;
+        v_where := v_where || quote_ident(v_key) || ' = ' || quote_literal(v_val);
+    END LOOP;
+
+    EXECUTE 'DELETE FROM ' || v_full_table || v_where;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+
+    RETURN QUERY SELECT v_rows;
+END;
+$$;
+
+-- ============================================================================
+-- 21. TX HELPERS: usp_sys_headerdetailtx
+--     Inserta cabecera + detalle en una transaccion (auto-tx en PG).
+--     Recibe datos como JSONB.
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_headerdetailtx(
+    p_header_table    VARCHAR(260),
+    p_detail_table    VARCHAR(260),
+    p_header_json     JSONB,
+    p_details_json    JSONB,
+    p_link_fields_csv VARCHAR(500) DEFAULT NULL
+)
+RETURNS TABLE("ok" INT, "detailRows" INT)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_cols       TEXT;
+    v_vals       TEXT;
+    v_sql        TEXT;
+    v_detail_count INT;
+    v_row        JSONB;
+    v_key        TEXT;
+    v_val        TEXT;
+    v_d_cols     TEXT;
+    v_d_vals     TEXT;
+    v_link_fields TEXT[];
+    v_lf         TEXT;
+BEGIN
+    -- Build header INSERT dynamically from JSONB keys
+    v_cols := '';
+    v_vals := '';
+
+    FOR v_key, v_val IN SELECT * FROM jsonb_each_text(p_header_json)
+    LOOP
+        IF v_cols <> '' THEN v_cols := v_cols || ', '; v_vals := v_vals || ', '; END IF;
+        v_cols := v_cols || quote_ident(v_key);
+        v_vals := v_vals || quote_literal(v_val);
+    END LOOP;
+
+    v_sql := 'INSERT INTO ' || p_header_table || ' (' || v_cols || ') VALUES (' || v_vals || ')';
+    EXECUTE v_sql;
+
+    -- Parse link fields
+    IF p_link_fields_csv IS NOT NULL AND LENGTH(p_link_fields_csv) > 0 THEN
+        v_link_fields := string_to_array(p_link_fields_csv, ',');
+        FOR i IN 1..array_length(v_link_fields, 1) LOOP
+            v_link_fields[i] := TRIM(v_link_fields[i]);
+        END LOOP;
+    ELSE
+        v_link_fields := ARRAY[]::TEXT[];
+    END IF;
+
+    -- Process each detail row
+    v_detail_count := jsonb_array_length(p_details_json);
+
+    FOR i IN 0..v_detail_count-1
+    LOOP
+        v_row := p_details_json->i;
+
+        -- Add header link fields if missing from detail row
+        IF array_length(v_link_fields, 1) > 0 THEN
+            FOREACH v_lf IN ARRAY v_link_fields
+            LOOP
+                IF v_row->>v_lf IS NULL AND p_header_json->>v_lf IS NOT NULL THEN
+                    v_row := v_row || jsonb_build_object(v_lf, p_header_json->>v_lf);
+                END IF;
+            END LOOP;
+        END IF;
+
+        -- Build INSERT from row keys
+        v_d_cols := '';
+        v_d_vals := '';
+
+        FOR v_key, v_val IN SELECT * FROM jsonb_each_text(v_row)
+        LOOP
+            IF v_d_cols <> '' THEN v_d_cols := v_d_cols || ', '; v_d_vals := v_d_vals || ', '; END IF;
+            v_d_cols := v_d_cols || quote_ident(v_key);
+            v_d_vals := v_d_vals || quote_literal(v_val);
+        END LOOP;
+
+        IF LENGTH(v_d_cols) > 0 THEN
+            v_sql := 'INSERT INTO ' || p_detail_table || ' (' || v_d_cols || ') VALUES (' || v_d_vals || ')';
+            EXECUTE v_sql;
+        END IF;
+    END LOOP;
+
+    RETURN QUERY SELECT 1, v_detail_count;
+END;
+$$;
+
+-- ============================================================================
+-- 22. META: usp_sys_meta_relations
+--     Lista relaciones FK de la base de datos.
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_meta_relations()
+RETURNS TABLE(
+    "fkName"       TEXT,
+    "parentSchema" TEXT,
+    "parentTable"  TEXT,
+    "parentColumn" TEXT,
+    "refSchema"    TEXT,
+    "refTable"     TEXT,
+    "refColumn"    TEXT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        tc.constraint_name::TEXT                   AS "fkName",
+        kcu.table_schema::TEXT                     AS "parentSchema",
+        kcu.table_name::TEXT                       AS "parentTable",
+        kcu.column_name::TEXT                      AS "parentColumn",
+        ccu.table_schema::TEXT                     AS "refSchema",
+        ccu.table_name::TEXT                       AS "refTable",
+        ccu.column_name::TEXT                      AS "refColumn"
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON kcu.constraint_name = tc.constraint_name
+     AND kcu.constraint_schema = tc.constraint_schema
+    JOIN information_schema.constraint_column_usage ccu
+      ON ccu.constraint_name = tc.constraint_name
+     AND ccu.constraint_schema = tc.constraint_schema
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+    ORDER BY kcu.table_schema, kcu.table_name;
+END;
+$$;
+
+-- ============================================================================
+-- 22b. META: usp_sys_meta_tablesandcolumns
+--      Lista tablas y columnas para el endpoint /meta/schema.
+--      Multi-recordset => split en 2 funciones.
+-- ============================================================================
+CREATE OR REPLACE FUNCTION usp_sys_meta_tablesandcolumns_tables()
+RETURNS TABLE("schema" TEXT, "table" TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT table_schema::TEXT, table_name::TEXT
+    FROM information_schema.tables
+    WHERE table_type = 'BASE TABLE'
+      AND table_schema NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY table_schema, table_name;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION usp_sys_meta_tablesandcolumns_columns()
+RETURNS TABLE("schema" TEXT, "table" TEXT, "column" TEXT, "type" TEXT, "nullable" TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        table_schema::TEXT,
+        table_name::TEXT,
+        column_name::TEXT,
+        data_type::TEXT,
+        is_nullable::TEXT
+    FROM information_schema.columns
+    WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY table_schema, table_name, ordinal_position;
+END;
+$$;

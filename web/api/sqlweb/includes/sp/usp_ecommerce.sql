@@ -263,7 +263,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Recordset 1: Producto con rating + campos extendidos
+    -- Recordset 1: Producto con rating + campos extendidos + variantes/industria
     SELECT TOP 1
         p.ProductId       AS id,
         p.ProductCode     AS code,
@@ -289,11 +289,16 @@ BEGIN
         p.WarrantyMonths  AS warrantyMonths,
         p.BarCode         AS barCode,
         p.Slug            AS slug,
+        ISNULL(p.IsVariantParent, 0)  AS isVariantParent,
+        p.ParentProductCode           AS parentProductCode,
+        p.IndustryTemplateCode        AS industryTemplateCode,
+        it.TemplateName               AS industryTemplateName,
         ISNULL(rv.AvgRating, 0) AS avgRating,
         ISNULL(rv.ReviewCount, 0) AS reviewCount
     FROM [master].Product p
     LEFT JOIN [master].Category c ON c.CategoryCode = p.CategoryCode AND c.CompanyId = p.CompanyId AND c.IsDeleted = 0
     LEFT JOIN [master].Brand b ON b.BrandCode = p.BrandCode AND b.CompanyId = p.CompanyId AND b.IsDeleted = 0
+    LEFT JOIN store.IndustryTemplate it ON it.TemplateCode = p.IndustryTemplateCode AND it.CompanyId = p.CompanyId AND it.IsDeleted = 0
     OUTER APPLY (
         SELECT
             AVG(CAST(r.Rating AS FLOAT)) AS AvgRating,
@@ -349,6 +354,71 @@ BEGIN
       AND s.ProductCode = @Code
       AND s.IsActive    = 1
     ORDER BY s.SpecGroup, s.SortOrder, s.SpecId;
+
+    -- Recordset 5: Variantes (si IsVariantParent = 1)
+    SELECT
+        pv.ProductVariantId   AS variantId,
+        pv.VariantProductCode AS code,
+        vp.ProductName        AS name,
+        ISNULL(pv.SKU, pv.VariantProductCode) AS sku,
+        vp.SalesPrice         AS price,
+        pv.PriceDelta         AS priceDelta,
+        ISNULL(pv.StockOverride, vp.StockQty) AS stock,
+        pv.IsDefault          AS isDefault,
+        pv.SortOrder          AS sortOrder
+    FROM store.ProductVariant pv
+    INNER JOIN [master].Product vp ON vp.ProductCode = pv.VariantProductCode AND vp.CompanyId = pv.CompanyId
+    WHERE pv.CompanyId          = @CompanyId
+      AND pv.ParentProductCode  = @Code
+      AND pv.IsDeleted = 0
+      AND pv.IsActive  = 1
+      AND vp.IsDeleted = 0
+      AND vp.IsActive  = 1
+    ORDER BY pv.SortOrder, pv.ProductVariantId;
+
+    -- Recordset 6: Opciones de variante (para cada variante del recordset 5)
+    SELECT
+        pv.VariantProductCode AS code,
+        vg.GroupCode          AS groupCode,
+        vg.GroupName          AS groupName,
+        vg.DisplayType        AS displayType,
+        vo.OptionCode         AS optionCode,
+        vo.OptionLabel        AS optionLabel,
+        vo.ColorHex           AS colorHex,
+        vo.ImageUrl           AS optionImageUrl
+    FROM store.ProductVariantOptionValue pvov
+    INNER JOIN store.ProductVariant pv ON pv.ProductVariantId = pvov.ProductVariantId
+    INNER JOIN store.ProductVariantOption vo ON vo.VariantOptionId = pvov.VariantOptionId
+    INNER JOIN store.ProductVariantGroup vg ON vg.VariantGroupId = vo.VariantGroupId
+    WHERE pv.CompanyId          = @CompanyId
+      AND pv.ParentProductCode  = @Code
+      AND pv.IsDeleted = 0
+      AND pv.IsActive  = 1
+    ORDER BY vg.SortOrder, vo.SortOrder;
+
+    -- Recordset 7: Atributos de industria del producto
+    SELECT
+        pa.AttributeKey       AS [key],
+        ita.AttributeLabel    AS label,
+        ita.DataType          AS dataType,
+        ita.DisplayGroup      AS displayGroup,
+        pa.ValueText          AS valueText,
+        pa.ValueNumber        AS valueNumber,
+        pa.ValueDate          AS valueDate,
+        pa.ValueBoolean       AS valueBoolean,
+        ita.SortOrder         AS sortOrder
+    FROM store.ProductAttribute pa
+    INNER JOIN store.IndustryTemplateAttribute ita
+        ON ita.TemplateCode  = pa.TemplateCode
+       AND ita.AttributeKey  = pa.AttributeKey
+       AND ita.CompanyId     = pa.CompanyId
+       AND ita.IsDeleted     = 0
+       AND ita.IsActive      = 1
+    WHERE pa.CompanyId   = @CompanyId
+      AND pa.ProductCode = @Code
+      AND pa.IsDeleted   = 0
+      AND pa.IsActive    = 1
+    ORDER BY ita.DisplayGroup, ita.SortOrder;
 END;
 GO
 

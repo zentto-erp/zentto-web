@@ -35,6 +35,7 @@ import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useRouter } from "next/navigation";
 import { useInventarioDashboard, useMovimientosList } from "../hooks/useInventario";
 import { formatCurrency } from "@datqbox/shared-api";
+import { brandColors } from "@datqbox/shared-ui";
 
 export default function InventarioHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? String(dashboard.TotalArticulos) : "\u2014",
       subtitle: "En sistema",
       loading: dashLoading,
-      color: "#321fdb",
+      color: brandColors.statBlue,
       chartType: "bar" as const,
     },
     {
@@ -56,7 +57,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? String(dashboard.BajoStock) : "\u2014",
       subtitle: "Requieren atencion",
       loading: dashLoading,
-      color: "#e55353",
+      color: brandColors.statRed,
       chartType: "line" as const,
     },
     {
@@ -64,7 +65,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? String(dashboard.TotalCategorias) : "\u2014",
       subtitle: "Catalogos",
       loading: dashLoading,
-      color: "#39f",
+      color: brandColors.statTeal,
       chartType: "bar" as const,
     },
     {
@@ -72,20 +73,20 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? formatCurrency(dashboard.ValorInventario) : "\u2014",
       subtitle: "Costo total",
       loading: dashLoading,
-      color: "#f9b115",
+      color: brandColors.statOrange,
       chartType: "line" as const,
     },
   ];
 
   const shortcuts = [
-    { title: "Articulos", description: "Gestion de productos", icon: <InventoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/articulos`, bg: "#2e7d32" },
-    { title: "Ajuste Inventario", description: "Entradas y salidas", icon: <TuneIcon sx={{ fontSize: 32 }} />, href: `${bp}/ajuste`, bg: "#3b5998" },
-    { title: "Movimientos", description: "Historial completo", icon: <HistoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/movimientos`, bg: "#7b1fa2" },
-    { title: "Traslados", description: "Entre almacenes", icon: <SwapHorizIcon sx={{ fontSize: 32 }} />, href: `${bp}/traslados`, bg: "#e65100" },
-    { title: "Libro Inventario", description: "Reporte mensual", icon: <MenuBookIcon sx={{ fontSize: 32 }} />, href: `${bp}/reportes/libro`, bg: "#00897b" },
-    { title: "Etiquetas", description: "Generador", icon: <LocalOfferIcon sx={{ fontSize: 32 }} />, href: `${bp}/etiquetas`, bg: "#4875b4" },
-    { title: "Categorias", description: "Catalogo", icon: <CategoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/categorias`, bg: "#00aced" },
-    { title: "Almacenes", description: "Catalogo", icon: <WarehouseIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/almacenes`, bg: "#795548" },
+    { title: "Articulos", description: "Gestion de productos", icon: <InventoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/articulos`, bg: brandColors.shortcutGreen },
+    { title: "Ajuste Inventario", description: "Entradas y salidas", icon: <TuneIcon sx={{ fontSize: 32 }} />, href: `${bp}/ajuste`, bg: brandColors.shortcutDark },
+    { title: "Movimientos", description: "Historial completo", icon: <HistoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/movimientos`, bg: brandColors.shortcutNavy },
+    { title: "Traslados", description: "Entre almacenes", icon: <SwapHorizIcon sx={{ fontSize: 32 }} />, href: `${bp}/traslados`, bg: brandColors.danger },
+    { title: "Libro Inventario", description: "Reporte mensual", icon: <MenuBookIcon sx={{ fontSize: 32 }} />, href: `${bp}/reportes/libro`, bg: brandColors.success },
+    { title: "Etiquetas", description: "Generador", icon: <LocalOfferIcon sx={{ fontSize: 32 }} />, href: `${bp}/etiquetas`, bg: brandColors.shortcutSlate },
+    { title: "Categorias", description: "Catalogo", icon: <CategoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/categorias`, bg: brandColors.shortcutTeal },
+    { title: "Almacenes", description: "Catalogo", icon: <WarehouseIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/almacenes`, bg: brandColors.shortcutSlate },
   ];
 
   const movRows = (ultMovs?.rows ?? []) as Record<string, unknown>[];
@@ -179,19 +180,19 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
           <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>Indicadores</Typography>
-              <Box sx={{ borderLeft: "4px solid #321fdb", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Valor Total en Stock</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   {dashLoading ? <Skeleton width={120} /> : formatCurrency(dashboard?.ValorInventario ?? 0)}
                 </Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #e55353", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Articulos Bajo Minimo</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   {dashLoading ? <Skeleton width={60} /> : dashboard?.BajoStock ?? 0}
                 </Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #f9b115", pl: 2 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
                 <Typography variant="body2" color="text.secondary">Movimientos del Mes</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   {dashLoading ? <Skeleton width={60} /> : dashboard?.MovimientosMes ?? 0}

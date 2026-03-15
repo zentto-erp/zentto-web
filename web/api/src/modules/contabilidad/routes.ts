@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { advancedRouter } from "./routes-advanced.js";
 import {
   anularAsiento,
   balanceComprobacion,
@@ -25,6 +26,8 @@ import {
 } from "./service.js";
 
 export const contabilidadRouter = Router();
+
+contabilidadRouter.use("/", advancedRouter);
 
 const listSchema = z.object({
   fechaDesde: z.string().optional(),

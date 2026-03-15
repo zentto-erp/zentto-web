@@ -37,6 +37,41 @@ interface ProductSpec {
   value: string;
 }
 
+interface VariantOptionInfo {
+  groupCode: string;
+  groupName: string;
+  displayType: string; // BUTTON | SWATCH | DROPDOWN | IMAGE
+  optionCode: string;
+  optionLabel: string;
+  colorHex?: string;
+  imageUrl?: string;
+}
+
+interface ProductVariant {
+  variantId: number;
+  code: string;
+  name: string;
+  sku: string;
+  price: number;
+  priceDelta: number;
+  stock: number;
+  isDefault: boolean;
+  sortOrder: number;
+  options: VariantOptionInfo[];
+}
+
+interface IndustryAttribute {
+  key: string;
+  label: string;
+  dataType: string;
+  displayGroup: string;
+  value: any;
+  valueText?: string;
+  valueNumber?: number;
+  valueDate?: string;
+  valueBoolean?: boolean;
+}
+
 interface Props {
   product: {
     code: string;
@@ -65,6 +100,12 @@ interface Props {
     reviewCount?: number;
     highlights?: string[];
     specs?: ProductSpec[];
+    isVariantParent?: boolean;
+    parentProductCode?: string;
+    industryTemplateCode?: string;
+    industryTemplateName?: string;
+    variants?: ProductVariant[];
+    industryAttributes?: IndustryAttribute[];
   };
   onBack?: () => void;
   reviews?: React.ReactNode;
@@ -245,6 +286,15 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [shareMsg, setShareMsg] = useState("");
 
+  // Variant selection state
+  const hasVariants = product.isVariantParent && product.variants && product.variants.length > 0;
+  const defaultVariant = product.variants?.find((v) => v.isDefault) ?? product.variants?.[0] ?? null;
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(defaultVariant);
+
+  // Effective price/stock based on selected variant
+  const effectivePrice = selectedVariant ? selectedVariant.price : product.price;
+  const effectiveStock = selectedVariant ? selectedVariant.stock : product.stock;
+
   // Register product view for "recently viewed" recommendations
   useEffect(() => {
     addRecentView({
@@ -268,16 +318,16 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
 
   const handleAdd = () => {
     addItem({
-      productCode: product.code,
-      productName: product.name,
+      productCode: selectedVariant ? selectedVariant.code : product.code,
+      productName: selectedVariant ? selectedVariant.name : product.name,
       quantity: qty,
-      unitPrice: product.price,
+      unitPrice: effectivePrice,
       taxRate: product.taxRate > 1 ? product.taxRate / 100 : product.taxRate,
       imageUrl: media[0]?.url || null,
     });
   };
 
-  const subtotal = product.price * qty;
+  const subtotal = effectivePrice * qty;
   const taxRate = product.taxRate > 1 ? product.taxRate / 100 : product.taxRate;
   const tax = subtotal * taxRate;
 
@@ -437,6 +487,128 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                 )}
               </Box>
 
+              {/* ═══ Variant Selector ═══ */}
+              {hasVariants && (() => {
+                // Agrupar opciones únicas por grupo desde todas las variantes
+                const groupMap = new Map<string, { groupName: string; displayType: string; options: Map<string, VariantOptionInfo> }>();
+                for (const v of product.variants!) {
+                  for (const opt of v.options) {
+                    if (!groupMap.has(opt.groupCode)) {
+                      groupMap.set(opt.groupCode, { groupName: opt.groupName, displayType: opt.displayType, options: new Map() });
+                    }
+                    groupMap.get(opt.groupCode)!.options.set(opt.optionCode, opt);
+                  }
+                }
+
+                // Opciones seleccionadas del variante actual
+                const selectedOptions = new Map<string, string>();
+                if (selectedVariant) {
+                  for (const opt of selectedVariant.options) {
+                    selectedOptions.set(opt.groupCode, opt.optionCode);
+                  }
+                }
+
+                const handleOptionClick = (groupCode: string, optionCode: string) => {
+                  // Buscar variante que coincida con la nueva selección
+                  const newSelection = new Map(selectedOptions);
+                  newSelection.set(groupCode, optionCode);
+                  const match = product.variants!.find((v) =>
+                    v.options.every((opt) => newSelection.get(opt.groupCode) === opt.optionCode)
+                  );
+                  if (match) setSelectedVariant(match);
+                };
+
+                return (
+                  <Box sx={{ mb: 2 }}>
+                    {Array.from(groupMap.entries()).map(([groupCode, group]) => (
+                      <Box key={groupCode} sx={{ mb: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: "#0f1111", fontSize: 13 }}>
+                          {group.groupName}: <span style={{ fontWeight: 400 }}>{selectedOptions.get(groupCode) ? Array.from(group.options.values()).find(o => o.optionCode === selectedOptions.get(groupCode))?.optionLabel : ""}</span>
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {Array.from(group.options.values()).map((opt) => {
+                            const isSelected = selectedOptions.get(groupCode) === opt.optionCode;
+                            // SWATCH — círculos de color
+                            if (group.displayType === "SWATCH" && opt.colorHex) {
+                              return (
+                                <Box
+                                  key={opt.optionCode}
+                                  onClick={() => handleOptionClick(groupCode, opt.optionCode)}
+                                  title={opt.optionLabel}
+                                  sx={{
+                                    width: 36, height: 36, borderRadius: "50%",
+                                    bgcolor: opt.colorHex,
+                                    border: "3px solid", borderColor: isSelected ? "#ff9900" : "#e3e6e6",
+                                    cursor: "pointer", transition: "all 0.15s",
+                                    "&:hover": { borderColor: "#ff9900", transform: "scale(1.1)" },
+                                    boxShadow: isSelected ? "0 0 0 2px #fff, 0 0 0 4px #ff9900" : "none",
+                                  }}
+                                />
+                              );
+                            }
+                            // IMAGE — miniatura
+                            if (group.displayType === "IMAGE" && opt.imageUrl) {
+                              return (
+                                <Box
+                                  key={opt.optionCode}
+                                  onClick={() => handleOptionClick(groupCode, opt.optionCode)}
+                                  sx={{
+                                    width: 48, height: 48, borderRadius: "4px",
+                                    border: "2px solid", borderColor: isSelected ? "#ff9900" : "#e3e6e6",
+                                    cursor: "pointer", overflow: "hidden",
+                                    "&:hover": { borderColor: "#ff9900" },
+                                  }}
+                                >
+                                  <Box component="img" src={opt.imageUrl} alt={opt.optionLabel} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                </Box>
+                              );
+                            }
+                            // DROPDOWN — se renderiza como Select abajo
+                            if (group.displayType === "DROPDOWN") return null;
+                            // BUTTON (default) — botones de texto
+                            return (
+                              <Box
+                                key={opt.optionCode}
+                                onClick={() => handleOptionClick(groupCode, opt.optionCode)}
+                                sx={{
+                                  px: 2, py: 0.8, borderRadius: "8px",
+                                  border: "2px solid", borderColor: isSelected ? "#ff9900" : "#e3e6e6",
+                                  bgcolor: isSelected ? "#fff8e8" : "#fff",
+                                  cursor: "pointer", transition: "all 0.15s",
+                                  "&:hover": { borderColor: "#ff9900", bgcolor: "#fff8e8" },
+                                }}
+                              >
+                                <Typography variant="body2" sx={{ fontSize: 13, fontWeight: isSelected ? 600 : 400 }}>
+                                  {opt.optionLabel}
+                                </Typography>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                        {/* DROPDOWN rendering */}
+                        {group.displayType === "DROPDOWN" && (
+                          <Select
+                            size="small"
+                            value={selectedOptions.get(groupCode) || ""}
+                            onChange={(e) => handleOptionClick(groupCode, e.target.value as string)}
+                            sx={{ mt: 0.5, minWidth: 150, bgcolor: "#f0f2f2", borderRadius: "8px" }}
+                          >
+                            {Array.from(group.options.values()).map((opt) => (
+                              <MenuItem key={opt.optionCode} value={opt.optionCode}>{opt.optionLabel}</MenuItem>
+                            ))}
+                          </Select>
+                        )}
+                      </Box>
+                    ))}
+                    {selectedVariant && selectedVariant.sku && (
+                      <Typography variant="caption" sx={{ color: "#565959", mt: 0.5 }}>
+                        SKU: {selectedVariant.sku}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })()}
+
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
                 {(product.categoryName || product.category) && (
                   <Chip label={product.categoryName || product.category} size="small" sx={{ bgcolor: "#f0f2f2" }} />
@@ -580,18 +752,18 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                 <Typography
                   variant="body2"
                   sx={{
-                    color: product.stock > 0 ? "#067D62" : "#cc0c39",
+                    color: effectiveStock > 0 ? "#067D62" : "#cc0c39",
                     fontWeight: "bold",
                     fontSize: 16,
                     mb: 2,
                   }}
                 >
-                  {product.stock > 0
+                  {effectiveStock > 0
                     ? product.isService
                       ? "Disponible"
-                      : product.stock > 10
+                      : effectiveStock > 10
                         ? "En stock"
-                        : `Solo quedan ${product.stock}`
+                        : `Solo quedan ${effectiveStock}`
                     : "Agotado"}
                 </Typography>
 
@@ -608,7 +780,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                       "& .MuiOutlinedInput-notchedOutline": { border: "1px solid #d5d9d9" },
                     }}
                   >
-                    {Array.from({ length: Math.min(product.stock || 1, 10) }, (_, i) => i + 1).map((v) => (
+                    {Array.from({ length: Math.min(effectiveStock || 1, 10) }, (_, i) => i + 1).map((v) => (
                       <MenuItem key={v} value={v}>{v}</MenuItem>
                     ))}
                   </Select>
@@ -619,7 +791,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                   fullWidth
                   startIcon={<ShoppingCartIcon />}
                   onClick={handleAdd}
-                  disabled={product.stock <= 0 && !product.isService}
+                  disabled={effectiveStock <= 0 && !product.isService}
                   sx={{
                     bgcolor: "#ffd814",
                     color: "#0f1111",
@@ -640,7 +812,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                 <Button
                   variant="contained"
                   fullWidth
-                  disabled={product.stock <= 0 && !product.isService}
+                  disabled={effectiveStock <= 0 && !product.isService}
                   sx={{
                     bgcolor: "#ffa41c",
                     color: "#0f1111",
@@ -713,6 +885,53 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                       </Box>
                       <Box sx={{ flex: 1, p: 1 }}>
                         <Typography variant="body2" sx={{ color: "#0f1111", fontSize: 13 }}>{spec.value}</Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Paper>
+        );
+      })()}
+
+      {/* ═══ Atributos de industria ═══ */}
+      {product.industryAttributes && product.industryAttributes.length > 0 && (() => {
+        const groups: Record<string, IndustryAttribute[]> = {};
+        for (const a of product.industryAttributes) {
+          (groups[a.displayGroup] ??= []).push(a);
+        }
+        const formatValue = (attr: IndustryAttribute) => {
+          if (attr.dataType === "BOOLEAN") return attr.valueBoolean ? "Si" : "No";
+          if (attr.dataType === "DATE" && attr.valueDate) return new Date(attr.valueDate).toLocaleDateString("es-VE");
+          if (attr.dataType === "NUMBER" && attr.valueNumber != null) return String(attr.valueNumber);
+          return attr.valueText || attr.value || "-";
+        };
+        return (
+          <Paper elevation={0} sx={{ border: "1px solid #e3e6e6", borderRadius: "8px", mt: 3, p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f1111", mb: 2, fontSize: 18 }}>
+              {product.industryTemplateName ? `Informacion ${product.industryTemplateName}` : "Atributos del producto"}
+            </Typography>
+            {Object.entries(groups).map(([groupName, attrs]) => (
+              <Box key={groupName} sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight={600} sx={{ color: "#0f1111", mb: 0.5 }}>
+                  {groupName}
+                </Typography>
+                <Box sx={{ border: "1px solid #e3e6e6", borderRadius: "4px", overflow: "hidden" }}>
+                  {attrs.map((attr, i) => (
+                    <Box
+                      key={attr.key}
+                      sx={{
+                        display: "flex",
+                        borderBottom: i < attrs.length - 1 ? "1px solid #e3e6e6" : "none",
+                        "&:nth-of-type(odd)": { bgcolor: "#f7f7f7" },
+                      }}
+                    >
+                      <Box sx={{ flex: "0 0 40%", p: 1, pl: 1.5 }}>
+                        <Typography variant="body2" sx={{ color: "#565959", fontSize: 13 }}>{attr.label}</Typography>
+                      </Box>
+                      <Box sx={{ flex: 1, p: 1 }}>
+                        <Typography variant="body2" sx={{ color: "#0f1111", fontSize: 13 }}>{formatValue(attr)}</Typography>
                       </Box>
                     </Box>
                   ))}

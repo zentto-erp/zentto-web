@@ -940,6 +940,238 @@ export async function processVacationRequestPayment(requestId: string, codUsuari
   return { ...result, success: true, message: "Pago de vacaciones generado" };
 }
 
+// ─── Batch Payroll Processing ──────────────────────────────
+
+export async function generateBatchDraft(payload: {
+  nomina: string;
+  fechaInicio: string;
+  fechaHasta: string;
+  departamento?: string;
+  codUsuario?: string;
+}) {
+  const scope = await getDefaultScope();
+  const userId = await resolveUserId(payload.codUsuario);
+  const payrollCode = String(payload.nomina ?? "").trim().toUpperCase();
+  const fromDate = normalizeDate(payload.fechaInicio);
+  const toDate = normalizeDate(payload.fechaHasta);
+  if (!payrollCode || !fromDate || !toDate) {
+    return { success: false, message: "Datos invalidos" };
+  }
+  await ensurePayrollType(scope.companyId, payrollCode, userId);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_GenerateDraft",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      PayrollCode: payrollCode,
+      FromDate: fromDate,
+      ToDate: toDate,
+      DepartmentFilter: payload.departamento?.trim() || null,
+      UserId: userId,
+    },
+    { BatchId: sql.Int, Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    batchId: Number(output.BatchId ?? 0),
+    message: String(output.Mensaje ?? "Borrador generado"),
+  };
+}
+
+export async function saveDraftLine(payload: {
+  lineId: number;
+  quantity: number;
+  amount: number;
+  notes?: string;
+  codUsuario?: string;
+}) {
+  const userId = await resolveUserId(payload.codUsuario);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_SaveDraftLine",
+    {
+      LineId: payload.lineId,
+      Quantity: payload.quantity,
+      Amount: payload.amount,
+      Notes: payload.notes || null,
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    message: String(output.Mensaje ?? "Linea actualizada"),
+  };
+}
+
+export async function batchAddLine(payload: {
+  batchId: number;
+  employeeCode: string;
+  conceptCode: string;
+  conceptName: string;
+  conceptType: string;
+  quantity: number;
+  amount: number;
+  codUsuario?: string;
+}) {
+  const userId = await resolveUserId(payload.codUsuario);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_BatchAddLine",
+    {
+      BatchId: payload.batchId,
+      EmployeeCode: payload.employeeCode,
+      ConceptCode: payload.conceptCode,
+      ConceptName: payload.conceptName,
+      ConceptType: String(payload.conceptType).toUpperCase(),
+      Quantity: payload.quantity,
+      Amount: payload.amount,
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    message: String(output.Mensaje ?? "Linea agregada"),
+  };
+}
+
+export async function batchRemoveLine(lineId: number, codUsuario?: string) {
+  const userId = await resolveUserId(codUsuario);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_BatchRemoveLine",
+    { LineId: lineId, UserId: userId },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    message: String(output.Mensaje ?? "Linea eliminada"),
+  };
+}
+
+export async function getDraftSummary(batchId: number) {
+  const rows = await callSp<any>("usp_HR_Payroll_GetDraftSummary", { BatchId: batchId });
+  return rows[0] ?? null;
+}
+
+export async function getDraftGrid(params: {
+  batchId: number;
+  search?: string;
+  department?: string;
+  onlyModified?: boolean;
+  page?: number;
+  limit?: number;
+}) {
+  const page = Math.max(1, Number(params.page) || 1);
+  const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
+  const offset = (page - 1) * limit;
+  const { rows, output } = await callSpOut<any>(
+    "usp_HR_Payroll_GetDraftGrid",
+    {
+      BatchId: params.batchId,
+      Search: params.search?.trim() || null,
+      Department: params.department?.trim() || null,
+      OnlyModified: params.onlyModified ? 1 : 0,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
+  return { rows, total: Number(output.TotalCount ?? 0) };
+}
+
+export async function getEmployeeLines(batchId: number, employeeCode: string) {
+  return callSp<any>("usp_HR_Payroll_GetEmployeeLines", {
+    BatchId: batchId,
+    EmployeeCode: employeeCode,
+  });
+}
+
+export async function approveDraft(batchId: number, codUsuario?: string) {
+  const userId = await resolveUserId(codUsuario);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_ApproveDraft",
+    {
+      BatchId: batchId,
+      ApprovedBy: codUsuario || "SYSTEM",
+      UserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    message: String(output.Mensaje ?? "Borrador aprobado"),
+  };
+}
+
+export async function processBatch(batchId: number, codUsuario?: string) {
+  const userId = await resolveUserId(codUsuario);
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_ProcessBatch",
+    { BatchId: batchId, UserId: userId },
+    { Procesados: sql.Int, Errores: sql.Int, Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    procesados: Number(output.Procesados ?? 0),
+    errores: Number(output.Errores ?? 0),
+    message: String(output.Mensaje ?? "Lote procesado"),
+  };
+}
+
+export async function listBatches(params: {
+  nomina?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const scope = await getDefaultScope();
+  const page = Math.max(1, Number(params.page) || 1);
+  const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
+  const offset = (page - 1) * limit;
+  const { rows, output } = await callSpOut<any>(
+    "usp_HR_Payroll_ListBatches",
+    {
+      CompanyId: scope.companyId,
+      PayrollCode: params.nomina?.trim().toUpperCase() || null,
+      Status: params.status?.trim().toUpperCase() || null,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
+  return { rows, total: Number(output.TotalCount ?? 0) };
+}
+
+export async function batchBulkUpdate(payload: {
+  batchId: number;
+  conceptCode: string;
+  conceptType: string;
+  amount: number;
+  employeeCodes?: string[];
+  codUsuario?: string;
+}) {
+  const userId = await resolveUserId(payload.codUsuario);
+  const employeeXml = payload.employeeCodes?.length
+    ? arrayToXml(payload.employeeCodes.map(c => ({ code: c })))
+    : null;
+  const { output } = await callSpOut(
+    "usp_HR_Payroll_BatchBulkUpdate",
+    {
+      BatchId: payload.batchId,
+      ConceptCode: payload.conceptCode.trim().toUpperCase(),
+      ConceptType: payload.conceptType.trim().toUpperCase(),
+      Amount: payload.amount,
+      EmployeeCodes: employeeXml,
+      UserId: userId,
+    },
+    { AffectedCount: sql.Int, Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return {
+    success: Number(output.Resultado ?? 0) >= 0,
+    affectedCount: Number(output.AffectedCount ?? 0),
+    message: String(output.Mensaje ?? "Actualización masiva aplicada"),
+  };
+}
+
 export async function getAvailableDays(cedula: string) {
   const scope = await getDefaultScope();
   const rows = await callSp<{

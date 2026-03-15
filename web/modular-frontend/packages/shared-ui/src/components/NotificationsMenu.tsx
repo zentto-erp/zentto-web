@@ -89,7 +89,7 @@ export default function NotificationsMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'text.secondary' }}>
+            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={unreadCount} color="error" max={99}>
                     <NotificationsIcon />
                 </Badge>

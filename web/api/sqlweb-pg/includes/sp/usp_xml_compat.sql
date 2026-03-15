@@ -11,6 +11,7 @@
 -- Crea o reemplaza un documento de compra completo (cabecera + detalle + pagos).
 -- Para tipo COMPRA sincroniza ap."PayableDocument" y recalcula saldo proveedor.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_purchasedocument_upsert(VARCHAR, JSONB, JSONB, JSONB, VARCHAR);
 CREATE OR REPLACE FUNCTION usp_doc_purchasedocument_upsert(
     p_tipo_operacion  VARCHAR(20),
     p_header_json     JSONB,

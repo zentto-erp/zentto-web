@@ -332,17 +332,32 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asientos_List"(
   p_OrigenModulo    VARCHAR DEFAULT NULL,
   p_OrigenDocumento VARCHAR DEFAULT NULL,
   p_Page            INT     DEFAULT 1,
-  p_Limit           INT     DEFAULT 50,
-  OUT p_TotalCount  INT
+  p_Limit           INT     DEFAULT 50
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+  "AsientoId"      BIGINT,
+  "NumeroAsiento"  VARCHAR,
+  "Fecha"          DATE,
+  "TipoAsiento"    VARCHAR,
+  "Referencia"     VARCHAR,
+  "Concepto"       VARCHAR,
+  "Moneda"         VARCHAR,
+  "Tasa"           NUMERIC,
+  "TotalDebe"      NUMERIC,
+  "TotalHaber"     NUMERIC,
+  "Estado"         VARCHAR,
+  "OrigenModulo"   VARCHAR,
+  "CodUsuario"     VARCHAR,
+  "TotalCount"     INT
+)
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
   v_Limit INT := LEAST(GREATEST(COALESCE(p_Limit, 50), 1), 500);
   v_Offset INT := (v_Page - 1) * v_Limit;
+  v_TotalCount INT;
 BEGIN
-  SELECT COUNT(1) INTO p_TotalCount
+  SELECT COUNT(1) INTO v_TotalCount
   FROM public."Asientos" a
   WHERE (p_FechaDesde IS NULL OR a."Fecha" >= p_FechaDesde)
     AND (p_FechaHasta IS NULL OR a."Fecha" <= p_FechaHasta)
@@ -354,19 +369,19 @@ BEGIN
   RETURN QUERY
   SELECT
     a."Id"::BIGINT                                                                  AS "AsientoId",
-    ('LEG-' || LPAD(a."Id"::TEXT, 10, '0'))                                         AS "NumeroAsiento",
+    ('LEG-' || LPAD(a."Id"::TEXT, 10, '0'))::VARCHAR                                AS "NumeroAsiento",
     a."Fecha",
-    a."Tipo_Asiento"                                                                AS "TipoAsiento",
-    a."Referencia",
-    a."Concepto",
+    a."Tipo_Asiento"::VARCHAR                                                       AS "TipoAsiento",
+    a."Referencia"::VARCHAR,
+    a."Concepto"::VARCHAR,
     'VES'::VARCHAR                                                                  AS "Moneda",
     1::NUMERIC(18,6)                                                                AS "Tasa",
     a."Total_Debe"                                                                  AS "TotalDebe",
     a."Total_Haber"                                                                 AS "TotalHaber",
-    a."Estado",
-    a."Origen_Modulo"                                                               AS "OrigenModulo",
-    a."Cod_Usuario"                                                                 AS "CodUsuario",
-    p_TotalCount
+    a."Estado"::VARCHAR,
+    a."Origen_Modulo"::VARCHAR                                                      AS "OrigenModulo",
+    a."Cod_Usuario"::VARCHAR                                                        AS "CodUsuario",
+    v_TotalCount
   FROM public."Asientos" a
   WHERE (p_FechaDesde IS NULL OR a."Fecha" >= p_FechaDesde)
     AND (p_FechaHasta IS NULL OR a."Fecha" <= p_FechaHasta)

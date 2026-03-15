@@ -22,6 +22,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useBancosList, useCuentasBancarias } from "../hooks/useBancosAuxiliares";
 import { useConciliaciones } from "../hooks/useConciliacionBancaria";
 import { formatCurrency } from "@datqbox/shared-api";
+import { brandColors } from "@datqbox/shared-ui";
 
 export default function BancosHome() {
   const cuentas = useCuentasBancarias();
@@ -40,7 +41,7 @@ export default function BancosHome() {
       value: saldoTotal,
       subtitle: "Todas las Cuentas",
       loading: cuentas.isLoading,
-      color: "#321fdb",
+      color: brandColors.statBlue,
       chartType: "line" as const,
     },
     {
@@ -48,7 +49,7 @@ export default function BancosHome() {
       value: cuentasActivas,
       subtitle: "Registradas",
       loading: cuentas.isLoading,
-      color: "#39f",
+      color: brandColors.statTeal,
       chartType: "bar" as const,
     },
     {
@@ -56,7 +57,7 @@ export default function BancosHome() {
       value: "—",
       subtitle: "Este Mes",
       loading: false,
-      color: "#f9b115",
+      color: brandColors.statOrange,
       chartType: "bar" as const,
     },
     {
@@ -64,7 +65,7 @@ export default function BancosHome() {
       value: String(conciliacionesPendientes),
       subtitle: "Abiertas",
       loading: conciliaciones.isLoading,
-      color: "#e55353",
+      color: brandColors.statRed,
       chartType: "line" as const,
     },
   ];
@@ -75,49 +76,49 @@ export default function BancosHome() {
       description: "Gestión de Bancos",
       icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/entidades",
-      bg: "#2e7d32",
+      bg: brandColors.shortcutGreen,
     },
     {
       title: "Cuentas Bancarias",
       description: "Saldos y Movimientos",
       icon: <CreditCardIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/cuentas",
-      bg: "#3b5998",
+      bg: brandColors.shortcutDark,
     },
     {
       title: "Movimientos",
       description: "Generar Movimiento",
       icon: <SwapHorizIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/movimientos/generar",
-      bg: "#00aced",
+      bg: brandColors.shortcutTeal,
     },
     {
       title: "Conciliaciones",
       description: "Listado",
       icon: <CompareArrowsIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/conciliacion",
-      bg: "#4875b4",
+      bg: brandColors.shortcutSlate,
     },
     {
       title: "Nueva Conciliación",
       description: "Wizard Paso a Paso",
       icon: <PlaylistAddCheckIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/conciliacion/wizard",
-      bg: "#00897b",
+      bg: brandColors.success,
     },
     {
       title: "Caja Chica",
       description: "Gastos y Sesiones",
       icon: <LocalAtmIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/caja-chica",
-      bg: "#7b1fa2",
+      bg: brandColors.shortcutNavy,
     },
     {
       title: "Reportes",
       description: "Informes Bancarios",
       icon: <AssessmentIcon sx={{ fontSize: 32 }} />,
       href: "/bancos/cuentas",
-      bg: "#ffb818",
+      bg: brandColors.shortcutOrange,
     },
   ];
 
@@ -215,15 +216,15 @@ export default function BancosHome() {
 
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Box sx={{ borderLeft: "4px solid #321fdb", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Depósitos del Mes</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #e55353", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Cheques Emitidos</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #f9b115", pl: 2 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
                 <Typography variant="body2" color="text.secondary">Notas de Crédito</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
               </Box>

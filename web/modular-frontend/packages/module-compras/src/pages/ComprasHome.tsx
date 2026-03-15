@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import { useComprasList } from "../hooks/useCompras";
 import { useProveedoresList } from "../hooks/useProveedores";
 import { useCuentasPorPagarList } from "../hooks/useCuentasPorPagar";
+import { brandColors } from "@datqbox/shared-ui";
 
 export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       value: String(totalCompras),
       subtitle: "Documentos",
       loading: compras.isLoading,
-      color: "#321fdb",
+      color: brandColors.statBlue,
       chartType: "line" as const,
     },
     {
@@ -50,7 +51,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       value: String(totalProveedores),
       subtitle: "Directorio",
       loading: proveedores.isLoading,
-      color: "#39f",
+      color: brandColors.statTeal,
       chartType: "bar" as const,
     },
     {
@@ -58,7 +59,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       value: String(totalCxp),
       subtitle: "Cuentas",
       loading: cxp.isLoading,
-      color: "#f9b115",
+      color: brandColors.statOrange,
       chartType: "bar" as const,
     },
     {
@@ -66,7 +67,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       value: "---",
       subtitle: "Aplicado",
       loading: false,
-      color: "#e55353",
+      color: brandColors.statRed,
       chartType: "line" as const,
     },
   ];
@@ -77,42 +78,42 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       description: "Lista de Compras",
       icon: <ShoppingCartIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/compras`,
-      bg: "#2e7d32",
+      bg: brandColors.shortcutGreen,
     },
     {
       title: "Nueva Compra",
       description: "Maestro-Detalle",
       icon: <AddShoppingCartIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/compras/new`,
-      bg: "#3b5998",
+      bg: brandColors.shortcutDark,
     },
     {
       title: "Proveedores",
       description: "Directorio",
       icon: <LocalShippingIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/proveedores`,
-      bg: "#00aced",
+      bg: brandColors.shortcutTeal,
     },
     {
       title: "Nuevo Proveedor",
       description: "Registro",
       icon: <PersonAddIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/proveedores/new`,
-      bg: "#4875b4",
+      bg: brandColors.shortcutSlate,
     },
     {
       title: "CxP Estado de Cuenta",
       description: "Saldos y Pagos",
       icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/cxp`,
-      bg: "#00897b",
+      bg: brandColors.success,
     },
     {
       title: "Cuentas por Pagar",
       description: "Listado CxP",
       icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/cuentas-por-pagar`,
-      bg: "#ffb818",
+      bg: brandColors.shortcutOrange,
     },
   ];
 
@@ -212,15 +213,15 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
 
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Box sx={{ borderLeft: "4px solid #321fdb", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Monto Compras</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>---</Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #e55353", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Pagos CxP</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>---</Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #f9b115", pl: 2 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
                 <Typography variant="body2" color="text.secondary">Saldo Pendiente</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>---</Typography>
               </Box>

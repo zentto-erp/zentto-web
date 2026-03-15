@@ -20,10 +20,12 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import EventIcon from "@mui/icons-material/Event";
+import BatchPredictionIcon from "@mui/icons-material/BatchPrediction";
 import { useRouter } from "next/navigation";
 import { useEmpleadosList } from "../hooks/useEmpleados";
 import { useNominasList } from "../hooks/useNomina";
 import { formatCurrency } from "@datqbox/shared-api";
+import { brandColors } from "@datqbox/shared-ui";
 
 export default function NominaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
@@ -44,7 +46,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: nominaTotal,
       subtitle: "Total Pagos",
       loading: nominas.isLoading,
-      color: "#321fdb",
+      color: brandColors.statBlue,
       chartType: "line" as const,
     },
     {
@@ -52,7 +54,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: String(totalEmpleados),
       subtitle: "Staffing",
       loading: empleados.isLoading,
-      color: "#39f",
+      color: brandColors.statTeal,
       chartType: "bar" as const,
     },
     {
@@ -60,7 +62,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: "—",
       subtitle: "Este Mes",
       loading: false,
-      color: "#f9b115",
+      color: brandColors.statOrange,
       chartType: "bar" as const,
     },
     {
@@ -68,53 +70,60 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: "—",
       subtitle: "Rate",
       loading: false,
-      color: "#e55353",
+      color: brandColors.statRed,
       chartType: "line" as const,
     },
   ];
 
   const shortcuts = [
     {
+      title: "Nómina Masiva",
+      description: "Procesar Lote",
+      icon: <BatchPredictionIcon sx={{ fontSize: 32 }} />,
+      href: `${bp}/nominas`,
+      bg: brandColors.accent,
+    },
+    {
       title: "Empleados",
       description: "Gestión RRHH",
       icon: <PeopleIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/empleados`,
-      bg: "#2e7d32",
+      bg: brandColors.shortcutGreen,
     },
     {
       title: "Nóminas",
       description: "Recibos y Pagos",
       icon: <SupervisorAccountIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/nominas`,
-      bg: "#3b5998",
+      bg: brandColors.shortcutDark,
     },
     {
       title: "Conceptos",
       description: "Asignaciones",
       icon: <ListAltIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/conceptos`,
-      bg: "#00aced",
+      bg: brandColors.shortcutTeal,
     },
     {
       title: "Vacaciones",
       description: "Periodos",
       icon: <BeachAccessIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/vacaciones`,
-      bg: "#4875b4",
+      bg: brandColors.shortcutSlate,
     },
     {
       title: "Solicitar Vacaciones",
       description: "Calendario",
       icon: <EventIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/vacaciones/solicitar`,
-      bg: "#00897b",
+      bg: brandColors.success,
     },
     {
       title: "Retiros",
       description: "Liquidaciones",
       icon: <ExitToAppIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/liquidaciones`,
-      bg: "#ffb818",
+      bg: brandColors.shortcutOrange,
     },
   ];
 
@@ -214,15 +223,15 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
 
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Box sx={{ borderLeft: "4px solid #321fdb", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Salarios Base</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #e55353", pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Impuestos y SS</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
               </Box>
-              <Box sx={{ borderLeft: "4px solid #f9b115", pl: 2 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
                 <Typography variant="body2" color="text.secondary">Bonos Aprobados</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
               </Box>

@@ -2,6 +2,7 @@
 
 // Theme
 export { default as theme } from './theme';
+export { brandColors } from './theme';
 
 // Providers
 export { default as ToastProvider, useToast } from './providers/ToastProvider';

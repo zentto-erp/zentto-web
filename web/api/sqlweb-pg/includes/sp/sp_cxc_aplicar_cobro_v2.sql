@@ -25,7 +25,7 @@ RETURNS TABLE (
     "Mensaje"    VARCHAR(500)
 )
 LANGUAGE plpgsql
-AS $$
+AS $fn$
 DECLARE
     v_resultado     INT := 0;
     v_mensaje       VARCHAR(500) := '';
@@ -205,4 +205,29 @@ BEGIN
                SELECT COALESCE(SUM("PendingAmount"), 0)
                  FROM ar."ReceivableDocument"
                 WHERE "CustomerId" = v_customer_id
-                  AND "Status" <> 'VOIDED
+                  AND "Status" <> 'VOIDED'
+           ),
+           "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
+     WHERE "CustomerId" = v_customer_id;
+
+    -- -------------------------------------------------------
+    -- Retornar resultado exitoso
+    -- -------------------------------------------------------
+    v_resultado := 1;
+    v_mensaje := 'Cobro aplicado exitosamente. Recibo: ' || v_num_recibo;
+
+    RETURN QUERY SELECT
+        v_num_recibo::VARCHAR(50),
+        v_resultado,
+        v_mensaje::VARCHAR(500);
+
+EXCEPTION WHEN OTHERS THEN
+    v_resultado := -99;
+    v_mensaje := SQLERRM;
+
+    RETURN QUERY SELECT
+        ''::VARCHAR(50),
+        v_resultado,
+        v_mensaje::VARCHAR(500);
+END;
+$fn$;

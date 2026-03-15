@@ -3,6 +3,38 @@ import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
 import type { } from '@mui/x-data-grid/themeAugmentation';
 
+/* ── DatqBox Brand Colors (derivados del ecommerce) ── */
+export const brandColors = {
+  dark: '#131921',
+  darkSecondary: '#232f3e',
+  accent: '#ff9900',
+  accentHover: '#e68a00',
+  teal: '#007185',
+  tealHover: '#005F6B',
+  success: '#067D62',
+  danger: '#cc0c39',
+  cta: '#ffd814',
+  ctaHover: '#f7ca00',
+  border: '#e3e6e6',
+  bgPage: '#eaeded',
+  bgCard: '#ffffff',
+  textDark: '#0f1111',
+  textMuted: '#565959',
+  link: '#007185',
+  // Stats semantic colors
+  statBlue: '#232f3e',
+  statTeal: '#007185',
+  statOrange: '#ff9900',
+  statRed: '#cc0c39',
+  // Shortcut backgrounds
+  shortcutGreen: '#067D62',
+  shortcutDark: '#232f3e',
+  shortcutTeal: '#007185',
+  shortcutSlate: '#37475a',
+  shortcutNavy: '#131921',
+  shortcutOrange: '#ff9900',
+};
+
 const theme = createTheme({
   cssVariables: {
     colorSchemeSelector: 'data-toolpad-color-scheme',
@@ -10,20 +42,20 @@ const theme = createTheme({
   colorSchemes: {
     light: {
       palette: {
-        primary: { main: '#714B67', light: '#8E6783', dark: '#52344B', contrastText: '#fff' },
-        secondary: { main: '#E7E9ED', light: '#F8F9FA', dark: '#D1D5DB', contrastText: '#374151' },
+        primary: { main: '#ff9900', light: '#ffad33', dark: '#e68a00', contrastText: '#131921' },
+        secondary: { main: '#232f3e', light: '#37475a', dark: '#131921', contrastText: '#fff' },
         error: { main: red.A400 },
-        background: { default: '#F9FAFB', paper: '#FFFFFF' },
-        text: { primary: '#111827', secondary: '#6B7280' },
+        background: { default: '#eaeded', paper: '#FFFFFF' },
+        text: { primary: '#0f1111', secondary: '#565959' },
       }
     },
     dark: {
       palette: {
         mode: 'dark',
-        primary: { main: '#8E6783', light: '#714B67', dark: '#52344B', contrastText: '#fff' },
-        secondary: { main: '#4B5563', light: '#6B7280', dark: '#374151', contrastText: '#F9FAFB' },
+        primary: { main: '#ff9900', light: '#ffad33', dark: '#e68a00', contrastText: '#131921' },
+        secondary: { main: '#37475a', light: '#485769', dark: '#232f3e', contrastText: '#fff' },
         error: { main: red.A200 },
-        background: { default: '#1F2937', paper: '#111827' },
+        background: { default: '#131921', paper: '#1a2332' },
         text: { primary: '#F9FAFB', secondary: '#9CA3AF' },
         divider: 'rgba(255, 255, 255, 0.12)',
       }
@@ -56,7 +88,7 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: 20,
           textTransform: 'none',
           boxShadow: 'none',
           '&:hover': {
@@ -71,7 +103,7 @@ const theme = createTheme({
           textTransform: 'none',
           fontWeight: 500,
           '&.Mui-selected': {
-            color: 'var(--mui-palette-primary-main, #714B67)',
+            color: 'var(--mui-palette-primary-main, #ff9900)',
           },
         },
       },
@@ -79,7 +111,7 @@ const theme = createTheme({
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: 'var(--mui-palette-primary-main, #714B67)',
+          backgroundColor: 'var(--mui-palette-primary-main, #ff9900)',
         },
       },
     },
@@ -121,8 +153,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)',
-          border: 'none',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+          border: '1px solid #e3e6e6',
         },
       },
     },
@@ -175,6 +207,22 @@ const theme = createTheme({
       styleOverrides: {
         input: {
           padding: '8px 12px',
+        },
+      },
+    },
+    MuiCheckbox: {
+      defaultProps: { color: 'primary' },
+    },
+    MuiRadio: {
+      defaultProps: { color: 'primary' },
+    },
+    MuiSwitch: {
+      defaultProps: { color: 'primary' },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 8px rgba(255,153,0,0.3)',
         },
       },
     },

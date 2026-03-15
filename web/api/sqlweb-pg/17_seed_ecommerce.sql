@@ -6,6 +6,45 @@
 BEGIN;
 
 -- -------------------------------------------------------
+-- 0. Tablas pre-requisito para imagenes de productos
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS cfg."MediaAsset" (
+  "MediaAssetId"     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "CompanyId"        INT          NOT NULL,
+  "BranchId"         INT          NOT NULL DEFAULT 1,
+  "StorageProvider"  VARCHAR(30)  NOT NULL DEFAULT 'external',
+  "StorageKey"       VARCHAR(500) NOT NULL,
+  "PublicUrl"        VARCHAR(500) NOT NULL,
+  "OriginalFileName" VARCHAR(255) NULL,
+  "MimeType"         VARCHAR(100) NULL,
+  "FileExtension"    VARCHAR(10)  NULL,
+  "FileSizeBytes"    BIGINT       NOT NULL DEFAULT 0,
+  "AltText"          VARCHAR(255) NULL,
+  "WidthPx"          INT          NULL,
+  "HeightPx"         INT          NULL,
+  "IsActive"         BOOLEAN      NOT NULL DEFAULT TRUE,
+  "IsDeleted"        BOOLEAN      NOT NULL DEFAULT FALSE,
+  "CreatedAt"        TIMESTAMP    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "UpdatedAt"        TIMESTAMP    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+
+CREATE TABLE IF NOT EXISTS cfg."EntityImage" (
+  "EntityImageId"    BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "CompanyId"        INT          NOT NULL,
+  "BranchId"         INT          NOT NULL DEFAULT 1,
+  "EntityType"       VARCHAR(50)  NOT NULL,
+  "EntityId"         BIGINT       NOT NULL,
+  "MediaAssetId"     BIGINT       NOT NULL REFERENCES cfg."MediaAsset"("MediaAssetId"),
+  "RoleCode"         VARCHAR(50)  NOT NULL DEFAULT 'PRODUCT_IMAGE',
+  "SortOrder"        INT          NOT NULL DEFAULT 0,
+  "IsPrimary"        BOOLEAN      NOT NULL DEFAULT FALSE,
+  "IsActive"         BOOLEAN      NOT NULL DEFAULT TRUE,
+  "IsDeleted"        BOOLEAN      NOT NULL DEFAULT FALSE,
+  "CreatedAt"        TIMESTAMP    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "UpdatedAt"        TIMESTAMP    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+
+-- -------------------------------------------------------
 -- 1. Nuevas categorias para ecommerce
 -- -------------------------------------------------------
 INSERT INTO master."Category" ("CompanyId", "CategoryCode", "CategoryName", "Description", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt") VALUES

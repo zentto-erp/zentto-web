@@ -23,6 +23,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useFacturasList } from "../hooks/useFacturas";
 import { useClientesList } from "../hooks/useClientes";
 import { formatCurrency } from "@datqbox/shared-api";
+import { brandColors } from "@datqbox/shared-ui";
 
 export default function AdminHome() {
   const facturas = useFacturasList({ limit: 5 });
@@ -37,7 +38,7 @@ export default function AdminHome() {
       value: String(totalFacturas),
       subtitle: "Total registradas",
       loading: facturas.isLoading,
-      color: "#321fdb",
+      color: brandColors.statBlue,
       chartType: "line" as const,
     },
     {
@@ -45,7 +46,7 @@ export default function AdminHome() {
       value: String(totalClientes),
       subtitle: "Registrados",
       loading: clientes.isLoading,
-      color: "#39f",
+      color: brandColors.statTeal,
       chartType: "bar" as const,
     },
     {
@@ -53,7 +54,7 @@ export default function AdminHome() {
       value: "—",
       subtitle: "Total por cobrar",
       loading: false,
-      color: "#f9b115",
+      color: brandColors.statOrange,
       chartType: "bar" as const,
     },
     {
@@ -61,7 +62,7 @@ export default function AdminHome() {
       value: "—",
       subtitle: "Artículos",
       loading: false,
-      color: "#e55353",
+      color: brandColors.statRed,
       chartType: "line" as const,
     },
   ];
@@ -72,56 +73,56 @@ export default function AdminHome() {
       description: "Documentos de venta",
       icon: <ReceiptIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/facturas",
-      bg: "#1976d2",
+      bg: brandColors.shortcutDark,
     },
     {
       title: "Clientes",
       description: "Gestión de clientes",
       icon: <PeopleIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/clientes",
-      bg: "#ed6c02",
+      bg: brandColors.shortcutOrange,
     },
     {
       title: "Cuentas por Cobrar",
       description: "CxC y cobros",
       icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/cxc",
-      bg: "#2e7d32",
+      bg: brandColors.shortcutGreen,
     },
     {
       title: "Artículos",
       description: "Catálogo",
       icon: <CategoryIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/articulos",
-      bg: "#9c27b0",
+      bg: brandColors.shortcutNavy,
     },
     {
       title: "Inventario",
       description: "Stock y movimientos",
       icon: <InventoryIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/inventario",
-      bg: "#00897b",
+      bg: brandColors.success,
     },
     {
       title: "Proveedores",
       description: "Gestión",
       icon: <LocalShippingIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/proveedores",
-      bg: "#00aced",
+      bg: brandColors.shortcutTeal,
     },
     {
       title: "Cuentas por Pagar",
       description: "CxP y pagos",
       icon: <PaymentIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/cxp",
-      bg: "#e55353",
+      bg: brandColors.danger,
     },
     {
       title: "Bancos",
       description: "Tesorería",
       icon: <AccountBalanceWalletIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/bancos",
-      bg: "#3b5998",
+      bg: brandColors.shortcutSlate,
     },
   ];
 
@@ -230,7 +231,7 @@ export default function AdminHome() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      borderLeft: "4px solid #321fdb",
+                      borderLeft: `4px solid ${brandColors.statBlue}`,
                       pl: 2,
                       py: 1,
                     }}

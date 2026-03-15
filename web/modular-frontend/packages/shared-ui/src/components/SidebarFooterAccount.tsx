@@ -60,13 +60,13 @@ export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
     <>
       <Box onClick={handleClick} component="button" sx={{
         p: 0.5, pr: 1.5, gap: 1, alignItems: 'center', borderRadius: 8, bgcolor: 'transparent',
-        border: 'none', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
+        border: 'none', cursor: 'pointer', color: 'inherit', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
       }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <Avatar src={avatarSrc || undefined} sx={{ width: 36, height: 36, fontSize: '1rem', fontWeight: 600, bgcolor: '#321fdb', color: '#fff' }}>{!avatarSrc && getInitials(userName)}</Avatar>
           <Stack direction="column" spacing={0} sx={{ display: mini ? 'none' : { xs: 'none', sm: 'flex' }, alignItems: 'flex-start' }}>
-            <Typography variant="subtitle2" fontWeight="600">{userName || 'Usuario'}</Typography>
-            <Typography variant="caption" color="textSecondary">{isAdmin ? 'Administrador' : 'Usuario'}</Typography>
+            <Typography variant="subtitle2" fontWeight="600" sx={{ color: 'inherit' }}>{userName || 'Usuario'}</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>{isAdmin ? 'Administrador' : 'Usuario'}</Typography>
           </Stack>
         </Stack>
       </Box>

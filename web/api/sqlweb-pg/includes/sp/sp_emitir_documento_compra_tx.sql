@@ -4,6 +4,7 @@
 -- Compatible con: PostgreSQL 14+
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_emitir_documento_compra_tx(VARCHAR, JSONB, JSONB, JSONB, VARCHAR, BOOLEAN, BOOLEAN);
 CREATE OR REPLACE FUNCTION sp_emitir_documento_compra_tx(
     p_tipo_operacion         VARCHAR(20),
     p_doc_json               JSONB,

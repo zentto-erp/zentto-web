@@ -45,7 +45,7 @@ export default function MessagesMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'text.secondary' }}>
+            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={unreadCount} color="info" max={99}>
                     <MailOutlineIcon />
                 </Badge>

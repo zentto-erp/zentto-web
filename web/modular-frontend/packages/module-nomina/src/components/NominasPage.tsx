@@ -31,6 +31,7 @@ import {
   useCerrarNomina,
   type NominaFilter,
 } from "../hooks/useNomina";
+import NominaBatchWizard from "./NominaBatchWizard";
 
 type NominaDetalleItem = Record<string, unknown>;
 
@@ -39,6 +40,7 @@ export default function NominasPage() {
   const [selectedNomina, setSelectedNomina] = useState<string | null>(null);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
   const [procesarOpen, setProcesarOpen] = useState(false);
+  const [view, setView] = useState<"list" | "batch">("list");
   const [procesarData, setProcesarData] = useState({ nomina: "", fechaInicio: "", fechaHasta: "", soloActivos: true });
 
   const { data, isLoading } = useNominasList(filter);
@@ -119,14 +121,24 @@ export default function NominasPage() {
     setProcesarOpen(false);
   };
 
+  if (view === "batch") {
+    return <NominaBatchWizard onBack={() => setView("list")} />;
+  }
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
         title="Procesos de Nómina"
         primaryAction={{
-          label: "Procesar Nómina",
-          onClick: () => setProcesarOpen(true)
+          label: "Nómina Masiva",
+          onClick: () => setView("batch"),
         }}
+        secondaryActions={[
+          {
+            label: "Procesar Individual",
+            onClick: () => setProcesarOpen(true),
+          },
+        ]}
         searchPlaceholder="Buscar nóminas..."
       />
 

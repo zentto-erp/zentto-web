@@ -548,7 +548,7 @@ BEGIN
   END IF;
 
   -- AccesoUsuarios seed para SUP
-  IF EXISTS (SELECT 1 FROM public."Usuarios" WHERE "Cod_Usuario" = 'SUP')
+  IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = 'SUP' AND "IsDeleted" = FALSE)
     AND NOT EXISTS (SELECT 1 FROM public."AccesoUsuarios" WHERE "Cod_Usuario" = 'SUP')
   THEN
     INSERT INTO public."AccesoUsuarios" ("Cod_Usuario", "Modulo", "Permitido") VALUES
@@ -575,7 +575,7 @@ BEGIN
   END IF;
 
   -- AccesoUsuarios seed para OPERADOR
-  IF EXISTS (SELECT 1 FROM public."Usuarios" WHERE "Cod_Usuario" = 'OPERADOR')
+  IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = 'OPERADOR' AND "IsDeleted" = FALSE)
     AND NOT EXISTS (SELECT 1 FROM public."AccesoUsuarios" WHERE "Cod_Usuario" = 'OPERADOR')
   THEN
     INSERT INTO public."AccesoUsuarios" ("Cod_Usuario", "Modulo", "Permitido") VALUES

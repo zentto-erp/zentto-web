@@ -33,6 +33,7 @@ import SidebarFooterAccount from './SidebarFooterAccount';
 import Copyright from './Copyright';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useColorScheme } from '@mui/material/styles';
+import { brandColors } from '../theme';
 
 // Type definition for our custom navigation (ignoring toolpad core for this specific top nav)
 interface NavItem {
@@ -118,11 +119,11 @@ export default function OdooLayout({
                                 borderRadius: 1.5,
                                 justifyContent: isSidebarOpen ? 'flex-start' : 'center',
                                 color: isRouteActive ? '#fff' : 'rgba(255,255,255,0.7)',
-                                bgcolor: isRouteActive && !hasChildren ? 'rgba(255,255,255,0.15)' : 'transparent',
-                                boxShadow: isRouteActive && !hasChildren ? 'inset 4px 0 0 0 #ffffff' : 'none',
+                                bgcolor: isRouteActive && !hasChildren ? 'rgba(255,153,0,0.15)' : 'transparent',
+                                boxShadow: isRouteActive && !hasChildren ? `inset 4px 0 0 0 ${brandColors.accent}` : 'none',
                                 transition: 'all 0.2s',
                                 '&:hover': {
-                                    bgcolor: isRouteActive && !hasChildren ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.05)',
+                                    bgcolor: isRouteActive && !hasChildren ? 'rgba(255,153,0,0.25)' : 'rgba(255,255,255,0.06)',
                                 }
                             }}
                         >
@@ -189,7 +190,7 @@ export default function OdooLayout({
                             width: drawerPaperWidth,
                             boxSizing: 'border-box',
                             borderRight: 'none',
-                            bgcolor: '#3c4b64', /* CoreUI Dark Blue/Grey */
+                            bgcolor: brandColors.dark, /* DatqBox Brand Dark */
                             color: '#fff',
                             boxShadow: 'none',
                             transition: 'width 0.2s',
@@ -197,7 +198,7 @@ export default function OdooLayout({
                         },
                     }}
                 >
-                    <Box sx={{ h: 64, display: 'flex', alignItems: 'center', justifyContent: isSidebarOpen ? 'flex-start' : 'center', px: isSidebarOpen ? 2 : 0, borderBottom: '1px solid rgba(255,255,255,0.05)', minHeight: 64 }}>
+                    <Box sx={{ h: 64, display: 'flex', alignItems: 'center', justifyContent: isSidebarOpen ? 'flex-start' : 'center', px: isSidebarOpen ? 2 : 0, borderBottom: '1px solid rgba(255,255,255,0.08)', minHeight: 64 }}>
                         <Tooltip title={isSidebarOpen ? "Contraer menú" : "Expandir menú"}>
                             <IconButton onClick={() => setSidebarOpen(!isSidebarOpen)} size="small" sx={{ mr: isSidebarOpen ? 1 : 0, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                                 {isSidebarOpen ? <MenuOpenIcon /> : <MenuIcon />}
@@ -221,13 +222,13 @@ export default function OdooLayout({
             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: `calc(100% - ${actualSidebarWidth}px)`, transition: 'width 0.2s' }}>
 
                 {/* Top Header */}
-                <AppBar position="static" elevation={0} sx={{ backgroundColor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', color: 'text.primary' }}>
+                <AppBar position="static" elevation={0} sx={{ bgcolor: brandColors.dark, color: '#fff', borderBottom: 'none' }}>
                     <Toolbar variant="dense" sx={{ minHeight: 64, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             {/* Toggle Sidebar Button logic for mobile */}
                             {isMobile && !hideSidebar && (
-                                <IconButton onClick={() => setSidebarOpen(true)} size="small" sx={{ mr: 2, color: 'text.secondary', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}>
+                                <IconButton onClick={() => setSidebarOpen(true)} size="small" sx={{ mr: 2, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                                     <MenuIcon />
                                 </IconButton>
                             )}
@@ -235,36 +236,36 @@ export default function OdooLayout({
                             {hideSidebar && (
                                 <React.Fragment>
                                     <Tooltip title="Ir al Inicio">
-                                        <IconButton onClick={() => router.push('/')} size="small" sx={{ mr: 2, color: 'primary.main', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}>
+                                        <IconButton onClick={() => router.push('/')} size="small" sx={{ mr: 2, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                                             <AppsIcon fontSize="large" />
                                         </IconButton>
                                     </Tooltip>
-                                    <Typography variant="h5" color="primary.main" onClick={() => router.push('/')} sx={{ fontWeight: 700, letterSpacing: -0.5, cursor: 'pointer' }}>
-                                        <AppTitle />
+                                    <Typography variant="h5" color="#fff" onClick={() => router.push('/')} sx={{ fontWeight: 700, letterSpacing: -0.5, cursor: 'pointer' }}>
+                                        <AppTitle lightText={true} />
                                     </Typography>
                                 </React.Fragment>
                             )}
 
                             {/* Breadcrumbs */}
                             {!hideSidebar && (
-                                <Typography variant="body1" sx={{ ml: { xs: 0, sm: 2 }, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <span style={{ color: '#321fdb', cursor: 'pointer', fontWeight: 500 }} onClick={() => router.push('/')}>Home</span>
+                                <Typography variant="body1" sx={{ ml: { xs: 0, sm: 2 }, color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <span style={{ color: brandColors.accent, cursor: 'pointer', fontWeight: 500 }} onClick={() => router.push('/')}>Home</span>
                                     <span style={{ display: isMobile ? 'none' : 'inline' }}>/</span>
-                                    <span style={{ color: 'text.primary', fontWeight: 500, textTransform: 'capitalize', display: isMobile ? 'none' : 'inline' }}>
+                                    <span style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize', display: isMobile ? 'none' : 'inline' }}>
                                         {(pathname || '').split('/').filter(Boolean).join(' / ') || 'Dashboard'}
                                     </span>
                                 </Typography>
                             )}
 
                             <Box sx={{ ml: 2, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-                                <Chip size="small" color="primary" variant="outlined" label={`Empresa: ${companyLabel}`} />
-                                <Chip size="small" variant="outlined" label={`BD: ${dbName}`} />
+                                <Chip size="small" label={`Empresa: ${companyLabel}`} sx={{ bgcolor: brandColors.accent, color: brandColors.dark, fontWeight: 600, fontSize: '0.75rem' }} />
+                                <Chip size="small" label={`BD: ${dbName}`} sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)', fontWeight: 500, fontSize: '0.75rem' }} />
                             </Box>
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
                             <Tooltip title="Alternar Modo Oscuro">
-                                <IconButton onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} size="small" sx={{ color: 'text.secondary' }}>
+                                <IconButton onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} size="small" sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                                     <Brightness4Icon />
                                 </IconButton>
                             </Tooltip>

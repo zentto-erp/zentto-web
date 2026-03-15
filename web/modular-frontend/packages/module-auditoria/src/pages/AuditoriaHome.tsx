@@ -26,6 +26,7 @@ import { formatCurrency, toDateOnly, formatDateTime } from "@datqbox/shared-api"
 import { ContextActionHeader } from "@datqbox/shared-ui";
 import { useTimezone } from "@datqbox/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
+import { brandColors } from "@datqbox/shared-ui";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
@@ -53,10 +54,10 @@ export default function AuditoriaHome() {
   const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
 
   const stats = [
-    { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: "#1976D2" },
-    { label: "Creaciones", value: data?.totalCreates ?? 0, color: "#2E7D32" },
-    { label: "Actualizaciones", value: data?.totalUpdates ?? 0, color: "#ED6C02" },
-    { label: "Eliminaciones", value: data?.totalDeletes ?? 0, color: "#D32F2F" },
+    { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.statBlue },
+    { label: "Creaciones", value: data?.totalCreates ?? 0, color: brandColors.success },
+    { label: "Actualizaciones", value: data?.totalUpdates ?? 0, color: brandColors.statOrange },
+    { label: "Eliminaciones", value: data?.totalDeletes ?? 0, color: brandColors.statRed },
   ];
 
   const shortcuts = [

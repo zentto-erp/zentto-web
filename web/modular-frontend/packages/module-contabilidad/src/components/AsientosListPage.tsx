@@ -141,7 +141,7 @@ export default function AsientosListPage() {
               setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
             }
             disableRowSelectionOnClick
-            getRowId={(row) => row.id ?? row.Id}
+            getRowId={(row) => row.asientoId ?? row.id ?? row.Id}
             sx={{ border: 'none' }}
           />
         </Paper>

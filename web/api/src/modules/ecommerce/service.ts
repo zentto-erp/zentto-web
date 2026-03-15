@@ -5,6 +5,21 @@ import bcrypt from "bcryptjs";
 const DEFAULT_COMPANY = 1;
 const DEFAULT_BRANCH = 1;
 
+// Base URL de la API para resolver rutas relativas de imágenes (ej: /media-files/...)
+const API_SELF_URL = (process.env.API_SELF_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/+$/, "");
+
+/** Convierte URLs relativas de imágenes a absolutas */
+function resolveImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  // Ya es absoluta
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  // Relativa → prefijo con la API
+  return `${API_SELF_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+/** Placeholder SVG inline para productos sin imagen */
+const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f0f2f2' width='400' height='400'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='14'%3ESin imagen%3C/text%3E%3C/svg%3E";
+
 // ─── Tipos ─────────────────────────────────────────────
 
 interface StoreProduct {
@@ -85,11 +100,17 @@ export async function listProducts(params: {
     { TotalCount: sql.Int }
   );
 
+  // Resolver URLs de imágenes relativas y agregar placeholder
+  const resolvedRows = rows.map((r: any) => ({
+    ...r,
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+  }));
+
   return {
     page,
     limit,
     total: (output.TotalCount as number) ?? 0,
-    rows,
+    rows: resolvedRows,
   };
 }
 
@@ -128,8 +149,66 @@ export async function getProductByCodeFull(code: string) {
     value: s.value,
   }));
 
+  // Recordset 5: Variantes del producto
+  const variantsRaw = sets[4] ?? [];
+  // Recordset 6: Opciones de variante por código
+  const variantOptionsRaw = sets[5] ?? [];
+  // Recordset 7: Atributos de industria
+  const industryAttributesRaw = sets[6] ?? [];
+
+  // Agrupar opciones por código de variante
+  const optionsByCode: Record<string, any[]> = {};
+  for (const opt of variantOptionsRaw) {
+    (optionsByCode[opt.code] ??= []).push({
+      groupCode: opt.groupCode,
+      groupName: opt.groupName,
+      displayType: opt.displayType,
+      optionCode: opt.optionCode,
+      optionLabel: opt.optionLabel,
+      colorHex: opt.colorHex,
+      imageUrl: opt.optionImageUrl,
+    });
+  }
+
+  const variants = variantsRaw.map((v: any) => ({
+    variantId: v.variantId,
+    code: v.code,
+    name: v.name,
+    sku: v.sku,
+    price: v.price,
+    priceDelta: v.priceDelta,
+    stock: v.stock,
+    isDefault: v.isDefault,
+    sortOrder: v.sortOrder,
+    options: optionsByCode[v.code] ?? [],
+  }));
+
+  const industryAttributes = industryAttributesRaw.map((a: any) => ({
+    key: a.key,
+    label: a.label,
+    dataType: a.dataType,
+    displayGroup: a.displayGroup,
+    value: a.valueText ?? a.valueNumber ?? a.valueDate ?? a.valueBoolean,
+    valueText: a.valueText,
+    valueNumber: a.valueNumber,
+    valueDate: a.valueDate,
+    valueBoolean: a.valueBoolean,
+  }));
+
   if (!product) return null;
-  return { ...product, images, highlights, specs };
+
+  // Resolver URLs de imágenes relativas a absolutas
+  const resolvedImages = images.map((img: any) => ({
+    ...img,
+    url: resolveImageUrl(img.url) || PLACEHOLDER_IMAGE,
+  }));
+
+  // Si no hay imágenes, agregar placeholder
+  if (resolvedImages.length === 0) {
+    resolvedImages.push({ id: 0, url: PLACEHOLDER_IMAGE, role: "PRIMARY", isPrimary: true, altText: "Sin imagen" });
+  }
+
+  return { ...product, images: resolvedImages, highlights, specs, variants, industryAttributes };
 }
 
 export async function listCategories() {
