@@ -17,12 +17,17 @@ import {
   Select,
   FormControl,
   InputLabel,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   useMedExamList,
   useSaveMedExam,
+  useDeleteMedExam,
   usePendingExams,
   type MedExamFilter,
   type MedExamInput,
@@ -36,22 +41,26 @@ const TYPE_LABELS: Record<string, string> = {
   ESPECIAL: "Especial",
 };
 
+const emptyForm: MedExamInput = {
+  employeeCode: "",
+  type: "",
+  examDate: "",
+  nextDueDate: "",
+  result: "",
+  provider: "",
+  notes: "",
+};
+
 export default function ExamenesMedicosPage() {
   const [filter, setFilter] = useState<MedExamFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState<MedExamInput>({
-    employeeCode: "",
-    type: "",
-    examDate: "",
-    nextDueDate: "",
-    result: "",
-    provider: "",
-    notes: "",
-  });
+  const [editMode, setEditMode] = useState(false);
+  const [form, setForm] = useState<MedExamInput>({ ...emptyForm });
 
   const { data, isLoading } = useMedExamList(filter);
   const pendingExams = usePendingExams();
   const saveMutation = useSaveMedExam();
+  const deleteMutation = useDeleteMedExam();
 
   const rows = data?.data ?? data?.rows ?? [];
   const pendingCount = pendingExams.data?.data?.length ?? pendingExams.data?.length ?? 0;
@@ -59,6 +68,34 @@ export default function ExamenesMedicosPage() {
   const isOverdue = (nextDue: string | null | undefined): boolean => {
     if (!nextDue) return false;
     return new Date(nextDue) < new Date();
+  };
+
+  const handleNew = () => {
+    setForm({ ...emptyForm });
+    setEditMode(false);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (row: Record<string, any>) => {
+    setForm({
+      id: row.id,
+      employeeCode: row.employeeCode ?? "",
+      type: row.type ?? "",
+      examDate: row.examDate ?? "",
+      nextDueDate: row.nextDueDate ?? "",
+      result: row.result ?? "",
+      provider: row.provider ?? "",
+      notes: row.notes ?? "",
+    });
+    setEditMode(true);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (row: Record<string, any>) => {
+    const id = row.id;
+    if (!id) return;
+    if (!window.confirm(`¿Eliminar el examen médico de "${row.employeeName ?? row.employeeCode}"?`)) return;
+    await deleteMutation.mutateAsync(id);
   };
 
   const columns: GridColDef[] = [
@@ -95,12 +132,33 @@ export default function ExamenesMedicosPage() {
         ),
     },
     { field: "provider", headerName: "Proveedor", width: 150 },
+    {
+      field: "actions",
+      headerName: "Acciones",
+      width: 110,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Editar">
+            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
   ];
 
   const handleSave = async () => {
     await saveMutation.mutateAsync(form);
     setDialogOpen(false);
-    setForm({ employeeCode: "", type: "", examDate: "", nextDueDate: "", result: "", provider: "", notes: "" });
+    setForm({ ...emptyForm });
   };
 
   return (
@@ -116,7 +174,7 @@ export default function ExamenesMedicosPage() {
             />
           )}
         </Stack>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
           Nuevo Examen
         </Button>
       </Stack>
@@ -163,7 +221,7 @@ export default function ExamenesMedicosPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Registrar Examen Médico</DialogTitle>
+        <DialogTitle>{editMode ? "Editar Examen Médico" : "Registrar Examen Médico"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <EmployeeSelector

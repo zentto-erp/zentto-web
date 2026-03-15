@@ -24,6 +24,7 @@ import {
   useLiquidacionesList,
   useLiquidacionDetalle,
 } from "../hooks/useNomina";
+import EmployeeSelector from "./EmployeeSelector";
 
 type LiquidacionDetalleItem = Record<string, any>;
 
@@ -78,7 +79,14 @@ export default function LiquidacionesPage() {
       </Stack>
 
       <Stack direction="row" spacing={2} mb={2}>
-        <TextField label="Buscar por Cédula" size="small" value={cedula} onChange={(e) => setCedula(e.target.value)} />
+        <Box sx={{ minWidth: 320 }}>
+          <EmployeeSelector
+            value={cedula}
+            onChange={(code) => setCedula(code)}
+            label="Filtrar por empleado"
+            size="small"
+          />
+        </Box>
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>

@@ -433,6 +433,14 @@ export function useSaveMedExam() {
   });
 }
 
+export function useDeleteMedExam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`/v1/rrhh/examenes-medicos/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_MED_EXAMS] }),
+  });
+}
+
 export function usePendingExams() {
   return useQuery({
     queryKey: [QK_MED_EXAMS, "pending"],
@@ -522,6 +530,14 @@ export function useSaveTraining() {
   return useMutation({
     mutationFn: (data: TrainingInput) =>
       apiPost("/v1/rrhh/capacitacion", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_TRAINING] }),
+  });
+}
+
+export function useDeleteTraining() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`/v1/rrhh/capacitacion/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_TRAINING] }),
   });
 }

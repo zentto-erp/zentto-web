@@ -19,15 +19,21 @@ import {
   InputLabel,
   Switch,
   FormControlLabel,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   useTrainingList,
   useSaveTraining,
+  useDeleteTraining,
   type TrainingFilter,
   type TrainingInput,
 } from "../hooks/useRRHH";
+import EmployeeSelector from "./EmployeeSelector";
 
 const emptyForm: TrainingInput = {
   employeeCode: "", title: "", type: "", provider: "",
@@ -37,12 +43,44 @@ const emptyForm: TrainingInput = {
 export default function CapacitacionPage() {
   const [filter, setFilter] = useState<TrainingFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<TrainingInput>({ ...emptyForm });
 
   const { data, isLoading } = useTrainingList(filter);
   const saveMutation = useSaveTraining();
+  const deleteMutation = useDeleteTraining();
 
   const rows = data?.data ?? data?.rows ?? [];
+
+  const handleNew = () => {
+    setForm({ ...emptyForm });
+    setEditMode(false);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (row: Record<string, any>) => {
+    setForm({
+      id: row.id,
+      employeeCode: row.employeeCode ?? "",
+      title: row.title ?? "",
+      type: row.type ?? "",
+      provider: row.provider ?? "",
+      hours: row.hours ?? 0,
+      result: row.result ?? "",
+      regulatory: row.regulatory ?? false,
+      startDate: row.startDate ?? "",
+      endDate: row.endDate ?? "",
+    });
+    setEditMode(true);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (row: Record<string, any>) => {
+    const id = row.id;
+    if (!id) return;
+    if (!window.confirm(`¿Eliminar la capacitación "${row.title}"?`)) return;
+    await deleteMutation.mutateAsync(id);
+  };
 
   const columns: GridColDef[] = [
     { field: "title", headerName: "Título", flex: 1, minWidth: 200 },
@@ -84,6 +122,27 @@ export default function CapacitacionPage() {
           <Chip label="Regulatorio" size="small" color="warning" variant="outlined" />
         ) : null,
     },
+    {
+      field: "actions",
+      headerName: "Acciones",
+      width: 110,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Editar">
+            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
   ];
 
   const handleSave = async () => {
@@ -96,7 +155,7 @@ export default function CapacitacionPage() {
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">Capacitación</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
           Nueva Capacitación
         </Button>
       </Stack>
@@ -138,14 +197,12 @@ export default function CapacitacionPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Registrar Capacitación</DialogTitle>
+        <DialogTitle>{editMode ? "Editar Capacitación" : "Registrar Capacitación"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={form.employeeCode}
-              onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))}
             />
             <TextField
               label="Título"

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Box,
   Paper,
-  Typography,
   Button,
   TextField,
   Stack,
@@ -12,25 +11,76 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
-import { useConstantesList, useSaveConstante, type ConstanteInput } from "../hooks/useNomina";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useConstantesList, useSaveConstante, useDeleteConstante, type ConstanteInput } from "../hooks/useNomina";
 
 export default function ConstantesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConstanteInput>({ codigo: "", nombre: "", valor: 0 });
 
   const { data, isLoading } = useConstantesList();
   const saveMutation = useSaveConstante();
+  const deleteMutation = useDeleteConstante();
 
   const rows = data?.data ?? data?.rows ?? [];
+
+  const handleNew = () => {
+    setForm({ codigo: "", nombre: "", valor: 0 });
+    setEditMode(false);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (row: Record<string, any>) => {
+    setForm({
+      codigo: row.codigo ?? row.Codigo ?? "",
+      nombre: row.nombre ?? row.Nombre ?? "",
+      valor: row.valor ?? row.Valor ?? 0,
+      origen: row.origen ?? row.Origen ?? "",
+    });
+    setEditMode(true);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (row: Record<string, any>) => {
+    const codigo = row.codigo ?? row.Codigo;
+    if (!codigo) return;
+    if (!window.confirm(`¿Eliminar la constante "${row.nombre ?? row.Nombre}"?`)) return;
+    await deleteMutation.mutateAsync(codigo);
+  };
 
   const columns: GridColDef[] = [
     { field: "codigo", headerName: "Código", width: 150 },
     { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200 },
     { field: "valor", headerName: "Valor", width: 150, type: "number" },
     { field: "origen", headerName: "Origen", width: 120 },
+    {
+      field: "actions",
+      headerName: "Acciones",
+      width: 110,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Editar">
+            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
   ];
 
   const handleSave = async () => {
@@ -42,7 +92,7 @@ export default function ConstantesPage() {
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
           Nueva Constante
         </Button>
       </Stack>
@@ -59,10 +109,16 @@ export default function ConstantesPage() {
       </Paper>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nueva Constante</DialogTitle>
+        <DialogTitle>{editMode ? "Editar Constante" : "Nueva Constante"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField label="Código" fullWidth value={form.codigo} onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value }))} />
+            <TextField
+              label="Código"
+              fullWidth
+              value={form.codigo}
+              onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value }))}
+              disabled={editMode}
+            />
             <TextField label="Nombre" fullWidth value={form.nombre || ""} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} />
             <TextField label="Valor" type="number" fullWidth value={form.valor || ""} onChange={(e) => setForm((f) => ({ ...f, valor: Number(e.target.value) }))} />
             <TextField label="Origen" fullWidth value={form.origen || ""} onChange={(e) => setForm((f) => ({ ...f, origen: e.target.value }))} />

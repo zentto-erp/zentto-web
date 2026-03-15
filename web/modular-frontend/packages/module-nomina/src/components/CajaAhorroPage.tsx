@@ -30,6 +30,7 @@ import {
   type SavingsFilter,
   type LoanFilter,
 } from "../hooks/useRRHH";
+import EmployeeSelector from "./EmployeeSelector";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -195,11 +196,9 @@ export default function CajaAhorroPage() {
         <DialogTitle>Inscribir Empleado en Caja de Ahorro</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={enrollForm.employeeCode}
-              onChange={(e) => setEnrollForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setEnrollForm((f) => ({ ...f, employeeCode: code }))}
             />
             <TextField
               label="% Aporte Empleado"
@@ -230,11 +229,9 @@ export default function CajaAhorroPage() {
         <DialogTitle>Solicitar Préstamo</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={loanForm.employeeCode}
-              onChange={(e) => setLoanForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setLoanForm((f) => ({ ...f, employeeCode: code }))}
             />
             <TextField
               label="Monto"

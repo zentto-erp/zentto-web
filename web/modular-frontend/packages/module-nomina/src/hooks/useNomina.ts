@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiDelete } from "@datqbox/shared-api";
 
 const QK_CONCEPTOS = "nomina-conceptos";
 const QK_NOMINAS = "nomina-list";
@@ -96,6 +96,14 @@ export function useSaveConcepto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ConceptoInput) => apiPost("/v1/nomina/conceptos", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCEPTOS] }),
+  });
+}
+
+export function useDeleteConcepto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (codigo: string) => apiDelete(`/v1/nomina/conceptos/${encodeURIComponent(codigo)}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCEPTOS] }),
   });
 }
@@ -209,6 +217,14 @@ export function useSaveConstante() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ConstanteInput) => apiPost("/v1/nomina/constantes", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONSTANTES] }),
+  });
+}
+
+export function useDeleteConstante() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (codigo: string) => apiDelete(`/v1/nomina/constantes/${encodeURIComponent(codigo)}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONSTANTES] }),
   });
 }

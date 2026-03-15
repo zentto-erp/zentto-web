@@ -191,11 +191,9 @@ export default function OrdenesMedicasPage() {
         <DialogTitle>Nueva Orden Médica</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={form.employeeCode}
-              onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))}
             />
             <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>

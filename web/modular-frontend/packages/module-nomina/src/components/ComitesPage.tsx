@@ -42,6 +42,7 @@ import {
   type AddCommitteeMemberInput,
   type RecordMeetingInput,
 } from "../hooks/useRRHH";
+import EmployeeSelector from "./EmployeeSelector";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -359,11 +360,9 @@ export default function ComitesPage() {
         <DialogTitle>Agregar Miembro</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={memberForm.employeeCode}
-              onChange={(e) => setMemberForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setMemberForm((f) => ({ ...f, employeeCode: code }))}
             />
             <FormControl fullWidth>
               <InputLabel>Rol</InputLabel>
