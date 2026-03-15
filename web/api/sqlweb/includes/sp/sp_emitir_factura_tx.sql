@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedure: Emitir Factura (100% canónico)
 -- Tablas: ar.SalesDocument, ar.SalesDocumentLine, ar.SalesDocumentPayment
 -- CxC: ar.ReceivableDocument
@@ -49,7 +49,7 @@ BEGIN
     SET @Observ = NULLIF(@fx.value('(/factura/@OBSERV)[1]', 'nvarchar(4000)'), '');
     SET @FechaStr = NULLIF(@fx.value('(/factura/@FECHA)[1]', 'nvarchar(50)'), '');
     SET @FechaReporteStr = NULLIF(@fx.value('(/factura/@FECHA_REPORTE)[1]', 'nvarchar(50)'), '');
-    SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+    SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
     SET @FechaReporte = CASE WHEN ISDATE(@FechaReporteStr) = 1 THEN CAST(@FechaReporteStr AS DATETIME) ELSE @Fecha END;
     DECLARE @TotalStr NVARCHAR(50) = NULLIF(@fx.value('(/factura/@TOTAL)[1]', 'nvarchar(50)'), '');
     SET @Total = CASE WHEN @TotalStr IS NULL THEN 0 ELSE CAST(@TotalStr AS DECIMAL(18,4)) END;

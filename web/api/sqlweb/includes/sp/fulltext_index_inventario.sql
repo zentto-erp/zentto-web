@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Índice FULLTEXT para búsqueda rápida en Inventario
 -- Compatible con: SQL Server 2012+
 -- 

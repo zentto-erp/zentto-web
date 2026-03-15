@@ -545,11 +545,16 @@ BEGIN
             SET @WhereClause = ' WHERE (' + @SearchColumns + ')';
     END;
 
+    -- Build search param with wildcards (SQL 2012 compatible)
+    DECLARE @SearchParam NVARCHAR(200) = NULL;
+    IF @Search IS NOT NULL
+        SET @SearchParam = '%' + @Search + '%';
+
     -- Count into OUTPUT param
     SET @CountSql = N'SELECT @cnt = COUNT(1) FROM ' + @FullTable + @WhereClause;
     EXEC sp_executesql @CountSql,
         N'@Search NVARCHAR(200), @cnt INT OUTPUT',
-        @Search = CASE WHEN @Search IS NOT NULL THEN '%' + @Search + '%' ELSE NULL END,
+        @Search = @SearchParam,
         @cnt = @TotalCount OUTPUT;
 
     -- Data query (single resultset)
@@ -559,7 +564,7 @@ BEGIN
 
     EXEC sp_executesql @Sql,
         N'@Search NVARCHAR(200), @Offset INT, @Limit INT',
-        @Search = CASE WHEN @Search IS NOT NULL THEN '%' + @Search + '%' ELSE NULL END,
+        @Search = @SearchParam,
         @Offset = @Offset,
         @Limit  = @Limit;
 END;
@@ -761,7 +766,7 @@ BEGIN
     INSERT INTO [master].Employee
         (CompanyId, EmployeeCode, EmployeeName, FiscalId, HireDate, TerminationDate, IsActive, CreatedAt, UpdatedAt, IsDeleted)
     VALUES
-        (@CompanyId, @Code, @Name, @FiscalId, ISNULL(@HireDate, CAST(GETDATE() AS DATE)), @TerminationDate, @IsActive, SYSUTCDATETIME(), SYSUTCDATETIME(), 0);
+        (@CompanyId, @Code, @Name, @FiscalId, ISNULL(@HireDate, CAST(SYSUTCDATETIME() AS DATE)), @TerminationDate, @IsActive, SYSUTCDATETIME(), SYSUTCDATETIME(), 0);
 END;
 GO
 
@@ -1135,7 +1140,7 @@ BEGIN
         GatewayAuthCode = COALESCE(@GatewayAuthCode, GatewayAuthCode),
         GatewayResponse = COALESCE(@GatewayResponse, GatewayResponse),
         GatewayMessage  = COALESCE(@GatewayMessage, GatewayMessage),
-        UpdatedAt       = GETDATE()
+        UpdatedAt       = SYSUTCDATETIME()
     WHERE TransactionUUID = @TransactionUUID;
 END;
 GO

@@ -1,15 +1,16 @@
-﻿'use client';
-import { Box, Typography } from '@mui/material';
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { StoreFront } from '@datqbox/module-ecommerce';
 
 export default function Page() {
+    const router = useRouter();
+
     return (
-        <Box sx={{ p: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                Comercio Electrónico Dashboard
-            </Typography>
-            <Typography variant="body1">
-                Bienvenido al mÃ³dulo de Comercio Electrónico. Contenido en construcciÃ³n.
-            </Typography>
-        </Box>
+        <StoreFront
+            onViewProduct={(code) => router.push(`/productos/${code}`)}
+            onViewCategory={(category) => router.push(`/productos?category=${encodeURIComponent(category)}`)}
+            onViewAll={() => router.push('/productos')}
+        />
     );
 }

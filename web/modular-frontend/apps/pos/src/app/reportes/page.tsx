@@ -32,6 +32,8 @@ import {
     usePosReporteVentas,
     usePosReporteCajas,
 } from '@/hooks';
+import { useTimezone } from '@datqbox/shared-auth';
+import { toDateOnly, formatDateTime } from '@datqbox/shared-api';
 
 const DownloadIcon = dynamic(() => import('@mui/icons-material/Download'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
@@ -43,12 +45,13 @@ const ReceiptIcon = dynamic(() => import('@mui/icons-material/Receipt'), { ssr: 
  * Visualización de ventas, productos más vendidos, y estadísticas
  */
 export default function PosReportesPage() {
+    const { timeZone } = useTimezone();
     const [activeTab, setActiveTab] = useState(0);
-    const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().startOf('day'));
-    const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().endOf('day'));
+    const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().tz(timeZone).startOf('day'));
+    const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().tz(timeZone).endOf('day'));
     const [cajaFiltro, setCajaFiltro] = useState<string>('');
-    const [appliedDesde, setAppliedDesde] = useState<string>(dayjs().format('YYYY-MM-DD'));
-    const [appliedHasta, setAppliedHasta] = useState<string>(dayjs().format('YYYY-MM-DD'));
+    const [appliedDesde, setAppliedDesde] = useState<string>(toDateOnly(new Date(), timeZone));
+    const [appliedHasta, setAppliedHasta] = useState<string>(toDateOnly(new Date(), timeZone));
     const [appliedCaja, setAppliedCaja] = useState<string>('');
 
     const resumenQuery = usePosReporteResumen(appliedDesde, appliedHasta, appliedCaja || undefined);
@@ -86,8 +89,8 @@ export default function PosReportesPage() {
     };
 
     const handleGenerar = () => {
-        setAppliedDesde((fechaDesde ?? dayjs()).format('YYYY-MM-DD'));
-        setAppliedHasta((fechaHasta ?? dayjs()).format('YYYY-MM-DD'));
+        setAppliedDesde((fechaDesde ?? dayjs().tz(timeZone)).format('YYYY-MM-DD'));
+        setAppliedHasta((fechaHasta ?? dayjs().tz(timeZone)).format('YYYY-MM-DD'));
         setAppliedCaja(cajaFiltro.trim().toUpperCase());
     };
 
@@ -270,7 +273,7 @@ export default function PosReportesPage() {
                                 {ventasRecientes.map((venta) => (
                                     <TableRow key={`${venta.id}-${venta.numFactura}`}>
                                         <TableCell>{venta.numFactura}</TableCell>
-                                        <TableCell>{dayjs(venta.fecha).format('YYYY-MM-DD HH:mm')}</TableCell>
+                                        <TableCell>{formatDateTime(venta.fecha, { timeZone })}</TableCell>
                                         <TableCell>{venta.cajaId || '-'}</TableCell>
                                         <TableCell>{venta.serialFiscal || 'Sin serial'}</TableCell>
                                         <TableCell>{venta.cliente}</TableCell>

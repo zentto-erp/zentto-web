@@ -157,6 +157,22 @@ export function useBalanceGeneral(fechaCorte: string, enabled = true) {
   });
 }
 
+export function useLibroDiario(fechaDesde: string, fechaHasta: string, enabled = true) {
+  return useQuery({
+    queryKey: ["contabilidad-libro-diario", fechaDesde, fechaHasta],
+    queryFn: () => apiGet("/v1/contabilidad/reportes/libro-diario", { fechaDesde, fechaHasta }),
+    enabled,
+  });
+}
+
+export function useDashboardResumen(fechaDesde: string, fechaHasta: string, enabled = true) {
+  return useQuery({
+    queryKey: ["contabilidad-dashboard", fechaDesde, fechaHasta],
+    queryFn: () => apiGet("/v1/contabilidad/dashboard/resumen", { fechaDesde, fechaHasta }),
+    enabled,
+  });
+}
+
 // ─── Plan de Cuentas ──────────────────────────────────────────
 
 export function usePlanCuentas(filter?: { search?: string; tipo?: string }) {

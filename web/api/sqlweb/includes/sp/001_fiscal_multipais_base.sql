@@ -32,8 +32,8 @@ BEGIN
         PosEnabled          BIT NOT NULL CONSTRAINT DF_FiscalCountryConfig_PosEnabled DEFAULT(1),
         RestaurantEnabled   BIT NOT NULL CONSTRAINT DF_FiscalCountryConfig_RestaurantEnabled DEFAULT(1),
         IsActive            BIT NOT NULL CONSTRAINT DF_FiscalCountryConfig_IsActive DEFAULT(1),
-        CreatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalCountryConfig_CreatedAt DEFAULT(GETDATE()),
-        UpdatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalCountryConfig_UpdatedAt DEFAULT(GETDATE())
+        CreatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalCountryConfig_CreatedAt DEFAULT(SYSUTCDATETIME()),
+        UpdatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalCountryConfig_UpdatedAt DEFAULT(SYSUTCDATETIME())
     );
 
     CREATE UNIQUE INDEX UQ_FiscalCountryConfig_Context
@@ -54,7 +54,7 @@ BEGIN
         IsDefault           BIT NOT NULL CONSTRAINT DF_FiscalTaxRates_IsDefault DEFAULT(0),
         IsActive            BIT NOT NULL CONSTRAINT DF_FiscalTaxRates_IsActive DEFAULT(1),
         SortOrder           INT NOT NULL CONSTRAINT DF_FiscalTaxRates_SortOrder DEFAULT(0),
-        CreatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalTaxRates_CreatedAt DEFAULT(GETDATE())
+        CreatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalTaxRates_CreatedAt DEFAULT(SYSUTCDATETIME())
     );
 
     CREATE UNIQUE INDEX UQ_FiscalTaxRates_Code
@@ -74,7 +74,7 @@ BEGIN
         RequiresFiscalPrinter BIT NOT NULL CONSTRAINT DF_FiscalInvoiceTypes_RequiresFiscalPrinter DEFAULT(0),
         IsActive              BIT NOT NULL CONSTRAINT DF_FiscalInvoiceTypes_IsActive DEFAULT(1),
         SortOrder             INT NOT NULL CONSTRAINT DF_FiscalInvoiceTypes_SortOrder DEFAULT(0),
-        CreatedAt             DATETIME NOT NULL CONSTRAINT DF_FiscalInvoiceTypes_CreatedAt DEFAULT(GETDATE())
+        CreatedAt             DATETIME NOT NULL CONSTRAINT DF_FiscalInvoiceTypes_CreatedAt DEFAULT(SYSUTCDATETIME())
     );
 
     CREATE UNIQUE INDEX UQ_FiscalInvoiceTypes_Code
@@ -116,7 +116,7 @@ BEGIN
         FiscalPrinterSerial VARCHAR(30) NULL,
         FiscalControlNumber VARCHAR(30) NULL,
         ZReportNumber       INT NULL,
-        CreatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalRecords_CreatedAt DEFAULT(GETDATE())
+        CreatedAt           DATETIME NOT NULL CONSTRAINT DF_FiscalRecords_CreatedAt DEFAULT(SYSUTCDATETIME())
     );
 
     CREATE INDEX IX_FiscalRecords_Chain

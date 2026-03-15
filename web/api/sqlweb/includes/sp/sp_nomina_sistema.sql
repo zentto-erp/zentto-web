@@ -191,7 +191,7 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
-  IF @FechaCalculo IS NULL SET @FechaCalculo = CAST(GETDATE() AS DATE);
+  IF @FechaCalculo IS NULL SET @FechaCalculo = CAST(SYSUTCDATETIME() AS DATE);
 
   DECLARE @CompanyId INT;
   DECLARE @BranchId INT;

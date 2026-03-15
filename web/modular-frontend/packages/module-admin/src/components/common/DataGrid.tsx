@@ -70,6 +70,7 @@ interface DataGridProps<T> {
   onExport?: () => void;
   title?: string;
   emptyText?: string;
+  timeZone?: string;
 }
 
 export default function DataGrid<T extends Record<string, unknown>>({
@@ -85,6 +86,7 @@ export default function DataGrid<T extends Record<string, unknown>>({
   onExport,
   title,
   emptyText = 'No hay registros',
+  timeZone,
 }: DataGridProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     accessor: string;
@@ -110,7 +112,10 @@ export default function DataGrid<T extends Record<string, unknown>>({
     switch (column.type) {
       case 'date': {
         const parsed = value instanceof Date ? value : new Date(String(value ?? ''));
-        return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleDateString('es-ES');
+        if (Number.isNaN(parsed.getTime())) return '-';
+        const dateOpts: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        if (timeZone) dateOpts.timeZone = timeZone;
+        return parsed.toLocaleDateString('es', dateOpts);
       }
       case 'currency':
         return new Intl.NumberFormat('es-ES', {

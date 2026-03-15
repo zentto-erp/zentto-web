@@ -5,336 +5,405 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
-  Typography
+  Typography,
 } from "@mui/material";
+import Grid from "@mui/material/Grid2";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import AddIcon from "@mui/icons-material/Add";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import LockIcon from "@mui/icons-material/Lock";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { useRouter } from "next/navigation";
+import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
+import { useToast } from "@datqbox/shared-ui";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,
   useConciliaciones,
   useConciliarMovimiento,
-  useCrearConciliacion,
   useCuentasBank,
   useGenerarAjuste,
-  useImportarExtracto
+  useImportarExtracto,
 } from "../../hooks/useConciliacionBancaria";
 
-type CuentaRow = Record<string, any>;
 type ConciliacionRow = Record<string, any>;
 
-function firstDayOfCurrentMonth() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-}
-
-function lastDayOfCurrentMonth() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
-}
+const estadoColors: Record<string, "warning" | "success" | "info" | "error" | "default"> = {
+  ABIERTA: "warning",
+  EN_PROCESO: "info",
+  CERRADA: "success",
+  ANULADA: "error",
+};
 
 export default function ConciliacionBancariaPage() {
+  const router = useRouter();
+  const { showToast } = useToast();
+  const { timeZone } = useTimezone();
+
+  // Filtros
   const [nroCta, setNroCta] = useState("");
   const [estado, setEstado] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
+
+  // Detalle dialog
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [msg, setMsg] = useState<string>("");
-  const [err, setErr] = useState<string>("");
 
-  const [newDesde, setNewDesde] = useState(firstDayOfCurrentMonth());
-  const [newHasta, setNewHasta] = useState(lastDayOfCurrentMonth());
-  const [newCta, setNewCta] = useState("");
-
+  // Importar extracto dialog
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState(
     JSON.stringify(
-      [
-        { Fecha: firstDayOfCurrentMonth(), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }
-      ],
-      null,
-      2
+      [{ Fecha: toDateOnly(new Date(), timeZone), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }],
+      null, 2
     )
   );
 
-  const [movSistemaId, setMovSistemaId] = useState("");
-  const [extractoId, setExtractoId] = useState("");
-  const [ajusteTipo, setAjusteTipo] = useState<"NOTA_CREDITO" | "NOTA_DEBITO">("NOTA_DEBITO");
-  const [ajusteMonto, setAjusteMonto] = useState("");
-  const [ajusteDesc, setAjusteDesc] = useState("");
+  // Cerrar conciliación dialog
+  const [cerrarOpen, setCerrarOpen] = useState(false);
   const [saldoFinalBanco, setSaldoFinalBanco] = useState("");
   const [obsCierre, setObsCierre] = useState("");
 
-  const filter = useMemo(() => ({ Nro_Cta: nroCta || undefined, Estado: estado || undefined, page, limit }), [nroCta, estado, page, limit]);
+  // Queries
   const { data: cuentasData } = useCuentasBank();
+  const filter = useMemo(() => ({
+    Nro_Cta: nroCta || undefined,
+    Estado: estado || undefined,
+    page,
+    limit,
+  }), [nroCta, estado, page, limit]);
   const { data: listData, isLoading } = useConciliaciones(filter);
   const { data: detalleData, refetch: refetchDetalle } = useConciliacionDetalle(selectedId ?? undefined);
 
-  const crear = useCrearConciliacion();
+  // Mutations
   const importar = useImportarExtracto();
-  const conciliar = useConciliarMovimiento();
-  const ajustar = useGenerarAjuste();
   const cerrar = useCerrarConciliacion();
 
   const rows = (listData?.rows ?? []) as ConciliacionRow[];
+  const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
 
-  const handleCrear = async () => {
-    setErr("");
-    setMsg("");
-    try {
-      const r = await crear.mutateAsync({ Nro_Cta: newCta, Fecha_Desde: newDesde, Fecha_Hasta: newHasta });
-      setMsg(`Conciliacion creada: ${r?.conciliacionId ?? ""}`);
-    } catch (e: unknown) {
-      setErr(String(e instanceof Error ? e.message : e));
-    }
-  };
+  // Movimientos del detalle
+  const movSistema = (detalleData?.movimientosSistema ?? []) as Record<string, any>[];
+  const extractoPendiente = (detalleData?.extractoPendiente ?? []) as Record<string, any>[];
+
+  // ─── Handlers ───────────────────────────────────────────
 
   const handleImportar = async () => {
     if (!selectedId) return;
-    setErr("");
-    setMsg("");
     try {
       const parsed = JSON.parse(importText);
       const r = await importar.mutateAsync({ conciliacionId: selectedId, extracto: parsed });
-      setMsg(`Extracto importado. Registros: ${r?.registrosImportados ?? "ok"}`);
+      showToast(`Extracto importado. Registros: ${r?.registrosImportados ?? "ok"}`);
       setImportOpen(false);
       await refetchDetalle();
     } catch (e: unknown) {
-      setErr(String(e instanceof Error ? e.message : e));
-    }
-  };
-
-  const handleConciliar = async () => {
-    if (!selectedId) return;
-    setErr("");
-    setMsg("");
-    try {
-      const r = await conciliar.mutateAsync({
-        Conciliacion_ID: selectedId,
-        MovimientoSistema_ID: Number(movSistemaId),
-        Extracto_ID: extractoId ? Number(extractoId) : undefined
-      });
-      setMsg(r?.mensaje || "Movimiento conciliado");
-      await refetchDetalle();
-    } catch (e: unknown) {
-      setErr(String(e instanceof Error ? e.message : e));
-    }
-  };
-
-  const handleAjuste = async () => {
-    if (!selectedId) return;
-    setErr("");
-    setMsg("");
-    try {
-      const r = await ajustar.mutateAsync({
-        Conciliacion_ID: selectedId,
-        Tipo_Ajuste: ajusteTipo,
-        Monto: Number(ajusteMonto),
-        Descripcion: ajusteDesc
-      });
-      setMsg(r?.mensaje || "Ajuste generado");
-      await refetchDetalle();
-    } catch (e: unknown) {
-      setErr(String(e instanceof Error ? e.message : e));
+      showToast(e instanceof Error ? e.message : "Error al importar extracto");
     }
   };
 
   const handleCerrar = async () => {
     if (!selectedId) return;
-    setErr("");
-    setMsg("");
     try {
       const r = await cerrar.mutateAsync({
         Conciliacion_ID: selectedId,
         Saldo_Final_Banco: Number(saldoFinalBanco),
-        Observaciones: obsCierre || undefined
+        Observaciones: obsCierre || undefined,
       });
-      setMsg(`Conciliacion cerrada. Estado: ${r?.estado ?? "ok"} Diferencia: ${r?.diferencia ?? 0}`);
-      await refetchDetalle();
+      showToast(`Conciliación cerrada. Estado: ${r?.estado ?? "ok"}, Diferencia: ${r?.diferencia ?? 0}`);
+      setCerrarOpen(false);
+      setSelectedId(null);
     } catch (e: unknown) {
-      setErr(String(e instanceof Error ? e.message : e));
+      showToast(e instanceof Error ? e.message : "Error al cerrar conciliación");
     }
   };
 
+  // ─── Columnas DataGrid principal ────────────────────────
+
+  const columns: GridColDef[] = [
+    { field: "ID", headerName: "ID", width: 70 },
+    { field: "Nro_Cta", headerName: "Cuenta", width: 160 },
+    {
+      field: "Fecha_Desde", headerName: "Desde", width: 120,
+      renderCell: (p) => toDateOnly(p.value as string, timeZone),
+    },
+    {
+      field: "Fecha_Hasta", headerName: "Hasta", width: 120,
+      renderCell: (p) => toDateOnly(p.value as string, timeZone),
+    },
+    {
+      field: "Saldo_Final_Sistema", headerName: "Saldo Sistema", width: 140,
+      align: "right", headerAlign: "right",
+      renderCell: (p) => formatCurrency(Number(p.value ?? 0)),
+    },
+    {
+      field: "Diferencia", headerName: "Diferencia", width: 130,
+      align: "right", headerAlign: "right",
+      renderCell: (p) => {
+        const val = Number(p.value ?? 0);
+        return (
+          <Typography variant="body2" color={val === 0 ? "success.main" : "error.main"} fontWeight={600}>
+            {formatCurrency(val)}
+          </Typography>
+        );
+      },
+    },
+    {
+      field: "Estado", headerName: "Estado", width: 130,
+      renderCell: (p) => (
+        <Chip
+          size="small"
+          label={String(p.value ?? "—")}
+          color={estadoColors[String(p.value)] ?? "default"}
+        />
+      ),
+    },
+    {
+      field: "acciones", headerName: "Acciones", width: 120, sortable: false,
+      renderCell: (p) => (
+        <Stack direction="row" spacing={0.5}>
+          <IconButton size="small" onClick={() => setSelectedId(Number(p.row.ID))}>
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+          {p.row.Estado === "ABIERTA" && (
+            <IconButton
+              size="small"
+              color="warning"
+              onClick={() => {
+                setSelectedId(Number(p.row.ID));
+                setCerrarOpen(true);
+              }}
+            >
+              <LockIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Stack>
+      ),
+    },
+  ];
+
+  // ─── Columnas del detalle ───────────────────────────────
+
+  const colsMovSistema: GridColDef[] = [
+    { field: "Fecha", headerName: "Fecha", width: 110, renderCell: (p) => toDateOnly(p.value as string, timeZone) },
+    { field: "Tipo", headerName: "Tipo", width: 80 },
+    { field: "Concepto", headerName: "Concepto", flex: 1, minWidth: 150 },
+    { field: "Monto", headerName: "Monto", width: 120, align: "right", headerAlign: "right", renderCell: (p) => formatCurrency(Number(p.value ?? 0)) },
+    {
+      field: "Estado", headerName: "Estado", width: 100,
+      renderCell: (p) => <Chip size="small" label={String(p.value ?? "Pendiente")} color={p.value === "CONCILIADO" ? "success" : "default"} />,
+    },
+  ];
+
+  const colsExtracto: GridColDef[] = [
+    { field: "Fecha", headerName: "Fecha", width: 110, renderCell: (p) => toDateOnly(p.value as string, timeZone) },
+    { field: "Descripcion", headerName: "Descripción", flex: 1, minWidth: 150 },
+    { field: "Referencia", headerName: "Ref", width: 120 },
+    { field: "Tipo", headerName: "Tipo", width: 90, renderCell: (p) => <Chip size="small" label={String(p.value)} color={p.value === "CREDITO" ? "success" : "error"} /> },
+    { field: "Monto", headerName: "Monto", width: 120, align: "right", headerAlign: "right", renderCell: (p) => formatCurrency(Number(p.value ?? 0)) },
+  ];
+
+  // ─── Render ─────────────────────────────────────────────
+
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {/* Header */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Typography variant="h6">Conciliaciones Bancarias</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => router.push("/conciliacion/wizard")}
+        >
+          Nueva Conciliación
+        </Button>
+      </Stack>
 
-      {msg && <Alert severity="success" sx={{ mb: 2 }}>{msg}</Alert>}
-      {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
-
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Crear Conciliacion</Typography>
-        <Grid container spacing={1}>
-          <Grid item xs={12} md={4}>
-            <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Cuenta" value={newCta} onChange={(e) => setNewCta(e.target.value)}>
-              <option value="">Seleccione</option>
-              {((cuentasData?.rows ?? []) as CuentaRow[]).map((c) => (
-                <option key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>{String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}</option>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" type="date" label="Desde" InputLabelProps={{ shrink: true }} value={newDesde} onChange={(e) => setNewDesde(e.target.value)} />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" type="date" label="Hasta" InputLabelProps={{ shrink: true }} value={newHasta} onChange={(e) => setNewHasta(e.target.value)} />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <Button fullWidth variant="contained" onClick={handleCrear} disabled={crear.isPending}>Crear</Button>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Filtros</Typography>
-        <Grid container spacing={1}>
-          <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="Nro Cta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="Estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="Pagina" type="number" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />
-          </Grid>
-        </Grid>
-      </Paper>
-
-      <Paper sx={{ mb: 2 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Cuenta</TableCell>
-              <TableCell>Desde</TableCell>
-              <TableCell>Hasta</TableCell>
-              <TableCell>Saldo Sistema</TableCell>
-              <TableCell>Diferencia</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Accion</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading && (
-              <TableRow><TableCell colSpan={8}>Cargando...</TableCell></TableRow>
-            )}
-            {!isLoading && rows.length === 0 && (
-              <TableRow><TableCell colSpan={8}>Sin conciliaciones.</TableCell></TableRow>
-            )}
-            {!isLoading && rows.map((r) => (
-              <TableRow key={String(r.ID)} selected={selectedId === Number(r.ID)}>
-                <TableCell>{r.ID}</TableCell>
-                <TableCell>{r.Nro_Cta}</TableCell>
-                <TableCell>{String(r.Fecha_Desde || "").slice(0, 10)}</TableCell>
-                <TableCell>{String(r.Fecha_Hasta || "").slice(0, 10)}</TableCell>
-                <TableCell>{Number(r.Saldo_Final_Sistema || 0).toFixed(2)}</TableCell>
-                <TableCell>{Number(r.Diferencia || 0).toFixed(2)}</TableCell>
-                <TableCell>{r.Estado}</TableCell>
-                <TableCell>
-                  <Button size="small" onClick={() => setSelectedId(Number(r.ID))}>Abrir</Button>
-                </TableCell>
-              </TableRow>
+      {/* Filtros */}
+      <Stack direction="row" spacing={2}>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Cuenta</InputLabel>
+          <Select value={nroCta} label="Cuenta" onChange={(e) => setNroCta(e.target.value)}>
+            <MenuItem value="">Todas</MenuItem>
+            {cuentas.map((c) => (
+              <MenuItem key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>
+                {String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}
+              </MenuItem>
             ))}
-          </TableBody>
-        </Table>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel>Estado</InputLabel>
+          <Select value={estado} label="Estado" onChange={(e) => setEstado(e.target.value)}>
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="ABIERTA">Abierta</MenuItem>
+            <MenuItem value="EN_PROCESO">En Proceso</MenuItem>
+            <MenuItem value="CERRADA">Cerrada</MenuItem>
+          </Select>
+        </FormControl>
+      </Stack>
+
+      {/* DataGrid principal */}
+      <Paper sx={{ p: 0 }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          loading={isLoading}
+          rowCount={listData?.total ?? rows.length}
+          pageSizeOptions={[25, 50, 100]}
+          paginationModel={{ page: page - 1, pageSize: limit }}
+          onPaginationModelChange={(m) => setPage(m.page + 1)}
+          paginationMode="server"
+          disableRowSelectionOnClick
+          getRowId={(r) => r.ID ?? Math.random()}
+          sx={{ minHeight: 400 }}
+        />
       </Paper>
 
-      {selectedId && (
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>Detalle Conciliacion #{selectedId}</Typography>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Button variant="outlined" onClick={() => setImportOpen(true)}>Importar Extracto</Button>
-            <Button variant="outlined" onClick={() => refetchDetalle()}>Refrescar</Button>
-          </Stack>
-
-          <Grid container spacing={1} sx={{ mb: 2 }}>
-            <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="MovimientoSistema_ID" value={movSistemaId} onChange={(e) => setMovSistemaId(e.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="Extracto_ID (opcional)" value={extractoId} onChange={(e) => setExtractoId(e.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Button fullWidth variant="contained" onClick={handleConciliar} disabled={conciliar.isPending}>Conciliar</Button>
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={1} sx={{ mb: 2 }}>
-            <Grid item xs={12} md={3}>
-              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as "NOTA_CREDITO" | "NOTA_DEBITO")}>
-                <option value="NOTA_CREDITO">NOTA_CREDITO</option>
-                <option value="NOTA_DEBITO">NOTA_DEBITO</option>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField fullWidth size="small" label="Monto" type="number" value={ajusteMonto} onChange={(e) => setAjusteMonto(e.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="Descripcion" value={ajusteDesc} onChange={(e) => setAjusteDesc(e.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button fullWidth variant="contained" onClick={handleAjuste} disabled={ajustar.isPending}>Ajustar</Button>
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={1} sx={{ mb: 2 }}>
-            <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="Saldo Final Banco" type="number" value={saldoFinalBanco} onChange={(e) => setSaldoFinalBanco(e.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField fullWidth size="small" label="Observaciones" value={obsCierre} onChange={(e) => setObsCierre(e.target.value)} />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button fullWidth variant="contained" color="warning" onClick={handleCerrar} disabled={cerrar.isPending}>Cerrar</Button>
-            </Grid>
-          </Grid>
-
-          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Movimientos del Sistema</Typography>
-          <Paper variant="outlined" sx={{ p: 1, mb: 2, maxHeight: 220, overflow: "auto" }}>
-            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-              {JSON.stringify(detalleData?.movimientosSistema ?? [], null, 2)}
-            </pre>
-          </Paper>
-
-          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Extracto Pendiente</Typography>
-          <Paper variant="outlined" sx={{ p: 1, maxHeight: 220, overflow: "auto" }}>
-            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-              {JSON.stringify(detalleData?.extractoPendiente ?? [], null, 2)}
-            </pre>
-          </Paper>
-        </Paper>
-      )}
-
-      <Dialog open={importOpen} onClose={() => setImportOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Importar Extracto (JSON Array)</DialogTitle>
+      {/* Dialog: Detalle de Conciliación */}
+      <Dialog
+        open={selectedId != null && !cerrarOpen}
+        onClose={() => setSelectedId(null)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Conciliación #{selectedId}
+          {detalleData?.cabecera && (
+            <Typography variant="body2" color="text.secondary">
+              Cuenta: {detalleData.cabecera.Nro_Cta} | Período: {toDateOnly(detalleData.cabecera.Fecha_Desde, timeZone)} - {toDateOnly(detalleData.cabecera.Fecha_Hasta, timeZone)}
+            </Typography>
+          )}
+        </DialogTitle>
         <DialogContent>
+          {detalleData?.cabecera && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Stack direction="row" spacing={3}>
+                <Typography variant="body2"><strong>Saldo Sistema:</strong> {formatCurrency(Number(detalleData.cabecera.Saldo_Final_Sistema ?? 0))}</Typography>
+                <Typography variant="body2"><strong>Saldo Banco:</strong> {formatCurrency(Number(detalleData.cabecera.Saldo_Final_Banco ?? 0))}</Typography>
+                <Typography variant="body2"><strong>Diferencia:</strong> {formatCurrency(Number(detalleData.cabecera.Diferencia ?? 0))}</Typography>
+                <Chip size="small" label={String(detalleData.cabecera.Estado ?? "—")} color={estadoColors[String(detalleData.cabecera.Estado)] ?? "default"} />
+              </Stack>
+            </Alert>
+          )}
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Typography variant="subtitle2" gutterBottom>Movimientos del Sistema</Typography>
+              <Box sx={{ height: 350 }}>
+                <DataGrid
+                  rows={movSistema}
+                  columns={colsMovSistema}
+                  density="compact"
+                  hideFooter
+                  disableRowSelectionOnClick
+                  getRowId={(r) => r.id ?? r.ID ?? r.Mov_ID ?? Math.random()}
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Typography variant="subtitle2" gutterBottom>Extracto Pendiente</Typography>
+              <Box sx={{ height: 350 }}>
+                <DataGrid
+                  rows={extractoPendiente}
+                  columns={colsExtracto}
+                  density="compact"
+                  hideFooter
+                  disableRowSelectionOnClick
+                  getRowId={(r) => r.id ?? r.ID ?? r.Extracto_ID ?? Math.random()}
+                />
+              </Box>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            onClick={() => setImportOpen(true)}
+          >
+            Importar Extracto
+          </Button>
+          {detalleData?.cabecera?.Estado === "ABIERTA" && (
+            <Button variant="contained" color="warning" startIcon={<LockIcon />} onClick={() => setCerrarOpen(true)}>
+              Cerrar Conciliación
+            </Button>
+          )}
+          <Button onClick={() => setSelectedId(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog: Importar Extracto */}
+      <Dialog open={importOpen} onClose={() => setImportOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Importar Extracto Bancario (JSON)</DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Ingrese un array JSON con los movimientos del extracto bancario.
+            Campos: Fecha, Descripcion, Referencia, Tipo (DEBITO/CREDITO), Monto, Saldo.
+          </Alert>
           <TextField
             fullWidth
             multiline
-            minRows={12}
+            minRows={10}
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            sx={{ mt: 1 }}
+            sx={{ fontFamily: "monospace" }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setImportOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleImportar} disabled={importar.isPending}>Importar</Button>
+          <Button variant="contained" onClick={handleImportar} disabled={importar.isPending}>
+            {importar.isPending ? "Importando..." : "Importar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog: Cerrar Conciliación */}
+      <Dialog open={cerrarOpen} onClose={() => setCerrarOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Cerrar Conciliación #{selectedId}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <TextField
+              fullWidth
+              label="Saldo Final del Banco"
+              type="number"
+              value={saldoFinalBanco}
+              onChange={(e) => setSaldoFinalBanco(e.target.value)}
+            />
+            <TextField
+              fullWidth
+              label="Observaciones"
+              multiline
+              rows={3}
+              value={obsCierre}
+              onChange={(e) => setObsCierre(e.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCerrarOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleCerrar}
+            disabled={cerrar.isPending || !saldoFinalBanco}
+          >
+            {cerrar.isPending ? "Cerrando..." : "Cerrar Conciliación"}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
-

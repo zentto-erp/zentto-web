@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 -- 21_canonical_document_tables.sql
 -- Las tablas doc.SalesDocument, doc.PurchaseDocument, etc. se crean en
 -- create_documentos_unificado.sql (incluido desde script 10).

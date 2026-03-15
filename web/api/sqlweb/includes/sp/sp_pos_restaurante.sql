@@ -1,4 +1,4 @@
--- ═══════════════════════════════════════════════════════════════════
+﻿-- ═══════════════════════════════════════════════════════════════════
 -- DatqBox POS & Restaurante — Stored Procedures
 -- Productos para POS, Clientes POS, Mesas, Pedidos y Facturación
 -- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode, ProductName, SalesPrice, CostPrice, IsService).
@@ -188,7 +188,7 @@ BEGIN
     PosicionY    INT NOT NULL DEFAULT 0,
     Estado       NVARCHAR(20) NOT NULL DEFAULT 'libre', -- libre, ocupada, reservada, cuenta
     Activa       BIT NOT NULL DEFAULT 1,
-    FechaCreacion DATETIME NOT NULL DEFAULT GETDATE()
+    FechaCreacion DATETIME NOT NULL DEFAULT SYSUTCDATETIME()
   );
 
   -- Seed: mesas iniciales
@@ -217,7 +217,7 @@ BEGIN
     Estado         NVARCHAR(20) NOT NULL DEFAULT 'abierto', -- abierto, en_preparacion, listo, cerrado
     Total          DECIMAL(18,2) NOT NULL DEFAULT 0,
     Comentarios    NVARCHAR(500) NULL,
-    FechaApertura  DATETIME NOT NULL DEFAULT GETDATE(),
+    FechaApertura  DATETIME NOT NULL DEFAULT SYSUTCDATETIME(),
     FechaCierre    DATETIME NULL,
     CodUsuario     NVARCHAR(10) NULL,
     CONSTRAINT FK_RestPedido_Mesa FOREIGN KEY (MesaId) REFERENCES RestauranteMesas(Id)
@@ -372,7 +372,7 @@ BEGIN
 
   UPDATE RestaurantePedidoItems
   SET EnviadoACocina = 1,
-      HoraEnvio = GETDATE(),
+      HoraEnvio = SYSUTCDATETIME(),
       Estado = 'en_preparacion'
   WHERE PedidoId = @PedidoId
     AND EnviadoACocina = 0;
@@ -398,7 +398,7 @@ BEGIN
     SELECT @MesaId = MesaId FROM RestaurantePedidos WHERE Id = @PedidoId;
 
     UPDATE RestaurantePedidos
-    SET Estado = 'cerrado', FechaCierre = GETDATE()
+    SET Estado = 'cerrado', FechaCierre = SYSUTCDATETIME()
     WHERE Id = @PedidoId;
 
     UPDATE RestauranteMesas SET Estado = 'libre' WHERE Id = @MesaId;

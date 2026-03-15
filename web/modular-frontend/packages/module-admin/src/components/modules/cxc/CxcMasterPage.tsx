@@ -34,6 +34,8 @@ import {
   Receipt as ReceiptIcon,
 } from "@mui/icons-material";
 import { useClientesList } from "../../../hooks/useClientes";
+import { toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import {
   CxcAplicarCobroPayload,
   CxcDocumentoPendiente,
@@ -57,6 +59,7 @@ type ClienteRow = Record<string, any>;
 // ─── Componente Principal ─────────────────────────────────────
 
 export default function CxcMasterPage() {
+  const { timeZone } = useTimezone();
   const [search, setSearch] = useState("");
   const [selectedCod, setSelectedCod] = useState("");
   const [selectedNombre, setSelectedNombre] = useState("");
@@ -223,13 +226,14 @@ export default function CxcMasterPage() {
 
           <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
             {tabValue === 0 && (
-              <EstadoCuentaTab documentos={documentos} isLoading={docsQuery.isLoading} />
+              <EstadoCuentaTab documentos={documentos} isLoading={docsQuery.isLoading} timeZone={timeZone} />
             )}
             {tabValue === 1 && (
               <AplicarCobrosTab
                 codCliente={selectedCod}
                 documentos={documentos}
                 isLoadingDocs={docsQuery.isLoading}
+                timeZone={timeZone}
                 onRefresh={() => {
                   docsQuery.refetch();
                   saldoQuery.refetch();
@@ -258,9 +262,11 @@ export default function CxcMasterPage() {
 function EstadoCuentaTab({
   documentos,
   isLoading,
+  timeZone,
 }: {
   documentos: CxcDocumentoPendiente[];
   isLoading: boolean;
+  timeZone: string;
 }) {
   if (isLoading) {
     return (
@@ -303,7 +309,7 @@ function EstadoCuentaTab({
                 <Chip label={d.tipoDoc} size="small" variant="outlined" sx={{ fontSize: "0.75rem" }} />
               </TableCell>
               <TableCell sx={{ fontFamily: "monospace" }}>{d.numDoc}</TableCell>
-              <TableCell>{d.fecha ? String(d.fecha).slice(0, 10) : ""}</TableCell>
+              <TableCell>{d.fecha ? toDateOnly(d.fecha as string, timeZone) : ""}</TableCell>
               <TableCell align="right">{Number(d.total || 0).toFixed(2)}</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600, color: Number(d.pendiente) > 0 ? "error.main" : "success.main" }}>
                 {Number(d.pendiente || 0).toFixed(2)}
@@ -330,14 +336,16 @@ function AplicarCobrosTab({
   codCliente,
   documentos,
   isLoadingDocs,
+  timeZone,
   onRefresh,
 }: {
   codCliente: string;
   documentos: CxcDocumentoPendiente[];
   isLoadingDocs: boolean;
+  timeZone: string;
   onRefresh: () => void;
 }) {
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [codUsuario] = useState("SUP");
   const [observaciones, setObservaciones] = useState("");
   const [rows, setRows] = useState<SelDoc[]>([]);
@@ -508,7 +516,7 @@ function AplicarCobrosTab({
                 </TableCell>
                 <TableCell sx={{ fontSize: "0.82rem" }}>{r.tipoDoc}</TableCell>
                 <TableCell sx={{ fontSize: "0.82rem", fontFamily: "monospace" }}>{r.numDoc}</TableCell>
-                <TableCell sx={{ fontSize: "0.82rem" }}>{r.fecha ? String(r.fecha).slice(0, 10) : ""}</TableCell>
+                <TableCell sx={{ fontSize: "0.82rem" }}>{r.fecha ? toDateOnly(r.fecha as string, timeZone) : ""}</TableCell>
                 <TableCell align="right" sx={{ fontSize: "0.82rem" }}>{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField

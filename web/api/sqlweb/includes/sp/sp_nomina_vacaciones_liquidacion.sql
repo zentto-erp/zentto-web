@@ -46,7 +46,7 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
-  IF @FechaRetiro IS NULL SET @FechaRetiro = CAST(GETDATE() AS DATE);
+  IF @FechaRetiro IS NULL SET @FechaRetiro = CAST(SYSUTCDATETIME() AS DATE);
 
   DECLARE @CompanyId INT;
   DECLARE @BranchId INT;
@@ -167,7 +167,7 @@ BEGIN
       )
       VALUES (
         @CompanyId, @BranchId, @VacacionID, @EmployeeId, @Cedula, @EmployeeName,
-        @FechaInicio, @FechaHasta, @FechaReintegro, CAST(GETDATE() AS DATE),
+        @FechaInicio, @FechaHasta, @FechaReintegro, CAST(SYSUTCDATETIME() AS DATE),
         @Total, @Total,
         SYSUTCDATETIME(), SYSUTCDATETIME(), @UserId, @UserId
       );
@@ -183,7 +183,7 @@ BEGIN
           StartDate = @FechaInicio,
           EndDate = @FechaHasta,
           ReintegrationDate = @FechaReintegro,
-          ProcessDate = CAST(GETDATE() AS DATE),
+          ProcessDate = CAST(SYSUTCDATETIME() AS DATE),
           TotalAmount = @Total,
           CalculatedAmount = @Total,
           UpdatedAt = SYSUTCDATETIME(),

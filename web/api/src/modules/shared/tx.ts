@@ -1,4 +1,5 @@
 import { callSp } from "../../db/query.js";
+import { objectToXml, arrayToXml } from "../../utils/xml.js";
 
 /**
  * Inserts a header row and multiple detail rows in a single transaction
@@ -16,8 +17,8 @@ export async function runHeaderDetailTx(input: {
     {
       HeaderTable: input.headerTable,
       DetailTable: input.detailTable,
-      HeaderJson: JSON.stringify(input.header),
-      DetailsJson: JSON.stringify(input.details),
+      HeaderXml: objectToXml(input.header),
+      DetailsXml: arrayToXml(input.details),
       LinkFieldsCsv: input.linkFields?.join(',') ?? null,
     }
   );

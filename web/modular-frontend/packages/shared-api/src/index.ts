@@ -8,7 +8,7 @@ export {
   authenticateSupervisorBiometricCredential,
 } from './supervisorBiometric';
 export type { SupervisorBiometricCredential } from './supervisorBiometric';
-export { formatCurrency, formatDate, formatName, formatPercent, truncateText, getStatusColor } from './formatters';
+export { formatCurrency, formatDate, formatDateTime, toDateOnly, formatName, formatPercent, truncateText, getStatusColor } from './formatters';
 export { requestLogger } from './requestLogger';
 export { default as QueryProvider } from './QueryProvider';
 export { useStore } from './store';
@@ -19,8 +19,22 @@ export type {
   LocalizacionConfig,
 } from './usePosStore';
 export { calcTotals } from './usePosStore';
+/** @deprecated Use useModuleSettings + useHydrateLocalizacion instead */
 export * from './useConfigStore';
 export { loadFrontendAddons } from './addons';
+
+// Localizacion utilities (centralized)
+export {
+  PREDEFINED_COUNTRIES,
+  fetchBcvRates,
+  settingsToLocalizacion,
+  localizacionToSettings,
+} from './localizacion';
+export type { CountryPreset, BcvRates } from './localizacion';
+
+// Settings hydration
+export { useHydrateLocalizacion } from './useHydrateLocalizacion';
+export { useHydrateModuleSettings } from './useHydrateModuleSettings';
 export type { FrontendAddon } from './addons';
 export type { RequestLog } from './requestLogger';
 

@@ -6,6 +6,8 @@ const nextConfig = {
     '@datqbox/shared-api',
     '@datqbox/module-admin',
     '@datqbox/module-bancos',
+    '@datqbox/module-compras',
+    '@datqbox/module-inventario',
     '@datqbox/module-contabilidad',
     '@datqbox/module-nomina',
     '@datqbox/pos',

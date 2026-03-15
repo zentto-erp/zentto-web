@@ -528,3 +528,11 @@ export async function getMovimientosCuenta(
     total: Number(output.TotalCount ?? 0),
   };
 }
+
+export async function getMovimientoById(movimientoId: number): Promise<any | null> {
+  const rows = await callSp<any>(
+    "sp_GetMovimientoBancarioById",
+    { MovimientoId: movimientoId }
+  );
+  return rows[0] ?? null;
+}

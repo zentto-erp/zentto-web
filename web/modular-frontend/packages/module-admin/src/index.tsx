@@ -62,6 +62,11 @@ export { default as PagoForm } from './components/modules/pagos/PagoForm';
 export { default as ProveedoresTable } from './components/modules/proveedores/ProveedoresTable';
 export { default as ProveedorForm } from './components/modules/proveedores/ProveedorForm';
 
+// Re-export components — bancos
+export { default as BancosPage } from './components/modules/bancos/BancosPage';
+export { default as CuentasBancariasPage } from './components/modules/bancos/CuentasBancariasPage';
+export { default as ConciliacionBancariaPage } from './components/modules/bancos/ConciliacionBancariaPage';
+
 // Re-export common components
 export { FacturaTable } from './components/FacturaTable';
 export { ProtectedComponent, withProtection } from './components/ProtectedComponent';

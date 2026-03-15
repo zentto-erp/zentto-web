@@ -28,10 +28,12 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { usePagosList, useDeletePago } from "../../../hooks/usePagos";
 import { formatCurrency, formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import { debounce } from "lodash";
 
 export default function PagosTable() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
@@ -150,7 +152,7 @@ export default function PagosTable() {
                 <TableRow key={pago.numeroPago} hover>
                   <TableCell sx={{ fontWeight: 500 }}>{pago.numeroPago}</TableCell>
                   <TableCell>{pago.nombre}</TableCell>
-                  <TableCell>{formatDate(pago.fecha)}</TableCell>
+                  <TableCell>{formatDate(pago.fecha, { timeZone })}</TableCell>
                   <TableCell align="right">{formatCurrency(pago.monto)}</TableCell>
                   <TableCell>
                     <Chip

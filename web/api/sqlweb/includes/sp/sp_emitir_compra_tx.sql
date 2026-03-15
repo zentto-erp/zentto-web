@@ -1,4 +1,4 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+﻿-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
 -- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode, SalesPrice).
 -- Referencias a dbo.Proveedores actualizadas a master.Supplier (TotalBalance, SupplierCode).
 -- Tablas legacy sin migrar (Compras, Detalle_Compras, P_Pagar, etc.)
@@ -47,7 +47,7 @@ BEGIN
         SET @NumFact = NULLIF(@cx.value('(/compra/@NUM_FACT)[1]', 'nvarchar(60)'), '');
         SET @CodProveedor = NULLIF(@cx.value('(/compra/@COD_PROVEEDOR)[1]', 'nvarchar(60)'), '');
         SET @FechaStr = NULLIF(@cx.value('(/compra/@FECHA)[1]', 'nvarchar(50)'), '');
-        SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+        SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
         SET @TotalStr = NULLIF(@cx.value('(/compra/@TOTAL)[1]', 'nvarchar(50)'), '');
         SET @Total = CASE WHEN @TotalStr IS NULL THEN 0 ELSE CAST(@TotalStr AS DECIMAL(18,4)) END;
         SET @CodUsuario = ISNULL(NULLIF(@cx.value('(/compra/@COD_USUARIO)[1]', 'nvarchar(60)'), ''), 'API');

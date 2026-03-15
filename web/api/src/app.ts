@@ -45,6 +45,7 @@ import { documentosVentaRouter } from "./modules/documentos-venta/routes.js";
 import { documentosCompraRouter } from "./modules/documentos-compra/routes.js";
 import { nominaRouter } from "./modules/nomina/routes.js";
 import { contabilidadRouter } from "./modules/contabilidad/routes.js";
+import { auditoriaRouter } from "./modules/auditoria/routes.js";
 import { maestrosRouter } from "./modules/maestros/routes.js";
 import { posRouter } from "./modules/pos/routes.js";
 import { posEsperaRouter } from "./modules/pos/espera.routes.js";
@@ -58,6 +59,7 @@ import { paymentsRouter } from "./modules/payments/routes.js";
 import { settingsRouter } from "./modules/settings/routes.js";
 import { mediaRouter } from "./modules/media/routes.js";
 import { supervisionRouter } from "./modules/supervision/routes.js";
+import { storeRouter } from "./modules/ecommerce/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -177,6 +179,9 @@ export async function createApp() {
 
   app.use("/health", healthRouter);
 
+  // Ecommerce storefront — público (sin JWT)
+  app.use("/store", storeRouter);
+
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
   app.use("/v1", normalizeRequestDateTimesToUtc);
@@ -209,6 +214,7 @@ export async function createApp() {
   app.use("/v1/empleados", empleadosRouter);
   app.use("/v1/nomina", nominaRouter);
   app.use("/v1/contabilidad", contabilidadRouter);
+  app.use("/v1/auditoria", auditoriaRouter);
   app.use("/v1/cuentas", cuentasRouter);
   app.use("/v1/centro-costo", centroCostoRouter);
   app.use("/v1/marcas", marcasRouter);
@@ -276,6 +282,7 @@ export async function createApp() {
   app.use("/api/v1/empleados", empleadosRouter);
   app.use("/api/v1/nomina", nominaRouter);
   app.use("/api/v1/contabilidad", contabilidadRouter);
+  app.use("/api/v1/auditoria", auditoriaRouter);
   app.use("/api/v1/cuentas", cuentasRouter);
   app.use("/api/v1/centro-costo", centroCostoRouter);
   app.use("/api/v1/marcas", marcasRouter);

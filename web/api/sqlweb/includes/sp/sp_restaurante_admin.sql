@@ -1,4 +1,4 @@
--- ═══════════════════════════════════════════════════════════════════
+﻿-- ═══════════════════════════════════════════════════════════════════
 -- DatqBox Restaurante — Subsistema Administrativo Completo
 -- Tablas: Ambientes, Productos del Menú, Categorías, Componentes,
 --         Compras Restaurante y Proveedores (usa Proveedores comunes)
@@ -83,7 +83,7 @@ BEGIN
     Activo              BIT NOT NULL DEFAULT 1,
     -- Referencia cruzada: si este plato consume artículos del inventario principal
     ArticuloInventarioId NVARCHAR(15) NULL,            -- FK opcional a master.Product.ProductCode
-    FechaCreacion       DATETIME NOT NULL DEFAULT GETDATE(),
+    FechaCreacion       DATETIME NOT NULL DEFAULT SYSUTCDATETIME(),
     FechaModificacion   DATETIME NULL,
     CONSTRAINT FK_RestProd_Cat FOREIGN KEY (CategoriaId) REFERENCES RestauranteCategorias(Id),
     CONSTRAINT UQ_RestProd_Codigo UNIQUE (Codigo)
@@ -147,7 +147,7 @@ BEGIN
     Id              INT IDENTITY(1,1) PRIMARY KEY,
     NumCompra       NVARCHAR(20) NOT NULL,
     ProveedorId     NVARCHAR(12) NULL,    -- FK a master.Supplier.SupplierCode (tabla canonica)
-    FechaCompra     DATETIME NOT NULL DEFAULT GETDATE(),
+    FechaCompra     DATETIME NOT NULL DEFAULT SYSUTCDATETIME(),
     FechaRecepcion  DATETIME NULL,
     Estado          NVARCHAR(20) NOT NULL DEFAULT 'pendiente', -- pendiente, recibida, anulada
     Subtotal        DECIMAL(18,2) NOT NULL DEFAULT 0,
@@ -435,7 +435,7 @@ BEGIN
       IVA=@IVA, EsCompuesto=@EsCompuesto, TiempoPreparacion=@TiempoPreparacion,
       Imagen=@Imagen, EsSugerenciaDelDia=@EsSugerenciaDelDia,
       Disponible=@Disponible, ArticuloInventarioId=@ArticuloInventarioId,
-      FechaModificacion=GETDATE()
+      FechaModificacion=SYSUTCDATETIME()
     WHERE Id = @Id;
     SET @ResultId = @Id;
   END
@@ -557,7 +557,7 @@ BEGIN
 
     DECLARE @NumCompra NVARCHAR(20);
     DECLARE @Seq INT = (SELECT ISNULL(MAX(Id), 0) + 1 FROM RestauranteCompras);
-    SET @NumCompra = 'RC-' + REPLACE(CONVERT(NVARCHAR(7), GETDATE(), 120), '-', '') + '-' + RIGHT('0000' + CAST(@Seq AS NVARCHAR), 4);
+    SET @NumCompra = 'RC-' + REPLACE(CONVERT(NVARCHAR(7), SYSUTCDATETIME(), 120), '-', '') + '-' + RIGHT('0000' + CAST(@Seq AS NVARCHAR), 4);
 
     INSERT INTO RestauranteCompras (NumCompra, ProveedorId, Estado, Observaciones, CodUsuario)
     VALUES (@NumCompra, @ProveedorId, 'pendiente', @Observaciones, @CodUsuario);

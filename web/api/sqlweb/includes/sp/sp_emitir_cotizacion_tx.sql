@@ -35,7 +35,7 @@ BEGIN
         SET @NumFact = NULLIF(@cx.value('(/cotizacion/@NUM_FACT)[1]', 'nvarchar(60)'), '');
         SET @Codigo = NULLIF(@cx.value('(/cotizacion/@CODIGO)[1]', 'nvarchar(60)'), '');
         SET @FechaStr = NULLIF(@cx.value('(/cotizacion/@FECHA)[1]', 'nvarchar(50)'), '');
-        SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+        SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
         SET @TotalStr = NULLIF(@cx.value('(/cotizacion/@TOTAL)[1]', 'nvarchar(50)'), '');
         SET @Total = CASE WHEN @TotalStr IS NULL THEN 0 ELSE CAST(@TotalStr AS DECIMAL(18,4)) END;
         SET @Nombre = ISNULL(NULLIF(@cx.value('(/cotizacion/@NOMBRE)[1]', 'nvarchar(200)'), ''), '');

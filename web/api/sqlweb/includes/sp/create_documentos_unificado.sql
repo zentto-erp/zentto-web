@@ -26,9 +26,9 @@ BEGIN
         FiscalId            NVARCHAR(20)  NULL,
 
         -- Fechas
-        DocumentDate        DATETIME      NULL DEFAULT GETDATE(),
+        DocumentDate        DATETIME      NULL DEFAULT SYSUTCDATETIME(),
         DueDate             DATETIME      NULL,
-        DocumentTime        NVARCHAR(20)  NULL DEFAULT CONVERT(NVARCHAR(8), GETDATE(), 108),
+        DocumentTime        NVARCHAR(20)  NULL DEFAULT CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108),
 
         -- Montos
         SubTotal            DECIMAL(18,4) NULL DEFAULT 0,
@@ -71,7 +71,7 @@ BEGIN
 
         -- Auditoria
         UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
-        ReportDate          DATETIME      NULL DEFAULT GETDATE(),
+        ReportDate          DATETIME      NULL DEFAULT SYSUTCDATETIME(),
         HostName            NVARCHAR(255) NULL DEFAULT HOST_NAME(),
 
         -- Campos especificos (taller/lubricantes)
@@ -135,7 +135,7 @@ BEGIN
 
         -- Auditoria
         UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
-        LineDate            DATETIME      NULL DEFAULT GETDATE(),
+        LineDate            DATETIME      NULL DEFAULT SYSUTCDATETIME(),
 
         -- Audit trail
         CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
@@ -176,7 +176,7 @@ BEGIN
         ExchangeRate        DECIMAL(18,6) NULL DEFAULT 1,
 
         -- Fechas
-        PaymentDate         DATETIME      NULL DEFAULT GETDATE(),
+        PaymentDate         DATETIME      NULL DEFAULT SYSUTCDATETIME(),
         DueDate             DATETIME      NULL,
 
         -- Referencias
@@ -220,11 +220,11 @@ BEGIN
         FiscalId            NVARCHAR(15)  NULL,
 
         -- Fechas
-        DocumentDate        DATETIME      NULL DEFAULT GETDATE(),
+        DocumentDate        DATETIME      NULL DEFAULT SYSUTCDATETIME(),
         DueDate             DATETIME      NULL,
         ReceiptDate         DATETIME      NULL,
         PaymentDate         DATETIME      NULL,
-        DocumentTime        NVARCHAR(20)  NULL DEFAULT CONVERT(NVARCHAR(8), GETDATE(), 108),
+        DocumentTime        NVARCHAR(20)  NULL DEFAULT CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108),
 
         -- Montos
         SubTotal            DECIMAL(18,4) NULL DEFAULT 0,
@@ -278,7 +278,7 @@ BEGIN
         -- Auditoria
         UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
         ShortUserCode       NVARCHAR(10)  NULL,
-        ReportDate          DATETIME      NULL DEFAULT GETDATE(),
+        ReportDate          DATETIME      NULL DEFAULT SYSUTCDATETIME(),
         HostName            NVARCHAR(255) NULL DEFAULT HOST_NAME(),
 
         -- Audit trail
@@ -334,7 +334,7 @@ BEGIN
 
         -- Auditoria
         UserCode            NVARCHAR(60)  NULL DEFAULT 'API',
-        LineDate            DATETIME      NULL DEFAULT GETDATE(),
+        LineDate            DATETIME      NULL DEFAULT SYSUTCDATETIME(),
 
         -- Audit trail
         CreatedAt           DATETIME2(0)  NOT NULL DEFAULT SYSUTCDATETIME(),
@@ -369,7 +369,7 @@ BEGIN
         PaymentNumber       NVARCHAR(60)  NULL,
 
         Amount              DECIMAL(18,4) NULL DEFAULT 0,
-        PaymentDate         DATETIME      NULL DEFAULT GETDATE(),
+        PaymentDate         DATETIME      NULL DEFAULT SYSUTCDATETIME(),
         DueDate             DATETIME      NULL,
 
         ReferenceNumber     NVARCHAR(100) NULL,

@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedures CRUD: Categorias
 -- Compatible con: SQL Server 2012+
 -- PK: Codigo int (IDENTITY)

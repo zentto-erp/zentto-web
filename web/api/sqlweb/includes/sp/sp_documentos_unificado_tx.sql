@@ -37,7 +37,7 @@ BEGIN
     DECLARE @TipoOrden NVARCHAR(6) = ISNULL(NULLIF(@dx.value('(/doc/@Tipo_Orden)[1]', 'nvarchar(6)'), ''), '');
     DECLARE @Codigo NVARCHAR(12) = NULLIF(@dx.value('(/doc/@CODIGO)[1]', 'nvarchar(12)'), '');
     DECLARE @FechaStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA)[1]', 'nvarchar(50)'), '');
-    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
     DECLARE @TotalStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@TOTAL)[1]', 'nvarchar(50)'), '');
     DECLARE @Total DECIMAL(18,4) = CASE WHEN ISNUMERIC(@TotalStr) = 1 THEN CAST(@TotalStr AS DECIMAL(18,4)) ELSE 0 END;
     DECLARE @Observ NVARCHAR(4000) = NULLIF(@dx.value('(/doc/@OBSERV)[1]', 'nvarchar(4000)'), '');
@@ -77,7 +77,7 @@ BEGIN
         )
         VALUES (
             @NumFact, @SerialTipo, @TipoOrden, @TipoOperacion, @Codigo,
-            @Fecha, GETDATE(), @Total, @CodUsuarioDoc, @Observ,
+            @Fecha, SYSUTCDATETIME(), @Total, @CodUsuarioDoc, @Observ,
             'N', @MontoEfect, @MontoCheque, @MontoTarjeta,
             @BancoCheque, @BancoTarjeta, @Tarjeta, @Cta
         );
@@ -169,7 +169,7 @@ BEGIN
     DECLARE @SerialTipo NVARCHAR(60) = ISNULL(NULLIF(@dx.value('(/doc/@SERIALTIPO)[1]', 'nvarchar(60)'), ''), '');
     DECLARE @TipoOrden NVARCHAR(6) = ISNULL(NULLIF(@dx.value('(/doc/@Tipo_Orden)[1]', 'nvarchar(6)'), ''), '');
     DECLARE @FechaStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA)[1]', 'nvarchar(50)'), '');
-    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
     DECLARE @TotalStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@TOTAL)[1]', 'nvarchar(50)'), '');
     DECLARE @Total DECIMAL(18,4) = CASE WHEN ISNUMERIC(@TotalStr) = 1 THEN CAST(@TotalStr AS DECIMAL(18,4)) ELSE 0 END;
     DECLARE @Observ NVARCHAR(500) = NULLIF(@dx.value('(/doc/@CONCEPTO)[1]', 'nvarchar(500)'), '');
@@ -367,7 +367,7 @@ BEGIN
         BEGIN TRANSACTION;
         
         UPDATE DocumentosVenta SET 
-            FECHA_ANULA = GETDATE(),
+            FECHA_ANULA = SYSUTCDATETIME(),
             MOTIVO_ANULA = @Motivo
         WHERE NUM_FACT = @NumFact;
         

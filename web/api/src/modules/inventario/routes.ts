@@ -6,6 +6,12 @@ import {
   deleteInventarioSP,
   getInventarioByCodigoSP,
 } from "./inventario-sp.service.js";
+import {
+  insertMovimientoSP,
+  listMovimientosSP,
+  getInventarioDashboardSP,
+  getLibroInventarioSP,
+} from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 
 export const inventarioRouter = Router();
@@ -87,6 +93,104 @@ inventarioRouter.get("/cache/stats", async (_req, res) => {
 inventarioRouter.post("/cache/reload", async (_req, res) => {
   const count = await warmUp();
   res.json({ ok: true, count, message: `Cache recargado con ${count} artículos` });
+});
+
+// ========== GET: Dashboard de inventario ==========
+inventarioRouter.get("/dashboard", async (_req, res) => {
+  try {
+    const data = await getInventarioDashboardSP();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ========== GET: Listado de movimientos ==========
+inventarioRouter.get("/movimientos", async (req, res) => {
+  try {
+    const q = req.query;
+    const result = await listMovimientosSP({
+      search: q.search as string,
+      productCode: q.productCode as string,
+      movementType: q.movementType as string,
+      warehouseCode: q.warehouseCode as string,
+      fechaDesde: q.fechaDesde as string,
+      fechaHasta: q.fechaHasta as string,
+      page: q.page ? Number(q.page) : undefined,
+      limit: q.limit ? Number(q.limit) : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ========== POST: Registrar movimiento ==========
+inventarioRouter.post("/movimientos", async (req, res) => {
+  try {
+    const b = req.body ?? {};
+    const result = await insertMovimientoSP({
+      productCode: b.productCode || b.codigoArticulo,
+      movementType: b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"),
+      quantity: Math.abs(Number(b.quantity || b.cantidad || 0)),
+      unitCost: b.unitCost ? Number(b.unitCost) : undefined,
+      documentRef: b.documentRef || b.motivo,
+      warehouseFrom: b.warehouseFrom,
+      warehouseTo: b.warehouseTo,
+      notes: b.notes || b.observaciones,
+    });
+    invalidateAndReload().catch(() => {});
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
+  } catch (err) {
+    res.status(400).json({ error: String(err) });
+  }
+});
+
+// ========== POST: Traslado entre almacenes ==========
+inventarioRouter.post("/traslados", async (req, res) => {
+  try {
+    const b = req.body ?? {};
+    const result = await insertMovimientoSP({
+      productCode: b.productCode,
+      movementType: "TRASLADO",
+      quantity: Math.abs(Number(b.quantity || 0)),
+      unitCost: b.unitCost ? Number(b.unitCost) : undefined,
+      documentRef: b.documentRef,
+      warehouseFrom: b.warehouseFrom,
+      warehouseTo: b.warehouseTo,
+      notes: b.notes,
+    });
+    invalidateAndReload().catch(() => {});
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
+  } catch (err) {
+    res.status(400).json({ error: String(err) });
+  }
+});
+
+// ========== GET: Libro de inventario (reporte) ==========
+inventarioRouter.get("/reportes/libro", async (req, res) => {
+  try {
+    const q = req.query;
+    if (!q.fechaDesde || !q.fechaHasta) {
+      return res.status(400).json({ error: "fechaDesde y fechaHasta son requeridos" });
+    }
+    const rows = await getLibroInventarioSP({
+      fechaDesde: q.fechaDesde as string,
+      fechaHasta: q.fechaHasta as string,
+      productCode: q.productCode as string,
+    });
+    res.json({ rows });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 // ========== GET: Artículo por código (caché) ==========

@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedures CRUD: Vehiculos
 -- Compatible con: SQL Server 2012+
 -- PK: Placa nvarchar

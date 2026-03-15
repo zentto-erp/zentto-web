@@ -56,6 +56,7 @@ interface CatalogoCrudBaseProps {
   fields?: CatalogField[];
   tableName?: string;
   schema?: string;
+  timeZone?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -190,7 +191,7 @@ function mapDataGridType(sqlType?: string): GridColDef['type'] {
   return 'string';
 }
 
-export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema }: CatalogoCrudBaseProps) {
+export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -385,6 +386,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
             }}
             addButtonText="Nuevo"
             getRowId={(row) => String(resolveRowKey(row as CatalogRow, keyField) ?? row.id ?? crypto.randomUUID())}
+            timeZone={timeZone}
           />
         </Box>
       </Box>

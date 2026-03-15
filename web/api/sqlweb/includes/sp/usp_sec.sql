@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ============================================================================
  *  Archivo : usp_sec.sql
  *  Esquema : sec (seguridad y autenticacion)
@@ -26,7 +26,7 @@
  *    cae de forma transparente a las tablas legacy (dbo.Usuarios) para
  *    mantener compatibilidad VB6 -> Web.
  *
- *  Patron  : CREATE OR ALTER (idempotente)
+ *  Patron  : IF EXISTS DROP + CREATE (compatible SQL Server 2012)
  * ============================================================================
  */
 
@@ -55,15 +55,15 @@ BEGIN
         SELECT TOP 1
                UserCode      AS Cod_Usuario,
                PasswordHash  AS Password,
-               DisplayName   AS Nombre,
-               UserRole      AS Tipo,
+               UserName      AS Nombre,
+               UserType      AS Tipo,
                CanUpdate     AS Updates,
-               CanInsert     AS Addnews,
+               CanCreate     AS Addnews,
                CanDelete     AS Deletes,
-               CreatedBy     AS Creador,
-               MustChangePassword AS Cambiar,
-               MinPriceOverride   AS PrecioMinimo,
-               CreditLimit        AS Credito
+               CAST(CreatedByUserId AS NVARCHAR(60)) AS Creador,
+               CanChangePwd       AS Cambiar,
+               CanChangePrice     AS PrecioMinimo,
+               CanGiveCredit      AS Credito
         FROM   sec.[User]
         WHERE  UserCode  = @CodUsuario
           AND  IsDeleted = 0;
@@ -106,7 +106,7 @@ BEGIN
     IF OBJECT_ID(N'sec.User', N'U') IS NOT NULL
     BEGIN
         SELECT UserCode   AS Cod_Usuario,
-               UserRole   AS Tipo
+               UserType   AS Tipo
         FROM   sec.[User]
         WHERE  UserCode  = @CodUsuario
           AND  IsDeleted = 0;
@@ -337,16 +337,21 @@ BEGIN
     DELETE FROM sec.UserModuleAccess
     WHERE  UserCode = @CodUsuario;
 
-    -- Insertar nuevos permisos desde el JSON
-    INSERT INTO sec.UserModuleAccess (UserCode, ModuleCode, IsAllowed)
-    SELECT @CodUsuario,
-           j.modulo,
-           j.permitido
-    FROM   OPENJSON(@ModulesJson)
-           WITH (
-               modulo    NVARCHAR(60)  '$.modulo',
-               permitido BIT           '$.permitido'
-           ) j;
+    -- Insertar nuevos permisos desde el JSON (compatible SQL 2012)
+    -- El JSON se parsea en Node.js y se pasa como XML
+    -- Fallback: si @ModulesJson es XML, parsearlo
+    BEGIN TRY
+        DECLARE @xml XML = CAST(@ModulesJson AS XML);
+        INSERT INTO sec.UserModuleAccess (UserCode, ModuleCode, IsAllowed)
+        SELECT @CodUsuario,
+               n.value('(modulo)[1]', 'NVARCHAR(60)'),
+               n.value('(permitido)[1]', 'BIT')
+        FROM   @xml.nodes('/modules/m') AS t(n);
+    END TRY
+    BEGIN CATCH
+        -- Si no es XML valido, ignorar (el caller debe enviar XML)
+        RETURN;
+    END CATCH;
 END;
 GO
 

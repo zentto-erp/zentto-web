@@ -182,7 +182,7 @@ BEGIN
 
   DECLARE @Reg NVARCHAR(10) = UPPER(ISNULL(@Regimen, @Nomina));
   DECLARE @TipoCalculo NVARCHAR(20) = N'MENSUAL';
-  DECLARE @SessionID NVARCHAR(80) = (@Nomina + N'_' + @Cedula + N'_' + CONVERT(NVARCHAR(8), GETDATE(), 112));
+  DECLARE @SessionID NVARCHAR(80) = (@Nomina + N'_' + @Cedula + N'_' + CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 112));
   DECLARE @NominaProceso NVARCHAR(20);
 
   IF UPPER(@Nomina) LIKE N'%VAC%' SET @TipoCalculo = N'VACACIONES';

@@ -1,4 +1,5 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { arrayToXml } from "../../utils/xml.js";
 
 export interface DocumentoAplicar {
   tipoDoc: string;
@@ -67,7 +68,7 @@ export async function aplicarCobro(input: AplicarCobroInput): Promise<AplicarCob
       Fecha: input.fecha ? new Date(input.fecha) : null,
       RequestId: input.requestId,
       NumRecibo: numRecibo,
-      DocumentosJson: JSON.stringify(input.documentos ?? []),
+      DocumentosXml: arrayToXml(input.documentos ?? []),
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );

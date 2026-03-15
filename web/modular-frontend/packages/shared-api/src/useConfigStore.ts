@@ -79,6 +79,11 @@ const defaultConfig: GlobalParamsConfig = {
     }
 };
 
+/**
+ * @deprecated Este store ya no se usa. La configuración global se gestiona
+ * via API settings (useModuleSettings + useHydrateLocalizacion).
+ * Se mantiene temporalmente por compatibilidad con localStorage existente.
+ */
 export const useConfigStore = create<GlobalConfigState>()(
     persist(
         (set) => ({

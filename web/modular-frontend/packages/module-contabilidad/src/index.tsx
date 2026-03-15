@@ -13,6 +13,8 @@ export {
   useBalanceComprobacion,
   useEstadoResultados,
   useBalanceGeneral,
+  useLibroDiario,
+  useDashboardResumen,
   usePlanCuentas,
   useCuentaDetalle,
   useSeedPlanCuentas,

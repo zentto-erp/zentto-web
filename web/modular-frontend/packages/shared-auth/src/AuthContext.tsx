@@ -24,7 +24,8 @@ export type AuthContextType = {
     branchId: number;
     branchCode: string;
     branchName: string;
-    countryCode: "VE" | "ES";
+    countryCode: string;
+    timeZone: string;
   } | null;
   companyAccesses: Array<{
     companyId: number;
@@ -33,7 +34,8 @@ export type AuthContextType = {
     branchId: number;
     branchCode: string;
     branchName: string;
-    countryCode: "VE" | "ES";
+    countryCode: string;
+    timeZone: string;
     isDefault?: boolean;
   }>;
   /** Check if user can access a specific module */

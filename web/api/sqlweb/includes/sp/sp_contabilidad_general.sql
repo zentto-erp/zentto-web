@@ -1,4 +1,4 @@
-SET ANSI_NULLS ON;
+﻿SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
@@ -175,7 +175,7 @@ BEGIN
     )
     VALUES (
       @NumeroAsiento, @Fecha, @Periodo, @TipoAsiento, @Referencia, @Concepto, @Moneda, @Tasa,
-      @Debe, @Haber, 'APROBADO', @OrigenModulo, @OrigenDocumento, @CodUsuario, GETDATE()
+      @Debe, @Haber, 'APROBADO', @OrigenModulo, @OrigenDocumento, @CodUsuario, SYSUTCDATETIME()
     );
 
     SET @AsientoId = SCOPE_IDENTITY();
@@ -244,7 +244,7 @@ BEGIN
 
     UPDATE dbo.AsientoContable
     SET Estado = 'ANULADO',
-        FechaAnulacion = GETDATE(),
+        FechaAnulacion = SYSUTCDATETIME(),
         UsuarioAnulacion = @CodUsuario,
         MotivoAnulacion = @Motivo
     WHERE Id = @AsientoId;

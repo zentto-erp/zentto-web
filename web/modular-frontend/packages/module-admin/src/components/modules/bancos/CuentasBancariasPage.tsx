@@ -14,24 +14,34 @@ import {
   Typography
 } from "@mui/material";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../../hooks/useBancosAuxiliares";
+import { toDateOnly, formatDateTime } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 
 type CuentaRow = Record<string, unknown>;
 type MovimientoRow = Record<string, unknown>;
 
-function firstDayOfCurrentMonth() {
+function firstDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  return `${y}-${m}-01`;
 }
 
-function lastDayOfCurrentMonth() {
+function lastDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit" }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")!.value);
+  const m = Number(parts.find((p) => p.type === "month")!.value);
+  const last = new Date(y, m, 0);
+  return toDateOnly(last, tz);
 }
 
 export default function CuentasBancariasPage() {
+  const { timeZone } = useTimezone();
   const [nroCta, setNroCta] = useState("");
-  const [desde, setDesde] = useState(firstDayOfCurrentMonth());
-  const [hasta, setHasta] = useState(lastDayOfCurrentMonth());
+  const [desde, setDesde] = useState(firstDayOfCurrentMonth(timeZone));
+  const [hasta, setHasta] = useState(lastDayOfCurrentMonth(timeZone));
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
 
@@ -110,7 +120,7 @@ export default function CuentasBancariasPage() {
                 {!loadingMovs && movs.map((m) => (
                   <TableRow key={String(m.id ?? m.ID)}>
                     <TableCell>{String(m.id ?? m.ID)}</TableCell>
-                    <TableCell>{String(m.Fecha ?? "").slice(0, 19).replace("T", " ")}</TableCell>
+                    <TableCell>{m.Fecha ? formatDateTime(m.Fecha as string, { timeZone }) : ""}</TableCell>
                     <TableCell>{String(m.Tipo ?? "")}</TableCell>
                     <TableCell>{String(m.Nro_Ref ?? "")}</TableCell>
                     <TableCell>{String(m.Beneficiario ?? "")}</TableCell>

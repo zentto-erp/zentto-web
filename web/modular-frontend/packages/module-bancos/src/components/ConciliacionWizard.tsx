@@ -19,6 +19,7 @@ import {
   Select,
   MenuItem,
   IconButton,
+  TextField,
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
@@ -37,7 +38,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SaveIcon from "@mui/icons-material/Save";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import { CustomStepper, useToast } from "@datqbox/shared-ui";
 import type { StepDef } from "@datqbox/shared-ui";
 import { EditableDataGrid } from "@datqbox/module-contabilidad";
@@ -80,19 +82,24 @@ type MovimientoSistemaRow = Record<string, any>;
 export default function ConciliacionWizard() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { timeZone } = useTimezone();
   const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // Paso 1 — cuenta y período
   const [nroCtaSeleccionada, setNroCtaSeleccionada] = useState("");
-  const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().startOf("month"));
-  const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs());
+  const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().tz(timeZone).startOf("month"));
+  const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().tz(timeZone));
 
   // Paso 2 — extracto bancario importado por el usuario
   const [movimientosExtracto, setMovimientosExtracto] = useState<MovimientoExtracto[]>([]);
 
   // Paso 3 — control local de conciliados
   const [conciliadosIds, setConciliadosIds] = useState<Set<string>>(new Set());
+
+  // Paso 4 — cierre
+  const [saldoFinalBanco, setSaldoFinalBanco] = useState("");
+  const [observaciones, setObservaciones] = useState("");
 
   // ID de la conciliación creada en el backend
   const [conciliacionId, setConciliacionId] = useState<number | null>(null);
@@ -174,7 +181,7 @@ export default function ConciliacionWizard() {
         try {
           await importarMut.mutateAsync({
             conciliacionId,
-            extracto: movimientosExtracto,
+            extracto: movimientosExtracto as any,
           });
           showToast("Extracto importado correctamente");
         } catch {
@@ -208,16 +215,17 @@ export default function ConciliacionWizard() {
   const handleFinalizar = async () => {
     if (!conciliacionId) {
       showToast("Conciliación procesada (sin backend)");
-      router.push("/bancos");
+      router.push("/conciliacion");
       return;
     }
     try {
       await cerrarMut.mutateAsync({
         Conciliacion_ID: conciliacionId,
-        Saldo_Final_Banco: Number(cuentaObj?.Saldo ?? 0),
+        Saldo_Final_Banco: saldoFinalBanco ? Number(saldoFinalBanco) : Number(cuentaObj?.Saldo ?? 0),
+        Observaciones: observaciones || undefined,
       });
       showToast("Conciliación cerrada exitosamente");
-      router.push("/bancos");
+      router.push("/conciliacion");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al cerrar la conciliación");
     }
@@ -278,15 +286,15 @@ export default function ConciliacionWizard() {
 
   const movSistemaConId = useMemo(
     () =>
-      movSistema.map((m, i: number) => ({
+      movSistema.map((m: any, i: number) => ({
         ...m,
         id: m.id ?? m.Mov_ID ?? i,
-      })),
+      })) as any[],
     [movSistema]
   );
 
   const noConciliados = useMemo(
-    () => movSistemaConId.filter((m) => !conciliadosIds.has(String(m.id))),
+    () => movSistemaConId.filter((m: any) => !conciliadosIds.has(String(m.id))),
     [movSistemaConId, conciliadosIds]
   );
 
@@ -398,7 +406,7 @@ export default function ConciliacionWizard() {
                   height={350}
                   addButtonText="Agregar Movimiento"
                   defaultNewRow={{
-                    fecha: dayjs().format("YYYY-MM-DD"),
+                    fecha: dayjs().tz(timeZone).format("YYYY-MM-DD"),
                     descripcion: "",
                     referencia: "",
                     tipo: "DEBITO",
@@ -529,8 +537,27 @@ export default function ConciliacionWizard() {
 
               <Divider sx={{ my: 2 }} />
 
+              <Stack spacing={2} sx={{ mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="Saldo Final del Banco"
+                  type="number"
+                  value={saldoFinalBanco}
+                  onChange={(e) => setSaldoFinalBanco(e.target.value)}
+                  helperText="Ingrese el saldo final según el estado de cuenta del banco"
+                />
+                <TextField
+                  fullWidth
+                  label="Observaciones"
+                  multiline
+                  rows={2}
+                  value={observaciones}
+                  onChange={(e) => setObservaciones(e.target.value)}
+                />
+              </Stack>
+
               <Stack direction="row" spacing={2} justifyContent="flex-end">
-                <Button variant="outlined" color="error" onClick={() => router.push("/bancos")}>
+                <Button variant="outlined" color="error" onClick={() => router.push("/conciliacion")}>
                   Cancelar
                 </Button>
                 <Button
@@ -560,7 +587,7 @@ export default function ConciliacionWizard() {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/bancos")}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/conciliacion")}>
           Volver
         </Button>
         <Typography variant="h5" fontWeight={700}>

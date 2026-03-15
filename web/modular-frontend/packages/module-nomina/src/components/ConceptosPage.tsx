@@ -89,7 +89,7 @@ export default function ConceptosPage() {
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
-          getRowId={(r) => r.codigo ?? r.Codigo ?? Math.random()}
+          getRowId={(r) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`}
         />
       </Paper>
 

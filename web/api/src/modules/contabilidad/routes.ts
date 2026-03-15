@@ -19,7 +19,9 @@ import {
   getCuenta,
   insertCuenta,
   updateCuenta,
-  deleteCuenta
+  deleteCuenta,
+  libroDiario,
+  dashboardResumen
 } from "./service.js";
 
 export const contabilidadRouter = Router();
@@ -211,6 +213,24 @@ contabilidadRouter.get("/reportes/balance-general", async (req, res) => {
     return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
   }
   const data = await balanceGeneral(parsed.data.fechaCorte);
+  return res.json(data);
+});
+
+contabilidadRouter.get("/reportes/libro-diario", async (req, res) => {
+  const parsed = rangoSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  }
+  const rows = await libroDiario(parsed.data.fechaDesde, parsed.data.fechaHasta);
+  return res.json({ rows });
+});
+
+contabilidadRouter.get("/dashboard/resumen", async (req, res) => {
+  const parsed = rangoSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  }
+  const data = await dashboardResumen(parsed.data.fechaDesde, parsed.data.fechaHasta);
   return res.json(data);
 });
 

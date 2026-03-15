@@ -34,7 +34,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import ArticleIcon from "@mui/icons-material/Article";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import { useRouter } from "next/navigation";
 import { useCreateAsiento, usePlanCuentas } from "../hooks/useContabilidad";
 
@@ -54,11 +55,12 @@ interface DetalleLinea {
 
 export default function NuevoAsientoPage() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const createMutation = useCreateAsiento();
   const { data: cuentasData } = usePlanCuentas();
 
   // Form state
-  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [tipoAsiento, setTipoAsiento] = useState("DIARIO");
   const [concepto, setConcepto] = useState("");
   const [referencia, setReferencia] = useState("");

@@ -7,7 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider } from '@datqbox/shared-api';
+import { QueryProvider, useHydrateModuleSettings } from '@datqbox/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
@@ -21,8 +21,11 @@ import '@datqbox/shared-ui/globals.css';
 import { buildNav } from './nav';
 
 function AppContent({ children }: { children: React.ReactNode }) {
-    const { isLoading, isAdmin, modulos } = useAuth();
+    const { isLoading, isAdmin, modulos, company } = useAuth();
     const [showContent, setShowContent] = useState(false);
+
+    // Hidratar configuración general + bancos desde BD al arrancar
+    useHydrateModuleSettings('bancos', company?.companyId ?? 1);
 
     useEffect(() => {
         if (!isLoading) {

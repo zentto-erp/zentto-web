@@ -16,6 +16,15 @@ import HelpIcon from '@mui/icons-material/Help';
 import InfoIcon from '@mui/icons-material/Info';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import AppsIcon from '@mui/icons-material/Apps';
+import TuneIcon from '@mui/icons-material/Tune';
+import CategoryIcon from '@mui/icons-material/Category';
+import LabelIcon from '@mui/icons-material/Label';
+import ListIcon from '@mui/icons-material/List';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import HistoryIcon from '@mui/icons-material/History';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import WarehouseIcon from '@mui/icons-material/Warehouse';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -50,9 +59,14 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     // App: Nómina
     if (has(modulos, 'nomina') && isApp('/nomina')) {
         nav.push({ kind: 'page', segment: 'nomina', title: 'Dashboard', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/empleados', title: 'Empleados', icon: <PeopleIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/nominas', title: 'Nóminas', icon: <BadgeIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/conceptos', title: 'Conceptos', icon: <BadgeIcon /> });
-        nav.push({ kind: 'page', segment: 'nomina/vacaciones', title: 'Vacaciones', icon: <BadgeIcon /> });
+        nav.push({ kind: 'header', title: 'Vacaciones' });
+        nav.push({ kind: 'page', segment: 'nomina/vacaciones', title: 'Calendario', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitar', title: 'Solicitar Vacaciones', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitudes', title: 'Aprobar Solicitudes', icon: <BadgeIcon /> });
+        nav.push({ kind: 'header', title: 'Administración' });
         nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <BadgeIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <BadgeIcon /> });
         return nav;
@@ -68,12 +82,23 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // App: Inventario
     if ((has(modulos, 'inventario') || has(modulos, 'articulos')) && isApp('/inventario')) {
-        nav.push({ kind: 'page', segment: 'inventario', title: 'Dashboard', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'articulos', title: 'Maestro de Artículos', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'inventario/marcas', title: 'Marcas', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'inventario/categorias', title: 'Categorías', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'inventario/clases', title: 'Clases', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'inventario/tipos', title: 'Tipos', icon: <InventoryIcon /> });
+        nav.push({ kind: 'header', title: 'Inventario' });
+        nav.push({ kind: 'page', segment: 'inventario', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/articulos', title: 'Artículos', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/ajuste', title: 'Ajuste de Inventario', icon: <TuneIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/movimientos', title: 'Movimientos', icon: <HistoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/traslados', title: 'Traslados', icon: <SwapHorizIcon /> });
+        nav.push({ kind: 'header', title: 'Reportes' });
+        nav.push({ kind: 'page', segment: 'inventario/reportes/libro', title: 'Libro de Inventario', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/etiquetas', title: 'Etiquetas', icon: <LocalOfferIcon /> });
+        nav.push({ kind: 'header', title: 'Catálogos' });
+        nav.push({ kind: 'page', segment: 'inventario/categorias', title: 'Categorías', icon: <CategoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/marcas', title: 'Marcas', icon: <LabelIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/clases', title: 'Clases', icon: <ListIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/tipos', title: 'Tipos', icon: <StraightenIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/lineas', title: 'Líneas', icon: <ListIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/unidades', title: 'Unidades', icon: <StraightenIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/almacenes', title: 'Almacenes', icon: <WarehouseIcon /> });
         return nav;
     }
 
@@ -90,9 +115,10 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // App: Compras y CxP
     const hasCompras = has(modulos, 'compras') || has(modulos, 'cuentas-por-pagar') || has(modulos, 'pagos') || has(modulos, 'cxp') || has(modulos, 'proveedores');
-    if (hasCompras && isApp('/compras')) {
-        nav.push({ kind: 'page', segment: 'compras', title: 'Dashboard', icon: <LocalShippingIcon /> });
-        if (has(modulos, 'compras')) nav.push({ kind: 'page', segment: 'compras', title: 'Compras', icon: <LocalShippingIcon /> });
+    const isComprasApp = isApp('/compras') || isApp('/cuentas-por-pagar') || isApp('/pagos') || isApp('/cxp') || isApp('/proveedores');
+    if (hasCompras && isComprasApp) {
+        nav.push({ kind: 'page', segment: 'compras', title: 'Dashboard', icon: <DashboardIcon /> });
+        if (has(modulos, 'compras')) nav.push({ kind: 'page', segment: 'compras/lista', title: 'Compras', icon: <LocalShippingIcon /> });
         if (has(modulos, 'cuentas-por-pagar')) nav.push({ kind: 'page', segment: 'cuentas-por-pagar', title: 'Cuentas por Pagar', icon: <AccountBalanceIcon /> });
         if (has(modulos, 'pagos')) nav.push({ kind: 'page', segment: 'pagos', title: 'Pagos', icon: <PaymentIcon /> });
         if (has(modulos, 'cxp')) nav.push({ kind: 'page', segment: 'cxp', title: 'Pagos CxP', icon: <PaymentsIcon /> });

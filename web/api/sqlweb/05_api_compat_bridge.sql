@@ -40,7 +40,7 @@ BEGIN TRY
   BEGIN
     CREATE TABLE dbo.Asientos(
       Id                 INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-      Fecha              DATE NOT NULL CONSTRAINT DF_Asientos_Fecha DEFAULT(CAST(GETDATE() AS DATE)),
+      Fecha              DATE NOT NULL CONSTRAINT DF_Asientos_Fecha DEFAULT(CAST(SYSUTCDATETIME() AS DATE)),
       Tipo_Asiento       NVARCHAR(20) NOT NULL,
       Concepto           NVARCHAR(400) NOT NULL,
       Referencia         NVARCHAR(120) NULL,
@@ -85,7 +85,7 @@ BEGIN TRY
       Id        BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
       Moneda    NVARCHAR(10) NOT NULL,
       Tasa      DECIMAL(18,6) NOT NULL,
-      Fecha     DATETIME NOT NULL CONSTRAINT DF_TasasDiarias_Fecha DEFAULT(GETDATE()),
+      Fecha     DATETIME NOT NULL CONSTRAINT DF_TasasDiarias_Fecha DEFAULT(SYSUTCDATETIME()),
       Origen    NVARCHAR(120) NULL,
       CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_TasasDiarias_CreatedAt DEFAULT(SYSUTCDATETIME())
     );

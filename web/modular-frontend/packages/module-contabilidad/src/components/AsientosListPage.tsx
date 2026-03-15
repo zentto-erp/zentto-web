@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Paper,
@@ -30,6 +31,7 @@ import {
 } from "../hooks/useContabilidad";
 
 export default function AsientosListPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState<AsientoFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [anularId, setAnularId] = useState<number | null>(null);
@@ -104,7 +106,7 @@ export default function AsientosListPage() {
         title="Asientos Contables"
         primaryAction={{
           label: "Nuevo Asiento",
-          onClick: () => { window.location.href = "/contabilidad/asientos/new" }
+          onClick: () => router.push("/contabilidad/asientos/new")
         }}
       />
 

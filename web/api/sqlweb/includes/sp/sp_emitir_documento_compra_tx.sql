@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedure: Emitir Documento de Compra (Unificado)
 -- Maneja: ORDEN, COMPRA
 -- Compatible con: SQL Server 2012+
@@ -40,7 +40,7 @@ BEGIN
     DECLARE @Nombre NVARCHAR(255) = NULLIF(@dx.value('(/doc/@NOMBRE)[1]', 'nvarchar(255)'), '');
     DECLARE @Rif NVARCHAR(15) = NULLIF(@dx.value('(/doc/@RIF)[1]', 'nvarchar(15)'), '');
     DECLARE @FechaStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA)[1]', 'nvarchar(50)'), '');
-    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
     DECLARE @FechaVenceStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA_VENCE)[1]', 'nvarchar(50)'), '');
     DECLARE @FechaVence DATETIME = CASE WHEN ISDATE(@FechaVenceStr) = 1 THEN CAST(@FechaVenceStr AS DATETIME) ELSE NULL END;
     DECLARE @FechaReciboStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA_RECIBO)[1]', 'nvarchar(50)'), '');
@@ -142,7 +142,7 @@ BEGIN
         )
         VALUES (
             @NumDoc, @SerialTipo, @TipoOperacion, @CodProveedor, @Nombre, @Rif,
-            @Fecha, @FechaVence, @FechaRecibo, CONVERT(NVARCHAR(8), GETDATE(), 108),
+            @Fecha, @FechaVence, @FechaRecibo, CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108),
             @SubTotal, @MontoGra, @MontoExe, @Exento, @MontoIva, @Alicuota, @Total,
             0, 'N', 
             CASE WHEN @TipoOperacion = 'ORDEN' THEN 'N' ELSE NULL END,
@@ -151,7 +151,7 @@ BEGIN
             @Concepto, @Observ, @Almacen,
             @IvaRetenido, @Islr, @MontoIslr,
             @Moneda, @TasaCambio, @PrecioDollar,
-            @CodUsuario, GETDATE()
+            @CodUsuario, SYSUTCDATETIME()
         );
         
         -- 3. Insertar detalle

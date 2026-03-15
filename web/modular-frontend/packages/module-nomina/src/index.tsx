@@ -22,11 +22,32 @@ export {
 export {
   useEmpleadosList,
   useEmpleadoDetalle,
+  useCreateEmpleado,
+  useUpdateEmpleado,
+  useDeleteEmpleado,
 } from "./hooks/useEmpleados";
 
 export type {
   EmpleadoFilter,
+  EmpleadoInput,
 } from "./hooks/useEmpleados";
+
+export {
+  useVacacionSolicitudesList,
+  useVacacionSolicitudDetalle,
+  useDiasDisponibles,
+  useCrearSolicitudVacaciones,
+  useAprobarSolicitud,
+  useRechazarSolicitud,
+  useCancelarSolicitud,
+  useProcesarPagoVacaciones,
+} from "./hooks/useVacacionesSolicitudes";
+
+export type {
+  SolicitudVacacionesInput,
+  SolicitudFilter,
+  DiasDisponibles,
+} from "./hooks/useVacacionesSolicitudes";
 
 // ─── Types ────────────────────────────────────────────────────
 export type {
@@ -43,10 +64,15 @@ export type {
 // ─── Components ───────────────────────────────────────────────
 export { default as NominasPage } from "./components/NominasPage";
 export { default as ConceptosPage } from "./components/ConceptosPage";
+export { default as EmpleadosPage } from "./components/EmpleadosPage";
 export { default as VacacionesPage } from "./components/VacacionesPage";
+export { default as VacacionesCalendarPage } from "./components/VacacionesCalendarPage";
+export { default as VacacionesSolicitudesPage } from "./components/VacacionesSolicitudesPage";
 export { default as LiquidacionesPage } from "./components/LiquidacionesPage";
 export { default as ConstantesPage } from "./components/ConstantesPage";
 export { default as NominaWizard } from "./components/NominaWizard";
+export { default as LiquidacionesWizard } from "./components/LiquidacionesWizard";
+export { default as VacacionesWizard } from "./components/VacacionesWizard";
 
 // ─── Pages ────────────────────────────────────────────────────
 export { default as NominaHome } from "./pages/NominaHome";

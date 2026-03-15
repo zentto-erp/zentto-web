@@ -1,4 +1,4 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+﻿-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
 -- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode, SalesPrice).
 -- Tablas legacy sin migrar (Pedidos, Detalle_Pedidos, etc.)
 -- mantienen sus nombres originales — ver TODOs en el codigo.
@@ -44,7 +44,7 @@ BEGIN
         SET @NumFact = NULLIF(@px.value('(/pedido/@NUM_FACT)[1]', 'nvarchar(60)'), '');
         SET @Codigo = NULLIF(@px.value('(/pedido/@CODIGO)[1]', 'nvarchar(60)'), '');
         SET @FechaStr = NULLIF(@px.value('(/pedido/@FECHA)[1]', 'nvarchar(50)'), '');
-        SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+        SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
         SET @TotalStr = NULLIF(@px.value('(/pedido/@TOTAL)[1]', 'nvarchar(50)'), '');
         SET @Total = CASE WHEN @TotalStr IS NULL THEN 0 ELSE CAST(@TotalStr AS DECIMAL(18,4)) END;
         SET @Nombre = ISNULL(NULLIF(@px.value('(/pedido/@NOMBRE)[1]', 'nvarchar(200)'), ''), '');
@@ -192,7 +192,7 @@ CREATE PROCEDURE sp_anular_pedido_tx
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
-    DECLARE @FechaAnulacion DATETIME = GETDATE();
+    DECLARE @FechaAnulacion DATETIME = SYSUTCDATETIME();
     DECLARE @YaAnulado BIT;
 
     -- TODO: tabla Pedidos es legacy

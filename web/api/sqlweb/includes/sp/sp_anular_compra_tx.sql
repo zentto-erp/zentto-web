@@ -1,4 +1,4 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+﻿-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
 -- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode, SalesPrice).
 -- Referencias a dbo.Proveedores actualizadas a master.Supplier (TotalBalance, SupplierCode).
 -- Tablas legacy sin migrar (Compras, Detalle_Compras, P_Pagar, etc.)
@@ -28,7 +28,7 @@ BEGIN
     DECLARE @YaAnulada BIT;
 
     BEGIN TRY
-        SET @FechaAnulacion = GETDATE();
+        SET @FechaAnulacion = SYSUTCDATETIME();
 
         -- ============================================
         -- 1. Validar que la compra existe

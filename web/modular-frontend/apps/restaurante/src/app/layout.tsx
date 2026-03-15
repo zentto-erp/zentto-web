@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider } from '@datqbox/shared-api';
+import { QueryProvider, useHydrateLocalizacion } from '@datqbox/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
@@ -18,8 +18,11 @@ import '@datqbox/shared-ui/globals.css';
 import { buildRestauranteNav } from './nav';
 
 function AppContent({ children }: { children: React.ReactNode }) {
-    const { isLoading, isAdmin, modulos } = useAuth();
+    const { isLoading, isAdmin, modulos, company } = useAuth();
     const [showContent, setShowContent] = useState(false);
+
+    // Hidratar localización desde BD al arrancar
+    useHydrateLocalizacion('restaurante', company?.companyId ?? 1);
 
     useEffect(() => {
         if (!isLoading) {

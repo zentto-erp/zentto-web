@@ -1,15 +1,6 @@
-﻿'use client';
-import { Box, Typography } from '@mui/material';
+'use client';
+import { AdminHome } from '@datqbox/module-admin';
 
 export default function Page() {
-    return (
-        <Box sx={{ p: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                Ventas Dashboard
-            </Typography>
-            <Typography variant="body1">
-                Bienvenido al mÃ³dulo de Ventas. Contenido en construcciÃ³n.
-            </Typography>
-        </Box>
-    );
+    return <AdminHome />;
 }

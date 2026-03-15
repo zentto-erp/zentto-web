@@ -1,4 +1,4 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+﻿-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
 -- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode, SalesPrice).
 -- Tablas legacy sin migrar (DocumentosCompra, DocumentosCompraDetalle, P_Pagar, etc.)
 -- mantienen sus nombres originales — ver TODOs en el codigo.
@@ -23,7 +23,7 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @FechaAnulacion DATETIME = GETDATE();
+    DECLARE @FechaAnulacion DATETIME = SYSUTCDATETIME();
     DECLARE @YaAnulado BIT;
 
     -- Verificar existencia

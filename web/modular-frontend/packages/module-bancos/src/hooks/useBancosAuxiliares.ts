@@ -84,3 +84,11 @@ export function useGenerarMovimientoBancario() {
   });
 }
 
+export function useMovimientoDetalle(id?: number | string) {
+  return useQuery<any>({
+    queryKey: [QUERY_KEY, "movimiento-detalle", id],
+    enabled: !!id && id !== "0",
+    queryFn: () => apiGet(`${API_BASE}/movimientos/${id}`)
+  });
+}
+

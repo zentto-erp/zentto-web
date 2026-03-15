@@ -22,7 +22,7 @@ BEGIN
         Fecha_Conciliacion DATETIME NULL,
         MovCuentas_ID INT NULL,              -- Vinculo a MovCuentas si existe
         Co_Usuario NVARCHAR(60) NULL DEFAULT 'API',
-        Fecha_Reg DATETIME NULL DEFAULT GETDATE()
+        Fecha_Reg DATETIME NULL DEFAULT SYSUTCDATETIME()
     );
     
     CREATE INDEX IX_Extracto_NroCta ON ExtractoBancario(Nro_Cta, Fecha);
@@ -49,7 +49,7 @@ BEGIN
         Estado NVARCHAR(20) NULL DEFAULT 'PENDIENTE', -- PENDIENTE, CONCILIADO, AJUSTADO
         Observaciones NVARCHAR(500) NULL,
         Co_Usuario NVARCHAR(60) NULL DEFAULT 'API',
-        Fecha_Creacion DATETIME NULL DEFAULT GETDATE(),
+        Fecha_Creacion DATETIME NULL DEFAULT SYSUTCDATETIME(),
         Fecha_Cierre DATETIME NULL
     );
     
@@ -138,7 +138,7 @@ BEGIN
         INSERT INTO MovCuentas (Nro_Cta, Fecha, Tipo, Nro_Ref, Beneficiario, Categoria, 
                                  Gastos, Ingresos, Saldo_Dia, Saldo, Confirmada, 
                                  Co_Usuario, Concepto, Fecha_Banco)
-        SELECT @Nro_Cta, GETDATE(), @Tipo, @Nro_Ref, @Beneficiario, @Categoria,
+        SELECT @Nro_Cta, SYSUTCDATETIME(), @Tipo, @Nro_Ref, @Beneficiario, @Categoria,
                @Gastos, @Ingresos, @Saldo_Actual, @Saldo_Actual, 0, 
                @Co_Usuario, @Concepto, NULL;
         
@@ -156,7 +156,7 @@ BEGIN
             
             INSERT INTO Movimiento_Cuenta (COD_CUENTA, COD_OPER, FECHA, DEBE, HABER, 
                                             COD_USUARIO, DESCRIPCION, CONCEPTO, Banco, Cheque)
-            VALUES (@Nro_Cta, @Tipo_Doc_Rel, GETDATE(), @Debe, @Haber, 
+            VALUES (@Nro_Cta, @Tipo_Doc_Rel, SYSUTCDATETIME(), @Debe, @Haber, 
                     @Co_Usuario, @Concepto, @Documento_Relacionado, 
                     (SELECT Banco FROM CuentasBank WHERE Nro_Cta = @Nro_Cta), @Nro_Ref);
         END
@@ -216,7 +216,7 @@ BEGIN
                                        Saldo_Inicial_Sistema, Saldo_Final_Sistema,
                                        Estado, Co_Usuario, Fecha_Creacion)
     VALUES (@Nro_Cta, @Fecha_Desde, @Fecha_Hasta, 
-            @Saldo_Inicial, @Saldo_Final, 'PENDIENTE', @Co_Usuario, GETDATE());
+            @Saldo_Inicial, @Saldo_Final, 'PENDIENTE', @Co_Usuario, SYSUTCDATETIME());
     
     DECLARE @Conciliacion_ID INT = SCOPE_IDENTITY();
     
@@ -260,7 +260,7 @@ BEGIN
             @Nro_Cta,
             CASE WHEN ISDATE(X.value('@Fecha', 'nvarchar(50)')) = 1 
                  THEN CAST(X.value('@Fecha', 'nvarchar(50)') AS DATETIME) 
-                 ELSE GETDATE() END,
+                 ELSE SYSUTCDATETIME() END,
             NULLIF(X.value('@Descripcion', 'nvarchar(255)'), ''),
             NULLIF(X.value('@Referencia', 'nvarchar(50)'), ''),
             NULLIF(X.value('@Tipo', 'nvarchar(10)'), ''),  -- DEBITO/CREDITO
@@ -323,7 +323,7 @@ BEGIN
         BEGIN
             UPDATE ExtractoBancario SET 
                 Conciliado = 1,
-                Fecha_Conciliacion = GETDATE(),
+                Fecha_Conciliacion = SYSUTCDATETIME(),
                 MovCuentas_ID = (SELECT MovCuentas_ID FROM ConciliacionDetalle WHERE ID = @MovimientoSistema_ID)
             WHERE ID = @Extracto_ID;
         END
@@ -425,7 +425,7 @@ BEGIN
         -- Insertar en detalle de conciliacion como ajuste
         INSERT INTO ConciliacionDetalle (Conciliacion_ID, Tipo_Origen, Fecha, Descripcion, 
                                           Referencia, Debito, Credito, Conciliado, Tipo_Ajuste, Co_Usuario)
-        VALUES (@Conciliacion_ID, 'AJUSTE', GETDATE(), @Descripcion, 
+        VALUES (@Conciliacion_ID, 'AJUSTE', SYSUTCDATETIME(), @Descripcion, 
                 'AJUSTE-' + CAST(@Conciliacion_ID AS NVARCHAR), @Debito, @Credito, 1, @Tipo_Ajuste, @Co_Usuario);
         
         COMMIT TRANSACTION;
@@ -470,7 +470,7 @@ BEGIN
         Diferencia = @Diferencia,
         Observaciones = @Observaciones,
         Estado = CASE WHEN ABS(@Diferencia) < 0.01 THEN 'CONCILIADO' ELSE 'DIFERENCIA' END,
-        Fecha_Cierre = GETDATE(),
+        Fecha_Cierre = SYSUTCDATETIME(),
         Co_Usuario = @Co_Usuario
     WHERE ID = @Conciliacion_ID;
     
@@ -552,3 +552,44 @@ END
 GO
 
 SELECT 'Sistema de conciliacion bancaria creado exitosamente' AS mensaje;
+GO
+
+-- =============================================
+-- 12. SP: Obtener movimiento bancario por ID
+-- =============================================
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'sp_GetMovimientoBancarioById')
+    DROP PROCEDURE sp_GetMovimientoBancarioById
+GO
+
+CREATE PROCEDURE sp_GetMovimientoBancarioById
+    @MovimientoId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT m.BankMovementId AS id,
+           m.BankAccountId,
+           m.MovementDate AS Fecha,
+           m.MovementType AS Tipo,
+           m.MovementSign,
+           m.Amount AS Monto,
+           m.NetAmount,
+           m.ReferenceNo AS Nro_Ref,
+           m.Beneficiary AS Beneficiario,
+           m.Concept AS Concepto,
+           m.CategoryCode AS Categoria,
+           m.RelatedDocumentNo AS Documento_Relacionado,
+           m.RelatedDocumentType AS Tipo_Doc_Rel,
+           m.BalanceAfter AS Saldo,
+           m.IsReconciled,
+           m.CreatedAt,
+           a.AccountNumber AS Nro_Cta,
+           a.AccountName AS CuentaDescripcion,
+           a.Balance AS SaldoActual,
+           b.BankName AS BancoNombre
+    FROM fin.BankMovement m
+    INNER JOIN fin.BankAccount a ON a.BankAccountId = m.BankAccountId
+    LEFT JOIN fin.Bank b ON b.BankId = a.BankId
+    WHERE m.BankMovementId = @MovimientoId;
+END
+GO

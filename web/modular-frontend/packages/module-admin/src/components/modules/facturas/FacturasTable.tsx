@@ -28,10 +28,12 @@ import {
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useFacturasList, useDeleteFactura } from "../../../hooks/useFacturas";
 import { formatCurrency, formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import { debounce } from "lodash";
 
 export default function FacturasTable() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
@@ -165,7 +167,7 @@ export default function FacturasTable() {
                 <TableRow key={factura.numeroFactura} hover>
                   <TableCell sx={{ fontWeight: 500 }}>{factura.numeroFactura}</TableCell>
                   <TableCell>{factura.nombreCliente}</TableCell>
-                  <TableCell>{formatDate(factura.fecha)}</TableCell>
+                  <TableCell>{formatDate(factura.fecha, { timeZone })}</TableCell>
                   <TableCell align="right">{formatCurrency(factura.totalFactura)}</TableCell>
                   <TableCell>
                     <Chip

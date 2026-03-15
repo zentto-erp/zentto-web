@@ -40,7 +40,7 @@ GO
 
 IF OBJECT_ID('dbo.sp_Nomina_CalcularAntiguedad','P') IS NULL
 BEGIN
-  EXEC('CREATE PROCEDURE dbo.sp_Nomina_CalcularAntiguedad @SessionID NVARCHAR(80), @Cedula NVARCHAR(32), @FechaCalculo DATE=NULL AS BEGIN IF @FechaCalculo IS NULL SET @FechaCalculo=CAST(GETDATE() AS DATE); EXEC dbo.sp_Nomina_SetVariable @SessionID, N''ANTI_ANIOS'', 0, N''Años''; EXEC dbo.sp_Nomina_SetVariable @SessionID, N''ANTI_MESES'', 0, N''Meses''; EXEC dbo.sp_Nomina_SetVariable @SessionID, N''ANTI_TOTAL_MESES'', 0, N''Total meses''; END');
+  EXEC('CREATE PROCEDURE dbo.sp_Nomina_CalcularAntiguedad @SessionID NVARCHAR(80), @Cedula NVARCHAR(32), @FechaCalculo DATE=NULL AS BEGIN IF @FechaCalculo IS NULL SET @FechaCalculo=CAST(SYSUTCDATETIME() AS DATE); EXEC dbo.sp_Nomina_SetVariable @SessionID, N''ANTI_ANIOS'', 0, N''Años''; EXEC dbo.sp_Nomina_SetVariable @SessionID, N''ANTI_MESES'', 0, N''Meses''; EXEC dbo.sp_Nomina_SetVariable @SessionID, N''ANTI_TOTAL_MESES'', 0, N''Total meses''; END');
 END
 GO
 

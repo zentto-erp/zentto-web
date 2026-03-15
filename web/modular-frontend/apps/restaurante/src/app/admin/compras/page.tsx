@@ -24,6 +24,8 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { GridColDef } from '@mui/x-data-grid';
 import { EditableDataGrid } from '@datqbox/module-admin';
+import { useTimezone } from '@datqbox/shared-auth';
+import { formatDateTime } from '@datqbox/shared-api';
 import {
     CompraRestauranteAdmin,
     CompraDetalleRowAdmin,
@@ -47,6 +49,7 @@ type CompraDetalleRow = CompraDetalleInput & { rowId: string };
 type ApiRow = Record<string, unknown>;
 
 export default function AdminComprasPage() {
+    const { timeZone } = useTimezone();
     const [estado, setEstado] = useState('');
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
@@ -147,7 +150,7 @@ export default function AdminComprasPage() {
             valueFormatter: (value) => {
                 if (!value) return '';
                 const d = new Date(String(value));
-                return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
+                return Number.isNaN(d.getTime()) ? String(value) : formatDateTime(String(value), { timeZone });
             },
         },
         {

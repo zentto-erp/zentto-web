@@ -39,7 +39,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     DECLARE @CustomerId BIGINT;
-    DECLARE @ApplyDate  DATE = COALESCE(@Fecha, CAST(GETDATE() AS DATE));
+    DECLARE @ApplyDate  DATE = COALESCE(@Fecha, CAST(SYSUTCDATETIME() AS DATE));
     DECLARE @Applied    DECIMAL(18,2) = 0;
 
     -- Resolver cliente
@@ -286,7 +286,7 @@ BEGIN
     SET XACT_ABORT ON;
 
     DECLARE @SupplierId BIGINT;
-    DECLARE @ApplyDate  DATE = COALESCE(@Fecha, CAST(GETDATE() AS DATE));
+    DECLARE @ApplyDate  DATE = COALESCE(@Fecha, CAST(SYSUTCDATETIME() AS DATE));
     DECLARE @Applied    DECIMAL(18,2) = 0;
 
     -- Resolver proveedor
@@ -644,8 +644,8 @@ BEGIN
     )
     VALUES (
         @CompanyId, @BranchId, @SupplierId, @DocumentType, @DocumentNumber,
-        COALESCE(@IssueDate, CAST(GETDATE() AS DATE)),
-        COALESCE(@DueDate, @IssueDate, CAST(GETDATE() AS DATE)),
+        COALESCE(@IssueDate, CAST(SYSUTCDATETIME() AS DATE)),
+        COALESCE(@DueDate, @IssueDate, CAST(SYSUTCDATETIME() AS DATE)),
         @CurrencyCode, @TotalAmount, @Pend,
         CASE WHEN @Pend <= 0 THEN 1 ELSE 0 END,
         CASE WHEN @Pend <= 0 THEN 'PAID' WHEN @Pend < @TotalAmount THEN 'PARTIAL' ELSE 'PENDING' END,
@@ -860,8 +860,8 @@ BEGIN
     )
     VALUES (
         @CompanyId, @BranchId, @CustomerId, @DocumentType, @DocumentNumber,
-        COALESCE(@IssueDate, CAST(GETDATE() AS DATE)),
-        COALESCE(@DueDate, @IssueDate, CAST(GETDATE() AS DATE)),
+        COALESCE(@IssueDate, CAST(SYSUTCDATETIME() AS DATE)),
+        COALESCE(@DueDate, @IssueDate, CAST(SYSUTCDATETIME() AS DATE)),
         @CurrencyCode, @TotalAmount, @Pend,
         CASE WHEN @Pend <= 0 THEN 1 ELSE 0 END,
         CASE WHEN @Pend <= 0 THEN 'PAID' WHEN @Pend < @TotalAmount THEN 'PARTIAL' ELSE 'PENDING' END,
@@ -1074,7 +1074,7 @@ BEGIN
         INSERTED.HireDate     AS hireDate
     VALUES (
         @CompanyId, @Document, N'Empleado ' + @Document, @Document,
-        CAST(GETDATE() AS DATE), 1, @UserId, @UserId
+        CAST(SYSUTCDATETIME() AS DATE), 1, @UserId, @UserId
     );
 END;
 GO
@@ -1301,7 +1301,7 @@ BEGIN
         IF @RunId IS NOT NULL
         BEGIN
             UPDATE hr.PayrollRun
-            SET ProcessDate      = CAST(GETDATE() AS DATE),
+            SET ProcessDate      = CAST(SYSUTCDATETIME() AS DATE),
                 TotalAssignments = @TotalAssignments,
                 TotalDeductions  = @TotalDeductions,
                 NetTotal         = @NetTotal,
@@ -1322,7 +1322,7 @@ BEGIN
             )
             VALUES (
                 @CompanyId, @BranchId, @PayrollCode, @EmployeeId, @EmployeeCode,
-                @EmployeeName, NULL, CAST(GETDATE() AS DATE), @FromDate, @ToDate,
+                @EmployeeName, NULL, CAST(SYSUTCDATETIME() AS DATE), @FromDate, @ToDate,
                 @TotalAssignments, @TotalDeductions, @NetTotal, @PayrollTypeName,
                 N'MANUAL', @UserId, @UserId
             );
@@ -1565,7 +1565,7 @@ BEGIN
             StartDate          = @StartDate,
             EndDate            = @EndDate,
             ReintegrationDate  = @ReintegrationDate,
-            ProcessDate        = CAST(GETDATE() AS DATE),
+            ProcessDate        = CAST(SYSUTCDATETIME() AS DATE),
             TotalAmount        = @TotalAmount,
             CalculatedAmount   = @TotalAmount,
             UpdatedAt          = SYSUTCDATETIME(),
@@ -1583,7 +1583,7 @@ BEGIN
         VALUES (
             @CompanyId, @BranchId, @VacationCode, @EmployeeId, @EmployeeCode,
             @EmployeeName, @StartDate, @EndDate, @ReintegrationDate,
-            CAST(GETDATE() AS DATE), @TotalAmount, @TotalAmount,
+            CAST(SYSUTCDATETIME() AS DATE), @TotalAmount, @TotalAmount,
             @UserId, @UserId
         );
 
@@ -1649,9 +1649,13 @@ BEGIN
 
     DECLARE @VacationProcessId BIGINT;
 
+    -- Resolver ID
+    SELECT TOP 1 @VacationProcessId = VacationProcessId
+    FROM hr.VacationProcess
+    WHERE CompanyId = @CompanyId AND VacationCode = @VacationCode;
+
     -- Resultado 1: cabecera
     SELECT TOP 1
-        @VacationProcessId = VacationProcessId,
         VacationProcessId AS id,
         VacationCode      AS vacacion,
         EmployeeCode      AS cedula,
@@ -1663,7 +1667,7 @@ BEGIN
         TotalAmount       AS total,
         CalculatedAmount  AS totalCalculado
     FROM hr.VacationProcess
-    WHERE CompanyId = @CompanyId AND VacationCode = @VacationCode;
+    WHERE VacationProcessId = @VacationProcessId;
 
     -- Resultado 2: detalle
     SELECT
@@ -1793,13 +1797,17 @@ BEGIN
 
     DECLARE @SettlementId BIGINT;
 
+    -- Resolver ID
+    SELECT TOP 1 @SettlementId = SettlementProcessId
+    FROM hr.SettlementProcess
+    WHERE CompanyId = @CompanyId AND SettlementCode = @SettlementCode;
+
     -- Resultado 1: total
     SELECT TOP 1
-        @SettlementId = SettlementProcessId,
         SettlementProcessId AS id,
         TotalAmount         AS total
     FROM hr.SettlementProcess
-    WHERE CompanyId = @CompanyId AND SettlementCode = @SettlementCode;
+    WHERE SettlementProcessId = @SettlementId;
 
     -- Resultado 2: detalle
     SELECT

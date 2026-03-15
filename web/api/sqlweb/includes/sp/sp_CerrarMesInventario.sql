@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- sp_CerrarMesInventario: calcula y guarda el cierre de inventario de un mes.
 -- Ese cierre será el inventario inicial del mes siguiente.
 -- Fuente: MovInvent (que se llena con cada operación de venta/compra/ajuste).
@@ -49,7 +49,7 @@ BEGIN
         u.CantidadFinal,
         u.CantidadFinal * u.CostoUnitario,
         u.CostoUnitario,
-        GETDATE()
+        SYSUTCDATETIME()
     FROM UltimoMov u
     LEFT JOIN dbo.Inventario i ON i.CODIGO = u.Codigo
     WHERE u.rn = 1 AND u.CantidadFinal <> 0;
@@ -63,7 +63,7 @@ BEGIN
         ISNULL(i.EXISTENCIA, 0),
         ISNULL(i.EXISTENCIA, 0) * ISNULL(i.COSTO_REFERENCIA, i.COSTO_PROMEDIO),
         ISNULL(i.COSTO_REFERENCIA, i.COSTO_PROMEDIO),
-        GETDATE()
+        SYSUTCDATETIME()
     FROM dbo.Inventario i
     WHERE ISNULL(i.EXISTENCIA, 0) > 0
       AND i.CODIGO IS NOT NULL AND LTRIM(RTRIM(i.CODIGO)) <> ''

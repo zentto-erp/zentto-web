@@ -9,6 +9,7 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@datqbox/module-auditoria": "0.1.0",
         "@datqbox/shared-api": "*",
         "@datqbox/shared-auth": "*",
         "@datqbox/shared-ui": "*",

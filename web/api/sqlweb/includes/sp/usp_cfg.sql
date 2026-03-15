@@ -17,7 +17,7 @@
  *
  *  Tabla principal: cfg.AppSetting
  *    Columnas: SettingId, CompanyId, Module, SettingKey, SettingValue, ValueType,
- *              Description, IsReadOnly, CreatedAt, UpdatedAt, UpdatedByUserId
+ *              Description, IsReadOnly, UpdatedAt, UpdatedByUserId
  *
  *  Patron  : CREATE OR ALTER (idempotente)
  * ============================================================================
@@ -97,7 +97,6 @@ BEGIN
            SettingValue,
            ValueType,
            Description,
-           CreatedAt,
            UpdatedAt
     FROM   cfg.AppSetting
     WHERE  CompanyId = @CompanyId
@@ -125,7 +124,6 @@ BEGIN
            SettingValue,
            ValueType,
            Description,
-           CreatedAt,
            UpdatedAt
     FROM   cfg.AppSetting
     WHERE  CompanyId = @CompanyId
@@ -157,7 +155,6 @@ BEGIN
            ValueType,
            Description,
            IsReadOnly,
-           CreatedAt,
            UpdatedAt
     FROM   cfg.AppSetting
     WHERE  CompanyId = @CompanyId
@@ -210,7 +207,7 @@ BEGIN
             SET    SettingValue     = @SettingValue,
                    ValueType       = ISNULL(@ValueType, ValueType),
                    Description     = ISNULL(@Description, Description),
-                   UpdatedAt       = GETDATE(),
+                   UpdatedAt       = SYSUTCDATETIME(),
                    UpdatedByUserId = @UserId
             WHERE  CompanyId  = @CompanyId
               AND  Module     = @Module
@@ -224,10 +221,10 @@ BEGIN
             -- Insertar nuevo registro
             INSERT INTO cfg.AppSetting
                 (CompanyId, Module, SettingKey, SettingValue, ValueType, Description,
-                 CreatedAt, UpdatedAt, UpdatedByUserId)
+                 UpdatedAt, UpdatedByUserId)
             VALUES
                 (@CompanyId, @Module, @SettingKey, @SettingValue, @ValueType, @Description,
-                 GETDATE(), GETDATE(), @UserId);
+                 SYSUTCDATETIME(), @UserId);
 
             SET @Resultado = 0;
             SET @Mensaje   = N'Configuracion insertada correctamente.';

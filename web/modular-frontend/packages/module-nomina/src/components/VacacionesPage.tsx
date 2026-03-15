@@ -18,28 +18,20 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import IconButton from "@mui/material/IconButton";
+import { useRouter } from "next/navigation";
 import { formatCurrency } from "@datqbox/shared-api";
 import {
   useVacacionesList,
   useVacacionDetalle,
-  useProcesarVacaciones,
-  type VacacionesInput,
 } from "../hooks/useNomina";
 
 export default function VacacionesPage() {
+  const router = useRouter();
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [procesarOpen, setProcesarOpen] = useState(false);
-  const [form, setForm] = useState<VacacionesInput>({
-    vacacionId: "",
-    cedula: "",
-    fechaInicio: "",
-    fechaHasta: "",
-  });
 
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
   const detalle = useVacacionDetalle(selectedId);
-  const procesarMutation = useProcesarVacaciones();
 
   const rows = data?.data ?? data?.rows ?? [];
 
@@ -70,23 +62,24 @@ export default function VacacionesPage() {
     },
   ];
 
-  const handleProcesar = async () => {
-    await procesarMutation.mutateAsync(form);
-    setProcesarOpen(false);
-    setForm({ vacacionId: "", cedula: "", fechaInicio: "", fechaHasta: "" });
-  };
-
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<PlayArrowIcon />} onClick={() => setProcesarOpen(true)}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6" fontWeight={600}>
+          Vacaciones
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<PlayArrowIcon />}
+          onClick={() => router.push("/nomina/vacaciones/procesar")}
+        >
           Procesar Vacaciones
         </Button>
       </Stack>
 
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
-          label="Cédula"
+          label="Buscar por Cédula"
           size="small"
           value={cedula}
           onChange={(e) => setCedula(e.target.value)}
@@ -123,26 +116,6 @@ export default function VacacionesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSelectedId(null)}>Cerrar</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Procesar Dialog */}
-      <Dialog open={procesarOpen} onClose={() => setProcesarOpen(false)}>
-        <DialogTitle>Procesar Vacaciones</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField label="ID Vacación" fullWidth value={form.vacacionId} onChange={(e) => setForm((f) => ({ ...f, vacacionId: e.target.value }))} />
-            <TextField label="Cédula" fullWidth value={form.cedula} onChange={(e) => setForm((f) => ({ ...f, cedula: e.target.value }))} />
-            <TextField label="Fecha Inicio" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.fechaInicio} onChange={(e) => setForm((f) => ({ ...f, fechaInicio: e.target.value }))} />
-            <TextField label="Fecha Hasta" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.fechaHasta} onChange={(e) => setForm((f) => ({ ...f, fechaHasta: e.target.value }))} />
-            <TextField label="Fecha Reintegro" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.fechaReintegro || ""} onChange={(e) => setForm((f) => ({ ...f, fechaReintegro: e.target.value || undefined }))} />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setProcesarOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleProcesar} disabled={procesarMutation.isPending}>
-            Procesar
-          </Button>
         </DialogActions>
       </Dialog>
     </Box>

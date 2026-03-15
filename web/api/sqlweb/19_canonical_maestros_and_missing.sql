@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 -- 19_canonical_maestros_and_missing.sql
 -- Tablas canónicas para datos maestros de clasificación y objetos faltantes
 -- Mantiene contratos SP idénticos para compatibilidad con API TypeScript

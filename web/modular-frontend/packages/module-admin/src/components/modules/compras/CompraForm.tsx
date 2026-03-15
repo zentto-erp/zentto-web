@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -22,8 +24,9 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import { Add, Delete, Search } from "@mui/icons-material";
-import { apiGet, apiPost } from "@datqbox/shared-api";
+import { Add, Delete } from "@mui/icons-material";
+import { apiGet, apiPost, toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import { useEmitirCompraTx } from "../../../hooks/useCompras";
 
 type ProveedorRow = {
@@ -37,6 +40,7 @@ type InventarioRow = {
   DESCRIPCION?: string;
   Referencia?: string;
   PRECIO_COMPRA?: number;
+  Alicuota?: number;
   ALICUOTA?: number;
 };
 
@@ -68,26 +72,42 @@ function autoNumFact() {
 
 export default function CompraForm({ numeroCompra }: CompraFormProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const emitirTx = useEmitirCompraTx();
   const isEdit = !!numeroCompra;
 
   const [numFact, setNumFact] = useState(numeroCompra || autoNumFact());
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [tipo, setTipo] = useState("CONTADO");
   const [codUsuario, setCodUsuario] = useState("SUP");
   const [concepto, setConcepto] = useState("");
 
-  const [codProveedor, setCodProveedor] = useState("");
-  const [nombreProveedor, setNombreProveedor] = useState("");
-  const [rifProveedor, setRifProveedor] = useState("");
+  // --- Proveedor autocomplete state ---
+  const [proveedorSelected, setProveedorSelected] = useState<ProveedorRow | null>(null);
+  const [proveedorInput, setProveedorInput] = useState("");
+  const [proveedorOptions, setProveedorOptions] = useState<ProveedorRow[]>([]);
+  const [proveedorLoading, setProveedorLoading] = useState(false);
+  const proveedorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // --- Articulo autocomplete state ---
+  const [articuloSelected, setArticuloSelected] = useState<InventarioRow | null>(null);
+  const [articuloInput, setArticuloInput] = useState("");
+  const [articuloOptions, setArticuloOptions] = useState<InventarioRow[]>([]);
+  const [articuloLoading, setArticuloLoading] = useState(false);
+  const articuloTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [detalle, setDetalle] = useState<DetalleRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
 
-  const [openBuscaArt, setOpenBuscaArt] = useState(false);
-  const [artSearch, setArtSearch] = useState("");
-  const [artRows, setArtRows] = useState<InventarioRow[]>([]);
+  const [linea, setLinea] = useState<DetalleRow>({
+    CODIGO: "",
+    REFERENCIA: "",
+    DESCRIPCION: "",
+    CANTIDAD: 1,
+    PRECIO_COSTO: 0,
+    ALICUOTA: 16
+  });
 
   const [openNuevoArt, setOpenNuevoArt] = useState(false);
   const [newArt, setNewArt] = useState({
@@ -102,52 +122,84 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
     Marca: ""
   });
 
-  const [linea, setLinea] = useState<DetalleRow>({
-    CODIGO: "",
-    REFERENCIA: "",
-    DESCRIPCION: "",
-    CANTIDAD: 1,
-    PRECIO_COSTO: 0,
-    ALICUOTA: 16
-  });
-
   const subtotal = useMemo(
     () => detalle.reduce((acc, r) => acc + Number(r.CANTIDAD || 0) * Number(r.PRECIO_COSTO || 0), 0),
     [detalle]
   );
   const total = subtotal;
 
-  const buscarProveedor = async (value: string) => {
-    setCodProveedor(value);
-    if (!value.trim()) {
-      setNombreProveedor("");
-      setRifProveedor("");
+  // Derived from proveedorSelected
+  const codProveedor = proveedorSelected?.CODIGO || "";
+  const nombreProveedor = proveedorSelected?.NOMBRE || "";
+  const rifProveedor = proveedorSelected?.RIF || "";
+
+  // --- Proveedor search (debounced) ---
+  const fetchProveedores = useCallback(async (search: string) => {
+    if (!search.trim()) {
+      setProveedorOptions([]);
       return;
     }
-    const resp = await apiGet(`/api/v1/proveedores?search=${encodeURIComponent(value.trim())}&page=1&limit=1`);
-    const p = (resp?.rows?.[0] ?? null) as ProveedorRow | null;
-    if (p) {
-      setCodProveedor(p.CODIGO);
-      setNombreProveedor(p.NOMBRE || "");
-      setRifProveedor(p.RIF || "");
+    setProveedorLoading(true);
+    try {
+      const resp = await apiGet("/api/v1/proveedores", { search: search.trim(), page: 1, limit: 10 });
+      setProveedorOptions((resp?.rows as ProveedorRow[]) ?? []);
+    } catch {
+      setProveedorOptions([]);
+    } finally {
+      setProveedorLoading(false);
     }
-  };
+  }, []);
 
-  const buscarArticulos = async () => {
-    const resp = await apiGet(`/api/v1/inventario?search=${encodeURIComponent(artSearch.trim())}&page=1&limit=30`);
-    setArtRows(resp?.rows ?? []);
-  };
+  useEffect(() => {
+    if (proveedorTimer.current) clearTimeout(proveedorTimer.current);
+    if (!proveedorInput.trim()) {
+      setProveedorOptions(proveedorSelected ? [proveedorSelected] : []);
+      return;
+    }
+    proveedorTimer.current = setTimeout(() => fetchProveedores(proveedorInput), 300);
+    return () => { if (proveedorTimer.current) clearTimeout(proveedorTimer.current); };
+  }, [proveedorInput, fetchProveedores, proveedorSelected]);
 
-  const seleccionarArticulo = (a: InventarioRow) => {
-    setLinea((prev) => ({
-      ...prev,
-      CODIGO: a.CODIGO,
-      REFERENCIA: a.Referencia || "",
-      DESCRIPCION: a.DESCRIPCION || "",
-      PRECIO_COSTO: Number(a.PRECIO_COMPRA || 0),
-      ALICUOTA: Number(a.ALICUOTA ?? 16)
-    }));
-    setOpenBuscaArt(false);
+  // --- Articulo search (debounced) ---
+  const fetchArticulos = useCallback(async (search: string) => {
+    if (!search.trim()) {
+      setArticuloOptions([]);
+      return;
+    }
+    setArticuloLoading(true);
+    try {
+      const resp = await apiGet("/api/v1/inventario", { search: search.trim(), page: 1, limit: 15 });
+      setArticuloOptions((resp?.rows as InventarioRow[]) ?? []);
+    } catch {
+      setArticuloOptions([]);
+    } finally {
+      setArticuloLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (articuloTimer.current) clearTimeout(articuloTimer.current);
+    if (!articuloInput.trim()) {
+      setArticuloOptions([]);
+      return;
+    }
+    articuloTimer.current = setTimeout(() => fetchArticulos(articuloInput), 300);
+    return () => { if (articuloTimer.current) clearTimeout(articuloTimer.current); };
+  }, [articuloInput, fetchArticulos]);
+
+  // When artículo is selected, fill the line
+  const handleArticuloSelect = (_: unknown, value: InventarioRow | null) => {
+    setArticuloSelected(value);
+    if (value) {
+      setLinea((prev) => ({
+        ...prev,
+        CODIGO: value.CODIGO,
+        REFERENCIA: value.Referencia || "",
+        DESCRIPCION: value.DESCRIPCION || "",
+        PRECIO_COSTO: Number(value.PRECIO_COMPRA || 0),
+        ALICUOTA: Number(value.Alicuota ?? value.ALICUOTA ?? 16)
+      }));
+    }
   };
 
   const agregarLinea = () => {
@@ -161,6 +213,9 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       PRECIO_COSTO: 0,
       ALICUOTA: 16
     });
+    setArticuloSelected(null);
+    setArticuloInput("");
+    setArticuloOptions([]);
   };
 
   const eliminarLinea = (idx: number) => {
@@ -176,8 +231,8 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       Co_Usuario: codUsuario || "SUP"
     });
     setOpenNuevoArt(false);
-    setArtSearch(newArt.CODIGO.trim());
-    await buscarArticulos();
+    // Auto-select the new article
+    setArticuloInput(newArt.CODIGO.trim());
   };
 
   const guardarCompraTx = async () => {
@@ -230,17 +285,13 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
         setNumFact(autoNumFact());
         setDetalle([]);
         setConcepto("");
+        setProveedorSelected(null);
+        setProveedorInput("");
       }
     } catch (e: unknown) {
       setError(String(e instanceof Error ? e.message : e));
     }
   };
-
-  useEffect(() => {
-    if (!openBuscaArt) return;
-    buscarArticulos().catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openBuscaArt]);
 
   return (
     <Box>
@@ -281,21 +332,49 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
         </Grid>
 
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Cod Proveedor"
-              value={codProveedor}
-              onBlur={(e) => buscarProveedor(e.target.value)}
-              onChange={(e) => setCodProveedor(e.target.value)}
+          <Grid item xs={12} md={8}>
+            <Autocomplete<ProveedorRow>
+              value={proveedorSelected}
+              onChange={(_, value) => setProveedorSelected(value)}
+              inputValue={proveedorInput}
+              onInputChange={(_, value) => setProveedorInput(value)}
+              options={proveedorOptions}
+              loading={proveedorLoading}
+              getOptionLabel={(opt) => `${opt.CODIGO} — ${opt.NOMBRE || ""}`}
+              isOptionEqualToValue={(a, b) => a.CODIGO === b.CODIGO}
+              filterOptions={(x) => x}
+              noOptionsText={proveedorInput.trim() ? "Sin resultados" : "Escriba para buscar..."}
+              renderOption={(props, opt) => (
+                <li {...props} key={opt.CODIGO}>
+                  <Box>
+                    <Typography variant="body2" fontWeight="bold">{opt.CODIGO}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {opt.NOMBRE}{opt.RIF ? ` — RIF: ${opt.RIF}` : ""}
+                    </Typography>
+                  </Box>
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Proveedor"
+                  size="small"
+                  placeholder="Buscar por codigo o nombre..."
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {proveedorLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
             />
           </Grid>
-          <Grid item xs={12} md={5}>
-            <TextField fullWidth size="small" label="Nombre Proveedor" value={nombreProveedor} onChange={(e) => setNombreProveedor(e.target.value)} />
-          </Grid>
           <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="RIF" value={rifProveedor} onChange={(e) => setRifProveedor(e.target.value)} />
+            <TextField fullWidth size="small" label="RIF" value={rifProveedor} InputProps={{ readOnly: true }} />
           </Grid>
           <Grid item xs={12}>
             <TextField fullWidth size="small" label="Concepto" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
@@ -306,27 +385,58 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Typography variant="subtitle1">Detalle de compra</Typography>
-          <Stack direction="row" spacing={1}>
-            <Button size="small" variant="outlined" startIcon={<Search />} onClick={() => setOpenBuscaArt(true)}>
-              Buscar Articulo
-            </Button>
-            <Button size="small" variant="outlined" startIcon={<Add />} onClick={() => setOpenNuevoArt(true)}>
-              Nuevo Articulo
-            </Button>
-          </Stack>
+          <Button size="small" variant="outlined" startIcon={<Add />} onClick={() => setOpenNuevoArt(true)}>
+            Nuevo Articulo
+          </Button>
         </Stack>
 
-        <Grid container spacing={1}>
-          <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Codigo" value={linea.CODIGO} onChange={(e) => setLinea((p) => ({ ...p, CODIGO: e.target.value }))} />
+        <Grid container spacing={1} alignItems="center">
+          <Grid item xs={12} md={5}>
+            <Autocomplete<InventarioRow>
+              value={articuloSelected}
+              onChange={handleArticuloSelect}
+              inputValue={articuloInput}
+              onInputChange={(_, value) => setArticuloInput(value)}
+              options={articuloOptions}
+              loading={articuloLoading}
+              getOptionLabel={(opt) => `${opt.CODIGO} — ${opt.DESCRIPCION || ""}`}
+              isOptionEqualToValue={(a, b) => a.CODIGO === b.CODIGO}
+              filterOptions={(x) => x}
+              noOptionsText={articuloInput.trim() ? "Sin resultados" : "Escriba para buscar..."}
+              renderOption={(props, opt) => (
+                <li {...props} key={opt.CODIGO}>
+                  <Box>
+                    <Typography variant="body2" fontWeight="bold">{opt.CODIGO}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {opt.DESCRIPCION}{opt.Referencia ? ` (Ref: ${opt.Referencia})` : ""}
+                      {` — $${Number(opt.PRECIO_COMPRA || 0).toFixed(2)}`}
+                    </Typography>
+                  </Box>
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Articulo"
+                  size="small"
+                  placeholder="Buscar por codigo o descripcion..."
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {articuloLoading ? <CircularProgress color="inherit" size={18} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
           </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Referencia" value={linea.REFERENCIA || ""} onChange={(e) => setLinea((p) => ({ ...p, REFERENCIA: e.target.value }))} />
+          <Grid item xs={6} md={2}>
+            <TextField fullWidth size="small" label="Referencia" value={linea.REFERENCIA || ""} InputProps={{ readOnly: true }} />
           </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="Descripcion" value={linea.DESCRIPCION} onChange={(e) => setLinea((p) => ({ ...p, DESCRIPCION: e.target.value }))} />
-          </Grid>
-          <Grid item xs={12} md={1}>
+          <Grid item xs={6} md={1}>
             <TextField
               fullWidth
               size="small"
@@ -337,7 +447,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
               onChange={(e) => setLinea((p) => ({ ...p, CANTIDAD: Number(e.target.value) || 0 }))}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={6} md={2}>
             <TextField
               fullWidth
               size="small"
@@ -348,7 +458,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
               onChange={(e) => setLinea((p) => ({ ...p, PRECIO_COSTO: Number(e.target.value) || 0 }))}
             />
           </Grid>
-          <Grid item xs={12} md={1}>
+          <Grid item xs={6} md={1}>
             <TextField
               fullWidth
               size="small"
@@ -413,49 +523,6 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
           Guardar Compra
         </Button>
       </Stack>
-
-      <Dialog open={openBuscaArt} onClose={() => setOpenBuscaArt(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Buscar Articulo</DialogTitle>
-        <DialogContent>
-          <Stack direction="row" spacing={1} sx={{ my: 1 }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Buscar por codigo/descripcion"
-              value={artSearch}
-              onChange={(e) => setArtSearch(e.target.value)}
-            />
-            <Button variant="outlined" onClick={buscarArticulos}>Buscar</Button>
-          </Stack>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Codigo</TableCell>
-                <TableCell>Descripcion</TableCell>
-                <TableCell>Referencia</TableCell>
-                <TableCell align="right">Costo</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {artRows.map((a) => (
-                <TableRow key={a.CODIGO}>
-                  <TableCell>{a.CODIGO}</TableCell>
-                  <TableCell>{a.DESCRIPCION}</TableCell>
-                  <TableCell>{a.Referencia}</TableCell>
-                  <TableCell align="right">{Number(a.PRECIO_COMPRA || 0).toFixed(2)}</TableCell>
-                  <TableCell align="right">
-                    <Button size="small" onClick={() => seleccionarArticulo(a)}>Seleccionar</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenBuscaArt(false)}>Cerrar</Button>
-        </DialogActions>
-      </Dialog>
 
       <Dialog open={openNuevoArt} onClose={() => setOpenNuevoArt(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Nuevo Articulo</DialogTitle>

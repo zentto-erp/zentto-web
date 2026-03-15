@@ -573,3 +573,38 @@ export async function deleteCuenta(params: {
     mensaje
   };
 }
+
+export async function libroDiario(fechaDesde: string, fechaHasta: string) {
+  const scope = await getDefaultScope();
+  return callSp<any>(
+    "dbo.usp_Acct_Report_LibroDiario",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
+}
+
+export async function dashboardResumen(fechaDesde: string, fechaHasta: string) {
+  const scope = await getDefaultScope();
+  const rows = await callSp<any>(
+    "dbo.usp_Acct_Dashboard_Resumen",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
+  return rows[0] || {
+    totalIngresos: 0,
+    totalGastos: 0,
+    margenPorcentaje: 0,
+    cuentasPorPagar: 0,
+    totalAsientos: 0,
+    totalCuentas: 0,
+    totalAnulados: 0
+  };
+}

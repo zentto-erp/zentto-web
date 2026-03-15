@@ -20,6 +20,8 @@ import {
   TextField,
   Typography
 } from "@mui/material";
+import { toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,
@@ -34,17 +36,25 @@ import {
 type CuentaRow = Record<string, unknown>;
 type ConciliacionRow = Record<string, unknown>;
 
-function firstDayOfCurrentMonth() {
+function firstDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  return `${y}-${m}-01`;
 }
 
-function lastDayOfCurrentMonth() {
+function lastDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit" }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")!.value);
+  const m = Number(parts.find((p) => p.type === "month")!.value);
+  const last = new Date(y, m, 0);
+  return toDateOnly(last, tz);
 }
 
 export default function ConciliacionBancariaPage() {
+  const { timeZone } = useTimezone();
   const [nroCta, setNroCta] = useState("");
   const [estado, setEstado] = useState("");
   const [page, setPage] = useState(1);
@@ -53,15 +63,15 @@ export default function ConciliacionBancariaPage() {
   const [msg, setMsg] = useState<string>("");
   const [err, setErr] = useState<string>("");
 
-  const [newDesde, setNewDesde] = useState(firstDayOfCurrentMonth());
-  const [newHasta, setNewHasta] = useState(lastDayOfCurrentMonth());
+  const [newDesde, setNewDesde] = useState(firstDayOfCurrentMonth(timeZone));
+  const [newHasta, setNewHasta] = useState(lastDayOfCurrentMonth(timeZone));
   const [newCta, setNewCta] = useState("");
 
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState(
     JSON.stringify(
       [
-        { Fecha: firstDayOfCurrentMonth(), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }
+        { Fecha: firstDayOfCurrentMonth(timeZone), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }
       ],
       null,
       2
@@ -236,8 +246,8 @@ export default function ConciliacionBancariaPage() {
               <TableRow key={String(r.ID)} selected={selectedId === Number(r.ID)}>
                 <TableCell>{r.ID}</TableCell>
                 <TableCell>{r.Nro_Cta}</TableCell>
-                <TableCell>{String(r.Fecha_Desde || "").slice(0, 10)}</TableCell>
-                <TableCell>{String(r.Fecha_Hasta || "").slice(0, 10)}</TableCell>
+                <TableCell>{r.Fecha_Desde ? toDateOnly(r.Fecha_Desde as string, timeZone) : ""}</TableCell>
+                <TableCell>{r.Fecha_Hasta ? toDateOnly(r.Fecha_Hasta as string, timeZone) : ""}</TableCell>
                 <TableCell>{Number(r.Saldo_Final_Sistema || 0).toFixed(2)}</TableCell>
                 <TableCell>{Number(r.Diferencia || 0).toFixed(2)}</TableCell>
                 <TableCell>{r.Estado}</TableCell>

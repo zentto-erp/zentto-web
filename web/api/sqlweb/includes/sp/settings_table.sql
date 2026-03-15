@@ -1,4 +1,4 @@
--- ============================================
+﻿-- ============================================
 -- cfg.AppSetting — Unified Key-Value Settings
 -- Stores all configurable parameters per company,
 -- scoped by module. Values are JSON-encoded.

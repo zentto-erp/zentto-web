@@ -43,6 +43,7 @@ interface EditableDataGridProps {
   filterModel?: GridFilterModel;
   onFilterModelChange?: (model: GridFilterModel) => void;
   filterMode?: 'client' | 'server';
+  timeZone?: string;
 }
 
 function defaultGetRowId(row: GridRow): GridRowId {
@@ -75,6 +76,7 @@ export default function EditableDataGrid({
   filterModel,
   onFilterModelChange,
   filterMode = 'client',
+  timeZone,
 }: EditableDataGridProps) {
   const [localRows, setLocalRows] = useState<GridRowsProp>(rows);
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
@@ -141,8 +143,36 @@ export default function EditableDataGrid({
     [getRowId, onUpdateRow]
   );
 
+  // Auto-convert string dates to Date objects and format in company timezone
+  const normalizedColumns = useMemo(() => {
+    return columns.map((col) => {
+      if ((col.type === 'date' || col.type === 'dateTime') && !col.valueGetter) {
+        return {
+          ...col,
+          valueGetter: (value: unknown) => {
+            if (value == null || value === '') return null;
+            if (value instanceof Date) return value;
+            const d = new Date(value as string);
+            return isNaN(d.getTime()) ? null : d;
+          },
+          valueFormatter: (value: unknown) => {
+            if (value == null) return '';
+            const d = value instanceof Date ? value : new Date(String(value));
+            if (isNaN(d.getTime())) return '';
+            const opts: Intl.DateTimeFormatOptions = col.type === 'dateTime'
+              ? { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+              : { year: 'numeric', month: '2-digit', day: '2-digit' };
+            if (timeZone) opts.timeZone = timeZone;
+            return d.toLocaleString('es', opts);
+          },
+        };
+      }
+      return col;
+    });
+  }, [columns, timeZone]);
+
   const columnsWithActions = useMemo(() => {
-    if (columns.some((col) => col.field === 'actions')) return columns;
+    if (normalizedColumns.some((col) => col.field === 'actions')) return normalizedColumns;
 
     const actionsColumn: GridColDef = {
       field: 'actions',
@@ -186,8 +216,8 @@ export default function EditableDataGrid({
       },
     };
 
-    return [...columns, actionsColumn];
-  }, [columns, handleCancelClick, handleDeleteClick, handleEditClick, handleSaveClick, rowModesModel]);
+    return [...normalizedColumns, actionsColumn];
+  }, [normalizedColumns, handleCancelClick, handleDeleteClick, handleEditClick, handleSaveClick, rowModesModel]);
 
   const paginationModel: GridPaginationModel = {
     page: Math.max(page - 1, 0),

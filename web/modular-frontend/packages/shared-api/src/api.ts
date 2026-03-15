@@ -50,6 +50,17 @@ async function authHeader(): Promise<Record<string, string>> {
       headers['x-branch-id'] = String(branchId);
     }
 
+    // @ts-ignore
+    const timezone = activeCompany?.timeZone as string | undefined;
+    // @ts-ignore
+    const countryCode = activeCompany?.countryCode as string | undefined;
+    if (timezone) {
+      headers['x-timezone'] = timezone;
+    }
+    if (countryCode) {
+      headers['x-country-code'] = countryCode;
+    }
+
     return headers;
   } catch {
     const token = await getAuthToken();

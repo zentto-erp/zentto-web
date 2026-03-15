@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 -- 22_canonical_usuarios_fiscal.sql
 -- Fix 2: dbo.Usuarios -> sec.User (ampliar tabla, migrar datos, view + triggers)
 -- Fix 3: Limpiar dbo.FiscalCountryConfig / FiscalTaxRates /

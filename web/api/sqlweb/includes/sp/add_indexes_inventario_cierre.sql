@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Indices para acelerar sp_CerrarMesInventario y sp_MovUnidades
 -- Con ~60k articulos e Inventario y 450k+ filas en MovInvent.
 -- Ejecutar una vez en la base (Sanjose o la que uses).

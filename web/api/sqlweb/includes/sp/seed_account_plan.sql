@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- seed_account_plan.sql (modelo canónico)
 -- Tabla destino: acct.Account
 -- Idempotente por CompanyId + AccountCode

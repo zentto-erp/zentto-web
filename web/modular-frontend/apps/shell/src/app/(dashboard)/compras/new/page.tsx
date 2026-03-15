@@ -1,10 +1,6 @@
-// app/(dashboard)/compras/new/page.tsx
-import { CompraForm } from "@datqbox/module-admin";
+"use client";
 
-export const metadata = {
-  title: "Nueva Compra | DatqBox",
-  description: "Crear nueva compra",
-};
+import { CompraForm } from "@datqbox/module-compras";
 
 export default function NewCompraPage() {
   return <CompraForm />;

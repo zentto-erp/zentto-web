@@ -30,7 +30,7 @@ BEGIN
 
     SELECT
         1            AS ok,
-        GETDATE()    AS serverTime,
+        SYSUTCDATETIME()    AS serverTime,
         DB_NAME()    AS dbName;
 END;
 GO

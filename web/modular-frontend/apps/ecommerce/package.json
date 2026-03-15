@@ -12,6 +12,7 @@
         "@datqbox/shared-api": "*",
         "@datqbox/shared-auth": "*",
         "@datqbox/shared-ui": "*",
+        "@datqbox/module-ecommerce": "*",
         "@emotion/cache": "^11.14.0",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",

@@ -300,4 +300,297 @@ BEGIN
 END
 GO
 
+-- =============================================
+-- Stored Procedures: Movimientos de Inventario
+-- Tabla: master.InventoryMovement
+-- Depende de: master.Product, master.Warehouse
+-- =============================================
+
+-- Agregar columnas de almacen si no existen
+IF COL_LENGTH('master.InventoryMovement', 'WarehouseFrom') IS NULL
+    ALTER TABLE [master].[InventoryMovement] ADD WarehouseFrom NVARCHAR(20) NULL;
+GO
+IF COL_LENGTH('master.InventoryMovement', 'WarehouseTo') IS NULL
+    ALTER TABLE [master].[InventoryMovement] ADD WarehouseTo NVARCHAR(20) NULL;
+GO
+
+-- ---------- 6. Movimiento Insert (ENTRADA/SALIDA/AJUSTE/TRASLADO) ----------
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_Movimiento_Insert')
+    DROP PROCEDURE usp_Inventario_Movimiento_Insert
+GO
+SET QUOTED_IDENTIFIER ON
+SET ANSI_NULLS ON
+GO
+CREATE PROCEDURE usp_Inventario_Movimiento_Insert
+    @CompanyId      INT = 1,
+    @ProductCode    NVARCHAR(80),
+    @MovementType   NVARCHAR(20),          -- ENTRADA | SALIDA | AJUSTE | TRASLADO
+    @Quantity       DECIMAL(18,4),
+    @UnitCost       DECIMAL(18,4) = 0,
+    @DocumentRef    NVARCHAR(60)  = NULL,
+    @WarehouseFrom  NVARCHAR(20)  = NULL,
+    @WarehouseTo    NVARCHAR(20)  = NULL,
+    @Notes          NVARCHAR(300) = NULL,
+    @UserId         INT = NULL,
+    @Resultado      INT OUTPUT,
+    @Mensaje        NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    SET @Resultado = 0;
+    SET @Mensaje = N'';
+
+    DECLARE @ProductName NVARCHAR(250), @CurrentStock DECIMAL(18,4), @CostPrice DECIMAL(18,4);
+
+    SELECT @ProductName = ProductName,
+           @CurrentStock = ISNULL(StockQty, 0),
+           @CostPrice    = ISNULL(CostPrice, 0)
+    FROM [master].[Product]
+    WHERE ProductCode = @ProductCode AND CompanyId = @CompanyId AND ISNULL(IsDeleted, 0) = 0;
+
+    IF @ProductName IS NULL
+    BEGIN
+        SET @Resultado = -1;
+        SET @Mensaje = N'Producto no encontrado: ' + @ProductCode;
+        RETURN;
+    END
+
+    IF @UnitCost = 0 SET @UnitCost = @CostPrice;
+    SET @Quantity = ABS(@Quantity);
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF @MovementType = N'TRASLADO'
+        BEGIN
+            IF @WarehouseFrom IS NULL OR @WarehouseTo IS NULL
+            BEGIN
+                SET @Resultado = -2;
+                SET @Mensaje = N'Traslado requiere almacen origen y destino';
+                ROLLBACK; RETURN;
+            END
+
+            IF @CurrentStock < @Quantity
+            BEGIN
+                SET @Resultado = -3;
+                SET @Mensaje = N'Stock insuficiente. Disponible: ' + CAST(@CurrentStock AS NVARCHAR(20));
+                ROLLBACK; RETURN;
+            END
+
+            DECLARE @DocRef NVARCHAR(60) = ISNULL(@DocumentRef,
+                N'TRASL-' + CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 112) + N'-' +
+                LEFT(REPLACE(CAST(NEWID() AS NVARCHAR(36)), N'-', N''), 6));
+
+            -- Movimiento SALIDA del almacen origen
+            INSERT INTO [master].[InventoryMovement]
+                (CompanyId, ProductCode, ProductName, MovementType, MovementDate,
+                 Quantity, UnitCost, TotalCost, DocumentRef, WarehouseFrom, WarehouseTo,
+                 Notes, CreatedByUserId)
+            VALUES
+                (@CompanyId, @ProductCode, @ProductName, N'SALIDA', CAST(SYSUTCDATETIME() AS DATE),
+                 @Quantity, @UnitCost, @Quantity * @UnitCost, @DocRef, @WarehouseFrom, NULL,
+                 N'Traslado a ' + @WarehouseTo + CASE WHEN @Notes IS NOT NULL THEN N'. ' + @Notes ELSE N'' END,
+                 @UserId);
+
+            -- Movimiento ENTRADA al almacen destino
+            INSERT INTO [master].[InventoryMovement]
+                (CompanyId, ProductCode, ProductName, MovementType, MovementDate,
+                 Quantity, UnitCost, TotalCost, DocumentRef, WarehouseFrom, WarehouseTo,
+                 Notes, CreatedByUserId)
+            VALUES
+                (@CompanyId, @ProductCode, @ProductName, N'ENTRADA', CAST(SYSUTCDATETIME() AS DATE),
+                 @Quantity, @UnitCost, @Quantity * @UnitCost, @DocRef, NULL, @WarehouseTo,
+                 N'Traslado desde ' + @WarehouseFrom + CASE WHEN @Notes IS NOT NULL THEN N'. ' + @Notes ELSE N'' END,
+                 @UserId);
+
+            -- Stock neto no cambia (traslado es movimiento interno entre almacenes)
+        END
+        ELSE
+        BEGIN
+            -- Movimiento normal: ENTRADA, SALIDA, AJUSTE
+            IF @MovementType = N'SALIDA' AND @CurrentStock < @Quantity
+            BEGIN
+                SET @Resultado = -3;
+                SET @Mensaje = N'Stock insuficiente. Disponible: ' + CAST(@CurrentStock AS NVARCHAR(20));
+                ROLLBACK; RETURN;
+            END
+
+            INSERT INTO [master].[InventoryMovement]
+                (CompanyId, ProductCode, ProductName, MovementType, MovementDate,
+                 Quantity, UnitCost, TotalCost, DocumentRef, WarehouseFrom, WarehouseTo,
+                 Notes, CreatedByUserId)
+            VALUES
+                (@CompanyId, @ProductCode, @ProductName, @MovementType, CAST(SYSUTCDATETIME() AS DATE),
+                 @Quantity, @UnitCost, @Quantity * @UnitCost, @DocumentRef, @WarehouseFrom, @WarehouseTo,
+                 @Notes, @UserId);
+
+            -- Actualizar stock en master.Product
+            IF @MovementType IN (N'ENTRADA', N'AJUSTE')
+                UPDATE [master].[Product]
+                SET StockQty = ISNULL(StockQty, 0) + @Quantity
+                WHERE ProductCode = @ProductCode AND CompanyId = @CompanyId;
+            ELSE IF @MovementType = N'SALIDA'
+                UPDATE [master].[Product]
+                SET StockQty = ISNULL(StockQty, 0) - @Quantity
+                WHERE ProductCode = @ProductCode AND CompanyId = @CompanyId;
+        END
+
+        COMMIT;
+        SET @Resultado = 1;
+        SET @Mensaje = N'OK';
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        SET @Resultado = -99;
+        SET @Mensaje = ERROR_MESSAGE();
+    END CATCH
+END
+GO
+
+-- ---------- 7. Movimientos List (paginado con filtros) ----------
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_Movimiento_List')
+    DROP PROCEDURE usp_Inventario_Movimiento_List
+GO
+CREATE PROCEDURE usp_Inventario_Movimiento_List
+    @CompanyId      INT = 1,
+    @Search         NVARCHAR(100) = NULL,
+    @ProductCode    NVARCHAR(80)  = NULL,
+    @MovementType   NVARCHAR(20)  = NULL,
+    @WarehouseCode  NVARCHAR(20)  = NULL,
+    @FechaDesde     DATE = NULL,
+    @FechaHasta     DATE = NULL,
+    @Page           INT = 1,
+    @Limit          INT = 50,
+    @TotalCount     INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Offset INT = (ISNULL(NULLIF(@Page, 0), 1) - 1) * ISNULL(NULLIF(@Limit, 0), 50);
+    IF @Offset < 0 SET @Offset = 0;
+    IF @Limit < 1  SET @Limit = 50;
+    IF @Limit > 500 SET @Limit = 500;
+
+    SELECT @TotalCount = COUNT(1)
+    FROM [master].[InventoryMovement]
+    WHERE CompanyId = @CompanyId
+      AND ISNULL(IsDeleted, 0) = 0
+      AND (@Search IS NULL OR ProductCode LIKE N'%' + @Search + N'%'
+           OR ProductName LIKE N'%' + @Search + N'%'
+           OR DocumentRef LIKE N'%' + @Search + N'%')
+      AND (@ProductCode IS NULL OR ProductCode = @ProductCode)
+      AND (@MovementType IS NULL OR MovementType = @MovementType)
+      AND (@WarehouseCode IS NULL OR WarehouseFrom = @WarehouseCode OR WarehouseTo = @WarehouseCode)
+      AND (@FechaDesde IS NULL OR MovementDate >= @FechaDesde)
+      AND (@FechaHasta IS NULL OR MovementDate <= @FechaHasta);
+
+    SELECT
+        MovementId, ProductCode, ProductName, MovementType, MovementDate,
+        Quantity, UnitCost, TotalCost, DocumentRef,
+        WarehouseFrom, WarehouseTo, Notes, CreatedAt, CreatedByUserId
+    FROM [master].[InventoryMovement]
+    WHERE CompanyId = @CompanyId
+      AND ISNULL(IsDeleted, 0) = 0
+      AND (@Search IS NULL OR ProductCode LIKE N'%' + @Search + N'%'
+           OR ProductName LIKE N'%' + @Search + N'%'
+           OR DocumentRef LIKE N'%' + @Search + N'%')
+      AND (@ProductCode IS NULL OR ProductCode = @ProductCode)
+      AND (@MovementType IS NULL OR MovementType = @MovementType)
+      AND (@WarehouseCode IS NULL OR WarehouseFrom = @WarehouseCode OR WarehouseTo = @WarehouseCode)
+      AND (@FechaDesde IS NULL OR MovementDate >= @FechaDesde)
+      AND (@FechaHasta IS NULL OR MovementDate <= @FechaHasta)
+    ORDER BY CreatedAt DESC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+END
+GO
+
+-- ---------- 8. Dashboard Inventario (metricas) ----------
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_Dashboard')
+    DROP PROCEDURE usp_Inventario_Dashboard
+GO
+CREATE PROCEDURE usp_Inventario_Dashboard
+    @CompanyId INT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        (SELECT COUNT(1) FROM [master].[Product]
+         WHERE CompanyId = @CompanyId AND ISNULL(IsDeleted, 0) = 0
+        ) AS TotalArticulos,
+
+        (SELECT COUNT(1) FROM [master].[Product]
+         WHERE CompanyId = @CompanyId AND ISNULL(IsDeleted, 0) = 0
+           AND ISNULL(StockQty, 0) <= 0
+        ) AS BajoStock,
+
+        (SELECT COUNT(DISTINCT CategoryCode) FROM [master].[Product]
+         WHERE CompanyId = @CompanyId AND ISNULL(IsDeleted, 0) = 0
+           AND CategoryCode IS NOT NULL AND CategoryCode <> N''
+        ) AS TotalCategorias,
+
+        (SELECT ISNULL(SUM(ISNULL(StockQty, 0) * ISNULL(CostPrice, 0)), 0)
+         FROM [master].[Product]
+         WHERE CompanyId = @CompanyId AND ISNULL(IsDeleted, 0) = 0
+        ) AS ValorInventario,
+
+        (SELECT COUNT(1) FROM [master].[InventoryMovement]
+         WHERE CompanyId = @CompanyId AND ISNULL(IsDeleted, 0) = 0
+           AND MovementDate >= DATEADD(DAY, 1 - DAY(CAST(SYSUTCDATETIME() AS DATE)),
+                                       CAST(SYSUTCDATETIME() AS DATE))
+        ) AS MovimientosMes;
+END
+GO
+
+-- ---------- 9. Libro de Inventario (reporte por rango de fechas) ----------
+IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario_LibroInventario')
+    DROP PROCEDURE usp_Inventario_LibroInventario
+GO
+CREATE PROCEDURE usp_Inventario_LibroInventario
+    @CompanyId      INT = 1,
+    @FechaDesde     DATE,
+    @FechaHasta     DATE,
+    @ProductCode    NVARCHAR(80) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- CTE: calcular entradas/salidas por producto en el rango
+    ;WITH MovsByProduct AS (
+        SELECT
+            ProductCode,
+            SUM(CASE WHEN MovementType IN (N'ENTRADA', N'AJUSTE') THEN Quantity ELSE 0 END) AS EntradasDesde,
+            SUM(CASE WHEN MovementType = N'SALIDA' THEN Quantity ELSE 0 END) AS SalidasDesde,
+            SUM(CASE WHEN MovementType IN (N'ENTRADA', N'AJUSTE') AND MovementDate <= @FechaHasta THEN Quantity ELSE 0 END) AS Entradas,
+            SUM(CASE WHEN MovementType = N'SALIDA' AND MovementDate <= @FechaHasta THEN Quantity ELSE 0 END) AS Salidas
+        FROM [master].[InventoryMovement]
+        WHERE CompanyId = @CompanyId
+          AND ISNULL(IsDeleted, 0) = 0
+          AND MovementDate >= @FechaDesde
+        GROUP BY ProductCode
+    )
+    SELECT
+        p.ProductCode   AS CODIGO,
+        p.ProductName   AS DESCRIPCION,
+        LTRIM(RTRIM(
+            ISNULL(RTRIM(p.CategoryCode), N'') +
+            CASE WHEN RTRIM(ISNULL(p.ProductName, N'')) <> N'' THEN N' ' + RTRIM(p.ProductName) ELSE N'' END
+        )) AS DescripcionCompleta,
+        ISNULL(p.StockQty, 0) - ISNULL(m.EntradasDesde, 0) + ISNULL(m.SalidasDesde, 0) AS StockInicial,
+        ISNULL(m.Entradas, 0) AS Entradas,
+        ISNULL(m.Salidas, 0)  AS Salidas,
+        (ISNULL(p.StockQty, 0) - ISNULL(m.EntradasDesde, 0) + ISNULL(m.SalidasDesde, 0))
+            + ISNULL(m.Entradas, 0) - ISNULL(m.Salidas, 0) AS StockFinal,
+        ISNULL(p.CostPrice, 0) AS CostoUnitario,
+        p.UnitCode AS Unidad
+    FROM [master].[Product] p
+    LEFT JOIN MovsByProduct m ON m.ProductCode = p.ProductCode
+    WHERE p.CompanyId = @CompanyId
+      AND ISNULL(p.IsDeleted, 0) = 0
+      AND (@ProductCode IS NULL OR p.ProductCode = @ProductCode)
+    ORDER BY p.ProductCode;
+END
+GO
+
 SELECT name, create_date FROM sys.objects WHERE type = 'P' AND name LIKE 'usp_Inventario_%';

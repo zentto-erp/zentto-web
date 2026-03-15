@@ -1,11 +1,7 @@
-import { ComprasTable } from "@datqbox/module-admin";
+"use client";
 
-export const metadata = {
-  title: "Compras | DatqBox",
-  description: "Listado y gestion de compras"
-};
+import { ComprasHome } from "@datqbox/module-compras";
 
 export default function ComprasPage() {
-  return <ComprasTable />;
+  return <ComprasHome basePath="/compras" />;
 }
-

@@ -1,4 +1,4 @@
--- ============================================
+﻿-- ============================================
 -- SEED DATA PARA CONTABILIDAD
 -- Datos de prueba para demostrar funcionalidad
 -- ============================================
@@ -127,7 +127,7 @@ GO
 -- ============================================
 IF NOT EXISTS (SELECT 1 FROM Asientos WHERE Id > 0)
 BEGIN
-    DECLARE @FechaIni DATE = DATEADD(DAY, -30, GETDATE());
+    DECLARE @FechaIni DATE = DATEADD(DAY, -30, SYSUTCDATETIME());
     
     -- ASIENTO 1: Registro de ventas al contado
     INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
@@ -235,8 +235,8 @@ IF NOT EXISTS (SELECT 1 FROM Configuracion WHERE Clave = 'PERIODO_FISCAL_INICIO'
 BEGIN
     INSERT INTO Configuracion (Clave, Valor, Descripcion, Tipo, Modificable)
     VALUES 
-        ('PERIODO_FISCAL_INICIO', CONVERT(VARCHAR, DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()), 0), 120), 'Fecha de inicio del período fiscal actual', 'FECHA', 1),
-        ('PERIODO_FISCAL_CIERRE', CONVERT(VARCHAR, DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()) + 1, -1), 120), 'Fecha de cierre del período fiscal actual', 'FECHA', 1),
+        ('PERIODO_FISCAL_INICIO', CONVERT(VARCHAR, DATEADD(YEAR, DATEDIFF(YEAR, 0, SYSUTCDATETIME()), 0), 120), 'Fecha de inicio del período fiscal actual', 'FECHA', 1),
+        ('PERIODO_FISCAL_CIERRE', CONVERT(VARCHAR, DATEADD(YEAR, DATEDIFF(YEAR, 0, SYSUTCDATETIME()) + 1, -1), 120), 'Fecha de cierre del período fiscal actual', 'FECHA', 1),
         ('MONEDA_BASE', 'USD', 'Moneda base del sistema', 'TEXTO', 0),
         ('DECIMALES_MONEDA', '2', 'Cantidad de decimales para moneda', 'NUMERO', 1),
         ('ASIENTO_AUTOMATICO_VENTAS', '1', 'Generar asiento automático desde ventas', 'BOOLEANO', 1),

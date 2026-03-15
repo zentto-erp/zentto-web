@@ -1,4 +1,4 @@
-SET ANSI_NULLS ON;
+﻿SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
@@ -27,7 +27,7 @@ BEGIN
     Descuento       DECIMAL(18,2) NOT NULL DEFAULT 0,
     Impuestos       DECIMAL(18,2) NOT NULL DEFAULT 0,
     Total           DECIMAL(18,2) NOT NULL DEFAULT 0,
-    FechaCreacion   DATETIME NOT NULL DEFAULT GETDATE(),
+    FechaCreacion   DATETIME NOT NULL DEFAULT SYSUTCDATETIME(),
     Estado          NVARCHAR(20) NOT NULL DEFAULT 'espera', -- espera, recuperado, anulado
     RecuperadoPor   NVARCHAR(10) NULL,              -- Cajero que recuperó
     RecuperadoEn    NVARCHAR(10) NULL,              -- Caja donde se recuperó
@@ -78,7 +78,7 @@ BEGIN
     Impuestos       DECIMAL(18,2) NOT NULL DEFAULT 0,
     Total           DECIMAL(18,2) NOT NULL DEFAULT 0,
     MetodoPago      NVARCHAR(50) NULL,              -- Efectivo, Tarjeta, Mixto
-    FechaVenta      DATETIME NOT NULL DEFAULT GETDATE(),
+    FechaVenta      DATETIME NOT NULL DEFAULT SYSUTCDATETIME(),
     TramaFiscal     NVARCHAR(MAX) NULL,             -- Respuesta de la impresora fiscal
     EsperaOrigenId  INT NULL,                        -- Si vino de "en espera"
     CONSTRAINT UQ_PosVentas_NumFact UNIQUE (NumFactura)
@@ -222,7 +222,7 @@ BEGIN
     Estado = 'recuperado',
     RecuperadoPor = @RecuperadoPor,
     RecuperadoEn = @RecuperadoEn,
-    FechaRecuperado = GETDATE()
+    FechaRecuperado = SYSUTCDATETIME()
   WHERE Id = @Id AND Estado = 'espera';
 END
 GO

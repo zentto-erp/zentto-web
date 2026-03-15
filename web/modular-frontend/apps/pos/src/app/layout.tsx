@@ -7,7 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider } from '@datqbox/shared-api';
+import { QueryProvider, useHydrateLocalizacion } from '@datqbox/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
@@ -25,8 +25,11 @@ import { buildPosNav } from './nav';
  * el layout con navegación POS
  */
 function AppContent({ children }: { children: React.ReactNode }) {
-    const { isLoading, isAdmin, modulos } = useAuth();
+    const { isLoading, isAdmin, modulos, company } = useAuth();
     const [showContent, setShowContent] = useState(false);
+
+    // Hidratar localización desde BD al arrancar
+    useHydrateLocalizacion('pos', company?.companyId ?? 1);
 
     useEffect(() => {
         if (!isLoading) {

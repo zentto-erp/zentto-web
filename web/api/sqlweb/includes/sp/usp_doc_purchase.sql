@@ -4,7 +4,7 @@
 -- Tablas: doc.PurchaseDocument, doc.PurchaseDocumentLine, doc.PurchaseDocumentPayment
 -- Base de datos: DatqBoxWeb
 --
--- Clave unica PurchaseDocument: (DocumentNumber, OperationType)
+-- Clave unica PurchaseDocument: (DocumentNumber, DocumentType)
 --
 -- Procedimientos:
 --   1. usp_Doc_PurchaseDocument_List           - Lista paginada con filtros
@@ -45,7 +45,7 @@ BEGIN
     -- Contar total de registros que coinciden con los filtros
     SELECT @TotalCount = COUNT(*)
     FROM doc.PurchaseDocument
-    WHERE OperationType = @TipoOperacion
+    WHERE DocumentType = @TipoOperacion
       AND IsDeleted = 0
       AND (@Search IS NULL OR (
             DocumentNumber LIKE '%' + @Search + '%'
@@ -53,13 +53,13 @@ BEGIN
             OR FiscalId LIKE '%' + @Search + '%'
           ))
       AND (@Codigo IS NULL OR SupplierCode = @Codigo)
-      AND (@FromDate IS NULL OR DocumentDate >= @FromDate)
-      AND (@ToDate IS NULL OR DocumentDate < DATEADD(DAY, 1, @ToDate));
+      AND (@FromDate IS NULL OR IssueDate >= @FromDate)
+      AND (@ToDate IS NULL OR IssueDate < DATEADD(DAY, 1, @ToDate));
 
     -- Obtener pagina de resultados
     SELECT *
     FROM doc.PurchaseDocument
-    WHERE OperationType = @TipoOperacion
+    WHERE DocumentType = @TipoOperacion
       AND IsDeleted = 0
       AND (@Search IS NULL OR (
             DocumentNumber LIKE '%' + @Search + '%'
@@ -67,9 +67,9 @@ BEGIN
             OR FiscalId LIKE '%' + @Search + '%'
           ))
       AND (@Codigo IS NULL OR SupplierCode = @Codigo)
-      AND (@FromDate IS NULL OR DocumentDate >= @FromDate)
-      AND (@ToDate IS NULL OR DocumentDate < DATEADD(DAY, 1, @ToDate))
-    ORDER BY DocumentDate DESC, DocumentNumber DESC
+      AND (@FromDate IS NULL OR IssueDate >= @FromDate)
+      AND (@ToDate IS NULL OR IssueDate < DATEADD(DAY, 1, @ToDate))
+    ORDER BY IssueDate DESC, DocumentNumber DESC
     OFFSET (@Page - 1) * @Limit ROWS
     FETCH NEXT @Limit ROWS ONLY;
 END;
@@ -89,7 +89,7 @@ BEGIN
     SELECT TOP 1 *
     FROM doc.PurchaseDocument
     WHERE DocumentNumber = @NumDoc
-      AND OperationType = @TipoOperacion
+      AND DocumentType = @TipoOperacion
       AND IsDeleted = 0;
 END;
 GO
@@ -108,7 +108,7 @@ BEGIN
     SELECT *
     FROM doc.PurchaseDocumentLine
     WHERE DocumentNumber = @NumDoc
-      AND OperationType = @TipoOperacion
+      AND DocumentType = @TipoOperacion
       AND IsDeleted = 0
     ORDER BY ISNULL(LineNumber, 0), LineId;
 END;
@@ -128,7 +128,7 @@ BEGIN
     SELECT *
     FROM doc.PurchaseDocumentPayment
     WHERE DocumentNumber = @NumDoc
-      AND OperationType = @TipoOperacion
+      AND DocumentType = @TipoOperacion
       AND IsDeleted = 0;
 END;
 GO
@@ -151,7 +151,7 @@ BEGIN
         IsReceived
     FROM doc.PurchaseDocument
     WHERE DocumentNumber = @NumDoc
-      AND OperationType = @TipoOperacion
+      AND DocumentType = @TipoOperacion
       AND IsDeleted = 0;
 END;
 GO
@@ -181,7 +181,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDoc
-          AND OperationType = @TipoOperacion
+          AND DocumentType = @TipoOperacion
           AND IsDeleted = 0
     )
     BEGIN
@@ -193,7 +193,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDoc
-          AND OperationType = @TipoOperacion
+          AND DocumentType = @TipoOperacion
           AND IsDeleted = 0
           AND IsVoided = 1
     )
@@ -207,7 +207,7 @@ BEGIN
     SELECT @codProveedor = SupplierCode
     FROM doc.PurchaseDocument
     WHERE DocumentNumber = @NumDoc
-      AND OperationType = @TipoOperacion
+      AND DocumentType = @TipoOperacion
       AND IsDeleted = 0;
 
     BEGIN TRAN;
@@ -215,12 +215,12 @@ BEGIN
         -- Anular cabecera del documento
         UPDATE doc.PurchaseDocument
         SET IsVoided  = 1,
-            Notes     = CONCAT(ISNULL(Notes, ''), ' | ANULADO ', FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm'),
+            Notes     = CONCAT(ISNULL(Notes, ''), ' | ANULADO ', FORMAT(SYSUTCDATETIME(), 'yyyy-MM-dd HH:mm'),
                          ' por ', @CodUsuario,
                          CASE WHEN @Motivo <> '' THEN ' - Motivo: ' + @Motivo ELSE '' END),
             UpdatedAt = SYSUTCDATETIME()
         WHERE DocumentNumber = @NumDoc
-          AND OperationType = @TipoOperacion
+          AND DocumentType = @TipoOperacion
           AND IsDeleted = 0;
 
         -- Anular lineas del documento
@@ -228,7 +228,7 @@ BEGIN
         SET IsVoided  = 1,
             UpdatedAt = SYSUTCDATETIME()
         WHERE DocumentNumber = @NumDoc
-          AND OperationType = @TipoOperacion
+          AND DocumentType = @TipoOperacion
           AND IsDeleted = 0;
 
         -- Resolver contexto: CompanyId y BranchId
@@ -303,7 +303,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDoc
-          AND OperationType = 'ORDEN'
+          AND DocumentType = 'ORDEN'
           AND IsDeleted = 0
     )
     BEGIN
@@ -317,7 +317,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDoc
-          AND OperationType = 'ORDEN'
+          AND DocumentType = 'ORDEN'
           AND IsDeleted = 0
           AND IsVoided = 1
     )
@@ -331,11 +331,11 @@ BEGIN
 
     UPDATE doc.PurchaseDocument
     SET IsReceived = 'S',
-        Notes      = CONCAT(ISNULL(Notes, ''), ' | Recibido ', FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm'),
+        Notes      = CONCAT(ISNULL(Notes, ''), ' | Recibido ', FORMAT(SYSUTCDATETIME(), 'yyyy-MM-dd HH:mm'),
                       ' por ', @CodUsuario),
         UpdatedAt  = SYSUTCDATETIME()
     WHERE DocumentNumber = @NumDoc
-      AND OperationType = 'ORDEN'
+      AND DocumentType = 'ORDEN'
       AND IsDeleted = 0;
 
     SELECT
@@ -399,21 +399,21 @@ BEGIN
         -- 1. Eliminar datos existentes (detalle, pagos, cabecera)
         -- ---------------------------------------------------------------
         DELETE FROM doc.PurchaseDocumentPayment
-        WHERE DocumentNumber = @numDoc AND OperationType = @TipoOperacion;
+        WHERE DocumentNumber = @numDoc AND DocumentType = @TipoOperacion;
 
         DELETE FROM doc.PurchaseDocumentLine
-        WHERE DocumentNumber = @numDoc AND OperationType = @TipoOperacion;
+        WHERE DocumentNumber = @numDoc AND DocumentType = @TipoOperacion;
 
         DELETE FROM doc.PurchaseDocument
-        WHERE DocumentNumber = @numDoc AND OperationType = @TipoOperacion;
+        WHERE DocumentNumber = @numDoc AND DocumentType = @TipoOperacion;
 
         -- ---------------------------------------------------------------
         -- 2. INSERT cabecera desde JSON
         -- ---------------------------------------------------------------
         INSERT INTO doc.PurchaseDocument (
-            DocumentNumber, SerialType, OperationType,
+            DocumentNumber, SerialType, DocumentType,
             SupplierCode, SupplierName, FiscalId,
-            DocumentDate, DueDate, ReceiptDate, PaymentDate, DocumentTime,
+            IssueDate, DueDate, ReceiptDate, PaymentDate, DocumentTime,
             SubTotal, TaxableAmount, ExemptAmount, TaxAmount, TaxRate,
             TotalAmount, DiscountAmount,
             IsVoided, IsPaid, IsReceived, IsLegal,
@@ -433,11 +433,11 @@ BEGIN
             j.SupplierCode,
             j.SupplierName,
             j.FiscalId,
-            ISNULL(j.DocumentDate, GETDATE()),
+            ISNULL(j.IssueDate, SYSUTCDATETIME()),
             j.DueDate,
             j.ReceiptDate,
             j.PaymentDate,
-            ISNULL(j.DocumentTime, CONVERT(NVARCHAR(8), GETDATE(), 108)),
+            ISNULL(j.DocumentTime, CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108)),
             ISNULL(j.SubTotal, 0),
             ISNULL(j.TaxableAmount, 0),
             ISNULL(j.ExemptAmount, 0),
@@ -473,7 +473,7 @@ BEGIN
             ISNULL(j.DollarPrice, 0),
             ISNULL(j.UserCode, 'API'),
             j.ShortUserCode,
-            ISNULL(j.ReportDate, GETDATE()),
+            ISNULL(j.ReportDate, SYSUTCDATETIME()),
             ISNULL(j.HostName, HOST_NAME()),
             SYSUTCDATETIME(),
             SYSUTCDATETIME()
@@ -483,7 +483,7 @@ BEGIN
             SupplierCode            NVARCHAR(60)   '$.SupplierCode',
             SupplierName            NVARCHAR(255)  '$.SupplierName',
             FiscalId                NVARCHAR(15)   '$.FiscalId',
-            DocumentDate            DATETIME       '$.DocumentDate',
+            IssueDate            DATETIME       '$.IssueDate',
             DueDate                 DATETIME       '$.DueDate',
             ReceiptDate             DATETIME       '$.ReceiptDate',
             PaymentDate             DATETIME       '$.PaymentDate',
@@ -531,7 +531,7 @@ BEGIN
         -- 3. INSERT lineas de detalle desde JSON
         -- ---------------------------------------------------------------
         INSERT INTO doc.PurchaseDocumentLine (
-            DocumentNumber, OperationType, LineNumber,
+            DocumentNumber, DocumentType, LineNumber,
             ProductCode, Description,
             Quantity, UnitPrice, UnitCost,
             SubTotal, DiscountAmount, TotalAmount,
@@ -555,7 +555,7 @@ BEGIN
             ISNULL(j.TaxAmount, 0),
             ISNULL(j.IsVoided, 0),
             j.UserCode,
-            ISNULL(j.LineDate, GETDATE()),
+            ISNULL(j.LineDate, SYSUTCDATETIME()),
             SYSUTCDATETIME(),
             SYSUTCDATETIME()
         FROM OPENJSON(@DetailJson)
@@ -584,7 +584,7 @@ BEGIN
         IF @PaymentsJson IS NOT NULL AND LEN(@PaymentsJson) > 2
         BEGIN
             INSERT INTO doc.PurchaseDocumentPayment (
-                DocumentNumber, OperationType,
+                DocumentNumber, DocumentType,
                 PaymentMethod, BankCode, PaymentNumber,
                 Amount, PaymentDate, DueDate,
                 ReferenceNumber, UserCode,
@@ -597,7 +597,7 @@ BEGIN
                 j.BankCode,
                 j.PaymentNumber,
                 ISNULL(j.Amount, 0),
-                ISNULL(j.PaymentDate, GETDATE()),
+                ISNULL(j.PaymentDate, SYSUTCDATETIME()),
                 j.DueDate,
                 j.ReferenceNumber,
                 j.UserCode,
@@ -635,12 +635,12 @@ BEGIN
                 @totalAmount  = TotalAmount,
                 @supplierCode = SupplierCode,
                 @isPaid       = ISNULL(IsPaid, 'N'),
-                @docDate      = DocumentDate,
+                @docDate      = IssueDate,
                 @notes        = Notes,
                 @userCode     = UserCode
             FROM doc.PurchaseDocument
             WHERE DocumentNumber = @numDoc
-              AND OperationType = @TipoOperacion;
+              AND DocumentType = @TipoOperacion;
 
             -- Calcular monto pendiente
             SET @pendingAmount = CASE WHEN UPPER(@isPaid) = 'S' THEN 0 ELSE @totalAmount END;
@@ -804,7 +804,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDocOrden
-          AND OperationType = 'ORDEN'
+          AND DocumentType = 'ORDEN'
           AND IsDeleted = 0
     )
     BEGIN
@@ -819,7 +819,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDocOrden
-          AND OperationType = 'ORDEN'
+          AND DocumentType = 'ORDEN'
           AND IsDeleted = 0
           AND IsVoided = 1
     )
@@ -837,22 +837,22 @@ BEGIN
         -- 1. Eliminar compra existente si la hubiera (idempotente)
         -- ---------------------------------------------------------------
         DELETE FROM doc.PurchaseDocumentPayment
-        WHERE DocumentNumber = @NumDocCompra AND OperationType = 'COMPRA';
+        WHERE DocumentNumber = @NumDocCompra AND DocumentType = 'COMPRA';
 
         DELETE FROM doc.PurchaseDocumentLine
-        WHERE DocumentNumber = @NumDocCompra AND OperationType = 'COMPRA';
+        WHERE DocumentNumber = @NumDocCompra AND DocumentType = 'COMPRA';
 
         DELETE FROM doc.PurchaseDocument
-        WHERE DocumentNumber = @NumDocCompra AND OperationType = 'COMPRA';
+        WHERE DocumentNumber = @NumDocCompra AND DocumentType = 'COMPRA';
 
         -- ---------------------------------------------------------------
         -- 2. Copiar cabecera de la orden como nueva compra
         --    Se aplican overrides del JSON si se proporcionaron
         -- ---------------------------------------------------------------
         INSERT INTO doc.PurchaseDocument (
-            DocumentNumber, SerialType, OperationType,
+            DocumentNumber, SerialType, DocumentType,
             SupplierCode, SupplierName, FiscalId,
-            DocumentDate, DueDate, ReceiptDate, PaymentDate, DocumentTime,
+            IssueDate, DueDate, ReceiptDate, PaymentDate, DocumentTime,
             SubTotal, TaxableAmount, ExemptAmount, TaxAmount, TaxRate,
             TotalAmount, DiscountAmount,
             IsVoided, IsPaid, IsReceived, IsLegal,
@@ -872,11 +872,11 @@ BEGIN
             COALESCE(ov.SupplierCode, o.SupplierCode),
             COALESCE(ov.SupplierName, o.SupplierName),
             COALESCE(ov.FiscalId, o.FiscalId),
-            ISNULL(ov.DocumentDate, GETDATE()),
+            ISNULL(ov.IssueDate, SYSUTCDATETIME()),
             COALESCE(ov.DueDate, o.DueDate),
             COALESCE(ov.ReceiptDate, o.ReceiptDate),
             COALESCE(ov.PaymentDate, o.PaymentDate),
-            ISNULL(ov.DocumentTime, CONVERT(NVARCHAR(8), GETDATE(), 108)),
+            ISNULL(ov.DocumentTime, CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108)),
             COALESCE(ov.SubTotal, o.SubTotal),
             COALESCE(ov.TaxableAmount, o.TaxableAmount),
             COALESCE(ov.ExemptAmount, o.ExemptAmount),
@@ -912,7 +912,7 @@ BEGIN
             o.UsdAmount,
             @CodUsuario,
             o.ShortUserCode,
-            GETDATE(),
+            SYSUTCDATETIME(),
             HOST_NAME(),
             SYSUTCDATETIME(),
             SYSUTCDATETIME()
@@ -924,7 +924,7 @@ BEGIN
                 SupplierCode    NVARCHAR(60)   '$.SupplierCode',
                 SupplierName    NVARCHAR(255)  '$.SupplierName',
                 FiscalId        NVARCHAR(15)   '$.FiscalId',
-                DocumentDate    DATETIME       '$.DocumentDate',
+                IssueDate    DATETIME       '$.IssueDate',
                 DueDate         DATETIME       '$.DueDate',
                 ReceiptDate     DATETIME       '$.ReceiptDate',
                 PaymentDate     DATETIME       '$.PaymentDate',
@@ -944,7 +944,7 @@ BEGIN
             )
         ) AS ov
         WHERE o.DocumentNumber = @NumDocOrden
-          AND o.OperationType = 'ORDEN'
+          AND o.DocumentType = 'ORDEN'
           AND o.IsDeleted = 0;
 
         -- ---------------------------------------------------------------
@@ -954,7 +954,7 @@ BEGIN
         BEGIN
             -- Usar detalle proporcionado
             INSERT INTO doc.PurchaseDocumentLine (
-                DocumentNumber, OperationType, LineNumber,
+                DocumentNumber, DocumentType, LineNumber,
                 ProductCode, Description,
                 Quantity, UnitPrice, UnitCost,
                 SubTotal, DiscountAmount, TotalAmount,
@@ -978,7 +978,7 @@ BEGIN
                 ISNULL(j.TaxAmount, 0),
                 ISNULL(j.IsVoided, 0),
                 @CodUsuario,
-                GETDATE(),
+                SYSUTCDATETIME(),
                 SYSUTCDATETIME(),
                 SYSUTCDATETIME()
             FROM OPENJSON(@DetalleJson)
@@ -1003,7 +1003,7 @@ BEGIN
         BEGIN
             -- Copiar lineas de la orden
             INSERT INTO doc.PurchaseDocumentLine (
-                DocumentNumber, OperationType, LineNumber,
+                DocumentNumber, DocumentType, LineNumber,
                 ProductCode, Description,
                 Quantity, UnitPrice, UnitCost,
                 SubTotal, DiscountAmount, TotalAmount,
@@ -1027,12 +1027,12 @@ BEGIN
                 ol.TaxAmount,
                 0,                          -- IsVoided = No
                 @CodUsuario,
-                GETDATE(),
+                SYSUTCDATETIME(),
                 SYSUTCDATETIME(),
                 SYSUTCDATETIME()
             FROM doc.PurchaseDocumentLine ol
             WHERE ol.DocumentNumber = @NumDocOrden
-              AND ol.OperationType = 'ORDEN'
+              AND ol.DocumentType = 'ORDEN'
               AND ol.IsDeleted = 0;
 
             SET @detalleRows = @@ROWCOUNT;
@@ -1055,11 +1055,11 @@ BEGIN
         UPDATE doc.PurchaseDocument
         SET IsReceived = 'S',
             Notes      = CONCAT(ISNULL(Notes, ''), ' | Convertida a compra ', @NumDocCompra,
-                          ' el ', FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm'),
+                          ' el ', FORMAT(SYSUTCDATETIME(), 'yyyy-MM-dd HH:mm'),
                           ' por ', @CodUsuario),
             UpdatedAt  = SYSUTCDATETIME()
         WHERE DocumentNumber = @NumDocOrden
-          AND OperationType = 'ORDEN'
+          AND DocumentType = 'ORDEN'
           AND IsDeleted = 0;
 
         -- ---------------------------------------------------------------
@@ -1075,11 +1075,11 @@ BEGIN
             @cTotalAmount  = TotalAmount,
             @cSupplierCode = SupplierCode,
             @cIsPaid       = ISNULL(IsPaid, 'N'),
-            @cDocDate      = DocumentDate,
+            @cDocDate      = IssueDate,
             @cNotes        = Notes
         FROM doc.PurchaseDocument
         WHERE DocumentNumber = @NumDocCompra
-          AND OperationType = 'COMPRA';
+          AND DocumentType = 'COMPRA';
 
         SET @pendingAmount = CASE WHEN UPPER(@cIsPaid) = 'S' THEN 0 ELSE @cTotalAmount END;
 

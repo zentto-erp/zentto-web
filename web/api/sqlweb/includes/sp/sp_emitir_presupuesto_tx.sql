@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedure: Emitir Presupuesto (100% canónico)
 -- Tablas: ar.SalesDocument, ar.SalesDocumentLine, ar.SalesDocumentPayment
 -- CxC: ar.ReceivableDocument
@@ -58,7 +58,7 @@ BEGIN
     IF @FechaStr IS NULL SET @FechaStr = NULLIF(@fx.value('(/factura/@FECHA)[1]', 'nvarchar(50)'), '');
     SET @FechaReporteStr = NULLIF(@fx.value('(/presupuesto/@FECHA_REPORTE)[1]', 'nvarchar(50)'), '');
     IF @FechaReporteStr IS NULL SET @FechaReporteStr = NULLIF(@fx.value('(/factura/@FECHA_REPORTE)[1]', 'nvarchar(50)'), '');
-    SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+    SET @Fecha = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
     SET @FechaReporte = CASE WHEN ISDATE(@FechaReporteStr) = 1 THEN CAST(@FechaReporteStr AS DATETIME) ELSE @Fecha END;
     SET @Total = CASE WHEN NULLIF(@fx.value('(/presupuesto/@TOTAL)[1]', 'nvarchar(50)'), '') IS NULL
         THEN (CASE WHEN NULLIF(@fx.value('(/factura/@TOTAL)[1]', 'nvarchar(50)'), '') IS NULL THEN 0 ELSE CAST(@fx.value('(/factura/@TOTAL)[1]', 'nvarchar(50)') AS DECIMAL(18,4)) END)

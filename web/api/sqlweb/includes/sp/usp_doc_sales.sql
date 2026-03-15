@@ -193,7 +193,7 @@ BEGIN
         -- Anular cabecera del documento
         UPDATE doc.SalesDocument
         SET IsVoided  = 1,
-            Notes     = CONCAT(ISNULL(Notes, ''), ' | ANULADO ', FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm'),
+            Notes     = CONCAT(ISNULL(Notes, ''), ' | ANULADO ', FORMAT(SYSUTCDATETIME(), 'yyyy-MM-dd HH:mm'),
                          ' por ', @CodUsuario,
                          CASE WHEN @Motivo <> '' THEN ' - Motivo: ' + @Motivo ELSE '' END),
             UpdatedAt = SYSUTCDATETIME()
@@ -353,9 +353,9 @@ BEGIN
             FiscalMemoryNumber,
             'FACT',                             -- OperationType
             CustomerCode, CustomerName, FiscalId,
-            GETDATE(),                          -- DocumentDate (fecha actual)
+            SYSUTCDATETIME(),                          -- DocumentDate (fecha actual)
             DueDate,
-            CONVERT(NVARCHAR(8), GETDATE(), 108), -- DocumentTime
+            CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108), -- DocumentTime
             SubTotal, TaxableAmount, ExemptAmount, TaxAmount, TaxRate, TotalAmount, DiscountAmount,
             0,                                  -- IsVoided = No
             'N',                                -- IsPaid
@@ -368,7 +368,7 @@ BEGIN
             SellerCode, DepartmentCode, LocationCode,
             CurrencyCode, ExchangeRate,
             @CodUsuario,                        -- UserCode
-            GETDATE(),
+            SYSUTCDATETIME(),
             HOST_NAME(),
             VehiclePlate, Mileage, TollAmount,
             SYSUTCDATETIME(), SYSUTCDATETIME()
@@ -400,7 +400,7 @@ BEGIN
             0,                                  -- IsVoided = No
             RelatedRef,
             @CodUsuario,
-            GETDATE(),
+            SYSUTCDATETIME(),
             SYSUTCDATETIME(), SYSUTCDATETIME()
         FROM doc.SalesDocumentLine
         WHERE DocumentNumber = @NumDocPedido
@@ -429,7 +429,7 @@ BEGIN
                 ISNULL(j.Amount, 0),
                 ISNULL(j.AmountBs, 0),
                 ISNULL(j.ExchangeRate, 1),
-                ISNULL(j.PaymentDate, GETDATE()),
+                ISNULL(j.PaymentDate, SYSUTCDATETIME()),
                 j.DueDate,
                 j.ReferenceNumber,
                 @CodUsuario,
@@ -454,7 +454,7 @@ BEGIN
         UPDATE doc.SalesDocument
         SET IsInvoiced = 'S',
             Notes      = CONCAT(ISNULL(Notes, ''), ' | Facturado como ', @NumDocFactura,
-                          ' el ', FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm'),
+                          ' el ', FORMAT(SYSUTCDATETIME(), 'yyyy-MM-dd HH:mm'),
                           ' por ', @CodUsuario),
             UpdatedAt  = SYSUTCDATETIME()
         WHERE DocumentNumber = @NumDocPedido
@@ -547,7 +547,7 @@ BEGIN
         @CustomerCode         = JSON_VALUE(@HeaderJson, '$.CustomerCode'),
         @CustomerName         = JSON_VALUE(@HeaderJson, '$.CustomerName'),
         @FiscalId             = JSON_VALUE(@HeaderJson, '$.FiscalId'),
-        @DocumentDate         = ISNULL(TRY_CAST(JSON_VALUE(@HeaderJson, '$.DocumentDate') AS DATETIME), GETDATE()),
+        @DocumentDate         = ISNULL(TRY_CAST(JSON_VALUE(@HeaderJson, '$.DocumentDate') AS DATETIME), SYSUTCDATETIME()),
         @DueDate              = TRY_CAST(JSON_VALUE(@HeaderJson, '$.DueDate') AS DATETIME),
         @DocumentTime         = JSON_VALUE(@HeaderJson, '$.DocumentTime'),
         @SubTotal             = ISNULL(TRY_CAST(JSON_VALUE(@HeaderJson, '$.SubTotal') AS DECIMAL(18,4)), 0),
@@ -576,7 +576,7 @@ BEGIN
         @CurrencyCode         = JSON_VALUE(@HeaderJson, '$.CurrencyCode'),
         @ExchangeRate         = TRY_CAST(JSON_VALUE(@HeaderJson, '$.ExchangeRate') AS DECIMAL(18,6)),
         @UserCode             = JSON_VALUE(@HeaderJson, '$.UserCode'),
-        @ReportDate           = ISNULL(TRY_CAST(JSON_VALUE(@HeaderJson, '$.ReportDate') AS DATETIME), GETDATE()),
+        @ReportDate           = ISNULL(TRY_CAST(JSON_VALUE(@HeaderJson, '$.ReportDate') AS DATETIME), SYSUTCDATETIME()),
         @HostName             = JSON_VALUE(@HeaderJson, '$.HostName'),
         @VehiclePlate         = JSON_VALUE(@HeaderJson, '$.VehiclePlate'),
         @Mileage              = TRY_CAST(JSON_VALUE(@HeaderJson, '$.Mileage') AS DECIMAL(18,2)),
@@ -679,7 +679,7 @@ BEGIN
                 ISNULL(j.IsVoided, 0),
                 j.RelatedRef,
                 ISNULL(j.UserCode, @UserCode),
-                ISNULL(j.LineDate, GETDATE()),
+                ISNULL(j.LineDate, SYSUTCDATETIME()),
                 SYSUTCDATETIME(), SYSUTCDATETIME(), 0
             FROM OPENJSON(@DetailJson)
             WITH (
@@ -729,7 +729,7 @@ BEGIN
                 ISNULL(j.Amount, 0),
                 ISNULL(j.AmountBs, 0),
                 ISNULL(j.ExchangeRate, 1),
-                ISNULL(j.PaymentDate, GETDATE()),
+                ISNULL(j.PaymentDate, SYSUTCDATETIME()),
                 j.DueDate,
                 j.ReferenceNumber,
                 ISNULL(j.UserCode, @UserCode),

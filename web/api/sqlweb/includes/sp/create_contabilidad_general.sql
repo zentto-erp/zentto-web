@@ -22,7 +22,7 @@ BEGIN TRY
       Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_PeriodoContable_Estado DEFAULT('ABIERTO'),
       CerradoPor NVARCHAR(40) NULL,
       CerradoEn DATETIME NULL,
-      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_PeriodoContable_FechaCreacion DEFAULT(GETDATE()),
+      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_PeriodoContable_FechaCreacion DEFAULT(SYSUTCDATETIME()),
       CONSTRAINT UQ_PeriodoContable_Periodo UNIQUE (Periodo)
     );
   END
@@ -45,7 +45,7 @@ BEGIN TRY
       OrigenModulo NVARCHAR(40) NULL, -- FACTURAS, CXC, CXP, COMPRAS, BANCOS, INVENTARIO
       OrigenDocumento NVARCHAR(120) NULL,
       CodUsuario NVARCHAR(40) NULL,
-      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_Asiento_FechaCreacion DEFAULT(GETDATE()),
+      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_Asiento_FechaCreacion DEFAULT(SYSUTCDATETIME()),
       FechaAprobacion DATETIME NULL,
       UsuarioAprobacion NVARCHAR(40) NULL,
       FechaAnulacion DATETIME NULL,
@@ -69,7 +69,7 @@ BEGIN TRY
       Documento NVARCHAR(120) NULL,
       Debe DECIMAL(18,2) NOT NULL CONSTRAINT DF_AsientoDet_Debe DEFAULT(0),
       Haber DECIMAL(18,2) NOT NULL CONSTRAINT DF_AsientoDet_Haber DEFAULT(0),
-      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_AsientoDet_FechaCreacion DEFAULT(GETDATE()),
+      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_AsientoDet_FechaCreacion DEFAULT(SYSUTCDATETIME()),
       CONSTRAINT FK_AsientoDet_Asiento FOREIGN KEY (AsientoId) REFERENCES dbo.AsientoContable(Id)
     );
   END
@@ -85,7 +85,7 @@ BEGIN TRY
       LlaveOrigen NVARCHAR(400) NULL,
       AsientoId BIGINT NOT NULL,
       Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_AsientoOri_Estado DEFAULT('APLICADO'),
-      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_AsientoOri_Fecha DEFAULT(GETDATE()),
+      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_AsientoOri_Fecha DEFAULT(SYSUTCDATETIME()),
       CONSTRAINT FK_AsientoOri_Asiento FOREIGN KEY (AsientoId) REFERENCES dbo.AsientoContable(Id),
       CONSTRAINT UQ_AsientoOri UNIQUE (OrigenModulo, TipoDocumento, NumeroDocumento, AsientoId)
     );
@@ -116,7 +116,7 @@ BEGIN TRY
       Fecha DATE NOT NULL,
       Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_AjusteCont_Estado DEFAULT('APROBADO'),
       CodUsuario NVARCHAR(40) NULL,
-      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_AjusteCont_Fecha DEFAULT(GETDATE()),
+      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_AjusteCont_Fecha DEFAULT(SYSUTCDATETIME()),
       CONSTRAINT FK_AjusteCont_Asiento FOREIGN KEY (AsientoId) REFERENCES dbo.AsientoContable(Id)
     );
   END
@@ -151,7 +151,7 @@ BEGIN TRY
       Monto DECIMAL(18,2) NOT NULL,
       AsientoId BIGINT NULL,
       Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_DepCont_Estado DEFAULT('GENERADO'),
-      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_DepCont_Fecha DEFAULT(GETDATE()),
+      FechaCreacion DATETIME NOT NULL CONSTRAINT DF_DepCont_Fecha DEFAULT(SYSUTCDATETIME()),
       CONSTRAINT FK_DepCont_Activo FOREIGN KEY (ActivoId) REFERENCES dbo.ActivoFijoContable(Id),
       CONSTRAINT FK_DepCont_Asiento FOREIGN KEY (AsientoId) REFERENCES dbo.AsientoContable(Id),
       CONSTRAINT UQ_DepCont UNIQUE (ActivoId, Periodo)

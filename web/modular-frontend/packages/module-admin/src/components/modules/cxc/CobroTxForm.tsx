@@ -19,6 +19,8 @@ import {
   Typography
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
+import { toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import {
   CxcAplicarCobroPayload,
   CxcDocumentoPendiente,
@@ -31,8 +33,9 @@ type SelDoc = CxcDocumentoPendiente & { checked: boolean; montoAplicar: number }
 type FormaPagoLine = { formaPago: string; monto: number; banco?: string; numCheque?: string; fechaVencimiento?: string };
 
 export default function CobroTxForm() {
+  const { timeZone } = useTimezone();
   const [codCliente, setCodCliente] = useState("");
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [codUsuario, setCodUsuario] = useState("SUP");
   const [observaciones, setObservaciones] = useState("");
   const [formasPago, setFormasPago] = useState<FormaPagoLine[]>([{ formaPago: "EFECTIVO", monto: 0 }]);
@@ -288,7 +291,7 @@ export default function CobroTxForm() {
                 </TableCell>
                 <TableCell>{r.tipoDoc}</TableCell>
                 <TableCell>{r.numDoc}</TableCell>
-                <TableCell>{r.fecha ? String(r.fecha).slice(0, 10) : ""}</TableCell>
+                <TableCell>{r.fecha ? toDateOnly(r.fecha as string, timeZone) : ""}</TableCell>
                 <TableCell align="right">{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField

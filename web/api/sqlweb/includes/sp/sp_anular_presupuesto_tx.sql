@@ -1,4 +1,4 @@
--- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
+﻿-- DEPRECATED: Este SP usa tablas legacy. Ver la versión canónica en el API TypeScript.
 -- Referencias a dbo.Inventario actualizadas a master.Product (StockQty, ProductCode).
 -- Referencias a dbo.Clientes actualizadas a master.Customer (TotalBalance, CustomerCode).
 -- Tablas legacy sin migrar (Presupuestos, Detalle_Presupuestos, P_Cobrar, P_CobrarC, etc.)
@@ -21,7 +21,7 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @FechaAnulacion DATETIME = GETDATE();
+    DECLARE @FechaAnulacion DATETIME = SYSUTCDATETIME();
     DECLARE @CodCliente NVARCHAR(60);
     DECLARE @YaAnulada BIT;
 

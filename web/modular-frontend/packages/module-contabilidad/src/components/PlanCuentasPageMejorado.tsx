@@ -39,6 +39,8 @@ import {
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
 import { ContextActionHeader } from "@datqbox/shared-ui";
+import { toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 
@@ -62,11 +64,12 @@ function MayorAnaliticoDialog({
   onClose: () => void;
   cuenta: CuentaContable | null;
 }) {
+  const { timeZone } = useTimezone();
   const [fechaDesde, setFechaDesde] = useState(
-    new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0]
+    toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone)
   );
   const [fechaHasta, setFechaHasta] = useState(
-    new Date().toISOString().split("T")[0]
+    toDateOnly(new Date(), timeZone)
   );
 
   const { data, isLoading } = useMayorAnalitico(

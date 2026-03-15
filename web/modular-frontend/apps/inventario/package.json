@@ -9,6 +9,7 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@datqbox/module-inventario": "*",
         "@datqbox/shared-api": "*",
         "@datqbox/shared-auth": "*",
         "@datqbox/shared-ui": "*",

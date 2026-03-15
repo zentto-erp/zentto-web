@@ -1439,5 +1439,141 @@ BEGIN
 END;
 GO
 
-PRINT 'usp_acct.sql: 28 procedimientos de contabilidad creados/actualizados exitosamente.';
+-- =============================================================================
+--  SP 29: usp_Acct_Report_LibroDiario
+--  Descripcion : Reporte de Libro Diario. Lista todas las lineas de asientos
+--                contables para un rango de fechas, agrupadas por asiento.
+--  Parametros  :
+--    @CompanyId   BIGINT - ID empresa.
+--    @BranchId    BIGINT - ID sucursal.
+--    @FechaDesde  DATE   - Fecha inicio.
+--    @FechaHasta  DATE   - Fecha fin.
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_LibroDiario
+    @CompanyId   BIGINT,
+    @BranchId    BIGINT,
+    @FechaDesde  DATE,
+    @FechaHasta  DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        CONVERT(VARCHAR(10), je.EntryDate, 120) AS fecha,
+        je.JournalEntryId AS asientoId,
+        je.EntryNumber     AS numeroAsiento,
+        je.EntryType       AS tipoAsiento,
+        je.Concept         AS concepto,
+        je.Status          AS estado,
+        jel.LineNumber     AS renglon,
+        jel.AccountCodeSnapshot AS codCuenta,
+        ISNULL(a.AccountName, jel.Description) AS descripcionCuenta,
+        jel.Description    AS descripcionLinea,
+        jel.DebitAmount    AS debe,
+        jel.CreditAmount   AS haber,
+        jel.CostCenterCode AS centroCosto
+    FROM acct.JournalEntry je
+    INNER JOIN acct.JournalEntryLine jel ON jel.JournalEntryId = je.JournalEntryId
+    LEFT JOIN acct.Account a ON a.AccountId = jel.AccountId AND a.CompanyId = @CompanyId
+    WHERE je.CompanyId = @CompanyId
+      AND je.BranchId  = @BranchId
+      AND je.EntryDate >= @FechaDesde
+      AND je.EntryDate <= @FechaHasta
+      AND je.IsDeleted  = 0
+      AND je.Status    <> 'VOIDED'
+    ORDER BY je.EntryDate, je.JournalEntryId, jel.LineNumber;
+END;
+GO
+
+-- =============================================================================
+--  SP 30: usp_Acct_Dashboard_Resumen
+--  Descripcion : Resumen de dashboard del modulo contable. Retorna un unico
+--                recordset con datos agregados (ingresos, gastos, cuentas por
+--                pagar, conteos de asientos y cuentas).
+--  Parametros  :
+--    @CompanyId   BIGINT - ID empresa.
+--    @BranchId    BIGINT - ID sucursal.
+--    @FechaDesde  DATE   - Fecha inicio.
+--    @FechaHasta  DATE   - Fecha fin.
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Acct_Dashboard_Resumen
+    @CompanyId   BIGINT,
+    @BranchId    BIGINT,
+    @FechaDesde  DATE,
+    @FechaHasta  DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Calculate totals from journal entry lines
+    DECLARE @totalIngresos DECIMAL(18,2) = 0;
+    DECLARE @totalGastos   DECIMAL(18,2) = 0;
+    DECLARE @cuentasPorPagar DECIMAL(18,2) = 0;
+    DECLARE @totalAsientos INT = 0;
+    DECLARE @totalCuentas  INT = 0;
+    DECLARE @totalAnulados INT = 0;
+
+    -- Total Ingresos (account type I = Ingresos) - credit side
+    SELECT @totalIngresos = ISNULL(SUM(jel.CreditAmount - jel.DebitAmount), 0)
+    FROM acct.JournalEntry je
+    INNER JOIN acct.JournalEntryLine jel ON jel.JournalEntryId = je.JournalEntryId
+    INNER JOIN acct.Account a ON a.AccountId = jel.AccountId AND a.CompanyId = @CompanyId
+    WHERE je.CompanyId = @CompanyId AND je.BranchId = @BranchId
+      AND je.EntryDate >= @FechaDesde AND je.EntryDate <= @FechaHasta
+      AND je.IsDeleted = 0 AND je.Status <> 'VOIDED'
+      AND a.AccountType = 'I';
+
+    -- Total Gastos (account type G = Gastos) - debit side
+    SELECT @totalGastos = ISNULL(SUM(jel.DebitAmount - jel.CreditAmount), 0)
+    FROM acct.JournalEntry je
+    INNER JOIN acct.JournalEntryLine jel ON jel.JournalEntryId = je.JournalEntryId
+    INNER JOIN acct.Account a ON a.AccountId = jel.AccountId AND a.CompanyId = @CompanyId
+    WHERE je.CompanyId = @CompanyId AND je.BranchId = @BranchId
+      AND je.EntryDate >= @FechaDesde AND je.EntryDate <= @FechaHasta
+      AND je.IsDeleted = 0 AND je.Status <> 'VOIDED'
+      AND a.AccountType = 'G';
+
+    -- Cuentas por pagar (account type P, code starts with '2.1')
+    SELECT @cuentasPorPagar = ISNULL(SUM(jel.CreditAmount - jel.DebitAmount), 0)
+    FROM acct.JournalEntry je
+    INNER JOIN acct.JournalEntryLine jel ON jel.JournalEntryId = je.JournalEntryId
+    INNER JOIN acct.Account a ON a.AccountId = jel.AccountId AND a.CompanyId = @CompanyId
+    WHERE je.CompanyId = @CompanyId AND je.BranchId = @BranchId
+      AND je.EntryDate >= @FechaDesde AND je.EntryDate <= @FechaHasta
+      AND je.IsDeleted = 0 AND je.Status <> 'VOIDED'
+      AND a.AccountType = 'P' AND a.AccountCode LIKE '2.1%';
+
+    -- Counts
+    SELECT @totalAsientos = COUNT(*)
+    FROM acct.JournalEntry
+    WHERE CompanyId = @CompanyId AND BranchId = @BranchId
+      AND EntryDate >= @FechaDesde AND EntryDate <= @FechaHasta
+      AND IsDeleted = 0 AND Status <> 'VOIDED';
+
+    SELECT @totalAnulados = COUNT(*)
+    FROM acct.JournalEntry
+    WHERE CompanyId = @CompanyId AND BranchId = @BranchId
+      AND EntryDate >= @FechaDesde AND EntryDate <= @FechaHasta
+      AND IsDeleted = 0 AND Status = 'VOIDED';
+
+    SELECT @totalCuentas = COUNT(*)
+    FROM acct.Account
+    WHERE CompanyId = @CompanyId AND IsDeleted = 0 AND IsActive = 1;
+
+    -- Return single row with all dashboard data
+    SELECT
+        @totalIngresos   AS totalIngresos,
+        @totalGastos     AS totalGastos,
+        CASE WHEN @totalIngresos > 0
+             THEN ROUND((@totalIngresos - @totalGastos) / @totalIngresos * 100, 2)
+             ELSE 0
+        END              AS margenPorcentaje,
+        @cuentasPorPagar AS cuentasPorPagar,
+        @totalAsientos   AS totalAsientos,
+        @totalCuentas    AS totalCuentas,
+        @totalAnulados   AS totalAnulados;
+END;
+GO
+
+PRINT 'usp_acct.sql: 30 procedimientos de contabilidad creados/actualizados exitosamente.';
 GO

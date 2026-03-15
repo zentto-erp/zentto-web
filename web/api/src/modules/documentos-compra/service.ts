@@ -1,4 +1,5 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { objectToXml, arrayToXml } from "../../utils/xml.js";
 
 export type TipoOperacionCompra = "ORDEN" | "COMPRA";
 
@@ -259,9 +260,9 @@ export async function emitirDocumentoCompraTx(payload: {
     "usp_Doc_PurchaseDocument_Upsert",
     {
       TipoOperacion: payload.tipoOperacion,
-      HeaderJson: JSON.stringify(headerData),
-      DetailJson: JSON.stringify(detalleData),
-      PaymentsJson: pagosData.length > 0 ? JSON.stringify(pagosData) : null
+      HeaderXml: objectToXml(headerData),
+      DetailXml: arrayToXml(detalleData),
+      PaymentsXml: pagosData.length > 0 ? arrayToXml(pagosData) : null
     }
   );
 
@@ -346,10 +347,10 @@ export async function cerrarOrdenConCompraDocumentoTx(payload: {
   const codUsuario = getValue(c, "COD_USUARIO", "UserCode") ?? "API";
 
   // Construir JSON de detalle (si se proporcionaron)
-  let detalleJson: string | null = null;
+  let detalleXml: string | null = null;
   if (payload.detalle && payload.detalle.length > 0) {
     const detalleData = mapDetalle("COMPRA", numFactCompra, payload.detalle);
-    detalleJson = JSON.stringify(detalleData);
+    detalleXml = arrayToXml(detalleData);
   }
 
   const rows = await callSp<{
@@ -365,8 +366,8 @@ export async function cerrarOrdenConCompraDocumentoTx(payload: {
     {
       NumDocOrden: numFactOrden,
       NumDocCompra: numFactCompra,
-      CompraOverrideJson: Object.keys(compraOverride).length > 0 ? JSON.stringify(compraOverride) : null,
-      DetalleJson: detalleJson,
+      CompraOverrideXml: Object.keys(compraOverride).length > 0 ? objectToXml(compraOverride) : null,
+      DetalleXml: detalleXml,
       CodUsuario: asString(codUsuario, "API")
     }
   );

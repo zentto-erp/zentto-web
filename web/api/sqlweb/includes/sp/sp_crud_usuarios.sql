@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedures CRUD: Usuarios
 -- Compatible con: SQL Server 2012+
 -- Tabla canónica: sec.[User]

@@ -148,7 +148,7 @@ BEGIN
 
   SET @Resultado = 0;
   SET @Mensaje = N'';
-  SET @SessionID = (@Nomina + N'_' + @Cedula + N'_' + CONVERT(NVARCHAR(8), GETDATE(), 112));
+  SET @SessionID = (@Nomina + N'_' + @Cedula + N'_' + CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 112));
 
   BEGIN TRY
     EXEC dbo.sp_Nomina_GetScope @CompanyId OUTPUT, @BranchId OUTPUT;
@@ -197,7 +197,7 @@ BEGIN
       )
       VALUES (
         @CompanyId, @BranchId, @Nomina, @EmployeeId, @Cedula, @EmployeeName,
-        CAST(GETDATE() AS DATE), @FechaInicio, @FechaHasta, 0, 0, 0,
+        CAST(SYSUTCDATETIME() AS DATE), @FechaInicio, @FechaHasta, 0, 0, 0,
         0, N'COMPAT', N'SP_LEGACY_COMPAT', SYSUTCDATETIME(), SYSUTCDATETIME(), @UserId, @UserId
       );
 
@@ -208,7 +208,7 @@ BEGIN
       UPDATE hr.PayrollRun
       SET UpdatedAt = SYSUTCDATETIME(),
           UpdatedByUserId = @UserId,
-          ProcessDate = CAST(GETDATE() AS DATE)
+          ProcessDate = CAST(SYSUTCDATETIME() AS DATE)
       WHERE PayrollRunId = @RunId;
 
       DELETE FROM hr.PayrollRunLine WHERE PayrollRunId = @RunId;
@@ -259,7 +259,12 @@ BEGIN
       IF UPPER(ISNULL(@ConceptType, N'')) = N'DEDUCCION'
         SET @Ded = @Ded + ISNULL(@Total,0);
       ELSE
+      BEGIN
         SET @Asig = @Asig + ISNULL(@Total,0);
+        -- Actualizar TOTAL_ASIGNACIONES para que deducciones legales
+        -- (ej. FAOV) puedan calcular sobre gananciales (LOTTT Art. 172)
+        EXEC dbo.sp_Nomina_SetVariable @SessionID, N'TOTAL_ASIGNACIONES', @Asig, N'Total asignaciones acumuladas';
+      END
 
       SET @VarCode = N'C' + @ConceptCode;
       SET @VarTotal = ISNULL(@Total, 0);

@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- usp_CxP_AplicarPago v2 (modelo canónico)
 -- Esquema: [master].Supplier + ap.PayableDocument/ap.PayableApplication
 -- Entrada arrays por XML para compatibilidad con SQL Server 2012

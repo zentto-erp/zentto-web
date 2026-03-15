@@ -17,20 +17,13 @@ import {
   Typography,
 } from '@mui/material';
 import { useAuth } from '@datqbox/shared-auth';
-import { apiPut, useModuleSettings, usePosStore } from '@datqbox/shared-api';
+import {
+  apiPut, useModuleSettings, usePosStore,
+  PREDEFINED_COUNTRIES, fetchBcvRates as fetchBcvRatesApi, settingsToLocalizacion,
+  type BcvRates,
+} from '@datqbox/shared-api';
 import { PaymentSettingsPanel } from '@datqbox/shared-ui';
-import { getSession } from 'next-auth/react';
 
-const PREDEFINED_COUNTRIES = [
-  { code: 'VE', name: 'Venezuela', defaults: { preciosIncluyenIva: true, tasaCambio: 45.0, monedaPrincipal: 'Bs', monedaReferencia: '$', tasaIgtf: 3, aplicarIgtf: true } },
-  { code: 'CO', name: 'Colombia', defaults: { preciosIncluyenIva: false, tasaCambio: 4000, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'MX', name: 'México', defaults: { preciosIncluyenIva: false, tasaCambio: 18.0, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'ES', name: 'España', defaults: { preciosIncluyenIva: true, tasaCambio: 1.0, monedaPrincipal: '€', monedaReferencia: '$', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'US', name: 'Estados Unidos', defaults: { preciosIncluyenIva: false, tasaCambio: 1.0, monedaPrincipal: '$', monedaReferencia: 'EUR', tasaIgtf: 0, aplicarIgtf: false } },
-];
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000';
-type BcvRates = { success?: boolean; USD?: number; EUR?: number; fechaInformativa?: string };
 type PosSettings = Record<string, any>;
 
 export default function PosConfiguracionPage() {
@@ -114,30 +107,21 @@ export default function PosConfiguracionPage() {
     setLoadingBcv(true);
     setBcvError(null);
     try {
-      const session = await getSession();
-      const token = (session as unknown as { accessToken?: string } | null)?.accessToken;
-      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      for (const ep of [`${API_BASE}/v1/config/tasas`, `${API_BASE}/api/v1/config/tasas`]) {
-        const res = await fetch(ep, { headers, credentials: 'include' });
-        if (!res.ok) continue;
-        const rates = await res.json() as BcvRates;
-        setBcvRates(rates);
+      const rates = await fetchBcvRatesApi();
+      setBcvRates(rates);
 
-        if (updateDraftState) {
-          setDraft(prev => {
-            const ref = String(prev['localizacion.monedaReferencia'] ?? '$').toUpperCase();
-            let appliedRate = prev['localizacion.tasaCambio'];
-            if (ref.includes('USD') || ref === '$') {
-              appliedRate = Number(rates.USD ?? prev['localizacion.tasaCambio']);
-            } else if (ref.includes('EUR') || ref === '€') {
-              appliedRate = Number(rates.EUR ?? prev['localizacion.tasaCambio']);
-            }
-            return { ...prev, 'localizacion.tasaCambio': appliedRate };
-          });
-        }
-        return;
+      if (updateDraftState) {
+        setDraft(prev => {
+          const ref = String(prev['localizacion.monedaReferencia'] ?? '$').toUpperCase();
+          let appliedRate = prev['localizacion.tasaCambio'];
+          if (ref.includes('USD') || ref === '$') {
+            appliedRate = Number(rates.USD ?? prev['localizacion.tasaCambio']);
+          } else if (ref.includes('EUR') || ref === '€') {
+            appliedRate = Number(rates.EUR ?? prev['localizacion.tasaCambio']);
+          }
+          return { ...prev, 'localizacion.tasaCambio': appliedRate };
+        });
       }
-      throw new Error('unavailable');
     } catch {
       setBcvError('No se pudo cargar la tasa BCV.');
     } finally {
@@ -159,15 +143,7 @@ export default function PosConfiguracionPage() {
     try {
       await apiPut(`/v1/settings/pos?companyId=${companyId}`, draft);
       // Sync localizacion with runtime POS store
-      setLocalizacion({
-        pais: String(draft['localizacion.pais'] ?? 'VE'),
-        preciosIncluyenIva: Boolean(draft['localizacion.preciosIncluyenIva'] ?? true),
-        tasaCambio: Number(draft['localizacion.tasaCambio'] ?? 1),
-        monedaPrincipal: String(draft['localizacion.monedaPrincipal'] ?? 'Bs'),
-        monedaReferencia: String(draft['localizacion.monedaReferencia'] ?? '$'),
-        tasaIgtf: Number(draft['localizacion.tasaIgtf'] ?? 3),
-        aplicarIgtf: Boolean(draft['localizacion.aplicarIgtf'] ?? true),
-      });
+      setLocalizacion(settingsToLocalizacion(draft));
       await refetch();
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : 'No fue posible guardar configuración POS.');

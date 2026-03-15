@@ -28,10 +28,12 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../../../hooks/useCuentasPorPagar";
 import { formatCurrency, formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 import { debounce } from "lodash";
 
 export default function CuentasPorPagarTable() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
@@ -164,8 +166,8 @@ export default function CuentasPorPagarTable() {
                 <TableRow key={cuenta.id} hover>
                   <TableCell sx={{ fontWeight: 500 }}>{cuenta.nombreProveedor}</TableCell>
                   <TableCell>{cuenta.numeroReferencia}</TableCell>
-                  <TableCell>{formatDate(cuenta.fechaCreacion)}</TableCell>
-                  <TableCell>{formatDate(cuenta.fechaVencimiento)}</TableCell>
+                  <TableCell>{formatDate(cuenta.fechaCreacion, { timeZone })}</TableCell>
+                  <TableCell>{formatDate(cuenta.fechaVencimiento, { timeZone })}</TableCell>
                   <TableCell align="right">{formatCurrency(cuenta.montoTotal)}</TableCell>
                   <TableCell align="right" sx={{ color: cuenta.saldo > 0 ? "error.main" : "success.main" }}>
                     {formatCurrency(cuenta.saldo)}

@@ -1,5 +1,6 @@
 
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { arrayToXml } from "../../utils/xml.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 export interface ConceptoNomina {
@@ -325,7 +326,7 @@ async function upsertRunWithLines(input: {
       NetTotal: input.totalNeto,
       PayrollTypeName: input.calculationType ?? null,
       UserId: input.userId,
-      LinesJson: JSON.stringify(input.lines),
+      LinesXml: arrayToXml(input.lines),
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
@@ -820,4 +821,140 @@ export async function saveConstante(data: {
     success: true,
     message: String(output.Mensaje ?? "Constante guardada"),
   };
+}
+
+// ─── Solicitudes de Vacaciones ──────────────────────────────
+
+export async function createVacationRequest(params: {
+  employeeCode: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  isPartial: boolean;
+  notes?: string;
+  days: Array<{ date: string; dayType: string }>;
+}) {
+  const scope = await getDefaultScope();
+  const rows = await callSp<{ RequestId: number }>(
+    "usp_HR_VacationRequest_Create",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      EmployeeCode: params.employeeCode,
+      StartDate: params.startDate,
+      EndDate: params.endDate,
+      TotalDays: params.totalDays,
+      IsPartial: params.isPartial,
+      Notes: params.notes || null,
+      Days: `<days>${params.days.map(d => `<d dt="${d.date}" tp="${d.dayType || 'COMPLETO'}"/>`).join('')}</days>`,
+    }
+  );
+  return { success: true, requestId: rows[0]?.RequestId };
+}
+
+export async function listVacationRequests(params: {
+  employeeCode?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const scope = await getDefaultScope();
+  const page = Math.max(1, Number(params.page) || 1);
+  const limit = Math.min(Math.max(1, Number(params.limit) || 50), 500);
+  const offset = (page - 1) * limit;
+
+  const { rows, output } = await callSpOut(
+    "usp_HR_VacationRequest_List",
+    {
+      CompanyId: scope.companyId,
+      EmployeeCode: params.employeeCode || null,
+      Status: params.status || null,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
+
+  return { rows, total: Number(output.TotalCount ?? 0) };
+}
+
+export async function getVacationRequest(requestId: string) {
+  const rows = await callSp("usp_HR_VacationRequest_Get", {
+    RequestId: Number(requestId),
+  });
+  // SP returns 2 result sets: header + days
+  return rows[0] ?? null;
+}
+
+export async function approveVacationRequest(requestId: string, approvedBy: string) {
+  const rows = await callSp("usp_HR_VacationRequest_Approve", {
+    RequestId: Number(requestId),
+    ApprovedBy: approvedBy,
+  });
+  return { success: true, message: "Solicitud aprobada" };
+}
+
+export async function rejectVacationRequest(requestId: string, approvedBy: string, reason: string) {
+  const rows = await callSp("usp_HR_VacationRequest_Reject", {
+    RequestId: Number(requestId),
+    ApprovedBy: approvedBy,
+    RejectionReason: reason,
+  });
+  return { success: true, message: "Solicitud rechazada" };
+}
+
+export async function cancelVacationRequest(requestId: string) {
+  const rows = await callSp("usp_HR_VacationRequest_Cancel", {
+    RequestId: Number(requestId),
+  });
+  return { success: true, message: "Solicitud cancelada" };
+}
+
+export async function processVacationRequestPayment(requestId: string, codUsuario: string) {
+  const scope = await getDefaultScope();
+  const userId = await resolveUserId(codUsuario);
+
+  // Get the request details
+  const reqRows = await callSp<any>("usp_HR_VacationRequest_Get", {
+    RequestId: Number(requestId),
+  });
+  const request = reqRows[0];
+  if (!request) throw new Error("solicitud_not_found");
+  if (request.Status !== "APROBADA") throw new Error("solicitud_not_approved");
+
+  // Process the vacation using existing logic
+  const result = await procesarVacaciones({
+    vacacionId: `VAC-REQ-${requestId}`,
+    cedula: request.EmployeeCode,
+    fechaInicio: request.StartDate,
+    fechaHasta: request.EndDate,
+    codUsuario,
+  });
+
+  // Link the VacationId back to the request
+  await callSp("usp_HR_VacationRequest_Process", {
+    RequestId: Number(requestId),
+    VacationId: 0, // The VacationProcess ID from the result
+  });
+
+  return { ...result, success: true, message: "Pago de vacaciones generado" };
+}
+
+export async function getAvailableDays(cedula: string) {
+  const scope = await getDefaultScope();
+  const rows = await callSp<{
+    DiasBase: number;
+    AnosServicio: number;
+    DiasAdicionales: number;
+    DiasDisponibles: number;
+    DiasTomados: number;
+    DiasPendientes: number;
+  }>(
+    "usp_HR_VacationRequest_GetAvailableDays",
+    {
+      CompanyId: scope.companyId,
+      EmployeeCode: cedula,
+    }
+  );
+  return rows[0] ?? { DiasBase: 15, AnosServicio: 0, DiasAdicionales: 0, DiasDisponibles: 15, DiasTomados: 0, DiasPendientes: 0 };
 }

@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedure: Anular Factura (100% canónico)
 -- Tablas: ar.SalesDocument, ar.SalesDocumentLine
 -- CxC: ar.ReceivableDocument
@@ -20,7 +20,7 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @FechaAnulacion DATETIME = GETDATE();
+    DECLARE @FechaAnulacion DATETIME = SYSUTCDATETIME();
     DECLARE @CodCliente NVARCHAR(60);
     DECLARE @CustomerId BIGINT;
     DECLARE @YaAnulada BIT;

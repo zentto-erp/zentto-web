@@ -16,6 +16,8 @@ import {
   Typography
 } from "@mui/material";
 import { useCompraById, useDetalleCompra, useIndicadoresCompra } from "../../../hooks/useCompras";
+import { toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 
 interface CompraDetailProps {
   numFact: string;
@@ -25,6 +27,7 @@ type CompraDetalleRow = Record<string, unknown>;
 
 export default function CompraDetail({ numFact }: CompraDetailProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const compra = useCompraById(numFact);
   const detalle = useDetalleCompra(numFact);
   const indicadores = useIndicadoresCompra(numFact);
@@ -51,7 +54,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         <Grid container spacing={1}>
           <Grid item xs={12} md={3}><strong>Proveedor:</strong> {row?.NOMBRE || row?.COD_PROVEEDOR || ""}</Grid>
           <Grid item xs={12} md={3}><strong>RIF:</strong> {row?.RIF || ""}</Grid>
-          <Grid item xs={12} md={2}><strong>Fecha:</strong> {row?.FECHA ? String(row.FECHA).slice(0, 10) : ""}</Grid>
+          <Grid item xs={12} md={2}><strong>Fecha:</strong> {row?.FECHA ? toDateOnly(row.FECHA as string, timeZone) : ""}</Grid>
           <Grid item xs={12} md={2}><strong>Tipo:</strong> {row?.TIPO || ""}</Grid>
           <Grid item xs={12} md={2}><strong>Total:</strong> {Number(row?.TOTAL || 0).toFixed(2)}</Grid>
         </Grid>

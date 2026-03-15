@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- usp_CxC_AplicarCobro v2 (modelo canónico)
 -- Esquema: [master].Customer + ar.ReceivableDocument/ar.ReceivableApplication
 -- Entrada arrays por XML para compatibilidad con SQL Server 2012

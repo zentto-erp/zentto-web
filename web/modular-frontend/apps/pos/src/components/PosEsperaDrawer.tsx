@@ -23,6 +23,8 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import { usePosStore, type VentaEnEspera } from '@datqbox/shared-api';
+import { useTimezone } from '@datqbox/shared-auth';
+import { formatDateTime } from '@datqbox/shared-api';
 
 interface PosEsperaDrawerProps {
     open: boolean;
@@ -32,6 +34,7 @@ interface PosEsperaDrawerProps {
 }
 
 export function PosEsperaDrawer({ open, onClose, onRecuperado, onError }: PosEsperaDrawerProps) {
+    const { timeZone } = useTimezone();
     const ventasEnEspera = usePosStore(s => s.ventasEnEspera);
     const loadingEspera = usePosStore(s => s.loadingEspera);
     const syncing = usePosStore(s => s.syncing);
@@ -61,9 +64,7 @@ export function PosEsperaDrawer({ open, onClose, onRecuperado, onError }: PosEsp
 
     const formatTime = (fecha: string) => {
         try {
-            const d = new Date(fecha);
-            return d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
-                + ' ' + d.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' });
+            return formatDateTime(fecha, { timeZone });
         } catch {
             return fecha;
         }

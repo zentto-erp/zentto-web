@@ -26,7 +26,8 @@ import {
 import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
 import { useFacturaById, useCreateFactura, useUpdateFactura } from "../../../hooks/useFacturas";
 import { Factura, CreateFacturaDTO, UpdateFacturaDTO } from "@datqbox/shared-api/types";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
+import { useTimezone } from "@datqbox/shared-auth";
 
 interface FacturaFormProps {
   numeroFactura?: string;
@@ -42,13 +43,14 @@ interface DetalleFactura {
 
 export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const isEdit = !!numeroFactura;
 
   // State
   const [formData, setFormData] = useState({
     codigoCliente: "",
     nombreCliente: "",
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: toDateOnly(new Date(), timeZone),
     referencia: "",
     observaciones: "",
   });

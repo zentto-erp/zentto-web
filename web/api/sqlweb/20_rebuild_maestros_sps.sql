@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 -- 20_rebuild_maestros_sps.sql
 -- Reconstruye todos los SPs de datos maestros para usar tablas canónicas
 -- Preserva firmas idénticas de parámetros y columnas de resultado para
@@ -606,6 +606,7 @@ IF OBJECT_ID(N'usp_Tipos_List', N'P') IS NOT NULL DROP PROCEDURE usp_Tipos_List;
 GO
 CREATE PROCEDURE usp_Tipos_List
     @Search     NVARCHAR(100) = NULL,
+    @Categoria  NVARCHAR(50) = NULL,
     @Page       INT = 1,
     @Limit      INT = 50,
     @TotalCount INT OUTPUT
@@ -615,12 +616,17 @@ BEGIN
     DECLARE @Offset INT = (ISNULL(NULLIF(@Page,0),1) - 1) * ISNULL(NULLIF(@Limit,0),50);
     IF @Offset < 0 SET @Offset = 0; IF @Limit < 1 SET @Limit = 50; IF @Limit > 500 SET @Limit = 500;
     DECLARE @S NVARCHAR(100) = CASE WHEN @Search IS NOT NULL AND LTRIM(RTRIM(@Search)) <> N'' THEN N'%' + @Search + N'%' ELSE NULL END;
+    DECLARE @Cat NVARCHAR(50) = CASE WHEN @Categoria IS NOT NULL AND LTRIM(RTRIM(@Categoria)) <> N'' THEN @Categoria ELSE NULL END;
     SELECT @TotalCount = COUNT(1) FROM master.ProductType
-    WHERE IsDeleted = 0 AND (@S IS NULL OR TypeName LIKE @S OR CategoryCode LIKE @S OR CAST(TypeId AS NVARCHAR(20)) LIKE @S);
+    WHERE IsDeleted = 0
+      AND (@S IS NULL OR TypeName LIKE @S OR CategoryCode LIKE @S OR CAST(TypeId AS NVARCHAR(20)) LIKE @S)
+      AND (@Cat IS NULL OR CategoryCode = @Cat);
     SELECT TypeId AS Codigo, TypeName AS Nombre, CategoryCode AS Categoria,
            CAST(NULL AS NVARCHAR(10)) AS Co_Usuario
     FROM master.ProductType
-    WHERE IsDeleted = 0 AND (@S IS NULL OR TypeName LIKE @S OR CategoryCode LIKE @S OR CAST(TypeId AS NVARCHAR(20)) LIKE @S)
+    WHERE IsDeleted = 0
+      AND (@S IS NULL OR TypeName LIKE @S OR CategoryCode LIKE @S OR CAST(TypeId AS NVARCHAR(20)) LIKE @S)
+      AND (@Cat IS NULL OR CategoryCode = @Cat)
     ORDER BY TypeId OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 END
 GO

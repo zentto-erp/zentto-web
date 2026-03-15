@@ -1,54 +1,37 @@
-﻿'use client';
+'use client';
 
 import * as React from 'react';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
-import { SessionProvider, useSession } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider } from '@datqbox/shared-api';
-import {
-    AppBarWrapper,
-    LoadingFallback,
-    ToastProvider,
-    LocalizationProviderWrapper,
-    theme,
-    OdooLayout
-} from '@datqbox/shared-ui';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { theme } from '@datqbox/shared-ui';
 import '@datqbox/shared-ui/globals.css';
+import { StoreLayout } from '@datqbox/module-ecommerce';
+import { useRouter } from 'next/navigation';
+import { CircularProgress, Box } from '@mui/material';
 
-import { buildNav } from './nav';
+const queryClient = new QueryClient({
+    defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+});
+
+function LoadingFallback() {
+    return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+            <CircularProgress />
+        </Box>
+    );
+}
 
 function AppContent({ children }: { children: React.ReactNode }) {
-    const { isLoading, isAdmin, modulos } = useAuth();
-    const [showContent, setShowContent] = useState(false);
-
-    useEffect(() => {
-        if (!isLoading) {
-            const t = setTimeout(() => setShowContent(true), 100);
-            return () => clearTimeout(t);
-        }
-    }, [isLoading]);
-
-    const navigation = React.useMemo(() => buildNav(isAdmin, modulos), [isAdmin, modulos]);
-
-    if (isLoading) {
-        return <LoadingFallback />;
-    }
+    const router = useRouter();
+    const handleNavigate = (path: string) => router.push(path);
 
     return (
-        <AppBarWrapper>
-            {!showContent ? (
-                <LoadingFallback />
-            ) : (
-                <ToastProvider>
-                    <OdooLayout navigationFields={navigation}>
-                        <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                    </OdooLayout>
-                </ToastProvider>
-            )}
-        </AppBarWrapper>
+        <StoreLayout onNavigate={handleNavigate}>
+            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+        </StoreLayout>
     );
 }
 
@@ -56,23 +39,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" suppressHydrationWarning>
             <head>
-                <title>Comercio Electrónico - DatqBox App</title>
+                <title>DatqBox Store - Tienda en linea</title>
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>
-                <SessionProvider basePath="/api/auth">
-                    <QueryProvider>
-                        <AuthProvider>
-                            <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                                <ThemeProvider theme={theme} defaultMode="system">
-                                    <LocalizationProviderWrapper>
-                                        <AppContent>{children}</AppContent>
-                                    </LocalizationProviderWrapper>
-                                </ThemeProvider>
-                            </AppRouterCacheProvider>
-                        </AuthProvider>
-                    </QueryProvider>
-                </SessionProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+                        <ThemeProvider theme={theme} defaultMode="system">
+                            <AppContent>{children}</AppContent>
+                        </ThemeProvider>
+                    </AppRouterCacheProvider>
+                </QueryClientProvider>
             </body>
         </html>
     );

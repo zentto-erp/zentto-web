@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ============================================================================
  *  Archivo : usp_pay.sql
  *  Esquema : pay (gateway de pagos y configuracion)
@@ -318,7 +318,7 @@ BEGIN
     WHEN MATCHED THEN
         UPDATE SET IsActive    = source.IsActive,
                    ExtraConfig = COALESCE(source.ExtraConfig, target.ExtraConfig),
-                   UpdatedAt   = GETDATE()
+                   UpdatedAt   = SYSUTCDATETIME()
     WHEN NOT MATCHED THEN
         INSERT (EmpresaId, SucursalId, CountryCode, ProviderId, IsActive, ExtraConfig, CreatedAt, UpdatedAt)
         VALUES (source.EmpresaId,
@@ -327,8 +327,8 @@ BEGIN
                 source.ProviderId,
                 source.IsActive,
                 source.ExtraConfig,
-                GETDATE(),
-                GETDATE());
+                SYSUTCDATETIME(),
+                SYSUTCDATETIME());
 END;
 GO
 
@@ -410,7 +410,7 @@ BEGIN
                    AllowRefunds   = @AllowRefunds,
                    MaxRefundDays  = @MaxRefundDays,
                    IsActive       = 1,
-                   UpdatedAt      = GETDATE()
+                   UpdatedAt      = SYSUTCDATETIME()
     WHEN NOT MATCHED THEN
         INSERT (EmpresaId, SucursalId, CountryCode, ProviderId, Environment,
                 ClientId, ClientSecret, MerchantId, TerminalId, IntegratorId,
@@ -419,7 +419,7 @@ BEGIN
         VALUES (@CompanyId, @BranchId, @CountryCode, @ProviderId, @Environment,
                 @ClientId, @ClientSecret, @MerchantId, @TerminalId, @IntegratorId,
                 @CertificatePath, @ExtraConfig, @AutoCapture, @AllowRefunds, @MaxRefundDays,
-                1, GETDATE(), GETDATE());
+                1, SYSUTCDATETIME(), SYSUTCDATETIME());
 END;
 GO
 
@@ -440,7 +440,7 @@ BEGIN
 
     UPDATE cc
     SET    cc.IsActive  = 0,
-           cc.UpdatedAt = GETDATE()
+           cc.UpdatedAt = SYSUTCDATETIME()
     FROM   pay.CompanyPaymentConfig cc
     INNER JOIN pay.PaymentProviders p ON p.Id = cc.ProviderId
     WHERE  cc.EmpresaId = @CompanyId
@@ -462,7 +462,7 @@ BEGIN
 
     UPDATE pay.CompanyPaymentConfig
     SET    IsActive  = 0,
-           UpdatedAt = GETDATE()
+           UpdatedAt = SYSUTCDATETIME()
     WHERE  Id = @Id;
 END;
 GO
@@ -741,7 +741,7 @@ BEGIN
             @ConnectionConfig,
             @ProviderId,
             1,
-            GETDATE()
+            SYSUTCDATETIME()
         );
     END;
 END;

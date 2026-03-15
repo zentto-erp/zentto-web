@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- DatqBox Payment Gateway — Multi-country, multi-provider
 -- Schema: pay
 -- ============================================================
@@ -22,7 +22,7 @@ CREATE TABLE pay.PaymentMethods (
     RequiresGateway BIT DEFAULT 0,                  -- Does this method need an external gateway?
     IsActive        BIT DEFAULT 1,
     SortOrder       INT DEFAULT 0,
-    CreatedAt       DATETIME DEFAULT GETDATE(),
+    CreatedAt       DATETIME DEFAULT SYSUTCDATETIME(),
     CONSTRAINT UQ_PayMethod UNIQUE (Code, CountryCode)
 );
 GO
@@ -43,7 +43,7 @@ CREATE TABLE pay.PaymentProviders (
     DocsUrl         VARCHAR(500) NULL,
     LogoUrl         VARCHAR(500) NULL,
     IsActive        BIT DEFAULT 1,
-    CreatedAt       DATETIME DEFAULT GETDATE()
+    CreatedAt       DATETIME DEFAULT SYSUTCDATETIME()
 );
 GO
 
@@ -90,8 +90,8 @@ CREATE TABLE pay.CompanyPaymentConfig (
     MaxRefundDays   INT DEFAULT 30,
     
     IsActive        BIT DEFAULT 1,
-    CreatedAt       DATETIME DEFAULT GETDATE(),
-    UpdatedAt       DATETIME DEFAULT GETDATE(),
+    CreatedAt       DATETIME DEFAULT SYSUTCDATETIME(),
+    UpdatedAt       DATETIME DEFAULT SYSUTCDATETIME(),
     
     CONSTRAINT UQ_CompanyPayConfig UNIQUE (EmpresaId, SucursalId, ProviderId)
 );
@@ -179,8 +179,8 @@ CREATE TABLE pay.Transactions (
     UserAgent       VARCHAR(500) NULL,
     Notes           NVARCHAR(500) NULL,
     
-    CreatedAt       DATETIME DEFAULT GETDATE(),
-    UpdatedAt       DATETIME DEFAULT GETDATE(),
+    CreatedAt       DATETIME DEFAULT SYSUTCDATETIME(),
+    UpdatedAt       DATETIME DEFAULT SYSUTCDATETIME(),
     
     INDEX IX_PayTrx_Source (SourceType, SourceId),
     INDEX IX_PayTrx_Status (Status, CreatedAt),
@@ -204,7 +204,7 @@ CREATE TABLE pay.ReconciliationBatches (
     UnmatchedCount  INT DEFAULT 0,
     Status          VARCHAR(20) DEFAULT 'PENDING',  -- 'PENDING','IN_PROGRESS','COMPLETED','FAILED'
     ResultJson      NVARCHAR(MAX) NULL,
-    CreatedAt       DATETIME DEFAULT GETDATE(),
+    CreatedAt       DATETIME DEFAULT SYSUTCDATETIME(),
     CompletedAt     DATETIME NULL,
     UserId          VARCHAR(20) NULL
 );
@@ -226,7 +226,7 @@ CREATE TABLE pay.CardReaderDevices (
     ProviderId      INT NULL REFERENCES pay.PaymentProviders(Id),
     IsActive        BIT DEFAULT 1,
     LastSeenAt      DATETIME NULL,
-    CreatedAt       DATETIME DEFAULT GETDATE()
+    CreatedAt       DATETIME DEFAULT SYSUTCDATETIME()
 );
 GO
 

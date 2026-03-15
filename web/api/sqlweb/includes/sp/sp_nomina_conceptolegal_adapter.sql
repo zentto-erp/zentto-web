@@ -136,7 +136,7 @@ BEGIN
   DECLARE @Formula NVARCHAR(MAX);
   DECLARE @Result DECIMAL(18,6);
   DECLARE @FormulaResuelta NVARCHAR(MAX);
-  DECLARE @SessionTest NVARCHAR(80) = (N'TEST_' + CONVERT(NVARCHAR(8), GETDATE(), 112));
+  DECLARE @SessionTest NVARCHAR(80) = (N'TEST_' + CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 112));
 
   EXEC dbo.sp_Nomina_LimpiarVariables @SessionTest;
   EXEC dbo.sp_Nomina_SetVariable @SessionTest, N'SUELDO', 30000, N'Test';

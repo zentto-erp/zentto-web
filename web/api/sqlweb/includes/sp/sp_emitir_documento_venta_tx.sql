@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Stored Procedure: Emitir Documento de Venta (Unificado)
 -- Maneja: FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENTREGA
 -- Compatible con: SQL Server 2012+
@@ -40,7 +40,7 @@ BEGIN
     DECLARE @Nombre NVARCHAR(255) = NULLIF(@dx.value('(/doc/@NOMBRE)[1]', 'nvarchar(255)'), '');
     DECLARE @Rif NVARCHAR(20) = NULLIF(@dx.value('(/doc/@RIF)[1]', 'nvarchar(20)'), '');
     DECLARE @FechaStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA)[1]', 'nvarchar(50)'), '');
-    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE GETDATE() END;
+    DECLARE @Fecha DATETIME = CASE WHEN ISDATE(@FechaStr) = 1 THEN CAST(@FechaStr AS DATETIME) ELSE SYSUTCDATETIME() END;
     DECLARE @FechaVenceStr NVARCHAR(50) = NULLIF(@dx.value('(/doc/@FECHA_VENCE)[1]', 'nvarchar(50)'), '');
     DECLARE @FechaVence DATETIME = CASE WHEN ISDATE(@FechaVenceStr) = 1 THEN CAST(@FechaVenceStr AS DATETIME) ELSE NULL END;
     DECLARE @Observ NVARCHAR(500) = NULLIF(@dx.value('(/doc/@OBSERV)[1]', 'nvarchar(500)'), '');
@@ -143,7 +143,7 @@ BEGIN
         )
         VALUES (
             @NumDoc, @SerialTipo, @TipoOperacion, @Codigo, @Nombre, @Rif,
-            @Fecha, @FechaVence, CONVERT(NVARCHAR(8), GETDATE(), 108),
+            @Fecha, @FechaVence, CONVERT(NVARCHAR(8), SYSUTCDATETIME(), 108),
             @SubTotal, @MontoGra, @MontoExe, @MontoIva, @Alicuota, @Total, @Descuento,
             0, 'N', 
             CASE WHEN @TipoOperacion = 'PEDIDO' THEN 'N' ELSE NULL END,
@@ -153,7 +153,7 @@ BEGIN
             @Observ, @Terminos, @Vendedor,
             @Moneda, @TasaCambio,
             @Placas, @Kilometros,
-            @CodUsuario, GETDATE()
+            @CodUsuario, SYSUTCDATETIME()
         );
         
         -- 3. Insertar detalle
