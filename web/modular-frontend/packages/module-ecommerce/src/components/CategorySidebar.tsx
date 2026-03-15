@@ -72,7 +72,7 @@ function FilterList({
           Todas
         </Typography>
       </Box>
-      {items.map((item) => (
+      {items.filter((item) => item.code != null).map((item) => (
         <Box
           key={item.code}
           onClick={() => onSelect(item.code)}
