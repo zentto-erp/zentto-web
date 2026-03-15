@@ -29,7 +29,7 @@ export {
   useGenerateClosingEntries, usePeriodoChecklist,
   useCentrosCostoList, useCentroCostoGet, useCreateCentroCosto, useUpdateCentroCosto, useDeleteCentroCosto,
   usePresupuestosList, usePresupuestoGet, useCreatePresupuesto, useUpdatePresupuesto, useDeletePresupuesto, usePresupuestoVarianza,
-  useBankStatementsList, useBankStatementLines, useImportBankStatement, useMatchBankLine, useUnmatchBankLine, useAutoMatch, useBankReconSummary,
+  // Conciliación bancaria: usar hooks de @datqbox/module-bancos
   useRecurrentesList, useRecurrenteGet, useCreateRecurrente, useUpdateRecurrente, useDeleteRecurrente, useExecuteRecurrente, useDueRecurrentes,
   useReverseEntry,
   useCashFlowReport, useBalanceCompMultiPeriod, usePnLMultiPeriod, useAgingCxC, useAgingCxP, useFinancialRatios, useTaxSummary, useDrillDown,
@@ -55,9 +55,7 @@ export type {
   PresupuestoDetalle,
   PresupuestoLinea,
   CreatePresupuestoInput,
-  BankStatement,
-  BankStatementLine,
-  BankReconSummary,
+  // BankStatement, BankStatementLine, BankReconSummary: usar @datqbox/module-bancos
   RecurrenteTemplate,
   RecurrenteLinea,
   CreateRecurrenteInput,

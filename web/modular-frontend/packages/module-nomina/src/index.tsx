@@ -87,6 +87,89 @@ export type {
   ConstanteInput,
 } from "./hooks/useNomina";
 
+export {
+  useProfitSharingList,
+  useGenerateProfitSharing,
+  useProfitSharingSummary,
+  useApproveProfitSharing,
+  useTrustList,
+  useCalculateTrust,
+  useTrustBalance,
+  useTrustSummary,
+  useSavingsList,
+  useEnrollSavings,
+  useProcessMonthly,
+  useSavingsBalance,
+  useLoanList,
+  useRequestLoan,
+  useApproveLoan,
+  useProcessLoanPayment,
+  useObligationsList,
+  useSaveObligation,
+  useObligationsByCountry,
+  useEnrollObligation,
+  useEmployeeObligations,
+  useFilingsList,
+  useGenerateFiling,
+  useFilingSummary,
+  useMarkFiled,
+  useOccHealthList,
+  useCreateOccHealth,
+  useUpdateOccHealth,
+  useOccHealthDetail,
+  useMedExamList,
+  useSaveMedExam,
+  usePendingExams,
+  useMedOrderList,
+  useCreateMedOrder,
+  useApproveMedOrder,
+  useTrainingList,
+  useSaveTraining,
+  useEmployeeCertifications,
+  useCommitteeList,
+  useSaveCommittee,
+  useAddCommitteeMember,
+  useRemoveCommitteeMember,
+  useRecordMeeting,
+  useCommitteeMeetings,
+} from "./hooks/useRRHH";
+
+export type {
+  BaseFilter,
+  ProfitSharingFilter,
+  GenerateProfitSharingInput,
+  ApproveProfitSharingInput,
+  TrustFilter,
+  CalculateTrustInput,
+  SavingsFilter,
+  EnrollSavingsInput,
+  ProcessMonthlyInput,
+  LoanFilter,
+  RequestLoanInput,
+  ApproveLoanInput,
+  ProcessLoanPaymentInput,
+  ObligationsFilter,
+  SaveObligationInput,
+  EnrollObligationInput,
+  FilingsFilter,
+  GenerateFilingInput,
+  MarkFiledInput,
+  OccHealthFilter,
+  OccHealthInput,
+  MedExamFilter,
+  MedExamInput,
+  MedOrderFilter,
+  MedOrderInput,
+  ApproveMedOrderInput,
+  TrainingFilter,
+  TrainingInput,
+  CommitteeFilter,
+  CommitteeInput,
+  AddCommitteeMemberInput,
+  RemoveCommitteeMemberInput,
+  RecordMeetingInput,
+} from "./hooks/useRRHH";
+
 // ─── Components ───────────────────────────────────────────────
 export { default as NominasPage } from "./components/NominasPage";
 export { default as ConceptosPage } from "./components/ConceptosPage";
@@ -103,6 +186,16 @@ export { default as PayrollPreview } from "./components/PayrollPreview";
 export { default as PayrollEmployeePanel } from "./components/PayrollEmployeePanel";
 export { default as LiquidacionesWizard } from "./components/LiquidacionesWizard";
 export { default as VacacionesWizard } from "./components/VacacionesWizard";
+
+export { default as UtilidadesPage } from "./components/UtilidadesPage";
+export { default as FideicomisoPage } from "./components/FideicomisoPage";
+export { default as CajaAhorroPage } from "./components/CajaAhorroPage";
+export { default as ObligacionesPage } from "./components/ObligacionesPage";
+export { default as SaludOcupacionalPage } from "./components/SaludOcupacionalPage";
+export { default as ExamenesMedicosPage } from "./components/ExamenesMedicosPage";
+export { default as OrdenesMedicasPage } from "./components/OrdenesMedicasPage";
+export { default as CapacitacionPage } from "./components/CapacitacionPage";
+export { default as ComitesPage } from "./components/ComitesPage";
 
 // ─── Pages ────────────────────────────────────────────────────
 export { default as NominaHome } from "./pages/NominaHome";

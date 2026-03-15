@@ -60,6 +60,7 @@ import { settingsRouter } from "./modules/settings/routes.js";
 import { mediaRouter } from "./modules/media/routes.js";
 import { supervisionRouter } from "./modules/supervision/routes.js";
 import { storeRouter } from "./modules/ecommerce/routes.js";
+import rrhhRouter from "./modules/rrhh/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -213,6 +214,7 @@ export async function createApp() {
   app.use("/v1/vendedores", vendedoresRouter);
   app.use("/v1/empleados", empleadosRouter);
   app.use("/v1/nomina", nominaRouter);
+  app.use("/v1/rrhh", rrhhRouter);
   app.use("/v1/contabilidad", contabilidadRouter);
   app.use("/v1/auditoria", auditoriaRouter);
   app.use("/v1/cuentas", cuentasRouter);
@@ -281,6 +283,7 @@ export async function createApp() {
   app.use("/api/v1/vendedores", vendedoresRouter);
   app.use("/api/v1/empleados", empleadosRouter);
   app.use("/api/v1/nomina", nominaRouter);
+  app.use("/api/v1/rrhh", rrhhRouter);
   app.use("/api/v1/contabilidad", contabilidadRouter);
   app.use("/api/v1/auditoria", auditoriaRouter);
   app.use("/api/v1/cuentas", cuentasRouter);

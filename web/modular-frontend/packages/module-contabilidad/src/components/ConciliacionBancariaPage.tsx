@@ -30,50 +30,50 @@ import PendingIcon from "@mui/icons-material/Pending";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { formatCurrency } from "@datqbox/shared-api";
 import {
-  useBankStatementsList,
-  useBankStatementLines,
-  useImportBankStatement,
-  useMatchBankLine,
-  useUnmatchBankLine,
-  useAutoMatch,
-  useBankReconSummary,
-  type BankStatement,
-  type BankStatementLine,
-  type BankReconSummary,
-} from "../hooks/useContabilidadAdvanced";
+  useConciliaciones,
+  useCuentasBank,
+  useConciliacionDetalle,
+  useCrearConciliacion,
+  useImportarExtracto,
+  useConciliarMovimiento,
+  useGenerarAjuste,
+  useCerrarConciliacion,
+  type ConciliacionFilter,
+} from "@datqbox/module-bancos";
 import { useAsientosList } from "../hooks/useContabilidad";
 
 // ─── Summary Cards ───────────────────────────────────────────
 
 function SummaryCards({
-  summary,
+  detalle,
   isLoading,
 }: {
-  summary: BankReconSummary | null;
+  detalle: any;
   isLoading: boolean;
 }) {
+  const cabecera = detalle?.cabecera;
   const cards = [
     {
-      title: "Total Lineas",
-      value: summary?.totalLines ?? 0,
-      color: "#1565c0",
-      isCurrency: false,
-    },
-    {
-      title: "Conciliadas",
-      value: summary?.matched ?? 0,
-      color: "#2e7d32",
-      isCurrency: false,
-    },
-    {
       title: "Pendientes",
-      value: summary?.unmatched ?? 0,
+      value: cabecera?.Pendientes ?? 0,
       color: "#e65100",
       isCurrency: false,
     },
     {
-      title: "Monto Pendiente",
-      value: summary?.pendingAmount ?? 0,
+      title: "Conciliados",
+      value: cabecera?.Conciliados ?? 0,
+      color: "#2e7d32",
+      isCurrency: false,
+    },
+    {
+      title: "Saldo Sistema",
+      value: cabecera?.Saldo_Final_Sistema ?? 0,
+      color: "#1565c0",
+      isCurrency: true,
+    },
+    {
+      title: "Diferencia",
+      value: cabecera?.Diferencia ?? 0,
       color: "#c62828",
       isCurrency: true,
     },
@@ -133,46 +133,47 @@ function parseCSVLines(csvText: string): any[] {
 // ─── Main Component ──────────────────────────────────────────
 
 export default function ConciliacionBancariaPage() {
-  const [selectedAccountCode, setSelectedAccountCode] = useState<string>("");
-  const [selectedStatementId, setSelectedStatementId] = useState<number | null>(null);
-  const [selectedBankLineId, setSelectedBankLineId] = useState<number | null>(null);
-  const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
+  const [selectedNroCta, setSelectedNroCta] = useState<string>("");
+  const [selectedConciliacionId, setSelectedConciliacionId] = useState<number | null>(null);
+  const [selectedMovSistemaId, setSelectedMovSistemaId] = useState<number | null>(null);
+  const [selectedExtractoId, setSelectedExtractoId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Data hooks
-  const { data: statementsData, isLoading: statementsLoading } =
-    useBankStatementsList(selectedAccountCode || undefined);
-  const { data: linesData, isLoading: linesLoading } =
-    useBankStatementLines(selectedStatementId);
-  const { data: summaryData, isLoading: summaryLoading } =
-    useBankReconSummary(selectedStatementId);
+  // Data hooks — delegados al modulo de bancos
+  const conciliacionFilter: ConciliacionFilter = {
+    ...(selectedNroCta && { Nro_Cta: selectedNroCta }),
+  };
+  const { data: conciliacionesData, isLoading: conciliacionesLoading } =
+    useConciliaciones(conciliacionFilter);
+  const { data: cuentasData } = useCuentasBank();
+  const { data: detalleData, isLoading: detalleLoading } =
+    useConciliacionDetalle(selectedConciliacionId ?? undefined);
   const { data: asientosData } = useAsientosList({ page: 1, limit: 100 });
 
-  // Mutations
-  const importMutation = useImportBankStatement();
-  const matchMutation = useMatchBankLine();
-  const unmatchMutation = useUnmatchBankLine();
-  const autoMatchMutation = useAutoMatch();
+  // Mutations — delegados al modulo de bancos
+  const importMutation = useImportarExtracto();
+  const conciliarMutation = useConciliarMovimiento();
+  const ajusteMutation = useGenerarAjuste();
+  const cerrarMutation = useCerrarConciliacion();
+  const crearMutation = useCrearConciliacion();
 
-  const statements: BankStatement[] = statementsData?.data ?? statementsData?.rows ?? [];
-  const bankLines: BankStatementLine[] = linesData?.data ?? linesData?.rows ?? [];
-  const summary: BankReconSummary | null = summaryData?.data ?? summaryData ?? null;
+  const conciliaciones: any[] = conciliacionesData?.rows ?? conciliacionesData?.data ?? [];
+  const cuentas: any[] = cuentasData?.data ?? cuentasData ?? [];
+  const detalle = detalleData?.data ?? detalleData ?? null;
+  const movimientosSistema: any[] = detalle?.movimientosSistema ?? [];
+  const extractoPendiente: any[] = detalle?.extractoPendiente ?? [];
   const asientos = asientosData?.data ?? asientosData?.rows ?? [];
 
-  // Unique bank account codes from statements
-  const bankAccounts = useMemo(() => {
-    const codes = new Set(statements.map((s) => s.bankAccountCode));
-    return Array.from(codes);
-  }, [statements]);
-
-  // Bank statement lines columns
-  const bankLineCols: GridColDef[] = [
-    { field: "date", headerName: "Fecha", width: 100 },
-    { field: "description", headerName: "Descripcion", flex: 1, minWidth: 200 },
+  // Movimientos sistema columns
+  const movSistemaCols: GridColDef[] = [
+    { field: "Fecha", headerName: "Fecha", width: 100 },
+    { field: "Tipo", headerName: "Tipo", width: 80 },
+    { field: "Nro_Ref", headerName: "Referencia", width: 120 },
+    { field: "Concepto", headerName: "Concepto", flex: 1, minWidth: 180 },
     {
-      field: "amount",
+      field: "Monto",
       headerName: "Monto",
       width: 130,
       type: "number",
@@ -180,40 +181,40 @@ export default function ConciliacionBancariaPage() {
         <Typography
           variant="body2"
           fontWeight={500}
-          sx={{ color: p.value >= 0 ? "success.main" : "error.main" }}
+          sx={{ color: (p.value ?? 0) >= 0 ? "success.main" : "error.main" }}
         >
-          {formatCurrency(p.value)}
+          {formatCurrency(p.value ?? 0)}
         </Typography>
       ),
     },
     {
-      field: "status",
+      field: "Estado",
       headerName: "Estado",
       width: 120,
       renderCell: (p) => (
         <Chip
-          icon={p.value === "MATCHED" ? <CheckCircleIcon /> : <PendingIcon />}
-          label={p.value === "MATCHED" ? "Conciliada" : "Pendiente"}
+          icon={p.value === "CONCILIADO" ? <CheckCircleIcon /> : <PendingIcon />}
+          label={p.value === "CONCILIADO" ? "Conciliado" : "Pendiente"}
           size="small"
-          color={p.value === "MATCHED" ? "success" : "warning"}
+          color={p.value === "CONCILIADO" ? "success" : "warning"}
         />
       ),
     },
+  ];
+
+  // Extracto pendiente columns
+  const extractoCols: GridColDef[] = [
+    { field: "Fecha", headerName: "Fecha", width: 100 },
+    { field: "Descripcion", headerName: "Descripcion", flex: 1, minWidth: 180 },
+    { field: "Referencia", headerName: "Referencia", width: 120 },
     {
-      field: "matchedEntryRef",
-      headerName: "Ref. Asiento",
+      field: "Monto",
+      headerName: "Monto",
       width: 130,
-      renderCell: (p) =>
-        p.value ? (
-          <Typography variant="body2" fontFamily="monospace">
-            {p.value}
-          </Typography>
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            --
-          </Typography>
-        ),
+      type: "number",
+      renderCell: (p) => formatCurrency(p.value ?? 0),
     },
+    { field: "Tipo", headerName: "Tipo", width: 100 },
   ];
 
   // Accounting entries columns
@@ -237,11 +238,11 @@ export default function ConciliacionBancariaPage() {
     },
   ];
 
-  // File import handler
+  // File import handler — uses bancos importar-extracto
   const handleImportCSV = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (!file) return;
+      if (!file || !selectedConciliacionId) return;
 
       setError(null);
       setSuccessMsg(null);
@@ -256,8 +257,13 @@ export default function ConciliacionBancariaPage() {
         }
 
         await importMutation.mutateAsync({
-          bankAccountCode: selectedAccountCode || "MAIN",
-          lines,
+          conciliacionId: selectedConciliacionId,
+          extracto: lines.map((l) => ({
+            Fecha: l.date,
+            Descripcion: l.description,
+            Tipo: (l.amount ?? 0) >= 0 ? "CREDITO" : "DEBITO",
+            Monto: Math.abs(l.amount ?? 0),
+          })),
         });
 
         setSuccessMsg(`${lines.length} lineas importadas correctamente`);
@@ -265,63 +271,31 @@ export default function ConciliacionBancariaPage() {
         setError(err.message || "Error al importar el archivo");
       }
 
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     },
-    [selectedAccountCode, importMutation]
+    [selectedConciliacionId, importMutation]
   );
 
-  // Match handler
-  const handleMatch = async () => {
-    if (selectedBankLineId == null || selectedEntryId == null) {
-      setError("Seleccione una linea bancaria y un asiento para conciliar");
+  // Conciliar handler — uses bancos conciliar-movimiento
+  const handleConciliar = async () => {
+    if (selectedMovSistemaId == null || selectedConciliacionId == null) {
+      setError("Seleccione un movimiento del sistema para conciliar");
       return;
     }
     setError(null);
     try {
-      await matchMutation.mutateAsync({
-        lineId: selectedBankLineId,
-        entryId: selectedEntryId,
+      await conciliarMutation.mutateAsync({
+        Conciliacion_ID: selectedConciliacionId,
+        MovimientoSistema_ID: selectedMovSistemaId,
+        Extracto_ID: selectedExtractoId ?? undefined,
       });
-      setSuccessMsg("Linea conciliada correctamente");
-      setSelectedBankLineId(null);
-      setSelectedEntryId(null);
+      setSuccessMsg("Movimiento conciliado correctamente");
+      setSelectedMovSistemaId(null);
+      setSelectedExtractoId(null);
     } catch (err: any) {
       setError(err.message || "Error al conciliar");
-    }
-  };
-
-  // Unmatch handler
-  const handleUnmatch = async () => {
-    if (selectedBankLineId == null) {
-      setError("Seleccione una linea bancaria para desconciliar");
-      return;
-    }
-    setError(null);
-    try {
-      await unmatchMutation.mutateAsync(selectedBankLineId);
-      setSuccessMsg("Linea desconciliada correctamente");
-      setSelectedBankLineId(null);
-    } catch (err: any) {
-      setError(err.message || "Error al desconciliar");
-    }
-  };
-
-  // Auto match handler
-  const handleAutoMatch = async () => {
-    if (selectedStatementId == null) {
-      setError("Seleccione un extracto bancario primero");
-      return;
-    }
-    setError(null);
-    try {
-      const result = await autoMatchMutation.mutateAsync(selectedStatementId);
-      const count = (result as any)?.matchedCount ?? 0;
-      setSuccessMsg(`Auto-conciliacion completada. ${count} lineas conciliadas.`);
-    } catch (err: any) {
-      setError(err.message || "Error en auto-conciliacion");
     }
   };
 
@@ -336,34 +310,34 @@ export default function ConciliacionBancariaPage() {
         <TextField
           select
           label="Cuenta Bancaria"
-          value={selectedAccountCode}
+          value={selectedNroCta}
           onChange={(e) => {
-            setSelectedAccountCode(e.target.value);
-            setSelectedStatementId(null);
+            setSelectedNroCta(e.target.value);
+            setSelectedConciliacionId(null);
           }}
           size="small"
           sx={{ minWidth: 200 }}
         >
           <MenuItem value="">Todas</MenuItem>
-          {bankAccounts.map((code) => (
-            <MenuItem key={code} value={code}>
-              {code}
+          {(Array.isArray(cuentas) ? cuentas : []).map((c: any) => (
+            <MenuItem key={c.nroCta ?? c.Nro_Cta} value={c.nroCta ?? c.Nro_Cta}>
+              {c.bankName ?? c.Banco ?? c.nroCta ?? c.Nro_Cta}
             </MenuItem>
           ))}
         </TextField>
 
-        {statements.length > 0 && (
+        {conciliaciones.length > 0 && (
           <TextField
             select
-            label="Extracto"
-            value={selectedStatementId ?? ""}
-            onChange={(e) => setSelectedStatementId(Number(e.target.value) || null)}
+            label="Conciliacion"
+            value={selectedConciliacionId ?? ""}
+            onChange={(e) => setSelectedConciliacionId(Number(e.target.value) || null)}
             size="small"
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: 250 }}
           >
-            {statements.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.statementDate} - {s.bankAccountName || s.bankAccountCode}
+            {conciliaciones.map((c: any) => (
+              <MenuItem key={c.ID} value={c.ID}>
+                #{c.ID} - {c.Fecha_Desde} a {c.Fecha_Hasta} ({c.Estado})
               </MenuItem>
             ))}
           </TextField>
@@ -382,18 +356,9 @@ export default function ConciliacionBancariaPage() {
           variant="outlined"
           startIcon={<CloudUploadIcon />}
           onClick={() => fileInputRef.current?.click()}
-          disabled={importMutation.isPending}
+          disabled={importMutation.isPending || !selectedConciliacionId}
         >
           {importMutation.isPending ? "Importando..." : "Importar CSV"}
-        </Button>
-
-        <Button
-          variant="contained"
-          startIcon={autoMatchMutation.isPending ? <CircularProgress size={18} /> : <AutoFixHighIcon />}
-          onClick={handleAutoMatch}
-          disabled={!selectedStatementId || autoMatchMutation.isPending}
-        >
-          Auto-Conciliar
         </Button>
       </Stack>
 
@@ -410,13 +375,13 @@ export default function ConciliacionBancariaPage() {
       )}
 
       {/* Summary Cards */}
-      {selectedStatementId && (
-        <SummaryCards summary={summary} isLoading={summaryLoading} />
+      {selectedConciliacionId && (
+        <SummaryCards detalle={detalle} isLoading={detalleLoading} />
       )}
 
       {/* Main Split View */}
       <Grid container spacing={2}>
-        {/* Left: Bank Statement Lines */}
+        {/* Left: Movimientos del Sistema */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
             <Box
@@ -431,56 +396,49 @@ export default function ConciliacionBancariaPage() {
             >
               <AccountBalanceIcon color="primary" />
               <Typography variant="h6" fontWeight={600}>
-                Extracto Bancario
+                Movimientos del Sistema
               </Typography>
             </Box>
 
-            {!selectedStatementId ? (
+            {!selectedConciliacionId ? (
               <Box sx={{ p: 4, textAlign: "center" }}>
                 <Typography color="text.secondary">
-                  Seleccione un extracto bancario para ver las lineas
+                  Seleccione una conciliacion para ver los movimientos
                 </Typography>
               </Box>
-            ) : linesLoading ? (
+            ) : detalleLoading ? (
               <Box sx={{ p: 4, textAlign: "center" }}>
                 <CircularProgress />
               </Box>
             ) : (
               <DataGrid
-                rows={bankLines}
-                columns={bankLineCols}
-                getRowId={(r) => r.id}
+                rows={movimientosSistema}
+                columns={movSistemaCols}
+                getRowId={(r) => r.ID ?? r.id ?? Math.random()}
                 autoHeight
                 disableMultipleRowSelection
                 onRowSelectionModelChange={(model: GridRowSelectionModel) => {
                   const ids = Array.isArray(model) ? model : Array.from(model as any);
                   const id = ids[0] as number;
-                  setSelectedBankLineId(id ?? null);
+                  setSelectedMovSistemaId(id ?? null);
                 }}
                 sx={{
                   border: 0,
-                  "& .MuiDataGrid-row": {
-                    cursor: "pointer",
-                  },
-                  "& .MuiDataGrid-row.Mui-selected": {
-                    bgcolor: "primary.light",
-                  },
+                  "& .MuiDataGrid-row": { cursor: "pointer" },
+                  "& .MuiDataGrid-row.Mui-selected": { bgcolor: "primary.light" },
                 }}
                 initialState={{
                   pagination: { paginationModel: { pageSize: 10 } },
                 }}
                 pageSizeOptions={[10, 25]}
-                getRowClassName={(params) =>
-                  params.row.status === "MATCHED" ? "matched-row" : ""
-                }
               />
             )}
           </Paper>
         </Grid>
 
-        {/* Right: Accounting Entries */}
+        {/* Right: Extracto Bancario + Asientos */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
+          <Paper sx={{ borderRadius: 2, overflow: "hidden", mb: 2 }}>
             <Box
               sx={{
                 p: 2,
@@ -492,7 +450,7 @@ export default function ConciliacionBancariaPage() {
               }}
             >
               <Typography variant="h6" fontWeight={600}>
-                Asientos Contables
+                Extracto Pendiente
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Tooltip title="Conciliar seleccion">
@@ -500,28 +458,60 @@ export default function ConciliacionBancariaPage() {
                     <IconButton
                       color="success"
                       disabled={
-                        selectedBankLineId == null ||
-                        selectedEntryId == null ||
-                        matchMutation.isPending
+                        selectedMovSistemaId == null ||
+                        selectedConciliacionId == null ||
+                        conciliarMutation.isPending
                       }
-                      onClick={handleMatch}
+                      onClick={handleConciliar}
                     >
                       <LinkIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
-                <Tooltip title="Desconciliar">
-                  <span>
-                    <IconButton
-                      color="error"
-                      disabled={selectedBankLineId == null || unmatchMutation.isPending}
-                      onClick={handleUnmatch}
-                    >
-                      <LinkOffIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
               </Stack>
+            </Box>
+
+            {selectedConciliacionId && extractoPendiente.length > 0 ? (
+              <DataGrid
+                rows={extractoPendiente}
+                columns={extractoCols}
+                getRowId={(r) => r.ID ?? r.id ?? Math.random()}
+                autoHeight
+                disableMultipleRowSelection
+                onRowSelectionModelChange={(model: GridRowSelectionModel) => {
+                  const ids = Array.isArray(model) ? model : Array.from(model as any);
+                  const id = ids[0] as number;
+                  setSelectedExtractoId(id ?? null);
+                }}
+                sx={{
+                  border: 0,
+                  "& .MuiDataGrid-row": { cursor: "pointer" },
+                }}
+                initialState={{
+                  pagination: { paginationModel: { pageSize: 5 } },
+                }}
+                pageSizeOptions={[5, 10]}
+              />
+            ) : (
+              <Box sx={{ p: 3, textAlign: "center" }}>
+                <Typography color="text.secondary">
+                  {selectedConciliacionId ? "Sin extractos pendientes" : "Seleccione una conciliacion"}
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+
+          <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
+            <Box
+              sx={{
+                p: 2,
+                borderBottom: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Typography variant="h6" fontWeight={600}>
+                Asientos Contables
+              </Typography>
             </Box>
 
             <DataGrid
@@ -530,26 +520,21 @@ export default function ConciliacionBancariaPage() {
               getRowId={(r) => r.id ?? r.asientoId}
               autoHeight
               disableMultipleRowSelection
-              onRowSelectionModelChange={(model: GridRowSelectionModel) => {
-                const ids = Array.isArray(model) ? model : Array.from(model as any);
-                const id = ids[0] as number;
-                setSelectedEntryId(id ?? null);
-              }}
               sx={{
                 border: 0,
                 "& .MuiDataGrid-row": { cursor: "pointer" },
               }}
               initialState={{
-                pagination: { paginationModel: { pageSize: 10 } },
+                pagination: { paginationModel: { pageSize: 5 } },
               }}
-              pageSizeOptions={[10, 25]}
+              pageSizeOptions={[5, 10]}
             />
           </Paper>
         </Grid>
       </Grid>
 
       {/* Bottom: Reconciliation Status */}
-      {selectedStatementId && summary && (
+      {selectedConciliacionId && detalle?.cabecera && (
         <Paper sx={{ mt: 3, p: 3, borderRadius: 2 }}>
           <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
             Resumen de Conciliacion
@@ -558,8 +543,12 @@ export default function ConciliacionBancariaPage() {
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h4" fontWeight={700} color="success.main">
-                  {summary.totalLines > 0
-                    ? ((summary.matched / summary.totalLines) * 100).toFixed(1)
+                  {(detalle.cabecera.Conciliados ?? 0) + (detalle.cabecera.Pendientes ?? 0) > 0
+                    ? (
+                        ((detalle.cabecera.Conciliados ?? 0) /
+                          ((detalle.cabecera.Conciliados ?? 0) + (detalle.cabecera.Pendientes ?? 0))) *
+                        100
+                      ).toFixed(1)
                     : 0}
                   %
                 </Typography>
@@ -571,20 +560,20 @@ export default function ConciliacionBancariaPage() {
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h4" fontWeight={700} color="primary.main">
-                  {formatCurrency(summary.matchedAmount ?? 0)}
+                  {formatCurrency(detalle.cabecera.Saldo_Final_Sistema ?? 0)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Monto Conciliado
+                  Saldo Final Sistema
                 </Typography>
               </Box>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h4" fontWeight={700} color="error.main">
-                  {formatCurrency(summary.pendingAmount ?? 0)}
+                  {formatCurrency(detalle.cabecera.Diferencia ?? 0)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Monto Pendiente
+                  Diferencia
                 </Typography>
               </Box>
             </Grid>

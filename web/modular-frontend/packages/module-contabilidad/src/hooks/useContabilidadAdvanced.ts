@@ -7,7 +7,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
 const QK_PERIODOS = "contabilidad-periodos";
 const QK_CENTROS_COSTO = "contabilidad-centros-costo";
 const QK_PRESUPUESTOS = "contabilidad-presupuestos";
-const QK_CONCILIACION = "contabilidad-conciliacion";
+
 const QK_RECURRENTES = "contabilidad-recurrentes";
 const QK_REPORTES_ADV = "contabilidad-reportes-adv";
 const QK_ASIENTOS = "contabilidad-asientos";
@@ -89,35 +89,8 @@ export interface CreatePresupuestoInput {
   lines: Omit<PresupuestoLinea, "accountName" | "annualTotal">[];
 }
 
-export interface BankStatement {
-  id: number;
-  bankAccountCode: string;
-  bankAccountName?: string;
-  statementDate: string;
-  totalLines: number;
-  matchedLines: number;
-  pendingLines: number;
-  pendingAmount: number;
-}
-
-export interface BankStatementLine {
-  id: number;
-  statementId: number;
-  date: string;
-  description: string;
-  amount: number;
-  status: "MATCHED" | "UNMATCHED";
-  matchedEntryId?: number;
-  matchedEntryRef?: string;
-}
-
-export interface BankReconSummary {
-  totalLines: number;
-  matched: number;
-  unmatched: number;
-  pendingAmount: number;
-  matchedAmount: number;
-}
+// BankStatement, BankStatementLine, BankReconSummary: eliminados.
+// Usar tipos de @datqbox/module-bancos/hooks/useConciliacionBancaria
 
 export interface RecurrenteTemplate {
   id: number;
@@ -376,72 +349,13 @@ export function usePresupuestoVarianza(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CONCILIACION BANCARIA
+// CONCILIACION BANCARIA: usar hooks de @datqbox/module-bancos
+// Los hooks de conciliación bancaria fueron eliminados de este archivo
+// para evitar duplicación. Importar desde @datqbox/module-bancos:
+//   useConciliaciones, useCuentasBank, useConciliacionDetalle,
+//   useCrearConciliacion, useImportarExtracto, useConciliarMovimiento,
+//   useGenerarAjuste, useCerrarConciliacion
 // ═══════════════════════════════════════════════════════════════
-
-export function useBankStatementsList(bankAccountCode?: string) {
-  return useQuery({
-    queryKey: [QK_CONCILIACION, "extractos", bankAccountCode],
-    queryFn: () =>
-      apiGet("/v1/contabilidad/conciliacion/extractos", {
-        ...(bankAccountCode && { bankAccountCode }),
-      }),
-  });
-}
-
-export function useBankStatementLines(statementId: number | null) {
-  return useQuery({
-    queryKey: [QK_CONCILIACION, "lineas", statementId],
-    queryFn: () =>
-      apiGet(`/v1/contabilidad/conciliacion/extractos/${statementId}/lineas`),
-    enabled: statementId != null && statementId > 0,
-  });
-}
-
-export function useImportBankStatement() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { bankAccountCode: string; lines: unknown[] }) =>
-      apiPost("/v1/contabilidad/conciliacion/importar", data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCILIACION] }),
-  });
-}
-
-export function useMatchBankLine() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { lineId: number; entryId: number }) =>
-      apiPost("/v1/contabilidad/conciliacion/match", data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCILIACION] }),
-  });
-}
-
-export function useUnmatchBankLine() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (lineId: number) =>
-      apiPost("/v1/contabilidad/conciliacion/unmatch", { lineId }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCILIACION] }),
-  });
-}
-
-export function useAutoMatch() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (statementId: number) =>
-      apiPost(`/v1/contabilidad/conciliacion/auto-match/${statementId}`, {}),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCILIACION] }),
-  });
-}
-
-export function useBankReconSummary(statementId: number | null) {
-  return useQuery({
-    queryKey: [QK_CONCILIACION, "resumen", statementId],
-    queryFn: () =>
-      apiGet(`/v1/contabilidad/conciliacion/resumen/${statementId}`),
-    enabled: statementId != null && statementId > 0,
-  });
-}
 
 // ═══════════════════════════════════════════════════════════════
 // ASIENTOS RECURRENTES

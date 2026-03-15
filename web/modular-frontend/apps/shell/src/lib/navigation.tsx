@@ -33,6 +33,14 @@ import HubIcon from '@mui/icons-material/Hub';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import LockIcon from '@mui/icons-material/Lock';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import SavingsIcon from '@mui/icons-material/Savings';
+import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import MedicalInformationIcon from '@mui/icons-material/MedicalInformation';
+import SchoolIcon from '@mui/icons-material/School';
+import GroupsIcon from '@mui/icons-material/Groups';
+import GavelIcon from '@mui/icons-material/Gavel';
+import EventIcon from '@mui/icons-material/Event';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -85,10 +93,22 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'nomina/vacaciones', title: 'Calendario', icon: <HistoryIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitar', title: 'Solicitar Vacaciones', icon: <AddCircleOutlineIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitudes', title: 'Aprobar Solicitudes', icon: <ReceiptLongIcon /> });
+        nav.push({ kind: 'header', title: 'Beneficios' });
+        nav.push({ kind: 'page', segment: 'nomina/utilidades', title: 'Utilidades', icon: <AccountBalanceWalletIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/fideicomiso', title: 'Fideicomiso', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/caja-ahorro', title: 'Caja de Ahorro', icon: <SavingsIcon /> });
+        nav.push({ kind: 'header', title: 'Salud y Seguridad' });
+        nav.push({ kind: 'page', segment: 'nomina/salud-ocupacional', title: 'Salud Ocupacional', icon: <HealthAndSafetyIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/examenes-medicos', title: 'Exámenes Médicos', icon: <MedicalServicesIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/ordenes-medicas', title: 'Órdenes Médicas', icon: <MedicalInformationIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/capacitacion', title: 'Capacitación', icon: <SchoolIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/comites', title: 'Comités de Seguridad', icon: <GroupsIcon /> });
+        nav.push({ kind: 'header', title: 'Obligaciones Legales' });
+        nav.push({ kind: 'page', segment: 'nomina/obligaciones', title: 'Obligaciones y Aportes', icon: <GavelIcon /> });
         nav.push({ kind: 'header', title: 'Administración' });
         nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <AccountBalanceWalletIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <SettingsIcon /> });
-        nav.push({ kind: 'page', segment: 'nomina/feriados', title: 'Feriados', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/feriados', title: 'Feriados', icon: <EventIcon /> });
         return nav;
     }
 
