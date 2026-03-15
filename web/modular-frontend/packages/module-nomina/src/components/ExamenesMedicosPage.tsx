@@ -27,6 +27,7 @@ import {
   type MedExamFilter,
   type MedExamInput,
 } from "../hooks/useRRHH";
+import EmployeeSelector from "./EmployeeSelector";
 
 const TYPE_LABELS: Record<string, string> = {
   PREEMPLEO: "Pre-Empleo",
@@ -165,11 +166,9 @@ export default function ExamenesMedicosPage() {
         <DialogTitle>Registrar Examen Médico</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={form.employeeCode}
-              onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))}
             />
             <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>

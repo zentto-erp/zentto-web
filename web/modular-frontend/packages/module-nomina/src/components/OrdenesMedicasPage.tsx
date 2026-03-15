@@ -31,6 +31,7 @@ import {
   type MedOrderFilter,
   type MedOrderInput,
 } from "../hooks/useRRHH";
+import EmployeeSelector from "./EmployeeSelector";
 
 export default function OrdenesMedicasPage() {
   const [filter, setFilter] = useState<MedOrderFilter>({ page: 1, limit: 25 });

@@ -150,18 +150,10 @@ export async function crearAsiento(input: CrearAsientoInput, _codUsuario?: strin
     return { ok: false, resultado: 0, mensaje: "Asiento desbalanceado", asientoId: null, numeroAsiento: null };
   }
 
-  const detalleJson = JSON.stringify(
-    detalle.map((item) => ({
-      codCuenta: String(item.codCuenta || "").trim(),
-      descripcion: item.descripcion || null,
-      centroCosto: item.centroCosto || null,
-      auxiliarTipo: item.auxiliarTipo || null,
-      auxiliarCodigo: item.auxiliarCodigo || null,
-      documento: item.documento || input.origenDocumento || null,
-      debe: Number(item.debe || 0),
-      haber: Number(item.haber || 0)
-    }))
-  );
+  const detalleXml = "<rows>" + detalle.map((item) => {
+    const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    return `<row codCuenta="${esc(String(item.codCuenta || "").trim())}" descripcion="${esc(item.descripcion || "")}" centroCosto="${esc(item.centroCosto || "")}" auxiliarTipo="${esc(item.auxiliarTipo || "")}" auxiliarCodigo="${esc(item.auxiliarCodigo || "")}" documento="${esc(item.documento || input.origenDocumento || "")}" debe="${Number(item.debe || 0)}" haber="${Number(item.haber || 0)}"/>`;
+  }).join("") + "</rows>";
 
   const { output } = await callSpOut(
     "dbo.usp_Acct_Entry_Insert",
@@ -180,7 +172,7 @@ export async function crearAsiento(input: CrearAsientoInput, _codUsuario?: strin
       TotalCredit: totalHaber,
       SourceModule: input.origenModulo || null,
       SourceDocumentNo: input.origenDocumento || null,
-      DetalleJson: detalleJson
+      DetalleXml: detalleXml
     },
     {
       AsientoId: sql.BigInt,

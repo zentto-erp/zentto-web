@@ -826,7 +826,7 @@ GO
 -- =============================================================================
 --  SP 19: usp_Acct_Entry_Insert
 --  Descripcion : Crea un asiento contable completo (cabecera + lineas) en una
---                sola transaccion. Recibe las lineas como JSON.
+--                sola transaccion. Recibe las lineas como XML.
 --  Parametros  :
 --    @CompanyId          INT            - ID empresa.
 --    @BranchId           INT            - ID sucursal.
@@ -842,12 +842,14 @@ GO
 --    @TotalCredit        DECIMAL(18,2)  - Total haber.
 --    @SourceModule       NVARCHAR(40)   - Modulo origen (opcional).
 --    @SourceDocumentNo   NVARCHAR(120)  - Documento origen (opcional).
---    @DetalleJson        NVARCHAR(MAX)  - JSON con lineas del asiento.
+--    @DetalleXml         XML            - XML con lineas del asiento.
 --    @AsientoId          BIGINT OUTPUT  - ID del asiento creado.
 --    @Resultado          INT OUTPUT     - 1=exito, 0=error.
 --    @Mensaje            NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Entry_Insert
+IF OBJECT_ID('dbo.usp_Acct_Entry_Insert','P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Entry_Insert;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Entry_Insert
     @CompanyId          INT,
     @BranchId           INT,
     @EntryNumber        NVARCHAR(40),
@@ -862,7 +864,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_Acct_Entry_Insert
     @TotalCredit        DECIMAL(18,2),
     @SourceModule       NVARCHAR(40)   = NULL,
     @SourceDocumentNo   NVARCHAR(120)  = NULL,
-    @DetalleJson        NVARCHAR(MAX),
+    @DetalleXml         XML,
     @AsientoId          BIGINT         OUTPUT,
     @Resultado          INT            OUTPUT,
     @Mensaje            NVARCHAR(500)  OUTPUT
@@ -883,7 +885,7 @@ BEGIN
         RETURN;
     END;
 
-    -- Parsear JSON de detalle
+    -- Parsear XML de detalle
     DECLARE @Detalle TABLE (
         idx             INT IDENTITY(1,1),
         codCuenta       NVARCHAR(40),
@@ -899,18 +901,18 @@ BEGIN
     BEGIN TRY
         INSERT INTO @Detalle (codCuenta, descripcion, centroCosto, auxiliarTipo, auxiliarCodigo, documento, debe, haber)
         SELECT
-            JSON_VALUE(j.value, '$.codCuenta'),
-            JSON_VALUE(j.value, '$.descripcion'),
-            JSON_VALUE(j.value, '$.centroCosto'),
-            JSON_VALUE(j.value, '$.auxiliarTipo'),
-            JSON_VALUE(j.value, '$.auxiliarCodigo'),
-            JSON_VALUE(j.value, '$.documento'),
-            CAST(ISNULL(JSON_VALUE(j.value, '$.debe'), '0') AS DECIMAL(18,2)),
-            CAST(ISNULL(JSON_VALUE(j.value, '$.haber'), '0') AS DECIMAL(18,2))
-        FROM OPENJSON(@DetalleJson) j;
+            r.value('@codCuenta',      'NVARCHAR(40)'),
+            r.value('@descripcion',    'NVARCHAR(300)'),
+            r.value('@centroCosto',    'NVARCHAR(20)'),
+            r.value('@auxiliarTipo',   'NVARCHAR(30)'),
+            r.value('@auxiliarCodigo', 'NVARCHAR(60)'),
+            r.value('@documento',      'NVARCHAR(120)'),
+            ISNULL(r.value('@debe',    'DECIMAL(18,2)'), 0),
+            ISNULL(r.value('@haber',   'DECIMAL(18,2)'), 0)
+        FROM @DetalleXml.nodes('/rows/row') AS t(r);
     END TRY
     BEGIN CATCH
-        SET @Mensaje = N'Error parseando JSON de detalle: ' + ERROR_MESSAGE();
+        SET @Mensaje = N'Error parseando XML de detalle: ' + ERROR_MESSAGE();
         RETURN;
     END CATCH;
 
@@ -920,15 +922,18 @@ BEGIN
         RETURN;
     END;
 
-    -- Verificar que todas las cuentas existen
+    -- Verificar que todas las cuentas existen (FOR XML PATH en vez de STRING_AGG)
     DECLARE @Missing NVARCHAR(500);
-    SELECT @Missing = STRING_AGG(d.codCuenta, ', ')
-    FROM @Detalle d
-    LEFT JOIN acct.Account a
-        ON a.CompanyId = @CompanyId
-       AND a.AccountCode = d.codCuenta
-       AND a.IsDeleted = 0
-    WHERE a.AccountId IS NULL;
+    SELECT @Missing = STUFF((
+        SELECT ', ' + d.codCuenta
+        FROM @Detalle d
+        LEFT JOIN acct.Account a
+            ON a.CompanyId = @CompanyId
+           AND a.AccountCode = d.codCuenta
+           AND a.IsDeleted = 0
+        WHERE a.AccountId IS NULL
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(500)'), 1, 2, '');
 
     IF @Missing IS NOT NULL AND LEN(@Missing) > 0
     BEGIN

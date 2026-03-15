@@ -32,6 +32,7 @@ import {
   type OccHealthFilter,
   type OccHealthInput,
 } from "../hooks/useRRHH";
+import EmployeeSelector from "./EmployeeSelector";
 
 const STATUS_COLORS: Record<string, "warning" | "info" | "primary" | "default"> = {
   OPEN: "warning",
@@ -248,11 +249,9 @@ export default function SaludOcupacionalPage() {
         <DialogTitle>{editMode ? "Editar Registro" : "Nuevo Registro de Salud Ocupacional"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Código Empleado"
-              fullWidth
+            <EmployeeSelector
               value={form.employeeCode}
-              onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
+              onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))}
             />
             <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>

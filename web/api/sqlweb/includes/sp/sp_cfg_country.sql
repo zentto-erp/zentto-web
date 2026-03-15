@@ -45,11 +45,11 @@ GO
 -- usp_CFG_Country_List
 -- Lista países activos ordenados por SortOrder, CountryName
 -- ------------------------------------------------------------
-IF OBJECT_ID('cfg.usp_CFG_Country_List', 'P') IS NOT NULL
-    DROP PROCEDURE cfg.usp_CFG_Country_List;
+IF OBJECT_ID('dbo.usp_CFG_Country_List', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_CFG_Country_List;
 GO
 
-CREATE PROCEDURE cfg.usp_CFG_Country_List
+CREATE PROCEDURE dbo.usp_CFG_Country_List
     @ActiveOnly BIT = 1
 AS
 BEGIN
@@ -84,11 +84,11 @@ GO
 -- usp_CFG_Country_Save
 -- Insert o Update país
 -- ------------------------------------------------------------
-IF OBJECT_ID('cfg.usp_CFG_Country_Save', 'P') IS NOT NULL
-    DROP PROCEDURE cfg.usp_CFG_Country_Save;
+IF OBJECT_ID('dbo.usp_CFG_Country_Save', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_CFG_Country_Save;
 GO
 
-CREATE PROCEDURE cfg.usp_CFG_Country_Save
+CREATE PROCEDURE dbo.usp_CFG_Country_Save
     @CountryCode            CHAR(2),
     @CountryName            NVARCHAR(80),
     @CurrencyCode           CHAR(3),
@@ -168,11 +168,11 @@ GO
 -- usp_CFG_Country_Get
 -- Obtener un país por código
 -- ------------------------------------------------------------
-IF OBJECT_ID('cfg.usp_CFG_Country_Get', 'P') IS NOT NULL
-    DROP PROCEDURE cfg.usp_CFG_Country_Get;
+IF OBJECT_ID('dbo.usp_CFG_Country_Get', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_CFG_Country_Get;
 GO
 
-CREATE PROCEDURE cfg.usp_CFG_Country_Get
+CREATE PROCEDURE dbo.usp_CFG_Country_Get
     @CountryCode CHAR(2)
 AS
 BEGIN
