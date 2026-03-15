@@ -46,6 +46,29 @@ export type {
   CuentaInput,
 } from "./hooks/useContabilidad";
 
+export type {
+  Periodo,
+  PeriodoChecklistItem,
+  CentroCosto,
+  CentroCostoInput,
+  Presupuesto,
+  PresupuestoDetalle,
+  PresupuestoLinea,
+  CreatePresupuestoInput,
+  BankStatement,
+  BankStatementLine,
+  BankReconSummary,
+  RecurrenteTemplate,
+  RecurrenteLinea,
+  CreateRecurrenteInput,
+  VarianzaRow,
+  CashFlowSection,
+  AgingBucket,
+  FinancialRatio,
+  TaxSummaryRow,
+  DrillDownRow,
+} from "./hooks/useContabilidadAdvanced";
+
 // ─── Components ───────────────────────────────────────────────
 export { default as AsientosListPage } from "./components/AsientosListPage";
 export { default as NuevoAsientoPage } from "./components/NuevoAsientoPage";

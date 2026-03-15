@@ -76,17 +76,18 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // App: Nómina
     if (has(modulos, 'nomina') && isApp('/nomina')) {
-        nav.push({ kind: 'page', segment: 'nomina', title: 'Dashboard', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'header', title: 'Procesos' });
         nav.push({ kind: 'page', segment: 'nomina/empleados', title: 'Empleados', icon: <PeopleIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/nominas', title: 'Nóminas', icon: <BadgeIcon /> });
-        nav.push({ kind: 'page', segment: 'nomina/conceptos', title: 'Conceptos', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/conceptos', title: 'Conceptos', icon: <ListIcon /> });
         nav.push({ kind: 'header', title: 'Vacaciones' });
-        nav.push({ kind: 'page', segment: 'nomina/vacaciones', title: 'Calendario', icon: <BadgeIcon /> });
-        nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitar', title: 'Solicitar Vacaciones', icon: <BadgeIcon /> });
-        nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitudes', title: 'Aprobar Solicitudes', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/vacaciones', title: 'Calendario', icon: <HistoryIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitar', title: 'Solicitar Vacaciones', icon: <AddCircleOutlineIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/vacaciones/solicitudes', title: 'Aprobar Solicitudes', icon: <ReceiptLongIcon /> });
         nav.push({ kind: 'header', title: 'Administración' });
-        nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <BadgeIcon /> });
-        nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <BadgeIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <AccountBalanceWalletIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/feriados', title: 'Feriados', icon: <SettingsIcon /> });
         return nav;
     }

@@ -3,6 +3,7 @@
     Tablas: hr.PayrollBatch, hr.PayrollBatchLine, hr.PayrollConcept,
             hr.PayrollRun, hr.PayrollRunLine, master.Employee
     Requiere: sp_nomina_sistema.sql, sp_nomina_calculo.sql
+    Compatible con: SQL Server 2012+
     ═══════════════════════════════════════════════════════════════ */
 
 USE [DatqBoxWeb];
@@ -80,7 +81,10 @@ GO
 -- 1. usp_HR_Payroll_GenerateDraft
 --    Genera un borrador de nómina en lote para todos los empleados activos.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_GenerateDraft
+IF OBJECT_ID('dbo.usp_HR_Payroll_GenerateDraft', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_GenerateDraft;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_GenerateDraft
     @CompanyId          INT,
     @BranchId           INT,
     @PayrollCode        NVARCHAR(15),
@@ -151,7 +155,7 @@ BEGIN
             @BatchId,
             e.EmployeeId,
             e.EmployeeCode,
-            ISNULL(e.FirstName + N' ', N'') + ISNULL(e.LastName, N''),
+            ISNULL(e.EmployeeName, N''),
             pc.ConceptCode,
             pc.ConceptName,
             pc.ConceptType,
@@ -164,8 +168,7 @@ BEGIN
           AND e.IsActive    = 1
           AND pc.CompanyId  = @CompanyId
           AND pc.PayrollCode = @PayrollCode
-          AND pc.IsActive   = 1
-          AND (@DepartmentFilter IS NULL OR e.DepartmentCode = @DepartmentFilter);
+          AND pc.IsActive   = 1;
 
         SET @EmpCount = (
             SELECT COUNT(DISTINCT EmployeeCode)
@@ -200,7 +203,10 @@ GO
 -- 2. usp_HR_Payroll_SaveDraftLine
 --    Guarda cambios de una celda (autosave).
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_SaveDraftLine
+IF OBJECT_ID('dbo.usp_HR_Payroll_SaveDraftLine', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_SaveDraftLine;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_SaveDraftLine
     @LineId       INT,
     @Quantity     DECIMAL(18,4),
     @Amount       DECIMAL(18,4),
@@ -263,7 +269,10 @@ GO
 -- 3. usp_HR_Payroll_BatchAddLine
 --    Agrega un nuevo concepto a un empleado en el lote.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_BatchAddLine
+IF OBJECT_ID('dbo.usp_HR_Payroll_BatchAddLine', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_BatchAddLine;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_BatchAddLine
     @BatchId      INT,
     @EmployeeCode NVARCHAR(24),
     @ConceptCode  NVARCHAR(20),
@@ -294,7 +303,7 @@ BEGIN
     DECLARE @EmployeeId   BIGINT;
 
     SELECT TOP 1
-        @EmployeeName = ISNULL(e.FirstName + N' ', N'') + ISNULL(e.LastName, N''),
+        @EmployeeName = ISNULL(e.EmployeeName, N''),
         @EmployeeId   = e.EmployeeId
     FROM [master].Employee e
     WHERE e.EmployeeCode = @EmployeeCode
@@ -366,7 +375,10 @@ GO
 -- 4. usp_HR_Payroll_BatchRemoveLine
 --    Elimina una línea de concepto del lote.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_BatchRemoveLine
+IF OBJECT_ID('dbo.usp_HR_Payroll_BatchRemoveLine', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_BatchRemoveLine;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_BatchRemoveLine
     @LineId       INT,
     @UserId       INT,
     @Resultado    INT           OUTPUT,
@@ -423,7 +435,10 @@ GO
 --    RS2: Resumen por departamento
 --    RS3: Alertas
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_GetDraftSummary
+IF OBJECT_ID('dbo.usp_HR_Payroll_GetDraftSummary', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_GetDraftSummary;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_GetDraftSummary
     @BatchId INT
 AS
 BEGIN
@@ -472,21 +487,17 @@ BEGIN
     ) prev
     WHERE b.BatchId = @BatchId;
 
-    -- RS2: Resumen por departamento
+    -- RS2: Resumen general (sin columna departamento en Employee)
     SELECT
-        ISNULL(e.DepartmentCode, N'SIN_DEPTO') AS DepartmentCode,
-        ISNULL(e.DepartmentName, N'Sin Departamento') AS DepartmentName,
+        N'GENERAL' AS DepartmentCode,
+        N'General' AS DepartmentName,
         COUNT(DISTINCT bl.EmployeeCode) AS EmployeeCount,
         ISNULL(SUM(CASE WHEN bl.ConceptType IN (N'ASIGNACION', N'BONO') THEN bl.Total ELSE 0 END), 0) AS DeptGross,
         ISNULL(SUM(CASE WHEN bl.ConceptType = N'DEDUCCION' THEN bl.Total ELSE 0 END), 0) AS DeptDeductions,
         ISNULL(SUM(CASE WHEN bl.ConceptType IN (N'ASIGNACION', N'BONO') THEN bl.Total ELSE 0 END), 0)
         - ISNULL(SUM(CASE WHEN bl.ConceptType = N'DEDUCCION' THEN bl.Total ELSE 0 END), 0) AS DeptNet
     FROM hr.PayrollBatchLine bl
-    LEFT JOIN [master].Employee e ON e.EmployeeCode = bl.EmployeeCode AND e.IsActive = 1
-    WHERE bl.BatchId = @BatchId
-    GROUP BY ISNULL(e.DepartmentCode, N'SIN_DEPTO'),
-             ISNULL(e.DepartmentName, N'Sin Departamento')
-    ORDER BY DeptNet DESC;
+    WHERE bl.BatchId = @BatchId;
 
     -- RS3: Alertas
     SELECT
@@ -537,21 +548,6 @@ BEGIN
           AND bl.Total = 0
           AND bl.ConceptType IN (N'ASIGNACION', N'BONO')
 
-        UNION ALL
-
-        -- Empleados sin datos de cuenta bancaria (si la columna existe)
-        SELECT
-            N'SIN_CUENTA_BANCARIA' AS AlertType,
-            bl.EmployeeCode,
-            bl.EmployeeName,
-            N'El empleado no tiene cuenta bancaria registrada.' AS AlertMessage
-        FROM (
-            SELECT DISTINCT EmployeeCode, EmployeeName
-            FROM hr.PayrollBatchLine
-            WHERE BatchId = @BatchId
-        ) bl
-        INNER JOIN [master].Employee e ON e.EmployeeCode = bl.EmployeeCode AND e.IsActive = 1
-        WHERE (e.BankAccountNumber IS NULL OR LEN(LTRIM(RTRIM(e.BankAccountNumber))) = 0)
     ) alerts
     ORDER BY AlertType, EmployeeCode;
 END;
@@ -561,7 +557,10 @@ GO
 -- 6. usp_HR_Payroll_GetDraftGrid
 --    Retorna los empleados con sus totales para la grilla.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_GetDraftGrid
+IF OBJECT_ID('dbo.usp_HR_Payroll_GetDraftGrid', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_GetDraftGrid;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_GetDraftGrid
     @BatchId      INT,
     @Search       NVARCHAR(100) = NULL,
     @Department   NVARCHAR(100) = NULL,
@@ -591,11 +590,9 @@ BEGIN
     )
     SELECT @TotalCount = COUNT(*)
     FROM EmployeeSummary es
-    LEFT JOIN [master].Employee e ON e.EmployeeCode = es.EmployeeCode AND e.IsActive = 1
     WHERE (@Search IS NULL
            OR es.EmployeeCode LIKE N'%' + @Search + N'%'
            OR es.EmployeeName LIKE N'%' + @Search + N'%')
-      AND (@Department IS NULL OR e.DepartmentCode = @Department)
       AND (@OnlyModified = 0 OR es.HasModified = 1);
 
     ;WITH EmployeeSummary AS (
@@ -617,20 +614,18 @@ BEGIN
         es.EmployeeCode,
         es.EmployeeName,
         es.EmployeeId,
-        ISNULL(e.DepartmentCode, N'') AS DepartmentCode,
-        ISNULL(e.DepartmentName, N'') AS DepartmentName,
-        ISNULL(e.PositionName, N'')   AS PositionName,
+        N'' AS DepartmentCode,
+        N'' AS DepartmentName,
+        N'' AS PositionName,
         es.TotalGross,
         es.TotalDeductions,
         es.TotalNet,
         es.HasModified,
         es.ConceptCount
     FROM EmployeeSummary es
-    LEFT JOIN [master].Employee e ON e.EmployeeCode = es.EmployeeCode AND e.IsActive = 1
     WHERE (@Search IS NULL
            OR es.EmployeeCode LIKE N'%' + @Search + N'%'
            OR es.EmployeeName LIKE N'%' + @Search + N'%')
-      AND (@Department IS NULL OR e.DepartmentCode = @Department)
       AND (@OnlyModified = 0 OR es.HasModified = 1)
     ORDER BY es.EmployeeName
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
@@ -641,7 +636,10 @@ GO
 -- 7. usp_HR_Payroll_GetEmployeeLines
 --    Retorna todas las líneas de concepto de un empleado en un lote.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_GetEmployeeLines
+IF OBJECT_ID('dbo.usp_HR_Payroll_GetEmployeeLines', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_GetEmployeeLines;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_GetEmployeeLines
     @BatchId      INT,
     @EmployeeCode NVARCHAR(24)
 AS
@@ -680,7 +678,10 @@ GO
 -- 8. usp_HR_Payroll_ApproveDraft
 --    Aprueba un borrador de nómina.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_ApproveDraft
+IF OBJECT_ID('dbo.usp_HR_Payroll_ApproveDraft', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_ApproveDraft;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_ApproveDraft
     @BatchId    INT,
     @ApprovedBy INT,
     @UserId     INT,
@@ -742,8 +743,12 @@ GO
 -- ═══════════════════════════════════════════════════════════════
 -- 9. usp_HR_Payroll_ProcessBatch
 --    Procesa un lote aprobado: crea PayrollRun individuales.
+--    Usa XML en lugar de JSON (compatible SQL Server 2012).
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_ProcessBatch
+IF OBJECT_ID('dbo.usp_HR_Payroll_ProcessBatch', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_ProcessBatch;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_ProcessBatch
     @BatchId    INT,
     @UserId     INT,
     @Procesados INT           OUTPUT,
@@ -801,7 +806,7 @@ BEGIN
     DECLARE @EmpNet    DECIMAL(18,2);
     DECLARE @RunRes    INT;
     DECLARE @RunMsg    NVARCHAR(500);
-    DECLARE @LinesJson NVARCHAR(MAX);
+    DECLARE @LinesXml  NVARCHAR(MAX);
 
     DECLARE emp_cur CURSOR LOCAL FAST_FORWARD FOR
         SELECT
@@ -824,8 +829,8 @@ BEGIN
 
         WHILE @@FETCH_STATUS = 0
         BEGIN
-            -- Construir JSON de líneas para este empleado
-            SET @LinesJson = (
+            -- Construir XML de líneas para este empleado (compatible SQL 2012)
+            SET @LinesXml = CAST((
                 SELECT
                     ConceptCode  AS [code],
                     ConceptName  AS [name],
@@ -833,12 +838,12 @@ BEGIN
                     Quantity     AS [qty],
                     Amount       AS [amount],
                     Total        AS [total],
-                    Notes        AS [description]
+                    ISNULL(Notes, N'') AS [description]
                 FROM hr.PayrollBatchLine
                 WHERE BatchId = @BatchId
                   AND EmployeeCode = @EmpCode
-                FOR JSON PATH
-            );
+                FOR XML PATH('line'), ROOT('lines'), TYPE
+            ) AS NVARCHAR(MAX));
 
             BEGIN TRY
                 EXEC dbo.usp_HR_Payroll_UpsertRun
@@ -855,7 +860,7 @@ BEGIN
                     @NetTotal         = @EmpNet,
                     @PayrollTypeName  = NULL,
                     @UserId           = @UserId,
-                    @LinesJson        = @LinesJson,
+                    @LinesXml         = @LinesXml,
                     @Resultado        = @RunRes OUTPUT,
                     @Mensaje          = @RunMsg OUTPUT;
 
@@ -905,7 +910,10 @@ GO
 -- 10. usp_HR_Payroll_ListBatches
 --     Lista todos los lotes de nómina con paginación.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_ListBatches
+IF OBJECT_ID('dbo.usp_HR_Payroll_ListBatches', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_ListBatches;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_ListBatches
     @CompanyId    INT,
     @PayrollCode  NVARCHAR(15) = NULL,
     @Status       NVARCHAR(20) = NULL,
@@ -952,7 +960,10 @@ GO
 -- 11. usp_HR_Payroll_BatchBulkUpdate
 --     Actualización masiva: aplica un concepto a múltiples empleados.
 -- ═══════════════════════════════════════════════════════════════
-CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_BatchBulkUpdate
+IF OBJECT_ID('dbo.usp_HR_Payroll_BatchBulkUpdate', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_HR_Payroll_BatchBulkUpdate;
+GO
+CREATE PROCEDURE dbo.usp_HR_Payroll_BatchBulkUpdate
     @BatchId        INT,
     @ConceptCode    NVARCHAR(20),
     @ConceptType    NVARCHAR(15),

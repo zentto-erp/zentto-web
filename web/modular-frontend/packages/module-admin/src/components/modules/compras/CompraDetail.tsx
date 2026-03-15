@@ -23,7 +23,7 @@ interface CompraDetailProps {
   numFact: string;
 }
 
-type CompraDetalleRow = Record<string, unknown>;
+type CompraDetalleRow = Record<string, any>;
 
 export default function CompraDetail({ numFact }: CompraDetailProps) {
   const router = useRouter();

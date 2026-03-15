@@ -1,7 +1,7 @@
 "use client";
 
-import { NominaWizard } from "@datqbox/module-nomina";
+import { NominasPage } from "@datqbox/module-nomina";
 
 export default function NominasRoute() {
-  return <NominaWizard />;
+  return <NominasPage />;
 }

@@ -34,7 +34,7 @@ import {
 } from "../../../hooks/useConciliacionBancaria";
 
 type CuentaRow = Record<string, unknown>;
-type ConciliacionRow = Record<string, unknown>;
+type ConciliacionRow = Record<string, any>;
 
 function firstDayOfCurrentMonth(tz: string) {
   const d = new Date();

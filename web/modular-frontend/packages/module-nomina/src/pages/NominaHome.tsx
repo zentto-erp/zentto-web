@@ -21,6 +21,8 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import EventIcon from "@mui/icons-material/Event";
 import BatchPredictionIcon from "@mui/icons-material/BatchPrediction";
+import SettingsIcon from "@mui/icons-material/Settings";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useRouter } from "next/navigation";
 import { useEmpleadosList } from "../hooks/useEmpleados";
 import { useNominasList } from "../hooks/useNomina";
@@ -77,13 +79,6 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
 
   const shortcuts = [
     {
-      title: "Nómina Masiva",
-      description: "Procesar Lote",
-      icon: <BatchPredictionIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/nominas`,
-      bg: brandColors.accent,
-    },
-    {
       title: "Empleados",
       description: "Gestión RRHH",
       icon: <PeopleIcon sx={{ fontSize: 32 }} />,
@@ -92,7 +87,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
     },
     {
       title: "Nóminas",
-      description: "Recibos y Pagos",
+      description: "Procesos y Lotes",
       icon: <SupervisorAccountIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/nominas`,
       bg: brandColors.shortcutDark,
@@ -106,24 +101,38 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
     },
     {
       title: "Vacaciones",
-      description: "Periodos",
+      description: "Calendario",
       icon: <BeachAccessIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/vacaciones`,
       bg: brandColors.shortcutSlate,
     },
     {
       title: "Solicitar Vacaciones",
-      description: "Calendario",
+      description: "Solicitudes",
       icon: <EventIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/vacaciones/solicitar`,
       bg: brandColors.success,
     },
     {
-      title: "Retiros",
-      description: "Liquidaciones",
+      title: "Aprobar Solicitudes",
+      description: "Revisión",
+      icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />,
+      href: `${bp}/vacaciones/solicitudes`,
+      bg: brandColors.accent,
+    },
+    {
+      title: "Liquidaciones",
+      description: "Retiros",
       icon: <ExitToAppIcon sx={{ fontSize: 32 }} />,
       href: `${bp}/liquidaciones`,
       bg: brandColors.shortcutOrange,
+    },
+    {
+      title: "Constantes",
+      description: "Configuración",
+      icon: <SettingsIcon sx={{ fontSize: 32 }} />,
+      href: `${bp}/constantes`,
+      bg: brandColors.statBlue,
     },
   ];
 

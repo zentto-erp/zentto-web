@@ -18,11 +18,22 @@ import {
   InputLabel,
   IconButton,
   Chip,
+  Tooltip,
+  CircularProgress,
+  Menu,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import HistoryIcon from "@mui/icons-material/History";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import BeachAccessIcon from "@mui/icons-material/BeachAccess";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import NominaWizard from "./NominaWizard";
+import VacacionesWizard from "./VacacionesWizard";
+import LiquidacionesWizard from "./LiquidacionesWizard";
 import {
   useEmpleadosList,
   useCreateEmpleado,
@@ -32,6 +43,10 @@ import {
   type EmpleadoInput,
 } from "../hooks/useEmpleados";
 import { formatCurrency } from "@datqbox/shared-api";
+import { useNominasList } from "../hooks/useNomina";
+
+const GRUPOS = ["ADMIN", "ALMACEN", "GERENCIA", "PRODUCCION", "VENTAS"];
+const NOMINAS = ["MENSUAL", "QUINCENAL", "SEMANAL"];
 
 const emptyForm: EmpleadoInput = {
   CEDULA: "",
@@ -53,8 +68,19 @@ export default function EmpleadosPage() {
   const [editCedula, setEditCedula] = useState<string | null>(null);
   const [form, setForm] = useState<EmpleadoInput>({ ...emptyForm });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [historialCedula, setHistorialCedula] = useState<string | null>(null);
+  const [historialNombre, setHistorialNombre] = useState<string>("");
+  const [nominaCedula, setNominaCedula] = useState<string | null>(null);
+  const [nominaNombre, setNominaNombre] = useState<string>("");
+  const [vacCedula, setVacCedula] = useState<string | null>(null);
+  const [vacNombre, setVacNombre] = useState<string>("");
+  const [liqCedula, setLiqCedula] = useState<string | null>(null);
+  const [liqNombre, setLiqNombre] = useState<string>("");
 
   const { data, isLoading } = useEmpleadosList(filter);
+  const historial = useNominasList(
+    historialCedula ? { cedula: historialCedula, limit: 50 } : { limit: 0 }
+  );
   const createMut = useCreateEmpleado();
   const updateMut = useUpdateEmpleado();
   const deleteMut = useDeleteEmpleado();
@@ -65,6 +91,44 @@ export default function EmpleadosPage() {
   const norm = (row: any, ...keys: string[]) => {
     for (const k of keys) if (row[k] !== undefined && row[k] !== null) return row[k];
     return "";
+  };
+
+  // Sub-componente para acciones por fila con menú contextual
+  const RowActions = ({ row }: { row: any }) => {
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const ced = norm(row, "CEDULA", "cedula", "EmployeeCode");
+    const nombre = norm(row, "NOMBRE", "nombre", "EmployeeName");
+    return (
+      <>
+        <Tooltip title="Editar">
+          <IconButton size="small" onClick={() => handleEdit(row)}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Acciones">
+          <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={() => setAnchorEl(null)}>
+          <MenuItem onClick={() => { setAnchorEl(null); setNominaCedula(ced); setNominaNombre(nombre); }}>
+            <PlayArrowIcon fontSize="small" sx={{ mr: 1, color: "success.main" }} /> Procesar Nómina
+          </MenuItem>
+          <MenuItem onClick={() => { setAnchorEl(null); setVacCedula(ced); setVacNombre(nombre); }}>
+            <BeachAccessIcon fontSize="small" sx={{ mr: 1, color: "info.main" }} /> Procesar Vacaciones
+          </MenuItem>
+          <MenuItem onClick={() => { setAnchorEl(null); setLiqCedula(ced); setLiqNombre(nombre); }}>
+            <ExitToAppIcon fontSize="small" sx={{ mr: 1, color: "warning.main" }} /> Calcular Liquidación
+          </MenuItem>
+          <MenuItem onClick={() => { setAnchorEl(null); setHistorialCedula(ced); setHistorialNombre(nombre); }}>
+            <HistoryIcon fontSize="small" sx={{ mr: 1, color: "primary.main" }} /> Historial de Nómina
+          </MenuItem>
+          <MenuItem onClick={() => { setAnchorEl(null); setDeleteTarget(ced); }} sx={{ color: "error.main" }}>
+            <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Eliminar
+          </MenuItem>
+        </Menu>
+      </>
+    );
   };
 
   const columns: GridColDef[] = [
@@ -88,20 +152,8 @@ export default function EmpleadosPage() {
       },
     },
     {
-      field: "acciones", headerName: "", width: 100, sortable: false,
-      renderCell: (p) => {
-        const ced = norm(p.row, "CEDULA", "cedula", "EmployeeCode");
-        return (
-          <>
-            <IconButton size="small" onClick={() => handleEdit(p.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" color="error" onClick={() => setDeleteTarget(ced)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </>
-        );
-      },
+      field: "acciones", headerName: "", width: 120, sortable: false,
+      renderCell: (p) => <RowActions row={p.row} />,
     },
   ];
 
@@ -176,12 +228,19 @@ export default function EmpleadosPage() {
             <MenuItem value="INACTIVO">Inactivo</MenuItem>
           </Select>
         </FormControl>
-        <TextField
-          label="Grupo"
-          size="small"
-          value={filter.grupo || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, grupo: e.target.value || undefined }))}
-        />
+        <FormControl size="small" sx={{ minWidth: 130 }}>
+          <InputLabel>Grupo</InputLabel>
+          <Select
+            value={filter.grupo || ""}
+            label="Grupo"
+            onChange={(e) => setFilter((f) => ({ ...f, grupo: e.target.value || undefined }))}
+          >
+            <MenuItem value="">Todos</MenuItem>
+            {GRUPOS.map((g) => (
+              <MenuItem key={g} value={g}>{g}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
@@ -224,20 +283,34 @@ export default function EmpleadosPage() {
                 value={form.CARGO || ""}
                 onChange={(e) => setForm((f) => ({ ...f, CARGO: e.target.value }))}
               />
-              <TextField
-                label="Grupo / Depto."
-                fullWidth
-                value={form.GRUPO || ""}
-                onChange={(e) => setForm((f) => ({ ...f, GRUPO: e.target.value }))}
-              />
+              <FormControl fullWidth>
+                <InputLabel>Grupo / Depto.</InputLabel>
+                <Select
+                  value={form.GRUPO || ""}
+                  label="Grupo / Depto."
+                  onChange={(e) => setForm((f) => ({ ...f, GRUPO: e.target.value }))}
+                >
+                  <MenuItem value="">—</MenuItem>
+                  {GRUPOS.map((g) => (
+                    <MenuItem key={g} value={g}>{g}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField
-                label="Nómina"
-                fullWidth
-                value={form.NOMINA || ""}
-                onChange={(e) => setForm((f) => ({ ...f, NOMINA: e.target.value }))}
-              />
+              <FormControl fullWidth>
+                <InputLabel>Nómina</InputLabel>
+                <Select
+                  value={form.NOMINA || ""}
+                  label="Nómina"
+                  onChange={(e) => setForm((f) => ({ ...f, NOMINA: e.target.value }))}
+                >
+                  <MenuItem value="">—</MenuItem>
+                  {NOMINAS.map((n) => (
+                    <MenuItem key={n} value={n}>{n}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <TextField
                 label="Sueldo"
                 type="number"
@@ -312,6 +385,109 @@ export default function EmpleadosPage() {
           <Button variant="contained" color="error" onClick={handleDelete} disabled={deleteMut.isPending}>
             Eliminar
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Procesar Vacaciones */}
+      <Dialog
+        open={vacCedula != null}
+        onClose={() => setVacCedula(null)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Procesar Vacaciones — {vacNombre} ({vacCedula})</DialogTitle>
+        <DialogContent sx={{ p: 0, minHeight: 500 }}>
+          {vacCedula && (
+            <VacacionesWizard
+              initialCedula={vacCedula}
+              onClose={() => setVacCedula(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Calcular Liquidación */}
+      <Dialog
+        open={liqCedula != null}
+        onClose={() => setLiqCedula(null)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Calcular Liquidación — {liqNombre} ({liqCedula})</DialogTitle>
+        <DialogContent sx={{ p: 0, minHeight: 500 }}>
+          {liqCedula && (
+            <LiquidacionesWizard
+              initialCedula={liqCedula}
+              onClose={() => setLiqCedula(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Procesar Nómina Individual */}
+      <Dialog
+        open={nominaCedula != null}
+        onClose={() => setNominaCedula(null)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Procesar Nómina — {nominaNombre} ({nominaCedula})</DialogTitle>
+        <DialogContent sx={{ p: 0, minHeight: 500 }}>
+          {nominaCedula && (
+            <NominaWizard
+              initialCedula={nominaCedula}
+              onClose={() => setNominaCedula(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Historial de Nómina */}
+      <Dialog
+        open={historialCedula != null}
+        onClose={() => setHistorialCedula(null)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Historial de Nómina — {historialNombre} ({historialCedula})</DialogTitle>
+        <DialogContent>
+          {historial.isLoading ? (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (() => {
+            const hRows = historial.data?.data ?? historial.data?.rows ?? [];
+            if (hRows.length === 0) {
+              return <Typography color="text.secondary" sx={{ py: 2 }}>No se encontraron registros de nómina para este empleado.</Typography>;
+            }
+            return (
+              <DataGrid
+                rows={hRows}
+                columns={[
+                  { field: "nomina", headerName: "Nómina", width: 120 },
+                  { field: "fechaInicio", headerName: "Desde", width: 110 },
+                  { field: "fechaHasta", headerName: "Hasta", width: 110 },
+                  { field: "totalAsignaciones", headerName: "Asignaciones", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
+                  { field: "totalDeducciones", headerName: "Deducciones", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
+                  { field: "netoAPagar", headerName: "Neto", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
+                  {
+                    field: "estado", headerName: "Estado", width: 100,
+                    renderCell: (p) => (
+                      <Chip label={p.value || "ABIERTA"} size="small" color={p.value === "CERRADA" ? "default" : "success"} />
+                    ),
+                  },
+                ]}
+                autoHeight
+                disableRowSelectionOnClick
+                getRowId={(r) => `${r.nomina}-${r.fechaInicio ?? Math.random()}`}
+                pageSizeOptions={[10, 25]}
+                initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+              />
+            );
+          })()}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistorialCedula(null)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
     </Box>

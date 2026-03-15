@@ -70,15 +70,21 @@ interface LiquidacionDesglose {
 
 // ─── Componente Principal ──────────────────────────────────────
 
-export default function LiquidacionesWizard() {
+interface LiquidacionesWizardProps {
+  initialCedula?: string | null;
+  onClose?: () => void;
+}
+
+export default function LiquidacionesWizard({ initialCedula, onClose }: LiquidacionesWizardProps = {}) {
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
-  const [activeStep, setActiveStep] = useState(0);
+  const hasInitialCedula = !!initialCedula;
+  const [activeStep, setActiveStep] = useState(hasInitialCedula ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
 
   // Paso 1: Empleado
-  const [cedulaSeleccionada, setCedulaSeleccionada] = useState<string | null>(null);
+  const [cedulaSeleccionada, setCedulaSeleccionada] = useState<string | null>(initialCedula ?? null);
 
   // Paso 2: Retiro
   const [fechaRetiro, setFechaRetiro] = useState<Dayjs | null>(dayjs().tz(timeZone));

@@ -63,15 +63,21 @@ type EmpleadoRow = Record<string, any>;
 
 // ─── Componente Principal ──────────────────────────────────────
 
-export default function VacacionesWizard() {
+interface VacacionesWizardProps {
+  initialCedula?: string | null;
+  onClose?: () => void;
+}
+
+export default function VacacionesWizard({ initialCedula, onClose }: VacacionesWizardProps = {}) {
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
-  const [activeStep, setActiveStep] = useState(0);
+  const hasInitialCedula = !!initialCedula;
+  const [activeStep, setActiveStep] = useState(hasInitialCedula ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
 
   // Paso 1: Empleado
-  const [cedulaSeleccionada, setCedulaSeleccionada] = useState<string | null>(null);
+  const [cedulaSeleccionada, setCedulaSeleccionada] = useState<string | null>(initialCedula ?? null);
 
   // Paso 2: Período
   const [fechaInicio, setFechaInicio] = useState<Dayjs | null>(dayjs().tz(timeZone));

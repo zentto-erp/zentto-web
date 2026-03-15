@@ -453,7 +453,8 @@ export default function ConciliacionBancariaPage() {
                 autoHeight
                 disableMultipleRowSelection
                 onRowSelectionModelChange={(model: GridRowSelectionModel) => {
-                  const id = model[0] as number;
+                  const ids = Array.isArray(model) ? model : Array.from(model as any);
+                  const id = ids[0] as number;
                   setSelectedBankLineId(id ?? null);
                 }}
                 sx={{
@@ -530,7 +531,8 @@ export default function ConciliacionBancariaPage() {
               autoHeight
               disableMultipleRowSelection
               onRowSelectionModelChange={(model: GridRowSelectionModel) => {
-                const id = model[0] as number;
+                const ids = Array.isArray(model) ? model : Array.from(model as any);
+                const id = ids[0] as number;
                 setSelectedEntryId(id ?? null);
               }}
               sx={{

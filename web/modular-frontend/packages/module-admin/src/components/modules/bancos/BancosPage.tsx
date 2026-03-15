@@ -102,7 +102,7 @@ export default function BancosPage() {
     setErr("");
     setMsg("");
     try {
-      const payload = { ...mov, Monto: Number(mov.Monto) };
+      const payload = { ...mov, Monto: Number(mov.Monto), Tipo: mov.Tipo as "PCH" | "DEP" | "NCR" | "NDB" | "IDB" };
       await generarMov.mutateAsync(payload);
       setMsg("Movimiento bancario generado");
       setMovOpen(false);
