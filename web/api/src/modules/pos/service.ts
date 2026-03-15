@@ -4,7 +4,7 @@ import { getActiveScope } from "../_shared/scope.js";
 interface DefaultScope {
   companyId: number;
   branchId: number;
-  countryCode: "VE" | "ES";
+  countryCode: string;
 }
 
 let defaultScopeCache: DefaultScope | null = null;
@@ -16,7 +16,7 @@ async function getDefaultScope(): Promise<DefaultScope> {
       ...defaultScopeCache,
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
-      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as "VE" | "ES",
+      countryCode: activeScope.countryCode ?? defaultScopeCache.countryCode,
     };
   }
   if (defaultScopeCache) return defaultScopeCache;
@@ -29,14 +29,14 @@ async function getDefaultScope(): Promise<DefaultScope> {
   defaultScopeCache = {
     companyId: Number(row?.companyId ?? 1),
     branchId: Number(row?.branchId ?? 1),
-    countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
+    countryCode: String(row?.countryCode ?? "VE").toUpperCase(),
   };
   if (activeScope) {
     return {
       ...defaultScopeCache,
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
-      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as "VE" | "ES",
+      countryCode: activeScope.countryCode ?? defaultScopeCache.countryCode,
     };
   }
   return defaultScopeCache;

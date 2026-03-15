@@ -101,7 +101,7 @@ restauranteRouter.post("/pedidos/:pedidoId/comanda", async (req, res) => {
 const cerrarSchema = z.object({
     empresaId: z.number().int().positive().optional(),
     sucursalId: z.number().int().nonnegative().optional(),
-    countryCode: z.enum(["VE", "ES"]).optional(),
+    countryCode: z.string().length(2).toUpperCase().optional(),
     codUsuario: z.string().optional(),
     invoiceNumber: z.string().optional(),
     invoiceDate: z.string().optional(),
@@ -127,7 +127,7 @@ restauranteRouter.post("/pedidos/:pedidoId/cerrar", async (req, res) => {
 
 const contabilizarPedidoSchema = z.object({
     codUsuario: z.string().optional(),
-    countryCode: z.enum(["VE", "ES"]).optional(),
+    countryCode: z.string().length(2).toUpperCase().optional(),
     currency: z.string().optional(),
     exchangeRate: z.number().positive().optional(),
     invoiceNumber: z.string().optional(),

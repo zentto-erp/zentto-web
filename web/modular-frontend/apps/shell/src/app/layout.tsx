@@ -6,10 +6,8 @@ import { usePathname } from 'next/navigation';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppProvider } from '@toolpad/core/nextjs';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import type { Navigation } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import type { SystemModule } from '@datqbox/shared-auth';
 import { QueryProvider } from '@datqbox/shared-api';
 import {
   AppBarWrapper,
@@ -17,32 +15,11 @@ import {
   LoadingFallback,
   ToastProvider,
   LocalizationProviderWrapper,
-  Copyright,
   theme,
 } from '@datqbox/shared-ui';
 import '@datqbox/shared-ui/globals.css';
 
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import PaymentIcon from '@mui/icons-material/Payment';
-import PeopleIcon from '@mui/icons-material/People';
-import SettingsIcon from '@mui/icons-material/Settings';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import PaymentsIcon from '@mui/icons-material/Payments';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import BadgeIcon from '@mui/icons-material/Badge';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import HelpIcon from '@mui/icons-material/Help';
-import InfoIcon from '@mui/icons-material/Info';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import AppsIcon from '@mui/icons-material/Apps';
-
 import { buildNavigation } from '../lib/navigation';
-
-// Navigation
-
-
 
 const AUTHENTICATION = { signIn, signOut };
 

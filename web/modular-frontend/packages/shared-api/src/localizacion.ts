@@ -1,7 +1,29 @@
 'use client';
 
-import { apiGet } from './api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiGet, apiPost } from './api';
 import type { LocalizacionConfig } from './usePosStore';
+
+// ─── CountryRecord (mirrors cfg.Country table) ─────────────────────────────
+
+export interface CountryRecord {
+  CountryCode: string;
+  CountryName: string;
+  CurrencyCode: string;
+  CurrencySymbol: string;
+  ReferenceCurrency: string;
+  ReferenceCurrencySymbol: string;
+  DefaultExchangeRate: number;
+  PricesIncludeTax: boolean;
+  SpecialTaxRate: number;
+  SpecialTaxEnabled: boolean;
+  TaxAuthorityCode: string | null;
+  FiscalIdName: string | null;
+  TimeZoneIana: string | null;
+  PhonePrefix: string | null;
+  SortOrder: number;
+  IsActive: boolean;
+}
 
 // ─── Country Presets ────────────────────────────────────────────────────────
 
@@ -11,13 +33,61 @@ export interface CountryPreset {
   defaults: Omit<LocalizacionConfig, 'pais'>;
 }
 
+/**
+ * @deprecated Use useCountries() hook instead. Kept as offline/fallback only.
+ */
 export const PREDEFINED_COUNTRIES: CountryPreset[] = [
   { code: 'VE', name: 'Venezuela', defaults: { preciosIncluyenIva: true, tasaCambio: 45.0, monedaPrincipal: 'Bs', monedaReferencia: '$', tasaIgtf: 3, aplicarIgtf: true } },
   { code: 'CO', name: 'Colombia', defaults: { preciosIncluyenIva: false, tasaCambio: 4000, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'MX', name: 'México', defaults: { preciosIncluyenIva: false, tasaCambio: 18.0, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'ES', name: 'España', defaults: { preciosIncluyenIva: true, tasaCambio: 1.0, monedaPrincipal: '€', monedaReferencia: '$', tasaIgtf: 0, aplicarIgtf: false } },
+  { code: 'MX', name: 'Mexico', defaults: { preciosIncluyenIva: false, tasaCambio: 18.0, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
+  { code: 'ES', name: 'Espana', defaults: { preciosIncluyenIva: true, tasaCambio: 1.0, monedaPrincipal: '\u20ac', monedaReferencia: '$', tasaIgtf: 0, aplicarIgtf: false } },
   { code: 'US', name: 'Estados Unidos', defaults: { preciosIncluyenIva: false, tasaCambio: 1.0, monedaPrincipal: '$', monedaReferencia: 'EUR', tasaIgtf: 0, aplicarIgtf: false } },
 ];
+
+// ─── Hooks ──────────────────────────────────────────────────────────────────
+
+/** Fetch active countries from cfg.Country via API. */
+export function useCountries() {
+  return useQuery<CountryRecord[]>({
+    queryKey: ['config', 'countries'],
+    queryFn: () => apiGet('/v1/config/countries'),
+    staleTime: 5 * 60 * 1000, // 5 min
+  });
+}
+
+/** Mutation to create or update a country record. */
+export function useSaveCountry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Partial<CountryRecord>) => apiPost('/v1/config/countries', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['config', 'countries'] });
+    },
+  });
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Given a list of CountryRecord and a country code, return the localization
+ * defaults for that country mapped to LocalizacionConfig shape.
+ */
+export function getCountryDefaults(
+  countries: CountryRecord[],
+  code: string,
+): LocalizacionConfig | null {
+  const c = countries.find((r) => r.CountryCode === code.toUpperCase());
+  if (!c) return null;
+  return {
+    pais: c.CountryCode,
+    preciosIncluyenIva: c.PricesIncludeTax,
+    tasaCambio: c.DefaultExchangeRate,
+    monedaPrincipal: c.CurrencySymbol,
+    monedaReferencia: c.ReferenceCurrencySymbol,
+    tasaIgtf: c.SpecialTaxRate,
+    aplicarIgtf: c.SpecialTaxEnabled,
+  };
+}
 
 // ─── BCV Rates ──────────────────────────────────────────────────────────────
 

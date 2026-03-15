@@ -1,4 +1,4 @@
-export type CountryCode = "VE" | "ES";
+export type CountryCode = string;
 
 export interface AuthorityResponse {
   accepted: boolean;

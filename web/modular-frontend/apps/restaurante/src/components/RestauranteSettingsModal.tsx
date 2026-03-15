@@ -36,7 +36,7 @@ import {
 import { useAuth } from '@datqbox/shared-auth';
 import {
     apiPut, useModuleSettings, usePosStore,
-    PREDEFINED_COUNTRIES, fetchBcvRates as fetchBcvRatesApi, settingsToLocalizacion,
+    useCountries, getCountryDefaults, fetchBcvRates as fetchBcvRatesApi, settingsToLocalizacion,
     type BcvRates,
 } from '@datqbox/shared-api';
 import { PaymentSettingsPanel } from '@datqbox/shared-ui';
@@ -49,6 +49,7 @@ interface RestauranteSettingsModalProps {
 }
 
 export function RestauranteSettingsModal({ open, onClose }: RestauranteSettingsModalProps) {
+    const { data: countries = [] } = useCountries();
     const { isAdmin, company } = useAuth();
     const companyId = company?.companyId ?? 1;
     const branchId = company?.branchId ?? 1;
@@ -87,7 +88,7 @@ export function RestauranteSettingsModal({ open, onClose }: RestauranteSettingsM
         setDraft((prev) => ({ ...prev, [key]: value }));
 
     const handleCountryChange = (code: string) => {
-        const preset = PREDEFINED_COUNTRIES.find(c => c.code === code)?.defaults;
+        const preset = getCountryDefaults(countries, code);
         if (preset) {
             setDraft(prev => {
                 let newRate = preset.tasaCambio;
@@ -293,8 +294,8 @@ export function RestauranteSettingsModal({ open, onClose }: RestauranteSettingsM
                                             helperText="Seleccionar un país carga los defaults para moneda e impuestos automáticos."
                                             disabled={!isAdmin}
                                         >
-                                            {PREDEFINED_COUNTRIES.map(c => (
-                                                <MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>
+                                            {countries.map(c => (
+                                                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
                                             ))}
                                         </TextField>
                                     </Tooltip>

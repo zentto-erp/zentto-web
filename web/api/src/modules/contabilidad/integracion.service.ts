@@ -1,6 +1,7 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { crearAsiento, type AsientoDetalleInput } from "./service.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { getCountryCurrency } from "../_shared/country-currency.js";
 
 type SalesModule = "POS" | "RESTAURANTE";
 
@@ -79,7 +80,7 @@ export interface EmitSaleAccountingEntryResult {
 export interface ReprocessPosAccountingInput {
   ventaId: number;
   codUsuario?: string;
-  countryCode?: "VE" | "ES";
+  countryCode?: string;
   currency?: string;
   exchangeRate?: number;
 }
@@ -87,7 +88,7 @@ export interface ReprocessPosAccountingInput {
 export interface ReprocessRestauranteAccountingInput {
   pedidoId: number;
   codUsuario?: string;
-  countryCode?: "VE" | "ES";
+  countryCode?: string;
   currency?: string;
   exchangeRate?: number;
   invoiceNumber?: string;
@@ -101,10 +102,10 @@ function round4(value: number): number {
   return Math.round((value + Number.EPSILON) * 10000) / 10000;
 }
 
-function resolveCurrency(inputCurrency: string | undefined, countryCode?: "VE" | "ES"): string {
+async function resolveCurrency(inputCurrency: string | undefined, countryCode?: string): Promise<string> {
   if (inputCurrency && inputCurrency.trim()) return inputCurrency.trim().toUpperCase();
-  if (countryCode === "ES") return "EUR";
-  return "VES";
+  if (countryCode) return getCountryCurrency(countryCode);
+  return "USD";
 }
 
 let defaultScopeCache: { companyId: number; branchId: number } | null = null;
@@ -419,7 +420,7 @@ export async function emitSaleAccountingEntry(input: EmitSaleAccountingEntryInpu
       tipoAsiento: "DIA",
       referencia: input.documentNumber,
       concepto: input.concept || resolveConcept(input.module, input.documentNumber),
-      moneda: resolveCurrency(input.currency, undefined),
+      moneda: await resolveCurrency(input.currency, undefined),
       tasa: input.exchangeRate ?? 1,
       origenModulo: input.module,
       origenDocumento: originDocument,
@@ -514,7 +515,7 @@ export async function reprocessPosAccounting(input: ReprocessPosAccountingInput)
     issueDate: header.fechaVenta ? new Date(header.fechaVenta) : new Date(),
     paymentMethod: header.metodoPago || undefined,
     codUsuario: input.codUsuario || header.codUsuario || "API",
-    currency: resolveCurrency(input.currency, input.countryCode),
+    currency: await resolveCurrency(input.currency, input.countryCode),
     exchangeRate: input.exchangeRate ?? 1,
     baseAmount,
     taxAmount,
@@ -555,7 +556,7 @@ export async function reprocessRestauranteAccounting(
     issueDate: header.fechaCierre ? new Date(header.fechaCierre) : new Date(),
     paymentMethod: "CAJA",
     codUsuario: input.codUsuario || header.codUsuario || "API",
-    currency: resolveCurrency(input.currency, input.countryCode),
+    currency: await resolveCurrency(input.currency, input.countryCode),
     exchangeRate: input.exchangeRate ?? 1,
     baseAmount,
     taxAmount,

@@ -29,8 +29,11 @@ export {
   fetchBcvRates,
   settingsToLocalizacion,
   localizacionToSettings,
+  useCountries,
+  useSaveCountry,
+  getCountryDefaults,
 } from './localizacion';
-export type { CountryPreset, BcvRates } from './localizacion';
+export type { CountryPreset, BcvRates, CountryRecord } from './localizacion';
 
 // Settings hydration
 export { useHydrateLocalizacion } from './useHydrateLocalizacion';

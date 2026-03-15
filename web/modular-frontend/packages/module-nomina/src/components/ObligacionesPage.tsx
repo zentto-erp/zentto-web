@@ -25,7 +25,7 @@ import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
 import CheckIcon from "@mui/icons-material/Check";
 import IconButton from "@mui/material/IconButton";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency, useCountries } from "@datqbox/shared-api";
 import {
   useObligationsList,
   useSaveObligation,
@@ -43,6 +43,7 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
 }
 
 export default function ObligacionesPage() {
+  const { data: countries = [] } = useCountries();
   const [tab, setTab] = useState(0);
   const [oblFilter, setOblFilter] = useState<ObligationsFilter>({ page: 1, limit: 25 });
   const [filFilter, setFilFilter] = useState<FilingsFilter>({ page: 1, limit: 25 });
@@ -185,11 +186,9 @@ export default function ObligacionesPage() {
               onChange={(e) => setOblFilter((f) => ({ ...f, countryCode: e.target.value || undefined }))}
             >
               <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="VE">Venezuela</MenuItem>
-              <MenuItem value="CO">Colombia</MenuItem>
-              <MenuItem value="MX">México</MenuItem>
-              <MenuItem value="ES">España</MenuItem>
-              <MenuItem value="US">Estados Unidos</MenuItem>
+              {countries.map(c => (
+                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+              ))}
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -279,11 +278,9 @@ export default function ObligacionesPage() {
                 label="País"
                 onChange={(e) => setOblForm((f) => ({ ...f, countryCode: e.target.value }))}
               >
-                <MenuItem value="VE">Venezuela</MenuItem>
-                <MenuItem value="CO">Colombia</MenuItem>
-                <MenuItem value="MX">México</MenuItem>
-                <MenuItem value="ES">España</MenuItem>
-                <MenuItem value="US">Estados Unidos</MenuItem>
+                {countries.map(c => (
+                  <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+                ))}
               </Select>
             </FormControl>
             <TextField

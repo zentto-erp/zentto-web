@@ -221,7 +221,9 @@ GO
 --    @Limit       INT              - Registros por pagina (default 50).
 --    @TotalCount  INT OUTPUT       - Total de registros.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Period_List
+IF OBJECT_ID('dbo.usp_Acct_Period_List', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Period_List;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Period_List
     @CompanyId   INT,
     @Year        SMALLINT      = NULL,
     @Status      NVARCHAR(10)  = NULL,
@@ -272,7 +274,9 @@ GO
 --    @Resultado  INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje    NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Period_EnsureYear
+IF OBJECT_ID('dbo.usp_Acct_Period_EnsureYear', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Period_EnsureYear;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Period_EnsureYear
     @CompanyId  INT,
     @Year       SMALLINT,
     @Resultado  INT           OUTPUT,
@@ -306,14 +310,20 @@ BEGIN
     BEGIN TRY
         BEGIN TRAN;
 
-        DECLARE @m TINYINT = 1;
+        DECLARE @m TINYINT;
+
+        SET @m = 1;
         WHILE @m <= 12
         BEGIN
-            DECLARE @Code  CHAR(6)       = CAST(@Year AS CHAR(4))
+            DECLARE @Code  CHAR(6);
+            SET @Code = CAST(@Year AS CHAR(4))
                                           + RIGHT('0' + CAST(@m AS VARCHAR(2)), 2);
-            DECLARE @Start DATE          = DATEFROMPARTS(@Year, @m, 1);
-            DECLARE @End   DATE          = EOMONTH(@Start);
-            DECLARE @Name  NVARCHAR(50)  = DATENAME(MONTH, @Start) + N' ' + CAST(@Year AS NVARCHAR(4));
+            DECLARE @Start DATE;
+            SET @Start = DATEFROMPARTS(@Year, @m, 1);
+            DECLARE @End DATE;
+            SET @End = EOMONTH(@Start);
+            DECLARE @Name NVARCHAR(50);
+            SET @Name = DATENAME(MONTH, @Start) + N' ' + CAST(@Year AS NVARCHAR(4));
 
             IF NOT EXISTS (
                 SELECT 1 FROM acct.FiscalPeriod
@@ -351,7 +361,9 @@ GO
 --    @Resultado   INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje     NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Period_Close
+IF OBJECT_ID('dbo.usp_Acct_Period_Close', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Period_Close;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Period_Close
     @CompanyId   INT,
     @PeriodCode  CHAR(6),
     @UserId      INT,
@@ -375,7 +387,8 @@ BEGIN
     END;
 
     -- Validar que no haya asientos en borrador
-    DECLARE @PeriodCodeFmt NVARCHAR(7) = LEFT(@PeriodCode, 4) + '-' + RIGHT(@PeriodCode, 2);
+    DECLARE @PeriodCodeFmt NVARCHAR(7);
+    SET @PeriodCodeFmt = LEFT(@PeriodCode, 4) + '-' + RIGHT(@PeriodCode, 2);
     DECLARE @DraftCount INT;
     SELECT @DraftCount = COUNT(*)
     FROM   acct.JournalEntry
@@ -421,7 +434,9 @@ GO
 --    @Resultado   INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje     NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Period_Reopen
+IF OBJECT_ID('dbo.usp_Acct_Period_Reopen', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Period_Reopen;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Period_Reopen
     @CompanyId   INT,
     @PeriodCode  CHAR(6),
     @UserId      INT,
@@ -482,7 +497,9 @@ GO
 --    @Resultado   INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje     NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Period_GenerateClosingEntries
+IF OBJECT_ID('dbo.usp_Acct_Period_GenerateClosingEntries', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Period_GenerateClosingEntries;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Period_GenerateClosingEntries
     @CompanyId   INT,
     @PeriodCode  CHAR(6),
     @UserId      INT,
@@ -507,7 +524,9 @@ BEGIN
         RETURN;
     END;
 
-    DECLARE @PeriodCodeFmt NVARCHAR(7) = LEFT(@PeriodCode, 4) + '-' + RIGHT(@PeriodCode, 2);
+    DECLARE @PeriodCodeFmt NVARCHAR(7);
+
+    SET @PeriodCodeFmt = LEFT(@PeriodCode, 4) + '-' + RIGHT(@PeriodCode, 2);
 
     -- Saldos de cuentas I y G en el periodo
     CREATE TABLE #ClosingSaldos (
@@ -551,7 +570,8 @@ BEGIN
         FROM   acct.JournalEntry
         WHERE  CompanyId = @CompanyId AND EntryType = 'CIE' AND PeriodCode = @PeriodCodeFmt;
 
-        DECLARE @EntryNumber NVARCHAR(40) = N'CIE-' + @PeriodCode + N'-'
+        DECLARE @EntryNumber NVARCHAR(40);
+        SET @EntryNumber = N'CIE-' + @PeriodCode + N'-'
             + RIGHT('0000' + CAST(@SeqNum AS NVARCHAR(4)), 4);
 
         DECLARE @BranchId INT;
@@ -572,7 +592,9 @@ BEGIN
             'VES', 0, 0, 'APPROVED', 'CONTABILIDAD', @UserId
         );
 
-        DECLARE @EntryId BIGINT = SCOPE_IDENTITY();
+        DECLARE @EntryId BIGINT;
+
+        SET @EntryId = SCOPE_IDENTITY();
 
         -- Lineas que revierten cada cuenta I/G
         INSERT INTO acct.JournalEntryLine (
@@ -588,7 +610,9 @@ BEGIN
                CASE WHEN Saldo > 0 THEN Saldo      ELSE 0 END
         FROM   #ClosingSaldos;
 
-        DECLARE @LineCount INT = (SELECT COUNT(*) FROM #ClosingSaldos);
+        DECLARE @LineCount INT;
+
+        SET @LineCount = (SELECT COUNT(*) FROM #ClosingSaldos);
 
         -- Linea contra 3.3.01 utilidades retenidas
         DECLARE @RetainedAcctId BIGINT;
@@ -654,14 +678,18 @@ GO
 --    @CompanyId   INT              - ID de la empresa.
 --    @PeriodCode  CHAR(6)          - Codigo del periodo (YYYYMM).
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Period_Checklist
+IF OBJECT_ID('dbo.usp_Acct_Period_Checklist', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Period_Checklist;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Period_Checklist
     @CompanyId   INT,
     @PeriodCode  CHAR(6)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @PeriodCodeFmt NVARCHAR(7) = LEFT(@PeriodCode, 4) + '-' + RIGHT(@PeriodCode, 2);
+    DECLARE @PeriodCodeFmt NVARCHAR(7);
+
+    SET @PeriodCodeFmt = LEFT(@PeriodCode, 4) + '-' + RIGHT(@PeriodCode, 2);
 
     CREATE TABLE #Checklist (
         ItemName   NVARCHAR(100),
@@ -734,7 +762,9 @@ GO
 --    @Limit       INT              - Registros por pagina (default 50).
 --    @TotalCount  INT OUTPUT       - Total de registros.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_CostCenter_List
+IF OBJECT_ID('dbo.usp_Acct_CostCenter_List', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_CostCenter_List;
+GO
+CREATE PROCEDURE dbo.usp_Acct_CostCenter_List
     @CompanyId   INT,
     @Search      NVARCHAR(100) = NULL,
     @Page        INT           = 1,
@@ -781,7 +811,9 @@ GO
 --    @CompanyId       INT              - ID de la empresa.
 --    @CostCenterCode  NVARCHAR(20)     - Codigo del centro de costo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_CostCenter_Get
+IF OBJECT_ID('dbo.usp_Acct_CostCenter_Get', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_CostCenter_Get;
+GO
+CREATE PROCEDURE dbo.usp_Acct_CostCenter_Get
     @CompanyId       INT,
     @CostCenterCode  NVARCHAR(20)
 AS
@@ -817,7 +849,9 @@ GO
 --    @Resultado       INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje         NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_CostCenter_Insert
+IF OBJECT_ID('dbo.usp_Acct_CostCenter_Insert', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_CostCenter_Insert;
+GO
+CREATE PROCEDURE dbo.usp_Acct_CostCenter_Insert
     @CompanyId   INT,
     @Code        NVARCHAR(20),
     @Name        NVARCHAR(200),
@@ -840,8 +874,11 @@ BEGIN
         RETURN;
     END;
 
-    DECLARE @ParentId INT = NULL;
-    DECLARE @Lvl TINYINT = 1;
+    DECLARE @ParentId INT;
+
+    SET @ParentId = NULL;
+    DECLARE @Lvl TINYINT;
+    SET @Lvl = 1;
 
     IF @ParentCode IS NOT NULL
     BEGIN
@@ -881,7 +918,9 @@ GO
 --    @Resultado       INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje         NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_CostCenter_Update
+IF OBJECT_ID('dbo.usp_Acct_CostCenter_Update', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_CostCenter_Update;
+GO
+CREATE PROCEDURE dbo.usp_Acct_CostCenter_Update
     @CompanyId   INT,
     @Code        NVARCHAR(20),
     @Name        NVARCHAR(200),
@@ -904,8 +943,11 @@ BEGIN
         RETURN;
     END;
 
-    DECLARE @ParentId INT = NULL;
-    DECLARE @Lvl TINYINT = 1;
+    DECLARE @ParentId INT;
+
+    SET @ParentId = NULL;
+    DECLARE @Lvl TINYINT;
+    SET @Lvl = 1;
 
     IF @ParentCode IS NOT NULL
     BEGIN
@@ -949,7 +991,9 @@ GO
 --    @Resultado       INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje         NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_CostCenter_Delete
+IF OBJECT_ID('dbo.usp_Acct_CostCenter_Delete', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_CostCenter_Delete;
+GO
+CREATE PROCEDURE dbo.usp_Acct_CostCenter_Delete
     @CompanyId   INT,
     @Code        NVARCHAR(20),
     @Resultado   INT           OUTPUT,
@@ -1007,7 +1051,9 @@ GO
 --    @FechaDesde  DATE             - Fecha inicio.
 --    @FechaHasta  DATE             - Fecha fin.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_PnLByCostCenter
+IF OBJECT_ID('dbo.usp_Acct_Report_PnLByCostCenter', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_PnLByCostCenter;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_PnLByCostCenter
     @CompanyId   INT,
     @FechaDesde  DATE,
     @FechaHasta  DATE
@@ -1054,7 +1100,9 @@ GO
 --  SP 13: usp_Acct_Budget_List
 --  Descripcion : Lista paginada de presupuestos.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_List
+IF OBJECT_ID('dbo.usp_Acct_Budget_List', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_List;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_List
     @CompanyId   INT,
     @FiscalYear  SMALLINT      = NULL,
     @Status      NVARCHAR(10)  = NULL,
@@ -1099,7 +1147,9 @@ GO
 --  SP 14: usp_Acct_Budget_Get
 --  Descripcion : Obtiene un presupuesto por su ID.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_Get
+IF OBJECT_ID('dbo.usp_Acct_Budget_Get', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_Get;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_Get
     @CompanyId  INT,
     @BudgetId   INT
 AS
@@ -1125,7 +1175,9 @@ GO
 --  SP 15: usp_Acct_Budget_GetLines
 --  Descripcion : Obtiene las lineas de un presupuesto.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_GetLines
+IF OBJECT_ID('dbo.usp_Acct_Budget_GetLines', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_GetLines;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_GetLines
     @BudgetId  INT
 AS
 BEGIN
@@ -1151,7 +1203,9 @@ GO
 --  Descripcion : Inserta un presupuesto con sus lineas via OPENJSON.
 --  LinesJson format: [{"accountCode":"5.1.01","month01":100,...,"month12":100,"notes":""}]
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_Insert
+IF OBJECT_ID('dbo.usp_Acct_Budget_Insert', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_Insert;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_Insert
     @CompanyId       INT,
     @Name            NVARCHAR(200),
     @FiscalYear      SMALLINT,
@@ -1179,36 +1233,33 @@ BEGIN
         INSERT INTO acct.Budget (CompanyId, BudgetName, FiscalYear, CostCenterCode)
         VALUES (@CompanyId, @Name, @FiscalYear, @CostCenterCode);
 
-        DECLARE @BudgetId INT = SCOPE_IDENTITY();
+        DECLARE @BudgetId INT;
 
+        SET @BudgetId = SCOPE_IDENTITY();
+
+        DECLARE @XmlLines XML;
+        SET @XmlLines = CAST(@LinesJson AS XML);
         INSERT INTO acct.BudgetLine (
             BudgetId, AccountCode,
             Month01, Month02, Month03, Month04, Month05, Month06,
             Month07, Month08, Month09, Month10, Month11, Month12, Notes
         )
         SELECT @BudgetId,
-               j.AccountCode,
-               ISNULL(j.Month01, 0), ISNULL(j.Month02, 0), ISNULL(j.Month03, 0),
-               ISNULL(j.Month04, 0), ISNULL(j.Month05, 0), ISNULL(j.Month06, 0),
-               ISNULL(j.Month07, 0), ISNULL(j.Month08, 0), ISNULL(j.Month09, 0),
-               ISNULL(j.Month10, 0), ISNULL(j.Month11, 0), ISNULL(j.Month12, 0),
-               j.Notes
-        FROM OPENJSON(@LinesJson) WITH (
-            AccountCode NVARCHAR(20) '$.accountCode',
-            Month01     DECIMAL(18,2) '$.month01',
-            Month02     DECIMAL(18,2) '$.month02',
-            Month03     DECIMAL(18,2) '$.month03',
-            Month04     DECIMAL(18,2) '$.month04',
-            Month05     DECIMAL(18,2) '$.month05',
-            Month06     DECIMAL(18,2) '$.month06',
-            Month07     DECIMAL(18,2) '$.month07',
-            Month08     DECIMAL(18,2) '$.month08',
-            Month09     DECIMAL(18,2) '$.month09',
-            Month10     DECIMAL(18,2) '$.month10',
-            Month11     DECIMAL(18,2) '$.month11',
-            Month12     DECIMAL(18,2) '$.month12',
-            Notes       NVARCHAR(200) '$.notes'
-        ) j;
+               x.r.value('(accountCode)[1]', 'NVARCHAR(20)'),
+               ISNULL(x.r.value('(month01)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month02)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month03)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month04)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month05)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month06)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month07)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month08)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month09)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month10)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month11)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month12)[1]', 'DECIMAL(18,2)'), 0),
+               x.r.value('(notes)[1]', 'NVARCHAR(200)')
+        FROM @XmlLines.nodes('/lines/line') x(r);
 
         COMMIT TRAN;
         SET @Resultado = 1;
@@ -1226,7 +1277,9 @@ GO
 --  SP 17: usp_Acct_Budget_Update
 --  Descripcion : Actualiza un presupuesto y reemplaza sus lineas.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_Update
+IF OBJECT_ID('dbo.usp_Acct_Budget_Update', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_Update;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_Update
     @CompanyId   INT,
     @BudgetId    INT,
     @Name        NVARCHAR(200),
@@ -1260,34 +1313,29 @@ BEGIN
 
         DELETE FROM acct.BudgetLine WHERE BudgetId = @BudgetId;
 
+        DECLARE @XmlLines2 XML;
+        SET @XmlLines2 = CAST(@LinesJson AS XML);
         INSERT INTO acct.BudgetLine (
             BudgetId, AccountCode,
             Month01, Month02, Month03, Month04, Month05, Month06,
             Month07, Month08, Month09, Month10, Month11, Month12, Notes
         )
         SELECT @BudgetId,
-               j.AccountCode,
-               ISNULL(j.Month01, 0), ISNULL(j.Month02, 0), ISNULL(j.Month03, 0),
-               ISNULL(j.Month04, 0), ISNULL(j.Month05, 0), ISNULL(j.Month06, 0),
-               ISNULL(j.Month07, 0), ISNULL(j.Month08, 0), ISNULL(j.Month09, 0),
-               ISNULL(j.Month10, 0), ISNULL(j.Month11, 0), ISNULL(j.Month12, 0),
-               j.Notes
-        FROM OPENJSON(@LinesJson) WITH (
-            AccountCode NVARCHAR(20) '$.accountCode',
-            Month01     DECIMAL(18,2) '$.month01',
-            Month02     DECIMAL(18,2) '$.month02',
-            Month03     DECIMAL(18,2) '$.month03',
-            Month04     DECIMAL(18,2) '$.month04',
-            Month05     DECIMAL(18,2) '$.month05',
-            Month06     DECIMAL(18,2) '$.month06',
-            Month07     DECIMAL(18,2) '$.month07',
-            Month08     DECIMAL(18,2) '$.month08',
-            Month09     DECIMAL(18,2) '$.month09',
-            Month10     DECIMAL(18,2) '$.month10',
-            Month11     DECIMAL(18,2) '$.month11',
-            Month12     DECIMAL(18,2) '$.month12',
-            Notes       NVARCHAR(200) '$.notes'
-        ) j;
+               x.r.value('(accountCode)[1]', 'NVARCHAR(20)'),
+               ISNULL(x.r.value('(month01)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month02)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month03)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month04)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month05)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month06)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month07)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month08)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month09)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month10)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month11)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(month12)[1]', 'DECIMAL(18,2)'), 0),
+               x.r.value('(notes)[1]', 'NVARCHAR(200)')
+        FROM @XmlLines2.nodes('/lines/line') x(r);
 
         COMMIT TRAN;
         SET @Resultado = 1;
@@ -1305,7 +1353,9 @@ GO
 --  SP 18: usp_Acct_Budget_Delete
 --  Descripcion : Eliminacion logica de un presupuesto.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_Delete
+IF OBJECT_ID('dbo.usp_Acct_Budget_Delete', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_Delete;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_Delete
     @CompanyId   INT,
     @BudgetId    INT,
     @Resultado   INT           OUTPUT,
@@ -1345,7 +1395,9 @@ GO
 --    @FechaDesde  DATE             - Fecha inicio del rango real.
 --    @FechaHasta  DATE             - Fecha fin del rango real.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Budget_Variance
+IF OBJECT_ID('dbo.usp_Acct_Budget_Variance', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Budget_Variance;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Budget_Variance
     @CompanyId   INT,
     @BudgetId    INT,
     @FechaDesde  DATE,
@@ -1392,7 +1444,9 @@ GO
 --  SP 20: usp_Acct_RecurringEntry_List
 --  Descripcion : Lista paginada de plantillas de asientos recurrentes.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_List
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_List', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_List;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_List
     @CompanyId   INT,
     @IsActive    BIT           = NULL,
     @Page        INT           = 1,
@@ -1436,7 +1490,9 @@ GO
 --  SP 21: usp_Acct_RecurringEntry_Get
 --  Descripcion : Obtiene una plantilla recurrente por su ID.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_Get
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_Get', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_Get;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_Get
     @CompanyId         INT,
     @RecurringEntryId  INT
 AS
@@ -1465,7 +1521,9 @@ GO
 --  SP 22: usp_Acct_RecurringEntry_GetLines
 --  Descripcion : Obtiene las lineas de una plantilla recurrente.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_GetLines
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_GetLines', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_GetLines;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_GetLines
     @RecurringEntryId  INT
 AS
 BEGIN
@@ -1490,7 +1548,9 @@ GO
 --  Descripcion : Inserta plantilla recurrente con lineas via OPENJSON.
 --  LinesJson: [{"accountCode":"5.1.01","description":"...","costCenterCode":null,"debit":100,"credit":0}]
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_Insert
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_Insert', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_Insert;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_Insert
     @CompanyId          INT,
     @TemplateName       NVARCHAR(200),
     @Frequency          NVARCHAR(10),
@@ -1519,12 +1579,11 @@ BEGIN
     DECLARE @SumDebit  DECIMAL(18,2);
     DECLARE @SumCredit DECIMAL(18,2);
 
-    SELECT @SumDebit  = SUM(ISNULL(j.Debit, 0)),
-           @SumCredit = SUM(ISNULL(j.Credit, 0))
-    FROM OPENJSON(@LinesJson) WITH (
-        Debit  DECIMAL(18,2) '$.debit',
-        Credit DECIMAL(18,2) '$.credit'
-    ) j;
+    DECLARE @XmlCheck XML;
+    SET @XmlCheck = CAST(@LinesJson AS XML);
+    SELECT @SumDebit  = SUM(ISNULL(x.r.value('(debit)[1]', 'DECIMAL(18,2)'), 0)),
+           @SumCredit = SUM(ISNULL(x.r.value('(credit)[1]', 'DECIMAL(18,2)'), 0))
+    FROM @XmlCheck.nodes('/lines/line') x(r);
 
     IF ABS(ISNULL(@SumDebit, 0) - ISNULL(@SumCredit, 0)) > 0.01
     BEGIN
@@ -1545,24 +1604,22 @@ BEGIN
             @MaxExecutions, @TipoAsiento, @Concepto
         );
 
-        DECLARE @ReId INT = SCOPE_IDENTITY();
+        DECLARE @ReId INT;
+
+        SET @ReId = SCOPE_IDENTITY();
+        DECLARE @XmlLines3 XML;
+        SET @XmlLines3 = CAST(@LinesJson AS XML);
 
         INSERT INTO acct.RecurringEntryLine (
             RecurringEntryId, AccountCode, Description, CostCenterCode, Debit, Credit
         )
         SELECT @ReId,
-               j.AccountCode,
-               j.Description,
-               j.CostCenterCode,
-               ISNULL(j.Debit, 0),
-               ISNULL(j.Credit, 0)
-        FROM OPENJSON(@LinesJson) WITH (
-            AccountCode    NVARCHAR(20)  '$.accountCode',
-            Description    NVARCHAR(200) '$.description',
-            CostCenterCode NVARCHAR(20)  '$.costCenterCode',
-            Debit          DECIMAL(18,2) '$.debit',
-            Credit         DECIMAL(18,2) '$.credit'
-        ) j;
+               x.r.value('(accountCode)[1]', 'NVARCHAR(20)'),
+               x.r.value('(description)[1]', 'NVARCHAR(200)'),
+               x.r.value('(costCenterCode)[1]', 'NVARCHAR(20)'),
+               ISNULL(x.r.value('(debit)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(credit)[1]', 'DECIMAL(18,2)'), 0)
+        FROM @XmlLines3.nodes('/lines/line') x(r);
 
         COMMIT TRAN;
         SET @Resultado = 1;
@@ -1580,7 +1637,9 @@ GO
 --  SP 24: usp_Acct_RecurringEntry_Update
 --  Descripcion : Actualiza plantilla recurrente y reemplaza sus lineas.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_Update
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_Update', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_Update;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_Update
     @CompanyId          INT,
     @RecurringEntryId   INT,
     @TemplateName       NVARCHAR(200),
@@ -1621,22 +1680,18 @@ BEGIN
 
         DELETE FROM acct.RecurringEntryLine WHERE RecurringEntryId = @RecurringEntryId;
 
+        DECLARE @XmlLines4 XML;
+        SET @XmlLines4 = CAST(@LinesJson AS XML);
         INSERT INTO acct.RecurringEntryLine (
             RecurringEntryId, AccountCode, Description, CostCenterCode, Debit, Credit
         )
         SELECT @RecurringEntryId,
-               j.AccountCode,
-               j.Description,
-               j.CostCenterCode,
-               ISNULL(j.Debit, 0),
-               ISNULL(j.Credit, 0)
-        FROM OPENJSON(@LinesJson) WITH (
-            AccountCode    NVARCHAR(20)  '$.accountCode',
-            Description    NVARCHAR(200) '$.description',
-            CostCenterCode NVARCHAR(20)  '$.costCenterCode',
-            Debit          DECIMAL(18,2) '$.debit',
-            Credit         DECIMAL(18,2) '$.credit'
-        ) j;
+               x.r.value('(accountCode)[1]', 'NVARCHAR(20)'),
+               x.r.value('(description)[1]', 'NVARCHAR(200)'),
+               x.r.value('(costCenterCode)[1]', 'NVARCHAR(20)'),
+               ISNULL(x.r.value('(debit)[1]', 'DECIMAL(18,2)'), 0),
+               ISNULL(x.r.value('(credit)[1]', 'DECIMAL(18,2)'), 0)
+        FROM @XmlLines4.nodes('/lines/line') x(r);
 
         COMMIT TRAN;
         SET @Resultado = 1;
@@ -1654,7 +1709,9 @@ GO
 --  SP 25: usp_Acct_RecurringEntry_Delete
 --  Descripcion : Eliminacion logica de una plantilla recurrente.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_Delete
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_Delete', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_Delete;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_Delete
     @CompanyId          INT,
     @RecurringEntryId   INT,
     @Resultado          INT           OUTPUT,
@@ -1697,7 +1754,9 @@ GO
 --    @Resultado          INT OUTPUT   - 1=exito, 0=error.
 --    @Mensaje            NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_Execute
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_Execute', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_Execute;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_Execute
     @CompanyId          INT,
     @RecurringEntryId   INT,
     @ExecutionDate      DATE,
@@ -1746,7 +1805,8 @@ BEGIN
         BEGIN TRAN;
 
         -- PeriodCode
-        DECLARE @PeriodCodeFmt NVARCHAR(7) = LEFT(CONVERT(CHAR(10), @ExecutionDate, 120), 4)
+        DECLARE @PeriodCodeFmt NVARCHAR(7);
+        SET @PeriodCodeFmt = LEFT(CONVERT(CHAR(10), @ExecutionDate, 120), 4)
             + '-' + SUBSTRING(CONVERT(CHAR(10), @ExecutionDate, 120), 6, 2);
 
         -- Generar numero de asiento
@@ -1760,7 +1820,8 @@ BEGIN
         FROM   acct.JournalEntry
         WHERE  CompanyId = @CompanyId AND EntryType = @TipoAsiento AND PeriodCode = @PeriodCodeFmt;
 
-        DECLARE @EntryNumber NVARCHAR(40) = @TipoAsiento + N'-'
+        DECLARE @EntryNumber NVARCHAR(40);
+        SET @EntryNumber = @TipoAsiento + N'-'
             + REPLACE(@PeriodCodeFmt, '-', '') + N'-'
             + RIGHT('000000' + CAST(@SeqNum AS NVARCHAR(6)), 6);
 
@@ -1776,7 +1837,9 @@ BEGIN
             'VES', 0, 0, 'APPROVED', 'RECURRENTE', @UserId
         );
 
-        DECLARE @EntryId BIGINT = SCOPE_IDENTITY();
+        DECLARE @EntryId BIGINT;
+
+        SET @EntryId = SCOPE_IDENTITY();
 
         -- Insertar lineas desde la plantilla
         INSERT INTO acct.JournalEntryLine (
@@ -1844,7 +1907,9 @@ GO
 --  SP 27: usp_Acct_RecurringEntry_GetDue
 --  Descripcion : Devuelve plantillas recurrentes cuya fecha <= hoy y estan activas.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_RecurringEntry_GetDue
+IF OBJECT_ID('dbo.usp_Acct_RecurringEntry_GetDue', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_RecurringEntry_GetDue;
+GO
+CREATE PROCEDURE dbo.usp_Acct_RecurringEntry_GetDue
     @CompanyId  INT
 AS
 BEGIN
@@ -1885,7 +1950,9 @@ GO
 --    @Resultado   INT OUTPUT       - 1=exito, 0=error.
 --    @Mensaje     NVARCHAR(500) OUTPUT - Mensaje descriptivo.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Entry_Reverse
+IF OBJECT_ID('dbo.usp_Acct_Entry_Reverse', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Entry_Reverse;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Entry_Reverse
     @CompanyId   INT,
     @EntryId     INT,
     @Fecha       DATE,
@@ -1923,10 +1990,13 @@ BEGIN
     BEGIN TRY
         BEGIN TRAN;
 
-        DECLARE @PeriodCodeFmt NVARCHAR(7) = LEFT(CONVERT(CHAR(10), @Fecha, 120), 4)
+        DECLARE @PeriodCodeFmt NVARCHAR(7);
+        SET @PeriodCodeFmt = LEFT(CONVERT(CHAR(10), @Fecha, 120), 4)
             + '-' + SUBSTRING(CONVERT(CHAR(10), @Fecha, 120), 6, 2);
 
-        DECLARE @RevNumber NVARCHAR(40) = N'REV-' + @OrigNumber;
+        DECLARE @RevNumber NVARCHAR(40);
+
+        SET @RevNumber = N'REV-' + @OrigNumber;
 
         -- Insertar asiento de reversion
         INSERT INTO acct.JournalEntry (
@@ -1941,7 +2011,9 @@ BEGIN
             @OrigCurrency, @OrigRate, 0, 0, 'APPROVED', 'CONTABILIDAD', @UserId
         );
 
-        DECLARE @NewEntryId BIGINT = SCOPE_IDENTITY();
+        DECLARE @NewEntryId BIGINT;
+
+        SET @NewEntryId = SCOPE_IDENTITY();
 
         -- Insertar lineas con Debe/Haber invertidos
         INSERT INTO acct.JournalEntryLine (
@@ -1992,7 +2064,9 @@ GO
 --    @FechaDesde  DATE             - Fecha inicio.
 --    @FechaHasta  DATE             - Fecha fin.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_CashFlow
+IF OBJECT_ID('dbo.usp_Acct_Report_CashFlow', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_CashFlow;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_CashFlow
     @CompanyId   INT,
     @FechaDesde  DATE,
     @FechaHasta  DATE
@@ -2042,7 +2116,9 @@ GO
 --    @CompanyId  INT              - ID de la empresa.
 --    @Periodos   NVARCHAR(200)    - Periodos separados por coma, e.g. '202601,202602,202603'.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_BalanceCompMultiPeriod
+IF OBJECT_ID('dbo.usp_Acct_Report_BalanceCompMultiPeriod', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_BalanceCompMultiPeriod;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_BalanceCompMultiPeriod
     @CompanyId  INT,
     @Periodos   NVARCHAR(200)
 AS
@@ -2060,8 +2136,10 @@ BEGIN
     WHERE LEN(LTRIM(RTRIM(value))) = 6;
 
     -- Construir query dinamico con PIVOT
-    DECLARE @Cols NVARCHAR(MAX) = N'';
-    DECLARE @ColsSelect NVARCHAR(MAX) = N'';
+    DECLARE @Cols NVARCHAR(MAX);
+    SET @Cols = N'';
+    DECLARE @ColsSelect NVARCHAR(MAX);
+    SET @ColsSelect = N'';
 
     SELECT @Cols = @Cols + N',' + QUOTENAME(PeriodCode),
            @ColsSelect = @ColsSelect + N',ISNULL(' + QUOTENAME(PeriodCode) + N',0) AS ' + QUOTENAME(PeriodCode)
@@ -2076,7 +2154,8 @@ BEGIN
         RETURN;
     END;
 
-    DECLARE @SQL NVARCHAR(MAX) = N'
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = N'
     SELECT AccountCode, AccountName, AccountType ' + @ColsSelect + N'
     FROM (
         SELECT a.AccountCode, a.AccountName, a.AccountType,
@@ -2108,7 +2187,9 @@ GO
 --    @CompanyId  INT              - ID de la empresa.
 --    @Periodos   NVARCHAR(200)    - Periodos separados por coma (YYYYMM).
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_PnLMultiPeriod
+IF OBJECT_ID('dbo.usp_Acct_Report_PnLMultiPeriod', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_PnLMultiPeriod;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_PnLMultiPeriod
     @CompanyId  INT,
     @Periodos   NVARCHAR(200)
 AS
@@ -2124,8 +2205,11 @@ BEGIN
     FROM STRING_SPLIT(@Periodos, ',')
     WHERE LEN(LTRIM(RTRIM(value))) = 6;
 
-    DECLARE @Cols NVARCHAR(MAX) = N'';
-    DECLARE @ColsSelect NVARCHAR(MAX) = N'';
+    DECLARE @Cols NVARCHAR(MAX);
+
+    SET @Cols = N'';
+    DECLARE @ColsSelect NVARCHAR(MAX);
+    SET @ColsSelect = N'';
 
     SELECT @Cols = @Cols + N',' + QUOTENAME(PeriodCode),
            @ColsSelect = @ColsSelect + N',ISNULL(' + QUOTENAME(PeriodCode) + N',0) AS ' + QUOTENAME(PeriodCode)
@@ -2140,7 +2224,8 @@ BEGIN
         RETURN;
     END;
 
-    DECLARE @SQL NVARCHAR(MAX) = N'
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = N'
     SELECT AccountCode, AccountName, AccountType ' + @ColsSelect + N'
     FROM (
         SELECT a.AccountCode, a.AccountName, a.AccountType,
@@ -2177,7 +2262,9 @@ GO
 --    @CompanyId   INT              - ID de la empresa.
 --    @FechaCorte  DATE             - Fecha de corte para calculo de edad.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_AgingCxC
+IF OBJECT_ID('dbo.usp_Acct_Report_AgingCxC', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_AgingCxC;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_AgingCxC
     @CompanyId   INT,
     @FechaCorte  DATE
 AS
@@ -2213,7 +2300,9 @@ GO
 --    @CompanyId   INT              - ID de la empresa.
 --    @FechaCorte  DATE             - Fecha de corte.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_AgingCxP
+IF OBJECT_ID('dbo.usp_Acct_Report_AgingCxP', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_AgingCxP;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_AgingCxP
     @CompanyId   INT,
     @FechaCorte  DATE
 AS
@@ -2251,7 +2340,9 @@ GO
 --    @CompanyId   INT              - ID de la empresa.
 --    @FechaCorte  DATE             - Fecha de corte.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_FinancialRatios
+IF OBJECT_ID('dbo.usp_Acct_Report_FinancialRatios', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_FinancialRatios;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_FinancialRatios
     @CompanyId   INT,
     @FechaCorte  DATE
 AS
@@ -2259,15 +2350,24 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Acumular saldos por tipo de cuenta
-    DECLARE @ActivoCorriente   DECIMAL(18,2) = 0;
-    DECLARE @ActivoNoCorriente DECIMAL(18,2) = 0;
-    DECLARE @PasivoCorriente   DECIMAL(18,2) = 0;
-    DECLARE @PasivoNoCorriente DECIMAL(18,2) = 0;
-    DECLARE @Patrimonio        DECIMAL(18,2) = 0;
-    DECLARE @Ingresos          DECIMAL(18,2) = 0;
-    DECLARE @CostoVentas       DECIMAL(18,2) = 0;
-    DECLARE @Gastos            DECIMAL(18,2) = 0;
-    DECLARE @Inventario        DECIMAL(18,2) = 0;
+    DECLARE @ActivoCorriente DECIMAL(18,2);
+    SET @ActivoCorriente = 0;
+    DECLARE @ActivoNoCorriente DECIMAL(18,2);
+    SET @ActivoNoCorriente = 0;
+    DECLARE @PasivoCorriente DECIMAL(18,2);
+    SET @PasivoCorriente = 0;
+    DECLARE @PasivoNoCorriente DECIMAL(18,2);
+    SET @PasivoNoCorriente = 0;
+    DECLARE @Patrimonio DECIMAL(18,2);
+    SET @Patrimonio = 0;
+    DECLARE @Ingresos DECIMAL(18,2);
+    SET @Ingresos = 0;
+    DECLARE @CostoVentas DECIMAL(18,2);
+    SET @CostoVentas = 0;
+    DECLARE @Gastos DECIMAL(18,2);
+    SET @Gastos = 0;
+    DECLARE @Inventario DECIMAL(18,2);
+    SET @Inventario = 0;
 
     SELECT
         @ActivoCorriente   = SUM(CASE WHEN a.AccountCode LIKE '1.1%' THEN jel.DebitAmount - jel.CreditAmount ELSE 0 END),
@@ -2288,9 +2388,13 @@ BEGIN
       AND  je.IsDeleted  = 0
       AND  a.IsDeleted   = 0;
 
-    DECLARE @TotalPasivo DECIMAL(18,2) = ISNULL(@PasivoCorriente, 0) + ISNULL(@PasivoNoCorriente, 0);
-    DECLARE @UtilidadBruta DECIMAL(18,2) = ISNULL(@Ingresos, 0) - ISNULL(@CostoVentas, 0);
-    DECLARE @UtilidadNeta  DECIMAL(18,2) = ISNULL(@Ingresos, 0) - ISNULL(@Gastos, 0);
+    DECLARE @TotalPasivo DECIMAL(18,2);
+
+    SET @TotalPasivo = ISNULL(@PasivoCorriente, 0) + ISNULL(@PasivoNoCorriente, 0);
+    DECLARE @UtilidadBruta DECIMAL(18,2);
+    SET @UtilidadBruta = ISNULL(@Ingresos, 0) - ISNULL(@CostoVentas, 0);
+    DECLARE @UtilidadNeta DECIMAL(18,2);
+    SET @UtilidadNeta = ISNULL(@Ingresos, 0) - ISNULL(@Gastos, 0);
 
     SELECT N'CurrentRatio' AS RatioName,
            CASE WHEN ISNULL(@PasivoCorriente, 0) = 0 THEN 0
@@ -2336,7 +2440,9 @@ GO
 --    @FechaDesde  DATE             - Fecha inicio.
 --    @FechaHasta  DATE             - Fecha fin.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_TaxSummary
+IF OBJECT_ID('dbo.usp_Acct_Report_TaxSummary', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_TaxSummary;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_TaxSummary
     @CompanyId   INT,
     @FechaDesde  DATE,
     @FechaHasta  DATE
@@ -2402,7 +2508,9 @@ GO
 --    @Limit        INT              - Registros por pagina (default 50).
 --    @TotalCount   INT OUTPUT       - Total de registros.
 -- =============================================================================
-CREATE OR ALTER PROCEDURE dbo.usp_Acct_Report_DrillDown
+IF OBJECT_ID('dbo.usp_Acct_Report_DrillDown', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Acct_Report_DrillDown;
+GO
+CREATE PROCEDURE dbo.usp_Acct_Report_DrillDown
     @CompanyId    INT,
     @AccountCode  NVARCHAR(20),
     @FechaDesde   DATE,
@@ -2442,7 +2550,8 @@ BEGIN
       AND  je.IsDeleted  = 0;
 
     -- Saldo anterior al rango
-    DECLARE @SaldoAnterior DECIMAL(18,2) = 0;
+    DECLARE @SaldoAnterior DECIMAL(18,2);
+    SET @SaldoAnterior = 0;
     SELECT @SaldoAnterior = ISNULL(SUM(jel.DebitAmount - jel.CreditAmount), 0)
     FROM   acct.JournalEntryLine jel
     JOIN   acct.JournalEntry je ON je.JournalEntryId = jel.JournalEntryId

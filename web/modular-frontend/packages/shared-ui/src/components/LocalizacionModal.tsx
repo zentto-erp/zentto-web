@@ -17,6 +17,7 @@ import {
     CircularProgress,
 } from '@mui/material';
 import { getSession } from 'next-auth/react';
+import { useCountries, type CountryRecord } from '@datqbox/shared-api';
 
 export interface LocalizacionConfig {
     pais: string;
@@ -35,13 +36,6 @@ interface LocalizacionModalProps {
     onSave: (newConfig: LocalizacionConfig) => void;
 }
 
-const PREDEFINED_COUNTRIES = [
-    { code: 'VE', name: 'Venezuela', defaultLoc: { preciosIncluyenIva: true, tasaCambio: 45.0, monedaPrincipal: 'Bs', monedaReferencia: '$', tasaIgtf: 3, aplicarIgtf: true } },
-    { code: 'CO', name: 'Colombia', defaultLoc: { preciosIncluyenIva: false, tasaCambio: 4000, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-    { code: 'MX', name: 'México', defaultLoc: { preciosIncluyenIva: false, tasaCambio: 18.0, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-    { code: 'ES', name: 'España', defaultLoc: { preciosIncluyenIva: true, tasaCambio: 1.0, monedaPrincipal: '€', monedaReferencia: '$', tasaIgtf: 0, aplicarIgtf: false } },
-    { code: 'US', name: 'Estados Unidos', defaultLoc: { preciosIncluyenIva: false, tasaCambio: 1.0, monedaPrincipal: '$', monedaReferencia: 'EUR', tasaIgtf: 0, aplicarIgtf: false } },
-];
 
 type TasasBcvResponse = {
     success?: boolean;
@@ -62,6 +56,7 @@ function normalizeRefCurrency(monedaReferencia: string): 'USD' | 'EUR' | null {
 }
 
 export function LocalizacionModal({ open, onClose, currentConfig, onSave }: LocalizacionModalProps) {
+    const { data: countries = [] } = useCountries();
     const [config, setConfig] = useState<LocalizacionConfig>(currentConfig);
     const [bcvRates, setBcvRates] = useState<TasasBcvResponse | null>(null);
     const [loadingRates, setLoadingRates] = useState(false);
@@ -127,12 +122,17 @@ export function LocalizacionModal({ open, onClose, currentConfig, onSave }: Loca
 
     const handleCountryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const pais = e.target.value;
-        const preset = PREDEFINED_COUNTRIES.find(c => c.code === pais)?.defaultLoc;
-        if (preset) {
-            const nextConfig = {
+        const country = countries.find(c => c.CountryCode === pais);
+        if (country) {
+            const nextConfig: LocalizacionConfig = {
                 ...config,
                 pais,
-                ...preset
+                preciosIncluyenIva: country.PricesIncludeTax,
+                tasaCambio: country.DefaultExchangeRate,
+                monedaPrincipal: country.CurrencySymbol,
+                monedaReferencia: country.ReferenceCurrencySymbol,
+                tasaIgtf: country.SpecialTaxRate,
+                aplicarIgtf: country.SpecialTaxEnabled,
             };
             setConfig(applyBcvRateIfNeeded(nextConfig));
         } else {
@@ -163,9 +163,9 @@ export function LocalizacionModal({ open, onClose, currentConfig, onSave }: Loca
                             onChange={handleCountryChange}
                             helperText="Seleccionar un país carga los defaults para moneda e impuestos automáticos."
                         >
-                            {PREDEFINED_COUNTRIES.map(c => (
-                                <MenuItem key={c.code} value={c.code}>
-                                    {c.name}
+                            {countries.map(c => (
+                                <MenuItem key={c.CountryCode} value={c.CountryCode}>
+                                    {c.CountryName}
                                 </MenuItem>
                             ))}
                         </TextField>

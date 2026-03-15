@@ -87,7 +87,7 @@ const ventaSchema = z.object({
     esperaOrigenId: z.number().optional(),
     empresaId: z.number().int().positive().optional(),
     sucursalId: z.number().int().nonnegative().optional(),
-    countryCode: z.enum(["VE", "ES"]).optional(),
+    countryCode: z.string().length(2).toUpperCase().optional(),
     invoiceTypeHint: z.string().optional(),
     fiscalPrinterSerial: z.string().optional(),
     fiscalControlNumber: z.string().optional(),
@@ -126,7 +126,7 @@ posEsperaRouter.post("/ventas", async (req, res) => {
 
 const contabilizarVentaSchema = z.object({
     codUsuario: z.string().optional(),
-    countryCode: z.enum(["VE", "ES"]).optional(),
+    countryCode: z.string().length(2).toUpperCase().optional(),
     currency: z.string().optional(),
     exchangeRate: z.number().positive().optional(),
 });

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { JwtPayload } from "../auth/jwt.js";
 import type { RequestScope } from "../context/request-context.js";
+import { callSp } from "../db/query.js";
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_WITH_TZ_REGEX =
@@ -8,10 +9,24 @@ const ISO_WITH_TZ_REGEX =
 const ISO_WITHOUT_TZ_REGEX =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,7})?)?$/i;
 
-const COUNTRY_TIMEZONES: Record<string, string> = {
-  VE: "America/Caracas",
-  ES: "Europe/Madrid",
-};
+let _countryTimezones: Record<string, string> | null = null;
+
+async function getCountryTimezones(): Promise<Record<string, string>> {
+  if (_countryTimezones) return _countryTimezones;
+  try {
+    const rows = await callSp<{ CountryCode: string; TimeZoneIana: string }>(
+      "usp_CFG_Country_List",
+      { ActiveOnly: 1 }
+    );
+    _countryTimezones = {};
+    for (const r of rows) {
+      _countryTimezones[r.CountryCode] = r.TimeZoneIana;
+    }
+    return _countryTimezones;
+  } catch {
+    return { VE: "America/Caracas", ES: "Europe/Madrid" };
+  }
+}
 
 type ScopedRequest = Request & {
   user?: JwtPayload;
@@ -259,7 +274,7 @@ function resolveCountryCode(req: ScopedRequest) {
   return null;
 }
 
-function resolveTimeZone(req: ScopedRequest) {
+async function resolveTimeZone(req: ScopedRequest) {
   const countryCode = resolveCountryCode(req);
   const fromScope = normalizeTimeZone(req.scope?.timeZone);
   if (fromScope) {
@@ -277,17 +292,18 @@ function resolveTimeZone(req: ScopedRequest) {
     return { countryCode: countryCode ?? "UTC", timeZone: fromHeader };
   }
 
-  const timeZone = countryCode ? COUNTRY_TIMEZONES[countryCode] : null;
+  const countryTimezones = await getCountryTimezones();
+  const timeZone = countryCode ? countryTimezones[countryCode] : null;
   return { countryCode: countryCode ?? "UTC", timeZone: timeZone ?? "UTC" };
 }
 
-export function normalizeRequestDateTimesToUtc(
+export async function normalizeRequestDateTimesToUtc(
   req: Request,
   _res: Response,
   next: NextFunction
 ) {
   const scopedReq = req as ScopedRequest;
-  const { timeZone } = resolveTimeZone(scopedReq);
+  const { timeZone } = await resolveTimeZone(scopedReq);
   if (req.body && typeof req.body === "object") {
     req.body = toUtcValue(req.body, timeZone);
   }
@@ -312,11 +328,15 @@ export function localizeResponseDateTimes(
   const originalJson = res.json.bind(res);
 
   res.json = ((body: unknown) => {
-    const { countryCode, timeZone } = resolveTimeZone(scopedReq);
-    res.setHeader("x-datetime-storage", "UTC");
-    res.setHeader("x-datetime-country", countryCode);
-    res.setHeader("x-datetime-timezone", timeZone);
-    return originalJson(toLocalizedValue(body, timeZone));
+    resolveTimeZone(scopedReq).then(({ countryCode, timeZone }) => {
+      res.setHeader("x-datetime-storage", "UTC");
+      res.setHeader("x-datetime-country", countryCode);
+      res.setHeader("x-datetime-timezone", timeZone);
+      originalJson(toLocalizedValue(body, timeZone));
+    }).catch(() => {
+      originalJson(body);
+    });
+    return res;
   }) as Response["json"];
 
   next();

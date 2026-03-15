@@ -3,6 +3,7 @@ import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessRestauranteAccounting } from "../contabilidad/integracion.service.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { getCountryCurrency } from "../_shared/country-currency.js";
 import { consumeSupervisorOverride, createSupervisorOverride, validateSupervisorCredentials } from "../_shared/supervisor-override.service.js";
 
 interface DefaultScope {
@@ -47,7 +48,7 @@ async function getDefaultScope(): Promise<DefaultScope> {
       ...defaultScopeCache,
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
-      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as CountryCode,
+      countryCode: activeScope.countryCode ?? defaultScopeCache.countryCode,
     };
   }
   if (defaultScopeCache) return defaultScopeCache;
@@ -60,14 +61,14 @@ async function getDefaultScope(): Promise<DefaultScope> {
   defaultScopeCache = {
     companyId: Number(row?.companyId ?? 1),
     branchId: Number(row?.branchId ?? 1),
-    countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
+    countryCode: String(row?.countryCode ?? "VE").toUpperCase(),
   };
   if (activeScope) {
     return {
       ...defaultScopeCache,
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
-      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as CountryCode,
+      countryCode: activeScope.countryCode ?? defaultScopeCache.countryCode,
     };
   }
   return defaultScopeCache;
@@ -272,7 +273,7 @@ export async function agregarItemPedido(params: {
     return { ok: false, error: "pedido_not_open", executionMode: "ts_canonical" as const };
   }
 
-  const countryCode: CountryCode = String(order.countryCode ?? "VE").toUpperCase() === "ES" ? "ES" : "VE";
+  const countryCode: CountryCode = String(order.countryCode ?? "VE").toUpperCase();
   const product = await resolveProduct(Number(order.companyId), params.productoId);
 
   const quantity = Number(params.cantidad ?? 0);
@@ -496,7 +497,7 @@ async function inferCountryCodeFromFiscalConfig(empresaId: number, sucursalId: n
     { EmpresaId: empresaId, SucursalId: sucursalId }
   );
 
-  return String(rows[0]?.countryCode ?? "VE").toUpperCase() === "ES" ? "ES" : "VE";
+  return String(rows[0]?.countryCode ?? "VE").toUpperCase();
 }
 
 async function getPedidoHeaderForClose(pedidoId: number) {
@@ -688,7 +689,7 @@ export async function cerrarPedido(params: {
         issueDate: params.invoiceDate ? new Date(params.invoiceDate) : new Date(),
         paymentMethod: "CAJA",
         codUsuario: params.codUsuario ?? (pedidoActual.codUsuario ? String(pedidoActual.codUsuario) : undefined),
-        currency: countryCode === "ES" ? "EUR" : "VES",
+        currency: await getCountryCurrency(countryCode),
         exchangeRate: 1,
         baseAmount,
         taxAmount,

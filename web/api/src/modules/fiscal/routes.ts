@@ -12,7 +12,7 @@ import {
   upsertFiscalConfig
 } from "./service.js";
 
-const countryCodeSchema = z.enum(["VE", "ES"]);
+const countryCodeSchema = z.string().length(2).toUpperCase();
 
 const fiscalConfigSchema = z.object({
   empresaId: z.number().int().positive(),

@@ -3,6 +3,7 @@ import { emitFiscalRecordFromTransaction } from "../fiscal/service.js";
 import { CountryCode } from "../fiscal/types.js";
 import { emitSaleAccountingEntry, reprocessPosAccounting } from "../contabilidad/integracion.service.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { getCountryCurrency } from "../_shared/country-currency.js";
 import { consumeSupervisorOverride } from "../_shared/supervisor-override.service.js";
 
 interface CartItem {
@@ -59,7 +60,7 @@ async function getDefaultScope(): Promise<DefaultScope> {
       ...defaultScopeCache,
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
-      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as CountryCode,
+      countryCode: activeScope.countryCode ?? defaultScopeCache.countryCode,
     };
   }
   if (defaultScopeCache) return defaultScopeCache;
@@ -72,14 +73,14 @@ async function getDefaultScope(): Promise<DefaultScope> {
   defaultScopeCache = {
     companyId: Number(row?.companyId ?? 1),
     branchId: Number(row?.branchId ?? 1),
-    countryCode: String(row?.countryCode ?? "VE") === "ES" ? "ES" : "VE",
+    countryCode: String(row?.countryCode ?? "VE").toUpperCase(),
   };
   if (activeScope) {
     return {
       ...defaultScopeCache,
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
-      countryCode: (activeScope.countryCode ?? defaultScopeCache.countryCode) as CountryCode,
+      countryCode: activeScope.countryCode ?? defaultScopeCache.countryCode,
     };
   }
   return defaultScopeCache;
@@ -649,7 +650,7 @@ export async function registrarVenta(data: {
       issueDate: new Date(),
       paymentMethod: data.metodoPago,
       codUsuario: data.codUsuario,
-      currency: scope.countryCode === "ES" ? "EUR" : "VES",
+      currency: await getCountryCurrency(scope.countryCode),
       exchangeRate: 1,
       baseAmount: netAmount,
       taxAmount,
