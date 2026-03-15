@@ -54,3 +54,10 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_bancos.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fin_pettycash.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ecommerce.sql
+
+-- ====================================================================
+-- RRHH: Beneficios, Obligaciones Legales, Salud Ocupacional
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_beneficios.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_obligaciones_legales.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_salud_ocupacional.sql

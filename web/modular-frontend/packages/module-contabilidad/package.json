@@ -11,6 +11,7 @@
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
+    "@datqbox/module-bancos": "*",
     "@datqbox/shared-api": "0.1.0",
     "@datqbox/shared-auth": "0.1.0",
     "@datqbox/shared-ui": "0.1.0",

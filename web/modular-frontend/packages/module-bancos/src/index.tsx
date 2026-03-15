@@ -25,6 +25,7 @@ export {
   useGenerarAjuste,
   useCerrarConciliacion,
 } from "./hooks/useConciliacionBancaria";
+export type { ConciliacionFilter } from "./hooks/useConciliacionBancaria";
 
 export {
   useCajaChicaBoxes,

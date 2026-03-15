@@ -9,6 +9,10 @@
 
 USE [DatqBoxWeb];
 GO
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
 
 -- =============================================================
 -- SCHEMA: hr (ensure exists)
@@ -271,8 +275,20 @@ BEGIN
             e.EmployeeId,
             e.EmployeeCode,
             e.EmployeeName,
-            e.MonthlySalary,
-            ROUND(e.MonthlySalary / 30.0, 2) AS DailySalary,
+            ISNULL((
+                SELECT TOP 1 prl.Amount
+                FROM hr.PayrollRun pr
+                INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                ORDER BY pr.CreatedAt DESC
+            ), 0) AS MonthlySalary,
+            ROUND(ISNULL((
+                SELECT TOP 1 prl.Amount
+                FROM hr.PayrollRun pr
+                INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                ORDER BY pr.CreatedAt DESC
+            ), 0) / 30.0, 2) AS DailySalary,
             -- Dias trabajados: desde mayor(fecha ingreso, inicio ano) hasta menor(hoy, fin ano)
             DATEDIFF(DAY,
                 CASE WHEN e.HireDate > @YearStart THEN e.HireDate ELSE @YearStart END,
@@ -291,7 +307,13 @@ BEGIN
             , 2) AS DaysEntitled,
             -- GrossAmount = DailySalary * DaysEntitled
             ROUND(
-                (e.MonthlySalary / 30.0) *
+                (ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) / 30.0) *
                 ROUND(
                     CAST(
                         (DATEDIFF(DAY,
@@ -304,7 +326,13 @@ BEGIN
             , 2) AS GrossAmount,
             -- INCE: 0.5% del monto bruto
             ROUND(
-                (e.MonthlySalary / 30.0) *
+                (ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) / 30.0) *
                 ROUND(
                     CAST(
                         (DATEDIFF(DAY,
@@ -317,7 +345,13 @@ BEGIN
             , 2) AS InceDeduction,
             -- NetAmount = GrossAmount - InceDeduction
             ROUND(
-                (e.MonthlySalary / 30.0) *
+                (ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) / 30.0) *
                 ROUND(
                     CAST(
                         (DATEDIFF(DAY,
@@ -330,7 +364,13 @@ BEGIN
             , 2)
             -
             ROUND(
-                (e.MonthlySalary / 30.0) *
+                (ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) / 30.0) *
                 ROUND(
                     CAST(
                         (DATEDIFF(DAY,
@@ -343,8 +383,7 @@ BEGIN
             , 2) AS NetAmount
         FROM master.Employee e
         WHERE e.CompanyId = @CompanyId
-          AND e.BranchId = @BranchId
-          AND e.Status = 'ACTIVO'
+          AND e.IsActive = 1
           AND e.HireDate <= @YearEnd
           AND (e.TerminationDate IS NULL OR e.TerminationDate >= @YearStart);
 
@@ -576,7 +615,13 @@ BEGIN
             e.EmployeeName,
             @FiscalYear,
             @Quarter,
-            ROUND(e.MonthlySalary / 30.0, 2) AS DailySalary,
+            ROUND(ISNULL((
+                SELECT TOP 1 prl.Amount
+                FROM hr.PayrollRun pr
+                INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                ORDER BY pr.CreatedAt DESC
+            ), 0) / 30.0, 2) AS DailySalary,
             15 AS DaysDeposited,
             -- Bonus: 2 dias por cada ano despues del primero, max 30
             CASE
@@ -590,7 +635,13 @@ BEGIN
             END AS BonusDays,
             -- DepositAmount = DailySalary * (15 + BonusDays)
             ROUND(
-                (e.MonthlySalary / 30.0) * (
+                (ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) / 30.0) * (
                     15 +
                     CASE
                         WHEN @Quarter = 4 AND DATEDIFF(YEAR, e.HireDate, CAST(CAST(@FiscalYear AS VARCHAR(4)) + '-12-31' AS DATE)) > 1
@@ -626,7 +677,13 @@ BEGIN
             ), 0)
             +
             ROUND(
-                (e.MonthlySalary / 30.0) * (
+                (ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) / 30.0) * (
                     15 +
                     CASE
                         WHEN @Quarter = 4 AND DATEDIFF(YEAR, e.HireDate, CAST(CAST(@FiscalYear AS VARCHAR(4)) + '-12-31' AS DATE)) > 1
@@ -653,7 +710,7 @@ BEGIN
             'PENDIENTE'
         FROM master.Employee e
         WHERE e.CompanyId = @CompanyId
-          AND e.Status = 'ACTIVO'
+          AND e.IsActive = 1
           AND e.HireDate <= CAST(CAST(@FiscalYear AS VARCHAR(4)) + '-' + RIGHT('0' + CAST(@Quarter * 3 AS VARCHAR(2)), 2) + '-28' AS DATE);
 
         DECLARE @Inserted INT = @@ROWCOUNT;
@@ -923,9 +980,15 @@ BEGIN
         WHILE @@FETCH_STATUS = 0
         BEGIN
             -- Obtener salario del empleado
-            SELECT @Salary = e.MonthlySalary
+            SELECT @Salary = ISNULL((
+                SELECT TOP 1 prl.Amount
+                FROM hr.PayrollRun pr
+                INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                ORDER BY pr.CreatedAt DESC
+            ), 0)
             FROM master.Employee e
-            WHERE e.CompanyId = @CompanyId AND e.EmployeeCode = @EmpCode AND e.Status = 'ACTIVO';
+            WHERE e.CompanyId = @CompanyId AND e.EmployeeCode = @EmpCode AND e.IsActive = 1;
 
             IF @Salary IS NOT NULL AND @Salary > 0
             BEGIN

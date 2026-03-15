@@ -28,15 +28,7 @@ import {
   getVarianza
 } from "./presupuestos.service.js";
 
-import {
-  importBankStatement,
-  listStatements,
-  getStatementLines,
-  matchLine,
-  unmatchLine,
-  autoMatch,
-  getReconSummary
-} from "./conciliacion.service.js";
+// Conciliación bancaria delegada a módulo de bancos: /v1/bancos/conciliaciones
 
 import {
   listRecurrentes,
@@ -392,138 +384,8 @@ advancedRouter.get("/presupuestos/:id/varianza", async (req, res) => {
 });
 
 // ─── Conciliacion Bancaria ──────────────────────────────────────────────────
-
-const bankStatementLineSchema = z.object({
-  transactionDate: z.string().min(1),
-  description: z.string().min(1),
-  reference: z.string().optional(),
-  debit: z.number().min(0),
-  credit: z.number().min(0)
-});
-
-advancedRouter.post("/conciliacion/importar", async (req, res) => {
-  const schema = z.object({
-    bankAccountCode: z.string().min(1),
-    statementDate: z.string().min(1),
-    fileName: z.string().min(1),
-    lines: z.array(bankStatementLineSchema).min(1)
-  });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-
-  try {
-    const result = await importBankStatement(parsed.data);
-    if (!result.success) return res.status(400).json(result);
-    return res.status(201).json(result);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-advancedRouter.get("/conciliacion/extractos", async (req, res) => {
-  const schema = paginationSchema.extend({
-    bankAccountCode: z.string().optional()
-  });
-  const parsed = schema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-
-  try {
-    const data = await listStatements({
-      bankAccountCode: parsed.data.bankAccountCode,
-      page: parsed.data.page ? Number(parsed.data.page) : 1,
-      limit: parsed.data.limit ? Number(parsed.data.limit) : 50
-    });
-    return res.json(data);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-advancedRouter.get("/conciliacion/extractos/:id/lineas", async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id) || id <= 0) {
-    return res.status(400).json({ error: "invalid_id" });
-  }
-
-  try {
-    const data = await getStatementLines(id);
-    return res.json(data);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-advancedRouter.post("/conciliacion/match", async (req, res) => {
-  const schema = z.object({
-    lineId: z.number().int().min(1),
-    entryId: z.number().int().min(1)
-  });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-
-  try {
-    const user = (req as any).user?.username || "API";
-    const result = await matchLine(parsed.data.lineId, parsed.data.entryId, user);
-    if (!result.success) return res.status(400).json(result);
-    return res.json(result);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-advancedRouter.post("/conciliacion/unmatch", async (req, res) => {
-  const schema = z.object({
-    lineId: z.number().int().min(1)
-  });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-
-  try {
-    const result = await unmatchLine(parsed.data.lineId);
-    if (!result.success) return res.status(400).json(result);
-    return res.json(result);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-advancedRouter.post("/conciliacion/auto-match/:statementId", async (req, res) => {
-  const statementId = Number(req.params.statementId);
-  if (!Number.isFinite(statementId) || statementId <= 0) {
-    return res.status(400).json({ error: "invalid_id" });
-  }
-
-  try {
-    const result = await autoMatch(statementId);
-    if (!result.success) return res.status(400).json(result);
-    return res.json(result);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
-
-advancedRouter.get("/conciliacion/resumen/:statementId", async (req, res) => {
-  const statementId = Number(req.params.statementId);
-  if (!Number.isFinite(statementId) || statementId <= 0) {
-    return res.status(400).json({ error: "invalid_id" });
-  }
-
-  try {
-    const data = await getReconSummary(statementId);
-    if (!data) return res.status(404).json({ error: "not_found" });
-    return res.json(data);
-  } catch (err: any) {
-    return res.status(500).json({ error: String(err) });
-  }
-});
+// ELIMINADO: Rutas de conciliacion bancaria delegadas a /v1/bancos/conciliaciones
+// Ver: web/api/src/modules/bancos/conciliacion.service.ts
 
 // ─── Asientos Recurrentes ───────────────────────────────────────────────────
 

@@ -26,6 +26,10 @@
 -- =============================================================================
 USE DatqBoxWeb;
 GO
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
 
 -- =============================================================================
 -- TABLES
@@ -748,20 +752,50 @@ BEGIN
         SELECT
             @FilingId,
             eo.EmployeeId,
-            ISNULL(e.Salary, 0) AS BaseSalary,
+            ISNULL((
+                SELECT TOP 1 prl.Amount
+                FROM hr.PayrollRun pr
+                INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                ORDER BY pr.CreatedAt DESC
+            ), 0) AS BaseSalary,
             -- Monto patronal: salario * tasa efectiva patronal / 100
             ROUND(
-                CASE WHEN @Cap IS NOT NULL AND ISNULL(e.Salary, 0) > @Cap
+                CASE WHEN @Cap IS NOT NULL AND ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) > @Cap
                      THEN @Cap
-                     ELSE ISNULL(e.Salary, 0)
+                     ELSE ISNULL((
+                        SELECT TOP 1 prl.Amount
+                        FROM hr.PayrollRun pr
+                        INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                        WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                        ORDER BY pr.CreatedAt DESC
+                     ), 0)
                 END
                 * COALESCE(eo.CustomRate, rl.EmployerRate, @BaseEmployerRate) / 100.0,
             2) AS EmployerAmount,
             -- Monto empleado: salario * tasa efectiva empleado / 100
             ROUND(
-                CASE WHEN @Cap IS NOT NULL AND ISNULL(e.Salary, 0) > @Cap
+                CASE WHEN @Cap IS NOT NULL AND ISNULL((
+                    SELECT TOP 1 prl.Amount
+                    FROM hr.PayrollRun pr
+                    INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                    WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                    ORDER BY pr.CreatedAt DESC
+                ), 0) > @Cap
                      THEN @Cap
-                     ELSE ISNULL(e.Salary, 0)
+                     ELSE ISNULL((
+                        SELECT TOP 1 prl.Amount
+                        FROM hr.PayrollRun pr
+                        INNER JOIN hr.PayrollRunLine prl ON prl.PayrollRunId = pr.PayrollRunId
+                        WHERE pr.EmployeeId = e.EmployeeId AND prl.ConceptCode = 'SALARIO_BASE'
+                        ORDER BY pr.CreatedAt DESC
+                     ), 0)
                 END
                 * COALESCE(rl.EmployeeRate, @BaseEmployeeRate) / 100.0,
             2) AS EmployeeAmount,
@@ -864,8 +898,7 @@ BEGIN
         d.ObligationFilingId,
         d.EmployeeId,
         e.EmployeeCode,
-        e.FirstName,
-        e.LastName,
+        e.EmployeeName,
         d.BaseSalary,
         d.EmployerAmount,
         d.EmployeeAmount,
@@ -875,7 +908,7 @@ BEGIN
     FROM hr.ObligationFilingDetail d
     INNER JOIN master.Employee e ON e.EmployeeId = d.EmployeeId
     WHERE d.ObligationFilingId = @ObligationFilingId
-    ORDER BY e.LastName, e.FirstName;
+    ORDER BY e.EmployeeName;
 END
 GO
 
