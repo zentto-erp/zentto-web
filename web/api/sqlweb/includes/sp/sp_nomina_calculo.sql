@@ -258,13 +258,14 @@ BEGIN
 
       IF UPPER(ISNULL(@ConceptType, N'')) = N'DEDUCCION'
         SET @Ded = @Ded + ISNULL(@Total,0);
-      ELSE
+      ELSE IF UPPER(ISNULL(@ConceptType, N'')) <> N'PATRONAL'
       BEGIN
         SET @Asig = @Asig + ISNULL(@Total,0);
         -- Actualizar TOTAL_ASIGNACIONES para que deducciones legales
         -- (ej. FAOV) puedan calcular sobre gananciales (LOTTT Art. 172)
         EXEC dbo.sp_Nomina_SetVariable @SessionID, N'TOTAL_ASIGNACIONES', @Asig, N'Total asignaciones acumuladas';
       END
+      -- PATRONAL: se inserta la línea para contabilidad pero no afecta neto del empleado
 
       SET @VarCode = N'C' + @ConceptCode;
       SET @VarTotal = ISNULL(@Total, 0);

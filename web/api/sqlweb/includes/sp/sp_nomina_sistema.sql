@@ -1,4 +1,4 @@
-﻿-- =============================================
+-- =============================================
 -- SISTEMA BASE DE NÓMINA (CANÓNICO)
 -- Modelo objetivo: hr.* + master.Employee
 -- =============================================
@@ -84,6 +84,36 @@ BEGIN
   END
 
   RETURN @Domingos;
+END
+GO
+
+-- =============================================
+-- fn_Nomina_ContarLunes
+-- Cuenta lunes en el rango [@FechaDesde, @FechaHasta].
+-- Referencia fija: 2000-01-03 fue lunes (no depende de DATEFIRST).
+-- =============================================
+IF OBJECT_ID('dbo.fn_Nomina_ContarLunes','FN') IS NOT NULL DROP FUNCTION dbo.fn_Nomina_ContarLunes;
+GO
+CREATE FUNCTION dbo.fn_Nomina_ContarLunes(
+  @FechaDesde DATE,
+  @FechaHasta DATE
+)
+RETURNS INT
+AS
+BEGIN
+  DECLARE @Actual DATE = @FechaDesde;
+  DECLARE @Lunes INT = 0;
+
+  WHILE (@Actual <= @FechaHasta)
+  BEGIN
+    -- (DATEDIFF(DAY, '2000-01-03', @Actual) % 7) = 0 identifica lunes
+    -- independientemente del valor de DATEFIRST.
+    IF (DATEDIFF(DAY, '2000-01-03', @Actual) % 7) = 0
+      SET @Lunes = @Lunes + 1;
+    SET @Actual = DATEADD(DAY, 1, @Actual);
+  END
+
+  RETURN @Lunes;
 END
 GO
 
@@ -279,5 +309,94 @@ BEGIN
   EXEC dbo.sp_Nomina_SetVariable @SessionID, 'HORAS_MES', 240, 'Horas laborales referenciales';
 
   EXEC dbo.sp_Nomina_CalcularAntiguedad @SessionID, @Cedula, @FechaHasta;
+
+  -- -------------------------------------------------------
+  -- Variables adicionales: semanas, SSO, RPE
+  -- -------------------------------------------------------
+  DECLARE @SueldoMin DECIMAL(18,6) = 0;
+  DECLARE @TopeSSO DECIMAL(18,6) = 5;
+  DECLARE @TopeRPE DECIMAL(18,6) = 10;
+  DECLARE @LunesMes INT;
+  DECLARE @SueldoSemanal DECIMAL(18,6);
+  DECLARE @SemanasPeriodo DECIMAL(18,6);
+  DECLARE @SueldoMinSem DECIMAL(18,6);
+  DECLARE @TopeSsoSem DECIMAL(18,6);
+  DECLARE @TopeRpeSem DECIMAL(18,6);
+  DECLARE @PrimerDiaMes DATE;
+
+  -- Leer SUELDO_MIN de hr.PayrollConstant
+  SELECT @SueldoMin = pc.ConstantValue
+  FROM hr.PayrollConstant pc
+  WHERE pc.CompanyId = @CompanyId
+    AND pc.ConstantCode = 'SUELDO_MIN'
+    AND pc.IsActive = 1;
+
+  IF @SueldoMin IS NULL SET @SueldoMin = 0;
+
+  -- Leer TOPE_SSO (por defecto 5 salarios mínimos)
+  SELECT @TopeSSO = pc.ConstantValue
+  FROM hr.PayrollConstant pc
+  WHERE pc.CompanyId = @CompanyId
+    AND pc.ConstantCode = 'TOPE_SSO'
+    AND pc.IsActive = 1;
+
+  IF @TopeSSO IS NULL SET @TopeSSO = 5;
+
+  -- Leer TOPE_RPE (por defecto 10 salarios mínimos)
+  SELECT @TopeRPE = pc.ConstantValue
+  FROM hr.PayrollConstant pc
+  WHERE pc.CompanyId = @CompanyId
+    AND pc.ConstantCode = 'TOPE_RPE'
+    AND pc.IsActive = 1;
+
+  IF @TopeRPE IS NULL SET @TopeRPE = 10;
+
+  -- Primer día del mes de @FechaInicio
+  SET @PrimerDiaMes = DATEFROMPARTS(YEAR(@FechaInicio), MONTH(@FechaInicio), 1);
+
+  -- Lunes del mes completo
+  SET @LunesMes = dbo.fn_Nomina_ContarLunes(@PrimerDiaMes, EOMONTH(@FechaInicio));
+
+  -- Sueldo semanal = sueldo mensual × 12 / 52
+  SET @SueldoSemanal = @Sueldo * 12.0 / 52.0;
+
+  -- Semanas del período según duración
+  IF @DiasPeriodo <= 7
+    SET @SemanasPeriodo = 1.0;
+  ELSE IF @DiasPeriodo <= 16
+    SET @SemanasPeriodo = CAST(@LunesMes AS DECIMAL(18,6)) / 2.0;
+  ELSE
+    SET @SemanasPeriodo = CAST(@LunesMes AS DECIMAL(18,6));
+
+  -- Sueldo mínimo semanal
+  SET @SueldoMinSem = @SueldoMin * 12.0 / 52.0;
+
+  -- Topes semanales SSO y RPE
+  IF @SueldoMin > 0
+  BEGIN
+    -- TOPE_SSO_SEM = MIN(sueldo_semanal, TopeSSO × sueldo_min_semanal)
+    IF @SueldoSemanal < (@TopeSSO * @SueldoMinSem)
+      SET @TopeSsoSem = @SueldoSemanal;
+    ELSE
+      SET @TopeSsoSem = @TopeSSO * @SueldoMinSem;
+
+    -- TOPE_RPE_SEM = MIN(sueldo_semanal, TopeRPE × sueldo_min_semanal)
+    IF @SueldoSemanal < (@TopeRPE * @SueldoMinSem)
+      SET @TopeRpeSem = @SueldoSemanal;
+    ELSE
+      SET @TopeRpeSem = @TopeRPE * @SueldoMinSem;
+  END
+  ELSE
+  BEGIN
+    -- Sin salario mínimo configurado: sin tope aplicado
+    SET @TopeSsoSem = @SueldoSemanal;
+    SET @TopeRpeSem = @SueldoSemanal;
+  END
+
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, 'LUNES_MES', @LunesMes, 'Lunes del mes (para cálculo SSO)';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, 'SUELDO_SEMANAL', @SueldoSemanal, 'Sueldo semanal (sueldo × 12/52)';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, 'SEMANAS_PERIODO', @SemanasPeriodo, 'Semanas en el período de nómina';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, 'TOPE_SSO_SEM', @TopeSsoSem, 'Base semanal SSO con tope (min(sal_sem, 5×salMin_sem))';
+  EXEC dbo.sp_Nomina_SetVariable @SessionID, 'TOPE_RPE_SEM', @TopeRpeSem, 'Base semanal RPE con tope (min(sal_sem, 10×salMin_sem))';
 END
 GO
