@@ -1,0 +1,57 @@
+name: Hotfix — Restart containers (no build)
+
+# Usar cuando solo cambia configuración (env vars, compose, nginx)
+# sin necesidad de reconstruir imágenes Docker.
+# Lanzar desde: GitHub Actions → Hotfix → Run workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Servicio a reiniciar'
+        required: true
+        default: 'api'
+        type: choice
+        options:
+          - api
+          - frontend
+          - all
+
+jobs:
+  hotfix:
+    name: Restart ${{ inputs.service }} on server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copiar docker-compose.prod.yml al servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.prod.yml
+          target: /opt/zentto/
+
+      - name: Reiniciar ${{ inputs.service }}
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SERVICE: ${{ inputs.service }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SERVICE
+          script: |
+            set -e
+            cd /opt/zentto
+            if [ "$SERVICE" = "all" ]; then
+              docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            else
+              docker compose -f docker-compose.prod.yml up -d --no-deps "$SERVICE"
+            fi
+            echo "✓ $SERVICE reiniciado: $(date -u)"
+            docker compose -f docker-compose.prod.yml ps
