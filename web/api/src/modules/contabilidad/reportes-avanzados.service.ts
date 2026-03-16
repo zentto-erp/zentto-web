@@ -21,7 +21,6 @@ export async function cashFlowStatement(input: {
     "dbo.usp_Acct_Report_CashFlow",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FechaDesde: input.fechaDesde,
       FechaHasta: input.fechaHasta
     }
@@ -39,7 +38,6 @@ export async function balanceCompMultiPeriod(input: {
     "dbo.usp_Acct_Report_BalanceCompMultiPeriod",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       PeriodosJson: input.periodos
     }
   );
@@ -56,7 +54,6 @@ export async function pnlMultiPeriod(input: {
     "dbo.usp_Acct_Report_PnLMultiPeriod",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       PeriodosJson: input.periodos
     }
   );
@@ -73,7 +70,6 @@ export async function agingCxC(input: {
     "dbo.usp_Acct_Report_AgingCxC",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FechaCorte: input.fechaCorte
     }
   );
@@ -90,7 +86,6 @@ export async function agingCxP(input: {
     "dbo.usp_Acct_Report_AgingCxP",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FechaCorte: input.fechaCorte
     }
   );
@@ -107,7 +102,6 @@ export async function financialRatios(input: {
     "dbo.usp_Acct_Report_FinancialRatios",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FechaCorte: input.fechaCorte
     }
   );
@@ -125,7 +119,6 @@ export async function taxSummary(input: {
     "dbo.usp_Acct_Report_TaxSummary",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FechaDesde: input.fechaDesde,
       FechaHasta: input.fechaHasta
     }
@@ -149,7 +142,6 @@ export async function drillDown(input: {
     "dbo.usp_Acct_Report_DrillDown",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       AccountCode: input.accountCode,
       FechaDesde: input.fechaDesde,
       FechaHasta: input.fechaHasta,

@@ -1,0 +1,2250 @@
+
+╔══════════════════════════════════════════════════════╗
+║  DatqBoxWeb PostgreSQL - Deployment Script          ║
+╚══════════════════════════════════════════════════════╝
+
+[01/17] Core Foundation (schemas + sec/cfg)...
+BEGIN
+psql:01_core_foundation.sql:9: NOTICE:  el esquema «sec» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:10: NOTICE:  el esquema «cfg» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:11: NOTICE:  el esquema «master» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:12: NOTICE:  el esquema «acct» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:13: NOTICE:  el esquema «ar» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:14: NOTICE:  el esquema «ap» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:15: NOTICE:  el esquema «pos» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:16: NOTICE:  el esquema «rest» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:17: NOTICE:  el esquema «fiscal» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:18: NOTICE:  el esquema «doc» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:19: NOTICE:  el esquema «fin» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:20: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:21: NOTICE:  el esquema «pay» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:22: NOTICE:  el esquema «audit» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:23: NOTICE:  el esquema «store» ya existe, omitiendo
+CREATE SCHEMA
+psql:01_core_foundation.sql:46: NOTICE:  la relación «User» ya existe, omitiendo
+CREATE TABLE
+psql:01_core_foundation.sql:60: NOTICE:  la relación «Role» ya existe, omitiendo
+CREATE TABLE
+psql:01_core_foundation.sql:73: NOTICE:  la relación «UserRole» ya existe, omitiendo
+CREATE TABLE
+psql:01_core_foundation.sql:87: NOTICE:  la relación «Country» ya existe, omitiendo
+CREATE TABLE
+psql:01_core_foundation.sql:116: NOTICE:  la relación «Company» ya existe, omitiendo
+CREATE TABLE
+psql:01_core_foundation.sql:141: NOTICE:  la relación «Branch» ya existe, omitiendo
+CREATE TABLE
+psql:01_core_foundation.sql:156: NOTICE:  la relación «ExchangeRateDaily» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+DO
+COMMIT
+[02/17] Master Data (customer, supplier, employee, product)...
+BEGIN
+psql:02_master_data.sql:35: NOTICE:  la relación «Customer» ya existe, omitiendo
+CREATE TABLE
+psql:02_master_data.sql:64: NOTICE:  la relación «Supplier» ya existe, omitiendo
+CREATE TABLE
+psql:02_master_data.sql:93: NOTICE:  la relación «Employee» ya existe, omitiendo
+CREATE TABLE
+psql:02_master_data.sql:124: NOTICE:  la relación «Product» ya existe, omitiendo
+CREATE TABLE
+psql:02_master_data.sql:127: NOTICE:  la relación «IX_master_Product_Company_IsActive» ya existe, omitiendo
+CREATE INDEX
+COMMIT
+[03/17] Accounting Core (account, journal entry)...
+BEGIN
+psql:03_accounting_core.sql:37: NOTICE:  la relación «Account» ya existe, omitiendo
+CREATE TABLE
+psql:03_accounting_core.sql:40: NOTICE:  la relación «IX_acct_Account_Company_Parent» ya existe, omitiendo
+CREATE INDEX
+psql:03_accounting_core.sql:77: NOTICE:  la relación «JournalEntry» ya existe, omitiendo
+CREATE TABLE
+psql:03_accounting_core.sql:80: NOTICE:  la relación «IX_acct_JE_Date» ya existe, omitiendo
+CREATE INDEX
+psql:03_accounting_core.sql:108: NOTICE:  la relación «JournalEntryLine» ya existe, omitiendo
+CREATE TABLE
+psql:03_accounting_core.sql:111: NOTICE:  la relación «IX_acct_JEL_Account» ya existe, omitiendo
+CREATE INDEX
+psql:03_accounting_core.sql:130: NOTICE:  la relación «DocumentLink» ya existe, omitiendo
+CREATE TABLE
+psql:03_accounting_core.sql:150: NOTICE:  la relación «AccountingPolicy» ya existe, omitiendo
+CREATE TABLE
+COMMIT
+[04/17] Operations Core (ar, ap, fiscal, pos, rest)...
+BEGIN
+psql:04_operations_core.sql:43: NOTICE:  la relación «ReceivableDocument» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:56: NOTICE:  la relación «ReceivableApplication» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:92: NOTICE:  la relación «PayableDocument» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:105: NOTICE:  la relación «PayableApplication» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:151: NOTICE:  la relación «CountryConfig» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:179: NOTICE:  la relación «TaxRate» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:204: NOTICE:  la relación «InvoiceType» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:236: NOTICE:  la relación «Record» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:239: NOTICE:  la relación «IX_fiscal_Record_Search» ya existe, omitiendo
+CREATE INDEX
+psql:04_operations_core.sql:280: NOTICE:  la relación «WaitTicket» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:306: NOTICE:  la relación «WaitTicketLine» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:340: NOTICE:  la relación «SaleTicket» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:365: NOTICE:  la relación «SaleTicketLine» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:397: NOTICE:  la relación «OrderTicket» ya existe, omitiendo
+CREATE TABLE
+psql:04_operations_core.sql:422: NOTICE:  la relación «OrderTicketLine» ya existe, omitiendo
+CREATE TABLE
+COMMIT
+[05/17] API Compat Bridge (legacy tables)...
+BEGIN
+DO
+psql:05_api_compat_bridge.sql:46: NOTICE:  la relación «Cuentas» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:63: NOTICE:  la relación «Asientos» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:66: NOTICE:  la relación «IX_Asientos_Fecha» ya existe, omitiendo
+CREATE INDEX
+psql:05_api_compat_bridge.sql:68: NOTICE:  la relación «IX_Asientos_AsientoContableId» ya existe, omitiendo
+CREATE INDEX
+psql:05_api_compat_bridge.sql:84: NOTICE:  la relación «Asientos_Detalle» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:87: NOTICE:  la relación «IX_AsientosDetalle_IdAsiento» ya existe, omitiendo
+CREATE INDEX
+psql:05_api_compat_bridge.sql:89: NOTICE:  la relación «IX_AsientosDetalle_CodCuenta» ya existe, omitiendo
+CREATE INDEX
+psql:05_api_compat_bridge.sql:99: NOTICE:  la relación «TasasDiarias» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:102: NOTICE:  la relación «IX_TasasDiarias_Moneda_Fecha» ya existe, omitiendo
+CREATE INDEX
+psql:05_api_compat_bridge.sql:135: NOTICE:  la relación «FiscalCountryConfig» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:153: NOTICE:  la relación «FiscalTaxRates» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:170: NOTICE:  la relación «FiscalInvoiceTypes» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:200: NOTICE:  la relación «FiscalRecords» ya existe, omitiendo
+CREATE TABLE
+psql:05_api_compat_bridge.sql:203: NOTICE:  la relación «IX_FiscalRecords_Search» ya existe, omitiendo
+CREATE INDEX
+CREATE VIEW
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+COMMIT
+[06/17] Seed Reference Data (fiscal config, tax rates)...
+BEGIN
+DO
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+COMMIT
+[07/17] POS & Restaurant Extensions...
+BEGIN
+psql:07_pos_rest_extensions.sql:31: NOTICE:  la relación «FiscalCorrelative» ya existe, omitiendo
+CREATE TABLE
+psql:07_pos_rest_extensions.sql:34: NOTICE:  la relación «IX_pos_FiscalCorrelative_Search» ya existe, omitiendo
+CREATE INDEX
+psql:07_pos_rest_extensions.sql:61: NOTICE:  la relación «DiningTable» ya existe, omitiendo
+CREATE TABLE
+psql:07_pos_rest_extensions.sql:64: NOTICE:  la relación «IX_rest_DiningTable_Search» ya existe, omitiendo
+CREATE INDEX
+DO
+COMMIT
+[08/17] Finance & HR Extensions...
+BEGIN
+psql:08_fin_hr_extensions.sql:10: NOTICE:  el esquema «fin» ya existe, omitiendo
+CREATE SCHEMA
+psql:08_fin_hr_extensions.sql:11: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:08_fin_hr_extensions.sql:35: NOTICE:  la relación «Bank» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:62: NOTICE:  la relación «BankAccount» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:65: NOTICE:  la relación «IX_fin_BankAccount_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:96: NOTICE:  la relación «BankReconciliation» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:99: NOTICE:  la relación «IX_fin_BankRec_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:130: NOTICE:  la relación «BankMovement» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:133: NOTICE:  la relación «IX_fin_BankMovement_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:156: NOTICE:  la relación «BankStatementLine» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:159: NOTICE:  la relación «IX_fin_BankStatementLine_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:177: NOTICE:  la relación «BankReconciliationMatch» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:197: NOTICE:  la relación «PayrollType» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:234: NOTICE:  la relación «PayrollConcept» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:237: NOTICE:  la relación «IX_hr_PayrollConcept_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:274: NOTICE:  la relación «PayrollRun» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:277: NOTICE:  la relación «IX_hr_PayrollRun_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:295: NOTICE:  la relación «PayrollRunLine» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:298: NOTICE:  la relación «IX_hr_PayrollRunLine_Run» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:328: NOTICE:  la relación «VacationProcess» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:341: NOTICE:  la relación «VacationProcessLine» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:368: NOTICE:  la relación «SettlementProcess» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:381: NOTICE:  la relación «SettlementProcessLine» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:403: NOTICE:  la relación «PayrollConstant» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:427: NOTICE:  la relación «MenuEnvironment» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:452: NOTICE:  la relación «MenuCategory» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:487: NOTICE:  la relación «MenuProduct» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:490: NOTICE:  la relación «IX_rest_MenuProduct_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:505: NOTICE:  la relación «MenuComponent» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:520: NOTICE:  la relación «MenuOption» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:537: NOTICE:  la relación «MenuRecipe» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:565: NOTICE:  la relación «Purchase» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:568: NOTICE:  la relación «IX_rest_Purchase_Search» ya existe, omitiendo
+CREATE INDEX
+psql:08_fin_hr_extensions.sql:586: NOTICE:  la relación «PurchaseLine» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:608: NOTICE:  la relación «PayrollBatch» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:629: NOTICE:  la relación «PayrollBatchLine» ya existe, omitiendo
+CREATE TABLE
+psql:08_fin_hr_extensions.sql:655: NOTICE:  la relación «DocumentTemplate» ya existe, omitiendo
+CREATE TABLE
+DO
+COMMIT
+[09/17] Canonical Maestros...
+BEGIN
+psql:09_canonical_maestros.sql:27: NOTICE:  la relación «Category» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:30: NOTICE:  la relación «UQ_Category_CompanyName» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:46: NOTICE:  la relación «Brand» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:49: NOTICE:  la relación «UQ_Brand_CompanyName» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:66: NOTICE:  la relación «Warehouse» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:69: NOTICE:  la relación «UQ_Warehouse_CompanyCode» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:84: NOTICE:  la relación «ProductLine» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:99: NOTICE:  la relación «ProductClass» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:114: NOTICE:  la relación «ProductGroup» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:130: NOTICE:  la relación «ProductType» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:145: NOTICE:  la relación «UnitOfMeasure» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:148: NOTICE:  la relación «UQ_UnitOfMeasure_CompanyCode» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:167: NOTICE:  la relación «Seller» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:170: NOTICE:  la relación «UQ_Seller_CompanyCode» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:185: NOTICE:  la relación «CostCenter» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:202: NOTICE:  la relación «TaxRetention» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:205: NOTICE:  la relación «UQ_TaxRetention_CompanyCode» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:226: NOTICE:  la relación «InventoryMovement» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:229: NOTICE:  la relación «IX_InventoryMovement_ProductDate» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:245: NOTICE:  la relación «InventoryPeriodSummary» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:248: NOTICE:  la relación «UQ_InventoryPeriodSummary_Key» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:261: NOTICE:  la relación «SupplierLine» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:276: NOTICE:  la relación «Holiday» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:291: NOTICE:  la relación «DocumentSequence» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:295: NOTICE:  la relación «UQ_DocumentSequence_NoBranch» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:298: NOTICE:  la relación «UQ_DocumentSequence_Branch» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:309: NOTICE:  la relación «Currency» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:324: NOTICE:  la relación «ReportTemplate» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:339: NOTICE:  la relación «CompanyProfile» ya existe, omitiendo
+CREATE TABLE
+psql:09_canonical_maestros.sql:342: NOTICE:  la relación «UQ_CompanyProfile_CompanyId» ya existe, omitiendo
+CREATE INDEX
+psql:09_canonical_maestros.sql:354: NOTICE:  la relación «AccesoUsuarios» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+DO
+COMMIT
+[10/17] Canonical Documents...
+BEGIN
+DO
+psql:10_canonical_documents.sql:70: NOTICE:  la relación «UserModuleAccess» ya existe, omitiendo
+CREATE TABLE
+DO
+CREATE VIEW
+COMMIT
+[11/17] Canonical Usuarios & Fiscal...
+BEGIN
+DO
+DO
+CREATE VIEW
+CREATE RULE
+CREATE RULE
+CREATE RULE
+psql:11_canonical_usuarios_fiscal.sql:224: NOTICE:  [11] Tablas public.Fiscal* mantenidas (usadas por API compat bridge).
+DO
+COMMIT
+[12/17] Payment & Ecommerce tables...
+BEGIN
+psql:12_payment_ecommerce.sql:9: NOTICE:  el esquema «pay» ya existe, omitiendo
+CREATE SCHEMA
+psql:12_payment_ecommerce.sql:10: NOTICE:  el esquema «store» ya existe, omitiendo
+CREATE SCHEMA
+psql:12_payment_ecommerce.sql:31: NOTICE:  la relación «PaymentMethods» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:49: NOTICE:  la relación «PaymentProviders» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:63: NOTICE:  la relación «ProviderCapabilities» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:89: NOTICE:  la relación «CompanyPaymentConfig» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:110: NOTICE:  la relación «AcceptedPaymentMethods» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:152: NOTICE:  la relación «Transactions» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:155: NOTICE:  la relación «IX_PayTrx_Source» ya existe, omitiendo
+CREATE INDEX
+psql:12_payment_ecommerce.sql:157: NOTICE:  la relación «IX_PayTrx_Status» ya existe, omitiendo
+CREATE INDEX
+psql:12_payment_ecommerce.sql:159: NOTICE:  la relación «IX_PayTrx_Recon» ya existe, omitiendo
+CREATE INDEX
+psql:12_payment_ecommerce.sql:179: NOTICE:  la relación «ReconciliationBatches» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:197: NOTICE:  la relación «CardReaderDevices» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:219: NOTICE:  la relación «ProductReview» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:222: NOTICE:  la relación «IX_ProductReview_Product» ya existe, omitiendo
+CREATE INDEX
+psql:12_payment_ecommerce.sql:235: NOTICE:  la relación «ProductHighlight» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:238: NOTICE:  la relación «IX_ProductHighlight_Product» ya existe, omitiendo
+CREATE INDEX
+psql:12_payment_ecommerce.sql:253: NOTICE:  la relación «ProductSpec» ya existe, omitiendo
+CREATE TABLE
+psql:12_payment_ecommerce.sql:256: NOTICE:  la relación «IX_ProductSpec_Product» ya existe, omitiendo
+CREATE INDEX
+INSERT 0 11
+INSERT 0 0
+DO
+COMMIT
+[13/17] Triggers (row_ver, updated_at)...
+CREATE FUNCTION
+CREATE FUNCTION
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+[14/17] Fulltext Search (tsvector + GIN)...
+psql:14_fulltext_search.sql:7: NOTICE:  la columna «SearchVector» de la relación «Product» ya existe, omitiendo
+ALTER TABLE
+CREATE FUNCTION
+DROP TRIGGER
+CREATE TRIGGER
+psql:14_fulltext_search.sql:29: NOTICE:  la relación «IX_master_Product_fulltext» ya existe, omitiendo
+CREATE INDEX
+psql:14_fulltext_search.sql:33: NOTICE:  la relación «IX_master_Product_code_trgm» ya existe, omitiendo
+CREATE INDEX
+[15/17] Seed Contabilidad...
+BEGIN
+psql:15_seed_contabilidad.sql:54: NOTICE:  Seed contabilidad: plan de cuentas insertado.
+DO
+COMMIT
+[16/17] Seed Nomina...
+BEGIN
+psql:16_seed_nomina.sql:29: NOTICE:  la relación «Empleados» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+COMMIT
+[17/17] Seed Ecommerce...
+BEGIN
+psql:17_seed_ecommerce.sql:29: NOTICE:  la relación «MediaAsset» ya existe, omitiendo
+CREATE TABLE
+psql:17_seed_ecommerce.sql:45: NOTICE:  la relación «EntityImage» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+DO
+INSERT 0 51
+COMMIT
+
+--- DDL: Documentos Unificado Tables (pre-requisito para funciones) ---
+psql:includes/sp/create_documentos_unificado.sql:9: NOTICE:  el esquema «ar» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_documentos_unificado.sql:10: NOTICE:  el esquema «ap» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_documentos_unificado.sql:11: NOTICE:  el esquema «doc» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_documentos_unificado.sql:12: NOTICE:  el esquema «acct» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_documentos_unificado.sql:13: NOTICE:  el esquema «master» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_documentos_unificado.sql:72: NOTICE:  la relación «SalesDocument» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:74: NOTICE:  la relación «IX_SalesDocument_Customer» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:75: NOTICE:  la relación «IX_SalesDocument_OpDate» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:109: NOTICE:  la relación «SalesDocumentLine» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:111: NOTICE:  la relación «IX_SalesDocLine_DocKey» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:112: NOTICE:  la relación «IX_SalesDocLine_Product» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:139: NOTICE:  la relación «SalesDocumentPayment» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:141: NOTICE:  la relación «IX_SalesDocPay_DocKey» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:208: NOTICE:  la relación «PurchaseDocument» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:210: NOTICE:  la relación «IX_PurchaseDocument_Supplier» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:211: NOTICE:  la relación «IX_PurchaseDocument_OpDate» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:242: NOTICE:  la relación «PurchaseDocumentLine» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:244: NOTICE:  la relación «IX_PurchDocLine_DocKey» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:245: NOTICE:  la relación «IX_PurchDocLine_Product» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:270: NOTICE:  la relación «PurchaseDocumentPayment» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:272: NOTICE:  la relación «IX_PurchDocPay_DocKey» ya existe, omitiendo
+CREATE INDEX
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+psql:includes/sp/create_documentos_unificado.sql:500: NOTICE:  la relación «BankDeposit» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_documentos_unificado.sql:502: NOTICE:  la relación «IX_BankDeposit_Customer» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_documentos_unificado.sql:513: NOTICE:  la relación «AlternateStock» ya existe, omitiendo
+CREATE TABLE
+--- Funciones Helper ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Sistema ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Configuracion ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Configuracion Paises ---
+DROP FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+INSERT 0 1
+INSERT 0 1
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+--- Funciones Seguridad ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Balance Maestros ---
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/usp_master_balance.sql:74: NOTICE:  [usp_master_balance] Funciones de recalculo de balance creadas correctamente.
+DO
+--- Funciones Documentos Venta ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Documentos Compra ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Cuentas por Cobrar ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Cuentas por Pagar ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad Avanzada ---
+psql:includes/sp/usp_acct_advanced.sql:59: NOTICE:  la relación «FiscalPeriod» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_acct_advanced.sql:78: NOTICE:  la relación «CostCenter» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_acct_advanced.sql:96: NOTICE:  la relación «Budget» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_acct_advanced.sql:121: NOTICE:  la relación «BudgetLine» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_acct_advanced.sql:142: NOTICE:  la relación «RecurringEntry» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_acct_advanced.sql:153: NOTICE:  la relación «RecurringEntryLine» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_acct_advanced.sql:159: NOTICE:  la columna «CostCenterCode» de la relación «JournalEntryLine» ya existe, omitiendo
+ALTER TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad Patrimonio ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad Activos Fijos ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad Inflacion ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad Plantillas ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Fiscal Tributaria ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Pagos ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Miscelaneas ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Operaciones ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/usp_ops.sql:1518: NOTICE:  >>> usp_ops.sql ejecutado correctamente <<<
+DO
+--- Funciones Utilidades ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Restaurante Admin ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/usp_rest_admin.sql:1164: NOTICE:  SPs administrativos restaurante (tablas canonicas) creados exitosamente.
+DO
+--- Funciones Auditoria ---
+psql:includes/sp/usp_audit.sql:11: NOTICE:  el esquema «audit» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/usp_audit.sql:31: NOTICE:  la relación «AuditLog» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_audit.sql:34: NOTICE:  la relación «IX_AuditLog_Company_Date» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_audit.sql:37: NOTICE:  la relación «IX_AuditLog_Module» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_audit.sql:40: NOTICE:  la relación «IX_AuditLog_User» ya existe, omitiendo
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Ecommerce ---
+psql:includes/sp/usp_ecommerce.sql:12: NOTICE:  el esquema «store» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/usp_ecommerce.sql:27: NOTICE:  la relación «ProductReview» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce.sql:30: NOTICE:  la relación «IX_ProductReview_Product» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce.sql:43: NOTICE:  la relación «ProductHighlight» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce.sql:46: NOTICE:  la relación «IX_ProductHighlight_Product» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce.sql:61: NOTICE:  la relación «ProductSpec» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce.sql:64: NOTICE:  la relación «IX_ProductSpec_Product» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce.sql:86: NOTICE:  la relación «CustomerAddress» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce.sql:110: NOTICE:  la relación «CustomerPaymentMethod» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Ecommerce Variants ---
+psql:includes/sp/usp_ecommerce_variants.sql:19: NOTICE:  el esquema «store» ya existe, omitiendo
+CREATE SCHEMA
+DO
+psql:includes/sp/usp_ecommerce_variants.sql:66: NOTICE:  la relación «ProductVariantGroup» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:69: NOTICE:  la relación «IX_ProductVariantGroup_Company» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce_variants.sql:86: NOTICE:  la relación «ProductVariantOption» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:89: NOTICE:  la relación «IX_ProductVariantOption_Group» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce_variants.sql:106: NOTICE:  la relación «ProductVariant» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:109: NOTICE:  la relación «IX_ProductVariant_Parent» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce_variants.sql:119: NOTICE:  la relación «ProductVariantOptionValue» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:138: NOTICE:  la relación «IndustryTemplate» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:157: NOTICE:  la relación «IndustryTemplateAttribute» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:160: NOTICE:  la relación «IX_TemplateAttribute_Template» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/usp_ecommerce_variants.sql:178: NOTICE:  la relación «ProductAttribute» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_ecommerce_variants.sql:181: NOTICE:  la relación «IX_ProductAttribute_Product» ya existe, omitiendo
+CREATE INDEX
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+UPDATE 0
+UPDATE 0
+INSERT 0 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+DO
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Inventario ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Categorias ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Usuarios ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Vehiculos ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Bancos ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Almacen ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Centro Costo ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Clases ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Clientes ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Compras ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Cotizacion ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Cuentas ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Empleados ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Empresa ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Facturas ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Feriados ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Grupos ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Lineas ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Marcas ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Moneda ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Pedidos ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Proveedores ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Tipos ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Unidades ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones CRUD Vendedores ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Documentos Unificado TX ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Documento Venta TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Documento Compra TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Factura TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Pedido TX ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Presupuesto TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Cotizacion TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Emitir Compra TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Anular Documento Venta TX ---
+CREATE FUNCTION
+--- Funciones Anular Documento Compra TX ---
+CREATE FUNCTION
+--- Funciones Anular Factura TX ---
+CREATE FUNCTION
+--- Funciones Anular Pedido TX ---
+CREATE FUNCTION
+--- Funciones Anular Presupuesto TX ---
+CREATE FUNCTION
+--- Funciones Anular Compra TX ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Lista Documentos Venta ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Lista Documentos Compra ---
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Contabilidad General ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Bancos Conciliacion ---
+psql:includes/sp/sp_bancos_conciliacion.sql:31: NOTICE:  la relación «ExtractoBancario» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_bancos_conciliacion.sql:33: NOTICE:  la relación «IX_Extracto_NroCta» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/sp_bancos_conciliacion.sql:34: NOTICE:  la relación «IX_Extracto_Conciliado» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/sp_bancos_conciliacion.sql:35: NOTICE:  la relación «IX_Extracto_Ref» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/sp_bancos_conciliacion.sql:55: NOTICE:  la relación «ConciliacionBancaria» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_bancos_conciliacion.sql:57: NOTICE:  la relación «IX_Conciliacion_NroCta» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/sp_bancos_conciliacion.sql:76: NOTICE:  la relación «ConciliacionDetalle» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_bancos_conciliacion.sql:78: NOTICE:  la relación «IX_ConcDet_Conciliacion» ya existe, omitiendo
+CREATE INDEX
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones CxC Cobro ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones CxP Pago ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Sistema ---
+psql:includes/sp/sp_nomina_sistema.sql:7: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/sp_nomina_sistema.sql:17: NOTICE:  la relación «PayrollCalcVariable» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Calculo ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Regimen ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Concepto Legal ---
+CREATE VIEW
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Constantes Convenios ---
+psql:includes/sp/sp_nomina_constantes_convenios.sql:121: NOTICE:  Conceptos por convenio sembrados/actualizados en hr.PayrollConcept
+DO
+--- Funciones Nomina Constantes Venezuela ---
+psql:includes/sp/sp_nomina_constantes_venezuela.sql:92: NOTICE:  Constantes de nómina Venezuela sembradas/actualizadas en hr.PayrollConstant
+DO
+--- Funciones Nomina Consultas ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Vacaciones ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Venezuela ---
+psql:includes/sp/sp_nomina_venezuela_install.sql:7: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/sp_nomina_venezuela_install.sql:17: NOTICE:  la relación «PayrollCalcVariable» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/sp_nomina_venezuela_install.sql:102: NOTICE:  Instalacion canonica de nomina completada.
+DO
+       Objeto        | Total 
+---------------------+-------
+ PayrollType         |     4
+ PayrollConstant     |    25
+ PayrollConcept      |    14
+ PayrollRun          |     0
+ PayrollCalcVariable |     0
+(5 filas)
+
+--- Funciones Nomina Batch ---
+psql:includes/sp/sp_nomina_batch.sql:15: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/sp_nomina_batch.sql:36: NOTICE:  la relación «PayrollBatch» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_nomina_batch.sql:40: NOTICE:  la relación «IX_hr_PayrollBatch_Company» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/sp_nomina_batch.sql:61: NOTICE:  la relación «PayrollBatchLine» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_nomina_batch.sql:65: NOTICE:  la relación «IX_hr_PayrollBatchLine_Batch» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/sp_nomina_batch.sql:69: NOTICE:  la relación «IX_hr_PayrollBatchLine_Employee» ya existe, omitiendo
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Nomina Documentos ---
+psql:includes/sp/sp_nomina_documentos.sql:9: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/sp_nomina_documentos.sql:29: NOTICE:  la relación «DocumentTemplate» ya existe, omitiendo
+CREATE TABLE
+DO
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/sp_nomina_documentos.sql:747: NOTICE:  >> SEED: 6 plantillas legales aplicadas OK
+DO
+--- Funciones RRHH Beneficios ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones RRHH Obligaciones Legales ---
+psql:includes/sp/sp_rrhh_obligaciones_legales.sql:30: NOTICE:  el esquema «hr» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/sp_rrhh_obligaciones_legales.sql:55: NOTICE:  la relación «LegalObligation» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_rrhh_obligaciones_legales.sql:68: NOTICE:  la relación «ObligationRiskLevel» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_rrhh_obligaciones_legales.sql:88: NOTICE:  la relación «EmployeeObligation» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_rrhh_obligaciones_legales.sql:112: NOTICE:  la relación «ObligationFiling» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_rrhh_obligaciones_legales.sql:126: NOTICE:  la relación «ObligationFilingDetail» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+DO
+--- Funciones RRHH Salud Ocupacional ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones POS Ventas Espera ---
+psql:includes/sp/sp_pos_ventas_espera.sql:29: NOTICE:  la relación «PosVentasEnEspera» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_pos_ventas_espera.sql:47: NOTICE:  la relación «PosVentasEnEsperaDetalle» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_pos_ventas_espera.sql:70: NOTICE:  la relación «PosVentas» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_pos_ventas_espera.sql:84: NOTICE:  la relación «PosVentasDetalle» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones POS Restaurante ---
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/sp_pos_restaurante.sql:217: NOTICE:  la relación «RestauranteMesas» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+psql:includes/sp/sp_pos_restaurante.sql:248: NOTICE:  la relación «RestaurantePedidos» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_pos_restaurante.sql:267: NOTICE:  la relación «RestaurantePedidoItems» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Restaurante Admin ---
+psql:includes/sp/sp_restaurante_admin.sql:15: NOTICE:  la relación «RestauranteAmbientes» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+DO
+psql:includes/sp/sp_restaurante_admin.sql:49: NOTICE:  la relación «RestauranteCategorias» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+psql:includes/sp/sp_restaurante_admin.sql:88: NOTICE:  la relación «RestauranteProductos» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_restaurante_admin.sql:100: NOTICE:  la relación «RestauranteProductoComponentes» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_restaurante_admin.sql:109: NOTICE:  la relación «RestauranteComponenteOpciones» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_restaurante_admin.sql:122: NOTICE:  la relación «RestauranteRecetas» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_restaurante_admin.sql:140: NOTICE:  la relación «RestauranteCompras» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sp_restaurante_admin.sql:152: NOTICE:  la relación «RestauranteComprasDetalle» ya existe, omitiendo
+CREATE TABLE
+DO
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Funciones Restaurante Compra ---
+CREATE FUNCTION
+--- Funciones Vacaciones ---
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Inventario Cierre Mes ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Mov Unidades ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Mov Unidades Mes ---
+DROP FUNCTION
+CREATE FUNCTION
+--- Funciones Caja Chica ---
+psql:includes/sp/usp_fin_pettycash.sql:9: NOTICE:  el esquema «fin» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/usp_fin_pettycash.sql:26: NOTICE:  la relación «PettyCashBox» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_fin_pettycash.sql:43: NOTICE:  la relación «PettyCashSession» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/usp_fin_pettycash.sql:60: NOTICE:  la relación «PettyCashExpense» ya existe, omitiendo
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+psql:includes/sp/usp_fin_pettycash.sql:491: NOTICE:  Modulo de Caja Chica (Petty Cash) creado exitosamente
+DO
+--- Funciones XML Compat ---
+DROP FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+--- Notificaciones ---
+psql:includes/sp/sys_notificaciones.sql:16: NOTICE:  la relación «Sys_Notificaciones» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sys_notificaciones.sql:29: NOTICE:  la relación «Sys_Tareas» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/sys_notificaciones.sql:41: NOTICE:  la relación «Sys_Mensajes» ya existe, omitiendo
+CREATE TABLE
+--- Seeds Account Plan ---
+psql:includes/sp/seed_account_plan.sql:184: NOTICE:  seed_account_plan.sql: cuentas canonicas sincronizadas para CompanyId=1. Total=81
+DO
+--- Seeds Contabilidad ---
+psql:includes/sp/seed_contabilidad.sql:259: NOTICE:  El plan de cuentas ya existe
+psql:includes/sp/seed_contabilidad.sql:259: NOTICE:  Los asientos ya existen
+psql:includes/sp/seed_contabilidad.sql:259: NOTICE:  Tabla Configuracion no existe (legacy), omitida
+psql:includes/sp/seed_contabilidad.sql:259: NOTICE:  Tabla Centro_Costo no existe (legacy), omitida
+psql:includes/sp/seed_contabilidad.sql:259: NOTICE:  SEED DE CONTABILIDAD COMPLETADO EXITOSAMENTE
+DO
+--- Settings Table ---
+psql:includes/sp/settings_table.sql:7: NOTICE:  el esquema «cfg» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/settings_table.sql:21: NOTICE:  la relación «AppSetting» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+--- Payment Gateway Tables ---
+psql:includes/sp/payment_gateway_tables.sql:7: NOTICE:  el esquema «pay» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/payment_gateway_tables.sql:22: NOTICE:  la relación «PaymentMethods» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:38: NOTICE:  la relación «PaymentProviders» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:50: NOTICE:  la relación «ProviderCapabilities» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:74: NOTICE:  la relación «CompanyPaymentConfig» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:93: NOTICE:  la relación «AcceptedPaymentMethods» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:133: NOTICE:  la relación «Transactions» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:135: NOTICE:  la relación «IX_PayTrx_Source» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/payment_gateway_tables.sql:136: NOTICE:  la relación «IX_PayTrx_Status» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/payment_gateway_tables.sql:137: NOTICE:  la relación «IX_PayTrx_Recon» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/payment_gateway_tables.sql:155: NOTICE:  la relación «ReconciliationBatches» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/payment_gateway_tables.sql:171: NOTICE:  la relación «CardReaderDevices» ya existe, omitiendo
+CREATE TABLE
+INSERT 0 11
+INSERT 0 0
+INSERT 0 6
+INSERT 0 3
+INSERT 0 1
+--- Cierre Mensual Inventario ---
+psql:includes/sp/create_cierre_mensual_inventario.sql:17: NOTICE:  la relación «CierreMensualInventario» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_cierre_mensual_inventario.sql:20: NOTICE:  la relación «IX_CierreMensualInventario_Periodo» ya existe, omitiendo
+CREATE INDEX
+--- Contabilidad General Tables ---
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «PeriodoContable» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «AsientoContable» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «AsientoContableDetalle» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «AsientoOrigenAuxiliar» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «ConfiguracionContableAuxiliar» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «AjusteContable» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «ActivoFijoContable» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «DepreciacionContable» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «IX_AsientoContable_Fecha» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «IX_AsientoContable_Periodo» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «IX_AsientoDetalle_Cuenta» ya existe, omitiendo
+psql:includes/sp/create_contabilidad_general.sql:336: NOTICE:  la relación «IX_AsientoOri_Doc» ya existe, omitiendo
+DO
+--- Activos Fijos Tables ---
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  el esquema «acct» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Esquema acct verificado.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «FixedAssetCategory» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Tabla acct."FixedAssetCategory" verificada.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «FixedAsset» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Tabla acct."FixedAsset" verificada.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «FixedAssetDepreciation» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Tabla acct."FixedAssetDepreciation" verificada.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «FixedAssetImprovement» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Tabla acct."FixedAssetImprovement" verificada.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «FixedAssetRevaluation» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Tabla acct."FixedAssetRevaluation" verificada.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Insertando categorias seed para VE y ES...
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:     VE: 8 categorias verificadas/insertadas.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:     ES: 8 categorias verificadas/insertadas.
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «IX_FixedAsset_CompanyCode» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «IX_FixedAsset_CategoryId» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  la relación «IX_FixedAssetDepreciation_AssetPeriod» ya existe, omitiendo
+psql:includes/sp/create_activos_fijos.sql:251: NOTICE:  >> Activos fijos: script completado exitosamente.
+DO
+--- Fiscal Tributaria Tables ---
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  el esquema «fiscal» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Esquema fiscal verificado.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «TaxDeclaration» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Tabla fiscal."TaxDeclaration" verificada.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «TaxBookEntry» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Tabla fiscal."TaxBookEntry" verificada.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «WithholdingVoucher» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Tabla fiscal."WithholdingVoucher" verificada.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «DeclarationTemplate» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Tabla fiscal."DeclarationTemplate" verificada.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «ISLRTariff» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Tabla fiscal."ISLRTariff" verificada.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «IX_TaxDeclaration_Country_Period» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «IX_TaxBookEntry_Period_Book» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «IX_TaxBookEntry_Declaration» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «IX_WithholdingVoucher_Period» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  la relación «IX_ISLRTariff_Year» ya existe, omitiendo
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Índices verificados.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Insertando plantillas de declaración...
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Plantillas de declaración insertadas.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Insertando tarifa ISLR Venezuela 2026...
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Tarifa ISLR 2026 ya existe, omitida.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Verificando retenciones en master."TaxRetention"...
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Retenciones en master."TaxRetention" verificadas.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  ========================================================
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  >> Módulo fiscal/tributaria desplegado exitosamente.
+psql:includes/sp/create_fiscal_tributaria.sql:306: NOTICE:  ========================================================
+DO
+--- Tablas Legales Contabilidad ---
+psql:includes/sp/acct_legal_tables.sql:25: NOTICE:  el esquema «acct» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/acct_legal_tables.sql:26: NOTICE:  el esquema «cfg» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/acct_legal_tables.sql:46: NOTICE:  la relación «InflationIndex» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:67: NOTICE:  la relación «AccountMonetaryClass» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:98: NOTICE:  la relación «InflationAdjustment» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:119: NOTICE:  la relación «InflationAdjustmentLine» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:122: NOTICE:  la relación «IX_acct_IAL_Header» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/acct_legal_tables.sql:156: NOTICE:  la relación «EquityMovement» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:159: NOTICE:  la relación «IX_acct_EM_Year» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/acct_legal_tables.sql:187: NOTICE:  la relación «ReportTemplate» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:207: NOTICE:  la relación «ReportTemplateVariable» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/acct_legal_tables.sql:210: NOTICE:  la relación «IX_acct_RTV_Template» ya existe, omitiendo
+CREATE INDEX
+--- Balance Compat ---
+psql:includes/sp/balance_compat.sql:8: NOTICE:  el esquema «master» ya existe, omitiendo
+CREATE SCHEMA
+CREATE FUNCTION
+CREATE FUNCTION
+--- Fiscal Multipais Base ---
+psql:includes/sp/001_fiscal_multipais_base.sql:7: NOTICE:  el esquema «fiscal» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/001_fiscal_multipais_base.sql:37: NOTICE:  la relación «FiscalCountryConfig» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/001_fiscal_multipais_base.sql:40: NOTICE:  la relación «UQ_FiscalCountryConfig_Context» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/001_fiscal_multipais_base.sql:56: NOTICE:  la relación «FiscalTaxRates» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/001_fiscal_multipais_base.sql:59: NOTICE:  la relación «UQ_FiscalTaxRates_Code» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/001_fiscal_multipais_base.sql:74: NOTICE:  la relación «FiscalInvoiceTypes» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/001_fiscal_multipais_base.sql:77: NOTICE:  la relación «UQ_FiscalInvoiceTypes_Code» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/001_fiscal_multipais_base.sql:104: NOTICE:  la relación «FiscalRecords» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/001_fiscal_multipais_base.sql:107: NOTICE:  la relación «IX_FiscalRecords_Chain» ya existe, omitiendo
+CREATE INDEX
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+INSERT 0 0
+--- Governance Baseline ---
+psql:includes/sp/00_governance_baseline.sql:46: NOTICE:  la relación «SchemaGovernanceDecision» ya existe, omitiendo
+psql:includes/sp/00_governance_baseline.sql:46: NOTICE:  la relación «SchemaGovernanceSnapshot» ya existe, omitiendo
+DO
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+CREATE FUNCTION
+--- Indices Inventario Cierre ---
+psql:includes/sp/add_indexes_inventario_cierre.sql:12: NOTICE:  la relación «IX_Product_ProductCode» ya existe, omitiendo
+CREATE INDEX
+--- Fulltext Inventario ---
+psql:includes/sp/fulltext_index_inventario.sql:87: NOTICE:  ADVERTENCIA: Tabla Inventario no encontrada. No se puede crear indice FTS.
+DO
+--- Vacation Request Tables ---
+BEGIN
+psql:includes/sp/create_vacation_request.sql:32: NOTICE:  la relación «VacationRequest» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_vacation_request.sql:35: NOTICE:  la relación «IX_VacationRequest_Employee» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_vacation_request.sql:38: NOTICE:  la relación «IX_VacationRequest_Status» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_vacation_request.sql:48: NOTICE:  la relación «VacationRequestDay» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_vacation_request.sql:51: NOTICE:  la relación «IX_VacationRequestDay_Request» ya existe, omitiendo
+CREATE INDEX
+COMMIT
+--- Supervisor Biometric Credentials ---
+psql:includes/sp/create_supervisor_biometric_credentials.sql:6: NOTICE:  el esquema «sec» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_supervisor_biometric_credentials.sql:24: NOTICE:  la relación «SupervisorBiometricCredential» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_supervisor_biometric_credentials.sql:27: NOTICE:  la relación «UX_SupervisorBiometricCredential_UserHash» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_supervisor_biometric_credentials.sql:30: NOTICE:  la relación «IX_SupervisorBiometricCredential_Active» ya existe, omitiendo
+CREATE INDEX
+--- Supervisor Override Controls ---
+psql:includes/sp/create_supervisor_override_controls.sql:7: NOTICE:  el esquema «sec» ya existe, omitiendo
+CREATE SCHEMA
+psql:includes/sp/create_supervisor_override_controls.sql:28: NOTICE:  la relación «SupervisorOverride» ya existe, omitiendo
+CREATE TABLE
+psql:includes/sp/create_supervisor_override_controls.sql:31: NOTICE:  la relación «IX_SupervisorOverride_Status» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/create_supervisor_override_controls.sql:34: NOTICE:  la relación «IX_SupervisorOverride_Source» ya existe, omitiendo
+CREATE INDEX
+DO
+--- POS Restaurante Contabilidad Bridge ---
+DO
+--- Alter Employee Position Company Address ---
+psql:includes/sp/alter_employee_position_company_address.sql:11: NOTICE:  la columna «Address» de la relación «Company» ya existe, omitiendo
+psql:includes/sp/alter_employee_position_company_address.sql:11: NOTICE:  la columna «LegalRep» de la relación «Company» ya existe, omitiendo
+psql:includes/sp/alter_employee_position_company_address.sql:11: NOTICE:  la columna «Phone» de la relación «Company» ya existe, omitiendo
+ALTER TABLE
+psql:includes/sp/alter_employee_position_company_address.sql:17: NOTICE:  la columna «PositionName» de la relación «Employee» ya existe, omitiendo
+psql:includes/sp/alter_employee_position_company_address.sql:17: NOTICE:  la columna «DepartmentName» de la relación «Employee» ya existe, omitiendo
+psql:includes/sp/alter_employee_position_company_address.sql:17: NOTICE:  la columna «Salary» de la relación «Employee» ya existe, omitiendo
+ALTER TABLE
+--- Seed Constantes y Conceptos Legal ---
+psql:includes/sp/seed_constantes_y_conceptos_legal.sql:64: NOTICE:  Constantes de nomina Venezuela sembradas/actualizadas en hr.PayrollConstant
+DO
+psql:includes/sp/seed_constantes_y_conceptos_legal.sql:145: NOTICE:  Conceptos por convenio sembrados/actualizados en hr.PayrollConcept
+DO
+--- Seed Gananciales y Deducciones ---
+psql:includes/sp/seed_gananciales_y_deducciones_completo.sql:66: NOTICE:  Constantes de nomina Venezuela sembradas/actualizadas en hr.PayrollConstant
+DO
+psql:includes/sp/seed_gananciales_y_deducciones_completo.sql:147: NOTICE:  Gananciales/deducciones canonicos actualizados en hr.PayrollConcept
+DO
+--- Seed Restaurante Componentes Recetas ---
+psql:includes/sp/seed_restaurante_componentes_recetas.sql:9: NOTICE:  la relación «UQ_MenuComponent_ProductName» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/seed_restaurante_componentes_recetas.sql:12: NOTICE:  la relación «UQ_MenuOption_ComponentOption» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/seed_restaurante_componentes_recetas.sql:15: NOTICE:  la relación «UQ_MenuRecipe_ProductIngredient» ya existe, omitiendo
+CREATE INDEX
+psql:includes/sp/seed_restaurante_componentes_recetas.sql:278: NOTICE:  Componentes activos: 11
+psql:includes/sp/seed_restaurante_componentes_recetas.sql:278: NOTICE:  Opciones activas: 23
+psql:includes/sp/seed_restaurante_componentes_recetas.sql:278: NOTICE:  Recetas activas: 17
+DO
+--- Seed Restaurante Menu Extra ---
+psql:includes/sp/seed_restaurante_menu_extra.sql:157: NOTICE:  Categorias activas: 8
+psql:includes/sp/seed_restaurante_menu_extra.sql:157: NOTICE:  Productos activos: 19
+DO
+--- Seed Nomina Completo (batches, vacaciones, salud ocupacional) ---
+psql:includes/sp/seed_nomina_completo.sql:735: NOTICE:  === SEED NOMINA COMPLETO — Inicio ===
+psql:includes/sp/seed_nomina_completo.sql:735: NOTICE:  >> 1. Empleados
+psql:includes/sp/seed_nomina_completo.sql:735: NOTICE:     8 empleados procesados.
+psql:includes/sp/seed_nomina_completo.sql:735: NOTICE:  >> 2. Payroll Batches
+psql:includes/sp/seed_nomina_completo.sql:735: NOTICE:  Error en seed_nomina_completo.sql: no existe la columna «BranchId» en la relación «PayrollBatch»
+DO
+--- Seed Nomina Completo P2 (capacitacion, ahorro, obligaciones) ---
+psql:includes/sp/seed_nomina_completo_p2.sql:734: NOTICE:  === SEED NOMINA COMPLETO P2 — Inicio ===
+psql:includes/sp/seed_nomina_completo_p2.sql:734: NOTICE:  >> 1. Capacitacion (8 registros nuevos)
+psql:includes/sp/seed_nomina_completo_p2.sql:734: NOTICE:  Error en seed_nomina_completo_p2.sql: no existe la relación «hr.TrainingRecord»
+DO
+--- Seed RRHH Completo (utilidades, prestaciones, caja ahorro) ---
+psql:includes/sp/seed_rrhh_completo.sql:513: NOTICE:  === SEED RRHH COMPLETO — Inicio ===
+psql:includes/sp/seed_rrhh_completo.sql:513: NOTICE:  >> 1. Utilidades 2025
+psql:includes/sp/seed_rrhh_completo.sql:513: NOTICE:  Error en seed_rrhh_completo.sql: no existe la relación «hr.ProfitSharing»
+DO
+--- Seed Plantillas de Reportes Contables ---
+psql:includes/sp/seed_report_templates.sql:693: NOTICE:  === seed_report_templates.sql — Inicio ===
+psql:includes/sp/seed_report_templates.sql:693: NOTICE:  === seed_report_templates.sql completado: 12 plantillas creadas ===
+DO
+--- Seed Demo Contabilidad ---
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  === SEED CONTABILIDAD DEMO ===
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> Iniciando...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 1. Períodos fiscales 2026...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     12 períodos fiscales OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 2. Centros de costo...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     5 centros de costo OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 3. Clientes...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     4 clientes OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 4. Asiento de apertura...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     Asiento apertura SEED-APE-001 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 5. Asientos de enero...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-001 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-002 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-003 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-004 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-005 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-006 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-007 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-ENE-008 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     8 asientos enero OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 6. Asientos de febrero...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-001 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-002 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-003 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-004 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-005 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-006 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-007 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-FEB-008 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     8 asientos febrero OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 7. Asientos de marzo...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-MAR-001 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-MAR-002 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-MAR-003 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-MAR-004 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-MAR-005 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     SEED-MAR-006 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     6 asientos marzo OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 8. Documentos de venta (ar."SalesDocument")...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     5 documentos venta OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 9. Documentos de compra (ap."PurchaseDocument")...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     5 documentos compra OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 10. Activos fijos...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     5 activos fijos OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 11. Depreciaciones mensuales...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     11 registros depreciación OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 12. Mejora activo AF-001...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     Mejora AF-001 OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 13. Presupuesto operativo 2026...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     Presupuesto Operativo 2026 ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 14. Asientos recurrentes...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     Recurrente: Alquiler Mensual ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     Recurrente: Servicios Públicos ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     Recurrente: Depreciación Mensual ya existe, omitido.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     3 asientos recurrentes OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> 15. Retenciones IVA...
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:     3 retenciones IVA OK.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> Seed contabilidad demo completado exitosamente.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >> Resumen: 12 períodos, 5 centros costo, 4 clientes,
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >>   23 asientos contables (1 apertura + 8 ene + 8 feb + 6 mar),
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >>   5 doc venta, 5 doc compra, 5 activos fijos,
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >>   11 depreciaciones, 1 mejora, 1 presupuesto (5 líneas),
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  >>   3 asientos recurrentes, 3 retenciones IVA.
+psql:includes/sp/seed_contabilidad_demo.sql:807: NOTICE:  === FIN SEED CONTABILIDAD DEMO ===
+DO
+--- Seed Demo Clientes y Documentos ---
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  === Seed demo: Clientes y Documentos Comerciales ===
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 1. Clientes demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 2. Direcciones de clientes demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 3. Métodos de pago de clientes demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 4. Documentos de venta demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 5. Cuentas por cobrar demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 6. Documentos de compra demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 7. Cuentas por pagar demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  >> 8. Movimientos de inventario demo...
+psql:includes/sp/seed_demo_clientes_documentos.sql:495: NOTICE:  === Seed completado ===
+DO
+--- Seed Demo Ecommerce y POS ---
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  === seed_demo_ecommerce_pos.sql — START ===
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  Seeded 6 variant child products in master."Product"
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  Seeded 6 rows in store."ProductVariant"
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  Seeded 6 rows in store."ProductVariantOptionValue"
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  Seeded 10 rows in store."ProductAttribute" (6 FARMACIA + 4 ALIMENTOS)
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  Seeded 8 rows in pay."Transactions"
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  Seeded 10 rows in audit."AuditLog"
+psql:includes/sp/seed_demo_ecommerce_pos.sql:381: NOTICE:  === seed_demo_ecommerce_pos.sql — COMPLETE ===
+DO
+--- Seed Demo Finanzas y Contabilidad ---
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:  === SEED DEMO FINANZAS / CONTABILIDAD / PAGOS ===
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    fin.Bank: 9 bancos verificados/insertados.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    fin.BankAccount: 5 cuentas verificadas/insertadas.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    fin.BankMovement: ya existen 10+ movimientos, sin cambios.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    acct.FiscalPeriod: 12 periodos 2026 verificados/insertados.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    acct.CostCenter: 5 centros verificados/insertados.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    acct.Budget: presupuesto 2026 ya existe.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    acct.RecurringEntry: 3 plantillas recurrentes verificadas/insertadas.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    acct.InflationIndex: 24 meses INPC VE verificados/insertados.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    pay.AcceptedPaymentMethods: 6 métodos verificados/insertados para EmpresaId=1.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:    pay.CompanyPaymentConfig: 3 configs de proveedor verificadas/insertadas.
+psql:includes/sp/seed_demo_finanzas_contabilidad.sql:469: NOTICE:  === SEED DEMO FINANZAS / CONTABILIDAD / PAGOS — COMPLETADO ===
+DO
+
+╔══════════════════════════════════════════════════════╗
+║  Verificacion de objetos                            ║
+╚══════════════════════════════════════════════════════╝
+
+--- Conteo de objetos por tipo ---
+   Tipo    | Cantidad 
+-----------+----------
+ Schemas   | 15
+ Tablas    | 187
+ Funciones | 807
+ Vistas    | 19
+ Indices   | 207
+ Triggers  | 42
+(6 filas)
+
+
+--- Tablas por schema ---
+ Schema | Tablas 
+--------+--------
+ acct   |     24
+ ap     |      5
+ ar     |      5
+ audit  |      1
+ cfg    |     12
+ fin    |      9
+ fiscal |      9
+ hr     |     20
+ master |     21
+ pay    |      8
+ pos    |      5
+ public |     41
+ rest   |     11
+ sec    |      6
+ store  |     10
+(15 filas)
+
+
+--- Funciones tipo SP ---
+ Total funciones SP 
+--------------------
+                795
+(1 fila)
+
+
+--- Test HealthCheck ---
+ ok |         serverTime         |   dbName   
+----+----------------------------+------------
+  1 | 2026-03-16 11:19:35.774205 | datqboxweb
+(1 fila)
+
+
+--- Verificacion completa ---
+
+=== DatqBoxWeb PostgreSQL deployment COMPLETO ===
+

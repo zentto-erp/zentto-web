@@ -32,24 +32,25 @@ CREATE OR REPLACE FUNCTION usp_Acct_InflationIndex_List(
     p_country_code CHAR(2)      DEFAULT 'VE',
     p_index_name   VARCHAR(30)  DEFAULT 'INPC',
     p_year_from    SMALLINT     DEFAULT NULL,
-    p_year_to      SMALLINT     DEFAULT NULL,
-    OUT p_total_count INTEGER
+    p_year_to      SMALLINT     DEFAULT NULL
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count      BIGINT,
+    "InflationIndexId" INTEGER,
+    "CountryCode"      CHAR(2),
+    "IndexName"        VARCHAR(30),
+    "PeriodCode"       CHAR(6),
+    "IndexValue"       NUMERIC(18,6),
+    "SourceReference"  VARCHAR(200),
+    "CreatedAt"        TIMESTAMP,
+    "UpdatedAt"        TIMESTAMP
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM acct."InflationIndex"
-    WHERE "CompanyId"   = p_company_id
-      AND "CountryCode" = p_country_code
-      AND "IndexName"   = p_index_name
-      AND (p_year_from IS NULL OR CAST(LEFT("PeriodCode", 4) AS SMALLINT) >= p_year_from)
-      AND (p_year_to   IS NULL OR CAST(LEFT("PeriodCode", 4) AS SMALLINT) <= p_year_to);
-
     RETURN QUERY
-    SELECT "InflationIndexId",
+    SELECT COUNT(*) OVER()          AS p_total_count,
+           "InflationIndexId",
            "CountryCode",
            "IndexName",
            "PeriodCode",
@@ -180,26 +181,29 @@ $$;
 CREATE OR REPLACE FUNCTION usp_Acct_AccountMonetaryClass_List(
     p_company_id    INTEGER,
     p_classification VARCHAR(20)  DEFAULT NULL,
-    p_search        VARCHAR(100) DEFAULT NULL,
-    OUT p_total_count INTEGER
+    p_search        VARCHAR(100) DEFAULT NULL
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count                BIGINT,
+    "AccountMonetaryClassId"     INTEGER,
+    "AccountId"                  BIGINT,
+    "AccountCode"                VARCHAR(30),
+    "AccountName"                VARCHAR(200),
+    "AccountType"                CHAR(1),
+    "AccountLevel"               SMALLINT,
+    "AllowsPosting"              BOOLEAN,
+    "Classification"             VARCHAR(20),
+    "SubClassification"          VARCHAR(40),
+    "ReexpressionAccountId"      BIGINT,
+    "IsActive"                   BOOLEAN,
+    "UpdatedAt"                  TIMESTAMP
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM acct."AccountMonetaryClass" mc
-    JOIN acct."Account" a ON a."AccountId" = mc."AccountId" AND a."CompanyId" = mc."CompanyId"
-    WHERE mc."CompanyId" = p_company_id
-      AND mc."IsActive"  = TRUE
-      AND (p_classification IS NULL OR mc."Classification" = p_classification)
-      AND (p_search IS NULL
-           OR a."AccountCode" LIKE '%' || p_search || '%'
-           OR a."AccountName" LIKE '%' || p_search || '%');
-
     RETURN QUERY
-    SELECT mc."AccountMonetaryClassId",
+    SELECT COUNT(*) OVER()          AS p_total_count,
+           mc."AccountMonetaryClassId",
            a."AccountId",
            a."AccountCode",
            a."AccountName",

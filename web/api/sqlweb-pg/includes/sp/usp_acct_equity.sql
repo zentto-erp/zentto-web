@@ -22,22 +22,37 @@
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_List(
     p_company_id  INTEGER,
     p_branch_id   INTEGER,
-    p_fiscal_year SMALLINT,
-    OUT p_total_count INTEGER
+    p_fiscal_year SMALLINT
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count     BIGINT,
+    "EquityMovementId" BIGINT,
+    "AccountId"        BIGINT,
+    "AccountCode"      VARCHAR(30),
+    "AccountName"      VARCHAR(200),
+    "MovementType"     VARCHAR(30),
+    "MovementDate"     DATE,
+    "Amount"           NUMERIC(18,2),
+    "JournalEntryId"   BIGINT,
+    "Description"      VARCHAR(400),
+    "CreatedAt"        TIMESTAMP,
+    "UpdatedAt"        TIMESTAMP
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_total_count BIGINT;
 BEGIN
     SELECT COUNT(*)
-    INTO p_total_count
+    INTO v_total_count
     FROM acct."EquityMovement"
     WHERE "CompanyId" = p_company_id
       AND "BranchId"  = p_branch_id
       AND "FiscalYear" = p_fiscal_year;
 
     RETURN QUERY
-    SELECT "EquityMovementId",
+    SELECT v_total_count,
+           "EquityMovementId",
            "AccountId",
            "AccountCode",
            "AccountName",

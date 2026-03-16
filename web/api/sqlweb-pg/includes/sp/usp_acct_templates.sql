@@ -17,23 +17,27 @@
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_List(
     p_company_id   INTEGER,
     p_country_code CHAR(2)       DEFAULT NULL,
-    p_report_code  VARCHAR(50)   DEFAULT NULL,
-    OUT p_total_count INTEGER
+    p_report_code  VARCHAR(50)   DEFAULT NULL
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count       BIGINT,
+    "ReportTemplateId"  INTEGER,
+    "CountryCode"       CHAR(2),
+    "ReportCode"        VARCHAR(50),
+    "ReportName"        VARCHAR(200),
+    "LegalFramework"    VARCHAR(50),
+    "LegalReference"    VARCHAR(300),
+    "IsDefault"         BOOLEAN,
+    "Version"           INTEGER,
+    "CreatedAt"         TIMESTAMP,
+    "UpdatedAt"         TIMESTAMP
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM acct."ReportTemplate"
-    WHERE "CompanyId" = p_company_id
-      AND "IsActive"  = TRUE
-      AND (p_country_code IS NULL OR "CountryCode" = p_country_code)
-      AND (p_report_code  IS NULL OR "ReportCode"  = p_report_code);
-
     RETURN QUERY
-    SELECT "ReportTemplateId",
+    SELECT COUNT(*) OVER()    AS p_total_count,
+           "ReportTemplateId",
            "CountryCode",
            "ReportCode",
            "ReportName",

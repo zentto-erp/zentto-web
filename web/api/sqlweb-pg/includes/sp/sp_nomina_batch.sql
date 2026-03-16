@@ -79,13 +79,12 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_payroll_code      VARCHAR(15),
     p_from_date         DATE,
     p_to_date           DATE,
-    p_department_filter VARCHAR(100) DEFAULT NULL,
     p_user_id           INTEGER,
+    p_department_filter VARCHAR(100) DEFAULT NULL,
     OUT p_batch_id      INTEGER,
     OUT p_resultado     INTEGER,
     OUT p_mensaje       TEXT
 )
-RETURNS record
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -188,12 +187,11 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
     p_line_id   INTEGER,
     p_quantity  NUMERIC(18,4),
     p_amount    NUMERIC(18,4),
-    p_notes     VARCHAR(500) DEFAULT NULL,
     p_user_id   INTEGER,
+    p_notes     VARCHAR(500) DEFAULT NULL,
     OUT p_resultado INTEGER,
     OUT p_mensaje   TEXT
 )
-RETURNS record
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -597,32 +595,25 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
     p_department    VARCHAR(100) DEFAULT NULL,
     p_only_modified BOOLEAN      DEFAULT FALSE,
     p_offset        INTEGER      DEFAULT 0,
-    p_limit         INTEGER      DEFAULT 50,
-    OUT p_total_count INTEGER
+    p_limit         INTEGER      DEFAULT 50
 )
-RETURNS SETOF record
+RETURNS TABLE(
+    p_total_count    BIGINT,
+    "EmployeeCode"   VARCHAR(24),
+    "EmployeeName"   VARCHAR(200),
+    "EmployeeId"     BIGINT,
+    "DepartmentCode" TEXT,
+    "DepartmentName" TEXT,
+    "PositionName"   TEXT,
+    "TotalGross"     NUMERIC,
+    "TotalDeductions" NUMERIC,
+    "TotalNet"       NUMERIC,
+    "HasModified"    BIGINT,
+    "ConceptCount"   BIGINT
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Calcular total count
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM (
-        SELECT
-            bl."EmployeeCode",
-            bl."EmployeeName",
-            bl."EmployeeId",
-            MAX(CASE WHEN bl."IsModified" THEN 1 ELSE 0 END) AS "HasModified"
-        FROM hr."PayrollBatchLine" bl
-        WHERE bl."BatchId" = p_batch_id
-        GROUP BY bl."EmployeeCode", bl."EmployeeName", bl."EmployeeId"
-    ) es
-    WHERE (p_search IS NULL
-           OR es."EmployeeCode" ILIKE '%' || p_search || '%'
-           OR es."EmployeeName" ILIKE '%' || p_search || '%')
-      AND (NOT p_only_modified OR es."HasModified" = 1);
-
-    -- Retornar filas paginadas
     RETURN QUERY
     WITH "EmployeeSummary" AS (
         SELECT
@@ -638,25 +629,29 @@ BEGIN
         FROM hr."PayrollBatchLine" bl
         WHERE bl."BatchId" = p_batch_id
         GROUP BY bl."EmployeeCode", bl."EmployeeName", bl."EmployeeId"
+    ), "Filtered" AS (
+        SELECT es.*
+        FROM "EmployeeSummary" es
+        WHERE (p_search IS NULL
+               OR es."EmployeeCode" ILIKE '%' || p_search || '%'
+               OR es."EmployeeName" ILIKE '%' || p_search || '%')
+          AND (NOT p_only_modified OR es."HasModified" = 1)
     )
     SELECT
-        es."EmployeeCode",
-        es."EmployeeName",
-        es."EmployeeId",
-        ''::TEXT AS "DepartmentCode",
-        ''::TEXT AS "DepartmentName",
-        ''::TEXT AS "PositionName",
-        es."TotalGross",
-        es."TotalDeductions",
-        es."TotalNet",
-        es."HasModified",
-        es."ConceptCount"
-    FROM "EmployeeSummary" es
-    WHERE (p_search IS NULL
-           OR es."EmployeeCode" ILIKE '%' || p_search || '%'
-           OR es."EmployeeName" ILIKE '%' || p_search || '%')
-      AND (NOT p_only_modified OR es."HasModified" = 1)
-    ORDER BY es."EmployeeName"
+        COUNT(*) OVER()       AS p_total_count,
+        f."EmployeeCode",
+        f."EmployeeName",
+        f."EmployeeId",
+        ''::TEXT              AS "DepartmentCode",
+        ''::TEXT              AS "DepartmentName",
+        ''::TEXT              AS "PositionName",
+        f."TotalGross",
+        f."TotalDeductions",
+        f."TotalNet",
+        f."HasModified",
+        f."ConceptCount"
+    FROM "Filtered" f
+    ORDER BY f."EmployeeName"
     OFFSET p_offset
     LIMIT p_limit;
 END;
@@ -934,22 +929,33 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ListBatches(
     p_payroll_code VARCHAR(15) DEFAULT NULL,
     p_status       VARCHAR(20) DEFAULT NULL,
     p_offset       INTEGER     DEFAULT 0,
-    p_limit        INTEGER     DEFAULT 25,
-    OUT p_total_count INTEGER
+    p_limit        INTEGER     DEFAULT 25
 )
-RETURNS SETOF record
+RETURNS TABLE(
+    p_total_count    BIGINT,
+    "BatchId"        INTEGER,
+    "CompanyId"      INTEGER,
+    "BranchId"       INTEGER,
+    "PayrollCode"    VARCHAR(15),
+    "FromDate"       DATE,
+    "ToDate"         DATE,
+    "Status"         VARCHAR(20),
+    "TotalEmployees" INTEGER,
+    "TotalGross"     NUMERIC(18,2),
+    "TotalDeductions" NUMERIC(18,2),
+    "TotalNet"       NUMERIC(18,2),
+    "CreatedBy"      INTEGER,
+    "CreatedAt"      TIMESTAMP,
+    "ApprovedBy"     INTEGER,
+    "ApprovedAt"     TIMESTAMP,
+    "UpdatedAt"      TIMESTAMP
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM hr."PayrollBatch"
-    WHERE "CompanyId" = p_company_id
-      AND (p_payroll_code IS NULL OR "PayrollCode" = p_payroll_code)
-      AND (p_status       IS NULL OR "Status"      = p_status);
-
     RETURN QUERY
     SELECT
+        COUNT(*) OVER()  AS p_total_count,
         b."BatchId",
         b."CompanyId",
         b."BranchId",
@@ -988,13 +994,12 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
     p_concept_code   VARCHAR(20),
     p_concept_type   VARCHAR(15),
     p_amount         NUMERIC(18,4),
-    p_employee_codes TEXT         DEFAULT NULL,  -- JSON array: '[{"code":"EMP001"},...]'
     p_user_id        INTEGER,
+    p_employee_codes TEXT         DEFAULT NULL,  -- JSON array: '[{"code":"EMP001"},...]'
     OUT p_affected_count INTEGER,
     OUT p_resultado      INTEGER,
     OUT p_mensaje        TEXT
 )
-RETURNS record
 LANGUAGE plpgsql
 AS $$
 DECLARE

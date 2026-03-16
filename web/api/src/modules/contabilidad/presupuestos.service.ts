@@ -32,7 +32,6 @@ export async function listPresupuestos(input: {
     "dbo.usp_Acct_Budget_List",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FiscalYear: input.fiscalYear || null,
       Status: input.status || null,
       Page: page,
@@ -58,7 +57,6 @@ export async function getPresupuesto(id: number) {
     "dbo.usp_Acct_Budget_Get",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       BudgetId: id
     }
   );
@@ -67,7 +65,6 @@ export async function getPresupuesto(id: number) {
     "dbo.usp_Acct_Budget_GetLines",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       BudgetId: id
     }
   );
@@ -99,7 +96,6 @@ export async function insertPresupuesto(input: {
     "dbo.usp_Acct_Budget_Insert",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       BudgetName: input.name,
       FiscalYear: input.fiscalYear,
       CostCenterCode: input.costCenterCode || null,
@@ -144,7 +140,6 @@ export async function updatePresupuesto(id: number, input: {
     "dbo.usp_Acct_Budget_Update",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       BudgetId: id,
       BudgetName: input.name || null,
       LinesJson: linesJson
@@ -171,7 +166,6 @@ export async function deletePresupuesto(id: number) {
     "dbo.usp_Acct_Budget_Delete",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       BudgetId: id
     },
     {
@@ -200,7 +194,6 @@ export async function getVarianza(input: {
     "dbo.usp_Acct_Budget_Variance",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       BudgetId: input.budgetId,
       FechaDesde: input.fechaDesde,
       FechaHasta: input.fechaHasta

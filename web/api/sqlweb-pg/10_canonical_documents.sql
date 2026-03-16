@@ -14,12 +14,46 @@ BEGIN;
 -- ============================================================
 
 -- Solo eliminar si existen como tablas (no vistas)
-DROP TABLE IF EXISTS public."DocumentosVentaDetalle"  CASCADE;
-DROP TABLE IF EXISTS public."DocumentosVentaPago"     CASCADE;
-DROP TABLE IF EXISTS public."DocumentosVenta"         CASCADE;
-DROP TABLE IF EXISTS public."DocumentosCompraDetalle" CASCADE;
-DROP TABLE IF EXISTS public."DocumentosCompraPago"    CASCADE;
-DROP TABLE IF EXISTS public."DocumentosCompra"        CASCADE;
+-- Usa DO block para ignorar si el objeto existe como vista en lugar de tabla
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'DocumentosVentaDetalle' AND table_type = 'BASE TABLE'
+    ) THEN
+        DROP TABLE public."DocumentosVentaDetalle" CASCADE;
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'DocumentosVentaPago' AND table_type = 'BASE TABLE'
+    ) THEN
+        DROP TABLE public."DocumentosVentaPago" CASCADE;
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'DocumentosVenta' AND table_type = 'BASE TABLE'
+    ) THEN
+        DROP TABLE public."DocumentosVenta" CASCADE;
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'DocumentosCompraDetalle' AND table_type = 'BASE TABLE'
+    ) THEN
+        DROP TABLE public."DocumentosCompraDetalle" CASCADE;
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'DocumentosCompraPago' AND table_type = 'BASE TABLE'
+    ) THEN
+        DROP TABLE public."DocumentosCompraPago" CASCADE;
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'DocumentosCompra' AND table_type = 'BASE TABLE'
+    ) THEN
+        DROP TABLE public."DocumentosCompra" CASCADE;
+    END IF;
+END $$;
 
 -- ============================================================
 -- SECCION 2: sec."UserModuleAccess" (permisos de modulos)

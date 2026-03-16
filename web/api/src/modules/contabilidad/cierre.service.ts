@@ -25,7 +25,6 @@ export async function listPeriodos(input: {
     "dbo.usp_Acct_Period_List",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       Year: input.year || null,
       Status: input.status || null,
       Page: page,
@@ -51,7 +50,6 @@ export async function ensureYear(year: number) {
     "dbo.usp_Acct_Period_EnsureYear",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       Year: year
     },
     {
@@ -76,7 +74,6 @@ export async function closePeriod(periodoCode: string, userId: string) {
     "dbo.usp_Acct_Period_Close",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       PeriodCode: periodoCode,
       UserId: userId
     },
@@ -102,7 +99,6 @@ export async function reopenPeriod(periodoCode: string, userId: string) {
     "dbo.usp_Acct_Period_Reopen",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       PeriodCode: periodoCode,
       UserId: userId
     },
@@ -128,7 +124,6 @@ export async function generateClosingEntries(periodoCode: string, userId: string
     "dbo.usp_Acct_Period_GenerateClosingEntries",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       PeriodCode: periodoCode,
       UserId: userId
     },
@@ -154,7 +149,6 @@ export async function getChecklist(periodoCode: string) {
     "dbo.usp_Acct_Period_Checklist",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       PeriodCode: periodoCode
     }
   );

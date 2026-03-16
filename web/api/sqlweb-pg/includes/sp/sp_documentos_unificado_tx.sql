@@ -7,6 +7,7 @@
 -- =============================================
 -- 1. EMITIR DOCUMENTO DE VENTA (legacy unificado)
 -- =============================================
+DROP FUNCTION IF EXISTS sp_emitir_documento_venta_tx CASCADE;
 CREATE OR REPLACE FUNCTION sp_emitir_documento_venta_tx(
     p_tipo_operacion         VARCHAR(20),
     p_doc_json               JSONB,
@@ -133,6 +134,7 @@ $$;
 -- =============================================
 -- 2. EMITIR DOCUMENTO DE COMPRA (legacy unificado)
 -- =============================================
+DROP FUNCTION IF EXISTS sp_emitir_documento_compra_tx CASCADE;
 CREATE OR REPLACE FUNCTION sp_emitir_documento_compra_tx(
     p_tipo_operacion         VARCHAR(20),
     p_doc_json               JSONB,

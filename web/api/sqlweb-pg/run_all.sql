@@ -91,6 +91,9 @@
 \echo '--- Funciones Configuracion ---'
 \i includes/sp/usp_cfg.sql
 
+\echo '--- Funciones Configuracion Paises ---'
+\i includes/sp/sp_cfg_country.sql
+
 \echo '--- Funciones Seguridad ---'
 \i includes/sp/usp_sec.sql
 
@@ -111,6 +114,24 @@
 
 \echo '--- Funciones Contabilidad ---'
 \i includes/sp/usp_acct.sql
+
+\echo '--- Funciones Contabilidad Avanzada ---'
+\i includes/sp/usp_acct_advanced.sql
+
+\echo '--- Funciones Contabilidad Patrimonio ---'
+\i includes/sp/usp_acct_equity.sql
+
+\echo '--- Funciones Contabilidad Activos Fijos ---'
+\i includes/sp/usp_acct_fixedassets.sql
+
+\echo '--- Funciones Contabilidad Inflacion ---'
+\i includes/sp/usp_acct_inflation.sql
+
+\echo '--- Funciones Contabilidad Plantillas ---'
+\i includes/sp/usp_acct_templates.sql
+
+\echo '--- Funciones Fiscal Tributaria ---'
+\i includes/sp/usp_fiscal_tributaria.sql
 
 \echo '--- Funciones Pagos ---'
 \i includes/sp/usp_pay.sql
@@ -298,6 +319,21 @@
 \echo '--- Funciones Nomina Venezuela ---'
 \i includes/sp/sp_nomina_venezuela_install.sql
 
+\echo '--- Funciones Nomina Batch ---'
+\i includes/sp/sp_nomina_batch.sql
+
+\echo '--- Funciones Nomina Documentos ---'
+\i includes/sp/sp_nomina_documentos.sql
+
+\echo '--- Funciones RRHH Beneficios ---'
+\i includes/sp/sp_rrhh_beneficios.sql
+
+\echo '--- Funciones RRHH Obligaciones Legales ---'
+\i includes/sp/sp_rrhh_obligaciones_legales.sql
+
+\echo '--- Funciones RRHH Salud Ocupacional ---'
+\i includes/sp/sp_rrhh_salud_ocupacional.sql
+
 \echo '--- Funciones POS Ventas Espera ---'
 \i includes/sp/sp_pos_ventas_espera.sql
 
@@ -349,6 +385,15 @@
 \echo '--- Contabilidad General Tables ---'
 \i includes/sp/create_contabilidad_general.sql
 
+\echo '--- Activos Fijos Tables ---'
+\i includes/sp/create_activos_fijos.sql
+
+\echo '--- Fiscal Tributaria Tables ---'
+\i includes/sp/create_fiscal_tributaria.sql
+
+\echo '--- Tablas Legales Contabilidad ---'
+\i includes/sp/acct_legal_tables.sql
+
 \echo '--- Balance Compat ---'
 \i includes/sp/balance_compat.sql
 
@@ -376,6 +421,9 @@
 \echo '--- POS Restaurante Contabilidad Bridge ---'
 \i includes/sp/alter_pos_restaurante_contabilidad_bridge.sql
 
+\echo '--- Alter Employee Position Company Address ---'
+\i includes/sp/alter_employee_position_company_address.sql
+
 \echo '--- Seed Constantes y Conceptos Legal ---'
 \i includes/sp/seed_constantes_y_conceptos_legal.sql
 
@@ -387,6 +435,30 @@
 
 \echo '--- Seed Restaurante Menu Extra ---'
 \i includes/sp/seed_restaurante_menu_extra.sql
+
+\echo '--- Seed Nomina Completo (batches, vacaciones, salud ocupacional) ---'
+\i includes/sp/seed_nomina_completo.sql
+
+\echo '--- Seed Nomina Completo P2 (capacitacion, ahorro, obligaciones) ---'
+\i includes/sp/seed_nomina_completo_p2.sql
+
+\echo '--- Seed RRHH Completo (utilidades, prestaciones, caja ahorro) ---'
+\i includes/sp/seed_rrhh_completo.sql
+
+\echo '--- Seed Plantillas de Reportes Contables ---'
+\i includes/sp/seed_report_templates.sql
+
+\echo '--- Seed Demo Contabilidad ---'
+\i includes/sp/seed_contabilidad_demo.sql
+
+\echo '--- Seed Demo Clientes y Documentos ---'
+\i includes/sp/seed_demo_clientes_documentos.sql
+
+\echo '--- Seed Demo Ecommerce y POS ---'
+\i includes/sp/seed_demo_ecommerce_pos.sql
+
+\echo '--- Seed Demo Finanzas y Contabilidad ---'
+\i includes/sp/seed_demo_finanzas_contabilidad.sql
 
 -- ====================================================================
 -- FASE 6: Verificacion

@@ -32,7 +32,6 @@ export async function listRecurrentes(input: {
     "dbo.usp_Acct_RecurringEntry_List",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       IsActive: input.isActive ?? null,
       Page: page,
       Limit: limit
@@ -57,7 +56,6 @@ export async function getRecurrente(id: number) {
     "dbo.usp_Acct_RecurringEntry_Get",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       RecurringEntryId: id
     }
   );
@@ -66,7 +64,6 @@ export async function getRecurrente(id: number) {
     "dbo.usp_Acct_RecurringEntry_GetLines",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       RecurringEntryId: id
     }
   );
@@ -101,7 +98,6 @@ export async function insertRecurrente(input: {
     "dbo.usp_Acct_RecurringEntry_Insert",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       TemplateName: input.templateName,
       Frequency: input.frequency,
       NextExecutionDate: input.nextExecutionDate,
@@ -154,7 +150,6 @@ export async function updateRecurrente(id: number, data: {
     "dbo.usp_Acct_RecurringEntry_Update",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       RecurringEntryId: id,
       TemplateName: data.templateName || null,
       Frequency: data.frequency || null,
@@ -186,7 +181,6 @@ export async function deleteRecurrente(id: number) {
     "dbo.usp_Acct_RecurringEntry_Delete",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       RecurringEntryId: id
     },
     {
@@ -211,7 +205,6 @@ export async function executeRecurrente(id: number, executionDate: string, userI
     "dbo.usp_Acct_RecurringEntry_Execute",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       RecurringEntryId: id,
       ExecutionDate: executionDate,
       UserId: userId
@@ -240,8 +233,7 @@ export async function getDueRecurrentes() {
   const rows = await callSp<any>(
     "dbo.usp_Acct_RecurringEntry_GetDue",
     {
-      CompanyId: scope.companyId,
-      BranchId: scope.branchId
+      CompanyId: scope.companyId
     }
   );
 

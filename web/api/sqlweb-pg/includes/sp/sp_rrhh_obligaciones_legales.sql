@@ -24,6 +24,108 @@
 -- =============================================================================
 
 -- =============================================================================
+-- DDL: Tablas requeridas por este módulo
+-- =============================================================================
+
+CREATE SCHEMA IF NOT EXISTS hr;
+
+-- hr."LegalObligation" - Catálogo maestro de obligaciones legales
+CREATE TABLE IF NOT EXISTS hr."LegalObligation" (
+    "LegalObligationId"  SERIAL          NOT NULL CONSTRAINT "PK_LegalObligation" PRIMARY KEY,
+    "CountryCode"        CHAR(2)         NOT NULL,
+    "Code"               VARCHAR(30)     NOT NULL,
+    "Name"               VARCHAR(200)    NOT NULL,
+    "InstitutionName"    VARCHAR(200)    NULL,
+    "ObligationType"     VARCHAR(20)     NOT NULL, -- CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION
+    "CalculationBasis"   VARCHAR(30)     NOT NULL, -- NORMAL_SALARY, INTEGRAL_SALARY, GROSS_PAYROLL, TAXABLE_INCOME, FIXED_AMOUNT
+    "SalaryCap"          NUMERIC(18,2)   NULL,
+    "SalaryCapUnit"      VARCHAR(20)     NULL,     -- CURRENCY, MIN_WAGES, UMA, SMMLV
+    "EmployerRate"       NUMERIC(8,5)    NOT NULL DEFAULT 0,
+    "EmployeeRate"       NUMERIC(8,5)    NOT NULL DEFAULT 0,
+    "RateVariableByRisk" BOOLEAN         NOT NULL DEFAULT FALSE,
+    "FilingFrequency"    VARCHAR(15)     NOT NULL, -- MONTHLY, QUARTERLY, ANNUAL, REALTIME
+    "FilingDeadlineRule" VARCHAR(200)    NULL,
+    "EffectiveFrom"      DATE            NOT NULL,
+    "EffectiveTo"        DATE            NULL,
+    "IsActive"           BOOLEAN         NOT NULL DEFAULT TRUE,
+    "Notes"              VARCHAR(500)    NULL,
+    "CreatedAt"          TIMESTAMP(0)    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"          TIMESTAMP(0)    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    CONSTRAINT "UQ_LegalObligation_Country_Code_From" UNIQUE ("CountryCode", "Code", "EffectiveFrom")
+);
+
+-- hr."ObligationRiskLevel" - Tasas variables por nivel de riesgo
+CREATE TABLE IF NOT EXISTS hr."ObligationRiskLevel" (
+    "ObligationRiskLevelId" SERIAL          NOT NULL CONSTRAINT "PK_ObligationRiskLevel" PRIMARY KEY,
+    "LegalObligationId"     INTEGER         NOT NULL,
+    "RiskLevel"             SMALLINT        NOT NULL,
+    "RiskDescription"       VARCHAR(100)    NULL,
+    "EmployerRate"          NUMERIC(8,5)    NOT NULL DEFAULT 0,
+    "EmployeeRate"          NUMERIC(8,5)    NOT NULL DEFAULT 0,
+    CONSTRAINT "FK_ObligationRiskLevel_Obligation" FOREIGN KEY ("LegalObligationId")
+        REFERENCES hr."LegalObligation" ("LegalObligationId"),
+    CONSTRAINT "UQ_ObligationRiskLevel" UNIQUE ("LegalObligationId", "RiskLevel")
+);
+
+-- hr."EmployeeObligation" - Inscripción por empleado
+CREATE TABLE IF NOT EXISTS hr."EmployeeObligation" (
+    "EmployeeObligationId" SERIAL          NOT NULL CONSTRAINT "PK_EmployeeObligation" PRIMARY KEY,
+    "EmployeeId"           BIGINT          NOT NULL,
+    "LegalObligationId"    INTEGER         NOT NULL,
+    "AffiliationNumber"    VARCHAR(50)     NULL,
+    "InstitutionCode"      VARCHAR(50)     NULL,
+    "RiskLevelId"          INTEGER         NULL,
+    "EnrollmentDate"       DATE            NOT NULL,
+    "DisenrollmentDate"    DATE            NULL,
+    "Status"               VARCHAR(15)     NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, SUSPENDED, TERMINATED
+    "CustomRate"           NUMERIC(8,5)    NULL,
+    "CreatedAt"            TIMESTAMP(0)    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"            TIMESTAMP(0)    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    CONSTRAINT "FK_EmployeeObligation_Obligation" FOREIGN KEY ("LegalObligationId")
+        REFERENCES hr."LegalObligation" ("LegalObligationId"),
+    CONSTRAINT "FK_EmployeeObligation_RiskLevel" FOREIGN KEY ("RiskLevelId")
+        REFERENCES hr."ObligationRiskLevel" ("ObligationRiskLevelId")
+);
+
+-- hr."ObligationFiling" - Declaraciones por período
+CREATE TABLE IF NOT EXISTS hr."ObligationFiling" (
+    "ObligationFilingId"   SERIAL          NOT NULL CONSTRAINT "PK_ObligationFiling" PRIMARY KEY,
+    "CompanyId"            INTEGER         NOT NULL,
+    "LegalObligationId"    INTEGER         NOT NULL,
+    "FilingPeriodStart"    DATE            NOT NULL,
+    "FilingPeriodEnd"      DATE            NOT NULL,
+    "DueDate"              DATE            NOT NULL,
+    "FiledDate"            DATE            NULL,
+    "ConfirmationNumber"   VARCHAR(100)    NULL,
+    "TotalEmployerAmount"  NUMERIC(18,2)   NULL,
+    "TotalEmployeeAmount"  NUMERIC(18,2)   NULL,
+    "TotalAmount"          NUMERIC(18,2)   NULL,
+    "EmployeeCount"        INTEGER         NULL,
+    "Status"               VARCHAR(15)     NOT NULL DEFAULT 'PENDING', -- PENDING, LATE, FILED, PAID, REJECTED
+    "FiledByUserId"        INTEGER         NULL,
+    "DocumentUrl"          VARCHAR(500)    NULL,
+    "Notes"                VARCHAR(500)    NULL,
+    "CreatedAt"            TIMESTAMP(0)    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"            TIMESTAMP(0)    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    CONSTRAINT "FK_ObligationFiling_Obligation" FOREIGN KEY ("LegalObligationId")
+        REFERENCES hr."LegalObligation" ("LegalObligationId")
+);
+
+-- hr."ObligationFilingDetail" - Detalle por empleado en cada declaración
+CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
+    "DetailId"             SERIAL          NOT NULL CONSTRAINT "PK_ObligationFilingDetail" PRIMARY KEY,
+    "ObligationFilingId"   INTEGER         NOT NULL,
+    "EmployeeId"           BIGINT          NOT NULL,
+    "BaseSalary"           NUMERIC(18,2)   NOT NULL DEFAULT 0,
+    "EmployerAmount"       NUMERIC(18,2)   NOT NULL DEFAULT 0,
+    "EmployeeAmount"       NUMERIC(18,2)   NOT NULL DEFAULT 0,
+    "DaysWorked"           INTEGER         NOT NULL DEFAULT 30,
+    "NoveltyType"          VARCHAR(20)     NOT NULL DEFAULT 'NONE', -- NONE, ENROLLMENT, WITHDRAWAL, SUSPENSION
+    CONSTRAINT "FK_ObligationFilingDetail_Filing" FOREIGN KEY ("ObligationFilingId")
+        REFERENCES hr."ObligationFiling" ("ObligationFilingId")
+);
+
+-- =============================================================================
 -- 1. usp_HR_Obligation_List
 -- =============================================================================
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
@@ -32,10 +134,29 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
     p_is_active         BOOLEAN         DEFAULT NULL,
     p_search            VARCHAR(100)    DEFAULT NULL,
     p_page              INTEGER         DEFAULT 1,
-    p_limit             INTEGER         DEFAULT 50,
-    OUT p_total_count   INTEGER
+    p_limit             INTEGER         DEFAULT 50
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count           BIGINT,
+    "LegalObligationId"     INTEGER,
+    "CountryCode"           CHAR(2),
+    "Code"                  VARCHAR(30),
+    "Name"                  VARCHAR(200),
+    "InstitutionName"       VARCHAR(200),
+    "ObligationType"        VARCHAR(20),
+    "CalculationBasis"      VARCHAR(30),
+    "SalaryCap"             NUMERIC(18,2),
+    "SalaryCapUnit"         VARCHAR(20),
+    "EmployerRate"          NUMERIC(8,5),
+    "EmployeeRate"          NUMERIC(8,5),
+    "RateVariableByRisk"    BOOLEAN,
+    "FilingFrequency"       VARCHAR(15),
+    "FilingDeadlineRule"    VARCHAR(200),
+    "EffectiveFrom"         DATE,
+    "EffectiveTo"           DATE,
+    "IsActive"              BOOLEAN,
+    "Notes"                 VARCHAR(500)
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -43,17 +164,9 @@ BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM hr."LegalObligation"
-    WHERE (p_country_code    IS NULL OR "CountryCode"    = p_country_code)
-      AND (p_obligation_type IS NULL OR "ObligationType" = p_obligation_type)
-      AND (p_is_active       IS NULL OR "IsActive"       = p_is_active)
-      AND (p_search          IS NULL OR "Name" ILIKE '%' || p_search || '%'
-                                     OR "Code" ILIKE '%' || p_search || '%');
-
     RETURN QUERY
     SELECT
+        COUNT(*) OVER()         AS p_total_count,
         "LegalObligationId",
         "CountryCode",
         "Code",
@@ -424,21 +537,37 @@ $$;
 -- =============================================================================
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_GetByEmployee(
     p_employee_id       BIGINT,
-    p_status_filter     VARCHAR(15)     DEFAULT NULL,
-    OUT p_total_count   INTEGER
+    p_status_filter     VARCHAR(15)     DEFAULT NULL
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count               BIGINT,
+    "EmployeeObligationId"      INTEGER,
+    "EmployeeId"                BIGINT,
+    "LegalObligationId"         INTEGER,
+    "CountryCode"               CHAR(2),
+    "Code"                      VARCHAR(30),
+    "ObligationName"            VARCHAR(200),
+    "InstitutionName"           VARCHAR(200),
+    "ObligationType"            VARCHAR(20),
+    "CalculationBasis"          VARCHAR(30),
+    "AffiliationNumber"         VARCHAR(50),
+    "InstitutionCode"           VARCHAR(50),
+    "RiskLevelId"               INTEGER,
+    "RiskLevel"                 SMALLINT,
+    "RiskDescription"           VARCHAR(100),
+    "EnrollmentDate"            DATE,
+    "DisenrollmentDate"         DATE,
+    "Status"                    VARCHAR(15),
+    "CustomRate"                NUMERIC(8,5),
+    "EffectiveEmployerRate"     NUMERIC(8,5),
+    "EffectiveEmployeeRate"     NUMERIC(8,5)
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM hr."EmployeeObligation"
-    WHERE "EmployeeId" = p_employee_id
-      AND (p_status_filter IS NULL OR "Status" = p_status_filter);
-
     RETURN QUERY
     SELECT
+        COUNT(*) OVER()                                                         AS p_total_count,
         eo."EmployeeObligationId",
         eo."EmployeeId",
         eo."LegalObligationId",
@@ -457,12 +586,12 @@ BEGIN
         eo."DisenrollmentDate",
         eo."Status",
         eo."CustomRate",
-        COALESCE(eo."CustomRate", rl."EmployerRate", lo."EmployerRate") AS "EffectiveEmployerRate",
+        COALESCE(eo."CustomRate", rl."EmployerRate", lo."EmployerRate")         AS "EffectiveEmployerRate",
         COALESCE(
             CASE WHEN eo."CustomRate" IS NOT NULL THEN lo."EmployeeRate" ELSE NULL END,
             rl."EmployeeRate",
             lo."EmployeeRate"
-        )                                       AS "EffectiveEmployeeRate"
+        )                                                                       AS "EffectiveEmployeeRate"
     FROM hr."EmployeeObligation" eo
     INNER JOIN hr."LegalObligation" lo ON lo."LegalObligationId" = eo."LegalObligationId"
     LEFT JOIN  hr."ObligationRiskLevel" rl ON rl."ObligationRiskLevelId" = eo."RiskLevelId"
@@ -789,10 +918,29 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Filing_List(
     p_from_date             DATE            DEFAULT NULL,
     p_to_date               DATE            DEFAULT NULL,
     p_page                  INTEGER         DEFAULT 1,
-    p_limit                 INTEGER         DEFAULT 50,
-    OUT p_total_count       INTEGER
+    p_limit                 INTEGER         DEFAULT 50
 )
-RETURNS SETOF RECORD
+RETURNS TABLE(
+    p_total_count           BIGINT,
+    "ObligationFilingId"    INTEGER,
+    "CompanyId"             INTEGER,
+    "LegalObligationId"     INTEGER,
+    "CountryCode"           CHAR(2),
+    "ObligationCode"        VARCHAR(30),
+    "ObligationName"        VARCHAR(200),
+    "InstitutionName"       VARCHAR(200),
+    "FilingPeriodStart"     DATE,
+    "FilingPeriodEnd"       DATE,
+    "DueDate"               DATE,
+    "FiledDate"             DATE,
+    "ConfirmationNumber"    VARCHAR(100),
+    "TotalEmployerAmount"   NUMERIC(18,2),
+    "TotalEmployeeAmount"   NUMERIC(18,2),
+    "TotalAmount"           NUMERIC(18,2),
+    "EmployeeCount"         INTEGER,
+    "Status"                VARCHAR(15),
+    "CreatedAt"             TIMESTAMP
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -800,25 +948,15 @@ BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
-    SELECT COUNT(*)
-    INTO p_total_count
-    FROM hr."ObligationFiling" f
-    INNER JOIN hr."LegalObligation" lo ON lo."LegalObligationId" = f."LegalObligationId"
-    WHERE (p_company_id          IS NULL OR f."CompanyId"          = p_company_id)
-      AND (p_legal_obligation_id IS NULL OR f."LegalObligationId"  = p_legal_obligation_id)
-      AND (p_country_code        IS NULL OR lo."CountryCode"       = p_country_code)
-      AND (p_status              IS NULL OR f."Status"             = p_status)
-      AND (p_from_date           IS NULL OR f."FilingPeriodStart" >= p_from_date)
-      AND (p_to_date             IS NULL OR f."FilingPeriodEnd"   <= p_to_date);
-
     RETURN QUERY
     SELECT
+        COUNT(*) OVER()         AS p_total_count,
         f."ObligationFilingId",
         f."CompanyId",
         f."LegalObligationId",
         lo."CountryCode",
-        lo."Code"           AS "ObligationCode",
-        lo."Name"           AS "ObligationName",
+        lo."Code"               AS "ObligationCode",
+        lo."Name"               AS "ObligationName",
         lo."InstitutionName",
         f."FilingPeriodStart",
         f."FilingPeriodEnd",

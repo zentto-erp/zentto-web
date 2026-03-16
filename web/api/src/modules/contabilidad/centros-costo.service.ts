@@ -24,7 +24,6 @@ export async function listCentrosCosto(input: {
     "dbo.usp_Acct_CostCenter_List",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       Search: input.search?.trim() || null,
       Page: page,
       Limit: limit
@@ -49,7 +48,6 @@ export async function getCentroCosto(code: string) {
     "dbo.usp_Acct_CostCenter_Get",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       CostCenterCode: code
     }
   );
@@ -68,7 +66,6 @@ export async function insertCentroCosto(input: {
     "dbo.usp_Acct_CostCenter_Insert",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       CostCenterCode: input.code,
       CostCenterName: input.name,
       ParentCode: input.parentCode || null
@@ -98,7 +95,6 @@ export async function updateCentroCosto(code: string, input: {
     "dbo.usp_Acct_CostCenter_Update",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       CostCenterCode: code,
       CostCenterName: input.name || null,
       ParentCode: input.parentCode || null
@@ -125,7 +121,6 @@ export async function deleteCentroCosto(code: string) {
     "dbo.usp_Acct_CostCenter_Delete",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       CostCenterCode: code
     },
     {
@@ -153,7 +148,6 @@ export async function pnlByCostCenter(input: {
     "dbo.usp_Acct_Report_PnLByCostCenter",
     {
       CompanyId: scope.companyId,
-      BranchId: scope.branchId,
       FechaDesde: input.fechaDesde,
       FechaHasta: input.fechaHasta
     }

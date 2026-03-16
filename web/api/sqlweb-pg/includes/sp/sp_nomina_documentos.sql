@@ -28,6 +28,22 @@ CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
     CONSTRAINT "UQ_DocumentTemplate_Code" UNIQUE ("CompanyId", "TemplateCode")
 );
 
+-- Agregar columna IsSystem si la tabla ya existe sin ella (migración)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'hr'
+          AND table_name   = 'DocumentTemplate'
+          AND column_name  = 'IsSystem'
+    ) THEN
+        ALTER TABLE hr."DocumentTemplate"
+            ADD COLUMN "IsSystem" BOOLEAN NOT NULL DEFAULT FALSE;
+        RAISE NOTICE '>> Columna IsSystem agregada a hr.DocumentTemplate';
+    END IF;
+END;
+$$;
+
 -- =============================================
 -- 2. FUNCIONES (equivalentes a los SPs)
 -- =============================================
@@ -131,13 +147,12 @@ CREATE OR REPLACE FUNCTION public.usp_HR_DocumentTemplate_Save(
     p_template_name VARCHAR(200),
     p_template_type VARCHAR(40),
     p_country_code  CHAR(2),
-    p_payroll_code  VARCHAR(20) DEFAULT NULL,
     p_content_md    TEXT,
+    p_payroll_code  VARCHAR(20) DEFAULT NULL,
     p_is_default    BOOLEAN     DEFAULT TRUE,
     OUT p_resultado INTEGER,
     OUT p_mensaje   TEXT
 )
-RETURNS record
 LANGUAGE plpgsql
 AS $$
 BEGIN
