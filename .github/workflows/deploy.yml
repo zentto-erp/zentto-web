@@ -21,9 +21,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      registry_token: ${{ steps.token.outputs.token }}
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
