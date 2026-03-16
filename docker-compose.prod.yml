@@ -28,7 +28,7 @@ services:
       - /opt/zentto/.env.frontend
     environment:
       - NODE_ENV=production
-      - NEXTAUTH_URL=https://zentto.net
+      - NEXTAUTH_URL=https://app.zentto.net
       - AUTH_TRUST_HOST=true
       - BACKEND_URL=http://zentto-api:4000
       - API_URL=http://zentto-api:4000
