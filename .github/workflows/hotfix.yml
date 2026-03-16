@@ -55,3 +55,23 @@ jobs:
             fi
             echo "✓ $SERVICE reiniciado: $(date -u)"
             docker compose -f docker-compose.prod.yml ps
+
+  diagnose:
+    name: Ver logs del servidor
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: hotfix
+    permissions:
+      contents: read
+    steps:
+      - name: Logs API container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "=== API LOGS ==="
+            docker logs zentto-api --tail 50 2>&1 || echo "container no existe"
+            echo "=== ENV.API (sin secrets) ==="
+            grep -v "PASSWORD\|SECRET\|KEY\|TOKEN" /opt/zentto/.env.api 2>/dev/null || echo "no existe"
