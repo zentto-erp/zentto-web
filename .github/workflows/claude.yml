@@ -32,7 +32,8 @@ jobs:
       - name: Run Claude Code Agent
         uses: anthropics/claude-code-action@beta
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Usa suscripcion Max ($200/mes) — sin costo adicional de API
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           model: "claude-sonnet-4-5"
           max_turns: "10"
