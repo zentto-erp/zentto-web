@@ -104,6 +104,55 @@ Si solo actualizas UNO, el otro motor queda roto. **No hay excepciones.**
 3. **SQL Specialist** -> valida SQL en AMBOS motores (sqlweb + sqlweb-pg)
 4. **QA** -> GO/NO-GO
 
+## Infraestructura de Produccion
+
+| Componente | Valor |
+|-----------|-------|
+| Servidor | Hetzner CX33 — `zentto-server` |
+| IP | `178.104.56.185` |
+| Dominio | `zentto.net` (Cloudflare) |
+| Frontend | `https://zentto.net` → Docker container puerto 3000 |
+| API | `https://api.zentto.net` → Docker container puerto 4000 |
+| Repositorio | `https://github.com/datqbox/zentto-web` |
+| Registry | `ghcr.io/datqbox/zentto-web/api` y `.../frontend` |
+
+### CI/CD — GitHub Actions
+
+- Rama `main` → deploy automatico a produccion
+- Workflow: `.github/workflows/deploy.yml`
+- Build Docker → push a ghcr.io → SSH deploy al servidor
+- Secrets configurados: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `GHCR_PAT`
+
+### Docker
+
+```
+docker/Dockerfile.api        # API Node/Express
+docker/Dockerfile.frontend   # 11 micro-apps Next.js via PM2
+docker/pm2.config.cjs        # PM2 ecosystem (ports 3000-3010)
+docker-compose.yml           # Local (build)
+docker-compose.prod.yml      # Produccion (imagenes ghcr.io)
+nginx/zentto.conf            # Reverse proxy config
+scripts/server-setup.sh      # Setup inicial del servidor
+```
+
+### Setup del servidor (primera vez)
+
+```bash
+# En el servidor como root:
+bash <(curl -sSL https://raw.githubusercontent.com/datqbox/zentto-web/main/scripts/server-setup.sh)
+
+# SSL (tras configurar DNS en Cloudflare):
+certbot --nginx -d zentto.net -d www.zentto.net -d api.zentto.net
+```
+
+### DNS Cloudflare (registros requeridos)
+
+```
+A    zentto.net      178.104.56.185   (proxy OFF para SSH, ON para HTTP)
+A    www.zentto.net  178.104.56.185
+A    api.zentto.net  178.104.56.185
+```
+
 ## Reglas
 
 - Siempre parametrizar queries SQL.
@@ -115,3 +164,5 @@ Si solo actualizas UNO, el otro motor queda roto. **No hay excepciones.**
 - Writes usan `@Resultado, @Mensaje OUTPUT` (SQL Server) / `RETURNS TABLE("ok", "mensaje")` (PG).
 - Helpers API: `callSp()`, `callSpOut()`, `callSpTx()` en `web/api/src/db/query.ts`.
 - Todas las fechas en **UTC-0**. Display convierte a timezone de empresa.
+- No hacer `git push --force` a `main` sin confirmacion explicita.
+- Deploy a produccion solo via CI/CD (push a main) o `workflow_dispatch`.

@@ -1,0 +1,44 @@
+# ── Git ────────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ── Node modules (se reinstalan en el build) ──────────────────────────────────
+**/node_modules
+
+# ── Builds previos ────────────────────────────────────────────────────────────
+web/api/dist
+**/dist
+**/.next
+!web/modular-frontend/apps/**/.next
+
+# ── Secretos ──────────────────────────────────────────────────────────────────
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+**/*.log
+**/logs
+
+# ── Docs y SQL (no necesarios en runtime) ─────────────────────────────────────
+docs/
+md/
+web/api/sqlweb/
+web/api/sqlweb-pg/
+web/api/db-snapshot/
+web/api/scripts/
+web/api/sql/
+
+# ── Otros proyectos del workspace ─────────────────────────────────────────────
+BrokerPlatform/
+DatqBox.LocalFiscalAgent/
+DatqBox.ReportServer/
+RigazaInspector/
+tools/
+
+# ── IDE y OS ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
