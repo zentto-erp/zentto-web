@@ -1,7 +1,7 @@
 version: '3.9'
 
-# ── Zentto — docker-compose PRODUCCIÓN ────────────────────────────────────────
-# Usa imágenes pre-construidas desde ghcr.io (desplegadas por CI/CD)
+# ── Zentto — docker-compose PRODUCCION ────────────────────────────────────────
+# Usa imagenes pre-construidas desde ghcr.io (desplegadas por CI/CD)
 # Uso en servidor: docker compose -f docker-compose.prod.yml up -d
 
 services:
@@ -28,8 +28,10 @@ services:
       - /opt/zentto/.env.frontend
     environment:
       - NODE_ENV=production
-      - NEXTAUTH_URL=https://app.zentto.net
+      # Auth (shell app — runtime)
       - AUTH_TRUST_HOST=true
+      - NEXTAUTH_URL=https://zentto.net
+      # API URLs para SSR (server-side rendering en runtime)
       - BACKEND_URL=http://zentto-api:4000
       - API_URL=http://zentto-api:4000
     networks:

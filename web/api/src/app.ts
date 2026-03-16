@@ -111,33 +111,19 @@ export async function createApp() {
   const app = express();
   app.disable("etag");
   app.use(helmet());
+  // CORS: origins locales + produccion (via CORS_ORIGINS en .env)
+  const corsOrigins: string[] = [
+    'http://localhost:3000', 'http://localhost:3100',
+    'http://127.0.0.1:3000', 'http://127.0.0.1:3100',
+    ...Array.from({ length: 10 }, (_, i) => `http://localhost:${3001 + i}`),
+    ...Array.from({ length: 10 }, (_, i) => `http://127.0.0.1:${3001 + i}`),
+  ];
+  // Produccion: CORS_ORIGINS=https://zentto.net,https://www.zentto.net,https://app.zentto.net
+  if (process.env.CORS_ORIGINS) {
+    corsOrigins.push(...process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean));
+  }
   app.use(cors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3100',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3100',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:3003',
-      'http://localhost:3004',
-      'http://localhost:3005',
-      'http://localhost:3006',
-      'http://localhost:3007',
-      'http://localhost:3008',
-      'http://localhost:3009',
-      'http://localhost:3010',
-      'http://127.0.0.1:3001',
-      'http://127.0.0.1:3002',
-      'http://127.0.0.1:3003',
-      'http://127.0.0.1:3004',
-      'http://127.0.0.1:3005',
-      'http://127.0.0.1:3006',
-      'http://127.0.0.1:3007',
-      'http://127.0.0.1:3008',
-      'http://127.0.0.1:3009',
-      'http://127.0.0.1:3010',
-    ],
+    origin: corsOrigins,
     credentials: true,
   }));
   fs.mkdirSync(env.media.storagePath, { recursive: true });
