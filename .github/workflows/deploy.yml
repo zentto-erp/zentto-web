@@ -3,7 +3,7 @@ name: Deploy Zentto to Production
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # permite lanzar manualmente desde GitHub UI
+  workflow_dispatch:
 
 concurrency:
   group: deploy-production
@@ -14,48 +14,43 @@ env:
   IMAGE_PREFIX: ghcr.io/zentto-erp/zentto-web
 
 jobs:
-  # ── 1. Build y push imágenes Docker ─────────────────────────────────────────
   build:
-    name: Build & Push Docker Images
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Checkout código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login a GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configurar Docker Buildx
+      - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Extraer metadata (API)
+      - name: Meta API
         id: meta-api
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_PREFIX }}/api
           tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest
 
-      - name: Extraer metadata (Frontend)
+      - name: Meta Frontend
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_PREFIX }}/frontend
           tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest
 
-      - name: Build y push API
+      - name: Build and push API
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -66,7 +61,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build y push Frontend
+      - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -82,29 +77,27 @@ jobs:
             NEXT_PUBLIC_API_URL=https://api.zentto.net
             NEXT_PUBLIC_BACKEND_URL=https://api.zentto.net
 
-  # ── 2. Deploy al servidor Hetzner ───────────────────────────────────────────
   deploy:
-    name: Deploy to zentto-server
+    name: Deploy to Server
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
-
     steps:
-      - name: Checkout código (para docker-compose.prod.yml)
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copiar docker-compose.prod.yml al servidor
+      - name: Copy compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml"
-          target: "/opt/zentto/"
+          source: docker-compose.prod.yml
+          target: /opt/zentto/
 
-      - name: Deploy vía SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,63 +110,12 @@ jobs:
           script: |
             set -e
             cd /opt/zentto
-
-            # Crear .env.frontend si no existe (AUTH_SECRET requerido por NextAuth)
             if [ ! -f /opt/zentto/.env.frontend ]; then
               echo "AUTH_SECRET=$(openssl rand -base64 32)" > /opt/zentto/.env.frontend
               chmod 600 /opt/zentto/.env.frontend
-              echo "✓ .env.frontend creado con AUTH_SECRET generado"
             fi
-
-            # Obtener certificado SSL para app.zentto.net si no existe
-            if [ ! -d /etc/letsencrypt/live/app.zentto.net ]; then
-              certbot certonly --dns-cloudflare \
-                --dns-cloudflare-credentials /etc/cloudflare/credentials.ini \
-                -d app.zentto.net --non-interactive --agree-tos \
-                -m admin@zentto.net && echo "✓ SSL app.zentto.net obtenido"
-            fi
-
-            # Actualizar bloque Nginx para app.zentto.net si no existe
-            if ! grep -q "app.zentto.net" /etc/nginx/sites-enabled/zentto 2>/dev/null; then
-              cat > /etc/nginx/sites-available/zentto-app <<'NGINX'
-server {
-    listen 443 ssl;
-    server_name app.zentto.net;
-    ssl_certificate     /etc/letsencrypt/live/app.zentto.net/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.zentto.net/privkey.pem;
-    client_max_body_size 20M;
-    location / {
-        proxy_pass         http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header   Upgrade $http_upgrade;
-        proxy_set_header   Connection 'upgrade';
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-server {
-    listen 80;
-    server_name app.zentto.net;
-    return 301 https://$host$request_uri;
-}
-NGINX
-              ln -sf /etc/nginx/sites-available/zentto-app /etc/nginx/sites-enabled/zentto-app
-              nginx -t && systemctl reload nginx && echo "✓ Nginx app.zentto.net configurado"
-            fi
-
-            # Login a ghcr.io usando el token del workflow
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-
-            # Descargar nuevas imágenes
             docker compose -f docker-compose.prod.yml pull
-
-            # Levantar/actualizar contenedores
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-            # Limpiar imágenes antiguas
             docker image prune -f
-
-            echo "✓ Deploy completado: $(date -u)"
+            echo "Deploy completed: $(date -u)"
