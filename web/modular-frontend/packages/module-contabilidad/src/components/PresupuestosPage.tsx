@@ -528,7 +528,10 @@ export default function PresupuestosPage() {
   const deleteMutation = useDeletePresupuesto();
 
   const presupuestos: Presupuesto[] = useMemo(
-    () => data?.data ?? data?.rows ?? [],
+    () => (data?.data ?? data?.rows ?? []).map((r: any) => ({
+      ...r,
+      id: r.BudgetId ?? r.id ?? r.budgetId,
+    })),
     [data]
   );
 
@@ -668,7 +671,7 @@ export default function PresupuestosPage() {
         <DataGrid
           rows={presupuestos}
           columns={columns}
-          getRowId={(r) => r.id}
+          getRowId={(r) => r.BudgetId ?? r.id ?? r._id}
           loading={isLoading}
           autoHeight
           disableRowSelectionOnClick

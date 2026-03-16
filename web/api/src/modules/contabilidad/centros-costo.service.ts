@@ -33,8 +33,16 @@ export async function listCentrosCosto(input: {
     }
   );
 
+  const mapped = (rows || []).map((r: any) => ({
+    code: r.CostCenterCode ?? r.code,
+    name: r.CostCenterName ?? r.name,
+    parentCode: r.ParentCostCenterId ?? r.parentCode ?? null,
+    level: r.Level ?? r.level ?? 1,
+    active: r.IsActive ?? r.active ?? true,
+  }));
+
   return {
-    rows,
+    rows: mapped,
     total: Number(output.TotalCount ?? 0),
     page,
     limit
@@ -52,7 +60,15 @@ export async function getCentroCosto(code: string) {
     }
   );
 
-  return rows[0] || null;
+  const r = rows[0];
+  if (!r) return null;
+  return {
+    code: r.CostCenterCode ?? r.code,
+    name: r.CostCenterName ?? r.name,
+    parentCode: r.ParentCostCenterId ?? r.parentCode ?? null,
+    level: r.Level ?? r.level ?? 1,
+    active: r.IsActive ?? r.active ?? true,
+  };
 }
 
 export async function insertCentroCosto(input: {
@@ -153,5 +169,35 @@ export async function pnlByCostCenter(input: {
     }
   );
 
-  return { rows };
+  // SP retorna líneas por cuenta; frontend espera agrupado por centro con ingresos/gastos/resultado
+  const byCenter = new Map<string, { costCenterCode: string; costCenterName: string; ingresos: number; gastos: number; resultado: number; detail: any[] }>();
+
+  for (const r of rows || []) {
+    const code = r.CostCenterCode ?? r.costCenterCode ?? "SIN-CC";
+    const name = r.CostCenterName ?? r.costCenterName ?? "Sin centro de costo";
+    const type = r.AccountType ?? r.accountType;
+    const saldo = Number(r.Saldo ?? r.saldo ?? 0);
+
+    if (!byCenter.has(code)) {
+      byCenter.set(code, { costCenterCode: code, costCenterName: name, ingresos: 0, gastos: 0, resultado: 0, detail: [] });
+    }
+    const entry = byCenter.get(code)!;
+    if (type === "I") entry.ingresos += saldo;
+    else if (type === "G") entry.gastos += saldo;
+    entry.detail.push({
+      accountCode: r.AccountCode ?? r.accountCode,
+      accountName: r.AccountName ?? r.accountName,
+      accountType: type,
+      totalDebit: Number(r.TotalDebit ?? r.totalDebit ?? 0),
+      totalCredit: Number(r.TotalCredit ?? r.totalCredit ?? 0),
+      saldo,
+    });
+  }
+
+  const mapped = Array.from(byCenter.values()).map((c) => ({
+    ...c,
+    resultado: c.ingresos - c.gastos,
+  }));
+
+  return { rows: mapped };
 }

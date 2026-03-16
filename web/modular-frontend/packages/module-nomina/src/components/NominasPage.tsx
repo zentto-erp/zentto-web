@@ -53,9 +53,9 @@ export default function NominasPage() {
   const columns: GridColDef[] = [
     { field: "nomina", headerName: "Nómina", width: 120 },
     { field: "cedula", headerName: "Cédula", width: 120 },
-    { field: "nombre", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "fechaInicio", headerName: "Desde", width: 110 },
-    { field: "fechaHasta", headerName: "Hasta", width: 110 },
+    { field: "nombreEmpleado", headerName: "Empleado", flex: 1, minWidth: 200 },
+    { field: "fechaInicio", headerName: "Desde", width: 110, renderCell: (p) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "fechaHasta", headerName: "Hasta", width: 110, renderCell: (p) => p.value ? new Date(p.value).toLocaleDateString() : "" },
     {
       field: "totalAsignaciones",
       headerName: "Asignaciones",
@@ -69,20 +69,20 @@ export default function NominasPage() {
       renderCell: (p) => formatCurrency(p.value ?? 0),
     },
     {
-      field: "netoAPagar",
+      field: "totalNeto",
       headerName: "Neto",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
     },
     {
-      field: "estado",
+      field: "cerrada",
       headerName: "Estado",
       width: 100,
       renderCell: (p) => (
         <Chip
-          label={p.value || "ABIERTA"}
+          label={p.value ? "CERRADA" : "ABIERTA"}
           size="small"
-          color={p.value === "CERRADA" ? "default" : "success"}
+          color={p.value ? "default" : "success"}
         />
       ),
     },

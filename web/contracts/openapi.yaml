@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: DatqBox API
-  version: 1.7.0
+  version: 1.8.0
   description: |
     API REST de DatqBox ERP - Sistema de Gestión Empresarial
-    
+
     **Módulos disponibles:**
     - Auth (Autenticación JWT, RBAC, Cambio/Reset de contraseña)
     - Clientes, Proveedores, Vendedores, Empleados
@@ -13,9 +13,16 @@ info:
     - Documentos de Compra (ORDEN, COMPRA)
     - CxC / CxP (Cuentas por Cobrar/Pagar)
     - Abonos, Pagos, Cuentas por Pagar
-    - **Bancos** (Conciliación bancaria)
-    - **Nómina** (Conceptos legales, LOT, procesamiento)
+    - **Bancos** (Conciliación bancaria, Caja Chica)
+    - **Nómina** (Conceptos legales, LOT, procesamiento, Vacaciones, Liquidaciones, Batch)
     - **Contabilidad** (Plan de cuentas, asientos, reportes)
+    - **RRHH** (Utilidades, Fideicomiso, Caja de Ahorro, Obligaciones, Salud Ocupacional, Capacitación, Comités)
+    - **Config/Países** (Tasas BCV, Países multi-moneda)
+    - **Payments** (Métodos de pago, Proveedores, Procesamiento de pagos, Transacciones)
+    - **Auditoría** (Logs de auditoría, Dashboard, Registros fiscales)
+    - **Settings** (Configuración por módulo)
+    - **Media** (Gestión de imágenes y archivos)
+    - **Supervisión** (Credenciales biométricas de supervisores)
     - Retenciones, Movimientos de Inventario
     - Meta, CRUD, Addons
 servers:
@@ -216,6 +223,235 @@ components:
           example: true
       required:
         - ok
+    Employee:
+      type: object
+      description: Empleado del sistema (normalizado multi-DB)
+      properties:
+        CEDULA:
+          type: string
+        NOMBRE:
+          type: string
+        GRUPO:
+          type: string
+          nullable: true
+        CARGO:
+          type: string
+          nullable: true
+          description: PositionName
+        NOMINA:
+          type: string
+          nullable: true
+          description: DepartmentName
+        SUELDO:
+          type: number
+          nullable: true
+          description: Salary
+        STATUS:
+          type: string
+          nullable: true
+        SEXO:
+          type: string
+          nullable: true
+        NACIONALIDAD:
+          type: string
+          nullable: true
+        DIRECCION:
+          type: string
+          nullable: true
+        TELEFONO:
+          type: string
+          nullable: true
+        Autoriza:
+          type: boolean
+          nullable: true
+    EmployeeInput:
+      type: object
+      description: Input para crear o actualizar empleado
+      required:
+        - CEDULA
+        - NOMBRE
+      properties:
+        CEDULA:
+          type: string
+        NOMBRE:
+          type: string
+        GRUPO:
+          type: string
+        CARGO:
+          type: string
+        NOMINA:
+          type: string
+        SUELDO:
+          type: number
+        STATUS:
+          type: string
+          default: ACTIVO
+        SEXO:
+          type: string
+        NACIONALIDAD:
+          type: string
+        DIRECCION:
+          type: string
+        TELEFONO:
+          type: string
+        Autoriza:
+          type: boolean
+    Company:
+      type: object
+      description: Datos de la empresa
+      properties:
+        Empresa:
+          type: string
+        RIF:
+          type: string
+          nullable: true
+        Nit:
+          type: string
+          nullable: true
+        Telefono:
+          type: string
+          nullable: true
+        Direccion:
+          type: string
+          nullable: true
+          description: Address
+        LegalRep:
+          type: string
+          nullable: true
+          description: Representante legal
+    CompanyInput:
+      type: object
+      description: Input para actualizar empresa
+      properties:
+        Empresa:
+          type: string
+        RIF:
+          type: string
+        Nit:
+          type: string
+        Telefono:
+          type: string
+        Direccion:
+          type: string
+    AuditLog:
+      type: object
+      description: Registro de auditoría
+      properties:
+        AuditLogId:
+          type: integer
+        ModuleName:
+          type: string
+        EntityName:
+          type: string
+        ActionType:
+          type: string
+        UserCode:
+          type: string
+        CreatedAt:
+          type: string
+          format: date-time
+        Details:
+          type: object
+          additionalProperties: true
+          nullable: true
+    PaymentMethod:
+      type: object
+      description: Método de pago
+      properties:
+        MethodId:
+          type: integer
+        MethodCode:
+          type: string
+        MethodName:
+          type: string
+        IsActive:
+          type: boolean
+    Country:
+      type: object
+      description: País con configuración fiscal y monetaria
+      properties:
+        CountryCode:
+          type: string
+          example: VE
+        CountryName:
+          type: string
+        CurrencyCode:
+          type: string
+        TaxAuthorityCode:
+          type: string
+          nullable: true
+        FiscalIdName:
+          type: string
+          nullable: true
+        IsActive:
+          type: boolean
+    MediaAsset:
+      type: object
+      description: Archivo multimedia almacenado
+      properties:
+        AssetId:
+          type: integer
+        StorageKey:
+          type: string
+        FileName:
+          type: string
+        MimeType:
+          type: string
+        FileSizeMb:
+          type: number
+        PublicUrl:
+          type: string
+    VacationRequest:
+      type: object
+      description: Solicitud de vacaciones
+      properties:
+        RequestId:
+          type: string
+        EmployeeCode:
+          type: string
+        EmployeeName:
+          type: string
+          nullable: true
+        StartDate:
+          type: string
+          format: date
+        EndDate:
+          type: string
+          format: date
+        DaysRequested:
+          type: integer
+        Status:
+          type: string
+          enum: [PENDIENTE, APROBADA, RECHAZADA, CANCELADA]
+        CreatedAt:
+          type: string
+          format: date-time
+    PayrollBatch:
+      type: object
+      description: Lote de nómina (pre-nómina procesable)
+      properties:
+        BatchId:
+          type: integer
+        PayrollCode:
+          type: string
+        FromDate:
+          type: string
+          format: date
+        ToDate:
+          type: string
+          format: date
+        Status:
+          type: string
+          enum: [DRAFT, APPROVED, PROCESSED, CLOSED]
+        TotalGross:
+          type: number
+          nullable: true
+        TotalDeductions:
+          type: number
+          nullable: true
+        TotalNet:
+          type: number
+          nullable: true
   parameters:
     IdParam:
       in: path
@@ -3293,982 +3529,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  # --- Documentos unificados (integrados) ---
-  /v1/documentos-venta:
-    get:
-      tags:
-        - DocumentosVenta
-      summary: Lista documentos de venta por tipoOperacion
-      parameters:
-        - in: query
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
-        - $ref: "#/components/parameters/SearchQuery"
-        - in: query
-          name: codigo
-          schema:
-            type: string
-        - in: query
-          name: from
-          schema:
-            type: string
-            format: date
-        - in: query
-          name: to
-          schema:
-            type: string
-            format: date
-        - $ref: "#/components/parameters/PageQuery"
-        - $ref: "#/components/parameters/LimitQuery"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkPagedRows"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-venta/{tipoOperacion}/{numFact}:
-    get:
-      tags:
-        - DocumentosVenta
-      summary: Obtiene cabecera de documento de venta
-      parameters:
-        - in: path
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
-        - $ref: "#/components/parameters/NumFactParam"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-  /v1/documentos-venta/{tipoOperacion}/{numFact}/detalle:
-    get:
-      tags:
-        - DocumentosVenta
-      summary: Obtiene detalle de documento de venta
-      parameters:
-        - in: path
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
-        - $ref: "#/components/parameters/NumFactParam"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkArray"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-  /v1/documentos-venta/emitir-tx:
-    post:
-      tags:
-        - DocumentosVenta
-      summary: Emite documento de venta (transaccional)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [tipoOperacion, documento, detalle]
-              properties:
-                tipoOperacion:
-                  type: string
-                  enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
-                documento:
-                  $ref: "#/components/schemas/GenericObject"
-                detalle:
-                  type: array
-                  minItems: 1
-                  items:
-                    $ref: "#/components/schemas/GenericObject"
-                formasPago:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/GenericObject"
-                options:
-                  type: object
-                  additionalProperties: true
-            examples:
-              facturaContado:
-                summary: Factura contado (cliente 0002, inventario real)
-                value:
-                  tipoOperacion: FACT
-                  documento:
-                    NUM_FACT: F-API-001
-                    CODIGO: "0002"
-                    NOMBRE: RAUL  ARZOLA
-                    FECHA: "2026-02-15"
-                    PAGO: CONTADO
-                    TOTAL: 13
-                    COD_USUARIO: SUP
-                    SERIALTIPO: EOC02255
-                    Tipo_Orden: "1"
-                  detalle:
-                    - COD_SERV: "0000106995"
-                      CANTIDAD: 1
-                      PRECIO: 11
-                      ALICUOTA: 16
-                    - COD_SERV: "0000106996"
-                      CANTIDAD: 1
-                      PRECIO: 2
-                      ALICUOTA: 16
-                  formasPago:
-                    - tipo: EFECTIVO
-                      monto: 13
-                  options:
-                    actualizarInventario: true
-                    generarCxC: false
-                    actualizarSaldosCliente: true
-              pedido:
-                summary: Pedido con compromiso de inventario
-                value:
-                  tipoOperacion: PEDIDO
-                  documento:
-                    NUM_FACT: PED-API-001
-                    CODIGO: "0002"
-                    NOMBRE: RAUL  ARZOLA
-                    FECHA: "2026-02-15"
-                    TOTAL: 11
-                    COD_USUARIO: SUP
-                    SERIALTIPO: EOC02255
-                    Tipo_Orden: "1"
-                  detalle:
-                    - CODIGO: "0000106995"
-                      CANTIDAD: 1
-                      PRECIO_VENTA: 11
-                      ALICUOTA: 16
-                  options:
-                    comprometerInventario: true
-              notaCredito:
-                summary: Nota de credito con ajuste CxC e inventario
-                value:
-                  tipoOperacion: NOTACRED
-                  documento:
-                    NUM_FACT: NCR-API-001
-                    CODIGO: "0002"
-                    NOMBRE: RAUL  ARZOLA
-                    FECHA: "2026-02-15"
-                    TOTAL: 11
-                    COD_USUARIO: SUP
-                    SERIALTIPO: EOC02255
-                    Tipo_Orden: "1"
-                    NUM_FACT_REF: "441"
-                  detalle:
-                    - CODIGO: "0000106995"
-                      CANTIDAD: 1
-                      PRECIO: 11
-                      ALICUOTA: 16
-                  options:
-                    impactarInventario: true
-                    ajustarCxC: true
-              notaDebito:
-                summary: Nota de debito (mora/recargo) con ajuste CxC
-                value:
-                  tipoOperacion: NOTADEB
-                  documento:
-                    NUM_FACT: NDB-API-001
-                    CODIGO: "0002"
-                    NOMBRE: RAUL  ARZOLA
-                    FECHA: "2026-02-15"
-                    TOTAL: 5
-                    COD_USUARIO: SUP
-                    SERIALTIPO: EOC02255
-                    Tipo_Orden: "1"
-                  detalle:
-                    - CODIGO: SERV-MORA
-                      CANTIDAD: 1
-                      PRECIO: 5
-                      ALICUOTA: 0
-                  options:
-                    ajustarCxC: true
-              notaEntrega:
-                summary: Nota de entrega con salida de inventario
-                value:
-                  tipoOperacion: NOTA_ENT
-                  documento:
-                    NUM_FACT: NENT-API-001
-                    CODIGO: "0002"
-                    NOMBRE: RAUL  ARZOLA
-                    FECHA: "2026-02-15"
-                    TOTAL: 11
-                    COD_USUARIO: SUP
-                    SERIALTIPO: EOC02255
-                    Tipo_Orden: "1"
-                  detalle:
-                    - CODIGO: "0000106995"
-                      CANTIDAD: 1
-                      PRECIO: 11
-                      ALICUOTA: 16
-                  options:
-                    impactarInventario: true
-      responses:
-        "201":
-          $ref: "#/components/responses/TxCreated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-venta/anular-tx:
-    post:
-      tags:
-        - DocumentosVenta
-      summary: Anula documento de venta (transaccional)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [tipoOperacion, numFact]
-              properties:
-                tipoOperacion:
-                  type: string
-                  enum: [FACT, PRESUP, PEDIDO, COTIZ, NOTACRED, NOTADEB, NOTA_ENT]
-                numFact:
-                  type: string
-                codUsuario:
-                  type: string
-                motivo:
-                  type: string
-            examples:
-              anularFactura:
-                value:
-                  tipoOperacion: FACT
-                  numFact: F-API-001
-                  codUsuario: SUP
-                  motivo: Prueba API
-              anularPedido:
-                value:
-                  tipoOperacion: PEDIDO
-                  numFact: PED-API-001
-                  codUsuario: SUP
-                  motivo: Cliente cancelo
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-venta/facturar-desde-pedido-tx:
-    post:
-      tags:
-        - DocumentosVenta
-      summary: Convierte un pedido en factura sin doble descuento de inventario
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [numFactPedido, factura]
-              properties:
-                numFactPedido:
-                  type: string
-                factura:
-                  $ref: "#/components/schemas/GenericObject"
-                formasPago:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/GenericObject"
-                options:
-                  type: object
-                  additionalProperties: true
-            example:
-              numFactPedido: PED-API-001
-              factura:
-                NUM_FACT: F-API-002
-                CODIGO: "0002"
-                NOMBRE: RAUL  ARZOLA
-                FECHA: "2026-02-15"
-                PAGO: CONTADO
-                TOTAL: 11
-                COD_USUARIO: SUP
-                SERIALTIPO: EOC02255
-                Tipo_Orden: "1"
-              formasPago:
-                - tipo: EFECTIVO
-                  monto: 11
-              options:
-                generarCxC: false
-                actualizarSaldosCliente: true
-      responses:
-        "201":
-          $ref: "#/components/responses/TxCreated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-compra:
-    get:
-      tags:
-        - DocumentosCompra
-      summary: Lista documentos de compra por tipoOperacion
-      parameters:
-        - in: query
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [ORDEN, COMPRA]
-        - $ref: "#/components/parameters/SearchQuery"
-        - in: query
-          name: codigo
-          schema:
-            type: string
-        - in: query
-          name: proveedor
-          schema:
-            type: string
-        - in: query
-          name: estado
-          schema:
-            type: string
-        - in: query
-          name: fechaDesde
-          schema:
-            type: string
-            format: date
-        - in: query
-          name: fechaHasta
-          schema:
-            type: string
-            format: date
-        - $ref: "#/components/parameters/PageQuery"
-        - $ref: "#/components/parameters/LimitQuery"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkPagedRows"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-compra/{tipoOperacion}/{numFact}:
-    get:
-      tags:
-        - DocumentosCompra
-      summary: Obtiene cabecera de documento de compra
-      parameters:
-        - in: path
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [ORDEN, COMPRA]
-        - $ref: "#/components/parameters/NumFactParam"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-  /v1/documentos-compra/{tipoOperacion}/{numFact}/detalle:
-    get:
-      tags:
-        - DocumentosCompra
-      summary: Obtiene detalle de documento de compra
-      parameters:
-        - in: path
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [ORDEN, COMPRA]
-        - $ref: "#/components/parameters/NumFactParam"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkArray"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-  /v1/documentos-compra/{tipoOperacion}/{numFact}/indicadores:
-    get:
-      tags:
-        - DocumentosCompra
-      summary: Indicadores de compra (solo tipoOperacion COMPRA)
-      parameters:
-        - in: path
-          name: tipoOperacion
-          required: true
-          schema:
-            type: string
-            enum: [ORDEN, COMPRA]
-        - $ref: "#/components/parameters/NumFactParam"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "404":
-          $ref: "#/components/responses/NotFound"
-  /v1/documentos-compra/emitir-tx:
-    post:
-      tags:
-        - DocumentosCompra
-      summary: Emite documento de compra (transaccional)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [tipoOperacion, documento, detalle]
-              properties:
-                tipoOperacion:
-                  type: string
-                  enum: [ORDEN, COMPRA]
-                documento:
-                  $ref: "#/components/schemas/GenericObject"
-                detalle:
-                  type: array
-                  minItems: 1
-                  items:
-                    $ref: "#/components/schemas/GenericObject"
-                options:
-                  type: object
-                  additionalProperties: true
-            examples:
-              compraCredito:
-                summary: Compra credito con CxP e inventario
-                value:
-                  tipoOperacion: COMPRA
-                  documento:
-                    NUM_FACT: C-API-001
-                    COD_PROVEEDOR: "0001"
-                    NOMBRE: IMPORTADORA BICIMOTO LTDA, C.A
-                    FECHA: "2026-02-15"
-                    TIPO: CREDITO
-                    TOTAL: 7.6
-                    COD_USUARIO: SUP
-                  detalle:
-                    - CODIGO: "0000106995"
-                      DESCRIPCION: "1 1/4"
-                      CANTIDAD: 1
-                      PRECIO_COSTO: 7.6
-                      ALICUOTA: 16
-                      REFERENCIA: "0000106995"
-                  options:
-                    actualizarInventario: true
-                    generarCxP: true
-                    actualizarSaldosProveedor: true
-              ordenCompra:
-                summary: Orden de compra (sin inventario ni CxP)
-                value:
-                  tipoOperacion: ORDEN
-                  documento:
-                    NUM_FACT: O-API-001
-                    COD_PROVEEDOR: "0001"
-                    NOMBRE: IMPORTADORA BICIMOTO LTDA, C.A
-                    FECHA: "2026-02-15"
-                    TOTAL: 7.6
-                    COD_USUARIO: SUP
-                  detalle:
-                    - CODIGO: "0000106995"
-                      DESCRIPCION: "1 1/4"
-                      CANTIDAD: 1
-                      PRECIO_COSTO: 7.6
-                      ALICUOTA: 16
-      responses:
-        "201":
-          $ref: "#/components/responses/TxCreated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-compra/anular-tx:
-    post:
-      tags:
-        - DocumentosCompra
-      summary: Anula compra (transaccional)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [tipoOperacion, numFact]
-              properties:
-                tipoOperacion:
-                  type: string
-                  enum: [ORDEN, COMPRA]
-                numFact:
-                  type: string
-                codUsuario:
-                  type: string
-                motivo:
-                  type: string
-            example:
-              tipoOperacion: COMPRA
-              numFact: C-API-001
-              codUsuario: SUP
-              motivo: Prueba API
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/documentos-compra/cerrar-orden-con-compra-tx:
-    post:
-      tags:
-        - DocumentosCompra
-      summary: Cierra una orden de compra emitiendo la compra asociada
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [numFactOrden, compra]
-              properties:
-                numFactOrden:
-                  type: string
-                compra:
-                  $ref: "#/components/schemas/GenericObject"
-                detalle:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/GenericObject"
-                options:
-                  type: object
-                  additionalProperties: true
-            example:
-              numFactOrden: O-API-001
-              compra:
-                NUM_FACT: C-API-002
-                COD_PROVEEDOR: "0001"
-                NOMBRE: IMPORTADORA BICIMOTO LTDA, C.A
-                FECHA: "2026-02-15"
-                TIPO: CREDITO
-                TOTAL: 7.6
-                COD_USUARIO: SUP
-              options:
-                actualizarInventario: true
-                generarCxP: true
-                actualizarSaldosProveedor: true
-      responses:
-        "201":
-          $ref: "#/components/responses/TxCreated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"  # ============================================
-  # BANCOS - Conciliación Bancaria
-  # ============================================
-  /v1/bancos:
-    get:
-      tags:
-        - Bancos
-      summary: Lista bancos
-      parameters:
-        - $ref: "#/components/parameters/SearchQuery"
-        - $ref: "#/components/parameters/PageQuery"
-        - $ref: "#/components/parameters/LimitQuery"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkPagedRowsPageSize"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    post:
-      tags:
-        - Bancos
-      summary: Crea banco
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [Nombre]
-              properties:
-                Nombre:
-                  type: string
-                Contacto:
-                  type: string
-                Direccion:
-                  type: string
-                Telefonos:
-                  type: string
-                Co_Usuario:
-                  type: string
-      responses:
-        "201":
-          $ref: "#/components/responses/CreatedObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/{nombre}:
-    get:
-      tags:
-        - Bancos
-      summary: Obtiene banco por nombre
-      parameters:
-        - in: path
-          name: nombre
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    put:
-      tags:
-        - Bancos
-      summary: Actualiza banco
-      parameters:
-        - in: path
-          name: nombre
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                Contacto:
-                  type: string
-                Direccion:
-                  type: string
-                Telefonos:
-                  type: string
-                Co_Usuario:
-                  type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    delete:
-      tags:
-        - Bancos
-      summary: Elimina banco
-      parameters:
-        - in: path
-          name: nombre
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/cuentas/list:
-    get:
-      tags:
-        - Bancos
-      summary: Lista cuentas bancarias
-      responses:
-        "200":
-          description: Lista de cuentas
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  rows:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/GenericObject"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/cuentas/{nroCta}/movimientos:
-    get:
-      tags:
-        - Bancos
-      summary: Movimientos de cuenta bancaria
-      parameters:
-        - in: path
-          name: nroCta
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: desde
-          schema:
-            type: string
-            format: date
-        - in: query
-          name: hasta
-          schema:
-            type: string
-            format: date
-        - $ref: "#/components/parameters/PageQuery"
-        - $ref: "#/components/parameters/LimitQuery"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkPagedRows"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/movimientos/generar:
-    post:
-      tags:
-        - Bancos
-      summary: Genera movimiento bancario
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [Nro_Cta, Tipo, Nro_Ref, Beneficiario, Monto, Concepto]
-              properties:
-                Nro_Cta:
-                  type: string
-                Tipo:
-                  type: string
-                  enum: [PCH, DEP, NCR, NDB, IDB]
-                Nro_Ref:
-                  type: string
-                Beneficiario:
-                  type: string
-                Monto:
-                  type: number
-                Concepto:
-                  type: string
-                Categoria:
-                  type: string
-                Documento_Relacionado:
-                  type: string
-                Tipo_Doc_Rel:
-                  type: string
-      responses:
-        "201":
-          $ref: "#/components/responses/TxCreated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones:
-    get:
-      tags:
-        - Bancos
-      summary: Lista conciliaciones bancarias
-      parameters:
-        - in: query
-          name: Nro_Cta
-          schema:
-            type: string
-        - in: query
-          name: Estado
-          schema:
-            type: string
-            enum: [ABIERTA, CERRADA, EN_PROCESO]
-        - $ref: "#/components/parameters/PageQuery"
-        - $ref: "#/components/parameters/LimitQuery"
-      responses:
-        "200":
-          $ref: "#/components/responses/OkArray"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones/crear:
-    post:
-      tags:
-        - Bancos
-      summary: Crea nueva conciliación bancaria
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [Nro_Cta, Fecha_Desde, Fecha_Hasta]
-              properties:
-                Nro_Cta:
-                  type: string
-                Fecha_Desde:
-                  type: string
-                  format: date
-                Fecha_Hasta:
-                  type: string
-                  format: date
-      responses:
-        "201":
-          $ref: "#/components/responses/TxCreated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones/{id}:
-    get:
-      tags:
-        - Bancos
-      summary: Obtiene conciliación por ID
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones/{id}/importar-extracto:
-    post:
-      tags:
-        - Bancos
-      summary: Importa extracto bancario a conciliación
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [extracto]
-              properties:
-                extracto:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      Fecha:
-                        type: string
-                        format: date
-                      Descripcion:
-                        type: string
-                      Referencia:
-                        type: string
-                      Tipo:
-                        type: string
-                        enum: [DEBITO, CREDITO]
-                      Monto:
-                        type: number
-                      Saldo:
-                        type: number
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones/conciliar:
-    post:
-      tags:
-        - Bancos
-      summary: Concilia movimientos
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [Conciliacion_ID, MovimientoSistema_ID]
-              properties:
-                Conciliacion_ID:
-                  type: integer
-                MovimientoSistema_ID:
-                  type: integer
-                Extracto_ID:
-                  type: integer
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones/ajuste:
-    post:
-      tags:
-        - Bancos
-      summary: Genera ajuste de conciliación
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [Conciliacion_ID, Tipo_Ajuste, Monto, Descripcion]
-              properties:
-                Conciliacion_ID:
-                  type: integer
-                Tipo_Ajuste:
-                  type: string
-                  enum: [NOTA_CREDITO, NOTA_DEBITO]
-                Monto:
-                  type: number
-                Descripcion:
-                  type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /v1/bancos/conciliaciones/cerrar:
-    post:
-      tags:
-        - Bancos
-      summary: Cierra conciliación bancaria
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [Conciliacion_ID, Saldo_Final_Banco]
-              properties:
-                Conciliacion_ID:
-                  type: integer
-                Saldo_Final_Banco:
-                  type: number
-                Observaciones:
-                  type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/OkObject"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
 
   # ============================================
   # NOMINA
@@ -5183,6 +4443,7 @@ paths:
       tags:
         - Empleados
       summary: Lista empleados
+      x-db-agnostic: true
       parameters:
         - $ref: "#/components/parameters/SearchQuery"
         - in: query
@@ -5197,7 +4458,18 @@ paths:
         - $ref: "#/components/parameters/LimitQuery"
       responses:
         "200":
-          $ref: "#/components/responses/OkPagedRowsPageSize"
+          description: Lista paginada de empleados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Employee"
+                  total:
+                    type: integer
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
@@ -5250,6 +4522,7 @@ paths:
       tags:
         - Empleados
       summary: Obtiene empleado por cédula
+      x-db-agnostic: true
       parameters:
         - in: path
           name: cedula
@@ -5258,7 +4531,11 @@ paths:
             type: string
       responses:
         "200":
-          $ref: "#/components/responses/OkObject"
+          description: Datos del empleado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
         "404":
           $ref: "#/components/responses/NotFound"
         "401":
@@ -5455,9 +4732,32 @@ paths:
       tags:
         - Empresa
       summary: Datos de la empresa
+      x-db-agnostic: true
+      responses:
+        "200":
+          description: Datos de la empresa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Empresa
+      summary: Actualiza datos de la empresa
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyInput"
       responses:
         "200":
           $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -6243,3 +5543,3651 @@ paths:
           $ref: "#/components/responses/OkObject"
         "400":
           $ref: "#/components/responses/BadRequest"
+
+  # ─────────────────────────────────────────────────────────────
+  # CONFIG / PAÍSES
+  # ─────────────────────────────────────────────────────────────
+  /v1/config/tasas:
+    get:
+      tags:
+        - Config
+      summary: Obtiene tasas BCV actuales
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/tasas/sync:
+    post:
+      tags:
+        - Config
+      summary: Fuerza sincronización manual de tasas BCV
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/countries:
+    get:
+      tags:
+        - Config
+      summary: Lista países activos
+      x-db-agnostic: true
+      responses:
+        "200":
+          description: Lista de países
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Config
+      summary: Crea o actualiza un país
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Country"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/countries/all:
+    get:
+      tags:
+        - Config
+      summary: Lista todos los países incluyendo inactivos
+      x-db-agnostic: true
+      responses:
+        "200":
+          description: Lista de todos los países
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/countries/{code}:
+    get:
+      tags:
+        - Config
+      summary: Obtiene un país por código
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            example: VE
+      responses:
+        "200":
+          description: Datos del país
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Country"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # BANCOS
+  # ─────────────────────────────────────────────────────────────
+  /v1/bancos/cuentas/list:
+    get:
+      tags:
+        - Bancos
+      summary: Lista cuentas bancarias
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/cuentas/{nroCta}/movimientos:
+    get:
+      tags:
+        - Bancos
+      summary: Movimientos de una cuenta bancaria
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: nroCta
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: desde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: hasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/movimientos/{id}:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene movimiento bancario por ID (voucher)
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/movimientos/generar:
+    post:
+      tags:
+        - Bancos
+      summary: Genera un movimiento bancario (PCH, DEP, NCR, NDB, IDB)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nro_Cta, Tipo, Nro_Ref, Beneficiario, Monto, Concepto]
+              properties:
+                Nro_Cta:
+                  type: string
+                Tipo:
+                  type: string
+                  enum: [PCH, DEP, NCR, NDB, IDB]
+                Nro_Ref:
+                  type: string
+                Beneficiario:
+                  type: string
+                Monto:
+                  type: number
+                Concepto:
+                  type: string
+                Categoria:
+                  type: string
+                Documento_Relacionado:
+                  type: string
+                Tipo_Doc_Rel:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones:
+    get:
+      tags:
+        - Bancos
+      summary: Lista conciliaciones bancarias
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: Nro_Cta
+          schema:
+            type: string
+        - in: query
+          name: Estado
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/crear:
+    post:
+      tags:
+        - Bancos
+      summary: Crea una nueva conciliación bancaria
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Nro_Cta, Fecha_Desde, Fecha_Hasta]
+              properties:
+                Nro_Cta:
+                  type: string
+                Fecha_Desde:
+                  type: string
+                  format: date
+                Fecha_Hasta:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/{id}:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene detalle de una conciliación
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/{id}/importar-extracto:
+    post:
+      tags:
+        - Bancos
+      summary: Importa extracto bancario a una conciliación
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [extracto]
+              properties:
+                extracto:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/conciliar:
+    post:
+      tags:
+        - Bancos
+      summary: Concilia movimientos del sistema con extracto
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, MovimientoSistema_ID]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                MovimientoSistema_ID:
+                  type: integer
+                Extracto_ID:
+                  type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/ajuste:
+    post:
+      tags:
+        - Bancos
+      summary: Genera ajuste bancario (nota crédito/débito)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, Tipo_Ajuste, Monto, Descripcion]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                Tipo_Ajuste:
+                  type: string
+                  enum: [NOTA_CREDITO, NOTA_DEBITO]
+                Monto:
+                  type: number
+                Descripcion:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/conciliaciones/cerrar:
+    post:
+      tags:
+        - Bancos
+      summary: Cierra una conciliación bancaria
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Conciliacion_ID, Saldo_Final_Banco]
+              properties:
+                Conciliacion_ID:
+                  type: integer
+                Saldo_Final_Banco:
+                  type: number
+                Observaciones:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/caja-chica:
+    get:
+      tags:
+        - Bancos
+      summary: Lista cajas chicas
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Bancos
+      summary: Crea una caja chica
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, maxAmount]
+              properties:
+                name:
+                  type: string
+                accountCode:
+                  type: string
+                maxAmount:
+                  type: number
+                responsible:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/caja-chica/{boxId}/abrir:
+    post:
+      tags:
+        - Bancos
+      summary: Abre sesión de caja chica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: boxId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [openingAmount]
+              properties:
+                openingAmount:
+                  type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/caja-chica/{boxId}/cerrar:
+    post:
+      tags:
+        - Bancos
+      summary: Cierra sesión de caja chica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: boxId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/caja-chica/{boxId}/sesion-activa:
+    get:
+      tags:
+        - Bancos
+      summary: Obtiene sesión activa de caja chica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: boxId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/caja-chica/{boxId}/gastos:
+    get:
+      tags:
+        - Bancos
+      summary: Lista gastos de una caja chica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: boxId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: sessionId
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Bancos
+      summary: Registra un gasto de caja chica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: boxId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, category, description, amount]
+              properties:
+                sessionId:
+                  type: integer
+                category:
+                  type: string
+                description:
+                  type: string
+                amount:
+                  type: number
+                beneficiary:
+                  type: string
+                receiptNumber:
+                  type: string
+                accountCode:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/bancos/caja-chica/{boxId}/resumen:
+    get:
+      tags:
+        - Bancos
+      summary: Resumen de caja chica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: boxId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # NÓMINA — Batch, Vacaciones, Liquidaciones, Constantes
+  # ─────────────────────────────────────────────────────────────
+  /v1/nomina/batch:
+    get:
+      tags:
+        - Nomina
+      summary: Lista lotes de nómina
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: nomina
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de lotes de nómina
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PayrollBatch"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/draft:
+    post:
+      tags:
+        - Nomina
+      summary: Genera borrador de lote de nómina
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nomina, fechaInicio, fechaHasta]
+              properties:
+                nomina:
+                  type: string
+                fechaInicio:
+                  type: string
+                  format: date
+                fechaHasta:
+                  type: string
+                  format: date
+                departamento:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/line:
+    put:
+      tags:
+        - Nomina
+      summary: Guarda línea de borrador (autosave)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lineId, quantity, amount]
+              properties:
+                lineId:
+                  type: integer
+                quantity:
+                  type: number
+                amount:
+                  type: number
+                notes:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Nomina
+      summary: Agrega línea a lote de nómina
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batchId, employeeCode, conceptCode, conceptName, conceptType, quantity, amount]
+              properties:
+                batchId:
+                  type: integer
+                employeeCode:
+                  type: string
+                conceptCode:
+                  type: string
+                conceptName:
+                  type: string
+                conceptType:
+                  type: string
+                  enum: [ASIGNACION, DEDUCCION, BONO]
+                quantity:
+                  type: number
+                amount:
+                  type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/line/{id}:
+    delete:
+      tags:
+        - Nomina
+      summary: Elimina línea de lote de nómina
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/bulk-update:
+    post:
+      tags:
+        - Nomina
+      summary: Actualización masiva de líneas de lote
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batchId, conceptCode, conceptType, amount]
+              properties:
+                batchId:
+                  type: integer
+                conceptCode:
+                  type: string
+                conceptType:
+                  type: string
+                  enum: [ASIGNACION, DEDUCCION, BONO]
+                amount:
+                  type: number
+                employeeCodes:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/{id}/summary:
+    get:
+      tags:
+        - Nomina
+      summary: Resumen del borrador de nómina (pre-nómina)
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resumen del lote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayrollBatch"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/{id}/grid:
+    get:
+      tags:
+        - Nomina
+      summary: Datos en grilla del borrador de nómina
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: department
+          schema:
+            type: string
+        - in: query
+          name: onlyModified
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/{id}/employee/{code}:
+    get:
+      tags:
+        - Nomina
+      summary: Líneas de un empleado en un lote de nómina
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/{id}/approve:
+    post:
+      tags:
+        - Nomina
+      summary: Aprueba borrador de nómina
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/batch/{id}/process:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa lote de nómina aprobado
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitar:
+    post:
+      tags:
+        - Nomina
+      summary: Crea solicitud de vacaciones
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, startDate, endDate, totalDays, days]
+              properties:
+                employeeCode:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                totalDays:
+                  type: integer
+                isPartial:
+                  type: boolean
+                notes:
+                  type: string
+                days:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitudes:
+    get:
+      tags:
+        - Nomina
+      summary: Lista solicitudes de vacaciones
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: employeeCode
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de solicitudes de vacaciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VacationRequest"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitudes/{id}:
+    get:
+      tags:
+        - Nomina
+      summary: Obtiene solicitud de vacaciones por ID
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Solicitud de vacaciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VacationRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitudes/{id}/aprobar:
+    put:
+      tags:
+        - Nomina
+      summary: Aprueba solicitud de vacaciones
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitudes/{id}/rechazar:
+    put:
+      tags:
+        - Nomina
+      summary: Rechaza solicitud de vacaciones
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitudes/{id}/cancelar:
+    put:
+      tags:
+        - Nomina
+      summary: Cancela solicitud de vacaciones
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/solicitudes/{id}/procesar-pago:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa pago de vacaciones aprobadas
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/dias-disponibles/{cedula}:
+    get:
+      tags:
+        - Nomina
+      summary: Días de vacaciones disponibles para un empleado
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: cedula
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/list:
+    get:
+      tags:
+        - Nomina
+      summary: Lista registros de vacaciones
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: cedula
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/{id}:
+    get:
+      tags:
+        - Nomina
+      summary: Obtiene detalle de vacación por ID
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/vacaciones/procesar:
+    post:
+      tags:
+        - Nomina
+      summary: Procesa vacaciones (cálculo nómina)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vacacionId, cedula, fechaInicio, fechaHasta]
+              properties:
+                vacacionId:
+                  type: string
+                cedula:
+                  type: string
+                fechaInicio:
+                  type: string
+                  format: date
+                fechaHasta:
+                  type: string
+                  format: date
+                fechaReintegro:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/liquidacion/calcular:
+    post:
+      tags:
+        - Nomina
+      summary: Calcula liquidación de empleado
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [liquidacionId, cedula, fechaRetiro]
+              properties:
+                liquidacionId:
+                  type: string
+                cedula:
+                  type: string
+                fechaRetiro:
+                  type: string
+                  format: date
+                causaRetiro:
+                  type: string
+                  enum: [RENUNCIA, DESPIDO, DESPIDO_JUSTIFICADO]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/liquidaciones/list:
+    get:
+      tags:
+        - Nomina
+      summary: Lista liquidaciones
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: cedula
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/liquidaciones/{id}:
+    get:
+      tags:
+        - Nomina
+      summary: Obtiene detalle de liquidación
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/nomina/constantes:
+    get:
+      tags:
+        - Nomina
+      summary: Lista constantes de nómina
+      x-db-agnostic: true
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Nomina
+      summary: Crea o actualiza constante de nómina
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codigo]
+              properties:
+                codigo:
+                  type: string
+                nombre:
+                  type: string
+                valor:
+                  type: number
+                origen:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # PAYMENTS
+  # ─────────────────────────────────────────────────────────────
+  /v1/payments/methods:
+    get:
+      tags:
+        - Payments
+      summary: Lista métodos de pago disponibles
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: countryCode
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de métodos de pago
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentMethod"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Payments
+      summary: Crea o actualiza método de pago
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentMethod"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/providers:
+    get:
+      tags:
+        - Payments
+      summary: Lista proveedores de pago
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: countryCode
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/providers/{code}:
+    get:
+      tags:
+        - Payments
+      summary: Obtiene proveedor de pago por código
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/providers/{code}/fields:
+    get:
+      tags:
+        - Payments
+      summary: Campos de configuración de un proveedor
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/plugins:
+    get:
+      tags:
+        - Payments
+      summary: Lista plugins de pago disponibles
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/config:
+    get:
+      tags:
+        - Payments
+      summary: Lista configuraciones de pago por empresa
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: empresaId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: sucursalId
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Payments
+      summary: Crea o actualiza configuración de pago
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [empresaId, countryCode, providerCode]
+              properties:
+                empresaId:
+                  type: integer
+                sucursalId:
+                  type: integer
+                countryCode:
+                  type: string
+                providerCode:
+                  type: string
+                environment:
+                  type: string
+                  enum: [sandbox, production]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/config/{id}:
+    delete:
+      tags:
+        - Payments
+      summary: Elimina configuración de pago
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/accepted:
+    get:
+      tags:
+        - Payments
+      summary: Lista métodos aceptados por empresa/sucursal
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: empresaId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: sucursalId
+          schema:
+            type: integer
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum: [POS, WEB, RESTAURANT]
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Payments
+      summary: Crea o actualiza método aceptado
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/accepted/{id}:
+    delete:
+      tags:
+        - Payments
+      summary: Elimina método aceptado
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/card-readers:
+    get:
+      tags:
+        - Payments
+      summary: Lista lectores de tarjeta
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: empresaId
+          schema:
+            type: integer
+        - in: query
+          name: sucursalId
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Payments
+      summary: Crea o actualiza lector de tarjeta
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericObject"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/process:
+    post:
+      tags:
+        - Payments
+      summary: Procesa un pago a través del gateway
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [empresaId, providerCode, sourceType, request]
+              properties:
+                empresaId:
+                  type: integer
+                sucursalId:
+                  type: integer
+                providerCode:
+                  type: string
+                sourceType:
+                  type: string
+                sourceId:
+                  type: integer
+                sourceNumber:
+                  type: string
+                request:
+                  type: object
+                  required: [capability, paymentMethodCode, amount, currency]
+                  properties:
+                    capability:
+                      type: string
+                    paymentMethodCode:
+                      type: string
+                    amount:
+                      type: number
+                    currency:
+                      type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "402":
+          description: Pago declinado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/payments/transactions:
+    get:
+      tags:
+        - Payments
+      summary: Busca transacciones de pago
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: empresaId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: providerCode
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: dateFrom
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: dateTo
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # AUDITORÍA
+  # ─────────────────────────────────────────────────────────────
+  /v1/auditoria/logs:
+    get:
+      tags:
+        - Auditoria
+      summary: Lista logs de auditoría con filtros
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: moduleName
+          schema:
+            type: string
+        - in: query
+          name: userName
+          schema:
+            type: string
+        - in: query
+          name: actionType
+          schema:
+            type: string
+        - in: query
+          name: entityName
+          schema:
+            type: string
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Lista de logs de auditoría
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditLog"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auditoria/logs/{id}:
+    get:
+      tags:
+        - Auditoria
+      summary: Obtiene un log de auditoría por ID
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Log de auditoría
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLog"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auditoria/dashboard:
+    get:
+      tags:
+        - Auditoria
+      summary: Dashboard de auditoría con estadísticas
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: fechaDesde
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auditoria/fiscal-records:
+    get:
+      tags:
+        - Auditoria
+      summary: Lista registros fiscales auditables
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # SETTINGS
+  # ─────────────────────────────────────────────────────────────
+  /v1/settings:
+    get:
+      tags:
+        - Settings
+      summary: Obtiene todas las configuraciones agrupadas por módulo
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: companyId
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/settings/modules:
+    get:
+      tags:
+        - Settings
+      summary: Lista módulos con configuraciones
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: companyId
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/settings/{module}:
+    get:
+      tags:
+        - Settings
+      summary: Obtiene configuraciones de un módulo
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: module
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: companyId
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: meta
+          schema:
+            type: boolean
+            description: Si true, devuelve metadata completa
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - Settings
+      summary: Guarda configuraciones de un módulo (bulk)
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: module
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: companyId
+          schema:
+            type: integer
+            default: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: "Clave: valor de cada setting del módulo"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # MEDIA
+  # ─────────────────────────────────────────────────────────────
+  /v1/media/upload:
+    post:
+      tags:
+        - Media
+      summary: Sube un archivo de imagen
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                entityType:
+                  type: string
+                entityId:
+                  type: string
+                altText:
+                  type: string
+                roleCode:
+                  type: string
+                sortOrder:
+                  type: integer
+                isPrimary:
+                  type: boolean
+      responses:
+        "201":
+          description: Archivo subido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAsset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/media/link-by-url:
+    post:
+      tags:
+        - Media
+      summary: Vincula imagen existente a entidad por URL
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityType, entityId, imageUrl]
+              properties:
+                entityType:
+                  type: string
+                entityId:
+                  type: string
+                imageUrl:
+                  type: string
+                roleCode:
+                  type: string
+                sortOrder:
+                  type: integer
+                isPrimary:
+                  type: boolean
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/media/entities/{entityType}/{entityId}/images:
+    get:
+      tags:
+        - Media
+      summary: Lista imágenes de una entidad
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: entityType
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entityId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Imágenes de la entidad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entityType:
+                    type: string
+                  entityId:
+                    type: string
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MediaAsset"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Media
+      summary: Vincula asset existente a entidad
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: entityType
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entityId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaAssetId]
+              properties:
+                mediaAssetId:
+                  type: integer
+                roleCode:
+                  type: string
+                sortOrder:
+                  type: integer
+                isPrimary:
+                  type: boolean
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/media/entities/{entityType}/{entityId}/images/{entityImageId}/primary:
+    put:
+      tags:
+        - Media
+      summary: Marca imagen como principal
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: entityType
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entityId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entityImageId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/media/entities/{entityType}/{entityId}/images/{entityImageId}:
+    delete:
+      tags:
+        - Media
+      summary: Desvincula imagen de entidad
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: entityType
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entityId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entityImageId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCUMENTOS DE VENTA
+  # ─────────────────────────────────────────────────────────────
+  /v1/documentos-venta:
+    get:
+      tags:
+        - DocumentosVenta
+      summary: Lista documentos de venta (FACT, PED, COT, etc.)
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-venta/emitir-tx:
+    post:
+      tags:
+        - DocumentosVenta
+      summary: Emite documento de venta (transaccional)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, documento, detalle]
+              properties:
+                tipoOperacion:
+                  type: string
+                documento:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                formasPago:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-venta/anular-tx:
+    post:
+      tags:
+        - DocumentosVenta
+      summary: Anula documento de venta (transaccional)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, numFact]
+              properties:
+                tipoOperacion:
+                  type: string
+                numFact:
+                  type: string
+                codUsuario:
+                  type: string
+                motivo:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-venta/facturar-desde-pedido-tx:
+    post:
+      tags:
+        - DocumentosVenta
+      summary: Factura desde pedido existente (transaccional)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [numFactPedido, factura]
+              properties:
+                numFactPedido:
+                  type: string
+                factura:
+                  $ref: "#/components/schemas/GenericObject"
+                formasPago:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-venta/{tipoOperacion}/{numFact}:
+    get:
+      tags:
+        - DocumentosVenta
+      summary: Obtiene documento de venta
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: numFact
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-venta/{tipoOperacion}/{numFact}/detalle:
+    get:
+      tags:
+        - DocumentosVenta
+      summary: Obtiene detalle de documento de venta
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: numFact
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCUMENTOS DE COMPRA
+  # ─────────────────────────────────────────────────────────────
+  /v1/documentos-compra:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Lista documentos de compra (COMPRA, ORDEN)
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: tipoOperacion
+          schema:
+            type: string
+            default: COMPRA
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: proveedor
+          schema:
+            type: string
+        - in: query
+          name: estado
+          schema:
+            type: string
+        - in: query
+          name: fechaDesde
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: fechaHasta
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-compra/emitir-tx:
+    post:
+      tags:
+        - DocumentosCompra
+      summary: Emite documento de compra (transaccional)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, documento, detalle]
+              properties:
+                tipoOperacion:
+                  type: string
+                documento:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-compra/anular-tx:
+    post:
+      tags:
+        - DocumentosCompra
+      summary: Anula documento de compra (transaccional)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoOperacion, numFact]
+              properties:
+                tipoOperacion:
+                  type: string
+                numFact:
+                  type: string
+                codUsuario:
+                  type: string
+                motivo:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-compra/cerrar-orden-con-compra-tx:
+    post:
+      tags:
+        - DocumentosCompra
+      summary: Cierra orden de compra creando factura (transaccional)
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [numFactOrden, compra]
+              properties:
+                numFactOrden:
+                  type: string
+                compra:
+                  $ref: "#/components/schemas/GenericObject"
+                detalle:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/GenericObject"
+                options:
+                  $ref: "#/components/schemas/GenericObject"
+      responses:
+        "201":
+          $ref: "#/components/responses/TxCreated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-compra/{tipoOperacion}/{numFact}:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Obtiene documento de compra
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: numFact
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-compra/{tipoOperacion}/{numFact}/detalle:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Obtiene detalle de documento de compra
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: numFact
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/documentos-compra/{tipoOperacion}/{numFact}/indicadores:
+    get:
+      tags:
+        - DocumentosCompra
+      summary: Indicadores de documento de compra
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: tipoOperacion
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: numFact
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # SUPERVISIÓN
+  # ─────────────────────────────────────────────────────────────
+  /v1/supervision/biometric/credentials:
+    get:
+      tags:
+        - Supervision
+      summary: Lista credenciales biométricas de supervisores
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: supervisorUser
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/supervision/biometric/enroll:
+    post:
+      tags:
+        - Supervision
+      summary: Inscribe credencial biométrica de supervisor
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supervisorUser, supervisorPassword, credentialId]
+              properties:
+                supervisorUser:
+                  type: string
+                supervisorPassword:
+                  type: string
+                credentialId:
+                  type: string
+                credentialLabel:
+                  type: string
+                deviceInfo:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "403":
+          description: Credenciales de supervisor inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/supervision/biometric/deactivate:
+    post:
+      tags:
+        - Supervision
+      summary: Desactiva credencial biométrica de supervisor
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supervisorUser, supervisorPassword, credentialId]
+              properties:
+                supervisorUser:
+                  type: string
+                supervisorPassword:
+                  type: string
+                credentialId:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "403":
+          description: Credenciales de supervisor inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─────────────────────────────────────────────────────────────
+  # RRHH
+  # ─────────────────────────────────────────────────────────────
+  /v1/rrhh/utilidades:
+    get:
+      tags:
+        - RRHH
+      summary: Lista registros de utilidades (profit sharing)
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/utilidades/generate:
+    post:
+      tags:
+        - RRHH
+      summary: Genera distribución de utilidades
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [year, totalProfit]
+              properties:
+                year:
+                  type: integer
+                totalProfit:
+                  type: number
+                daysBase:
+                  type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/utilidades/{id}/summary:
+    get:
+      tags:
+        - RRHH
+      summary: Resumen de distribución de utilidades
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/utilidades/{id}/approve:
+    post:
+      tags:
+        - RRHH
+      summary: Aprueba distribución de utilidades
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/fideicomiso:
+    get:
+      tags:
+        - RRHH
+      summary: Lista registros de fideicomiso (trust)
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/fideicomiso/calculate:
+    post:
+      tags:
+        - RRHH
+      summary: Calcula fideicomiso por trimestre
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [year, quarter]
+              properties:
+                year:
+                  type: integer
+                quarter:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                interestRate:
+                  type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/fideicomiso/balance/{employeeCode}:
+    get:
+      tags:
+        - RRHH
+      summary: Balance de fideicomiso de un empleado
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: employeeCode
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/fideicomiso/summary:
+    get:
+      tags:
+        - RRHH
+      summary: Resumen de fideicomiso por año/trimestre
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: quarter
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro:
+    get:
+      tags:
+        - RRHH
+      summary: Lista empleados en caja de ahorro
+      x-db-agnostic: true
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro/enroll:
+    post:
+      tags:
+        - RRHH
+      summary: Inscribe empleado en caja de ahorro
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, contributionPct]
+              properties:
+                employeeCode:
+                  type: string
+                contributionPct:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro/balance/{employeeCode}:
+    get:
+      tags:
+        - RRHH
+      summary: Balance de caja de ahorro de un empleado
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: employeeCode
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro/loans:
+    get:
+      tags:
+        - RRHH
+      summary: Lista préstamos de caja de ahorro
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: employeeCode
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Solicita préstamo de caja de ahorro
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, amount, installments]
+              properties:
+                employeeCode:
+                  type: string
+                amount:
+                  type: number
+                installments:
+                  type: integer
+                reason:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro/loans/{loanId}/approve:
+    post:
+      tags:
+        - RRHH
+      summary: Aprueba préstamo de caja de ahorro
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: loanId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro/loans/{loanId}/payment:
+    post:
+      tags:
+        - RRHH
+      summary: Procesa pago de préstamo de caja de ahorro
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: loanId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/caja-ahorro/process-monthly:
+    post:
+      tags:
+        - RRHH
+      summary: Procesa contribuciones mensuales de caja de ahorro
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones:
+    get:
+      tags:
+        - RRHH
+      summary: Lista obligaciones legales por país
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: countryCode
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Crea o actualiza obligación legal
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [countryCode, name, frequency]
+              properties:
+                countryCode:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                frequency:
+                  type: string
+                entityName:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/country/{code}:
+    get:
+      tags:
+        - RRHH
+      summary: Obligaciones legales de un país
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/enroll:
+    post:
+      tags:
+        - RRHH
+      summary: Inscribe empleado en obligación legal
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId, obligationId, startDate]
+              properties:
+                employeeId:
+                  type: integer
+                obligationId:
+                  type: integer
+                startDate:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/employee/{employeeId}:
+    get:
+      tags:
+        - RRHH
+      summary: Obligaciones de un empleado específico
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/filings:
+    get:
+      tags:
+        - RRHH
+      summary: Lista declaraciones de obligaciones
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: obligationId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/filings/generate:
+    post:
+      tags:
+        - RRHH
+      summary: Genera declaración de obligación legal
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [obligationId, periodStart, periodEnd]
+              properties:
+                obligationId:
+                  type: integer
+                periodStart:
+                  type: string
+                  format: date
+                periodEnd:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/filings/{id}:
+    get:
+      tags:
+        - RRHH
+      summary: Resumen de declaración de obligación
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/obligaciones/filings/{filingId}/mark-filed:
+    post:
+      tags:
+        - RRHH
+      summary: Marca declaración como presentada
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: filingId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filedDate]
+              properties:
+                filedDate:
+                  type: string
+                  format: date
+                referenceNumber:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/salud-ocupacional:
+    get:
+      tags:
+        - RRHH
+      summary: Lista registros de salud ocupacional
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: employeeCode
+          schema:
+            type: string
+        - in: query
+          name: recordType
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Crea registro de salud ocupacional
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, recordType, incidentDate, description]
+              properties:
+                employeeCode:
+                  type: string
+                recordType:
+                  type: string
+                incidentDate:
+                  type: string
+                  format: date
+                description:
+                  type: string
+                severity:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/salud-ocupacional/{id}:
+    get:
+      tags:
+        - RRHH
+      summary: Obtiene registro de salud ocupacional por ID
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags:
+        - RRHH
+      summary: Actualiza registro de salud ocupacional
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                followUpNotes:
+                  type: string
+                closedDate:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/examenes-medicos:
+    get:
+      tags:
+        - RRHH
+      summary: Lista exámenes médicos
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: employeeCode
+          schema:
+            type: string
+        - in: query
+          name: examType
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Guarda examen médico
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, examType, examDate]
+              properties:
+                employeeCode:
+                  type: string
+                examType:
+                  type: string
+                examDate:
+                  type: string
+                  format: date
+                result:
+                  type: string
+                notes:
+                  type: string
+                nextDueDate:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/examenes-medicos/pending:
+    get:
+      tags:
+        - RRHH
+      summary: Lista exámenes médicos pendientes
+      x-db-agnostic: true
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/ordenes-medicas:
+    get:
+      tags:
+        - RRHH
+      summary: Lista órdenes médicas
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: employeeCode
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Crea orden médica
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, orderType, startDate]
+              properties:
+                employeeCode:
+                  type: string
+                orderType:
+                  type: string
+                diagnosis:
+                  type: string
+                treatment:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                restDays:
+                  type: integer
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/ordenes-medicas/{orderId}/approve:
+    post:
+      tags:
+        - RRHH
+      summary: Aprueba orden médica
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/capacitacion:
+    get:
+      tags:
+        - RRHH
+      summary: Lista capacitaciones
+      x-db-agnostic: true
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Crea o actualiza capacitación
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, startDate]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                instructor:
+                  type: string
+                hours:
+                  type: integer
+                participants:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/capacitacion/certifications/{employeeCode}:
+    get:
+      tags:
+        - RRHH
+      summary: Certificaciones de un empleado
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: employeeCode
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/comites:
+    get:
+      tags:
+        - RRHH
+      summary: Lista comités de seguridad
+      x-db-agnostic: true
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          $ref: "#/components/responses/OkPagedRows"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Crea o actualiza comité
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, startDate]
+              properties:
+                name:
+                  type: string
+                committeeType:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/comites/{committeeId}/members:
+    post:
+      tags:
+        - RRHH
+      summary: Agrega miembro al comité
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: committeeId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeCode, role]
+              properties:
+                employeeCode:
+                  type: string
+                role:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/comites/{committeeId}/members/{memberId}:
+    delete:
+      tags:
+        - RRHH
+      summary: Elimina miembro del comité
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: committeeId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkObject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rrhh/comites/{committeeId}/meetings:
+    get:
+      tags:
+        - RRHH
+      summary: Lista reuniones de un comité
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: committeeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/OkArray"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - RRHH
+      summary: Registra reunión de comité
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: committeeId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [meetingDate]
+              properties:
+                meetingDate:
+                  type: string
+                  format: date
+                agenda:
+                  type: string
+                minutes:
+                  type: string
+                attendees:
+                  type: string
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"

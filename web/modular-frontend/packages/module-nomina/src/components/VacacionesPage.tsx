@@ -33,18 +33,38 @@ export default function VacacionesPage() {
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
   const detalle = useVacacionDetalle(selectedId);
 
-  const rows = data?.data ?? data?.rows ?? [];
+  const rawRows: any[] = data?.data ?? data?.rows ?? [];
+  // Mapear campos del SP a los que espera el DataGrid
+  const rows = rawRows.map((r: any, i: number) => {
+    const inicio = r.inicio ?? r.fechaInicio;
+    const hasta = r.hasta ?? r.fechaHasta;
+    let dias = 0;
+    if (inicio && hasta) {
+      dias = Math.round((new Date(hasta).getTime() - new Date(inicio).getTime()) / 86400000);
+    }
+    return {
+      _id: r.vacacion ?? r.vacacionId ?? i,
+      vacacion: r.vacacion ?? r.vacacionId ?? "",
+      cedula: r.cedula ?? "",
+      nombreEmpleado: r.nombreEmpleado ?? r.nombre ?? "",
+      inicio: inicio ? new Date(inicio).toLocaleDateString() : "",
+      hasta: hasta ? new Date(hasta).toLocaleDateString() : "",
+      reintegro: r.reintegro ?? r.fechaReintegro ? new Date(r.reintegro ?? r.fechaReintegro).toLocaleDateString() : "",
+      dias,
+      total: r.total ?? r.totalCalculado ?? r.montoVacaciones ?? 0,
+    };
+  });
 
   const columns: GridColDef[] = [
-    { field: "vacacionId", headerName: "ID", width: 100 },
+    { field: "vacacion", headerName: "ID", width: 160 },
     { field: "cedula", headerName: "Cédula", width: 120 },
-    { field: "nombre", headerName: "Empleado", flex: 1 },
-    { field: "fechaInicio", headerName: "Inicio", width: 110 },
-    { field: "fechaHasta", headerName: "Hasta", width: 110 },
-    { field: "fechaReintegro", headerName: "Reintegro", width: 110 },
-    { field: "diasVacaciones", headerName: "Días", width: 80, type: "number" },
+    { field: "nombreEmpleado", headerName: "Empleado", flex: 1 },
+    { field: "inicio", headerName: "Inicio", width: 110 },
+    { field: "hasta", headerName: "Hasta", width: 110 },
+    { field: "reintegro", headerName: "Reintegro", width: 110 },
+    { field: "dias", headerName: "Días", width: 80, type: "number" },
     {
-      field: "montoVacaciones",
+      field: "total",
       headerName: "Monto",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
@@ -55,7 +75,7 @@ export default function VacacionesPage() {
       width: 60,
       sortable: false,
       renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.vacacionId)}>
+        <IconButton size="small" onClick={() => setSelectedId(p.row.vacacion)}>
           <VisibilityIcon fontSize="small" />
         </IconButton>
       ),
@@ -93,7 +113,7 @@ export default function VacacionesPage() {
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
-          getRowId={(r) => r.vacacionId ?? r.id ?? Math.random()}
+          getRowId={(r) => r._id}
         />
       </Paper>
 
@@ -103,12 +123,11 @@ export default function VacacionesPage() {
         <DialogContent>
           {detalle.isLoading ? (
             <CircularProgress />
-          ) : detalle.data?.cabecera ? (
+          ) : detalle.data ? (
             <Box>
-              <Typography variant="body2"><strong>Empleado:</strong> {detalle.data.cabecera.nombre}</Typography>
-              <Typography variant="body2"><strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}</Typography>
-              <Typography variant="body2"><strong>Días:</strong> {detalle.data.cabecera.diasVacaciones}</Typography>
-              <Typography variant="body2"><strong>Monto:</strong> {formatCurrency(detalle.data.cabecera.montoVacaciones ?? 0)}</Typography>
+              <Typography variant="body2"><strong>Empleado:</strong> {detalle.data.cabecera?.nombreEmpleado ?? detalle.data.nombreEmpleado ?? detalle.data.cedula}</Typography>
+              <Typography variant="body2"><strong>Período:</strong> {detalle.data.cabecera?.inicio ?? detalle.data.inicio} - {detalle.data.cabecera?.hasta ?? detalle.data.hasta}</Typography>
+              <Typography variant="body2"><strong>Monto:</strong> {formatCurrency(detalle.data.cabecera?.total ?? detalle.data.total ?? 0)}</Typography>
             </Box>
           ) : (
             <Typography>No se encontró información</Typography>

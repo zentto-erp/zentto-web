@@ -379,6 +379,9 @@
 \echo '--- Payment Gateway Tables ---'
 \i includes/sp/payment_gateway_tables.sql
 
+\echo '--- Tablas HR RRHH (Salud, Beneficios, Comités) ---'
+\i includes/sp/create_hr_rrhh_tables.sql
+
 \echo '--- Cierre Mensual Inventario ---'
 \i includes/sp/create_cierre_mensual_inventario.sql
 
@@ -461,7 +464,57 @@
 \i includes/sp/seed_demo_finanzas_contabilidad.sql
 
 -- ====================================================================
--- FASE 6: Verificacion
+-- FASE 6: Corrección de tipos de retorno (character varying vs text)
+-- Los archivos includes/sp/ crean funciones con tipos que pueden
+-- generar mismatch en PG 15+. Esta fase los reemplaza con las
+-- versiones corregidas (NULLIF/UPPER/COALESCE con casts explícitos).
+-- ====================================================================
+\echo ''
+\echo '╔══════════════════════════════════════════════════════╗'
+\echo '║  FASE 6: Funciones con tipos corregidos (PG 15+)    ║'
+\echo '╚══════════════════════════════════════════════════════╝'
+
+\echo '[F6-01] Seguridad...'
+\i 01_sec.sql
+
+\echo '[F6-02] Configuracion...'
+\i 02_cfg.sql
+
+\echo '[F6-03] RRHH / Nomina...'
+\i 03_hr.sql
+
+\echo '[F6-04] Inventario...'
+\i 04_inventario.sql
+
+\echo '[F6-05] Maestros (clientes, proveedores, etc.)...'
+\i 05_master.sql
+
+\echo '[F6-06] Documentos (ventas, compras)...'
+\i 06_doc.sql
+
+\echo '[F6-07] Contabilidad...'
+\i 07_acct.sql
+
+\echo '[F6-08] Finanzas (bancos, CxC, CxP)...'
+\i 08_fin.sql
+
+\echo '[F6-09] POS / Restaurante...'
+\i 09_pos.sql
+
+\echo '[F6-10] Fiscal / Auditoria...'
+\i 10_fiscal.sql
+
+\echo '[F6-11] Pagos...'
+\i 11_pay.sql
+
+\echo '[F6-12] Sistema...'
+\i 12_sys.sql
+
+\echo '[F6-13] Otros...'
+\i 13_otros.sql
+
+-- ====================================================================
+-- FASE 7: Verificacion
 -- ====================================================================
 \echo ''
 \echo '╔══════════════════════════════════════════════════════╗'

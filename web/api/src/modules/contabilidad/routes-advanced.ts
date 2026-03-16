@@ -694,3 +694,20 @@ advancedRouter.get("/reportes/drill-down", async (req, res) => {
     return res.status(500).json({ error: String(err) });
   }
 });
+
+// ─── P&L por Centro de Costo ──────────────────────────────────────────────
+advancedRouter.get("/reportes/pnl-centro-costo", async (req, res) => {
+  const parsed = rangoSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  }
+  try {
+    const data = await pnlByCostCenter({
+      fechaDesde: parsed.data.fechaDesde,
+      fechaHasta: parsed.data.fechaHasta
+    });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err) });
+  }
+});

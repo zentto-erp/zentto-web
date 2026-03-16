@@ -16,7 +16,7 @@ BEGIN
   -- ============================================================================
   RAISE NOTICE '>> 1. Capacitacion (8 registros nuevos)';
 
-  -- 5: SEGURIDAD — Prevencion de Riesgos LOPCYMAT, emp 3
+  -- 5: SEGURIDAD — Prevencion de Riesgos LOPCYMAT, emp V-12345678
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 5) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -24,17 +24,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      5, 1, 'VE', 'SEGURIDAD', 'Prevencion de Riesgos Laborales LOPCYMAT', 'Instituto Seguridad Laboral',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 5, 1, 'VE', 'SEGURIDAD', 'Prevencion de Riesgos Laborales LOPCYMAT', 'Instituto Seguridad Laboral',
       '2025-06-09', '2025-06-10', 16,
-      3, 'V-12345678', 'Carlos Mendoza',
+      e."EmployeeId", 'V-12345678', 'Carlos Mendoza',
       'ISL-PRL-2025-0103', NULL, 'APROBADO', true,
       'Capacitacion obligatoria LOPCYMAT. Identificacion de riesgos, uso de EPP, notificacion de riesgos.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-12345678';
   END IF;
 
-  -- 6: SEGURIDAD — Prevencion de Riesgos LOPCYMAT, emp 4
+  -- 6: SEGURIDAD — Prevencion de Riesgos LOPCYMAT, emp V-14567890
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 6) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -42,17 +42,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      6, 1, 'VE', 'SEGURIDAD', 'Prevencion de Riesgos Laborales LOPCYMAT', 'Instituto Seguridad Laboral',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 6, 1, 'VE', 'SEGURIDAD', 'Prevencion de Riesgos Laborales LOPCYMAT', 'Instituto Seguridad Laboral',
       '2025-06-09', '2025-06-10', 16,
-      4, 'V-14567890', 'Ana Rodriguez',
+      e."EmployeeId", 'V-14567890', 'Ana Rodriguez',
       'ISL-PRL-2025-0104', NULL, 'APROBADO', true,
       'Capacitacion obligatoria LOPCYMAT. Identificacion de riesgos, uso de EPP, notificacion de riesgos.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-14567890';
   END IF;
 
-  -- 7: SEGURIDAD — Prevencion de Riesgos LOPCYMAT, emp 5
+  -- 7: SEGURIDAD — Prevencion de Riesgos LOPCYMAT, emp V-16789012
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 7) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -60,17 +60,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      7, 1, 'VE', 'SEGURIDAD', 'Prevencion de Riesgos Laborales LOPCYMAT', 'Instituto Seguridad Laboral',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 7, 1, 'VE', 'SEGURIDAD', 'Prevencion de Riesgos Laborales LOPCYMAT', 'Instituto Seguridad Laboral',
       '2025-06-09', '2025-06-10', 16,
-      5, 'V-16789012', 'Maria Lopez',
+      e."EmployeeId", 'V-16789012', 'Maria Lopez',
       'ISL-PRL-2025-0105', NULL, 'APROBADO', true,
       'Capacitacion obligatoria LOPCYMAT. Identificacion de riesgos, uso de EPP, notificacion de riesgos.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-16789012';
   END IF;
 
-  -- 8: SEGURIDAD — Manejo Sustancias Peligrosas, emp 3
+  -- 8: SEGURIDAD — Manejo Sustancias Peligrosas, emp V-12345678
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 8) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -78,17 +78,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      8, 1, 'VE', 'SEGURIDAD', 'Manejo de Sustancias Peligrosas', 'Instituto Seguridad Laboral',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 8, 1, 'VE', 'SEGURIDAD', 'Manejo de Sustancias Peligrosas', 'Instituto Seguridad Laboral',
       '2025-09-22', '2025-09-23', 16,
-      3, 'V-12345678', 'Carlos Mendoza',
+      e."EmployeeId", 'V-12345678', 'Carlos Mendoza',
       'ISL-MSP-2025-0088', NULL, 'APROBADO', true,
       'Normativa LOPCYMAT y NT para manejo, almacenamiento y transporte de sustancias quimicas.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-12345678';
   END IF;
 
-  -- 9: SEGURIDAD — Manejo Sustancias Peligrosas, emp 6
+  -- 9: SEGURIDAD — Manejo Sustancias Peligrosas, emp V-18234567
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 9) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -96,17 +96,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      9, 1, 'VE', 'SEGURIDAD', 'Manejo de Sustancias Peligrosas', 'Instituto Seguridad Laboral',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 9, 1, 'VE', 'SEGURIDAD', 'Manejo de Sustancias Peligrosas', 'Instituto Seguridad Laboral',
       '2025-09-22', '2025-09-23', 16,
-      6, 'V-18234567', 'Pedro Garcia',
+      e."EmployeeId", 'V-18234567', 'Pedro Garcia',
       'ISL-MSP-2025-0089', NULL, 'APROBADO', true,
       'Normativa LOPCYMAT y NT para manejo, almacenamiento y transporte de sustancias quimicas.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-18234567';
   END IF;
 
-  -- 10: DESARROLLO — Excel Avanzado, emp 5
+  -- 10: DESARROLLO — Excel Avanzado, emp V-16789012
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 10) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -114,17 +114,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      10, 1, 'VE', 'DESARROLLO', 'Excel Avanzado', 'AcademiaVE',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 10, 1, 'VE', 'DESARROLLO', 'Excel Avanzado', 'AcademiaVE',
       '2026-01-13', '2026-01-31', 24,
-      5, 'V-16789012', 'Maria Lopez',
+      e."EmployeeId", 'V-16789012', 'Maria Lopez',
       'AVE-EXC-2026-0045', NULL, 'APROBADO', false,
       'Tablas dinamicas, Power Query, macros VBA, dashboards. Formacion de desarrollo profesional.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-16789012';
   END IF;
 
-  -- 11: DESARROLLO — Excel Avanzado, emp 7
+  -- 11: DESARROLLO — Excel Avanzado, emp V-20456789
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 11) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -132,17 +132,17 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      11, 1, 'VE', 'DESARROLLO', 'Excel Avanzado', 'AcademiaVE',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 11, 1, 'VE', 'DESARROLLO', 'Excel Avanzado', 'AcademiaVE',
       '2026-01-13', '2026-01-31', 24,
-      7, 'V-20456789', 'Luisa Martinez',
+      e."EmployeeId", 'V-20456789', 'Luisa Martinez',
       'AVE-EXC-2026-0046', NULL, 'APROBADO', false,
       'Tablas dinamicas, Power Query, macros VBA, dashboards. Formacion de desarrollo profesional.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-20456789';
   END IF;
 
-  -- 12: INDUCCION — Induccion DatqBox, emp 9
+  -- 12: INDUCCION — Induccion DatqBox, emp V-24890123
   IF NOT EXISTS (SELECT 1 FROM hr."TrainingRecord" WHERE "TrainingRecordId" = 12) THEN
     INSERT INTO hr."TrainingRecord" (
       "TrainingRecordId", "CompanyId", "CountryCode", "TrainingType", "Title", "Provider",
@@ -150,14 +150,14 @@ BEGIN
       "EmployeeId", "EmployeeCode", "EmployeeName",
       "CertificateNumber", "CertificateUrl", "Result", "IsRegulatory",
       "Notes", "CreatedAt", "UpdatedAt"
-    ) VALUES (
-      12, 1, 'VE', 'INDUCCION', 'Induccion DatqBox', 'INCES',
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 12, 1, 'VE', 'INDUCCION', 'Induccion DatqBox', 'INCES',
       '2025-11-03', '2025-11-07', 40,
-      9, 'V-24890123', 'Roberto Hernandez',
+      e."EmployeeId", 'V-24890123', 'Roberto Hernandez',
       'INCES-IND-2025-1201', NULL, 'APROBADO', true,
       'Induccion integral: cultura organizacional, procesos, LOPCYMAT, seguridad informatica, herramientas internas.',
       (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
-    );
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-24890123';
   END IF;
 
   RAISE NOTICE '   8 registros de capacitacion insertados (IDs 5-12).';
@@ -171,7 +171,7 @@ BEGIN
     INSERT INTO hr."SafetyCommittee" (
       "SafetyCommitteeId", "CompanyId", "CountryCode", "CommitteeName",
       "FormationDate", "MeetingFrequency", "IsActive", "CreatedAt"
-    ) VALUES (
+    ) OVERRIDING SYSTEM VALUE VALUES (
       100, 1, 'VE', 'Comite de Seguridad y Salud Laboral',
       '2024-01-15', 'MENSUAL', true, (NOW() AT TIME ZONE 'UTC')
     );
@@ -181,7 +181,7 @@ BEGIN
     INSERT INTO hr."SafetyCommittee" (
       "SafetyCommitteeId", "CompanyId", "CountryCode", "CommitteeName",
       "FormationDate", "MeetingFrequency", "IsActive", "CreatedAt"
-    ) VALUES (
+    ) OVERRIDING SYSTEM VALUE VALUES (
       101, 1, 'VE', 'Comite de Bienestar Social',
       '2024-06-01', 'TRIMESTRAL', true, (NOW() AT TIME ZONE 'UTC')
     );
@@ -192,21 +192,27 @@ BEGIN
     INSERT INTO hr."SafetyCommitteeMember" (
       "MemberId", "SafetyCommitteeId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "Role", "StartDate", "EndDate"
-    ) VALUES (100, 100, 8, 'V-22678901', 'Fernando Diaz', 'PRESIDENTE', '2024-01-15', NULL);
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 100, 100, e."EmployeeId", 'V-22678901', 'Fernando Diaz', 'PRESIDENTE', '2024-01-15', NULL
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-22678901';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SafetyCommitteeMember" WHERE "MemberId" = 101) THEN
     INSERT INTO hr."SafetyCommitteeMember" (
       "MemberId", "SafetyCommitteeId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "Role", "StartDate", "EndDate"
-    ) VALUES (101, 100, 3, 'V-12345678', 'Carlos Mendoza', 'SECRETARIO', '2024-01-15', NULL);
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 101, 100, e."EmployeeId", 'V-12345678', 'Carlos Mendoza', 'SECRETARIO', '2024-01-15', NULL
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-12345678';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SafetyCommitteeMember" WHERE "MemberId" = 102) THEN
     INSERT INTO hr."SafetyCommitteeMember" (
       "MemberId", "SafetyCommitteeId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "Role", "StartDate", "EndDate"
-    ) VALUES (102, 100, 4, 'V-14567890', 'Ana Rodriguez', 'VOCAL', '2024-01-15', NULL);
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 102, 100, e."EmployeeId", 'V-14567890', 'Ana Rodriguez', 'VOCAL', '2024-01-15', NULL
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-14567890';
   END IF;
 
   -- Miembros Comite 101
@@ -214,14 +220,18 @@ BEGIN
     INSERT INTO hr."SafetyCommitteeMember" (
       "MemberId", "SafetyCommitteeId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "Role", "StartDate", "EndDate"
-    ) VALUES (103, 101, 5, 'V-16789012', 'Maria Lopez', 'PRESIDENTA', '2024-06-01', NULL);
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 103, 101, e."EmployeeId", 'V-16789012', 'Maria Lopez', 'PRESIDENTA', '2024-06-01', NULL
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-16789012';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SafetyCommitteeMember" WHERE "MemberId" = 104) THEN
     INSERT INTO hr."SafetyCommitteeMember" (
       "MemberId", "SafetyCommitteeId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "Role", "StartDate", "EndDate"
-    ) VALUES (104, 101, 7, 'V-20456789', 'Luisa Martinez', 'SECRETARIA', '2024-06-01', NULL);
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 104, 101, e."EmployeeId", 'V-20456789', 'Luisa Martinez', 'SECRETARIA', '2024-06-01', NULL
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-20456789';
   END IF;
 
   -- Reuniones Comite 100
@@ -229,7 +239,7 @@ BEGIN
     INSERT INTO hr."SafetyCommitteeMeeting" (
       "MeetingId", "SafetyCommitteeId", "MeetingDate", "MinutesUrl", "TopicsSummary",
       "ActionItems", "CreatedAt"
-    ) VALUES (
+    ) OVERRIDING SYSTEM VALUE VALUES (
       100, 100, '2026-01-20', NULL,
       '1. Revision accidentes Q4 2025. 2. Plan de capacitacion SST 2026. 3. Auditoria de extintores y senalizacion.',
       '- Programar inspeccion de extintores antes del 31/01. - Actualizar mapa de riesgos del almacen. - Coordinar charla de primeros auxilios con Cruz Roja.',
@@ -241,7 +251,7 @@ BEGIN
     INSERT INTO hr."SafetyCommitteeMeeting" (
       "MeetingId", "SafetyCommitteeId", "MeetingDate", "MinutesUrl", "TopicsSummary",
       "ActionItems", "CreatedAt"
-    ) VALUES (
+    ) OVERRIDING SYSTEM VALUE VALUES (
       101, 100, '2026-02-17', NULL,
       '1. Resultado inspeccion extintores. 2. Estadisticas accidentalidad enero. 3. Dotacion EPP primer trimestre.',
       '- Reemplazar 3 extintores vencidos en planta baja. - Solicitar cotizacion EPP nuevos ingresos. - Fijar fecha simulacro evacuacion marzo.',
@@ -253,7 +263,7 @@ BEGIN
     INSERT INTO hr."SafetyCommitteeMeeting" (
       "MeetingId", "SafetyCommitteeId", "MeetingDate", "MinutesUrl", "TopicsSummary",
       "ActionItems", "CreatedAt"
-    ) VALUES (
+    ) OVERRIDING SYSTEM VALUE VALUES (
       102, 100, '2026-03-16', NULL,
       '1. Simulacro de evacuacion realizado (3 min 20 seg). 2. Revision plan de emergencia. 3. Informe trimestral INPSASEL.',
       '- Documentar resultados simulacro para informe INPSASEL. - Corregir ruta evacuacion piso 2. - Entregar informe trimestral antes del 10/04.',
@@ -266,7 +276,7 @@ BEGIN
     INSERT INTO hr."SafetyCommitteeMeeting" (
       "MeetingId", "SafetyCommitteeId", "MeetingDate", "MinutesUrl", "TopicsSummary",
       "ActionItems", "CreatedAt"
-    ) VALUES (
+    ) OVERRIDING SYSTEM VALUE VALUES (
       103, 101, '2026-01-28', NULL,
       '1. Planificacion actividades recreativas Q1 2026. 2. Fondo de ayuda social: balance y solicitudes pendientes. 3. Convenio farmacia.',
       '- Organizar jornada deportiva para febrero. - Evaluar 2 solicitudes de ayuda economica. - Renovar convenio farmacia antes del 15/02.',
@@ -475,7 +485,7 @@ BEGIN
       "ConfirmationNumber", "TotalEmployerAmount", "TotalEmployeeAmount", "TotalAmount",
       "EmployeeCount", "Status", "FiledByUserId", "DocumentUrl", "Notes",
       "CreatedAt", "UpdatedAt"
-    )
+    ) OVERRIDING SYSTEM VALUE
     SELECT 10, 1, lo."LegalObligationId",
       '2026-01-01', '2026-01-31', '2026-02-10', '2026-02-10',
       'SSO-2026-01-0001', 3080.00, 1232.00, 4312.00,
@@ -492,7 +502,7 @@ BEGIN
       "ConfirmationNumber", "TotalEmployerAmount", "TotalEmployeeAmount", "TotalAmount",
       "EmployeeCount", "Status", "FiledByUserId", "DocumentUrl", "Notes",
       "CreatedAt", "UpdatedAt"
-    )
+    ) OVERRIDING SYSTEM VALUE
     SELECT 11, 1, lo."LegalObligationId",
       '2026-02-01', '2026-02-28', '2026-03-10', '2026-03-08',
       'SSO-2026-02-0001', 3080.00, 1232.00, 4312.00,
@@ -509,7 +519,7 @@ BEGIN
       "ConfirmationNumber", "TotalEmployerAmount", "TotalEmployeeAmount", "TotalAmount",
       "EmployeeCount", "Status", "FiledByUserId", "DocumentUrl", "Notes",
       "CreatedAt", "UpdatedAt"
-    )
+    ) OVERRIDING SYSTEM VALUE
     SELECT 12, 1, lo."LegalObligationId",
       '2026-03-01', '2026-03-31', '2026-04-10', NULL,
       NULL, 3080.00, 1232.00, 4312.00,
@@ -526,7 +536,7 @@ BEGIN
       "ConfirmationNumber", "TotalEmployerAmount", "TotalEmployeeAmount", "TotalAmount",
       "EmployeeCount", "Status", "FiledByUserId", "DocumentUrl", "Notes",
       "CreatedAt", "UpdatedAt"
-    )
+    ) OVERRIDING SYSTEM VALUE
     SELECT 13, 1, lo."LegalObligationId",
       '2026-01-01', '2026-01-31', '2026-02-10', '2026-02-09',
       'FAOV-2026-01-0001', 616.00, 308.00, 924.00,
@@ -543,7 +553,7 @@ BEGIN
       "ConfirmationNumber", "TotalEmployerAmount", "TotalEmployeeAmount", "TotalAmount",
       "EmployeeCount", "Status", "FiledByUserId", "DocumentUrl", "Notes",
       "CreatedAt", "UpdatedAt"
-    )
+    ) OVERRIDING SYSTEM VALUE
     SELECT 14, 1, lo."LegalObligationId",
       '2026-02-01', '2026-02-28', '2026-03-10', '2026-03-07',
       'FAOV-2026-02-0001', 616.00, 308.00, 924.00,
@@ -560,7 +570,7 @@ BEGIN
       "ConfirmationNumber", "TotalEmployerAmount", "TotalEmployeeAmount", "TotalAmount",
       "EmployeeCount", "Status", "FiledByUserId", "DocumentUrl", "Notes",
       "CreatedAt", "UpdatedAt"
-    )
+    ) OVERRIDING SYSTEM VALUE
     SELECT 15, 1, lo."LegalObligationId",
       '2026-03-01', '2026-03-31', '2026-04-10', NULL,
       NULL, 616.00, 308.00, 924.00,
@@ -581,7 +591,7 @@ BEGIN
   SELECT f_id, emp_id, salary,
     CAST(salary * 0.10 AS DECIMAL(18,2)),
     CAST(salary * 0.04 AS DECIMAL(18,2)),
-    30, NULL
+    30, 'NONE'
   FROM (VALUES (10), (11), (12)) AS filings(f_id),
   (VALUES
     (1, 3500.00), (2, 2800.00), (3, 3500.00), (4, 4200.00), (5, 3200.00),
@@ -599,7 +609,7 @@ BEGIN
   SELECT f_id, emp_id, salary,
     CAST(salary * 0.02 AS DECIMAL(18,2)),
     CAST(salary * 0.01 AS DECIMAL(18,2)),
-    30, NULL
+    30, 'NONE'
   FROM (VALUES (13), (14), (15)) AS filings(f_id),
   (VALUES
     (1, 3500.00), (2, 2800.00), (3, 3500.00), (4, 4200.00), (5, 3200.00),
@@ -621,42 +631,54 @@ BEGIN
     INSERT INTO hr."SavingsFund" (
       "SavingsFundId", "CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "EmployeeContribution", "EmployerMatch", "EnrollmentDate", "Status", "CreatedAt"
-    ) VALUES (3, 1, 3, 'V-12345678', 'Carlos Mendoza', 10.00, 5.00, '2021-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC'));
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 3, 1, e."EmployeeId", 'V-12345678', 'Carlos Mendoza', 10.00, 5.00, '2021-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC')
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-12345678';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SavingsFund" WHERE "SavingsFundId" = 4) THEN
     INSERT INTO hr."SavingsFund" (
       "SavingsFundId", "CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "EmployeeContribution", "EmployerMatch", "EnrollmentDate", "Status", "CreatedAt"
-    ) VALUES (4, 1, 4, 'V-14567890', 'Ana Rodriguez', 8.00, 5.00, '2020-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC'));
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 4, 1, e."EmployeeId", 'V-14567890', 'Ana Rodriguez', 8.00, 5.00, '2020-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC')
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-14567890';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SavingsFund" WHERE "SavingsFundId" = 5) THEN
     INSERT INTO hr."SavingsFund" (
       "SavingsFundId", "CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "EmployeeContribution", "EmployerMatch", "EnrollmentDate", "Status", "CreatedAt"
-    ) VALUES (5, 1, 6, 'V-18234567', 'Pedro Garcia', 5.00, 5.00, '2019-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC'));
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 5, 1, e."EmployeeId", 'V-18234567', 'Pedro Garcia', 5.00, 5.00, '2019-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC')
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-18234567';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SavingsFund" WHERE "SavingsFundId" = 6) THEN
     INSERT INTO hr."SavingsFund" (
       "SavingsFundId", "CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "EmployeeContribution", "EmployerMatch", "EnrollmentDate", "Status", "CreatedAt"
-    ) VALUES (6, 1, 8, 'V-22678901', 'Fernando Diaz', 10.00, 5.00, '2018-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC'));
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 6, 1, e."EmployeeId", 'V-22678901', 'Fernando Diaz', 10.00, 5.00, '2018-01-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC')
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-22678901';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SavingsFund" WHERE "SavingsFundId" = 7) THEN
     INSERT INTO hr."SavingsFund" (
       "SavingsFundId", "CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "EmployeeContribution", "EmployerMatch", "EnrollmentDate", "Status", "CreatedAt"
-    ) VALUES (7, 1, 7, 'V-20456789', 'Luisa Martinez', 7.00, 5.00, '2022-06-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC'));
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 7, 1, e."EmployeeId", 'V-20456789', 'Luisa Martinez', 7.00, 5.00, '2022-06-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC')
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-20456789';
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM hr."SavingsFund" WHERE "SavingsFundId" = 8) THEN
     INSERT INTO hr."SavingsFund" (
       "SavingsFundId", "CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName",
       "EmployeeContribution", "EmployerMatch", "EnrollmentDate", "Status", "CreatedAt"
-    ) VALUES (8, 1, 9, 'V-24890123', 'Roberto Hernandez', 5.00, 5.00, '2023-03-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC'));
+    ) OVERRIDING SYSTEM VALUE
+    SELECT 8, 1, e."EmployeeId", 'V-24890123', 'Roberto Hernandez', 5.00, 5.00, '2023-03-01', 'ACTIVO', (NOW() AT TIME ZONE 'UTC')
+    FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-24890123';
   END IF;
 
   RAISE NOTICE '   6 inscripciones de caja de ahorro insertadas (IDs 3-8).';
@@ -676,7 +698,7 @@ BEGIN
   INSERT INTO hr."SavingsFundTransaction" (
     "TransactionId", "SavingsFundId", "TransactionDate", "TransactionType",
     "Amount", "Balance", "Reference", "PayrollBatchId", "Notes", "CreatedAt"
-  )
+  ) OVERRIDING SYSTEM VALUE
   SELECT txn_id, fund_id, txn_date::date, txn_type,
     amount, balance, ref, NULL, notes, (NOW() AT TIME ZONE 'UTC')
   FROM (VALUES

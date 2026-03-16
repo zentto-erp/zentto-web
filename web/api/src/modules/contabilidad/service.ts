@@ -291,7 +291,7 @@ export async function mayorAnalitico(codCuenta: string, fechaDesde: string, fech
 
 export async function balanceComprobacion(fechaDesde: string, fechaHasta: string) {
   const scope = await getDefaultScope();
-  return callSp<any>(
+  const rows = await callSp<any>(
     "dbo.usp_Acct_Report_BalanceComprobacion",
     {
       CompanyId: scope.companyId,
@@ -300,6 +300,11 @@ export async function balanceComprobacion(fechaDesde: string, fechaHasta: string
       FechaHasta: fechaHasta
     }
   );
+  // SP retorna 'cuenta' pero el frontend espera 'descripcion'
+  return (rows || []).map((r: any) => ({
+    ...r,
+    descripcion: r.cuenta ?? r.descripcion ?? "",
+  }));
 }
 
 export async function estadoResultados(fechaDesde: string, fechaHasta: string) {

@@ -57,14 +57,12 @@ BEGIN
   -- Batch 100: Enero 2026 — CERRADA, 8 empleados activos
   IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatch" WHERE "BatchId" = 100) THEN
     INSERT INTO hr."PayrollBatch" (
-      "BatchId", "CompanyId", "BranchId", "PayrollCode", "FromDate", "ToDate",
-      "Status", "TotalEmployees", "TotalGross", "TotalDeductions", "TotalNet",
-      "CreatedBy", "CreatedAt", "UpdatedAt"
-    )
+      "BatchId", "CompanyId", "PayrollCode", "FromDate", "ToDate",
+      "Status", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt"
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      100, 1, 1, 'LOT', '2026-01-01', '2026-01-31',
-      'CERRADA', 8, 30300.00, 1666.50, 28633.50,
-      1, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
+      100, 1, 'LOT', '2026-01-01', '2026-01-31',
+      'CERRADA', 1, 1, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
     );
     RAISE NOTICE '   Batch 100 (Ene 2026) insertado.';
   END IF;
@@ -72,14 +70,12 @@ BEGIN
   -- Batch 101: Febrero 2026 — CERRADA, 8 empleados
   IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatch" WHERE "BatchId" = 101) THEN
     INSERT INTO hr."PayrollBatch" (
-      "BatchId", "CompanyId", "BranchId", "PayrollCode", "FromDate", "ToDate",
-      "Status", "TotalEmployees", "TotalGross", "TotalDeductions", "TotalNet",
-      "CreatedBy", "CreatedAt", "UpdatedAt"
-    )
+      "BatchId", "CompanyId", "PayrollCode", "FromDate", "ToDate",
+      "Status", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt"
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      101, 1, 1, 'LOT', '2026-02-01', '2026-02-28',
-      'CERRADA', 8, 30300.00, 1666.50, 28633.50,
-      1, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
+      101, 1, 'LOT', '2026-02-01', '2026-02-28',
+      'CERRADA', 1, 1, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
     );
     RAISE NOTICE '   Batch 101 (Feb 2026) insertado.';
   END IF;
@@ -87,14 +83,12 @@ BEGIN
   -- Batch 102: Marzo 2026 — BORRADOR, 9 empleados (incluye Carmen)
   IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatch" WHERE "BatchId" = 102) THEN
     INSERT INTO hr."PayrollBatch" (
-      "BatchId", "CompanyId", "BranchId", "PayrollCode", "FromDate", "ToDate",
-      "Status", "TotalEmployees", "TotalGross", "TotalDeductions", "TotalNet",
-      "CreatedBy", "CreatedAt", "UpdatedAt"
-    )
+      "BatchId", "CompanyId", "PayrollCode", "FromDate", "ToDate",
+      "Status", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt"
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      102, 1, 1, 'LOT', '2026-03-01', '2026-03-15',
-      'BORRADOR', 9, 33000.00, 1815.00, 31185.00,
-      1, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
+      102, 1, 'LOT', '2026-03-01', '2026-03-15',
+      'BORRADOR', 1, 1, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
     );
     RAISE NOTICE '   Batch 102 (Mar 2026) insertado.';
   END IF;
@@ -388,12 +382,12 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM hr."VacationRequest" WHERE "RequestId" = 100) THEN
     INSERT INTO hr."VacationRequest" (
-      "RequestId", "CompanyId", "BranchId", "EmployeeCode", "RequestDate",
+      "RequestId", "CompanyId", "EmployeeCode", "RequestDate",
       "StartDate", "EndDate", "TotalDays", "IsPartial", "Status",
       "ApprovedBy", "ApprovalDate", "Notes"
-    )
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      100, 1, 1, 'V-12345678', '2026-01-20',
+      100, 1, 'V-12345678', '2026-01-20',
       '2026-02-10', '2026-02-24', 15, false, 'PROCESADA',
       'V-18234567', '2026-01-25', 'Vacaciones anuales periodo 2025-2026'
     );
@@ -401,12 +395,12 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM hr."VacationRequest" WHERE "RequestId" = 101) THEN
     INSERT INTO hr."VacationRequest" (
-      "RequestId", "CompanyId", "BranchId", "EmployeeCode", "RequestDate",
+      "RequestId", "CompanyId", "EmployeeCode", "RequestDate",
       "StartDate", "EndDate", "TotalDays", "IsPartial", "Status",
       "ApprovedBy", "ApprovalDate", "Notes"
-    )
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      101, 1, 1, 'V-14567890', '2026-02-15',
+      101, 1, 'V-14567890', '2026-02-15',
       '2026-03-01', '2026-03-08', 8, false, 'APROBADA',
       'V-18234567', '2026-02-20', 'Dias pendientes periodo anterior'
     );
@@ -414,11 +408,11 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM hr."VacationRequest" WHERE "RequestId" = 102) THEN
     INSERT INTO hr."VacationRequest" (
-      "RequestId", "CompanyId", "BranchId", "EmployeeCode", "RequestDate",
+      "RequestId", "CompanyId", "EmployeeCode", "RequestDate",
       "StartDate", "EndDate", "TotalDays", "IsPartial", "Status", "Notes"
-    )
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      102, 1, 1, 'V-16789012', '2026-03-10',
+      102, 1, 'V-16789012', '2026-03-10',
       '2026-04-01', '2026-04-15', 15, false, 'PENDIENTE',
       'Vacaciones anuales completas'
     );
@@ -426,12 +420,12 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM hr."VacationRequest" WHERE "RequestId" = 103) THEN
     INSERT INTO hr."VacationRequest" (
-      "RequestId", "CompanyId", "BranchId", "EmployeeCode", "RequestDate",
+      "RequestId", "CompanyId", "EmployeeCode", "RequestDate",
       "StartDate", "EndDate", "TotalDays", "IsPartial", "Status",
       "ApprovedBy", "ApprovalDate", "Notes"
-    )
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      103, 1, 1, 'V-18234567', '2025-12-20',
+      103, 1, 'V-18234567', '2025-12-20',
       '2026-01-15', '2026-01-22', 8, false, 'PROCESADA',
       'V-25678901', '2025-12-28', 'Vacaciones parciales inicio de anno'
     );
@@ -439,12 +433,12 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM hr."VacationRequest" WHERE "RequestId" = 104) THEN
     INSERT INTO hr."VacationRequest" (
-      "RequestId", "CompanyId", "BranchId", "EmployeeCode", "RequestDate",
+      "RequestId", "CompanyId", "EmployeeCode", "RequestDate",
       "StartDate", "EndDate", "TotalDays", "IsPartial", "Status",
       "RejectionReason", "Notes"
-    )
+    ) OVERRIDING SYSTEM VALUE
     VALUES (
-      104, 1, 1, 'V-20456789', '2026-03-05',
+      104, 1, 'V-20456789', '2026-03-05',
       '2026-05-01', '2026-05-10', 10, false, 'RECHAZADA',
       'Periodo de alta demanda', 'Solicitud rechazada por carga laboral'
     );
@@ -609,7 +603,7 @@ BEGIN
   SELECT 1, 'VE', 'ACCIDENT', e."EmployeeId", 'V-18234567', 'Jose Manuel Herrera Torres',
     '2026-01-20', '2026-01-20', 'MODERADO', 'ESPALDA', 8,
     'Oficina administrativa', 'Lesion lumbar al levantar equipos de computo pesados',
-    NULL, 'EN_INVESTIGACION', '2026-02-20'
+    NULL, 'EN_INVEST', '2026-02-20'
   FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-18234567'
   AND NOT EXISTS (SELECT 1 FROM hr."OccupationalHealth" WHERE "CompanyId" = 1 AND "EmployeeCode" = 'V-18234567' AND "OccurrenceDate" = '2026-01-20');
 
@@ -671,7 +665,7 @@ BEGIN
   AND NOT EXISTS (SELECT 1 FROM hr."MedicalExam" WHERE "CompanyId" = 1 AND "EmployeeCode" = 'V-16789012' AND "ExamDate" = '2025-09-10');
 
   INSERT INTO hr."MedicalExam" ("CompanyId", "EmployeeId", "EmployeeCode", "EmployeeName", "ExamType", "ExamDate", "NextDueDate", "Result", "Restrictions", "PhysicianName", "ClinicName")
-  SELECT 1, e."EmployeeId", 'V-18234567', 'Jose Manuel Herrera Torres', 'PERIODIC', '2025-07-05', '2026-07-05', 'FIT_WITH_RESTRICTIONS', 'Evitar levantamiento de cargas superiores a 10 kg. Control lumbar cada 6 meses.', 'Dr. Luis Paredes', 'Centro Medico El Avila'
+  SELECT 1, e."EmployeeId", 'V-18234567', 'Jose Manuel Herrera Torres', 'PERIODIC', '2025-07-05', '2026-07-05', 'FIT_RESTRICTED', 'Evitar levantamiento de cargas superiores a 10 kg. Control lumbar cada 6 meses.', 'Dr. Luis Paredes', 'Centro Medico El Avila'
   FROM master."Employee" e WHERE e."CompanyId" = 1 AND e."EmployeeCode" = 'V-18234567'
   AND NOT EXISTS (SELECT 1 FROM hr."MedicalExam" WHERE "CompanyId" = 1 AND "EmployeeCode" = 'V-18234567' AND "ExamDate" = '2025-07-05');
 
