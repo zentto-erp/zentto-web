@@ -113,8 +113,8 @@ Si solo actualizas UNO, el otro motor queda roto. **No hay excepciones.**
 | Dominio | `zentto.net` (Cloudflare) |
 | Frontend | `https://zentto.net` → Docker container puerto 3000 |
 | API | `https://api.zentto.net` → Docker container puerto 4000 |
-| Repositorio | `https://github.com/datqbox/zentto-web` |
-| Registry | `ghcr.io/datqbox/zentto-web/api` y `.../frontend` |
+| Repositorio | `https://github.com/zentto-erp/zentto-web` |
+| Registry | `ghcr.io/zentto-erp/zentto-web/api` y `.../frontend` |
 
 ### CI/CD — GitHub Actions
 
