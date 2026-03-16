@@ -75,6 +75,11 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://api.zentto.net
+            NEXT_PUBLIC_API_BASE=https://api.zentto.net
+            NEXT_PUBLIC_API_URL=https://api.zentto.net
+            NEXT_PUBLIC_BACKEND_URL=https://api.zentto.net
 
   # ── 2. Deploy al servidor Hetzner ───────────────────────────────────────────
   deploy:
@@ -111,6 +116,13 @@ jobs:
           script: |
             set -e
             cd /opt/zentto
+
+            # Crear .env.frontend si no existe (AUTH_SECRET requerido por NextAuth)
+            if [ ! -f /opt/zentto/.env.frontend ]; then
+              echo "AUTH_SECRET=$(openssl rand -base64 32)" > /opt/zentto/.env.frontend
+              chmod 600 /opt/zentto/.env.frontend
+              echo "✓ .env.frontend creado con AUTH_SECRET generado"
+            fi
 
             # Login a ghcr.io usando el token del workflow
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin

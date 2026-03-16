@@ -24,8 +24,14 @@ services:
     restart: unless-stopped
     ports:
       - "3000-3010:3000-3010"
+    env_file:
+      - /opt/zentto/.env.frontend
     environment:
       - NODE_ENV=production
+      - NEXTAUTH_URL=https://zentto.net
+      - AUTH_TRUST_HOST=true
+      - BACKEND_URL=http://zentto-api:4000
+      - API_URL=http://zentto-api:4000
     networks:
       - zentto-net
 
