@@ -1,7 +1,5 @@
-"use client";
-
-import { ClientesTable } from "@datqbox/module-admin";
+import CatalogoCrudPage from '@/components/modules/inventario/CatalogoCrudPage';
 
 export default function ClientesPage() {
-  return <ClientesTable />;
+  return <CatalogoCrudPage endpoint="clientes" title="Clientes" />;
 }

@@ -35,6 +35,8 @@ import {
   Receipt as ReceiptIcon,
 } from "@mui/icons-material";
 import { useProveedoresList } from "../../../hooks/useProveedores";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   CxpAplicarPagoPayload,
   CxpDocumentoPendiente,
@@ -53,10 +55,12 @@ type FormaPagoLine = {
   numCheque?: string;
   fechaVencimiento?: string;
 };
+type ProveedorRow = Record<string, any>;
 
 // ─── Componente Principal ─────────────────────────────────────
 
 export default function CxpMasterPage() {
+  const { timeZone } = useTimezone();
   const [search, setSearch] = useState("");
   const [selectedCod, setSelectedCod] = useState("");
   const [selectedNombre, setSelectedNombre] = useState("");
@@ -64,18 +68,18 @@ export default function CxpMasterPage() {
 
   // ─── Datos de proveedores ─────────────────────────────────
   const provQuery = useProveedoresList({ search, limit: 50 });
-  const proveedores = (provQuery.data?.items || provQuery.data?.data || []) as any[];
+  const proveedores = (provQuery.data?.items || provQuery.data?.data || []) as unknown as ProveedorRow[];
 
   // ─── Datos CxP del proveedor seleccionado ─────────────────
   const docsQuery = useCxpDocumentosPendientes(selectedCod);
   const saldoQuery = useCxpSaldo(selectedCod);
   const documentos = docsQuery.data?.data ?? [];
-  const saldoData = saldoQuery.data?.data as Record<string, any> | null;
+  const saldoData = saldoQuery.data?.data as Record<string, unknown> | null;
 
-  const handleSelectProveedor = useCallback((prov: any) => {
-    const cod = prov.codigo || prov.CODIGO || "";
+  const handleSelectProveedor = useCallback((prov: ProveedorRow) => {
+    const cod = String(prov.codigo || prov.CODIGO || "");
     setSelectedCod(cod);
-    setSelectedNombre(prov.nombre || prov.NOMBRE || cod);
+    setSelectedNombre(String(prov.nombre || prov.NOMBRE || cod));
     setTabValue(0);
   }, []);
 
@@ -127,7 +131,7 @@ export default function CxpMasterPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  proveedores.map((p: any) => {
+                  proveedores.map((p) => {
                     const cod = p.codigo || p.CODIGO || "";
                     const isSelected = cod === selectedCod;
                     return (
@@ -223,13 +227,14 @@ export default function CxpMasterPage() {
 
           <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
             {tabValue === 0 && (
-              <EstadoCuentaTab documentos={documentos} isLoading={docsQuery.isLoading} />
+              <EstadoCuentaTab documentos={documentos} isLoading={docsQuery.isLoading} timeZone={timeZone} />
             )}
             {tabValue === 1 && (
               <AplicarPagosTab
                 codProveedor={selectedCod}
                 documentos={documentos}
                 isLoadingDocs={docsQuery.isLoading}
+                timeZone={timeZone}
                 onRefresh={() => {
                   docsQuery.refetch();
                   saldoQuery.refetch();
@@ -258,9 +263,11 @@ export default function CxpMasterPage() {
 function EstadoCuentaTab({
   documentos,
   isLoading,
+  timeZone,
 }: {
   documentos: CxpDocumentoPendiente[];
   isLoading: boolean;
+  timeZone: string;
 }) {
   if (isLoading) {
     return (
@@ -303,7 +310,7 @@ function EstadoCuentaTab({
                 <Chip label={d.tipoDoc} size="small" variant="outlined" sx={{ fontSize: "0.75rem" }} />
               </TableCell>
               <TableCell sx={{ fontFamily: "monospace" }}>{d.numDoc}</TableCell>
-              <TableCell>{d.fecha ? String(d.fecha).slice(0, 10) : ""}</TableCell>
+              <TableCell>{d.fecha ? toDateOnly(d.fecha as string, timeZone) : ""}</TableCell>
               <TableCell align="right">{Number(d.total || 0).toFixed(2)}</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600, color: Number(d.pendiente) > 0 ? "error.main" : "success.main" }}>
                 {Number(d.pendiente || 0).toFixed(2)}
@@ -330,14 +337,16 @@ function AplicarPagosTab({
   codProveedor,
   documentos,
   isLoadingDocs,
+  timeZone,
   onRefresh,
 }: {
   codProveedor: string;
   documentos: CxpDocumentoPendiente[];
   isLoadingDocs: boolean;
+  timeZone: string;
   onRefresh: () => void;
 }) {
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [codUsuario] = useState("SUP");
   const [observaciones, setObservaciones] = useState("");
   const [rows, setRows] = useState<SelDoc[]>([]);
@@ -434,7 +443,7 @@ function AplicarPagosTab({
     <Box>
       {pagoMutation.isSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Pago aplicado exitosamente. Recibo: {String((pagoMutation.data as any)?.numPago || "")}
+          Pago aplicado exitosamente. Recibo: {String((pagoMutation.data as { numPago?: string })?.numPago || "")}
         </Alert>
       )}
       {pagoMutation.isError && (
@@ -510,7 +519,7 @@ function AplicarPagosTab({
                 </TableCell>
                 <TableCell sx={{ fontSize: "0.82rem" }}>{r.tipoDoc}</TableCell>
                 <TableCell sx={{ fontSize: "0.82rem", fontFamily: "monospace" }}>{r.numDoc}</TableCell>
-                <TableCell sx={{ fontSize: "0.82rem" }}>{r.fecha ? String(r.fecha).slice(0, 10) : ""}</TableCell>
+                <TableCell sx={{ fontSize: "0.82rem" }}>{r.fecha ? toDateOnly(r.fecha as string, timeZone) : ""}</TableCell>
                 <TableCell align="right" sx={{ fontSize: "0.82rem" }}>{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField
@@ -618,7 +627,7 @@ function AplicarPagosTab({
 
 function PagosAplicadosTab({ codProveedor }: { codProveedor: string }) {
   const { data, isLoading } = useCxpSaldo(codProveedor);
-  const saldoData = data?.data as Record<string, any> | null;
+  const saldoData = data?.data as Record<string, unknown> | null;
 
   if (isLoading) {
     return (

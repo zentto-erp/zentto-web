@@ -18,7 +18,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { useProveedorById, useCreateProveedor, useUpdateProveedor } from "../../../hooks/useProveedores";
-import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO } from "@datqbox/shared-api/types";
+import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO } from "@zentto/shared-api/types";
 
 interface ProveedorFormProps {
   proveedorCodigo?: string;

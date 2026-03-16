@@ -1,7 +1,7 @@
 "use client";
 
-import { InventarioTable } from "@datqbox/module-admin";
+import { InventarioHome } from "@zentto/module-inventario";
 
 export default function InventarioPage() {
-  return <InventarioTable />;
+  return <InventarioHome basePath="/inventario" />;
 }

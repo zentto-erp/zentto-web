@@ -1,0 +1,33 @@
+# ── Stage 1: build todas las apps ────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copiar workspace completo
+COPY web/modular-frontend/ .
+
+# Instalar dependencias
+RUN npm ci
+
+# Build de las 11 apps
+RUN npm run build:all
+
+# ── Stage 2: runtime con PM2 ─────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN npm install -g pm2
+
+# Copiar apps compiladas + node_modules + packages
+COPY --from=builder /app/apps ./apps
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json ./
+
+# PM2 config
+COPY docker/pm2.config.cjs /app/pm2.config.cjs
+
+EXPOSE 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010
+
+CMD ["pm2-runtime", "/app/pm2.config.cjs"]

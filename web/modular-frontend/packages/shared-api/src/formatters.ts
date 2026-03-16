@@ -5,11 +5,45 @@ export function formatCurrency(value: number | string | null | undefined): strin
   return `Bs. ${num.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-export function formatDate(date: string | Date | null | undefined): string {
+export function formatDate(
+  date: string | Date | null | undefined,
+  options?: { timeZone?: string; locale?: string }
+): string {
   if (!date) return "N/A";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "N/A";
-  return d.toLocaleDateString("es-VE", { year: "numeric", month: "2-digit", day: "2-digit" });
+  const opts: Intl.DateTimeFormatOptions = {
+    year: "numeric", month: "2-digit", day: "2-digit",
+  };
+  if (options?.timeZone) opts.timeZone = options.timeZone;
+  return d.toLocaleDateString(options?.locale || "es", opts);
+}
+
+export function formatDateTime(
+  date: string | Date | null | undefined,
+  options?: { timeZone?: string; locale?: string }
+): string {
+  if (!date) return "N/A";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "N/A";
+  const opts: Intl.DateTimeFormatOptions = {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  };
+  if (options?.timeZone) opts.timeZone = options.timeZone;
+  return d.toLocaleString(options?.locale || "es", opts);
+}
+
+export function toDateOnly(
+  date: string | Date | null | undefined,
+  timeZone?: string
+): string {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+  const opts: Intl.DateTimeFormatOptions = { year: "numeric", month: "2-digit", day: "2-digit" };
+  if (timeZone) opts.timeZone = timeZone;
+  return d.toLocaleDateString("en-CA", opts);
 }
 
 export function formatName(name: string | null | undefined): string {

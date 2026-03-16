@@ -1,8 +1,8 @@
 // app/(dashboard)/facturas/new/page.tsx
-import { FacturaForm } from "@datqbox/module-admin";
+import { FacturaForm } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Nueva Factura | DatqBox",
+  title: "Nueva Factura | Zentto",
   description: "Crear nueva factura",
 };
 

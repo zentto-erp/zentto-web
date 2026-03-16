@@ -51,6 +51,8 @@ export { default as FacturaForm } from './components/modules/facturas/FacturaFor
 // Re-export components — inventario
 export { default as InventarioTable } from './components/modules/inventario/InventarioTable';
 export { default as AjusteInventarioForm } from './components/modules/inventario/AjusteInventarioForm';
+export { default as CatalogoCrudPage } from './components/modules/inventario/CatalogoCrudPage';
+export { default as GenericEntityCrudPage } from './components/modules/inventario/CatalogoCrudPage';
 
 // Re-export components — pagos
 export { default as PagosTable } from './components/modules/pagos/PagosTable';
@@ -60,9 +62,15 @@ export { default as PagoForm } from './components/modules/pagos/PagoForm';
 export { default as ProveedoresTable } from './components/modules/proveedores/ProveedoresTable';
 export { default as ProveedorForm } from './components/modules/proveedores/ProveedorForm';
 
+// Re-export components — bancos
+export { default as BancosPage } from './components/modules/bancos/BancosPage';
+export { default as CuentasBancariasPage } from './components/modules/bancos/CuentasBancariasPage';
+export { default as ConciliacionBancariaPage } from './components/modules/bancos/ConciliacionBancariaPage';
+
 // Re-export common components
 export { FacturaTable } from './components/FacturaTable';
 export { ProtectedComponent, withProtection } from './components/ProtectedComponent';
+export { default as EditableDataGrid } from './components/EditableDataGrid';
 
 // Home page
 export { default as AdminHome } from './pages/AdminHome';

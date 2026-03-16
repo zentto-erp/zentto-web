@@ -14,7 +14,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useAbonoById, useCreateAbono, useUpdateAbono } from "../../../hooks/useAbonos";
-import { CreateAbonoDTO, UpdateAbonoDTO } from "@datqbox/shared-api/types";
+import { CreateAbonoDTO, UpdateAbonoDTO } from "@zentto/shared-api/types";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 
 interface AbonoFormProps {
   numeroAbono?: string;
@@ -22,13 +24,14 @@ interface AbonoFormProps {
 
 export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const isEdit = !!numeroAbono;
 
   const [formData, setFormData] = useState({
     numeroFactura: "",
     nombreCliente: "",
     monto: 0,
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: toDateOnly(new Date(), timeZone),
     referencia: "",
     observaciones: "",
   });

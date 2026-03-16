@@ -1,6 +1,6 @@
 "use client";
 
-import { FacturasTable } from "@datqbox/module-admin";
+import { FacturasTable } from "@zentto/module-admin";
 
 export default function FacturasPage() {
   return <FacturasTable />;

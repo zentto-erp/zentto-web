@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QK_ASIENTOS = "contabilidad-asientos";
 const QK_CUENTAS = "contabilidad-cuentas";
@@ -17,6 +17,7 @@ export interface AsientoFilter {
   origenDocumento?: string;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 export interface AsientoDetalle {
@@ -152,6 +153,22 @@ export function useBalanceGeneral(fechaCorte: string, enabled = true) {
   return useQuery({
     queryKey: ["contabilidad-balance-general", fechaCorte],
     queryFn: () => apiGet("/v1/contabilidad/reportes/balance-general", { fechaCorte }),
+    enabled,
+  });
+}
+
+export function useLibroDiario(fechaDesde: string, fechaHasta: string, enabled = true) {
+  return useQuery({
+    queryKey: ["contabilidad-libro-diario", fechaDesde, fechaHasta],
+    queryFn: () => apiGet("/v1/contabilidad/reportes/libro-diario", { fechaDesde, fechaHasta }),
+    enabled,
+  });
+}
+
+export function useDashboardResumen(fechaDesde: string, fechaHasta: string, enabled = true) {
+  return useQuery({
+    queryKey: ["contabilidad-dashboard", fechaDesde, fechaHasta],
+    queryFn: () => apiGet("/v1/contabilidad/dashboard/resumen", { fechaDesde, fechaHasta }),
     enabled,
   });
 }

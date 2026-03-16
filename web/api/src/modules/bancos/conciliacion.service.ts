@@ -1,8 +1,5 @@
-/**
- * Conciliacion Bancaria Service
- * Maneja conciliaciones bancarias, extractos y ajustes
- */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface ConciliacionRow {
   ID?: number;
@@ -23,7 +20,7 @@ export interface ConciliacionRow {
 
 export interface MovimientoBancarioPayload {
   Nro_Cta: string;
-  Tipo: string;           // PCH, DEP, NCR, NDB
+  Tipo: string;
   Nro_Ref: string;
   Beneficiario: string;
   Monto: number;
@@ -34,7 +31,7 @@ export interface MovimientoBancarioPayload {
 }
 
 export interface ExtractoPayload {
-  Nro_Cta?: string;       // Opcional, se obtiene de la conciliación
+  Nro_Cta?: string;
   Fecha: string;
   Descripcion?: string;
   Referencia?: string;
@@ -45,7 +42,7 @@ export interface ExtractoPayload {
 
 export interface AjustePayload {
   Conciliacion_ID: number;
-  Tipo_Ajuste: string;    // NOTA_CREDITO, NOTA_DEBITO
+  Tipo_Ajuste: string;
   Monto: number;
   Descripcion: string;
 }
@@ -56,78 +53,222 @@ export interface ConciliacionResult {
   saldoFinal: number;
 }
 
-// Generar movimiento bancario desde pago/cobro
+type Scope = {
+  companyId: number;
+  branchId: number;
+  systemUserId: number | null;
+};
+
+type BankAccountRow = {
+  bankAccountId: number;
+  nroCta: string;
+  bankName: string;
+  balance: number;
+  availableBalance: number;
+};
+
+let scopeCache: Scope | null = null;
+
+async function getScope(): Promise<Scope> {
+  const activeScope = getActiveScope();
+  if (scopeCache && activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
+  if (scopeCache) return scopeCache;
+
+  const rows = await callSp<{ companyId: number; branchId: number; systemUserId: number | null }>(
+    "usp_Bank_ResolveScope"
+  );
+
+  const row = rows[0];
+  scopeCache = {
+    companyId: Number(row?.companyId ?? 1),
+    branchId: Number(row?.branchId ?? 1),
+    systemUserId: row?.systemUserId == null ? null : Number(row.systemUserId),
+  };
+  if (activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+      branchId: activeScope.branchId,
+    };
+  }
+  return scopeCache;
+}
+
+async function resolveUserId(codUsuario?: string): Promise<number | null> {
+  const code = String(codUsuario ?? "").trim();
+  if (!code) return (await getScope()).systemUserId;
+
+  const rows = await callSp<{ userId: number }>(
+    "usp_Bank_ResolveUserId",
+    { Code: code }
+  );
+
+  if (rows[0]?.userId != null) return Number(rows[0].userId);
+  return (await getScope()).systemUserId;
+}
+
+async function getBankAccount(nroCta: string): Promise<BankAccountRow | null> {
+  const scope = await getScope();
+
+  const rows = await callSp<BankAccountRow>(
+    "usp_Bank_Account_GetByNumber",
+    {
+      CompanyId: scope.companyId,
+      NroCta: String(nroCta ?? "").trim(),
+    }
+  );
+
+  return rows[0] ?? null;
+}
+
+function toMovementSign(tipo: string) {
+  const normalized = String(tipo ?? "").trim().toUpperCase();
+  if (["DEP", "NCR", "IDB", "NOTA_CREDITO", "CREDITO"].includes(normalized)) return 1;
+  return -1;
+}
+
+function toSqlDate(value?: string) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export async function generarMovimientoBancario(
   payload: MovimientoBancarioPayload,
   codUsuario?: string
 ): Promise<{ ok: boolean; movimientoId?: number; saldoNuevo?: number }> {
-  const pool = await getPool();
-  const request = pool.request();
+  const account = await getBankAccount(payload.Nro_Cta);
+  if (!account) return { ok: false };
 
-  request.input("Nro_Cta", sql.NVarChar(20), payload.Nro_Cta);
-  request.input("Tipo", sql.NVarChar(10), payload.Tipo);
-  request.input("Nro_Ref", sql.NVarChar(30), payload.Nro_Ref);
-  request.input("Beneficiario", sql.NVarChar(255), payload.Beneficiario);
-  request.input("Monto", sql.Decimal(18, 2), payload.Monto);
-  request.input("Concepto", sql.NVarChar(100), payload.Concepto);
-  request.input("Categoria", sql.NVarChar(50), payload.Categoria || null);
-  request.input("Co_Usuario", sql.NVarChar(60), codUsuario || "API");
-  request.input("Documento_Relacionado", sql.NVarChar(60), payload.Documento_Relacionado || null);
-  request.input("Tipo_Doc_Rel", sql.NVarChar(20), payload.Tipo_Doc_Rel || null);
+  const amount = Math.abs(Number(payload.Monto ?? 0));
+  if (!(amount > 0)) return { ok: false };
 
-  const result = await request.execute("sp_GenerarMovimientoBancario");
-  return result.recordset[0];
+  const movementSign = toMovementSign(payload.Tipo);
+  const netAmount = Number((movementSign * amount).toFixed(2));
+  const userId = await resolveUserId(codUsuario);
+
+  try {
+    const { rows, output } = await callSpOut<{ movementId: number; newBalance: number }>(
+      "usp_Bank_Movement_Create",
+      {
+        BankAccountId: account.bankAccountId,
+        MovementType: String(payload.Tipo ?? "").trim().toUpperCase() || "MOV",
+        MovementSign: movementSign,
+        Amount: amount,
+        NetAmount: netAmount,
+        ReferenceNo: String(payload.Nro_Ref ?? "").trim() || null,
+        Beneficiary: String(payload.Beneficiario ?? "").trim() || null,
+        Concept: String(payload.Concepto ?? "").trim() || null,
+        CategoryCode: String(payload.Categoria ?? "").trim() || null,
+        RelatedDocumentNo: String(payload.Documento_Relacionado ?? "").trim() || null,
+        RelatedDocumentType: String(payload.Tipo_Doc_Rel ?? "").trim() || null,
+        CreatedByUserId: userId ?? null,
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
+
+    const movementId = Number(output.Resultado ?? rows[0]?.movementId ?? 0);
+    const newBalance = Number(output.Mensaje ?? rows[0]?.newBalance ?? 0);
+
+    return {
+      ok: true,
+      movimientoId: movementId || undefined,
+      saldoNuevo: newBalance,
+    };
+  } catch {
+    return { ok: false };
+  }
 }
 
-// Crear nueva conciliacion
 export async function crearConciliacion(
   Nro_Cta: string,
   Fecha_Desde: string,
   Fecha_Hasta: string,
   codUsuario?: string
 ): Promise<ConciliacionResult> {
-  const pool = await getPool();
-  const request = pool.request();
+  const scope = await getScope();
+  const account = await getBankAccount(Nro_Cta);
+  if (!account) throw new Error("Cuenta bancaria no encontrada");
 
-  request.input("Nro_Cta", sql.NVarChar(20), Nro_Cta);
-  request.input("Fecha_Desde", sql.DateTime, new Date(Fecha_Desde));
-  request.input("Fecha_Hasta", sql.DateTime, new Date(Fecha_Hasta));
-  request.input("Co_Usuario", sql.NVarChar(60), codUsuario || "API");
+  const from = toSqlDate(Fecha_Desde);
+  const to = toSqlDate(Fecha_Hasta);
+  if (!from || !to) throw new Error("Fechas invalidas");
 
-  const result = await request.execute("sp_CrearConciliacion");
-  return result.recordset[0];
+  const netRows = await callSp<{ netTotal: number }>(
+    "usp_Bank_Reconciliation_GetNetTotal",
+    {
+      BankAccountId: account.bankAccountId,
+      FromDate: from,
+      ToDate: to,
+    }
+  );
+
+  const opening = Number(account.balance ?? 0);
+  const closing = Number((opening + Number(netRows[0]?.netTotal ?? 0)).toFixed(2));
+  const userId = await resolveUserId(codUsuario);
+
+  const { output } = await callSpOut(
+    "usp_Bank_Reconciliation_Create",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      BankAccountId: account.bankAccountId,
+      FromDate: from,
+      ToDate: to,
+      Opening: opening,
+      Closing: closing,
+      CreatedByUserId: userId,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+
+  return {
+    conciliacionId: Number(output.Resultado ?? 0),
+    saldoInicial: opening,
+    saldoFinal: closing,
+  };
 }
 
-// Listar conciliaciones
 export async function listConciliaciones(params: {
   Nro_Cta?: string;
   Estado?: string;
   page?: number;
   limit?: number;
 }): Promise<{ rows: ConciliacionRow[]; total: number; page: number; limit: number }> {
-  const pool = await getPool();
-  const request = pool.request();
-
+  const scope = await getScope();
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
+  const offset = (page - 1) * limit;
 
-  request.input("Nro_Cta", sql.NVarChar(20), params.Nro_Cta || null);
-  request.input("Estado", sql.NVarChar(20), params.Estado || null);
-  request.input("Page", sql.Int, page);
-  request.input("Limit", sql.Int, limit);
-  request.output("TotalCount", sql.Int);
+  const nroCta = params.Nro_Cta?.trim() || null;
+  const estado = params.Estado?.trim() ? params.Estado.trim().toUpperCase() : null;
 
-  const result = await request.execute("sp_Conciliacion_List");
+  const { rows, output } = await callSpOut<ConciliacionRow>(
+    "usp_Bank_Reconciliation_List",
+    {
+      CompanyId: scope.companyId,
+      NroCta: nroCta,
+      Estado: estado,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: result.output.TotalCount || 0,
+    rows,
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
   };
 }
 
-// Obtener detalle de conciliacion
 export async function getConciliacion(
   Conciliacion_ID: number
 ): Promise<{
@@ -135,115 +276,225 @@ export async function getConciliacion(
   movimientosSistema: any[];
   extractoPendiente: any[];
 }> {
-  const pool = await getPool();
-  const request = pool.request();
+  const scope = await getScope();
 
-  request.input("Conciliacion_ID", sql.Int, Conciliacion_ID);
+  const cabeceraRows = await callSp<ConciliacionRow>(
+    "usp_Bank_Reconciliation_GetById",
+    {
+      CompanyId: scope.companyId,
+      Id: Conciliacion_ID,
+    }
+  );
 
-  const result = await request.execute("sp_Conciliacion_Get");
-  const recordsets = result.recordsets as unknown as Array<Array<Record<string, unknown>>>;
+  const cabecera = cabeceraRows[0] ?? null;
+  if (!cabecera) {
+    return { cabecera: null, movimientosSistema: [], extractoPendiente: [] };
+  }
+
+  const movimientosSistema = await callSp<any>(
+    "usp_Bank_Reconciliation_GetSystemMovements",
+    { Id: Conciliacion_ID }
+  );
+
+  const extractoPendiente = await callSp<any>(
+    "usp_Bank_Reconciliation_GetPendingStatements",
+    { Id: Conciliacion_ID }
+  );
 
   return {
-    cabecera: recordsets[0]?.[0] || null,
-    movimientosSistema: recordsets[1] || [],
-    extractoPendiente: recordsets[2] || [],
+    cabecera,
+    movimientosSistema,
+    extractoPendiente,
   };
 }
 
-// Importar extracto bancario
 export async function importarExtracto(
   Nro_Cta: string,
   extractoRows: ExtractoPayload[],
   codUsuario?: string
 ): Promise<{ ok: boolean; registrosImportados?: number }> {
-  const pool = await getPool();
+  const scope = await getScope();
+  const account = await getBankAccount(Nro_Cta);
+  if (!account) return { ok: false };
 
-  // Convertir a XML
-  let xml = "<extracto>";
-  for (const row of extractoRows) {
-    xml += `<row Fecha="${row.Fecha}" Descripcion="${row.Descripcion || ""}" Referencia="${row.Referencia || ""}" Tipo="${row.Tipo}" Monto="${row.Monto}" Saldo="${row.Saldo || ""}"/>`;
+  const userId = await resolveUserId(codUsuario);
+  const validRows = extractoRows.filter((row) => Number(row.Monto ?? 0) > 0);
+  if (validRows.length === 0) return { ok: true, registrosImportados: 0 };
+
+  const openRec = await callSp<{ id: number }>(
+    "usp_Bank_Reconciliation_GetOpenForAccount",
+    {
+      CompanyId: scope.companyId,
+      BankAccountId: account.bankAccountId,
+    }
+  );
+
+  let reconciliationId = Number(openRec[0]?.id ?? 0);
+  if (!reconciliationId) {
+    const dates = validRows
+      .map((row) => toSqlDate(row.Fecha))
+      .filter((value): value is Date => value instanceof Date)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const fromDate = dates[0] ?? new Date();
+    const toDate = dates[dates.length - 1] ?? new Date();
+
+    const { output } = await callSpOut(
+      "usp_Bank_Reconciliation_Create",
+      {
+        CompanyId: scope.companyId,
+        BranchId: scope.branchId,
+        BankAccountId: account.bankAccountId,
+        FromDate: fromDate,
+        ToDate: toDate,
+        Opening: account.balance,
+        Closing: account.balance,
+        CreatedByUserId: userId,
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
+
+    reconciliationId = Number(output.Resultado ?? 0);
   }
-  xml += "</extracto>";
 
-  const request = pool.request();
-  request.input("ExtractoXml", sql.NVarChar(sql.MAX), xml);
-  request.input("Nro_Cta", sql.NVarChar(20), Nro_Cta);
-  request.input("Co_Usuario", sql.NVarChar(60), codUsuario || "API");
+  try {
+    for (const row of validRows) {
+      await callSpOut(
+        "usp_Bank_StatementLine_Insert",
+        {
+          ReconciliationId: reconciliationId,
+          StatementDate: toSqlDate(row.Fecha) ?? new Date(),
+          DescriptionText: String(row.Descripcion ?? "").trim() || null,
+          ReferenceNo: String(row.Referencia ?? "").trim() || null,
+          EntryType: row.Tipo === "CREDITO" ? "CREDITO" : "DEBITO",
+          Amount: Math.abs(Number(row.Monto ?? 0)),
+          Balance: row.Saldo == null ? null : Number(row.Saldo),
+          CreatedByUserId: userId ?? null,
+        },
+        { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+      );
+    }
 
-  const result = await request.execute("sp_ImportarExtracto");
-  return result.recordset[0];
+    return { ok: true, registrosImportados: validRows.length };
+  } catch {
+    return { ok: false };
+  }
 }
 
-// Conciliar movimientos
 export async function conciliarMovimientos(
   Conciliacion_ID: number,
   MovimientoSistema_ID: number,
   Extracto_ID?: number,
   codUsuario?: string
 ): Promise<{ ok: boolean; mensaje?: string }> {
-  const pool = await getPool();
-  const request = pool.request();
+  const userId = await resolveUserId(codUsuario);
 
-  request.input("Conciliacion_ID", sql.Int, Conciliacion_ID);
-  request.input("MovimientoSistema_ID", sql.Int, MovimientoSistema_ID);
-  request.input("Extracto_ID", sql.Int, Extracto_ID || null);
-  request.input("Co_Usuario", sql.NVarChar(60), codUsuario || "API");
+  try {
+    const { output } = await callSpOut(
+      "usp_Bank_Reconciliation_MatchMovement",
+      {
+        ReconciliationId: Conciliacion_ID,
+        MovementId: MovimientoSistema_ID,
+        StatementId: Number(Extracto_ID ?? 0) > 0 ? Number(Extracto_ID) : null,
+        MatchedByUserId: userId ?? null,
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
 
-  const result = await request.execute("sp_ConciliarMovimientos");
-  return result.recordset[0];
+    const resultado = Number(output.Resultado ?? 0);
+    const mensaje = String(output.Mensaje ?? "");
+
+    if (resultado === 0) {
+      return { ok: false, mensaje: mensaje || "No se pudo conciliar" };
+    }
+
+    return { ok: true, mensaje: mensaje || "Movimiento conciliado" };
+  } catch {
+    return { ok: false, mensaje: "No se pudo conciliar" };
+  }
 }
 
-// Generar ajuste bancario (Nota Credito/Debito)
 export async function generarAjusteBancario(
   payload: AjustePayload,
   codUsuario?: string
 ): Promise<{ ok: boolean; mensaje?: string }> {
-  const pool = await getPool();
-  const request = pool.request();
+  const rows = await callSp<{ accountNo: string }>(
+    "usp_Bank_Reconciliation_GetAccountNoById",
+    { Id: payload.Conciliacion_ID }
+  );
 
-  request.input("Conciliacion_ID", sql.Int, payload.Conciliacion_ID);
-  request.input("Tipo_Ajuste", sql.NVarChar(20), payload.Tipo_Ajuste);
-  request.input("Monto", sql.Decimal(18, 2), payload.Monto);
-  request.input("Descripcion", sql.NVarChar(255), payload.Descripcion);
-  request.input("Co_Usuario", sql.NVarChar(60), codUsuario || "API");
+  const accountNo = String(rows[0]?.accountNo ?? "").trim();
+  if (!accountNo) return { ok: false, mensaje: "Conciliacion no encontrada" };
 
-  const result = await request.execute("sp_GenerarAjusteBancario");
-  return result.recordset[0];
+  const tipo = String(payload.Tipo_Ajuste ?? "").trim().toUpperCase() === "NOTA_CREDITO" ? "NCR" : "NDB";
+  const result = await generarMovimientoBancario(
+    {
+      Nro_Cta: accountNo,
+      Tipo: tipo,
+      Nro_Ref: `AJ-${payload.Conciliacion_ID}-${Date.now()}`,
+      Beneficiario: "AJUSTE",
+      Monto: Math.abs(Number(payload.Monto ?? 0)),
+      Concepto: payload.Descripcion,
+      Categoria: "AJUSTE_CONCILIACION",
+      Documento_Relacionado: String(payload.Conciliacion_ID),
+      Tipo_Doc_Rel: "CONCILIACION",
+    },
+    codUsuario
+  );
+
+  if (!result.ok || !result.movimientoId) {
+    return { ok: false, mensaje: "No se pudo generar el ajuste" };
+  }
+
+  await conciliarMovimientos(payload.Conciliacion_ID, result.movimientoId, undefined, codUsuario);
+  return { ok: true, mensaje: "Ajuste generado" };
 }
 
-// Cerrar conciliacion
 export async function cerrarConciliacion(
   Conciliacion_ID: number,
   Saldo_Final_Banco: number,
   Observaciones?: string,
   codUsuario?: string
 ): Promise<{ ok: boolean; diferencia?: number; estado?: string }> {
-  const pool = await getPool();
-  const request = pool.request();
+  const userId = await resolveUserId(codUsuario);
 
-  request.input("Conciliacion_ID", sql.Int, Conciliacion_ID);
-  request.input("Saldo_Final_Banco", sql.Decimal(18, 2), Saldo_Final_Banco);
-  request.input("Observaciones", sql.NVarChar(500), Observaciones || null);
-  request.input("Co_Usuario", sql.NVarChar(60), codUsuario || "API");
+  try {
+    const { rows, output } = await callSpOut<{ diferencia: number; estado: string }>(
+      "usp_Bank_Reconciliation_Close",
+      {
+        Id: Conciliacion_ID,
+        BankClosing: Number(Saldo_Final_Banco ?? 0),
+        Notes: String(Observaciones ?? "").trim() || null,
+        ClosedByUserId: userId,
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
 
-  const result = await request.execute("sp_CerrarConciliacion");
-  return result.recordset[0];
+    const resultado = Number(output.Resultado ?? 0);
+    if (resultado === 0) return { ok: false };
+
+    const row = rows[0];
+    return {
+      ok: true,
+      diferencia: Number(row?.diferencia ?? 0),
+      estado: String(row?.estado ?? "CLOSED"),
+    };
+  } catch {
+    return { ok: false };
+  }
 }
 
-// Obtener cuentas bancarias
 export async function getCuentasBancarias(): Promise<any[]> {
-  const pool = await getPool();
-  const result = await pool.request().query(`
-    SELECT cb.Nro_Cta, cb.Banco, cb.Descripcion, cb.Moneda, 
-           cb.Saldo, cb.Saldo_Disponible, b.Nombre as BancoNombre
-    FROM CuentasBank cb
-    LEFT JOIN Bancos b ON b.Nombre = cb.Banco
-    ORDER BY cb.Banco, cb.Nro_Cta
-  `);
-  return result.recordset || [];
+  const scope = await getScope();
+
+  const rows = await callSp<any>(
+    "usp_Bank_Account_List",
+    { CompanyId: scope.companyId }
+  );
+
+  return rows;
 }
 
-// Obtener movimientos de cuenta
 export async function getMovimientosCuenta(
   Nro_Cta: string,
   desde?: string,
@@ -251,34 +502,37 @@ export async function getMovimientosCuenta(
   page: number = 1,
   limit: number = 50
 ): Promise<{ rows: any[]; total: number }> {
-  const pool = await getPool();
-  const offset = (page - 1) * limit;
+  const scope = await getScope();
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(Math.max(1, Number(limit) || 50), 500);
+  const offset = (safePage - 1) * safeLimit;
 
-  let whereClause = "WHERE Nro_Cta = @Nro_Cta";
-  if (desde) whereClause += " AND Fecha >= @Desde";
-  if (hasta) whereClause += " AND Fecha <= @Hasta";
+  const fromDate = desde ? toSqlDate(desde) : null;
+  const toDate = hasta ? toSqlDate(hasta) : null;
 
-  const countResult = await pool.request()
-    .input("Nro_Cta", sql.NVarChar(20), Nro_Cta)
-    .input("Desde", sql.DateTime, desde ? new Date(desde) : null)
-    .input("Hasta", sql.DateTime, hasta ? new Date(hasta) : null)
-    .query(`SELECT COUNT(1) as total FROM MovCuentas ${whereClause}`);
-
-  const result = await pool.request()
-    .input("Nro_Cta", sql.NVarChar(20), Nro_Cta)
-    .input("Desde", sql.DateTime, desde ? new Date(desde) : null)
-    .input("Hasta", sql.DateTime, hasta ? new Date(hasta) : null)
-    .input("Offset", sql.Int, offset)
-    .input("Limit", sql.Int, limit)
-    .query(`
-      SELECT * FROM MovCuentas 
-      ${whereClause}
-      ORDER BY Fecha DESC, id DESC
-      OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
-    `);
+  const { rows, output } = await callSpOut<any>(
+    "usp_Bank_Movement_ListByAccount",
+    {
+      CompanyId: scope.companyId,
+      NroCta: String(Nro_Cta ?? "").trim(),
+      FromDate: fromDate,
+      ToDate: toDate,
+      Offset: offset,
+      Limit: safeLimit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: countResult.recordset[0]?.total || 0,
+    rows,
+    total: Number(output.TotalCount ?? 0),
   };
+}
+
+export async function getMovimientoById(movimientoId: number): Promise<any | null> {
+  const rows = await callSp<any>(
+    "sp_GetMovimientoBancarioById",
+    { MovimientoId: movimientoId }
+  );
+  return rows[0] ?? null;
 }

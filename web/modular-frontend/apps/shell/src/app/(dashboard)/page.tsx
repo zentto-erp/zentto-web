@@ -1,182 +1,136 @@
 'use client';
 
 import React from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Button,
-  Stack,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, ButtonBase, useTheme, Avatar } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@datqbox/shared-auth';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@zentto/shared-auth';
 
-const DashboardIcon = dynamic(() => import('@mui/icons-material/Dashboard'), { ssr: false });
-const TrendingUpIcon = dynamic(() => import('@mui/icons-material/TrendingUp'), { ssr: false });
+// Icons - Importar todos los necesarios
+const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
+const BadgeIcon = dynamic(() => import('@mui/icons-material/Badge'), { ssr: false });
+const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalance'), { ssr: false });
+const StorefrontIcon = dynamic(() => import('@mui/icons-material/Storefront'), { ssr: false });
 const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
-const PeopleIcon = dynamic(() => import('@mui/icons-material/People'), { ssr: false });
+const AppsIcon = dynamic(() => import('@mui/icons-material/Apps'), { ssr: false });
+const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
+const PointOfSaleIcon = dynamic(() => import('@mui/icons-material/PointOfSale'), { ssr: false });
+const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShipping'), { ssr: false });
+const RestaurantIcon = dynamic(() => import('@mui/icons-material/Restaurant'), { ssr: false });
+const LanguageIcon = dynamic(() => import('@mui/icons-material/Language'), { ssr: false });
+const ContentPasteSearchIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearch'), { ssr: false });
 
-interface StatCard {
-  title: string;
-  value: string;
+interface AppShortcut {
+  id: string;
+  name: string;
   icon: React.ReactNode;
-  color: string;
+  path: string;
+  bgColor: string;
+  requiredModule?: string;
 }
 
-const StatCard: React.FC<StatCard> = ({ title, value, icon, color }) => {
+export default function AppSelectorPage() {
+  const router = useRouter();
   const theme = useTheme();
-  return (
-    <Card
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`,
-        border: `1px solid ${color}30`,
-        borderRadius: 2,
-      }}
-    >
-      <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-        <Box>
-          <Typography color="textSecondary" variant="body2" sx={{ mb: 1 }}>
-            {title}
-          </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 600, color }}>
-            {value}
-          </Typography>
-        </Box>
-        <Box sx={{ fontSize: '2.5rem', color: color, opacity: 0.7 }}>
-          {icon}
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
+  const { userName, modulos, isAdmin } = useAuth();
 
-export default function DashboardPage() {
-  const theme = useTheme();
-  const { userName, isAdmin } = useAuth();
+  const has = (mod: string) => isAdmin || modulos.includes(mod);
 
-  const stats: StatCard[] = [
-    {
-      title: 'Facturación Mensual',
-      value: '$45,231',
-      icon: <ShoppingCartIcon sx={{ fontSize: 'inherit' }} />,
-      color: theme.palette.primary.main,
-    },
-    {
-      title: 'Clientes Activos',
-      value: '328',
-      icon: <PeopleIcon sx={{ fontSize: 'inherit' }} />,
-      color: '#3498db',
-    },
-    {
-      title: 'Productos en Stock',
-      value: '1,247',
-      icon: <TrendingUpIcon sx={{ fontSize: 'inherit' }} />,
-      color: '#27ae60',
-    },
-    {
-      title: 'Órdenes Pendientes',
-      value: '42',
-      icon: <DashboardIcon sx={{ fontSize: 'inherit' }} />,
-      color: '#e67e22',
-    },
-  ];
+  const navigateToApp = (path: string) => {
+    const localPaths = ['/aplicaciones', '/configuracion', '/docs', '/soporte', '/info'];
+    if (localPaths.includes(path)) {
+      router.push(path);
+      return;
+    }
+    window.location.assign(path);
+  };
+
+  // Todas las apps disponibles
+  const allApps: AppShortcut[] = [];
+
+  if (has('contabilidad')) {
+    allApps.push({ id: 'contabilidad', name: 'Contabilidad', icon: <AccountBalanceWalletIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/contabilidad', bgColor: '#875A7B' });
+  }
+  if (has('nomina')) {
+    allApps.push({ id: 'nomina', name: 'Nómina', icon: <BadgeIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/nomina', bgColor: '#00A09D' });
+  }
+  if (has('bancos')) {
+    allApps.push({ id: 'bancos', name: 'Bancos e Inst.', icon: <AccountBalanceIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/bancos', bgColor: '#E67E22' });
+  }
+  if (has('inventario') || has('articulos')) {
+    allApps.push({ id: 'inventario', name: 'Inventario', icon: <StorefrontIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/inventario', bgColor: '#27AE60' });
+  }
+  if (has('ventas') || has('facturas')) {
+    allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/ventas', bgColor: '#3498DB' });
+  }
+  if (has('compras') || has('cxp')) {
+    allApps.push({ id: 'compras', name: 'Compras', icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
+  }
+  if (has('pos')) {
+    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/pos/facturacion', bgColor: '#9B59B6' });
+  }
+  if (has('restaurante')) {
+    allApps.push({ id: 'restaurant', name: 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });
+  }
+  if (has('ecommerce')) {
+    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <LanguageIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
+  }
+  if (has('auditoria')) {
+    allApps.push({ id: 'auditoria', name: 'Auditoría', icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
+  }
+
+  // Siempre agregar App Store y Settings al final
+  allApps.push({ id: 'apps', name: 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });
+  if (isAdmin) {
+    allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
+  }
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body1" color="textSecondary">
-          Bienvenido, {userName || 'Usuario'}. Aquí puede ver un resumen de su actividad comercial.
-        </Typography>
+    <Box sx={{ minHeight: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 8 }, background: 'linear-gradient(to right bottom, #f3f4f6, #e5e7eb)' }}>
+      <Box sx={{ width: '100%', maxWidth: 1200, mt: 5 }}>
+        {isAdmin && <Box sx={{ width: '100%', p: 2, mb: 4, bgcolor: '#fdf2f8', color: '#831843', borderRadius: 2, border: '1px solid #fbcfe8', textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>⚙️ Modo Administrador de Sistema activado. Tienes acceso a todas las aplicaciones.</Typography>
+        </Box>}
+
+        <Grid container spacing={4} justifyContent="center">
+          {allApps.map((app) => (
+            <Grid key={app.id} size={{ xs: 4, sm: 3, md: 2 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <ButtonBase
+                onClick={() => navigateToApp(app.path)}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  borderRadius: 4,
+                  p: 2,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                  }
+                }}
+              >
+                <Avatar
+                  variant="rounded"
+                  sx={{
+                    width: { xs: 64, sm: 80 },
+                    height: { xs: 64, sm: 80 },
+                    bgcolor: app.bgColor,
+                    mb: 1.5,
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  {app.icon}
+                </Avatar>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'center' }}>
+                  {app.name}
+                </Typography>
+              </ButtonBase>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
-
-      {/* Stats Cards */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
-          <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
-            <StatCard {...stat} />
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Content Sections */}
-      <Grid container spacing={2}>
-        {/* Últimas Facturas */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardHeader
-              title="Últimas Facturas"
-              subheader="Transacciones recientes"
-              sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
-            />
-            <CardContent>
-              <Typography variant="body2" color="textSecondary" sx={{ py: 3, textAlign: 'center' }}>
-                No hay facturas recientes aún
-              </Typography>
-              <Stack direction="row" justifyContent="center">
-                <Button variant="contained" color="primary" size="small">
-                  Ver todas las facturas
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Actividad Reciente */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardHeader
-              title="Actividad Reciente"
-              subheader="Últimos cambios en el sistema"
-              sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
-            />
-            <CardContent>
-              <Typography variant="body2" color="textSecondary" sx={{ py: 3, textAlign: 'center' }}>
-                No hay actividad registrada aún
-              </Typography>
-              <Stack direction="row" justifyContent="center">
-                <Button variant="contained" color="primary" size="small">
-                  Ver más
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Admin Section */}
-      {isAdmin && (
-        <Card sx={{ mt: 4, backgroundColor: '#f8f9fa', border: '1px solid #e0e0e0' }}>
-          <CardHeader
-            title="Sección de Administrador"
-            subheader="Opciones de configuración avanzada"
-            sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
-          />
-          <CardContent>
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-              Tienes acceso a funciones administrativas del sistema
-            </Typography>
-            <Stack direction="row" gap={1}>
-              <Button variant="outlined" color="primary" size="small">
-                Configuración General
-              </Button>
-              <Button variant="outlined" color="primary" size="small">
-                Usuarios del Sistema
-              </Button>
-              <Button variant="outlined" color="primary" size="small">
-                Reportes Avanzados
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
-      )}
     </Box>
   );
 }

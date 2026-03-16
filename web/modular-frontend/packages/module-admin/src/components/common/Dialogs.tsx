@@ -21,6 +21,8 @@ import {
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
+import { toDateOnly } from '@zentto/shared-api';
+import { useTimezone } from '@zentto/shared-auth';
 
 // ============================================================================
 // CONFIRM DIALOG
@@ -170,11 +172,12 @@ export function DateRangeDialog({
   initialFrom,
   initialTo,
 }: DateRangeDialogProps) {
+  const { timeZone } = useTimezone();
   const [from, setFrom] = React.useState<string>(
-    initialFrom?.toISOString().split('T')[0] || ''
+    initialFrom ? toDateOnly(initialFrom, timeZone) : ''
   );
   const [to, setTo] = React.useState<string>(
-    initialTo?.toISOString().split('T')[0] || ''
+    initialTo ? toDateOnly(initialTo, timeZone) : ''
   );
 
   const handleConfirm = () => {
@@ -236,7 +239,7 @@ interface SearchDialogProps<T> {
   onSearch?: (query: string) => void;
 }
 
-export function SearchDialog<T extends { [key: string]: any }>({
+export function SearchDialog<T extends Record<string, unknown>>({
   open,
   title,
   items,

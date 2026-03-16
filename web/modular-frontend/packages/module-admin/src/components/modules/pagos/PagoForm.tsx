@@ -18,7 +18,9 @@ import {
   MenuItem,
 } from "@mui/material";
 import { usePagoById, useCreatePago, useUpdatePago } from "../../../hooks/usePagos";
-import { CreatePagoDTO, UpdatePagoDTO } from "@datqbox/shared-api/types";
+import { CreatePagoDTO, UpdatePagoDTO } from "@zentto/shared-api/types";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 
 interface PagoFormProps {
   numeroPago?: string;
@@ -26,13 +28,14 @@ interface PagoFormProps {
 
 export default function PagoForm({ numeroPago }: PagoFormProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const isEdit = !!numeroPago;
 
   const [formData, setFormData] = useState({
     nombre: "",
     tipo: "cliente",
     monto: 0,
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: toDateOnly(new Date(), timeZone),
     metodoPago: "Efectivo",
     referencia: "",
     observaciones: "",

@@ -4,23 +4,24 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Articulo, CreateArticuloDTO, UpdateArticuloDTO, ArticuloFilter, ArticuloFilterOptions, PaginatedResponse } from "@datqbox/shared-api/types";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { Articulo, CreateArticuloDTO, UpdateArticuloDTO, ArticuloFilter, ArticuloFilterOptions, PaginatedResponse } from "@zentto/shared-api/types";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "articulos";
 const API_BASE = "/api/v1/articulos";
+type RawArticuloRow = Record<string, any>;
 
 /**
  * Convierte una fila cruda del API (nombres SQL como CODIGO, DESCRIPCION, etc.)
  * al tipo Articulo que consume el frontend.
  * El campo DescripcionCompleta viene calculado del SP.
  */
-function mapRowToArticulo(r: Record<string, any>): Articulo {
+function mapRowToArticulo(r: RawArticuloRow): Articulo {
   // Descripción compuesta: viene del SP como DescripcionCompleta
   // o se calcula aquí como fallback
   const descCompleta = r.DescripcionCompleta
     ?? [r.Categoria, r.Tipo, r.DESCRIPCION, r.Marca, r.Clase]
-         .map((s: string | null | undefined) => (s ?? "").trim())
+         .map((s) => String(s ?? "").trim())
          .filter(Boolean)
          .join(" ");
 
@@ -94,7 +95,7 @@ export function useArticulosList(filter?: ArticuloFilter) {
       const res = await apiGet(`${API_BASE}?${params.toString()}`);
       // El API devuelve { page, limit, total, rows: [...] }
       // El frontend espera PaginatedResponse con data/items
-      const rawRows: any[] = res.rows ?? res.data ?? res.items ?? [];
+      const rawRows = (res.rows ?? res.data ?? res.items ?? []) as RawArticuloRow[];
       const mapped = rawRows.map(mapRowToArticulo);
       return {
         data: mapped,

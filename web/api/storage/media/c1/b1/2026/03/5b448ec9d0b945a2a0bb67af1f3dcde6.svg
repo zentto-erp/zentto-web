@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1F3550"/>
+      <stop offset="100%" stop-color="#2A5A7A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="220" r="168" fill="#FFFFFF" fill-opacity="0.10"/>
+  <ellipse cx="256" cy="254" rx="146" ry="72" fill="#D2D9E0"/>
+<ellipse cx="256" cy="250" rx="128" ry="56" fill="#F3F7FA"/>
+<circle cx="214" cy="240" r="12" fill="#DB6F4B"/>
+<circle cx="246" cy="224" r="10" fill="#7AAF58"/>
+<circle cx="286" cy="242" r="11" fill="#DB6F4B"/>
+  <rect x="40" y="372" width="432" height="100" rx="18" fill="#0E1B2A" fill-opacity="0.72"/>
+  <text x="58" y="414" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#FFFFFF">Papas Rusticas</text>
+  <text x="58" y="446" font-family="Consolas, Arial, sans-serif" font-size="18" fill="#D1E8FF">PAPAS-RUSTICAS</text>
+</svg>

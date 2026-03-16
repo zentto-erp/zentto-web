@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatqBox.LocalFiscalAgent", "DatqBox.LocalFiscalAgent\DatqBox.LocalFiscalAgent.csproj", "{2A041101-CD43-6C93-C07F-B2EFEFA9A77F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatqBox.ReportServer", "DatqBox.ReportServer\DatqBox.ReportServer.csproj", "{D8A3C25D-1011-4E4B-305F-7C61B5BF85AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A041101-CD43-6C93-C07F-B2EFEFA9A77F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A041101-CD43-6C93-C07F-B2EFEFA9A77F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A041101-CD43-6C93-C07F-B2EFEFA9A77F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A041101-CD43-6C93-C07F-B2EFEFA9A77F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8A3C25D-1011-4E4B-305F-7C61B5BF85AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8A3C25D-1011-4E4B-305F-7C61B5BF85AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8A3C25D-1011-4E4B-305F-7C61B5BF85AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8A3C25D-1011-4E4B-305F-7C61B5BF85AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D160965C-CC5C-459D-B2B8-5DE8A345FF3F}
+	EndGlobalSection
+EndGlobal

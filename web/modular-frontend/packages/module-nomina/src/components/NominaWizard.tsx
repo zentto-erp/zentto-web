@@ -46,10 +46,12 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
-import { CustomStepper, useToast } from "@datqbox/shared-ui";
-import type { StepDef } from "@datqbox/shared-ui";
-import { EditableDataGrid } from "@datqbox/module-contabilidad";
+import { formatCurrency } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { CustomStepper, useToast } from "@zentto/shared-ui";
+import type { StepDef } from "@zentto/shared-ui";
+import { EditableDataGrid } from "@zentto/module-contabilidad";
+import type { GridColDef } from "@mui/x-data-grid";
 
 import {
   useConceptosList,
@@ -79,20 +81,31 @@ interface ConceptoRow {
   editable?: boolean;
 }
 
+type EmpleadoRow = Record<string, any>;
+type ConceptoApiRow = Record<string, any>;
+type CellLike = { value: any };
+
 // ─── Componente Principal ──────────────────────────────────────
 
-export default function NominaWizard() {
+interface NominaWizardProps {
+  initialCedula?: string | null;
+  onClose?: () => void;
+}
+
+export default function NominaWizard({ initialCedula, onClose }: NominaWizardProps = {}) {
   const router = useRouter();
   const { showToast } = useToast();
-  const [activeStep, setActiveStep] = useState(0);
+  const { timeZone } = useTimezone();
+  const hasInitialCedula = !!initialCedula;
+  const [activeStep, setActiveStep] = useState(hasInitialCedula ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
 
   // Paso 1: Empleado
-  const [cedulaSeleccionada, setCedulaSeleccionada] = useState<string | null>(null);
+  const [cedulaSeleccionada, setCedulaSeleccionada] = useState<string | null>(initialCedula ?? null);
 
   // Paso 2: Período
-  const [fechaInicio, setFechaInicio] = useState<Dayjs | null>(dayjs().startOf("month"));
-  const [fechaFin, setFechaFin] = useState<Dayjs | null>(dayjs().endOf("month"));
+  const [fechaInicio, setFechaInicio] = useState<Dayjs | null>(dayjs().tz(timeZone).startOf("month"));
+  const [fechaFin, setFechaFin] = useState<Dayjs | null>(dayjs().tz(timeZone).endOf("month"));
   const [tipoCalculo, setTipoCalculo] = useState("MENSUAL");
   const [sueldoBase, setSueldoBase] = useState(0);
   const [diasPeriodo, setDiasPeriodo] = useState(30);
@@ -105,14 +118,14 @@ export default function NominaWizard() {
 
   // ─── Queries ──────────────────────────────────────────────────
 
-  const empQuery = useEmpleadosList({ status: "A", limit: 500 });
-  const empleados: any[] = useMemo(
+  const empQuery = useEmpleadosList({ status: "ACTIVO", limit: 500 });
+  const empleados: EmpleadoRow[] = useMemo(
     () => (Array.isArray(empQuery.data) ? empQuery.data : empQuery.data?.rows ?? []),
     [empQuery.data]
   );
 
   const conceptosQuery = useConceptosList({ coNomina: nominaCodigo, limit: 200 });
-  const conceptosApi: any[] = useMemo(
+  const conceptosApi: ConceptoApiRow[] = useMemo(
     () => (Array.isArray(conceptosQuery.data) ? conceptosQuery.data : conceptosQuery.data?.rows ?? []),
     [conceptosQuery.data]
   );
@@ -125,56 +138,79 @@ export default function NominaWizard() {
   // ─── Empleado seleccionado ────────────────────────────────────
 
   const empleadoObj = useMemo(
-    () => empleados.find((e: any) => (e.CEDULA ?? e.cedula) === cedulaSeleccionada),
+    () => empleados.find((e) => (e.CEDULA ?? e.cedula) === cedulaSeleccionada),
     [empleados, cedulaSeleccionada]
   );
 
   // ─── Helpers ──────────────────────────────────────────────────
 
-  const empCedula = (e: any) => e.CEDULA ?? e.cedula ?? "";
-  const empNombre = (e: any) => e.NOMBRE ?? e.nombre ?? "";
-  const empCargo = (e: any) => e.CARGO ?? e.cargo ?? "";
-  const empNomina = (e: any) => e.NOMINA ?? e.nomina ?? "";
-  const empSueldo = (e: any) => Number(e.SUELDO ?? e.sueldo ?? 0);
+  const empCedula = (e: EmpleadoRow | null | undefined) => e?.CEDULA ?? e?.cedula ?? "";
+  const empNombre = (e: EmpleadoRow | null | undefined) => e?.NOMBRE ?? e?.nombre ?? "";
+  const empCargo = (e: EmpleadoRow | null | undefined) => e?.CARGO ?? e?.cargo ?? "";
+  const empNomina = (e: EmpleadoRow | null | undefined) => e?.NOMINA ?? e?.nomina ?? "";
+  const empSueldo = (e: EmpleadoRow | null | undefined) => Number(e?.SUELDO ?? e?.sueldo ?? 0);
 
   const cargarConceptos = () => {
     const sueldo = sueldoBase || empSueldo(empleadoObj);
 
+    // Evalúa fórmula simple reemplazando variables conocidas
+    const evalFormula = (formula: string, totalAsig: number): number | null => {
+      const vars: Record<string, number> = { SUELDO: sueldo, TOTAL_ASIGNACIONES: totalAsig };
+      const match = formula.match(/^(\w+)\s*\*\s*([\d.]+)$/i);
+      if (match) {
+        const base = vars[match[1].toUpperCase()];
+        if (base !== undefined) return base * parseFloat(match[2]);
+      }
+      return null;
+    };
+
     // Tomar conceptos del API si hay, si no usar por defecto
     if (conceptosApi.length > 0) {
-      const mapped: ConceptoRow[] = conceptosApi.map((c: any, i: number) => {
+      // Primera pasada: mapear conceptos y calcular asignaciones
+      const preMapped = conceptosApi.map((c, i: number) => {
         const tipo = String(c.tipo ?? c.TIPO ?? "ASIGNACION").toUpperCase();
         const valorDefecto = Number(c.valorDefecto ?? c.VALOR_DEFECTO ?? 0);
+        const formula = String(c.formula ?? c.FORMULA ?? "");
         let valor = valorDefecto;
-        // Intentar calcular con fórmula simple
-        const formula = c.formula ?? c.FORMULA ?? "";
-        if (formula && formula.includes("SUELDO")) {
-          const match = formula.match(/SUELDO\s*\*\s*([\d.]+)/i);
-          if (match) valor = sueldo * parseFloat(match[1]);
-        }
         if (valorDefecto === 0 && !formula && tipo === "ASIGNACION" && (c.codigo ?? c.CODIGO ?? "").toUpperCase() === "SUELDO") {
           valor = sueldo;
+        } else if (formula) {
+          const r = evalFormula(formula, 0);
+          if (r !== null) valor = r;
+        }
+        return { i, tipo, formula, valor, c };
+      });
+
+      const totalAsig = preMapped.filter(p => p.tipo !== "DEDUCCION").reduce((s, p) => s + p.valor, 0);
+
+      // Segunda pasada: recalcular deducciones que usan TOTAL_ASIGNACIONES
+      const mapped: ConceptoRow[] = preMapped.map((p) => {
+        let valor = p.valor;
+        if (p.formula && p.formula.includes("TOTAL_ASIGNACIONES")) {
+          const r = evalFormula(p.formula, totalAsig);
+          if (r !== null) valor = r;
         }
         return {
-          id: String(i + 1),
-          codigo: c.codigo ?? c.CODIGO ?? "",
-          descripcion: c.nombre ?? c.NOMBRE ?? c.descripcion ?? "",
-          tipo: (tipo === "DEDUCCION" ? "DEDUCCION" : "ASIGNACION") as "ASIGNACION" | "DEDUCCION",
-          formula: formula || undefined,
+          id: String(p.i + 1),
+          codigo: p.c.codigo ?? p.c.CODIGO ?? "",
+          descripcion: p.c.nombre ?? p.c.NOMBRE ?? p.c.descripcion ?? "",
+          tipo: (p.tipo === "DEDUCCION" ? "DEDUCCION" : "ASIGNACION") as "ASIGNACION" | "DEDUCCION",
+          formula: p.formula || undefined,
           valor,
-          editable: !formula,
+          editable: !p.formula,
         };
       });
       setConceptos(mapped);
     } else {
-      // Conceptos por defecto
+      // Conceptos por defecto (bases legales LOTTT Venezuela)
+      const totalAsig = sueldo + 100 + 50; // sueldo + bono + transporte
       setConceptos([
         { id: "1", codigo: "SUELDO", descripcion: "Sueldo Base", tipo: "ASIGNACION", valor: sueldo, editable: false },
         { id: "2", codigo: "BONO", descripcion: "Bono de Alimentación", tipo: "ASIGNACION", valor: 100, editable: true },
         { id: "3", codigo: "TRANS", descripcion: "Bono de Transporte", tipo: "ASIGNACION", valor: 50, editable: true },
         { id: "4", codigo: "SSO", descripcion: "Seguro Social (SSO)", tipo: "DEDUCCION", formula: "SUELDO * 0.04", valor: sueldo * 0.04, editable: false },
         { id: "5", codigo: "RPE", descripcion: "Régimen Prestacional Empleo", tipo: "DEDUCCION", formula: "SUELDO * 0.005", valor: sueldo * 0.005, editable: false },
-        { id: "6", codigo: "FAOV", descripcion: "FAOV", tipo: "DEDUCCION", formula: "SUELDO * 0.01", valor: sueldo * 0.01, editable: false },
+        { id: "6", codigo: "FAOV", descripcion: "FAOV (Ley Vivienda y Hábitat)", tipo: "DEDUCCION", formula: "TOTAL_ASIGNACIONES * 0.01", valor: totalAsig * 0.01, editable: false },
       ]);
     }
   };
@@ -228,19 +264,19 @@ export default function NominaWizard() {
       });
       showToast("Nómina procesada correctamente");
       router.push("/nomina");
-    } catch (e: any) {
-      setError(e?.message ?? "Error al procesar la nómina");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al procesar la nómina");
     }
   };
 
   // ─── Columnas conceptos ───────────────────────────────────────
 
-  const colsConceptos = [
+  const colsConceptos: GridColDef[] = [
     {
       field: "tipo",
       headerName: "Tipo",
       width: 120,
-      renderCell: (params: any) => (
+      renderCell: (params) => (
         <Chip
           size="small"
           icon={params.value === "ASIGNACION" ? <AddCircleIcon /> : <RemoveCircleIcon />}
@@ -255,7 +291,7 @@ export default function NominaWizard() {
       field: "formula",
       headerName: "Fórmula",
       width: 160,
-      renderCell: (params: any) => params.value || "—",
+      renderCell: (params) => params.value || "—",
     },
     {
       field: "valor",
@@ -263,7 +299,7 @@ export default function NominaWizard() {
       width: 140,
       editable: true,
       type: "number" as const,
-      renderCell: (params: any) => formatCurrency(params.value),
+      renderCell: (params) => formatCurrency(params.value),
     },
   ];
 
@@ -291,7 +327,7 @@ export default function NominaWizard() {
                 <>
                   <Autocomplete
                     options={empleados}
-                    getOptionLabel={(e: any) => `${empCedula(e)} — ${empNombre(e)} (${empCargo(e)})`}
+                    getOptionLabel={(e: EmpleadoRow) => `${empCedula(e)} — ${empNombre(e)} (${empCargo(e)})`}
                     value={empleadoObj ?? null}
                     onChange={(_, val) => {
                       setCedulaSeleccionada(val ? empCedula(val) : null);

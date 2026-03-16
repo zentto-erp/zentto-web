@@ -14,21 +14,34 @@ import {
   Typography
 } from "@mui/material";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../../hooks/useBancosAuxiliares";
+import { toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
-function firstDayOfCurrentMonth() {
+type CuentaRow = Record<string, unknown>;
+type MovimientoRow = Record<string, unknown>;
+
+function firstDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  return `${y}-${m}-01`;
 }
 
-function lastDayOfCurrentMonth() {
+function lastDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit" }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")!.value);
+  const m = Number(parts.find((p) => p.type === "month")!.value);
+  const last = new Date(y, m, 0);
+  return toDateOnly(last, tz);
 }
 
 export default function CuentasBancariasPage() {
+  const { timeZone } = useTimezone();
   const [nroCta, setNroCta] = useState("");
-  const [desde, setDesde] = useState(firstDayOfCurrentMonth());
-  const [hasta, setHasta] = useState(lastDayOfCurrentMonth());
+  const [desde, setDesde] = useState(firstDayOfCurrentMonth(timeZone));
+  const [hasta, setHasta] = useState(lastDayOfCurrentMonth(timeZone));
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
 
@@ -36,8 +49,8 @@ export default function CuentasBancariasPage() {
   const input = useMemo(() => ({ nroCta: nroCta || undefined, desde, hasta, page, limit }), [nroCta, desde, hasta, page, limit]);
   const { data: movsData, isLoading: loadingMovs } = useMovimientosCuenta(input);
 
-  const cuentas = cuentasData?.rows ?? [];
-  const movs = movsData?.rows ?? [];
+  const cuentas = (cuentasData?.rows ?? []) as CuentaRow[];
+  const movs = (movsData?.rows ?? []) as MovimientoRow[];
 
   return (
     <Box>
@@ -57,7 +70,7 @@ export default function CuentasBancariasPage() {
               <TableBody>
                 {loadingCtas && <TableRow><TableCell colSpan={3}>Cargando...</TableCell></TableRow>}
                 {!loadingCtas && cuentas.length === 0 && <TableRow><TableCell colSpan={3}>Sin cuentas.</TableCell></TableRow>}
-                {!loadingCtas && cuentas.map((c: any) => (
+                {!loadingCtas && cuentas.map((c) => (
                   <TableRow key={String(c.Nro_Cta)} selected={nroCta === String(c.Nro_Cta)} onClick={() => setNroCta(String(c.Nro_Cta))} sx={{ cursor: "pointer" }}>
                     <TableCell>{String(c.Nro_Cta)}</TableCell>
                     <TableCell>{String(c.BancoNombre ?? c.Banco ?? "")}</TableCell>
@@ -104,10 +117,10 @@ export default function CuentasBancariasPage() {
               <TableBody>
                 {loadingMovs && <TableRow><TableCell colSpan={6}>Cargando...</TableCell></TableRow>}
                 {!loadingMovs && movs.length === 0 && <TableRow><TableCell colSpan={6}>Sin movimientos.</TableCell></TableRow>}
-                {!loadingMovs && movs.map((m: any) => (
+                {!loadingMovs && movs.map((m) => (
                   <TableRow key={String(m.id ?? m.ID)}>
                     <TableCell>{String(m.id ?? m.ID)}</TableCell>
-                    <TableCell>{String(m.Fecha ?? "").slice(0, 19).replace("T", " ")}</TableCell>
+                    <TableCell>{m.Fecha ? formatDateTime(m.Fecha as string, { timeZone }) : ""}</TableCell>
                     <TableCell>{String(m.Tipo ?? "")}</TableCell>
                     <TableCell>{String(m.Nro_Ref ?? "")}</TableCell>
                     <TableCell>{String(m.Beneficiario ?? "")}</TableCell>

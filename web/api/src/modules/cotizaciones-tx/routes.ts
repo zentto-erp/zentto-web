@@ -12,8 +12,8 @@ const emitirTxSchema = z.object({
 
 /**
  * POST /v1/cotizaciones/emitir-tx
- * Emite una cotizacion completa (transaccion atómica)
- * Inserta cabecera y detalle en Cotizacion/Detalle_Cotizacion
+ * Emite una cotizacion completa (transaccion atomica)
+ * usando el modulo canonico DocumentosVenta (TIPO_OPERACION=COTIZ).
  */
 cotizacionesTxRouter.post("/emitir-tx", async (req, res) => {
   const parsed = emitirTxSchema.safeParse(req.body);

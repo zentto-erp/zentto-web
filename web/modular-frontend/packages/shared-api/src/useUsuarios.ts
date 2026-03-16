@@ -116,7 +116,7 @@ export function useUsuarioModulos(codigo: string | null) {
     queryFn: async () => {
       const res = await apiGet(`/v1/usuarios/${codigo}/modulos`);
       // Backend returns { modulos: [...], available: [...] }
-      return Array.isArray(res) ? res : (res as any).modulos ?? [];
+      return Array.isArray(res) ? res : (res as { modulos?: ModuloAcceso[] }).modulos ?? [];
     },
     enabled: !!codigo,
   });

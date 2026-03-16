@@ -1,0 +1,39 @@
+version: '3.9'
+
+# ── Zentto — docker-compose PRODUCCIÓN ────────────────────────────────────────
+# Usa imágenes pre-construidas desde ghcr.io (desplegadas por CI/CD)
+# Uso en servidor: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  api:
+    image: ghcr.io/zentto-erp/zentto-web/api:latest
+    container_name: zentto-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file:
+      - /opt/zentto/.env.api
+    volumes:
+      - api_storage:/app/storage/media
+    networks:
+      - zentto-net
+
+  frontend:
+    image: ghcr.io/zentto-erp/zentto-web/frontend:latest
+    container_name: zentto-frontend
+    restart: unless-stopped
+    ports:
+      - "3000-3010:3000-3010"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - zentto-net
+
+volumes:
+  api_storage:
+    external: true
+    name: zentto_api_storage
+
+networks:
+  zentto-net:
+    driver: bridge

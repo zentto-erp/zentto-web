@@ -19,23 +19,33 @@ import {
   Typography
 } from "@mui/material";
 import { Add, Search, Visibility } from "@mui/icons-material";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { useComprasList } from "../../../hooks/useCompras";
 
-function firstDayOfCurrentMonth() {
+function firstDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  return `${y}-${m}-01`;
 }
 
-function lastDayOfCurrentMonth() {
+function lastDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit" }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")!.value);
+  const m = Number(parts.find((p) => p.type === "month")!.value);
+  const last = new Date(y, m, 0);
+  return toDateOnly(last, tz);
 }
 
 export default function ComprasTable() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const [search, setSearch] = useState("");
-  const [fechaDesde, setFechaDesde] = useState(firstDayOfCurrentMonth());
-  const [fechaHasta, setFechaHasta] = useState(lastDayOfCurrentMonth());
+  const [fechaDesde, setFechaDesde] = useState(firstDayOfCurrentMonth(timeZone));
+  const [fechaHasta, setFechaHasta] = useState(lastDayOfCurrentMonth(timeZone));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
 
@@ -135,7 +145,7 @@ export default function ComprasTable() {
                 <TableRow key={String(row.NUM_FACT)}>
                   <TableCell>{row.NUM_FACT}</TableCell>
                   <TableCell>{row.NOMBRE || row.COD_PROVEEDOR}</TableCell>
-                  <TableCell>{row.FECHA ? String(row.FECHA).slice(0, 10) : ""}</TableCell>
+                  <TableCell>{row.FECHA ? toDateOnly(row.FECHA as string, timeZone) : ""}</TableCell>
                   <TableCell>
                     <Chip size="small" label={row.TIPO || "CONTADO"} />
                   </TableCell>

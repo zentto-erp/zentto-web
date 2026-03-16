@@ -1,6 +1,17 @@
 import { Router } from "express";
 import { z } from "zod";
-import { createInventario, deleteInventario, getInventario, updateInventario } from "./service.js";
+import {
+  insertInventarioSP,
+  updateInventarioSP,
+  deleteInventarioSP,
+  getInventarioByCodigoSP,
+} from "./inventario-sp.service.js";
+import {
+  insertMovimientoSP,
+  listMovimientosSP,
+  getInventarioDashboardSP,
+  getLibroInventarioSP,
+} from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 
 export const inventarioRouter = Router();
@@ -84,6 +95,104 @@ inventarioRouter.post("/cache/reload", async (_req, res) => {
   res.json({ ok: true, count, message: `Cache recargado con ${count} artículos` });
 });
 
+// ========== GET: Dashboard de inventario ==========
+inventarioRouter.get("/dashboard", async (_req, res) => {
+  try {
+    const data = await getInventarioDashboardSP();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ========== GET: Listado de movimientos ==========
+inventarioRouter.get("/movimientos", async (req, res) => {
+  try {
+    const q = req.query;
+    const result = await listMovimientosSP({
+      search: q.search as string,
+      productCode: q.productCode as string,
+      movementType: q.movementType as string,
+      warehouseCode: q.warehouseCode as string,
+      fechaDesde: q.fechaDesde as string,
+      fechaHasta: q.fechaHasta as string,
+      page: q.page ? Number(q.page) : undefined,
+      limit: q.limit ? Number(q.limit) : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ========== POST: Registrar movimiento ==========
+inventarioRouter.post("/movimientos", async (req, res) => {
+  try {
+    const b = req.body ?? {};
+    const result = await insertMovimientoSP({
+      productCode: b.productCode || b.codigoArticulo,
+      movementType: b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"),
+      quantity: Math.abs(Number(b.quantity || b.cantidad || 0)),
+      unitCost: b.unitCost ? Number(b.unitCost) : undefined,
+      documentRef: b.documentRef || b.motivo,
+      warehouseFrom: b.warehouseFrom,
+      warehouseTo: b.warehouseTo,
+      notes: b.notes || b.observaciones,
+    });
+    invalidateAndReload().catch(() => {});
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
+  } catch (err) {
+    res.status(400).json({ error: String(err) });
+  }
+});
+
+// ========== POST: Traslado entre almacenes ==========
+inventarioRouter.post("/traslados", async (req, res) => {
+  try {
+    const b = req.body ?? {};
+    const result = await insertMovimientoSP({
+      productCode: b.productCode,
+      movementType: "TRASLADO",
+      quantity: Math.abs(Number(b.quantity || 0)),
+      unitCost: b.unitCost ? Number(b.unitCost) : undefined,
+      documentRef: b.documentRef,
+      warehouseFrom: b.warehouseFrom,
+      warehouseTo: b.warehouseTo,
+      notes: b.notes,
+    });
+    invalidateAndReload().catch(() => {});
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
+  } catch (err) {
+    res.status(400).json({ error: String(err) });
+  }
+});
+
+// ========== GET: Libro de inventario (reporte) ==========
+inventarioRouter.get("/reportes/libro", async (req, res) => {
+  try {
+    const q = req.query;
+    if (!q.fechaDesde || !q.fechaHasta) {
+      return res.status(400).json({ error: "fechaDesde y fechaHasta son requeridos" });
+    }
+    const rows = await getLibroInventarioSP({
+      fechaDesde: q.fechaDesde as string,
+      fechaHasta: q.fechaHasta as string,
+      productCode: q.productCode as string,
+    });
+    res.json({ rows });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // ========== GET: Artículo por código (caché) ==========
 inventarioRouter.get("/:codigo", async (req, res) => {
   const item = await getByCode(req.params.codigo);
@@ -94,10 +203,13 @@ inventarioRouter.get("/:codigo", async (req, res) => {
 // ========== POST: Crear artículo + invalidar caché ==========
 inventarioRouter.post("/", async (req, res) => {
   try {
-    const data = await createInventario(req.body ?? {});
-    // Invalidar caché tras mutación
+    const result = await insertInventarioSP(req.body ?? {});
     invalidateAndReload().catch(() => {});
-    res.status(201).json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    if (result.success) {
+      res.status(201).json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -106,10 +218,13 @@ inventarioRouter.post("/", async (req, res) => {
 // ========== PUT: Actualizar artículo + invalidar caché ==========
 inventarioRouter.put("/:codigo", async (req, res) => {
   try {
-    const data = await updateInventario(req.params.codigo, req.body ?? {});
-    // Invalidar caché tras mutación
+    const result = await updateInventarioSP(req.params.codigo, req.body ?? {});
     invalidateAndReload().catch(() => {});
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    if (result.success) {
+      res.json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -118,10 +233,13 @@ inventarioRouter.put("/:codigo", async (req, res) => {
 // ========== DELETE: Eliminar artículo + invalidar caché ==========
 inventarioRouter.delete("/:codigo", async (req, res) => {
   try {
-    const data = await deleteInventario(req.params.codigo);
-    // Invalidar caché tras mutación
+    const result = await deleteInventarioSP(req.params.codigo);
     invalidateAndReload().catch(() => {});
-    res.json({ ok: true, ...(data.executionMode && { executionMode: data.executionMode }) });
+    if (result.success) {
+      res.json({ ok: true, message: result.message });
+    } else {
+      res.status(400).json({ ok: false, message: result.message });
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

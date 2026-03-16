@@ -2,8 +2,24 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@datqbox/shared-api";
-import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO, ProveedorFilter, PaginatedResponse } from "@datqbox/shared-api/types";
+import { apiDelete, apiGet, apiPost, apiPut } from "@zentto/shared-api";
+import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO, ProveedorFilter, PaginatedResponse } from "@zentto/shared-api/types";
+
+type RawRow = Record<string, unknown>;
+
+function mapRowToProveedor(row: RawRow): Proveedor {
+  return {
+    codigo: String(row.CODIGO ?? row.codigo ?? ""),
+    nombre: String(row.NOMBRE ?? row.nombre ?? ""),
+    rif: String(row.RIF ?? row.rif ?? ""),
+    direccion: String(row.DIRECCION ?? row.direccion ?? ""),
+    telefono: String(row.TELEFONO ?? row.telefono ?? ""),
+    email: String(row.EMAIL ?? row.email ?? ""),
+    estado: String(row.ESTADO ?? row.estado ?? "Activo") as Proveedor["estado"],
+    saldo: Number(row.SALDO_TOT ?? row.SALDO ?? row.saldo ?? 0),
+    fechaCreacion: new Date(),
+  };
+}
 
 export function useProveedoresList(filter?: ProveedorFilter) {
   return useQuery({
@@ -16,7 +32,22 @@ export function useProveedoresList(filter?: ProveedorFilter) {
       if (filter?.estado) params.append("estado", filter.estado);
       
       const query = params.toString();
-      return apiGet(`/api/v1/proveedores${query ? "?" + query : ""}`);
+      const raw = await apiGet(`/api/v1/proveedores${query ? "?" + query : ""}`);
+      const rows = (raw?.rows ?? raw?.items ?? raw?.data ?? []) as RawRow[];
+      const items = rows.map(mapRowToProveedor);
+      const total = Number(raw?.total ?? items.length);
+      const page = Number(raw?.page ?? filter?.page ?? 1);
+      const pageSize = Number(raw?.limit ?? filter?.limit ?? 10);
+      const totalPages = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
+
+      return {
+        items,
+        data: items,
+        total,
+        page,
+        pageSize,
+        totalPages,
+      };
     }
   });
 }
@@ -43,15 +74,8 @@ export function useCreateProveedor() {
 export function useUpdateProveedor(codigo: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: UpdateProveedorDTO): Promise<Proveedor> => {
-      const res = await fetch(`/api/v1/proveedores/${codigo}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
-    },
+    mutationFn: (data: UpdateProveedorDTO): Promise<Proveedor> =>
+      apiPut(`/api/v1/proveedores/${codigo}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["proveedores"] });
       queryClient.invalidateQueries({ queryKey: ["proveedores", codigo] });
@@ -63,10 +87,7 @@ export function useDeleteProveedor() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (codigo: string): Promise<void> => {
-      const res = await fetch(`/api/v1/proveedores/${codigo}`, {
-        method: "DELETE"
-      });
-      if (!res.ok) throw new Error(await res.text());
+      await apiDelete(`/api/v1/proveedores/${codigo}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["proveedores"] });

@@ -18,7 +18,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { useArticuloById, useCreateArticulo, useUpdateArticulo } from "../../../hooks/useArticulos";
-import { Articulo, CreateArticuloDTO, UpdateArticuloDTO } from "@datqbox/shared-api/types";
+import { Articulo, CreateArticuloDTO, UpdateArticuloDTO } from "@zentto/shared-api/types";
 
 interface ArticuloFormProps {
   codigoArticulo?: string;

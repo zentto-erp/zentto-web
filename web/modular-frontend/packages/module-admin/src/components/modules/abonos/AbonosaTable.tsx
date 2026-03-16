@@ -26,11 +26,13 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
-import { formatCurrency, formatDate } from "@datqbox/shared-api";
+import { formatCurrency, formatDate } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
 export default function AbonosTable() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
@@ -150,7 +152,7 @@ export default function AbonosTable() {
                   <TableCell sx={{ fontWeight: 500 }}>{abono.numeroAbono}</TableCell>
                   <TableCell>{abono.nombreCliente}</TableCell>
                   <TableCell>{abono.numeroFactura}</TableCell>
-                  <TableCell>{formatDate(abono.fecha)}</TableCell>
+                  <TableCell>{formatDate(abono.fecha, { timeZone })}</TableCell>
                   <TableCell align="right">{formatCurrency(abono.monto)}</TableCell>
                   <TableCell align="center">
                     <IconButton

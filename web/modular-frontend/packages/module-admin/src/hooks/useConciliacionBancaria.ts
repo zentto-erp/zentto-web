@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@datqbox/shared-api";
+import { apiGet, apiPost } from "@zentto/shared-api";
 
 const QUERY_KEY = "conciliacion-bancaria";
 const API_BASE = "/api/v1/bancos";
@@ -14,7 +14,7 @@ export type ConciliacionFilter = {
 };
 
 export function useConciliaciones(filter?: ConciliacionFilter) {
-  return useQuery<any>({
+  return useQuery<Record<string, unknown>>({
     queryKey: [QUERY_KEY, "list", filter],
     queryFn: async () => {
       const p = new URLSearchParams();
@@ -28,14 +28,14 @@ export function useConciliaciones(filter?: ConciliacionFilter) {
 }
 
 export function useCuentasBank() {
-  return useQuery<any>({
+  return useQuery<Record<string, unknown>>({
     queryKey: [QUERY_KEY, "cuentas"],
     queryFn: () => apiGet(`${API_BASE}/cuentas/list`)
   });
 }
 
 export function useConciliacionDetalle(id?: number) {
-  return useQuery<any>({
+  return useQuery<Record<string, unknown>>({
     queryKey: [QUERY_KEY, "detalle", id],
     queryFn: () => apiGet(`${API_BASE}/conciliaciones/${id}`),
     enabled: !!id

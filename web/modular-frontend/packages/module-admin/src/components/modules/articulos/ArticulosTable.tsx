@@ -2,7 +2,7 @@
 // Tabla de artículos con filtros avanzados: selectores, rangos, comodines
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -47,9 +47,9 @@ import {
   ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import { useArticulosList, useDeleteArticulo, useArticuloFilterOptions } from "../../../hooks/useArticulos";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { debounce } from "lodash";
-import type { ArticuloFilter } from "@datqbox/shared-api/types";
+import type { ArticuloFilter } from "@zentto/shared-api/types";
 
 // ============ Componente selector reutilizable ============
 function FilterSelect({
@@ -212,7 +212,7 @@ export default function ArticulosTable() {
   };
 
   // Resetear página al cambiar un filtro
-  const onFilterChange = (setter: (v: any) => void) => (val: any) => {
+  const onFilterChange = <T,>(setter: Dispatch<SetStateAction<T>>) => (val: T) => {
     setter(val);
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };

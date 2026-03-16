@@ -18,41 +18,53 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import IconButton from "@mui/material/IconButton";
-import { formatCurrency } from "@datqbox/shared-api";
+import { useRouter } from "next/navigation";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useVacacionesList,
   useVacacionDetalle,
-  useProcesarVacaciones,
-  type VacacionesInput,
 } from "../hooks/useNomina";
 
 export default function VacacionesPage() {
+  const router = useRouter();
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [procesarOpen, setProcesarOpen] = useState(false);
-  const [form, setForm] = useState<VacacionesInput>({
-    vacacionId: "",
-    cedula: "",
-    fechaInicio: "",
-    fechaHasta: "",
-  });
 
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
   const detalle = useVacacionDetalle(selectedId);
-  const procesarMutation = useProcesarVacaciones();
 
-  const rows = data?.data ?? data?.rows ?? [];
+  const rawRows: any[] = data?.data ?? data?.rows ?? [];
+  // Mapear campos del SP a los que espera el DataGrid
+  const rows = rawRows.map((r: any, i: number) => {
+    const inicio = r.inicio ?? r.fechaInicio;
+    const hasta = r.hasta ?? r.fechaHasta;
+    let dias = 0;
+    if (inicio && hasta) {
+      dias = Math.round((new Date(hasta).getTime() - new Date(inicio).getTime()) / 86400000);
+    }
+    return {
+      _id: r.vacacion ?? r.vacacionId ?? i,
+      vacacion: r.vacacion ?? r.vacacionId ?? "",
+      cedula: r.cedula ?? "",
+      nombreEmpleado: r.nombreEmpleado ?? r.nombre ?? "",
+      inicio: inicio ? new Date(inicio).toLocaleDateString() : "",
+      hasta: hasta ? new Date(hasta).toLocaleDateString() : "",
+      reintegro: r.reintegro ?? r.fechaReintegro ? new Date(r.reintegro ?? r.fechaReintegro).toLocaleDateString() : "",
+      dias,
+      total: r.total ?? r.totalCalculado ?? r.montoVacaciones ?? 0,
+    };
+  });
 
   const columns: GridColDef[] = [
-    { field: "vacacionId", headerName: "ID", width: 100 },
+    { field: "vacacion", headerName: "ID", width: 160 },
     { field: "cedula", headerName: "Cédula", width: 120 },
-    { field: "nombre", headerName: "Empleado", flex: 1 },
-    { field: "fechaInicio", headerName: "Inicio", width: 110 },
-    { field: "fechaHasta", headerName: "Hasta", width: 110 },
-    { field: "fechaReintegro", headerName: "Reintegro", width: 110 },
-    { field: "diasVacaciones", headerName: "Días", width: 80, type: "number" },
+    { field: "nombreEmpleado", headerName: "Empleado", flex: 1 },
+    { field: "inicio", headerName: "Inicio", width: 110 },
+    { field: "hasta", headerName: "Hasta", width: 110 },
+    { field: "reintegro", headerName: "Reintegro", width: 110 },
+    { field: "dias", headerName: "Días", width: 80, type: "number" },
     {
-      field: "montoVacaciones",
+      field: "total",
       headerName: "Monto",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
@@ -63,30 +75,31 @@ export default function VacacionesPage() {
       width: 60,
       sortable: false,
       renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.vacacionId)}>
+        <IconButton size="small" onClick={() => setSelectedId(p.row.vacacion)}>
           <VisibilityIcon fontSize="small" />
         </IconButton>
       ),
     },
   ];
 
-  const handleProcesar = async () => {
-    await procesarMutation.mutateAsync(form);
-    setProcesarOpen(false);
-    setForm({ vacacionId: "", cedula: "", fechaInicio: "", fechaHasta: "" });
-  };
-
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<PlayArrowIcon />} onClick={() => setProcesarOpen(true)}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6" fontWeight={600}>
+          Vacaciones
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<PlayArrowIcon />}
+          onClick={() => router.push("/nomina/vacaciones/procesar")}
+        >
           Procesar Vacaciones
         </Button>
       </Stack>
 
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
-          label="Cédula"
+          label="Buscar por Cédula"
           size="small"
           value={cedula}
           onChange={(e) => setCedula(e.target.value)}
@@ -100,7 +113,7 @@ export default function VacacionesPage() {
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
-          getRowId={(r) => r.vacacionId ?? r.id ?? Math.random()}
+          getRowId={(r) => r._id}
         />
       </Paper>
 
@@ -110,12 +123,11 @@ export default function VacacionesPage() {
         <DialogContent>
           {detalle.isLoading ? (
             <CircularProgress />
-          ) : detalle.data?.cabecera ? (
+          ) : detalle.data ? (
             <Box>
-              <Typography variant="body2"><strong>Empleado:</strong> {detalle.data.cabecera.nombre}</Typography>
-              <Typography variant="body2"><strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}</Typography>
-              <Typography variant="body2"><strong>Días:</strong> {detalle.data.cabecera.diasVacaciones}</Typography>
-              <Typography variant="body2"><strong>Monto:</strong> {formatCurrency(detalle.data.cabecera.montoVacaciones ?? 0)}</Typography>
+              <Typography variant="body2"><strong>Empleado:</strong> {detalle.data.cabecera?.nombreEmpleado ?? detalle.data.nombreEmpleado ?? detalle.data.cedula}</Typography>
+              <Typography variant="body2"><strong>Período:</strong> {detalle.data.cabecera?.inicio ?? detalle.data.inicio} - {detalle.data.cabecera?.hasta ?? detalle.data.hasta}</Typography>
+              <Typography variant="body2"><strong>Monto:</strong> {formatCurrency(detalle.data.cabecera?.total ?? detalle.data.total ?? 0)}</Typography>
             </Box>
           ) : (
             <Typography>No se encontró información</Typography>
@@ -123,26 +135,6 @@ export default function VacacionesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSelectedId(null)}>Cerrar</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Procesar Dialog */}
-      <Dialog open={procesarOpen} onClose={() => setProcesarOpen(false)}>
-        <DialogTitle>Procesar Vacaciones</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField label="ID Vacación" fullWidth value={form.vacacionId} onChange={(e) => setForm((f) => ({ ...f, vacacionId: e.target.value }))} />
-            <TextField label="Cédula" fullWidth value={form.cedula} onChange={(e) => setForm((f) => ({ ...f, cedula: e.target.value }))} />
-            <TextField label="Fecha Inicio" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.fechaInicio} onChange={(e) => setForm((f) => ({ ...f, fechaInicio: e.target.value }))} />
-            <TextField label="Fecha Hasta" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.fechaHasta} onChange={(e) => setForm((f) => ({ ...f, fechaHasta: e.target.value }))} />
-            <TextField label="Fecha Reintegro" type="date" fullWidth InputLabelProps={{ shrink: true }} value={form.fechaReintegro || ""} onChange={(e) => setForm((f) => ({ ...f, fechaReintegro: e.target.value || undefined }))} />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setProcesarOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleProcesar} disabled={procesarMutation.isPending}>
-            Procesar
-          </Button>
         </DialogActions>
       </Dialog>
     </Box>

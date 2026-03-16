@@ -1,4 +1,4 @@
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export interface AsientoDetalleInput {
   codCuenta: string;
@@ -34,113 +34,200 @@ export interface ListAsientosInput {
   limit?: number;
 }
 
-function esc(value: unknown): string {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+async function getDefaultScope() {
+  const rows = await callSp<{ CompanyId: number; BranchId: number }>(
+    "dbo.usp_Acct_Scope_GetDefault"
+  );
+
+  const companyId = Number(rows[0]?.CompanyId ?? 0);
+  const branchId = Number(rows[0]?.BranchId ?? 0);
+  if (!Number.isFinite(companyId) || companyId <= 0) throw new Error("company_not_found");
+  if (!Number.isFinite(branchId) || branchId <= 0) throw new Error("branch_not_found");
+  return { companyId, branchId };
 }
 
-function detalleToXml(detalle: AsientoDetalleInput[]): string {
-  const rows = detalle.map((d) => {
-    const attrs = [
-      `codCuenta="${esc(d.codCuenta)}"`,
-      d.descripcion !== undefined ? `descripcion="${esc(d.descripcion)}"` : "",
-      d.centroCosto !== undefined ? `centroCosto="${esc(d.centroCosto)}"` : "",
-      d.auxiliarTipo !== undefined ? `auxiliarTipo="${esc(d.auxiliarTipo)}"` : "",
-      d.auxiliarCodigo !== undefined ? `auxiliarCodigo="${esc(d.auxiliarCodigo)}"` : "",
-      d.documento !== undefined ? `documento="${esc(d.documento)}"` : "",
-      `debe="${esc(d.debe ?? 0)}"`,
-      `haber="${esc(d.haber ?? 0)}"`
-    ]
-      .filter(Boolean)
-      .join(" ");
-    return `<row ${attrs} />`;
-  });
-  return `<rows>${rows.join("")}</rows>`;
+function toPeriodCode(fecha: Date) {
+  const yyyy = fecha.getUTCFullYear();
+  const mm = String(fecha.getUTCMonth() + 1).padStart(2, "0");
+  return `${yyyy}${mm}`;
+}
+
+function generateEntryNumber(tipoAsiento: string) {
+  const stamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
+  const pref = String(tipoAsiento || "ASI").trim().toUpperCase().slice(0, 6) || "ASI";
+  return `${pref}-${stamp}`;
+}
+
+function normalizeAsientoEstado(estado?: string | null) {
+  const value = String(estado ?? "").trim().toUpperCase();
+  if (!value) return null;
+  if (["ACTIVO", "A", "POSTED", "APROBADO", "APPROVED"].includes(value)) return "APPROVED";
+  if (["ANULADO", "VOID", "VOIDED"].includes(value)) return "VOIDED";
+  if (["BORRADOR", "DRAFT"].includes(value)) return "DRAFT";
+  return value;
+}
+
+function round2(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 export async function listAsientos(input: ListAsientosInput) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
+  const scope = await getDefaultScope();
+  const page = Math.max(1, Number(input.page || 1));
+  const limit = Math.min(500, Math.max(1, Number(input.limit || 50)));
 
-  req.input("FechaDesde", sql.Date, input.fechaDesde || null);
-  req.input("FechaHasta", sql.Date, input.fechaHasta || null);
-  req.input("TipoAsiento", sql.NVarChar(20), input.tipoAsiento || null);
-  req.input("Estado", sql.NVarChar(20), input.estado || null);
-  req.input("OrigenModulo", sql.NVarChar(40), input.origenModulo || null);
-  req.input("OrigenDocumento", sql.NVarChar(120), input.origenDocumento || null);
-  req.input("Page", sql.Int, Math.max(1, input.page || 1));
-  req.input("Limit", sql.Int, Math.min(500, Math.max(1, input.limit || 50)));
-  req.output("TotalCount", sql.Int);
+  const estado = normalizeAsientoEstado(input.estado);
 
-  const rs = await req.execute("usp_Contabilidad_Asientos_List");
+  const { rows, output } = await callSpOut<any>(
+    "dbo.usp_Acct_Entry_List",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: input.fechaDesde || null,
+      FechaHasta: input.fechaHasta || null,
+      TipoAsiento: input.tipoAsiento || null,
+      Estado: estado,
+      OrigenModulo: input.origenModulo || null,
+      OrigenDocumento: input.origenDocumento || null,
+      Page: page,
+      Limit: limit
+    },
+    {
+      TotalCount: sql.Int
+    }
+  );
+
   return {
-    rows: rs.recordset || [],
-    total: Number(rs.output.TotalCount || 0),
-    page: Math.max(1, input.page || 1),
-    limit: Math.min(500, Math.max(1, input.limit || 50))
+    rows,
+    total: Number(output.TotalCount ?? 0),
+    page,
+    limit
   };
 }
 
 export async function getAsiento(asientoId: number) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("AsientoId", sql.BigInt, asientoId);
-  const rs = await req.execute("usp_Contabilidad_Asiento_Get");
-  const recordsets = rs.recordsets as unknown as Array<Array<Record<string, unknown>>>;
+  const scope = await getDefaultScope();
+
+  const cabeceraRows = await callSp<any>(
+    "dbo.usp_Acct_Entry_Get",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      AsientoId: asientoId
+    }
+  );
+
+  const detalle = await callSp<any>(
+    "dbo.usp_Acct_Entry_GetDetail",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      AsientoId: asientoId
+    }
+  );
+
   return {
-    cabecera: recordsets?.[0]?.[0] || null,
-    detalle: recordsets?.[1] || []
+    cabecera: cabeceraRows[0] || null,
+    detalle: detalle || []
   };
 }
 
-export async function crearAsiento(input: CrearAsientoInput, codUsuario?: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
+export async function crearAsiento(input: CrearAsientoInput, _codUsuario?: string) {
+  const scope = await getDefaultScope();
 
-  req.input("Fecha", sql.Date, input.fecha);
-  req.input("TipoAsiento", sql.NVarChar(20), input.tipoAsiento);
-  req.input("Referencia", sql.NVarChar(120), input.referencia || null);
-  req.input("Concepto", sql.NVarChar(400), input.concepto);
-  req.input("Moneda", sql.NVarChar(10), input.moneda || "VES");
-  req.input("Tasa", sql.Decimal(18, 6), input.tasa ?? 1);
-  req.input("OrigenModulo", sql.NVarChar(40), input.origenModulo || null);
-  req.input("OrigenDocumento", sql.NVarChar(120), input.origenDocumento || null);
-  req.input("CodUsuario", sql.NVarChar(40), codUsuario || "API");
-  req.input("DetalleXml", sql.NVarChar(sql.MAX), detalleToXml(input.detalle));
-  req.output("AsientoId", sql.BigInt);
-  req.output("NumeroAsiento", sql.NVarChar(40));
-  req.output("Resultado", sql.Int);
-  req.output("Mensaje", sql.NVarChar(500));
+  const fecha = input.fecha ? new Date(input.fecha) : new Date();
+  const entryNumber = generateEntryNumber(input.tipoAsiento);
+  const periodCode = toPeriodCode(fecha);
 
-  await req.execute("usp_Contabilidad_Asiento_Crear");
-  const resultado = Number(req.parameters.Resultado.value || 0);
+  const detalle = Array.isArray(input.detalle) ? input.detalle : [];
+  if (detalle.length === 0) {
+    return { ok: false, resultado: 0, mensaje: "Detalle de asiento requerido", asientoId: null, numeroAsiento: null };
+  }
+
+  const totalDebe = round2(detalle.reduce((acc, item) => acc + Number(item.debe || 0), 0));
+  const totalHaber = round2(detalle.reduce((acc, item) => acc + Number(item.haber || 0), 0));
+  if (totalDebe <= 0 || totalHaber <= 0 || round2(totalDebe - totalHaber) !== 0) {
+    return { ok: false, resultado: 0, mensaje: "Asiento desbalanceado", asientoId: null, numeroAsiento: null };
+  }
+
+  const detalleXml = "<rows>" + detalle.map((item) => {
+    const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    return `<row codCuenta="${esc(String(item.codCuenta || "").trim())}" descripcion="${esc(item.descripcion || "")}" centroCosto="${esc(item.centroCosto || "")}" auxiliarTipo="${esc(item.auxiliarTipo || "")}" auxiliarCodigo="${esc(item.auxiliarCodigo || "")}" documento="${esc(item.documento || input.origenDocumento || "")}" debe="${Number(item.debe || 0)}" haber="${Number(item.haber || 0)}"/>`;
+  }).join("") + "</rows>";
+
+  const { output } = await callSpOut(
+    "dbo.usp_Acct_Entry_Insert",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      EntryNumber: entryNumber,
+      EntryDate: fecha.toISOString().slice(0, 10),
+      PeriodCode: periodCode,
+      EntryType: input.tipoAsiento || "DIA",
+      ReferenceNumber: input.referencia || null,
+      Concept: input.concepto || "Asiento",
+      CurrencyCode: (input.moneda || "VES").toUpperCase().slice(0, 3),
+      ExchangeRate: Number(input.tasa ?? 1),
+      TotalDebit: totalDebe,
+      TotalCredit: totalHaber,
+      SourceModule: input.origenModulo || null,
+      SourceDocumentNo: input.origenDocumento || null,
+      DetalleXml: detalleXml
+    },
+    {
+      AsientoId: sql.BigInt,
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
+    }
+  );
+
+  const resultado = Number(output.Resultado ?? 0);
+  const asientoId = Number(output.AsientoId ?? 0);
+  const mensaje = String(output.Mensaje ?? "");
+
+  if (resultado !== 1) {
+    return {
+      ok: false,
+      resultado: 0,
+      mensaje: mensaje || "No se pudo crear asiento",
+      asientoId: null,
+      numeroAsiento: null
+    };
+  }
+
   return {
-    ok: resultado === 1,
-    resultado,
-    mensaje: String(req.parameters.Mensaje.value || ""),
-    asientoId: req.parameters.AsientoId.value ? Number(req.parameters.AsientoId.value) : null,
-    numeroAsiento: req.parameters.NumeroAsiento.value ? String(req.parameters.NumeroAsiento.value) : null
+    ok: true,
+    resultado: 1,
+    mensaje: mensaje || "Asiento creado en modelo canonico",
+    asientoId: asientoId > 0 ? asientoId : null,
+    numeroAsiento: entryNumber
   };
 }
 
-export async function anularAsiento(asientoId: number, motivo: string, codUsuario?: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("AsientoId", sql.BigInt, asientoId);
-  req.input("Motivo", sql.NVarChar(400), motivo);
-  req.input("CodUsuario", sql.NVarChar(40), codUsuario || "API");
-  req.output("Resultado", sql.Int);
-  req.output("Mensaje", sql.NVarChar(500));
-  await req.execute("usp_Contabilidad_Asiento_Anular");
+export async function anularAsiento(asientoId: number, motivo: string, _codUsuario?: string) {
+  const scope = await getDefaultScope();
 
-  const resultado = Number(req.parameters.Resultado.value || 0);
+  const { output } = await callSpOut(
+    "dbo.usp_Acct_Entry_Void",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      AsientoId: asientoId,
+      Motivo: motivo || "sin_motivo"
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
+    }
+  );
+
+  const resultado = Number(output.Resultado ?? 0);
+  const mensaje = String(output.Mensaje ?? "");
+
   return {
-    ok: resultado === 1,
-    resultado,
-    mensaje: String(req.parameters.Mensaje.value || "")
+    ok: resultado > 0,
+    resultado: resultado > 0 ? 1 : 0,
+    mensaje: mensaje || (resultado > 0 ? "Asiento anulado" : "Asiento no encontrado")
   };
 }
 
@@ -154,228 +241,364 @@ export async function crearAjuste(
   },
   codUsuario?: string
 ) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("Fecha", sql.Date, input.fecha);
-  req.input("TipoAjuste", sql.NVarChar(40), input.tipoAjuste);
-  req.input("Referencia", sql.NVarChar(120), input.referencia || null);
-  req.input("Motivo", sql.NVarChar(500), input.motivo);
-  req.input("CodUsuario", sql.NVarChar(40), codUsuario || "API");
-  req.input("DetalleXml", sql.NVarChar(sql.MAX), detalleToXml(input.detalle));
-  req.output("AsientoId", sql.BigInt);
-  req.output("Resultado", sql.Int);
-  req.output("Mensaje", sql.NVarChar(500));
-  await req.execute("usp_Contabilidad_Ajuste_Crear");
-
-  const resultado = Number(req.parameters.Resultado.value || 0);
-  return {
-    ok: resultado === 1,
-    resultado,
-    mensaje: String(req.parameters.Mensaje.value || ""),
-    asientoId: req.parameters.AsientoId.value ? Number(req.parameters.AsientoId.value) : null
-  };
+  return crearAsiento(
+    {
+      fecha: input.fecha,
+      tipoAsiento: input.tipoAjuste || "AJUSTE",
+      referencia: input.referencia,
+      concepto: input.motivo,
+      moneda: "VES",
+      tasa: 1,
+      origenModulo: "CONTABILIDAD",
+      origenDocumento: input.referencia || undefined,
+      detalle: input.detalle,
+    },
+    codUsuario
+  );
 }
 
 export async function generarDepreciacion(periodo: string, centroCosto?: string, codUsuario?: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("Periodo", sql.NVarChar(7), periodo);
-  req.input("CodUsuario", sql.NVarChar(40), codUsuario || "API");
-  req.input("CentroCosto", sql.NVarChar(20), centroCosto || null);
-  req.output("Resultado", sql.Int);
-  req.output("Mensaje", sql.NVarChar(500));
-  await req.execute("usp_Contabilidad_Depreciacion_Generar");
-
-  const resultado = Number(req.parameters.Resultado.value || 0);
-  return {
-    ok: resultado === 1,
-    resultado,
-    mensaje: String(req.parameters.Mensaje.value || "")
-  };
+  const { calculateDepreciation } = await import("./activos-fijos.service.js");
+  return calculateDepreciation(periodo, false, centroCosto, codUsuario);
 }
 
 export async function libroMayor(fechaDesde: string, fechaHasta: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("FechaDesde", sql.Date, fechaDesde);
-  req.input("FechaHasta", sql.Date, fechaHasta);
-  const rs = await req.execute("usp_Contabilidad_Libro_Mayor");
-  return rs.recordset || [];
+  const scope = await getDefaultScope();
+  return callSp<any>(
+    "dbo.usp_Acct_Report_LibroMayor",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
 }
 
 export async function mayorAnalitico(codCuenta: string, fechaDesde: string, fechaHasta: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("CodCuenta", sql.NVarChar(40), codCuenta);
-  req.input("FechaDesde", sql.Date, fechaDesde);
-  req.input("FechaHasta", sql.Date, fechaHasta);
-  const rs = await req.execute("usp_Contabilidad_Mayor_Analitico");
-  return rs.recordset || [];
+  const scope = await getDefaultScope();
+  return callSp<any>(
+    "dbo.usp_Acct_Report_MayorAnalitico",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      CodCuenta: codCuenta,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
 }
 
 export async function balanceComprobacion(fechaDesde: string, fechaHasta: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("FechaDesde", sql.Date, fechaDesde);
-  req.input("FechaHasta", sql.Date, fechaHasta);
-  const rs = await req.execute("usp_Contabilidad_Balance_Comprobacion");
-  return rs.recordset || [];
+  const scope = await getDefaultScope();
+  const rows = await callSp<any>(
+    "dbo.usp_Acct_Report_BalanceComprobacion",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
+  // SP retorna 'cuenta' pero el frontend espera 'descripcion'
+  return (rows || []).map((r: any) => ({
+    ...r,
+    descripcion: r.cuenta ?? r.descripcion ?? "",
+  }));
 }
 
 export async function estadoResultados(fechaDesde: string, fechaHasta: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("FechaDesde", sql.Date, fechaDesde);
-  req.input("FechaHasta", sql.Date, fechaHasta);
-  const rs = await req.execute("usp_Contabilidad_Estado_Resultados");
-  const recordsets = rs.recordsets as unknown as Array<Array<Record<string, unknown>>>;
+  const scope = await getDefaultScope();
+  const detalle = await callSp<any>(
+    "dbo.usp_Acct_Report_EstadoResultados",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
+
+  const ingresos = round2(detalle.filter((r: any) => r.tipo === "I").reduce((acc: number, r: any) => acc + Number(r.monto ?? 0), 0));
+  const gastos = round2(detalle.filter((r: any) => r.tipo === "G").reduce((acc: number, r: any) => acc + Number(r.monto ?? 0), 0));
+  const resultado = round2(ingresos - gastos);
+
   return {
-    detalle: recordsets?.[0] || [],
-    resumen: recordsets?.[1]?.[0] || null
+    detalle,
+    resumen: {
+      ingresos,
+      gastos,
+      resultado
+    }
   };
 }
 
 export async function balanceGeneral(fechaCorte: string) {
-  const pool = await getPool();
-  const req = new sql.Request(pool);
-  req.input("FechaCorte", sql.Date, fechaCorte);
-  const rs = await req.execute("usp_Contabilidad_Balance_General");
-  const recordsets = rs.recordsets as unknown as Array<Array<Record<string, unknown>>>;
+  const scope = await getDefaultScope();
+  const detalle = await callSp<any>(
+    "dbo.usp_Acct_Report_BalanceGeneral",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaCorte: fechaCorte
+    }
+  );
+
+  const totalActivo = round2(detalle.filter((r: any) => r.tipo === "A").reduce((acc: number, r: any) => acc + Number(r.saldo ?? 0), 0));
+  const totalPasivo = round2(detalle.filter((r: any) => r.tipo === "P").reduce((acc: number, r: any) => acc + Number(r.saldo ?? 0), 0));
+  const totalPatrimonio = round2(detalle.filter((r: any) => r.tipo === "C").reduce((acc: number, r: any) => acc + Number(r.saldo ?? 0), 0));
+
   return {
-    detalle: recordsets?.[0] || [],
-    resumen: recordsets?.[1]?.[0] || null
+    detalle,
+    resumen: {
+      totalActivo,
+      totalPasivo,
+      totalPatrimonio,
+      totalPasivoPatrimonio: round2(totalPasivo + totalPatrimonio)
+    }
   };
 }
 
 export async function seedPlanCuentas(codUsuario?: string) {
-  const pool = await getPool();
-  
-  // Crear plan de cuentas completo
-  const cuentasSql = `
-    -- PLan de cuentas básico
-    IF NOT EXISTS (SELECT 1 FROM Cuentas WHERE Cod_Cuenta = '1')
-    BEGIN
-      -- NIVEL 1 - ACTIVO
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('1', 'ACTIVO', 'A', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('1.1', 'ACTIVO CORRIENTE', 'A', 2, '1', 1, 0),
-        ('1.2', 'ACTIVO NO CORRIENTE', 'A', 2, '1', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('1.1.01', 'CAJA', 'A', 3, '1.1', 1, 1),
-        ('1.1.02', 'BANCOS', 'A', 3, '1.1', 1, 1),
-        ('1.1.03', 'INVERSIONES TEMPORALES', 'A', 3, '1.1', 1, 1),
-        ('1.1.04', 'CLIENTES', 'A', 3, '1.1', 1, 1),
-        ('1.1.05', 'DOCUMENTOS POR COBRAR', 'A', 3, '1.1', 1, 1),
-        ('1.1.06', 'INVENTARIOS', 'A', 3, '1.1', 1, 1);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('1.2.01', 'PROPIEDAD PLANTA Y EQUIPO', 'A', 3, '1.2', 1, 1),
-        ('1.2.02', 'DEPRECIACION ACUMULADA', 'A', 3, '1.2', 1, 1);
-      
-      -- NIVEL 1 - PASIVO
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('2', 'PASIVO', 'P', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('2.1', 'PASIVO CORRIENTE', 'P', 2, '2', 1, 0),
-        ('2.2', 'PASIVO NO CORRIENTE', 'P', 2, '2', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('2.1.01', 'PROVEEDORES', 'P', 3, '2.1', 1, 1),
-        ('2.1.02', 'DOCUMENTOS POR PAGAR', 'P', 3, '2.1', 1, 1),
-        ('2.1.03', 'IMPUESTOS POR PAGAR', 'P', 3, '2.1', 1, 1),
-        ('2.1.04', 'SUELDOS POR PAGAR', 'P', 3, '2.1', 1, 1);
-      
-      -- NIVEL 1 - PATRIMONIO
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('3', 'PATRIMONIO', 'C', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES ('3.1', 'CAPITAL SOCIAL', 'C', 2, '3', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES ('3.1.01', 'CAPITAL SUSCRITO', 'C', 3, '3.1', 1, 1);
-      
-      -- NIVEL 1 - INGRESOS
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('4', 'INGRESOS', 'I', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES ('4.1', 'INGRESOS OPERACIONALES', 'I', 2, '4', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('4.1.01', 'VENTAS', 'I', 3, '4.1', 1, 1),
-        ('4.1.02', 'DESCUENTOS EN VENTAS', 'I', 3, '4.1', 1, 1);
-      
-      -- NIVEL 1 - COSTOS Y GASTOS
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Activo, Accepta_Detalle)
-      VALUES ('5', 'COSTOS Y GASTOS', 'G', 1, 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('5.1', 'COSTO DE VENTAS', 'G', 2, '5', 1, 0),
-        ('5.2', 'GASTOS OPERACIONALES', 'G', 2, '5', 1, 0);
-      
-      INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel, Cod_CtaPadre, Activo, Accepta_Detalle)
-      VALUES 
-        ('5.1.01', 'COSTO DE MERCADERIA', 'G', 3, '5.1', 1, 1),
-        ('5.2.01', 'SUELDOS Y SALARIOS', 'G', 3, '5.2', 1, 1),
-        ('5.2.02', 'ALQUILERES', 'G', 3, '5.2', 1, 1),
-        ('5.2.03', 'DEPRECIACION', 'G', 3, '5.2', 1, 1);
-    END
-  `;
+  const scopeRows = await callSp<{ CompanyId: number; BranchId: number; SystemUserId: number | null }>(
+    "dbo.usp_Acct_Scope_GetDefaultForSeed"
+  );
 
-  await pool.request().query(cuentasSql);
+  const companyId = Number(scopeRows[0]?.CompanyId ?? 0);
+  const systemUserId = Number(scopeRows[0]?.SystemUserId ?? 0);
+  if (!Number.isFinite(companyId) || companyId <= 0) {
+    return { success: false, message: "No existe cfg.Company DEFAULT para sembrar plan de cuentas" };
+  }
 
-  // Crear asientos de ejemplo
-  const asientosSql = `
-    IF NOT EXISTS (SELECT 1 FROM Asientos WHERE Id > 0)
-    BEGIN
-      DECLARE @FechaIni DATE = GETDATE();
-      
-      -- ASIENTO 1: Ventas al contado
-      INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
-      VALUES (@FechaIni, 'DIARIO', 'Registro de ventas al contado', 'VTA-001', 'APROBADO', 1000.00, 1000.00, 'VTA', '${codUsuario || "API"}');
-      
-      DECLARE @Asiento1 INT = SCOPE_IDENTITY();
-      INSERT INTO Asientos_Detalle (Id_Asiento, Cod_Cuenta, Descripcion, Debe, Haber)
-      VALUES 
-        (@Asiento1, '1.1.02', 'BANCOS', 1000.00, 0),
-        (@Asiento1, '4.1.01', 'VENTAS', 0, 1000.00);
-      
-      -- ASIENTO 2: Compra de mercadería
-      INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
-      VALUES (@FechaIni, 'COMPRA', 'Compra de mercadería', 'CMP-001', 'APROBADO', 500.00, 500.00, 'CMP', '${codUsuario || "API"}');
-      
-      DECLARE @Asiento2 INT = SCOPE_IDENTITY();
-      INSERT INTO Asientos_Detalle (Id_Asiento, Cod_Cuenta, Descripcion, Debe, Haber)
-      VALUES 
-        (@Asiento2, '1.1.06', 'INVENTARIOS', 500.00, 0),
-        (@Asiento2, '2.1.01', 'PROVEEDORES', 0, 500.00);
-      
-      -- ASIENTO 3: Pago de sueldos
-      INSERT INTO Asientos (Fecha, Tipo_Asiento, Concepto, Referencia, Estado, Total_Debe, Total_Haber, Origen_Modulo, Cod_Usuario)
-      VALUES (@FechaIni, 'NOMINA', 'Pago de sueldos', 'NOM-001', 'APROBADO', 3000.00, 3000.00, 'NOM', '${codUsuario || "API"}');
-      
-      DECLARE @Asiento3 INT = SCOPE_IDENTITY();
-      INSERT INTO Asientos_Detalle (Id_Asiento, Cod_Cuenta, Descripcion, Debe, Haber)
-      VALUES 
-        (@Asiento3, '5.2.01', 'SUELDOS Y SALARIOS', 3000.00, 0),
-        (@Asiento3, '1.1.02', 'BANCOS', 0, 3000.00);
-    END
-  `;
+  const { output } = await callSpOut(
+    "dbo.usp_Acct_SeedPlanCuentas",
+    {
+      CompanyId: companyId,
+      SystemUserId: Number.isFinite(systemUserId) && systemUserId > 0 ? systemUserId : null
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
+    }
+  );
 
-  await pool.request().query(asientosSql);
+  const resultado = Number(output.Resultado ?? 0);
+  const mensaje = String(output.Mensaje ?? "");
+  const userLabel = codUsuario || "API";
 
-  return { success: true, message: "Datos de contabilidad creados" };
+  if (resultado !== 1) {
+    return { success: false, message: mensaje || "Error sembrando plan de cuentas" };
+  }
+
+  return { success: true, message: `${mensaje} (${userLabel})` };
 }
 
+// --- Funciones de servicio para CRUD de cuentas (usadas por routes.ts) ---
+
+export async function getDefaultCompanyId(): Promise<number> {
+  const { getActiveScope: getScope } = await import("../_shared/scope.js");
+  const activeScope = getScope();
+  if (activeScope?.companyId) return activeScope.companyId;
+
+  const rows = await callSp<{ CompanyId: number }>(
+    "dbo.usp_Acct_Scope_GetDefault"
+  );
+  return Number(rows[0]?.CompanyId ?? 1);
+}
+
+export function normalizeTipoCuenta(value: string | undefined): string | null {
+  const tipo = String(value ?? "").trim().toUpperCase();
+  if (!tipo) return null;
+  const normalized = tipo.charAt(0);
+  if (!["A", "P", "C", "I", "G"].includes(normalized)) return null;
+  return normalized;
+}
+
+export interface CuentaRow {
+  codCuenta: string;
+  descripcion: string;
+  tipo: string;
+  nivel: number;
+  activo: boolean;
+}
+
+export async function listCuentas(params: {
+  companyId: number;
+  search?: string;
+  tipo?: string;
+  nivel?: number;
+  activo?: boolean;
+  page?: number;
+  limit?: number;
+}): Promise<{ data: CuentaRow[]; total: number; page: number; limit: number }> {
+  const page = Math.max(1, Number(params.page ?? 1));
+  const limit = Math.min(200, Math.max(1, Number(params.limit ?? 50)));
+
+  const { rows, output } = await callSpOut<any>(
+    "dbo.usp_Acct_Account_List",
+    {
+      CompanyId: params.companyId,
+      Search: params.search?.trim() || null,
+      Tipo: params.tipo || null,
+      Grupo: null,
+      Page: page,
+      Limit: limit
+    },
+    {
+      TotalCount: sql.Int
+    }
+  );
+
+  const data: CuentaRow[] = (rows || []).map((row: any) => ({
+    codCuenta: row.AccountCode,
+    descripcion: row.AccountName,
+    tipo: row.AccountType,
+    nivel: row.AccountLevel,
+    activo: row.IsActive,
+  }));
+
+  return { data, total: Number(output.TotalCount ?? 0), page, limit };
+}
+
+export async function getCuenta(companyId: number, codCuenta: string): Promise<CuentaRow | null> {
+  const rows = await callSp<any>(
+    "dbo.usp_Acct_Account_Get",
+    {
+      CompanyId: companyId,
+      AccountCode: codCuenta
+    }
+  );
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    codCuenta: row.AccountCode,
+    descripcion: row.AccountName,
+    tipo: row.AccountType,
+    nivel: row.AccountLevel,
+    activo: row.IsActive,
+  };
+}
+
+export async function insertCuenta(params: {
+  companyId: number;
+  codCuenta: string;
+  descripcion: string;
+  tipo: string;
+  nivel: number;
+}): Promise<{ ok: boolean; mensaje: string }> {
+  const { output } = await callSpOut(
+    "dbo.usp_Acct_Account_Insert",
+    {
+      CompanyId: params.companyId,
+      AccountCode: params.codCuenta,
+      AccountName: params.descripcion,
+      AccountType: params.tipo,
+      AccountLevel: params.nivel
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
+    }
+  );
+
+  const resultado = Number(output.Resultado ?? 0);
+  const mensaje = String(output.Mensaje ?? "");
+
+  return {
+    ok: resultado === 1,
+    mensaje
+  };
+}
+
+export async function updateCuenta(params: {
+  companyId: number;
+  codCuenta: string;
+  descripcion?: string;
+  tipo?: string;
+  nivel?: number;
+}): Promise<{ ok: boolean; mensaje: string }> {
+  const { output } = await callSpOut(
+    "dbo.usp_Acct_Account_Update",
+    {
+      CompanyId: params.companyId,
+      AccountCode: params.codCuenta,
+      AccountName: params.descripcion || null,
+      AccountType: params.tipo || null,
+      AccountLevel: params.nivel ?? null
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
+    }
+  );
+
+  const resultado = Number(output.Resultado ?? 0);
+  const mensaje = String(output.Mensaje ?? "");
+
+  return {
+    ok: resultado === 1,
+    mensaje
+  };
+}
+
+export async function deleteCuenta(params: {
+  companyId: number;
+  codCuenta: string;
+}): Promise<{ ok: boolean; mensaje: string }> {
+  const { output } = await callSpOut(
+    "dbo.usp_Acct_Account_Delete",
+    {
+      CompanyId: params.companyId,
+      AccountCode: params.codCuenta
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500)
+    }
+  );
+
+  const resultado = Number(output.Resultado ?? 0);
+  const mensaje = String(output.Mensaje ?? "");
+
+  return {
+    ok: resultado === 1,
+    mensaje
+  };
+}
+
+export async function libroDiario(fechaDesde: string, fechaHasta: string) {
+  const scope = await getDefaultScope();
+  return callSp<any>(
+    "dbo.usp_Acct_Report_LibroDiario",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
+}
+
+export async function dashboardResumen(fechaDesde: string, fechaHasta: string) {
+  const scope = await getDefaultScope();
+  const rows = await callSp<any>(
+    "dbo.usp_Acct_Dashboard_Resumen",
+    {
+      CompanyId: scope.companyId,
+      BranchId: scope.branchId,
+      FechaDesde: fechaDesde,
+      FechaHasta: fechaHasta
+    }
+  );
+  return rows[0] || {
+    totalIngresos: 0,
+    totalGastos: 0,
+    margenPorcentaje: 0,
+    cuentasPorPagar: 0,
+    totalAsientos: 0,
+    totalCuentas: 0,
+    totalAnulados: 0
+  };
+}

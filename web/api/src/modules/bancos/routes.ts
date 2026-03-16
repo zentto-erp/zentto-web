@@ -18,7 +18,19 @@ import {
   cerrarConciliacion,
   getCuentasBancarias,
   getMovimientosCuenta,
+  getMovimientoById,
 } from "./conciliacion.service.js";
+import { emitBankMovementAccountingEntry } from "./bancos-contabilidad.service.js";
+import {
+  listCajaChicaBoxes,
+  createCajaChicaBox,
+  openSession,
+  closeSession,
+  getActiveSession,
+  addExpense,
+  listExpenses,
+  getCajaChicaSummary,
+} from "./caja-chica.service.js";
 
 export const bancosRouter = Router();
 
@@ -120,6 +132,19 @@ bancosRouter.get("/cuentas/:nroCta/movimientos", async (req, res) => {
   }
 });
 
+// GET /v1/bancos/movimientos/:id - Obtener movimiento por ID (voucher)
+bancosRouter.get("/movimientos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "invalid_id" });
+    const data = await getMovimientoById(id);
+    if (!data) return res.status(404).json({ error: "not_found" });
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // ============================================
 // MOVIMIENTOS BANCARIOS
 // ============================================
@@ -147,7 +172,24 @@ bancosRouter.post("/movimientos/generar", async (req, res) => {
     const codUsuario = (req as any).user?.username || "API";
     const result = await generarMovimientoBancario(parsed.data, codUsuario);
     if (result.ok) {
-      return res.status(201).json(result);
+      // Generate accounting entry (best effort, never blocks)
+      let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+      try {
+        if (result.movimientoId) {
+          contabilidad = await emitBankMovementAccountingEntry({
+            movimientoId: result.movimientoId,
+            nroCta: parsed.data.Nro_Cta,
+            tipo: parsed.data.Tipo,
+            monto: parsed.data.Monto,
+            beneficiario: parsed.data.Beneficiario,
+            concepto: parsed.data.Concepto,
+            nroRef: parsed.data.Nro_Ref,
+          }, codUsuario);
+        }
+      } catch {
+        // Never block the bank operation
+      }
+      return res.status(201).json({ ...result, contabilidad });
     } else {
       return res.status(400).json(result);
     }
@@ -325,6 +367,148 @@ bancosRouter.post("/conciliaciones/cerrar", async (req, res) => {
       codUsuario
     );
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ============================================
+// CAJA CHICA
+// ============================================
+
+// GET /v1/bancos/caja-chica - Listar cajas chicas
+bancosRouter.get("/caja-chica", async (req, res) => {
+  try {
+    const data = await listCajaChicaBoxes();
+    res.json({ rows: data });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/bancos/caja-chica - Crear caja chica
+const cajaChicaCreateSchema = z.object({
+  name: z.string().min(1),
+  accountCode: z.string().optional(),
+  maxAmount: z.number().min(0),
+  responsible: z.string().optional(),
+});
+
+bancosRouter.post("/caja-chica", async (req, res) => {
+  const parsed = cajaChicaCreateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await createCajaChicaBox(parsed.data, codUsuario);
+    res.status(201).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/bancos/caja-chica/:boxId/abrir - Abrir sesión
+const abrirSesionSchema = z.object({
+  openingAmount: z.number().min(0),
+});
+
+bancosRouter.post("/caja-chica/:boxId/abrir", async (req, res) => {
+  const parsed = abrirSesionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+  try {
+    const boxId = parseInt(req.params.boxId);
+    if (isNaN(boxId)) return res.status(400).json({ error: "invalid_boxId" });
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await openSession(boxId, parsed.data.openingAmount, codUsuario);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/bancos/caja-chica/:boxId/cerrar - Cerrar sesión
+const cerrarSesionSchema = z.object({
+  notes: z.string().optional(),
+});
+
+bancosRouter.post("/caja-chica/:boxId/cerrar", async (req, res) => {
+  const parsed = cerrarSesionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+  try {
+    const boxId = parseInt(req.params.boxId);
+    if (isNaN(boxId)) return res.status(400).json({ error: "invalid_boxId" });
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await closeSession(boxId, parsed.data.notes, codUsuario);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/bancos/caja-chica/:boxId/sesion-activa - Sesión activa
+bancosRouter.get("/caja-chica/:boxId/sesion-activa", async (req, res) => {
+  try {
+    const boxId = parseInt(req.params.boxId);
+    if (isNaN(boxId)) return res.status(400).json({ error: "invalid_boxId" });
+    const data = await getActiveSession(boxId);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/bancos/caja-chica/:boxId/gastos - Registrar gasto
+const gastoSchema = z.object({
+  sessionId: z.number(),
+  category: z.string().min(1),
+  description: z.string().min(1),
+  amount: z.number().positive(),
+  beneficiary: z.string().optional(),
+  receiptNumber: z.string().optional(),
+  accountCode: z.string().optional(),
+});
+
+bancosRouter.post("/caja-chica/:boxId/gastos", async (req, res) => {
+  const parsed = gastoSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+  try {
+    const boxId = parseInt(req.params.boxId);
+    if (isNaN(boxId)) return res.status(400).json({ error: "invalid_boxId" });
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await addExpense({ ...parsed.data, boxId }, codUsuario);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/bancos/caja-chica/:boxId/gastos - Listar gastos
+bancosRouter.get("/caja-chica/:boxId/gastos", async (req, res) => {
+  try {
+    const boxId = parseInt(req.params.boxId);
+    if (isNaN(boxId)) return res.status(400).json({ error: "invalid_boxId" });
+    const sessionId = req.query.sessionId ? parseInt(req.query.sessionId as string) : undefined;
+    const data = await listExpenses(boxId, sessionId);
+    res.json({ rows: data });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/bancos/caja-chica/:boxId/resumen - Resumen caja chica
+bancosRouter.get("/caja-chica/:boxId/resumen", async (req, res) => {
+  try {
+    const boxId = parseInt(req.params.boxId);
+    if (isNaN(boxId)) return res.status(400).json({ error: "invalid_boxId" });
+    const data = await getCajaChicaSummary(boxId);
+    res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

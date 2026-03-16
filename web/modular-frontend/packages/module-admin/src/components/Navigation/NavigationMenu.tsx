@@ -14,10 +14,10 @@ import { useRouter, usePathname } from 'next/navigation';
 
 export interface MenuItem {
   title: string;
-  icon?: any;
+  icon?: React.ReactNode;
   href?: string;
   children?: MenuItem[];
-  requiredRole?: 'admin' | 'user' | 'any';
+  requiredRole?: 'admin' | 'user' | 'all';
 }
 
 interface NavigationMenuProps {

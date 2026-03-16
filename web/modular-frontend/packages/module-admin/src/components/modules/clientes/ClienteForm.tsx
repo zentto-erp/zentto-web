@@ -18,7 +18,7 @@ import { z } from 'zod';
 import { Box, Paper, CircularProgress, Alert, Typography } from '@mui/material';
 import CrudForm from '../../common/CrudForm';
 import { useCrudGeneric } from '../../../hooks/useCrudGeneric';
-import { Cliente, CreateClienteDTO, FormField } from '@datqbox/shared-api/types';
+import { Cliente, CreateClienteDTO, FormField } from '@zentto/shared-api/types';
 
 // ============================================================================
 // VALIDACIÓN CON ZOD
@@ -144,7 +144,7 @@ export default function ClienteForm({
     : null;
 
   // Handler para guardar
-  const handleSave = async (data: CreateClienteDTO) => {
+  const handleSave = async (data: Record<string, unknown>) => {
     try {
       if (clienteCodigo && updateMutation) {
         // Actualizar

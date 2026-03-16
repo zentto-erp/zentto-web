@@ -46,6 +46,7 @@ export interface Cliente {
   saldo: number;
   fechaCreacion: Date;
   fechaUltimaModificacion?: Date;
+  [key: string]: any;
 }
 
 export interface CreateClienteDTO {

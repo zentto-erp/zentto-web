@@ -45,7 +45,27 @@ import { documentosVentaRouter } from "./modules/documentos-venta/routes.js";
 import { documentosCompraRouter } from "./modules/documentos-compra/routes.js";
 import { nominaRouter } from "./modules/nomina/routes.js";
 import { contabilidadRouter } from "./modules/contabilidad/routes.js";
+import { auditoriaRouter } from "./modules/auditoria/routes.js";
+import { maestrosRouter } from "./modules/maestros/routes.js";
+import { posRouter } from "./modules/pos/routes.js";
+import { posEsperaRouter } from "./modules/pos/espera.routes.js";
+import { restauranteRouter } from "./modules/restaurante/routes.js";
+import { restauranteAdminRouter } from "./modules/restaurante/admin.routes.js";
+import { configRouter } from "./modules/config/routes.js";
+import { reportesRouter } from "./modules/reportes/routes.js";
+import { sistemaRouter } from "./modules/sistema/sistema.routes.js";
+import { fiscalRouter } from "./modules/fiscal/routes.js";
+import { paymentsRouter } from "./modules/payments/routes.js";
+import { settingsRouter } from "./modules/settings/routes.js";
+import { mediaRouter } from "./modules/media/routes.js";
+import { supervisionRouter } from "./modules/supervision/routes.js";
+import { storeRouter } from "./modules/ecommerce/routes.js";
+import rrhhRouter from "./modules/rrhh/routes.js";
 import { requireJwt } from "./middleware/auth.js";
+import {
+  localizeResponseDateTimes,
+  normalizeRequestDateTimesToUtc,
+} from "./middleware/datetime.js";
 
 function resolveOpenApiPath() {
   const here = path.dirname(fileURLToPath(import.meta.url));
@@ -87,7 +107,6 @@ function loadOpenApiDoc() {
   doc.paths = paths;
   return doc;
 }
-
 export async function createApp() {
   const app = express();
   app.disable("etag");
@@ -98,9 +117,43 @@ export async function createApp() {
       'http://localhost:3100',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3100',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:3003',
+      'http://localhost:3004',
+      'http://localhost:3005',
+      'http://localhost:3006',
+      'http://localhost:3007',
+      'http://localhost:3008',
+      'http://localhost:3009',
+      'http://localhost:3010',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002',
+      'http://127.0.0.1:3003',
+      'http://127.0.0.1:3004',
+      'http://127.0.0.1:3005',
+      'http://127.0.0.1:3006',
+      'http://127.0.0.1:3007',
+      'http://127.0.0.1:3008',
+      'http://127.0.0.1:3009',
+      'http://127.0.0.1:3010',
     ],
     credentials: true,
   }));
+  fs.mkdirSync(env.media.storagePath, { recursive: true });
+  app.use(
+    "/media-files",
+    express.static(env.media.storagePath, {
+      fallthrough: true,
+      setHeaders(res) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        // Allow media embedding from modular frontends running on other localhost ports.
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.removeHeader("Content-Security-Policy");
+      },
+    })
+  );
   app.use((_req, res, next) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -126,15 +179,20 @@ export async function createApp() {
   });
 
   app.use("/health", healthRouter);
-  
+
+  // Ecommerce storefront — público (sin JWT)
+  app.use("/store", storeRouter);
+
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
+  app.use("/v1", normalizeRequestDateTimesToUtc);
+  app.use("/v1", localizeResponseDateTimes);
   app.use("/v1/auth", authRouter);
-  
+
   // Documentos Unificados (reemplazan a facturas, pedidos, cotizaciones, presupuestos, notas, compras, ordenes)
   app.use("/v1/documentos-venta", documentosVentaRouter);
   app.use("/v1/documentos-compra", documentosCompraRouter);
-  
+
   // Pagos y Cobros
   app.use("/v1/abonos", abonosRouter);
   app.use("/v1/pagos", pagosRouter);
@@ -142,11 +200,11 @@ export async function createApp() {
   app.use("/v1/pagosc", pagosCRouter);
   app.use("/v1/p-cobrar", pCobrarRouter);
   app.use("/v1/cuentas-por-pagar", cuentasPorPagarRouter);
-  
+
   // Cuentas por Cobrar/Pagar
   app.use("/v1/cxc", cxcRouter);
   app.use("/v1/cxp", cxpRouter);
-  
+
   // Configuración y Maestros
   app.use("/v1/retenciones", retencionesRouter);
   app.use("/v1/movinvent", movInventRouter);
@@ -156,7 +214,9 @@ export async function createApp() {
   app.use("/v1/vendedores", vendedoresRouter);
   app.use("/v1/empleados", empleadosRouter);
   app.use("/v1/nomina", nominaRouter);
+  app.use("/v1/rrhh", rrhhRouter);
   app.use("/v1/contabilidad", contabilidadRouter);
+  app.use("/v1/auditoria", auditoriaRouter);
   app.use("/v1/cuentas", cuentasRouter);
   app.use("/v1/centro-costo", centroCostoRouter);
   app.use("/v1/marcas", marcasRouter);
@@ -167,20 +227,43 @@ export async function createApp() {
   app.use("/v1/tipos", tiposRouter);
   app.use("/v1/usuarios", usuariosRouter);
   app.use("/v1/empresa", empresaRouter);
-  
+  app.use("/v1/maestros", maestrosRouter);
+
   // Terceros y Productos
   app.use("/v1/clientes", clientesRouter);
   app.use("/v1/proveedores", proveedoresRouter);
   app.use("/v1/inventario", inventarioRouter);
   app.use("/v1/articulos", inventarioRouter);
-  
-  // Utilidades
+
   app.use("/v1/addons", addonsRouter);
   app.use("/v1/crud", crudRouter);
   app.use("/v1/meta", metaRouter);
 
+  // POS y Restaurante
+  app.use("/v1/pos", posRouter);
+  app.use("/v1/pos", posEsperaRouter);
+  app.use("/v1/restaurante", restauranteRouter);
+  app.use("/v1/restaurante/admin", restauranteAdminRouter);
+
+  // Reportes Crystal Reports (proxy al .NET Report Server)
+  app.use("/v1/reportes", reportesRouter);
+
+  // Payment Gateway (multi-country, multi-provider)
+  app.use("/v1/payments", paymentsRouter);
+
+  // Configuraciones Globales (BD, Tasas, Licencias)
+  app.use("/v1/config", configRouter);
+  app.use("/v1/settings", settingsRouter);
+  app.use("/v1/media", mediaRouter);
+  app.use("/v1/supervision", supervisionRouter);
+  app.use("/v1/fiscal", fiscalRouter);
+  app.use("/v1/sistema", sistemaRouter); // Added this line
+  app.use("/api/v1/config", configRouter);
+
   // Duplicate routes under /api/v1 for backward compatibility
   app.use("/api/v1", requireJwt);
+  app.use("/api/v1", normalizeRequestDateTimesToUtc);
+  app.use("/api/v1", localizeResponseDateTimes);
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/documentos-venta", documentosVentaRouter);
   app.use("/api/v1/documentos-compra", documentosCompraRouter);
@@ -200,7 +283,9 @@ export async function createApp() {
   app.use("/api/v1/vendedores", vendedoresRouter);
   app.use("/api/v1/empleados", empleadosRouter);
   app.use("/api/v1/nomina", nominaRouter);
+  app.use("/api/v1/rrhh", rrhhRouter);
   app.use("/api/v1/contabilidad", contabilidadRouter);
+  app.use("/api/v1/auditoria", auditoriaRouter);
   app.use("/api/v1/cuentas", cuentasRouter);
   app.use("/api/v1/centro-costo", centroCostoRouter);
   app.use("/api/v1/marcas", marcasRouter);
@@ -211,6 +296,7 @@ export async function createApp() {
   app.use("/api/v1/tipos", tiposRouter);
   app.use("/api/v1/usuarios", usuariosRouter);
   app.use("/api/v1/empresa", empresaRouter);
+  app.use("/api/v1/maestros", maestrosRouter);
   app.use("/api/v1/clientes", clientesRouter);
   app.use("/api/v1/proveedores", proveedoresRouter);
   app.use("/api/v1/inventario", inventarioRouter);
@@ -218,6 +304,16 @@ export async function createApp() {
   app.use("/api/v1/addons", addonsRouter);
   app.use("/api/v1/crud", crudRouter);
   app.use("/api/v1/meta", metaRouter);
+  app.use("/api/v1/pos", posRouter);
+  app.use("/api/v1/pos", posEsperaRouter);
+  app.use("/api/v1/restaurante", restauranteRouter);
+  app.use("/api/v1/restaurante/admin", restauranteAdminRouter);
+  app.use("/api/v1/reportes", reportesRouter);
+  app.use("/api/v1/payments", paymentsRouter);
+  app.use("/api/v1/media", mediaRouter);
+  app.use("/api/v1/supervision", supervisionRouter);
+  app.use("/api/v1/fiscal", fiscalRouter);
+  app.use("/api/v1/sistema", sistemaRouter); // Added this line
 
   await loadAddons(app);
 

@@ -25,8 +25,9 @@ import {
 } from "@mui/material";
 import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
 import { useFacturaById, useCreateFactura, useUpdateFactura } from "../../../hooks/useFacturas";
-import { Factura, CreateFacturaDTO, UpdateFacturaDTO } from "@datqbox/shared-api/types";
-import { formatCurrency } from "@datqbox/shared-api";
+import { Factura, CreateFacturaDTO, UpdateFacturaDTO } from "@zentto/shared-api/types";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 interface FacturaFormProps {
   numeroFactura?: string;
@@ -42,13 +43,14 @@ interface DetalleFactura {
 
 export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const isEdit = !!numeroFactura;
 
   // State
   const [formData, setFormData] = useState({
     codigoCliente: "",
     nombreCliente: "",
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: toDateOnly(new Date(), timeZone),
     referencia: "",
     observaciones: "",
   });
@@ -167,7 +169,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
       };
 
       if (isEdit && numeroFactura) {
-        updateFactura(submitData as UpdateFacturaDTO, {
+        updateFactura(submitData as any, {
           onSuccess: () => {
             setSubmitSuccess(true);
             setTimeout(() => router.push("/facturas"), 1500);
@@ -177,7 +179,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
           }
         });
       } else {
-        createFactura(submitData, {
+        createFactura(submitData as any, {
           onSuccess: () => {
             setSubmitSuccess(true);
             setTimeout(() => router.push("/facturas"), 1500);

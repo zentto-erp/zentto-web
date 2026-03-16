@@ -3,7 +3,7 @@
  * Usa SPs: usp_Empresa_Get, usp_Empresa_Update
  * Tabla con un solo registro
  */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export interface EmpresaRow {
   Empresa?: string;
@@ -35,26 +35,19 @@ function rowToXml(row: Record<string, unknown>): string {
 }
 
 export async function getEmpresaSP(): Promise<EmpresaRow | null> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  const result = await request.execute("usp_Empresa_Get");
-  return result.recordset?.[0] || null;
+  const rows = await callSp<EmpresaRow>("usp_Empresa_Get");
+  return rows[0] || null;
 }
 
 export async function updateEmpresaSP(row: Partial<EmpresaRow>): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<never>(
+    "usp_Empresa_Update",
+    { RowXml: rowToXml(row) },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_Empresa_Update");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Number(output.Resultado) === 1,
+    message: String(output.Mensaje ?? "OK"),
   };
 }

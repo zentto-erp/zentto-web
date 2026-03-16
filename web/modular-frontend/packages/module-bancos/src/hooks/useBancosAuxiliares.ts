@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiDelete, apiGet, apiPost, apiPut } from "@datqbox/shared-api";
+import { apiDelete, apiGet, apiPost, apiPut } from "@zentto/shared-api";
 
 const QUERY_KEY = "bancos-aux";
 const API_BASE = "/api/v1/bancos";
@@ -81,6 +81,14 @@ export function useGenerarMovimientoBancario() {
       Tipo_Doc_Rel?: string;
     }) => apiPost(`${API_BASE}/movimientos/generar`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] })
+  });
+}
+
+export function useMovimientoDetalle(id?: number | string) {
+  return useQuery<any>({
+    queryKey: [QUERY_KEY, "movimiento-detalle", id],
+    enabled: !!id && id !== "0",
+    queryFn: () => apiGet(`${API_BASE}/movimientos/${id}`)
   });
 }
 

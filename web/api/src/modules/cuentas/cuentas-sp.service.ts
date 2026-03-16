@@ -1,8 +1,4 @@
-/**
- * Cuentas Service - Stored Procedures
- * Usa SPs: usp_Cuentas_List, GetByCodigo, Insert, Update, Delete
- */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export interface CuentaRow {
   COD_CUENTA?: string;
@@ -39,103 +35,149 @@ export interface SpResult {
   message: string;
 }
 
-function rowToXml(row: Record<string, unknown>): string {
-  const attrs = Object.entries(row)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => {
-      const escaped = String(v)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      return `${k}="${escaped}"`;
-    })
-    .join(" ");
-  return `<row ${attrs}/>`;
+/** Resolve default CompanyId via usp_Cfg_ResolveContext */
+async function getDefaultCompanyId(): Promise<number> {
+  const rows = await callSp<{ CompanyId: number }>("usp_Cfg_ResolveContext");
+  const companyId = Number(rows[0]?.CompanyId ?? 0);
+  if (!Number.isFinite(companyId) || companyId <= 0) throw new Error("company_not_found");
+  return companyId;
+}
+
+function inferLevel(accountCode: string, level?: number) {
+  if (Number.isFinite(level) && Number(level) > 0) return Number(level);
+  const normalized = String(accountCode || "").trim();
+  if (!normalized) return 1;
+  return normalized.split(".").filter(Boolean).length || 1;
+}
+
+function mapCanonicalRow(row: Record<string, unknown>): CuentaRow {
+  return {
+    COD_CUENTA: String(row.AccountCode ?? ""),
+    DESCRIPCION: String(row.AccountName ?? ""),
+    TIPO: String(row.AccountType ?? ""),
+    Nivel: Number(row.AccountLevel ?? 1),
+    grupo: String(row.AccountCode ?? "").split(".")[0] || "",
+    LINEA: "",
+    USO: Number(row.AllowsPosting ?? 0) ? "M" : "T",
+    Porcentaje: 0,
+    SALDO: 0,
+    PRESUPUESTO: 0,
+    IsActive: row.IsActive,
+    AccountId: row.AccountId
+  };
 }
 
 export async function listCuentasSP(params: ListCuentasParams = {}): Promise<ListCuentasResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
+  const companyId = await getDefaultCompanyId();
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
 
-  request.input("Search", sql.NVarChar(100), params.search || null);
-  request.input("Tipo", sql.NVarChar(50), params.tipo || null);
-  request.input("Grupo", sql.NVarChar(50), params.grupo || null);
-  request.input("Page", sql.Int, page);
-  request.input("Limit", sql.Int, limit);
-  request.output("TotalCount", sql.Int);
+  const tipo = params.tipo
+    ? String(params.tipo).trim().toUpperCase().charAt(0)
+    : undefined;
 
-  const result = await request.execute("usp_Cuentas_List");
+  const { rows, output } = await callSpOut<Record<string, unknown>>(
+    "usp_Acct_Account_List",
+    {
+      CompanyId: companyId,
+      Search: params.search || null,
+      Tipo: tipo || null,
+      Grupo: params.grupo || null,
+      Page: page,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: result.output.TotalCount || 0,
+    rows: rows.map(mapCanonicalRow),
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
   };
 }
 
 export async function getCuentaByCodigoSP(codCuenta: string): Promise<CuentaRow | null> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("CodCuenta", sql.NVarChar(50), codCuenta);
-
-  const result = await request.execute("usp_Cuentas_GetByCodigo");
-  return result.recordset?.[0] || null;
+  const companyId = await getDefaultCompanyId();
+  const rows = await callSp<Record<string, unknown>>(
+    "usp_Acct_Account_Get",
+    { CompanyId: companyId, AccountCode: codCuenta }
+  );
+  return rows[0] ? mapCanonicalRow(rows[0]) : null;
 }
 
 export async function insertCuentaSP(row: CuentaRow): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const companyId = await getDefaultCompanyId();
+  const codCuenta = String(row.COD_CUENTA ?? "").trim();
+  const descripcion = String(row.DESCRIPCION ?? "").trim();
+  if (!codCuenta) return { success: false, message: "COD_CUENTA requerido" };
+  if (!descripcion) return { success: false, message: "DESCRIPCION requerida" };
 
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const tipo = String(row.TIPO ?? "A").trim().toUpperCase().charAt(0) || "A";
+  const nivel = inferLevel(codCuenta, row.Nivel);
+  const allowsPosting = String(row.USO ?? "").trim().toUpperCase() === "M" || nivel >= 3 ? 1 : 0;
 
-  await request.execute("usp_Cuentas_Insert");
+  const { output } = await callSpOut<never>(
+    "usp_Acct_Account_Insert",
+    {
+      CompanyId: companyId,
+      AccountCode: codCuenta,
+      AccountName: descripcion,
+      AccountType: tipo,
+      AccountLevel: nivel,
+      AllowsPosting: allowsPosting,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  const resultado = request.parameters.Resultado?.value as number;
+  const success = Number(output.Resultado) === 1;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success,
+    message: String(output.Mensaje ?? (success ? "Cuenta creada" : "Error al crear cuenta")),
   };
 }
 
 export async function updateCuentaSP(codCuenta: string, row: Partial<CuentaRow>): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const companyId = await getDefaultCompanyId();
 
-  request.input("CodCuenta", sql.NVarChar(50), codCuenta);
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const tipo = row.TIPO ? String(row.TIPO).trim().toUpperCase().charAt(0) : null;
+  const nivel = row.Nivel ? Number(row.Nivel) : null;
+  const allowsPosting = row.USO !== undefined
+    ? (String(row.USO).trim().toUpperCase() === "M" ? 1 : 0)
+    : null;
 
-  await request.execute("usp_Cuentas_Update");
+  const { output } = await callSpOut<never>(
+    "usp_Acct_Account_Update",
+    {
+      CompanyId: companyId,
+      AccountCode: codCuenta,
+      AccountName: row.DESCRIPCION ?? null,
+      AccountType: tipo,
+      AccountLevel: nivel,
+      AllowsPosting: allowsPosting,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  const resultado = request.parameters.Resultado?.value as number;
+  const success = Number(output.Resultado) === 1;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success,
+    message: String(output.Mensaje ?? (success ? "Cuenta actualizada" : "Error al actualizar cuenta")),
   };
 }
 
 export async function deleteCuentaSP(codCuenta: string): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const companyId = await getDefaultCompanyId();
 
-  request.input("CodCuenta", sql.NVarChar(50), codCuenta);
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const { output } = await callSpOut<never>(
+    "usp_Acct_Account_Delete",
+    { CompanyId: companyId, AccountCode: codCuenta },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  await request.execute("usp_Cuentas_Delete");
-
-  const resultado = request.parameters.Resultado?.value as number;
+  const success = Number(output.Resultado) === 1;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success,
+    message: String(output.Mensaje ?? (success ? "Cuenta eliminada" : "Error al eliminar cuenta")),
   };
 }

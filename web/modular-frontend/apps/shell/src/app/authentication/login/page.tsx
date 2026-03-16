@@ -3,8 +3,8 @@
 import { Box, Card, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import React from 'react';
-import { AuthLogin } from '@datqbox/shared-auth';
-import { Logo } from '@datqbox/shared-ui';
+import { AuthLogin } from '@zentto/shared-auth';
+import { Logo } from '@zentto/shared-ui';
 
 export default function LoginPage() {
   return (
@@ -45,53 +45,54 @@ export default function LoginPage() {
             alignItems: 'center',
           }}
         >
-          <Card
-            elevation={9}
-            sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px', mx: 2 }}
-          >
+          <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px', mx: 2 }}>
             <Box display="flex" alignItems="center" justifyContent="center" mb={3}>
               <Logo />
             </Box>
             <AuthLogin
               subtext={
-                <Typography
-                  variant="subtitle1"
-                  textAlign="center"
-                  color="textSecondary"
-                  mb={1}
-                >
+                <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
                   Ingresa tus credenciales para continuar
                 </Typography>
               }
               subtitle={
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  justifyContent="center"
-                  mt={3}
-                >
-                  <Typography
-                    color="textSecondary"
-                    variant="body2"
-                    fontWeight="500"
-                  >
-                    ¿No tienes cuenta?
-                  </Typography>
-                  <Typography
-                    component="a"
-                    href="/authentication/register"
-                    fontWeight="500"
-                    sx={{
-                      color: 'primary.main',
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    Contactar al administrador
-                  </Typography>
+                <Stack spacing={1} justifyContent="center" mt={3}>
+                  <Stack direction="row" spacing={1} justifyContent="center">
+                    <Typography color="textSecondary" variant="body2" fontWeight="500">
+                      No tienes cuenta?
+                    </Typography>
+                    <Typography
+                      component="a"
+                      href="/authentication/register"
+                      fontWeight="500"
+                      sx={{
+                        color: 'primary.main',
+                        cursor: 'pointer',
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      Registrarme
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} justifyContent="center">
+                    <Typography color="textSecondary" variant="body2" fontWeight="500">
+                      Necesitas recuperar acceso?
+                    </Typography>
+                    <Typography
+                      component="a"
+                      href="/authentication/forgot-password"
+                      fontWeight="500"
+                      sx={{
+                        color: 'primary.main',
+                        cursor: 'pointer',
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      Recuperar contrasena
+                    </Typography>
+                  </Stack>
                 </Stack>
               }
             />

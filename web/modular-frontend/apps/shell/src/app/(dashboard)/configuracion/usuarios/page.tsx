@@ -14,14 +14,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import SecurityIcon from '@mui/icons-material/Security';
 import SearchIcon from '@mui/icons-material/Search';
-import { useAuth } from '@datqbox/shared-auth';
-import { SYSTEM_MODULES } from '@datqbox/shared-auth';
-import { useToast } from '@datqbox/shared-ui';
+import { useAuth } from '@zentto/shared-auth';
+import { SYSTEM_MODULES } from '@zentto/shared-auth';
+import { useToast } from '@zentto/shared-ui';
 import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
-} from '@datqbox/shared-api';
-import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@datqbox/shared-api';
+} from '@zentto/shared-api';
+import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@zentto/shared-api';
 
 // ─── Module labels ──────────────────────────────────────────
 const MODULE_LABELS: Record<string, string> = {
@@ -78,8 +78,8 @@ export default function UsuariosPage() {
       await deleteMutation.mutateAsync(deleteConfirm);
       showToast('Usuario eliminado correctamente', 'success');
       setDeleteConfirm(null);
-    } catch (e: any) {
-      showToast(e.message || 'Error al eliminar usuario', 'error');
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Error al eliminar usuario', 'error');
     }
   };
 
@@ -219,8 +219,8 @@ function CreateUsuarioDialog({ open, onClose, onSuccess }: { open: boolean; onCl
       setForm({ Cod_Usuario: '', Password: '', Nombre: '', Tipo: 'USER', Updates: false, Addnews: false, Deletes: false, Creador: false, Cambiar: true, PrecioMinimo: false, Credito: false });
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al crear usuario');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al crear usuario');
     }
   };
 
@@ -288,8 +288,8 @@ function EditUsuarioDialog({ user, onClose, onSuccess }: { user: Usuario | null;
       await updateMutation.mutateAsync(form);
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al actualizar');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al actualizar');
     }
   };
 
@@ -372,8 +372,8 @@ function ModulosDialog({ codigo, onClose, onSuccess }: { codigo: string | null; 
       await setModulosMutation.mutateAsync(modulos);
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al guardar módulos');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al guardar módulos');
     }
   };
 
@@ -429,8 +429,8 @@ function ResetPasswordDialog({ codigo, onClose, onSuccess }: { codigo: string | 
       await resetMutation.mutateAsync({ codUsuario: codigo!, newPassword: newPwd });
       onClose();
       onSuccess();
-    } catch (e: any) {
-      setErr(e.message || 'Error al resetear contraseña');
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al resetear contraseña');
     }
   };
 

@@ -17,6 +17,27 @@ export type AuthContextType = {
   tipo: string | null;
   permisos: UserPermisos;
   modulos: string[];
+  company: {
+    companyId: number;
+    companyCode: string;
+    companyName: string;
+    branchId: number;
+    branchCode: string;
+    branchName: string;
+    countryCode: string;
+    timeZone: string;
+  } | null;
+  companyAccesses: Array<{
+    companyId: number;
+    companyCode: string;
+    companyName: string;
+    branchId: number;
+    branchCode: string;
+    branchName: string;
+    countryCode: string;
+    timeZone: string;
+    isDefault?: boolean;
+  }>;
   /** Check if user can access a specific module */
   hasModule: (modulo: SystemModule) => boolean;
   signIn: typeof signIn;
@@ -58,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const permisos: UserPermisos = session?.permisos || getDefaultPermisos();
     // @ts-ignore
     const rawModulos: string[] | null = session?.modulos;
+    // @ts-ignore
+    const company = session?.company || null;
+    // @ts-ignore
+    const companyAccesses = Array.isArray(session?.companyAccesses) ? session.companyAccesses : [];
     const modulos = getEffectiveModules(rawModulos, isAdmin);
 
     return {
@@ -72,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tipo,
       permisos,
       modulos,
+      company,
+      companyAccesses,
       hasModule: (modulo: SystemModule) => hasModuleAccess(rawModulos, modulo, isAdmin),
       signIn,
       signOut,

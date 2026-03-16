@@ -1,8 +1,5 @@
-/**
- * Bancos Service - Stored Procedures
- * Usa SPs: usp_Bancos_List, GetByNombre, Insert, Update, Delete
- */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface BancoRow {
   Nombre?: string;
@@ -31,101 +28,178 @@ export interface SpResult {
   message: string;
 }
 
-function rowToXml(row: Record<string, unknown>): string {
-  const attrs = Object.entries(row)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => {
-      const escaped = String(v)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      return `${k}="${escaped}"`;
-    })
-    .join(" ");
-  return `<row ${attrs}/>`;
+type Scope = {
+  companyId: number;
+  systemUserId: number | null;
+};
+
+let scopeCache: Scope | null = null;
+
+async function getScope(): Promise<Scope> {
+  const activeScope = getActiveScope();
+  if (scopeCache && activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+    };
+  }
+  if (scopeCache) return scopeCache;
+
+  const rows = await callSp<{ companyId: number; systemUserId: number | null }>(
+    "usp_Cfg_Scope_GetDefaultCompanyUser"
+  );
+
+  const first = rows[0];
+  scopeCache = {
+    companyId: Number(first?.companyId ?? 1),
+    systemUserId: first?.systemUserId == null ? null : Number(first.systemUserId),
+  };
+  if (activeScope) {
+    return {
+      ...scopeCache,
+      companyId: activeScope.companyId,
+    };
+  }
+  return scopeCache;
+}
+
+async function resolveUserId(userCode?: string): Promise<number | null> {
+  const code = String(userCode ?? "").trim();
+  if (!code) {
+    return (await getScope()).systemUserId;
+  }
+
+  const rows = await callSp<{ userId: number }>(
+    "usp_Sec_User_ResolveByCode",
+    { Code: code }
+  );
+
+  if (rows[0]?.userId != null) return Number(rows[0].userId);
+  return (await getScope()).systemUserId;
+}
+
+function toBankCode(name: string) {
+  const normalized = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+  return (normalized || "BANCO").slice(0, 30);
 }
 
 export async function listBancosSP(params: ListBancosParams = {}): Promise<ListBancosResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
+  const scope = await getScope();
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
+  const offset = (page - 1) * limit;
 
-  request.input("Search", sql.NVarChar(100), params.search || null);
-  request.input("Page", sql.Int, page);
-  request.input("Limit", sql.Int, limit);
-  request.output("TotalCount", sql.Int);
+  const search = params.search?.trim() ? `%${params.search.trim()}%` : null;
 
-  const result = await request.execute("usp_Bancos_List");
+  const { rows, output } = await callSpOut<BancoRow>(
+    "usp_Fin_Bank_List",
+    {
+      CompanyId: scope.companyId,
+      Search: search,
+      Offset: offset,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: result.output.TotalCount || 0,
+    rows,
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
   };
 }
 
 export async function getBancoByNombreSP(nombre: string): Promise<BancoRow | null> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const scope = await getScope();
+  const rows = await callSp<BancoRow>(
+    "usp_Fin_Bank_GetByName",
+    {
+      CompanyId: scope.companyId,
+      BankName: String(nombre ?? "").trim(),
+    }
+  );
 
-  request.input("Nombre", sql.NVarChar(50), nombre);
-
-  const result = await request.execute("usp_Bancos_GetByNombre");
-  return result.recordset?.[0] || null;
+  return rows[0] ?? null;
 }
 
 export async function insertBancoSP(row: BancoRow): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const scope = await getScope();
+  const bankName = String(row.Nombre ?? "").trim();
+  if (!bankName) return { success: false, message: "Nombre es obligatorio" };
 
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const userId = await resolveUserId(String(row.Co_Usuario ?? ""));
 
-  await request.execute("usp_Bancos_Insert");
+  const { output } = await callSpOut(
+    "usp_Fin_Bank_Insert",
+    {
+      CompanyId: scope.companyId,
+      BankCode: toBankCode(bankName),
+      BankName: bankName,
+      ContactName: row.Contacto ?? null,
+      AddressLine: row.Direccion ?? null,
+      Phones: row.Telefonos ?? null,
+      UserId: userId,
+    },
+    { Success: sql.Bit, Message: sql.NVarChar(200) }
+  );
 
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Boolean(output.Success),
+    message: String(output.Message ?? ""),
   };
 }
 
 export async function updateBancoSP(nombre: string, row: Partial<BancoRow>): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const scope = await getScope();
+  const currentName = String(nombre ?? "").trim();
+  if (!currentName) return { success: false, message: "Nombre invalido" };
 
-  request.input("Nombre", sql.NVarChar(50), nombre);
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const userId = await resolveUserId(String(row.Co_Usuario ?? ""));
 
-  await request.execute("usp_Bancos_Update");
+  const { output } = await callSpOut(
+    "usp_Fin_Bank_Update",
+    {
+      CompanyId: scope.companyId,
+      BankName: currentName,
+      ContactName: row.Contacto ?? null,
+      AddressLine: row.Direccion ?? null,
+      Phones: row.Telefonos ?? null,
+      UserId: userId,
+    },
+    { Success: sql.Bit, Message: sql.NVarChar(200) }
+  );
 
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Boolean(output.Success),
+    message: String(output.Message ?? ""),
   };
 }
 
 export async function deleteBancoSP(nombre: string): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const scope = await getScope();
+  const bankName = String(nombre ?? "").trim();
+  if (!bankName) return { success: false, message: "Nombre invalido" };
 
-  request.input("Nombre", sql.NVarChar(50), nombre);
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const userId = (await getScope()).systemUserId;
 
-  await request.execute("usp_Bancos_Delete");
+  const { output } = await callSpOut(
+    "usp_Fin_Bank_Delete",
+    {
+      CompanyId: scope.companyId,
+      BankName: bankName,
+      UserId: userId,
+    },
+    { Success: sql.Bit, Message: sql.NVarChar(200) }
+  );
 
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: Boolean(output.Success),
+    message: String(output.Message ?? ""),
   };
 }

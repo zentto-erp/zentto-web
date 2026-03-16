@@ -17,22 +17,19 @@ import {
   Paper,
   CircularProgress,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
   InputAdornment,
   Typography,
 } from "@mui/material";
-import { Add as AddIcon, Edit as EditIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Add as AddIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useInventarioList } from "../../../hooks/useInventario";
+import { formatCurrency } from "@zentto/shared-api";
 import { debounce } from "lodash";
 
 export default function InventarioTable() {
   const router = useRouter();
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
   const [search, setSearch] = useState("");
 
   const { data: inventario, isLoading } = useInventarioList({
@@ -41,7 +38,9 @@ export default function InventarioTable() {
     limit: rowsPerPage,
   });
 
-  // Debounced search
+  const rows = (inventario?.rows ?? []) as Record<string, unknown>[];
+  const total = inventario?.total ?? 0;
+
   const debouncedSearch = useCallback(
     debounce((value: string) => {
       setSearch(value);
@@ -50,22 +49,9 @@ export default function InventarioTable() {
     []
   );
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
-
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
   const getStockColor = (stock: number, minimo: number): "error" | "warning" | "success" => {
-    if (stock < minimo) return "error";
-    if (stock < minimo * 1.5) return "warning";
+    if (minimo > 0 && stock < minimo) return "error";
+    if (minimo > 0 && stock < minimo * 1.5) return "warning";
     return "success";
   };
 
@@ -85,9 +71,9 @@ export default function InventarioTable() {
 
       {/* Search */}
       <TextField
-        placeholder="Buscar por código o nombre..."
+        placeholder="Buscar por codigo, nombre, categoria..."
         defaultValue=""
-        onChange={handleSearchChange}
+        onChange={(e) => debouncedSearch(e.target.value)}
         fullWidth
         size="small"
         sx={{ mb: 2 }}
@@ -102,84 +88,88 @@ export default function InventarioTable() {
 
       {/* Table */}
       <TableContainer component={Paper}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Artículo</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Stock Actual
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Stock Mínimo
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Stock Máximo
-              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Articulo</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Categoria</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Stock</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Minimo</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Costo</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>Precio</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 600 }}>
-                Acciones
-              </TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                   <CircularProgress size={40} />
                 </TableCell>
               </TableRow>
-            ) : !inventario?.data || inventario.data.length === 0 ? (
+            ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                <TableCell colSpan={9} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   No hay registros de inventario
                 </TableCell>
               </TableRow>
             ) : (
-              inventario.data.map((item) => (
-                <TableRow key={item.codigoArticulo} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{item.codigoArticulo}</TableCell>
-                  <TableCell>{item.nombreArticulo}</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 500 }}>
-                    {item.stock}
-                  </TableCell>
-                  <TableCell align="right">{item.stockMinimo}</TableCell>
-                  <TableCell align="right">{item.stockMaximo}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={item.stock < item.stockMinimo ? "Bajo" : "Normal"}
-                      size="small"
-                      color={getStockColor(item.stock, item.stockMinimo) as "error" | "warning" | "success"}
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/inventario/${item.codigoArticulo}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
+              rows.map((item) => {
+                const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
+                const nombre = String(item.DescripcionCompleta ?? item.DESCRIPCION ?? item.ProductName ?? "");
+                const categoria = String(item.Categoria ?? "");
+                const stock = Number(item.EXISTENCIA ?? item.StockQty ?? 0);
+                const minimo = Number(item.MINIMO ?? item.StockMin ?? 0);
+                const costo = Number(item.PRECIO_COMPRA ?? item.CostPrice ?? 0);
+                const precio = Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0);
+
+                return (
+                  <TableRow key={codigo} hover>
+                    <TableCell sx={{ fontWeight: 500 }}>{codigo}</TableCell>
+                    <TableCell>{nombre}</TableCell>
+                    <TableCell>{categoria}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 500 }}>{stock}</TableCell>
+                    <TableCell align="right">{minimo}</TableCell>
+                    <TableCell align="right">{formatCurrency(costo)}</TableCell>
+                    <TableCell align="right">{formatCurrency(precio)}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={minimo > 0 && stock < minimo ? "Bajo" : "Normal"}
+                        size="small"
+                        color={getStockColor(stock, minimo)}
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        size="small"
+                        onClick={() => router.push(`/inventario/${codigo}`)}
+                        title="Ver detalle"
+                      >
+                        <ViewIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
       {/* Pagination */}
-      {inventario && inventario.total > 0 && (
+      {total > 0 && (
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           component="div"
-          count={inventario.total}
+          count={total}
           rowsPerPage={rowsPerPage}
           page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="Filas por página:"
+          onPageChange={(_, p) => setPage(p)}
+          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+          labelRowsPerPage="Filas por pagina:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         />
       )}

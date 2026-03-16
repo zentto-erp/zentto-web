@@ -2,7 +2,7 @@
  * Centro Costo Service - Stored Procedures
  * Usa SPs: usp_CentroCosto_List, GetByCodigo, Insert, Update, Delete
  */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export interface CentroCostoRow {
   Codigo?: string;
@@ -46,85 +46,59 @@ function rowToXml(row: Record<string, unknown>): string {
 }
 
 export async function listCentroCostoSP(params: ListCentroCostoParams = {}): Promise<ListCentroCostoResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
 
-  request.input("Search", sql.NVarChar(100), params.search || null);
-  request.input("Page", sql.Int, page);
-  request.input("Limit", sql.Int, limit);
-  request.output("TotalCount", sql.Int);
-
-  const result = await request.execute("usp_CentroCosto_List");
+  const { rows, output } = await callSpOut<CentroCostoRow>("usp_CentroCosto_List",
+    { Search: params.search || null, Page: page, Limit: limit },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: result.output.TotalCount || 0,
+    rows: rows || [],
+    total: (output.TotalCount as number) || 0,
     page,
     limit,
   };
 }
 
 export async function getCentroCostoByCodigoSP(codigo: string): Promise<CentroCostoRow | null> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("Codigo", sql.NVarChar(50), codigo);
-
-  const result = await request.execute("usp_CentroCosto_GetByCodigo");
-  return result.recordset?.[0] || null;
+  const rows = await callSp<CentroCostoRow>("usp_CentroCosto_GetByCodigo", { Codigo: codigo });
+  return rows?.[0] || null;
 }
 
 export async function insertCentroCostoSP(row: CentroCostoRow): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<CentroCostoRow>("usp_CentroCosto_Insert",
+    { RowXml: rowToXml(row) },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_CentroCosto_Insert");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: (output.Resultado as number) === 1,
+    message: (output.Mensaje as string) || "OK",
   };
 }
 
 export async function updateCentroCostoSP(codigo: string, row: Partial<CentroCostoRow>): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<CentroCostoRow>("usp_CentroCosto_Update",
+    { Codigo: codigo, RowXml: rowToXml(row) },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("Codigo", sql.NVarChar(50), codigo);
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_CentroCosto_Update");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: (output.Resultado as number) === 1,
+    message: (output.Mensaje as string) || "OK",
   };
 }
 
 export async function deleteCentroCostoSP(codigo: string): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut<CentroCostoRow>("usp_CentroCosto_Delete",
+    { Codigo: codigo },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("Codigo", sql.NVarChar(50), codigo);
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_CentroCosto_Delete");
-
-  const resultado = request.parameters.Resultado?.value as number;
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: (output.Resultado as number) === 1,
+    message: (output.Mensaje as string) || "OK",
   };
 }

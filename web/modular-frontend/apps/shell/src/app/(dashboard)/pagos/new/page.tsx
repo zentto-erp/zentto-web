@@ -1,8 +1,8 @@
 // app/(dashboard)/pagos/new/page.tsx
-import { PagoForm } from "@datqbox/module-admin";
+import { PagoForm } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Nuevo Pago | DatqBox",
+  title: "Nuevo Pago | Zentto",
   description: "Registrar nuevo pago",
 };
 

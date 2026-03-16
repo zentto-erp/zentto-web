@@ -1,6 +1,18 @@
 ﻿import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 
+export type CompanyAccessClaim = {
+  companyId: number;
+  companyCode: string;
+  companyName: string;
+  branchId: number;
+  branchCode: string;
+  branchName: string;
+  countryCode: string;
+  timeZone?: string;
+  isDefault?: boolean;
+};
+
 export type JwtPayload = {
   sub: string;
   name?: string | null;
@@ -16,6 +28,15 @@ export type JwtPayload = {
     isCreator: boolean;
   };
   modulos?: string[];
+  companyId?: number;
+  companyCode?: string;
+  companyName?: string;
+  branchId?: number;
+  branchCode?: string;
+  branchName?: string;
+  countryCode?: string;
+  timeZone?: string;
+  companyAccesses?: CompanyAccessClaim[];
 };
 
 export function signJwt(payload: JwtPayload) {

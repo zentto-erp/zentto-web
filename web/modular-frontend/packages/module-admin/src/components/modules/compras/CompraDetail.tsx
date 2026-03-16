@@ -16,20 +16,25 @@ import {
   Typography
 } from "@mui/material";
 import { useCompraById, useDetalleCompra, useIndicadoresCompra } from "../../../hooks/useCompras";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 interface CompraDetailProps {
   numFact: string;
 }
 
+type CompraDetalleRow = Record<string, any>;
+
 export default function CompraDetail({ numFact }: CompraDetailProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const compra = useCompraById(numFact);
   const detalle = useDetalleCompra(numFact);
   const indicadores = useIndicadoresCompra(numFact);
 
-  const row = compra.data ?? null;
-  const detRows = detalle.data ?? [];
-  const ind = indicadores.data ?? null;
+  const row = (compra.data ?? null) as Record<string, any> | null;
+  const detRows = (detalle.data ?? []) as CompraDetalleRow[];
+  const ind = (indicadores.data ?? null) as Record<string, any> | null;
 
   return (
     <Box>
@@ -49,7 +54,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         <Grid container spacing={1}>
           <Grid item xs={12} md={3}><strong>Proveedor:</strong> {row?.NOMBRE || row?.COD_PROVEEDOR || ""}</Grid>
           <Grid item xs={12} md={3}><strong>RIF:</strong> {row?.RIF || ""}</Grid>
-          <Grid item xs={12} md={2}><strong>Fecha:</strong> {row?.FECHA ? String(row.FECHA).slice(0, 10) : ""}</Grid>
+          <Grid item xs={12} md={2}><strong>Fecha:</strong> {row?.FECHA ? toDateOnly(row.FECHA as string, timeZone) : ""}</Grid>
           <Grid item xs={12} md={2}><strong>Tipo:</strong> {row?.TIPO || ""}</Grid>
           <Grid item xs={12} md={2}><strong>Total:</strong> {Number(row?.TOTAL || 0).toFixed(2)}</Grid>
         </Grid>
@@ -100,7 +105,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
                 <TableCell colSpan={6}>Sin detalle.</TableCell>
               </TableRow>
             )}
-            {detRows.map((d: any, idx: number) => {
+            {detRows.map((d, idx: number) => {
               const c = Number(d.CANTIDAD || 0);
               const p = Number(d.PRECIO_COSTO || 0);
               return (

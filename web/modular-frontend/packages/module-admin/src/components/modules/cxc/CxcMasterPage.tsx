@@ -34,6 +34,8 @@ import {
   Receipt as ReceiptIcon,
 } from "@mui/icons-material";
 import { useClientesList } from "../../../hooks/useClientes";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   CxcAplicarCobroPayload,
   CxcDocumentoPendiente,
@@ -52,10 +54,12 @@ type FormaPagoLine = {
   numCheque?: string;
   fechaVencimiento?: string;
 };
+type ClienteRow = Record<string, any>;
 
 // ─── Componente Principal ─────────────────────────────────────
 
 export default function CxcMasterPage() {
+  const { timeZone } = useTimezone();
   const [search, setSearch] = useState("");
   const [selectedCod, setSelectedCod] = useState("");
   const [selectedNombre, setSelectedNombre] = useState("");
@@ -63,18 +67,18 @@ export default function CxcMasterPage() {
 
   // ─── Datos de clientes ────────────────────────────────────
   const clientesQuery = useClientesList({ search, limit: 50 });
-  const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as any[];
+  const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as unknown as ClienteRow[];
 
   // ─── Datos CxC del cliente seleccionado ───────────────────
   const docsQuery = useCxcDocumentosPendientes(selectedCod);
   const saldoQuery = useCxcSaldo(selectedCod);
   const documentos = docsQuery.data?.data ?? [];
-  const saldoData = saldoQuery.data?.data as Record<string, any> | null;
+  const saldoData = saldoQuery.data?.data as Record<string, unknown> | null;
 
-  const handleSelectCliente = useCallback((cli: any) => {
-    const cod = cli.codigo || cli.CODIGO || "";
+  const handleSelectCliente = useCallback((cli: ClienteRow) => {
+    const cod = String(cli.codigo || cli.CODIGO || "");
     setSelectedCod(cod);
-    setSelectedNombre(cli.nombre || cli.NOMBRE || cod);
+    setSelectedNombre(String(cli.nombre || cli.NOMBRE || cod));
     setTabValue(0);
   }, []);
 
@@ -126,7 +130,7 @@ export default function CxcMasterPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  clientes.map((c: any) => {
+                  clientes.map((c) => {
                     const cod = c.codigo || c.CODIGO || "";
                     const isSelected = cod === selectedCod;
                     return (
@@ -222,13 +226,14 @@ export default function CxcMasterPage() {
 
           <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
             {tabValue === 0 && (
-              <EstadoCuentaTab documentos={documentos} isLoading={docsQuery.isLoading} />
+              <EstadoCuentaTab documentos={documentos} isLoading={docsQuery.isLoading} timeZone={timeZone} />
             )}
             {tabValue === 1 && (
               <AplicarCobrosTab
                 codCliente={selectedCod}
                 documentos={documentos}
                 isLoadingDocs={docsQuery.isLoading}
+                timeZone={timeZone}
                 onRefresh={() => {
                   docsQuery.refetch();
                   saldoQuery.refetch();
@@ -257,9 +262,11 @@ export default function CxcMasterPage() {
 function EstadoCuentaTab({
   documentos,
   isLoading,
+  timeZone,
 }: {
   documentos: CxcDocumentoPendiente[];
   isLoading: boolean;
+  timeZone: string;
 }) {
   if (isLoading) {
     return (
@@ -302,7 +309,7 @@ function EstadoCuentaTab({
                 <Chip label={d.tipoDoc} size="small" variant="outlined" sx={{ fontSize: "0.75rem" }} />
               </TableCell>
               <TableCell sx={{ fontFamily: "monospace" }}>{d.numDoc}</TableCell>
-              <TableCell>{d.fecha ? String(d.fecha).slice(0, 10) : ""}</TableCell>
+              <TableCell>{d.fecha ? toDateOnly(d.fecha as string, timeZone) : ""}</TableCell>
               <TableCell align="right">{Number(d.total || 0).toFixed(2)}</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600, color: Number(d.pendiente) > 0 ? "error.main" : "success.main" }}>
                 {Number(d.pendiente || 0).toFixed(2)}
@@ -329,14 +336,16 @@ function AplicarCobrosTab({
   codCliente,
   documentos,
   isLoadingDocs,
+  timeZone,
   onRefresh,
 }: {
   codCliente: string;
   documentos: CxcDocumentoPendiente[];
   isLoadingDocs: boolean;
+  timeZone: string;
   onRefresh: () => void;
 }) {
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [codUsuario] = useState("SUP");
   const [observaciones, setObservaciones] = useState("");
   const [rows, setRows] = useState<SelDoc[]>([]);
@@ -431,7 +440,7 @@ function AplicarCobrosTab({
     <Box>
       {cobroMutation.isSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Cobro aplicado exitosamente. Recibo: {String((cobroMutation.data as any)?.numCobro || "")}
+          Cobro aplicado exitosamente. Recibo: {String((cobroMutation.data as { numCobro?: string })?.numCobro || "")}
         </Alert>
       )}
       {cobroMutation.isError && (
@@ -507,7 +516,7 @@ function AplicarCobrosTab({
                 </TableCell>
                 <TableCell sx={{ fontSize: "0.82rem" }}>{r.tipoDoc}</TableCell>
                 <TableCell sx={{ fontSize: "0.82rem", fontFamily: "monospace" }}>{r.numDoc}</TableCell>
-                <TableCell sx={{ fontSize: "0.82rem" }}>{r.fecha ? String(r.fecha).slice(0, 10) : ""}</TableCell>
+                <TableCell sx={{ fontSize: "0.82rem" }}>{r.fecha ? toDateOnly(r.fecha as string, timeZone) : ""}</TableCell>
                 <TableCell align="right" sx={{ fontSize: "0.82rem" }}>{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField
@@ -615,7 +624,7 @@ function AplicarCobrosTab({
 
 function CobrosAplicadosTab({ codCliente }: { codCliente: string }) {
   const { data, isLoading } = useCxcSaldo(codCliente);
-  const saldoData = data?.data as Record<string, any> | null;
+  const saldoData = data?.data as Record<string, unknown> | null;
 
   if (isLoading) {
     return (

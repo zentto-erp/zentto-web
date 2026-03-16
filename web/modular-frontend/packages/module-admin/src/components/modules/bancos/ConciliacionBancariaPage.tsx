@@ -20,6 +20,8 @@ import {
   TextField,
   Typography
 } from "@mui/material";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,
@@ -31,17 +33,28 @@ import {
   useImportarExtracto
 } from "../../../hooks/useConciliacionBancaria";
 
-function firstDayOfCurrentMonth() {
+type CuentaRow = Record<string, unknown>;
+type ConciliacionRow = Record<string, any>;
+
+function firstDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  return `${y}-${m}-01`;
 }
 
-function lastDayOfCurrentMonth() {
+function lastDayOfCurrentMonth(tz: string) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit" }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")!.value);
+  const m = Number(parts.find((p) => p.type === "month")!.value);
+  const last = new Date(y, m, 0);
+  return toDateOnly(last, tz);
 }
 
 export default function ConciliacionBancariaPage() {
+  const { timeZone } = useTimezone();
   const [nroCta, setNroCta] = useState("");
   const [estado, setEstado] = useState("");
   const [page, setPage] = useState(1);
@@ -50,15 +63,15 @@ export default function ConciliacionBancariaPage() {
   const [msg, setMsg] = useState<string>("");
   const [err, setErr] = useState<string>("");
 
-  const [newDesde, setNewDesde] = useState(firstDayOfCurrentMonth());
-  const [newHasta, setNewHasta] = useState(lastDayOfCurrentMonth());
+  const [newDesde, setNewDesde] = useState(firstDayOfCurrentMonth(timeZone));
+  const [newHasta, setNewHasta] = useState(lastDayOfCurrentMonth(timeZone));
   const [newCta, setNewCta] = useState("");
 
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState(
     JSON.stringify(
       [
-        { Fecha: firstDayOfCurrentMonth(), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }
+        { Fecha: firstDayOfCurrentMonth(timeZone), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }
       ],
       null,
       2
@@ -84,7 +97,7 @@ export default function ConciliacionBancariaPage() {
   const ajustar = useGenerarAjuste();
   const cerrar = useCerrarConciliacion();
 
-  const rows = listData?.rows ?? [];
+  const rows = (listData?.rows ?? []) as ConciliacionRow[];
 
   const handleCrear = async () => {
     setErr("");
@@ -92,8 +105,8 @@ export default function ConciliacionBancariaPage() {
     try {
       const r = await crear.mutateAsync({ Nro_Cta: newCta, Fecha_Desde: newDesde, Fecha_Hasta: newHasta });
       setMsg(`Conciliacion creada: ${r?.conciliacionId ?? ""}`);
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -107,8 +120,8 @@ export default function ConciliacionBancariaPage() {
       setMsg(`Extracto importado. Registros: ${r?.registrosImportados ?? "ok"}`);
       setImportOpen(false);
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -124,8 +137,8 @@ export default function ConciliacionBancariaPage() {
       });
       setMsg(r?.mensaje || "Movimiento conciliado");
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -142,8 +155,8 @@ export default function ConciliacionBancariaPage() {
       });
       setMsg(r?.mensaje || "Ajuste generado");
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -159,8 +172,8 @@ export default function ConciliacionBancariaPage() {
       });
       setMsg(`Conciliacion cerrada. Estado: ${r?.estado ?? "ok"} Diferencia: ${r?.diferencia ?? 0}`);
       await refetchDetalle();
-    } catch (e: any) {
-      setErr(String(e?.message || e));
+    } catch (e: unknown) {
+      setErr(String(e instanceof Error ? e.message : e));
     }
   };
 
@@ -176,7 +189,7 @@ export default function ConciliacionBancariaPage() {
           <Grid item xs={12} md={4}>
             <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Cuenta" value={newCta} onChange={(e) => setNewCta(e.target.value)}>
               <option value="">Seleccione</option>
-              {(cuentasData?.rows ?? []).map((c: any) => (
+              {((cuentasData?.rows ?? []) as CuentaRow[]).map((c) => (
                 <option key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>{String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}</option>
               ))}
             </TextField>
@@ -229,12 +242,12 @@ export default function ConciliacionBancariaPage() {
             {!isLoading && rows.length === 0 && (
               <TableRow><TableCell colSpan={8}>Sin conciliaciones.</TableCell></TableRow>
             )}
-            {!isLoading && rows.map((r: any) => (
+            {!isLoading && rows.map((r) => (
               <TableRow key={String(r.ID)} selected={selectedId === Number(r.ID)}>
                 <TableCell>{r.ID}</TableCell>
                 <TableCell>{r.Nro_Cta}</TableCell>
-                <TableCell>{String(r.Fecha_Desde || "").slice(0, 10)}</TableCell>
-                <TableCell>{String(r.Fecha_Hasta || "").slice(0, 10)}</TableCell>
+                <TableCell>{r.Fecha_Desde ? toDateOnly(r.Fecha_Desde as string, timeZone) : ""}</TableCell>
+                <TableCell>{r.Fecha_Hasta ? toDateOnly(r.Fecha_Hasta as string, timeZone) : ""}</TableCell>
                 <TableCell>{Number(r.Saldo_Final_Sistema || 0).toFixed(2)}</TableCell>
                 <TableCell>{Number(r.Diferencia || 0).toFixed(2)}</TableCell>
                 <TableCell>{r.Estado}</TableCell>
@@ -270,7 +283,7 @@ export default function ConciliacionBancariaPage() {
 
           <Grid container spacing={1} sx={{ mb: 2 }}>
             <Grid item xs={12} md={3}>
-              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as any)}>
+              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as "NOTA_CREDITO" | "NOTA_DEBITO")}>
                 <option value="NOTA_CREDITO">NOTA_CREDITO</option>
                 <option value="NOTA_DEBITO">NOTA_DEBITO</option>
               </TextField>

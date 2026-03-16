@@ -1,5 +1,4 @@
-import { execute, query } from "../../db/query.js";
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
 import {
   getMetadata,
   getTableMetadata,
@@ -56,42 +55,47 @@ export async function queryTable(input: {
   const page = validPage(input.page, 1);
   const pageSize = Math.min(validPage(input.pageSize, 50), 500);
   const offset = (page - 1) * pageSize;
+  const sortCol = parseSort(meta, input.sort);
+  const direction = input.desc ? "DESC" : "ASC";
 
-  const whereParts: string[] = [];
-  const params: Record<string, unknown> = {};
-
+  // Build filters JSON (excluding _search which is handled differently)
+  const filtersJson: Record<string, unknown> = {};
+  const searchValue = input.filters?._search as string | undefined;
   if (input.filters) {
     for (const [key, value] of Object.entries(input.filters)) {
+      if (key === '_search') continue;
       const col = meta.columns.find((c) => c.columnName.toLowerCase() === key.toLowerCase());
       if (!col) continue;
-      const paramName = `f_${col.columnName}`;
-      whereParts.push(`${quoteIdent(col.columnName)} = @${paramName}`);
-      params[paramName] = value;
+      filtersJson[col.columnName] = value;
     }
   }
 
-  const whereClause = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
-  const sortCol = parseSort(meta, input.sort);
-  const direction = input.desc ? "DESC" : "ASC";
-  const tableName = safeQualifiedTable(meta.schema, meta.table);
+  const hasFilters = Object.keys(filtersJson).length > 0;
 
-  const rows = await query<any>(
-    `SELECT * FROM ${tableName} ${whereClause} ORDER BY ${quoteIdent(sortCol)} ${direction} OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`,
-    params
+  // Use callSpOut to get both data rows and TotalCount OUTPUT parameter
+  const { rows: dataRows, output } = await callSpOut<any>(
+    'usp_Sys_GenericList',
+    {
+      SchemaName: meta.schema,
+      TableName: meta.table,
+      SortColumn: sortCol,
+      SortDir: direction,
+      Offset: offset,
+      PageSize: pageSize,
+      FiltersJson: hasFilters ? JSON.stringify(filtersJson) : null,
+    },
+    { TotalCount: sql.Int }
   );
 
-  const totalRows = await query<{ total: number }>(
-    `SELECT COUNT(1) AS total FROM ${tableName} ${whereClause}`,
-    params
-  );
+  const total = Number(output.TotalCount ?? 0);
 
   return {
     schema: meta.schema,
     table: meta.table,
     page,
     pageSize,
-    total: Number(totalRows[0]?.total ?? 0),
-    rows
+    total,
+    rows: dataRows
   };
 }
 
@@ -124,34 +128,18 @@ function decodeKey(meta: TableMetadata, keyEncoded: string) {
   return normalized;
 }
 
-function whereByPk(meta: TableMetadata, key: Record<string, unknown>) {
-  const parts: string[] = [];
-  const params: Record<string, unknown> = {};
-
-  for (const pk of meta.primaryKeys) {
-    const paramName = `pk_${pk}`;
-    parts.push(`${quoteIdent(pk)} = @${paramName}`);
-    params[paramName] = key[pk];
-  }
-
-  return {
-    clause: parts.join(" AND "),
-    params
-  };
-}
-
 export async function getByKey(schema: string, table: string, encodedKey: string) {
   const meta = await getTableMetadata(schema, table);
   if (!meta) throw new Error("table_not_found");
 
   const key = decodeKey(meta, encodedKey);
-  const where = whereByPk(meta, key);
+  const keyJson = JSON.stringify(key);
 
-  const tableName = safeQualifiedTable(meta.schema, meta.table);
-  const rows = await query<any>(
-    `SELECT * FROM ${tableName} WHERE ${where.clause}`,
-    where.params
-  );
+  const rows = await callSp<any>('usp_Sys_GenericGetByKey', {
+    SchemaName: meta.schema,
+    TableName: meta.table,
+    KeyJson: keyJson,
+  });
 
   return rows[0] ?? null;
 }
@@ -165,28 +153,24 @@ export async function createRow(schema: string, table: string, body: Record<stri
   if (!meta) throw new Error("table_not_found");
 
   const writable = writableColumns(meta);
-  const data: Array<{ column: string; value: unknown }> = [];
+  const data: Record<string, unknown> = {};
 
   for (const col of writable) {
     const found = Object.entries(body).find(([k]) => k.toLowerCase() === col.columnName.toLowerCase());
     if (found) {
-      data.push({ column: col.columnName, value: found[1] });
+      data[col.columnName] = found[1];
     }
   }
 
-  if (data.length === 0) {
+  if (Object.keys(data).length === 0) {
     throw new Error("no_writable_fields");
   }
 
-  const cols = data.map((d) => quoteIdent(d.column)).join(", ");
-  const vals = data.map((d) => `@c_${d.column}`).join(", ");
-  const params: Record<string, unknown> = {};
-  for (const d of data) {
-    params[`c_${d.column}`] = d.value;
-  }
-
-  const tableName = safeQualifiedTable(meta.schema, meta.table);
-  await execute(`INSERT INTO ${tableName} (${cols}) VALUES (${vals})`, params);
+  await callSp('usp_Sys_GenericInsert', {
+    SchemaName: meta.schema,
+    TableName: meta.table,
+    DataJson: JSON.stringify(data),
+  });
 
   return { ok: true };
 }
@@ -196,31 +180,27 @@ export async function updateRow(schema: string, table: string, encodedKey: strin
   if (!meta) throw new Error("table_not_found");
 
   const key = decodeKey(meta, encodedKey);
-  const where = whereByPk(meta, key);
-
   const writable = writableColumns(meta);
-  const setParts: string[] = [];
-  const params: Record<string, unknown> = { ...where.params };
+  const data: Record<string, unknown> = {};
 
   for (const col of writable) {
     const found = Object.entries(body).find(([k]) => k.toLowerCase() === col.columnName.toLowerCase());
     if (!found) continue;
-    const paramName = `u_${col.columnName}`;
-    setParts.push(`${quoteIdent(col.columnName)} = @${paramName}`);
-    params[paramName] = found[1];
+    data[col.columnName] = found[1];
   }
 
-  if (setParts.length === 0) {
+  if (Object.keys(data).length === 0) {
     throw new Error("no_writable_fields");
   }
 
-  const tableName = safeQualifiedTable(meta.schema, meta.table);
-  const result = await execute(
-    `UPDATE ${tableName} SET ${setParts.join(", ")} WHERE ${where.clause}`,
-    params
-  );
+  const result = await callSp<{ rowsAffected: number }>('usp_Sys_GenericUpdate', {
+    SchemaName: meta.schema,
+    TableName: meta.table,
+    KeyJson: JSON.stringify(key),
+    DataJson: JSON.stringify(data),
+  });
 
-  return { ok: true, rowsAffected: result.rowsAffected?.[0] ?? 0 };
+  return { ok: true, rowsAffected: Number(result[0]?.rowsAffected ?? 0) };
 }
 
 export async function deleteRow(schema: string, table: string, encodedKey: string) {
@@ -228,15 +208,14 @@ export async function deleteRow(schema: string, table: string, encodedKey: strin
   if (!meta) throw new Error("table_not_found");
 
   const key = decodeKey(meta, encodedKey);
-  const where = whereByPk(meta, key);
-  const tableName = safeQualifiedTable(meta.schema, meta.table);
 
-  const result = await execute(
-    `DELETE FROM ${tableName} WHERE ${where.clause}`,
-    where.params
-  );
+  const result = await callSp<{ rowsAffected: number }>('usp_Sys_GenericDelete', {
+    SchemaName: meta.schema,
+    TableName: meta.table,
+    KeyJson: JSON.stringify(key),
+  });
 
-  return { ok: true, rowsAffected: result.rowsAffected?.[0] ?? 0 };
+  return { ok: true, rowsAffected: Number(result[0]?.rowsAffected ?? 0) };
 }
 
 export function encodeKeyObject(key: Record<string, unknown>) {
@@ -289,7 +268,6 @@ export async function executeMasterCrudAction(input: {
   }
 
   const action = input.action;
-  const pool = await getPool();
 
   const spCandidates =
     action === "list"
@@ -298,16 +276,15 @@ export async function executeMasterCrudAction(input: {
 
   for (const spName of spCandidates) {
     try {
-      const req = pool.request();
-      req.input("SchemaName", sql.NVarChar(128), input.schema || "dbo");
-      req.input("TableName", sql.NVarChar(128), table);
-      if (input.row) req.input("RowXml", sql.NVarChar(sql.MAX), recordToXml("row", input.row));
-      if (input.key) req.input("KeyXml", sql.NVarChar(sql.MAX), recordToXml("key", input.key));
-      if (input.page) req.input("Page", sql.Int, input.page);
-      if (input.pageSize) req.input("PageSize", sql.Int, input.pageSize);
-
-      const result = await req.execute(spName);
-      return { ok: true, executionMode: "sp", spName, rows: result.recordset ?? [] };
+      const rows = await callSp<any>(spName, {
+        SchemaName: input.schema || "dbo",
+        TableName: table,
+        RowXml: input.row ? recordToXml("row", input.row) : undefined,
+        KeyXml: input.key ? recordToXml("key", input.key) : undefined,
+        Page: input.page,
+        PageSize: input.pageSize,
+      });
+      return { ok: true, executionMode: "sp", spName, rows };
     } catch {
       // fallback to generic CRUD below
     }

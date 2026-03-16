@@ -15,7 +15,8 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["apps/shell/src/*"]
+      "@/*": ["apps/shell/src/*"],
+      "@module-admin/*": ["packages/module-admin/src/*"]
     }
   }
 }

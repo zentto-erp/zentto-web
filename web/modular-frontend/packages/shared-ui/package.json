@@ -1,5 +1,5 @@
 {
-  "name": "@datqbox/shared-ui",
+  "name": "@zentto/shared-ui",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
@@ -26,6 +26,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.5.1",
-    "@datqbox/shared-auth": "0.1.0"
+    "@zentto/shared-auth": "0.1.0",
+    "@zentto/shared-api": "0.1.0"
   }
 }

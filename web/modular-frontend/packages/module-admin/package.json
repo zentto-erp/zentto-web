@@ -1,19 +1,22 @@
 {
-  "name": "@datqbox/module-admin",
+  "name": "@zentto/module-admin",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
   "types": "src/index.tsx",
   "exports": {
     ".": "./src/index.tsx",
+    "./components/EditableDataGrid": "./src/components/EditableDataGrid.tsx",
+    "./components/modules/inventario/CatalogoCrudBase": "./src/components/modules/inventario/CatalogoCrudBase.tsx",
+    "./components/modules/inventario/CatalogoCrudPage": "./src/components/modules/inventario/CatalogoCrudPage.tsx",
     "./components/*": "./src/components/*",
     "./hooks/*": "./src/hooks/*",
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
-    "@datqbox/shared-api": "0.1.0",
-    "@datqbox/shared-auth": "0.1.0",
-    "@datqbox/shared-ui": "0.1.0",
+    "@zentto/shared-api": "0.1.0",
+    "@zentto/shared-auth": "0.1.0",
+    "@zentto/shared-ui": "0.1.0",
     "@mui/icons-material": "^6",
     "@mui/material": "^6.5.0",
     "@mui/x-data-grid": "^7.24.0",

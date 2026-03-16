@@ -46,7 +46,7 @@ export interface Column<T> {
   type?: 'text' | 'number' | 'date' | 'currency' | 'percentage' | 'status';
   width?: string;
   sortable?: boolean;
-  formatFn?: (value: any) => string;
+  formatFn?: (value: unknown) => string;
 }
 
 export interface Action<T> {
@@ -70,9 +70,10 @@ interface DataGridProps<T> {
   onExport?: () => void;
   title?: string;
   emptyText?: string;
+  timeZone?: string;
 }
 
-export default function DataGrid<T extends { [key: string]: any }>({
+export default function DataGrid<T extends Record<string, unknown>>({
   columns,
   data,
   totalRecords = 0,
@@ -85,6 +86,7 @@ export default function DataGrid<T extends { [key: string]: any }>({
   onExport,
   title,
   emptyText = 'No hay registros',
+  timeZone,
 }: DataGridProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     accessor: string;
@@ -102,23 +104,28 @@ export default function DataGrid<T extends { [key: string]: any }>({
     onSortChange?.(accessor, order);
   };
 
-  const formatCellValue = (column: Column<T>, value: any): string => {
+  const formatCellValue = (column: Column<T>, value: unknown): string => {
     if (column.formatFn) {
       return column.formatFn(value);
     }
 
     switch (column.type) {
-      case 'date':
-        return new Date(value).toLocaleDateString('es-ES');
+      case 'date': {
+        const parsed = value instanceof Date ? value : new Date(String(value ?? ''));
+        if (Number.isNaN(parsed.getTime())) return '-';
+        const dateOpts: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        if (timeZone) dateOpts.timeZone = timeZone;
+        return parsed.toLocaleDateString('es', dateOpts);
+      }
       case 'currency':
         return new Intl.NumberFormat('es-ES', {
           style: 'currency',
           currency: 'USD',
-        }).format(value);
+        }).format(Number(value ?? 0));
       case 'percentage':
-        return `${(value * 100).toFixed(2)}%`;
+        return `${(Number(value ?? 0) * 100).toFixed(2)}%`;
       case 'status':
-        return getStatusBadge(value);
+        return getStatusBadge(String(value ?? ''));
       default:
         return String(value ?? '-');
     }

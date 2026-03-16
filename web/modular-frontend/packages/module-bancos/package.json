@@ -1,5 +1,5 @@
 {
-  "name": "@datqbox/module-bancos",
+  "name": "@zentto/module-bancos",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
@@ -10,16 +10,17 @@
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
-    "@datqbox/shared-api": "*",
-    "@datqbox/shared-auth": "*",
-    "@datqbox/shared-ui": "*",
-    "@datqbox/module-contabilidad": "*",
-    "@mui/material": "^6.5.0",
+    "@zentto/module-contabilidad": "*",
+    "@zentto/shared-api": "*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-ui": "*",
     "@mui/icons-material": "^6.5.0",
+    "@mui/material": "^6.5.0",
     "@mui/x-data-grid": "^8.5.0",
     "@mui/x-date-pickers": "^8.5.0",
     "@tanstack/react-query": "^5.64.2",
     "dayjs": "^1.11.13",
+    "jspdf": "^2.5.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }

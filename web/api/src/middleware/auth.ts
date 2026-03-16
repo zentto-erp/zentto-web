@@ -1,14 +1,103 @@
 ﻿import type { Request, Response, NextFunction } from "express";
-import { verifyJwt, type JwtPayload } from "../auth/jwt.js";
+import { verifyJwt, type JwtPayload, type CompanyAccessClaim } from "../auth/jwt.js";
+import { runWithRequestContext, type RequestScope } from "../context/request-context.js";
 
-const PUBLIC_PATHS = new Set(["/auth/login"]);
+const PUBLIC_PATHS = new Set([
+  "/auth/login",
+  "/auth/login-options",
+  "/auth/register",
+  "/auth/verify-email",
+  "/auth/resend-verification",
+  "/auth/forgot-password",
+  "/auth/reset-password/confirm",
+]);
 
 export interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
+  scope?: RequestScope;
+}
+
+function parseIntHeader(value: string | string[] | undefined): number | null {
+  const first = Array.isArray(value) ? value[0] : value;
+  if (!first) return null;
+  const parsed = Number(first);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.trunc(parsed);
+}
+
+function toScope(access: CompanyAccessClaim): RequestScope {
+  return {
+    companyId: Number(access.companyId),
+    branchId: Number(access.branchId),
+    companyCode: access.companyCode,
+    companyName: access.companyName,
+    branchCode: access.branchCode,
+    branchName: access.branchName,
+    countryCode: access.countryCode,
+    timeZone: access.timeZone,
+  };
+}
+
+function resolveScope(payload: JwtPayload, req: Request): RequestScope | null {
+  const accesses = (payload.companyAccesses ?? []).map((row) => toScope(row));
+  const requestedCompanyId = parseIntHeader(req.headers["x-company-id"] as string | string[] | undefined);
+  const requestedBranchId = parseIntHeader(req.headers["x-branch-id"] as string | string[] | undefined);
+
+  const defaultScopeFromToken = (
+    payload.companyId && payload.branchId
+      ? {
+          companyId: Number(payload.companyId),
+          branchId: Number(payload.branchId),
+          companyCode: payload.companyCode,
+          companyName: payload.companyName,
+          branchCode: payload.branchCode,
+          branchName: payload.branchName,
+          countryCode: payload.countryCode,
+          timeZone: payload.timeZone,
+        }
+      : null
+  );
+
+  const defaultScope =
+    defaultScopeFromToken ??
+    accesses.find((row, idx) => {
+      const raw = payload.companyAccesses?.[idx];
+      return raw?.isDefault === true;
+    }) ??
+    accesses[0] ??
+    null;
+
+  if (!requestedCompanyId && !requestedBranchId) {
+    return defaultScope;
+  }
+
+  if (accesses.length === 0) {
+    if (!defaultScope) return null;
+    if (
+      (requestedCompanyId && requestedCompanyId !== defaultScope.companyId) ||
+      (requestedBranchId && requestedBranchId !== defaultScope.branchId)
+    ) {
+      return null;
+    }
+    return defaultScope;
+  }
+
+  let match: RequestScope | undefined;
+  if (requestedCompanyId && requestedBranchId) {
+    match = accesses.find(
+      (row) => row.companyId === requestedCompanyId && row.branchId === requestedBranchId
+    );
+  } else if (requestedCompanyId) {
+    const byCompany = accesses.filter((row) => row.companyId === requestedCompanyId);
+    match = byCompany[0];
+  } else if (requestedBranchId) {
+    match = accesses.find((row) => row.branchId === requestedBranchId);
+  }
+
+  return match ?? null;
 }
 
 export function requireJwt(req: Request, res: Response, next: NextFunction) {
-  // Skip preflight CORS requests
   if (req.method === "OPTIONS") {
     return next();
   }
@@ -26,14 +115,33 @@ export function requireJwt(req: Request, res: Response, next: NextFunction) {
 
   try {
     const payload = verifyJwt(token);
-    (req as AuthenticatedRequest).user = payload;
-    return next();
+    const scope = resolveScope(payload, req);
+
+    if (!scope?.companyId || !scope?.branchId) {
+      return res.status(403).json({ error: "invalid_scope", message: "No hay empresa/sucursal activa para este usuario" });
+    }
+
+    const scopedUser: JwtPayload = {
+      ...payload,
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      companyCode: scope.companyCode,
+      companyName: scope.companyName,
+      branchCode: scope.branchCode,
+      branchName: scope.branchName,
+      countryCode: scope.countryCode,
+      timeZone: scope.timeZone,
+    };
+
+    (req as AuthenticatedRequest).user = scopedUser;
+    (req as AuthenticatedRequest).scope = scope;
+
+    return runWithRequestContext({ user: scopedUser, scope }, () => next());
   } catch {
     return res.status(401).json({ error: "invalid_token" });
   }
 }
 
-/** Middleware: require admin role */
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const user = (req as AuthenticatedRequest).user;
   if (!user?.isAdmin) {
@@ -42,16 +150,13 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
-/** Middleware: require specific module access */
 export function requireModule(modulo: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as AuthenticatedRequest).user;
     if (!user) {
       return res.status(401).json({ error: "not_authenticated" });
     }
-    // Admin has access to all modules
     if (user.isAdmin) return next();
-    // Check module list (from JWT)
     if (user.modulos && user.modulos.includes(modulo)) {
       return next();
     }
@@ -62,7 +167,6 @@ export function requireModule(modulo: string) {
   };
 }
 
-/** Middleware: require create permission */
 export function requireCreate(req: Request, res: Response, next: NextFunction) {
   const user = (req as AuthenticatedRequest).user;
   if (!user) return res.status(401).json({ error: "not_authenticated" });
@@ -70,7 +174,6 @@ export function requireCreate(req: Request, res: Response, next: NextFunction) {
   return res.status(403).json({ error: "forbidden", message: "No tienes permisos para crear registros" });
 }
 
-/** Middleware: require update permission */
 export function requireUpdate(req: Request, res: Response, next: NextFunction) {
   const user = (req as AuthenticatedRequest).user;
   if (!user) return res.status(401).json({ error: "not_authenticated" });
@@ -78,7 +181,6 @@ export function requireUpdate(req: Request, res: Response, next: NextFunction) {
   return res.status(403).json({ error: "forbidden", message: "No tienes permisos para actualizar registros" });
 }
 
-/** Middleware: require delete permission */
 export function requireDelete(req: Request, res: Response, next: NextFunction) {
   const user = (req as AuthenticatedRequest).user;
   if (!user) return res.status(401).json({ error: "not_authenticated" });

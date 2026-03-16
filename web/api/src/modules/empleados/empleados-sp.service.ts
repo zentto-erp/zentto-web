@@ -1,8 +1,5 @@
-/**
- * Empleados Service - Stored Procedures
- * Usa SPs: usp_Empleados_List, GetByCedula, Insert, Update, Delete
- */
-import { getPool, sql } from "../../db/mssql.js";
+import { callSp, callSpOut, sql } from "../../db/query.js";
+import { objectToXml } from "../../utils/xml.js";
 
 export interface EmpleadoRow {
   CEDULA?: string;
@@ -47,103 +44,137 @@ export interface SpResult {
   message: string;
 }
 
-function rowToXml(row: Record<string, unknown>): string {
-  const attrs = Object.entries(row)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => {
-      const escaped = String(v)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      return `${k}="${escaped}"`;
-    })
-    .join(" ");
-  return `<row ${attrs}/>`;
-}
-
+/**
+ * Lista empleados desde dbo.Empleados via usp_Empleados_List.
+ */
 export async function listEmpleadosSP(params: ListEmpleadosParams = {}): Promise<ListEmpleadosResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const page = Math.max(1, Number(params.page || 1));
+  const limit = Math.min(Math.max(1, Number(params.limit || 50)), 500);
 
-  const page = Math.max(1, params.page || 1);
-  const limit = Math.min(Math.max(1, params.limit || 50), 500);
-
-  request.input("Search", sql.NVarChar(100), params.search || null);
-  request.input("Grupo", sql.NVarChar(50), params.grupo || null);
-  request.input("Status", sql.NVarChar(50), params.status || null);
-  request.input("Page", sql.Int, page);
-  request.input("Limit", sql.Int, limit);
-  request.output("TotalCount", sql.Int);
-
-  const result = await request.execute("usp_Empleados_List");
+  const { rows, output } = await callSpOut<EmpleadoRow>(
+    "usp_Empleados_List",
+    {
+      Search: params.search?.trim() || null,
+      Grupo: params.grupo?.trim() || null,
+      Status: params.status?.trim().toUpperCase() || null,
+      Page: page,
+      Limit: limit,
+    },
+    { TotalCount: sql.Int }
+  );
 
   return {
-    rows: result.recordset || [],
-    total: result.output.TotalCount || 0,
+    rows,
+    total: Number(output.TotalCount ?? 0),
     page,
     limit,
   };
 }
 
+/**
+ * Obtener empleado por cédula desde dbo.Empleados.
+ */
 export async function getEmpleadoByCedulaSP(cedula: string): Promise<EmpleadoRow | null> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
-
-  request.input("Cedula", sql.NVarChar(20), cedula);
-
-  const result = await request.execute("usp_Empleados_GetByCedula");
-  return result.recordset?.[0] || null;
+  const rows = await callSp<EmpleadoRow>("usp_Empleados_GetByCedula", {
+    Cedula: cedula.trim(),
+  });
+  return rows[0] ?? null;
 }
 
+/**
+ * Insertar empleado en dbo.Empleados via XML.
+ */
 export async function insertEmpleadoSP(row: EmpleadoRow): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const cedula = String(row.CEDULA ?? "").trim();
+  const nombre = String(row.NOMBRE ?? "").trim();
+  if (!cedula) return { success: false, message: "CEDULA requerida" };
+  if (!nombre) return { success: false, message: "NOMBRE requerido" };
 
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  const xmlData: Record<string, unknown> = {
+    CEDULA: cedula,
+    NOMBRE: nombre,
+  };
 
-  await request.execute("usp_Empleados_Insert");
+  // Agregar campos opcionales solo si tienen valor
+  if (row.GRUPO) xmlData.GRUPO = row.GRUPO;
+  if (row.DIRECCION) xmlData.DIRECCION = row.DIRECCION;
+  if (row.TELEFONO) xmlData.TELEFONO = row.TELEFONO;
+  if (row.NACIMIENTO) xmlData.NACIMIENTO = row.NACIMIENTO instanceof Date ? row.NACIMIENTO.toISOString().split("T")[0].replace(/-/g, "") : String(row.NACIMIENTO);
+  if (row.CARGO) xmlData.CARGO = row.CARGO;
+  if (row.NOMINA) xmlData.NOMINA = row.NOMINA;
+  if (row.SUELDO != null) xmlData.SUELDO = row.SUELDO;
+  if (row.INGRESO) xmlData.INGRESO = row.INGRESO instanceof Date ? row.INGRESO.toISOString().split("T")[0].replace(/-/g, "") : String(row.INGRESO);
+  if (row.RETIRO) xmlData.RETIRO = row.RETIRO instanceof Date ? row.RETIRO.toISOString().split("T")[0].replace(/-/g, "") : String(row.RETIRO);
+  if (row.STATUS) xmlData.STATUS = row.STATUS;
+  if (row.COMISION != null) xmlData.COMISION = row.COMISION;
+  if (row.UTILIDAD != null) xmlData.UTILIDAD = row.UTILIDAD;
+  if (row.CO_Usuario) xmlData.CO_Usuario = row.CO_Usuario;
+  if (row.SEXO) xmlData.SEXO = row.SEXO;
+  if (row.NACIONALIDAD) xmlData.NACIONALIDAD = row.NACIONALIDAD;
+  if (row.Autoriza != null) xmlData.Autoriza = row.Autoriza ? 1 : 0;
+  if (row.Apodo) xmlData.Apodo = row.Apodo;
 
-  const resultado = request.parameters.Resultado?.value as number;
+  const { output } = await callSpOut(
+    "usp_Empleados_Insert",
+    { RowXml: objectToXml(xmlData) },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+
+  const resultado = Number(output.Resultado ?? -99);
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: resultado > 0,
+    message: String(output.Mensaje ?? (resultado > 0 ? "Empleado creado" : "Error al crear empleado")),
   };
 }
 
+/**
+ * Actualizar empleado en dbo.Empleados via XML.
+ */
 export async function updateEmpleadoSP(cedula: string, row: Partial<EmpleadoRow>): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const xmlData: Record<string, unknown> = {};
 
-  request.input("Cedula", sql.NVarChar(20), cedula);
-  request.input("RowXml", sql.NVarChar(sql.MAX), rowToXml(row));
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
+  if (row.NOMBRE != null) xmlData.NOMBRE = row.NOMBRE;
+  if (row.GRUPO != null) xmlData.GRUPO = row.GRUPO;
+  if (row.DIRECCION != null) xmlData.DIRECCION = row.DIRECCION;
+  if (row.TELEFONO != null) xmlData.TELEFONO = row.TELEFONO;
+  if (row.CARGO != null) xmlData.CARGO = row.CARGO;
+  if (row.NOMINA != null) xmlData.NOMINA = row.NOMINA;
+  if (row.SUELDO != null) xmlData.SUELDO = row.SUELDO;
+  if (row.STATUS != null) xmlData.STATUS = row.STATUS;
+  if (row.COMISION != null) xmlData.COMISION = row.COMISION;
+  if (row.SEXO != null) xmlData.SEXO = row.SEXO;
+  if (row.NACIONALIDAD != null) xmlData.NACIONALIDAD = row.NACIONALIDAD;
+  if (row.Autoriza != null) xmlData.Autoriza = row.Autoriza ? 1 : 0;
 
-  await request.execute("usp_Empleados_Update");
+  const { output } = await callSpOut(
+    "usp_Empleados_Update",
+    {
+      Cedula: cedula.trim(),
+      RowXml: objectToXml(xmlData),
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  const resultado = request.parameters.Resultado?.value as number;
+  const resultado = Number(output.Resultado ?? -99);
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: resultado > 0,
+    message: String(output.Mensaje ?? (resultado > 0 ? "Empleado actualizado" : "Error al actualizar")),
   };
 }
 
+/**
+ * Eliminar empleado de dbo.Empleados.
+ */
 export async function deleteEmpleadoSP(cedula: string): Promise<SpResult> {
-  const pool = await getPool();
-  const request = new sql.Request(pool);
+  const { output } = await callSpOut(
+    "usp_Empleados_Delete",
+    { Cedula: cedula.trim() },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
 
-  request.input("Cedula", sql.NVarChar(20), cedula);
-  request.output("Resultado", sql.Int);
-  request.output("Mensaje", sql.NVarChar(500));
-
-  await request.execute("usp_Empleados_Delete");
-
-  const resultado = request.parameters.Resultado?.value as number;
+  const resultado = Number(output.Resultado ?? -99);
   return {
-    success: resultado === 1,
-    message: (request.parameters.Mensaje?.value as string) || "OK",
+    success: resultado > 0,
+    message: String(output.Mensaje ?? (resultado > 0 ? "Empleado eliminado" : "Error al eliminar")),
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ConciliacionWizard } from "@datqbox/module-bancos";
+import { ConciliacionWizard } from "@zentto/module-bancos";
 
 export default function ConciliacionPage() {
   return <ConciliacionWizard />;

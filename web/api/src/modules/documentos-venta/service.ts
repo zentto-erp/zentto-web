@@ -1,16 +1,12 @@
-import { query } from "../../db/query.js";
-import { getPool, sql } from "../../db/mssql.js";
-import { anularFacturaTx, emitirFacturaTx, getDetalleFactura, getFacturaByNumero, getFacturas } from "../facturas/service.js";
-import { createCotizacionTx, getCotizacion, getCotizacionDetalle, listCotizaciones } from "../cotizaciones/service.js";
-import { anularPedidoTx, emitirPedidoTx, facturarPedidoTx, getPedido, getPedidoDetalle, listPedidos } from "../pedidos/service.js";
-import { notasService } from "../notas/service.js";
-import { anularPresupuestoTx, emitirPresupuestoTx, getPresupuesto, getPresupuestoDetalle, listPresupuestos } from "../presupuestos/service.js";
+import { callSp, callSpOut, callSpTx, sql } from "../../db/query.js";
+import { getPool } from "../../db/mssql.js";
+import mssql from "mssql";
 
 export type TipoOperacionVenta = "FACT" | "PRESUP" | "PEDIDO" | "COTIZ" | "NOTACRED" | "NOTADEB" | "NOTA_ENT";
 
-type SqlTx = sql.Transaction;
-
-const colCache = new Map<string, Set<string>>();
+// ---------------------------------------------------------------------------
+// Helpers puros (sin SQL)
+// ---------------------------------------------------------------------------
 
 function normalizeKey(key: string) {
   return key.trim().toUpperCase();
@@ -35,94 +31,16 @@ function asString(v: unknown, fallback = "") {
   return String(v);
 }
 
-function quoteIdent(name: string) {
-  return `[${name.replace(/]/g, "]]")}]`;
-}
+// ---------------------------------------------------------------------------
+// Mapping functions: VB6 field names -> canonical column names
+// ---------------------------------------------------------------------------
 
-async function txQuery<T>(tx: SqlTx, statement: string, params?: Record<string, unknown>) {
-  const req = new sql.Request(tx);
-  if (params) for (const [k, v] of Object.entries(params)) if (v !== undefined) req.input(k, v as any);
-  const result = await req.query<T>(statement);
-  return result.recordset;
-}
-
-async function txExec(tx: SqlTx, statement: string, params?: Record<string, unknown>) {
-  const req = new sql.Request(tx);
-  if (params) for (const [k, v] of Object.entries(params)) if (v !== undefined) req.input(k, v as any);
-  return req.query(statement);
-}
-
-async function tableExists(table: string) {
-  const rows = await query<{ cnt: number }>("SELECT COUNT(1) AS cnt FROM sys.tables WHERE name = @table", { table });
-  return Number(rows[0]?.cnt ?? 0) > 0;
-}
-
-async function getColumns(table: string) {
-  const key = table.toUpperCase();
-  const cached = colCache.get(key);
-  if (cached) return cached;
-  const rows = await query<{ COLUMN_NAME: string }>(
-    `SELECT COLUMN_NAME
-       FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @table`,
-    { table }
-  );
-  const cols = new Set(rows.map((r) => String(r.COLUMN_NAME).toUpperCase()));
-  colCache.set(key, cols);
-  return cols;
-}
-
-function docNumCol(cols: Set<string>) {
-  return cols.has("NUM_DOC") ? "NUM_DOC" : "NUM_FACT";
-}
-
-function detailOrderExpr(cols: Set<string>) {
-  if (cols.has("RENGLON")) return "ISNULL(RENGLON,0)";
-  if (cols.has("ID")) return "ID";
-  if (cols.has("ID".toLowerCase().toUpperCase())) return "ID";
-  if (cols.has("ID".toLowerCase())) return "Id";
-  return "(SELECT 1)";
-}
-
-async function hasUnifiedVenta() {
-  return (await tableExists("DocumentosVenta")) && (await tableExists("DocumentosVentaDetalle"));
-}
-
-async function getColumnsTx(tx: SqlTx, table: string) {
-  const key = table.toUpperCase();
-  const cached = colCache.get(key);
-  if (cached) return cached;
-  const rows = await txQuery<{ COLUMN_NAME: string }>(
-    tx,
-    `SELECT COLUMN_NAME
-       FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @table`,
-    { table }
-  );
-  const cols = new Set(rows.map((r) => String(r.COLUMN_NAME).toUpperCase()));
-  colCache.set(key, cols);
-  return cols;
-}
-
-function filterByColumns(row: Record<string, unknown>, cols: Set<string>) {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(row)) {
-    if (cols.has(k.toUpperCase())) out[k] = v;
-  }
-  return out;
-}
-
-async function insertDynamicTx(tx: SqlTx, table: string, row: Record<string, unknown>, prefix: string) {
-  const keys = Object.keys(row).filter((k) => row[k] !== undefined);
-  if (!keys.length) return;
-  const cols = keys.map((k) => quoteIdent(k)).join(", ");
-  const vals = keys.map((k) => `@${prefix}_${k}`).join(", ");
-  const req = new sql.Request(tx);
-  for (const k of keys) req.input(`${prefix}_${k}`, row[k] as any);
-  await req.query(`INSERT INTO [dbo].[${table}] (${cols}) VALUES (${vals})`);
-}
-
-function mapHeaderUnified(tipoOperacion: TipoOperacionVenta, documento: Record<string, unknown>, docOrigen?: string, tipoDocOrigen?: string) {
+function mapHeaderUnified(
+  tipoOperacion: TipoOperacionVenta,
+  documento: Record<string, unknown>,
+  docOrigen?: string,
+  tipoDocOrigen?: string
+) {
   const numDoc = asString(getValue(documento, "NUM_DOC", "NUM_FACT")).trim();
   const fecha = getValue(documento, "FECHA") ?? new Date();
   const total = asNumber(getValue(documento, "TOTAL"), 0);
@@ -133,32 +51,53 @@ function mapHeaderUnified(tipoOperacion: TipoOperacionVenta, documento: Record<s
   const cancelada = ["CONTADO", "EFECTIVO", "PAGADA", "S"].includes(pago.toUpperCase()) ? "S" : "N";
 
   return {
-    NUM_FACT: numDoc,
-    NUM_DOC: numDoc,
-    SERIALTIPO: asString(getValue(documento, "SERIALTIPO"), ""),
-    Tipo_Orden: asString(getValue(documento, "Tipo_Orden"), "1"),
-    TIPO_OPERACION: tipoOperacion,
-    CODIGO: getValue(documento, "CODIGO", "COD_CLIENTE"),
-    NOMBRE: getValue(documento, "NOMBRE"),
-    RIF: getValue(documento, "RIF"),
-    FECHA: fecha,
-    SUBTOTAL: subtotal,
-    IVA: iva,
-    ALICUOTA: asNumber(getValue(documento, "ALICUOTA"), 0),
-    TOTAL: total,
-    ANULADA: asNumber(getValue(documento, "ANULADA"), 0),
-    CANCELADA: asString(getValue(documento, "CANCELADA"), cancelada),
-    FACTURADA: asString(getValue(documento, "FACTURADA"), "N"),
-    DOC_ORIGEN: docOrigen ?? getValue(documento, "DOC_ORIGEN"),
-    TIPO_DOC_ORIGEN: tipoDocOrigen ?? getValue(documento, "TIPO_DOC_ORIGEN"),
-    OBSERV: observ,
-    CONCEPTO: getValue(documento, "CONCEPTO"),
-    COD_USUARIO: getValue(documento, "COD_USUARIO"),
-    FECHA_REPORTE: getValue(documento, "FECHA_REPORTE")
+    DocumentNumber: numDoc,
+    SerialType: asString(getValue(documento, "SERIALTIPO"), ""),
+    OperationType: tipoOperacion,
+    CustomerCode: getValue(documento, "CODIGO", "COD_CLIENTE"),
+    CustomerName: getValue(documento, "NOMBRE"),
+    FiscalId: getValue(documento, "RIF"),
+    DocumentDate: fecha,
+    DueDate: getValue(documento, "FECHA_VENCE"),
+    SubTotal: subtotal,
+    TaxableAmount: getValue(documento, "MONTO_GRA"),
+    ExemptAmount: getValue(documento, "MONTO_EXE"),
+    TaxAmount: iva,
+    TaxRate: asNumber(getValue(documento, "ALICUOTA"), 0),
+    TotalAmount: total,
+    DiscountAmount: getValue(documento, "DESCUENTO"),
+    IsVoided: asNumber(getValue(documento, "ANULADA"), 0),
+    IsPaid: asString(getValue(documento, "CANCELADA"), cancelada),
+    IsInvoiced: asString(getValue(documento, "FACTURADA"), "N"),
+    IsDelivered: asString(getValue(documento, "ENTREGADA"), "N"),
+    OriginDocumentNumber: docOrigen ?? getValue(documento, "DOC_ORIGEN"),
+    OriginDocumentType: tipoDocOrigen ?? getValue(documento, "TIPO_DOC_ORIGEN"),
+    ControlNumber: getValue(documento, "NUM_CONTROL"),
+    IsLegal: getValue(documento, "LEGAL"),
+    IsPrinted: getValue(documento, "IMPRESA"),
+    Notes: observ,
+    Concept: getValue(documento, "CONCEPTO"),
+    PaymentTerms: getValue(documento, "TERMINOS"),
+    ShipToAddress: getValue(documento, "DESPACHAR"),
+    SellerCode: getValue(documento, "VENDEDOR"),
+    DepartmentCode: getValue(documento, "DEPARTAMENTO"),
+    LocationCode: getValue(documento, "LOCACION"),
+    CurrencyCode: getValue(documento, "MONEDA"),
+    ExchangeRate: getValue(documento, "TASA_CAMBIO"),
+    UserCode: getValue(documento, "COD_USUARIO"),
+    ReportDate: getValue(documento, "FECHA_REPORTE") ?? new Date(),
+    HostName: getValue(documento, "COMPUTER"),
+    VehiclePlate: getValue(documento, "PLACAS"),
+    Mileage: getValue(documento, "KILOMETROS"),
+    TollAmount: getValue(documento, "PEAJE")
   };
 }
 
-function mapDetalleUnified(tipoOperacion: TipoOperacionVenta, numDoc: string, detalle: Record<string, unknown>[]) {
+function mapDetalleUnified(
+  tipoOperacion: TipoOperacionVenta,
+  numDoc: string,
+  detalle: Record<string, unknown>[]
+) {
   return detalle.map((d, i) => {
     const cantidad = asNumber(getValue(d, "CANTIDAD"), 0);
     const precio = asNumber(getValue(d, "PRECIO", "PRECIO_VENTA", "PRECIO_COSTO"), 0);
@@ -166,262 +105,69 @@ function mapDetalleUnified(tipoOperacion: TipoOperacionVenta, numDoc: string, de
     const subtotal = cantidad * precio;
     const total = asNumber(getValue(d, "TOTAL"), subtotal - descuento);
     const alicuota = asNumber(getValue(d, "ALICUOTA"), 0);
+
     return {
-      NUM_FACT: numDoc,
-      NUM_DOC: numDoc,
-      TIPO_OPERACION: tipoOperacion,
-      SERIALTIPO: getValue(d, "SERIALTIPO"),
-      Tipo_Orden: getValue(d, "Tipo_Orden"),
-      RENGLON: i + 1,
-      COD_SERV: getValue(d, "COD_SERV", "CODIGO", "REFERENCIA"),
-      DESCRIPCION: getValue(d, "DESCRIPCION"),
-      CANTIDAD: cantidad,
-      PRECIO: precio,
-      SUBTOTAL: subtotal,
-      DESCUENTO: descuento,
-      TOTAL: total,
-      ALICUOTA: alicuota,
-      MONTO_IVA: asNumber(getValue(d, "MONTO_IVA"), total * (alicuota / 100)),
-      ANULADA: asNumber(getValue(d, "ANULADA"), 0),
-      CO_USUARIO: getValue(d, "CO_USUARIO")
+      DocumentNumber: numDoc,
+      OperationType: tipoOperacion,
+      LineNumber: i + 1,
+      ProductCode: getValue(d, "COD_SERV", "CODIGO", "REFERENCIA"),
+      Description: getValue(d, "DESCRIPCION"),
+      AlternateCode: getValue(d, "COD_ALTERNO"),
+      Quantity: cantidad,
+      UnitPrice: precio,
+      DiscountedPrice: getValue(d, "PRECIO_DESCUENTO"),
+      UnitCost: getValue(d, "COSTO", "COSTO_REFERENCIA"),
+      SubTotal: subtotal,
+      DiscountAmount: descuento,
+      TotalAmount: total,
+      TaxRate: alicuota,
+      TaxAmount: asNumber(getValue(d, "MONTO_IVA"), total * (alicuota / 100)),
+      IsVoided: asNumber(getValue(d, "ANULADA"), 0),
+      RelatedRef: getValue(d, "RELACIONADA"),
+      UserCode: getValue(d, "CO_USUARIO"),
+      LineDate: getValue(d, "FECHA") ?? new Date()
     };
   });
 }
 
-function mapPagosUnified(tipoOperacion: TipoOperacionVenta, numDoc: string, formasPago: Record<string, unknown>[]) {
+function mapPagosUnified(
+  tipoOperacion: TipoOperacionVenta,
+  numDoc: string,
+  formasPago: Record<string, unknown>[]
+) {
   return formasPago.map((fp) => ({
-    NUM_DOC: numDoc,
-    TIPO_OPERACION: tipoOperacion,
-    TIPO_PAGO: getValue(fp, "tipo", "TIPO_PAGO", "FORMA_PAGO"),
-    BANCO: getValue(fp, "banco", "BANCO"),
-    NUMERO: getValue(fp, "numero", "NUMERO", "cheque"),
-    MONTO: asNumber(getValue(fp, "monto", "MONTO"), 0),
-    MONTO_BS: asNumber(getValue(fp, "montoBs", "MONTO_BS"), asNumber(getValue(fp, "monto", "MONTO"), 0)),
-    TASA_CAMBIO: asNumber(getValue(fp, "tasa", "TASA_CAMBIO"), 1),
-    FECHA: getValue(fp, "fecha", "FECHA") ?? new Date(),
-    FECHA_VENCE: getValue(fp, "fechaVence", "FECHA_VENCE"),
-    REFERENCIA: getValue(fp, "referencia", "REFERENCIA"),
-    CO_USUARIO: getValue(fp, "CO_USUARIO")
+    DocumentNumber: numDoc,
+    OperationType: tipoOperacion,
+    PaymentMethod: getValue(fp, "tipo", "TIPO_PAGO", "FORMA_PAGO"),
+    BankCode: getValue(fp, "banco", "BANCO"),
+    PaymentNumber: getValue(fp, "numero", "NUMERO", "numCheque"),
+    Amount: asNumber(getValue(fp, "monto", "MONTO"), 0),
+    AmountBs: asNumber(getValue(fp, "montoBs", "MONTO_BS"), asNumber(getValue(fp, "monto", "MONTO"), 0)),
+    ExchangeRate: asNumber(getValue(fp, "tasa", "TASA_CAMBIO"), 1),
+    PaymentDate: getValue(fp, "fecha", "FECHA") ?? new Date(),
+    DueDate: getValue(fp, "fechaVence", "FECHA_VENCE", "fechaVencimiento"),
+    ReferenceNumber: getValue(fp, "referencia", "REFERENCIA"),
+    UserCode: getValue(fp, "CO_USUARIO")
   }));
 }
 
-async function upsertDocumentoVentaUnifiedTx(tx: SqlTx, input: {
-  tipoOperacion: TipoOperacionVenta;
-  documento: Record<string, unknown>;
-  detalle: Record<string, unknown>[];
-  formasPago?: Record<string, unknown>[];
-  docOrigen?: string;
-  tipoDocOrigen?: string;
-}) {
-  const headerRaw = mapHeaderUnified(input.tipoOperacion, input.documento, input.docOrigen, input.tipoDocOrigen);
-  const numDoc = asString(headerRaw.NUM_DOC).trim();
-  if (!numDoc) throw new Error("missing_num_doc");
-
-  const headCols = await getColumnsTx(tx, "DocumentosVenta");
-  const detCols = await getColumnsTx(tx, "DocumentosVentaDetalle");
-  const hasPago = await tableExists("DocumentosVentaPago");
-  const pagoCols = hasPago ? await getColumnsTx(tx, "DocumentosVentaPago") : new Set<string>();
-
-  const headNum = docNumCol(headCols);
-  const detNum = docNumCol(detCols);
-  const detHasTipoOperacion = detCols.has("TIPO_OPERACION");
-  const serial = asString(headerRaw.SERIALTIPO, "");
-  const tipoOrden = asString(headerRaw.Tipo_Orden, "1");
-
-  if (detHasTipoOperacion) {
-    await txExec(tx, `DELETE FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc AND TIPO_OPERACION = @tipo`, {
-      numDoc,
-      tipo: input.tipoOperacion
-    });
-  } else if (detCols.has("SERIALTIPO") && detCols.has("TIPO_ORDEN")) {
-    await txExec(
-      tx,
-      `DELETE FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc AND SERIALTIPO = @serial AND Tipo_Orden = @tipoOrden`,
-      { numDoc, serial, tipoOrden }
-    );
-  } else {
-    await txExec(tx, `DELETE FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc`, { numDoc });
-  }
-  if (hasPago) {
-    await txExec(tx, "DELETE FROM [dbo].[DocumentosVentaPago] WHERE NUM_DOC = @numDoc AND TIPO_OPERACION = @tipo", { numDoc, tipo: input.tipoOperacion });
-  }
-  await txExec(tx, `DELETE FROM [dbo].[DocumentosVenta] WHERE ${quoteIdent(headNum)} = @numDoc AND TIPO_OPERACION = @tipo`, {
-    numDoc,
-    tipo: input.tipoOperacion
-  });
-
-  const header = filterByColumns(headerRaw, headCols);
-  await insertDynamicTx(tx, "DocumentosVenta", header, "h");
-
-  const detalleRows = mapDetalleUnified(input.tipoOperacion, numDoc, input.detalle)
-    .map((r) => ({ ...r, SERIALTIPO: r.SERIALTIPO ?? serial, Tipo_Orden: r.Tipo_Orden ?? tipoOrden }))
-    .map((r) => filterByColumns(r, detCols));
-  for (let i = 0; i < detalleRows.length; i += 1) await insertDynamicTx(tx, "DocumentosVentaDetalle", detalleRows[i], `d${i}`);
-
-  if (hasPago && (input.formasPago?.length ?? 0) > 0) {
-    const pagos = mapPagosUnified(input.tipoOperacion, numDoc, input.formasPago ?? []).map((r) => filterByColumns(r, pagoCols));
-    for (let i = 0; i < pagos.length; i += 1) await insertDynamicTx(tx, "DocumentosVentaPago", pagos[i], `p${i}`);
+function calculatePendingAmount(
+  total: number,
+  documento: Record<string, unknown>,
+  formasPago: Record<string, unknown>[] | undefined
+) {
+  const pendienteDoc = asNumber(getValue(documento, "PEND", "SALDO", "SALDO_PENDIENTE"), Number.NaN);
+  if (Number.isFinite(pendienteDoc) && pendienteDoc >= 0) {
+    return pendienteDoc;
   }
 
-  return { numDoc, detalleRows: detalleRows.length, formasPagoRows: input.formasPago?.length ?? 0 };
-}
+  const totalPagado = (formasPago ?? []).reduce((acc, fp) => {
+    const tipo = asString(getValue(fp, "tipo", "TIPO_PAGO", "FORMA_PAGO"), "").toUpperCase();
+    if (tipo.includes("SALDO")) return acc;
+    return acc + asNumber(getValue(fp, "monto", "MONTO"), 0);
+  }, 0);
 
-async function listDocumentosVentaUnified(input: {
-  tipoOperacion: TipoOperacionVenta;
-  search?: string;
-  codigo?: string;
-  page?: string;
-  limit?: string;
-  from?: string;
-  to?: string;
-}) {
-  const headCols = await getColumns("DocumentosVenta");
-  const headNum = docNumCol(headCols);
-  const page = Math.max(Number(input.page || 1), 1);
-  const limit = Math.min(Math.max(Number(input.limit || 50), 1), 500);
-  const offset = (page - 1) * limit;
-  const where: string[] = ["TIPO_OPERACION = @tipoOperacion"];
-  const params: Record<string, unknown> = { tipoOperacion: input.tipoOperacion };
-
-  if (input.search) {
-    where.push("(NUM_DOC LIKE @search OR NOMBRE LIKE @search OR RIF LIKE @search)");
-    params.search = `%${input.search}%`;
-  }
-  if (input.codigo) {
-    where.push("CODIGO = @codigo");
-    params.codigo = input.codigo;
-  }
-  if (input.from) {
-    where.push("CAST(FECHA AS date) >= @fromDate");
-    params.fromDate = input.from;
-  }
-  if (input.to) {
-    where.push("CAST(FECHA AS date) <= @toDate");
-    params.toDate = input.to;
-  }
-
-  const clause = `WHERE ${where.join(" AND ")}`;
-  const rows = await query<any>(
-    `SELECT * FROM [dbo].[DocumentosVenta] ${clause} ORDER BY FECHA DESC, ${quoteIdent(headNum)} DESC OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`,
-    params
-  );
-  const totalRows = await query<{ total: number }>(`SELECT COUNT(1) AS total FROM [dbo].[DocumentosVenta] ${clause}`, params);
-  return { page, limit, total: Number(totalRows[0]?.total ?? 0), rows, executionMode: "unified" as const };
-}
-
-async function getDocumentoVentaUnified(tipoOperacion: TipoOperacionVenta, numFact: string) {
-  const headCols = await getColumns("DocumentosVenta");
-  const headNum = docNumCol(headCols);
-  const rows = await query<any>(
-    `SELECT TOP 1 * FROM [dbo].[DocumentosVenta] WHERE ${quoteIdent(headNum)} = @numDoc AND TIPO_OPERACION = @tipoOperacion`,
-    { numDoc: numFact, tipoOperacion }
-  );
-  return { row: rows[0] ?? null, executionMode: "unified" as const };
-}
-
-async function getDetalleDocumentoVentaUnified(tipoOperacion: TipoOperacionVenta, numFact: string) {
-  const detCols = await getColumns("DocumentosVentaDetalle");
-  const detNum = docNumCol(detCols);
-  const hasTipo = detCols.has("TIPO_OPERACION");
-  if (hasTipo) {
-    return query<any>(
-      `SELECT * FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc AND TIPO_OPERACION = @tipoOperacion ORDER BY ${detailOrderExpr(detCols)}`,
-      { numDoc: numFact, tipoOperacion }
-    );
-  }
-  return query<any>(
-    `SELECT * FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc ORDER BY ${detailOrderExpr(detCols)}`,
-    { numDoc: numFact }
-  );
-}
-
-async function emitirDocumentoVentaUnifiedTx(payload: {
-  tipoOperacion: TipoOperacionVenta;
-  documento: Record<string, unknown>;
-  detalle: Record<string, unknown>[];
-  formasPago?: Record<string, unknown>[];
-}) {
-  const pool = await getPool();
-  const tx = new sql.Transaction(pool);
-  await tx.begin();
-  try {
-    const data = await upsertDocumentoVentaUnifiedTx(tx, payload);
-    await tx.commit();
-    return {
-      ok: true,
-      numFact: data.numDoc,
-      detalleRows: data.detalleRows,
-      formaPagoRows: data.formasPagoRows,
-      executionMode: "unified"
-    };
-  } catch (err) {
-    try { await tx.rollback(); } catch {}
-    throw err;
-  }
-}
-
-async function anularDocumentoVentaUnifiedTx(payload: {
-  tipoOperacion: TipoOperacionVenta;
-  numFact: string;
-  codUsuario?: string;
-  motivo?: string;
-}) {
-  const pool = await getPool();
-  const tx = new sql.Transaction(pool);
-  await tx.begin();
-  try {
-    const headCols = await getColumnsTx(tx, "DocumentosVenta");
-    const detCols = await getColumnsTx(tx, "DocumentosVentaDetalle");
-    const hasPago = await tableExists("DocumentosVentaPago");
-
-    const headNum = docNumCol(headCols);
-    const detNum = docNumCol(detCols);
-    if (headCols.has("ANULADA")) {
-      await txExec(
-        tx,
-        `UPDATE [dbo].[DocumentosVenta] SET ANULADA = 1, FECHA_REPORTE = GETDATE() WHERE ${quoteIdent(headNum)} = @numDoc AND TIPO_OPERACION = @tipoOperacion`,
-        { numDoc: payload.numFact, tipoOperacion: payload.tipoOperacion }
-      );
-    } else {
-      await txExec(tx, `DELETE FROM [dbo].[DocumentosVenta] WHERE ${quoteIdent(headNum)} = @numDoc AND TIPO_OPERACION = @tipoOperacion`, {
-        numDoc: payload.numFact,
-        tipoOperacion: payload.tipoOperacion
-      });
-    }
-
-    if (detCols.has("ANULADA")) {
-      await txExec(
-        tx,
-        detCols.has("TIPO_OPERACION")
-          ? `UPDATE [dbo].[DocumentosVentaDetalle] SET ANULADA = 1 WHERE ${quoteIdent(detNum)} = @numDoc AND TIPO_OPERACION = @tipoOperacion`
-          : `UPDATE [dbo].[DocumentosVentaDetalle] SET ANULADA = 1 WHERE ${quoteIdent(detNum)} = @numDoc`,
-        { numDoc: payload.numFact, tipoOperacion: payload.tipoOperacion }
-      );
-    } else {
-      await txExec(
-        tx,
-        detCols.has("TIPO_OPERACION")
-          ? `DELETE FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc AND TIPO_OPERACION = @tipoOperacion`
-          : `DELETE FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc`,
-        {
-        numDoc: payload.numFact,
-        tipoOperacion: payload.tipoOperacion
-      });
-    }
-
-    if (hasPago) {
-      await txExec(tx, "DELETE FROM [dbo].[DocumentosVentaPago] WHERE NUM_DOC = @numDoc AND TIPO_OPERACION = @tipoOperacion", {
-        numDoc: payload.numFact,
-        tipoOperacion: payload.tipoOperacion
-      });
-    }
-
-    await tx.commit();
-    return { ok: true, numFact: payload.numFact, executionMode: "unified" as const };
-  } catch (err) {
-    try { await tx.rollback(); } catch {}
-    throw err;
-  }
+  return Math.max(total - totalPagado, 0);
 }
 
 export function normalizeTipoOperacionVenta(value: string): TipoOperacionVenta {
@@ -456,6 +202,10 @@ export function normalizeTipoOperacionVenta(value: string): TipoOperacionVenta {
   return normalized;
 }
 
+// ---------------------------------------------------------------------------
+// Exported service functions (all via stored procedures)
+// ---------------------------------------------------------------------------
+
 export async function listDocumentosVenta(input: {
   tipoOperacion: TipoOperacionVenta;
   search?: string;
@@ -465,70 +215,49 @@ export async function listDocumentosVenta(input: {
   from?: string;
   to?: string;
 }) {
-  if (await hasUnifiedVenta()) {
-    return listDocumentosVentaUnified(input);
-  }
+  const page = Math.max(Number(input.page || 1), 1);
+  const limit = Math.min(Math.max(Number(input.limit || 50), 1), 500);
 
-  switch (input.tipoOperacion) {
-    case "FACT":
-      return getFacturas({ numFact: undefined, codUsuario: undefined, from: input.from, to: input.to, page: input.page, pageSize: input.limit });
-    case "PRESUP":
-      return listPresupuestos({ search: input.search, codigo: input.codigo, page: input.page, limit: input.limit });
-    case "PEDIDO":
-      return listPedidos({ search: input.search, codigo: input.codigo, page: input.page, limit: input.limit });
-    case "COTIZ":
-      return listCotizaciones({ search: input.search, codigo: input.codigo, page: input.page, limit: input.limit });
-    case "NOTACRED":
-      return notasService.listCredito({ search: input.search, codigo: input.codigo, page: input.page, limit: input.limit });
-    case "NOTADEB":
-      return notasService.listDebito({ search: input.search, codigo: input.codigo, page: input.page, limit: input.limit });
-    case "NOTA_ENT":
-      return notasService.listEntrega({ search: input.search, codigo: input.codigo, page: input.page, limit: input.limit });
-  }
+  const { rows, output } = await callSpOut<any>(
+    "usp_Doc_SalesDocument_List",
+    {
+      TipoOperacion: input.tipoOperacion,
+      Search: input.search || null,
+      Codigo: input.codigo || null,
+      FromDate: input.from || null,
+      ToDate: input.to || null,
+      Page: page,
+      Limit: limit
+    },
+    { TotalCount: sql.Int }
+  );
+
+  return {
+    page,
+    limit,
+    total: Number(output.TotalCount ?? 0),
+    rows,
+    executionMode: "unified" as const
+  };
 }
 
 export async function getDocumentoVenta(tipoOperacion: TipoOperacionVenta, numFact: string) {
-  if (await hasUnifiedVenta()) {
-    return getDocumentoVentaUnified(tipoOperacion, numFact);
-  }
-  switch (tipoOperacion) {
-    case "FACT":
-      return getFacturaByNumero(numFact);
-    case "PRESUP":
-      return { row: await getPresupuesto(numFact), executionMode: undefined };
-    case "PEDIDO":
-      return { row: await getPedido(numFact), executionMode: undefined };
-    case "COTIZ":
-      return getCotizacion(numFact);
-    case "NOTACRED":
-      return { row: await notasService.getCredito(numFact), executionMode: undefined };
-    case "NOTADEB":
-      return { row: await notasService.getDebito(numFact), executionMode: undefined };
-    case "NOTA_ENT":
-      return { row: await notasService.getEntrega(numFact), executionMode: undefined };
-  }
+  const rows = await callSp<any>("usp_Doc_SalesDocument_Get", {
+    TipoOperacion: tipoOperacion,
+    NumDoc: numFact
+  });
+
+  return {
+    row: rows[0] ?? null,
+    executionMode: "unified" as const
+  };
 }
 
 export async function getDetalleDocumentoVenta(tipoOperacion: TipoOperacionVenta, numFact: string) {
-  if (await hasUnifiedVenta()) {
-    return getDetalleDocumentoVentaUnified(tipoOperacion, numFact);
-  }
-  switch (tipoOperacion) {
-    case "FACT":
-      return getDetalleFactura(numFact);
-    case "PRESUP":
-      return getPresupuestoDetalle(numFact);
-    case "PEDIDO":
-      return getPedidoDetalle(numFact);
-    case "COTIZ":
-      return getCotizacionDetalle(numFact);
-    case "NOTACRED":
-      return notasService.getCreditoDetalle(numFact);
-    case "NOTADEB":
-      return notasService.getDebitoDetalle(numFact);
-    case "NOTA_ENT":
-      return notasService.getEntregaDetalle(numFact);
-  }
+  return callSp<any>("usp_Doc_SalesDocument_GetDetail", {
+    TipoOperacion: tipoOperacion,
+    NumDoc: numFact
+  });
 }
 
 export async function emitirDocumentoVentaTx(payload: {
@@ -538,26 +267,46 @@ export async function emitirDocumentoVentaTx(payload: {
   formasPago?: Record<string, unknown>[];
   options?: Record<string, unknown>;
 }) {
-  if (await hasUnifiedVenta()) {
-    return emitirDocumentoVentaUnifiedTx(payload);
-  }
+  const header = mapHeaderUnified(
+    payload.tipoOperacion,
+    payload.documento,
+    asString(getValue(payload.documento, "DOC_ORIGEN"), "").trim() || undefined,
+    asString(getValue(payload.documento, "TIPO_DOC_ORIGEN"), "").trim() || undefined
+  );
 
-  switch (payload.tipoOperacion) {
-    case "FACT":
-      return emitirFacturaTx({ factura: payload.documento, detalle: payload.detalle, formasPago: payload.formasPago ?? [], options: payload.options as any });
-    case "PRESUP":
-      return emitirPresupuestoTx({ presupuesto: payload.documento, detalle: payload.detalle, formasPago: payload.formasPago ?? [], options: payload.options as any });
-    case "PEDIDO":
-      return emitirPedidoTx({ pedido: payload.documento, detalle: payload.detalle, options: payload.options as any });
-    case "COTIZ":
-      return createCotizacionTx({ cotizacion: payload.documento, detalle: payload.detalle });
-    case "NOTACRED":
-      return notasService.emitirCreditoTx({ nota: payload.documento, detalle: payload.detalle, options: payload.options as any });
-    case "NOTADEB":
-      return notasService.emitirDebitoTx({ nota: payload.documento, detalle: payload.detalle, options: payload.options as any });
-    case "NOTA_ENT":
-      return notasService.emitirEntregaTx({ nota: payload.documento, detalle: payload.detalle, options: payload.options as any });
-  }
+  const numDoc = header.DocumentNumber;
+  if (!numDoc) throw new Error("missing_num_doc");
+
+  const detail = mapDetalleUnified(payload.tipoOperacion, numDoc, payload.detalle);
+  const payments = mapPagosUnified(payload.tipoOperacion, numDoc, payload.formasPago ?? []);
+
+  const headerJson = JSON.stringify(header);
+  const detailJson = JSON.stringify(detail);
+  const paymentsJson = payments.length > 0 ? JSON.stringify(payments) : null;
+
+  const rows = await callSp<{
+    ok: boolean;
+    numDoc: string;
+    detalleRows: number;
+    formasPagoRows: number;
+    pendingAmount: number;
+  }>("usp_Doc_SalesDocument_Upsert", {
+    TipoOperacion: payload.tipoOperacion,
+    HeaderJson: headerJson,
+    DetailJson: detailJson,
+    PaymentsJson: paymentsJson
+  });
+
+  const result = rows[0];
+
+  return {
+    ok: !!result?.ok,
+    numFact: result?.numDoc ?? numDoc,
+    detalleRows: result?.detalleRows ?? detail.length,
+    formaPagoRows: result?.formasPagoRows ?? payments.length,
+    saldoPendiente: result?.pendingAmount ?? 0,
+    executionMode: "unified"
+  };
 }
 
 export async function anularDocumentoVentaTx(payload: {
@@ -566,26 +315,28 @@ export async function anularDocumentoVentaTx(payload: {
   codUsuario?: string;
   motivo?: string;
 }) {
-  if (await hasUnifiedVenta()) {
-    return anularDocumentoVentaUnifiedTx(payload);
+  const rows = await callSp<{
+    ok: boolean;
+    numFact: string;
+    codCliente: string | null;
+    mensaje: string;
+  }>("usp_Doc_SalesDocument_Void", {
+    TipoOperacion: payload.tipoOperacion,
+    NumDoc: payload.numFact,
+    CodUsuario: payload.codUsuario ?? "API",
+    Motivo: payload.motivo ?? ""
+  });
+
+  const result = rows[0];
+  if (!result?.ok) {
+    throw new Error(result?.mensaje ?? "documento_no_encontrado");
   }
 
-  switch (payload.tipoOperacion) {
-    case "FACT":
-      return anularFacturaTx({ numFact: payload.numFact, codUsuario: payload.codUsuario, motivo: payload.motivo });
-    case "PRESUP":
-      return anularPresupuestoTx({ numFact: payload.numFact, codUsuario: payload.codUsuario, motivo: payload.motivo });
-    case "PEDIDO":
-      return anularPedidoTx({ numFact: payload.numFact, codUsuario: payload.codUsuario, motivo: payload.motivo, revertirInventario: true });
-    case "COTIZ":
-      throw new Error("anular_cotizacion_no_implementado");
-    case "NOTACRED":
-      return notasService.anularCreditoTx({ numFact: payload.numFact, codUsuario: payload.codUsuario, motivo: payload.motivo });
-    case "NOTADEB":
-      return notasService.anularDebitoTx({ numFact: payload.numFact, codUsuario: payload.codUsuario, motivo: payload.motivo });
-    case "NOTA_ENT":
-      return notasService.anularEntregaTx({ numFact: payload.numFact, codUsuario: payload.codUsuario, motivo: payload.motivo });
-  }
+  return {
+    ok: true,
+    numFact: payload.numFact,
+    executionMode: "unified" as const
+  };
 }
 
 export async function facturarDesdePedidoTx(payload: {
@@ -594,105 +345,44 @@ export async function facturarDesdePedidoTx(payload: {
   formasPago?: Record<string, unknown>[];
   options?: { generarCxC?: boolean; actualizarSaldosCliente?: boolean };
 }) {
-  if (!(await hasUnifiedVenta())) {
-    return facturarPedidoTx(payload);
-  }
-
   const numFactPedido = asString(payload.numFactPedido).trim();
   const numFactFactura = asString(getValue(payload.factura ?? {}, "NUM_FACT", "NUM_DOC")).trim();
   if (!numFactPedido) throw new Error("missing_num_fact_pedido");
   if (!numFactFactura) throw new Error("missing_num_fact_factura");
 
-  const pool = await getPool();
-  const tx = new sql.Transaction(pool);
-  await tx.begin();
-  try {
-    const headCols = await getColumnsTx(tx, "DocumentosVenta");
-    const detCols = await getColumnsTx(tx, "DocumentosVentaDetalle");
-    const headNum = docNumCol(headCols);
-    const detNum = docNumCol(detCols);
+  // Map payments to canonical format for the SP
+  const payments = mapPagosUnified("FACT", numFactFactura, payload.formasPago ?? []);
+  const paymentsJson = payments.length > 0 ? JSON.stringify(payments) : null;
 
-    const pedidoRows = await txQuery<any>(
-      tx,
-      `SELECT TOP 1 * FROM [dbo].[DocumentosVenta] WHERE ${quoteIdent(headNum)} = @numDoc AND TIPO_OPERACION = 'PEDIDO'`,
-      { numDoc: numFactPedido }
-    );
-    const pedido = pedidoRows[0];
-    if (!pedido) throw new Error("pedido_not_found");
-    if (asNumber(pedido.ANULADA, 0) === 1) throw new Error("pedido_anulado");
-    if (String(pedido.FACTURADA ?? "N").toUpperCase() === "S") throw new Error("pedido_already_facturado");
+  const rows = await callSp<{
+    ok: boolean;
+    pedido: string;
+    factura: string;
+    mensaje: string;
+  }>("usp_Doc_SalesDocument_InvoiceFromOrder", {
+    NumDocPedido: numFactPedido,
+    NumDocFactura: numFactFactura,
+    FormasPagoJson: paymentsJson,
+    CodUsuario: asString(getValue(payload.factura ?? {}, "COD_USUARIO"), "API")
+  });
 
-    const detallePedido = await txQuery<any>(
-      tx,
-      detCols.has("TIPO_OPERACION")
-        ? `SELECT * FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc AND TIPO_OPERACION = 'PEDIDO' ORDER BY ${detailOrderExpr(detCols)}`
-        : `SELECT * FROM [dbo].[DocumentosVentaDetalle] WHERE ${quoteIdent(detNum)} = @numDoc ORDER BY ${detailOrderExpr(detCols)}`,
-      { numDoc: numFactPedido }
-    );
-    if (!detallePedido.length) throw new Error("pedido_sin_detalle");
-
-    const facturaDoc: Record<string, unknown> = {
-      ...payload.factura,
-      NUM_DOC: numFactFactura,
-      NUM_FACT: numFactFactura,
-      CODIGO: getValue(payload.factura ?? {}, "CODIGO") ?? pedido.CODIGO,
-      NOMBRE: getValue(payload.factura ?? {}, "NOMBRE") ?? pedido.NOMBRE,
-      RIF: getValue(payload.factura ?? {}, "RIF") ?? pedido.RIF,
-      FECHA: getValue(payload.factura ?? {}, "FECHA") ?? new Date(),
-      TOTAL: getValue(payload.factura ?? {}, "TOTAL") ?? pedido.TOTAL,
-      DOC_ORIGEN: numFactPedido,
-      TIPO_DOC_ORIGEN: "PEDIDO",
-      COD_USUARIO: getValue(payload.factura ?? {}, "COD_USUARIO") ?? pedido.COD_USUARIO ?? "API"
-    };
-
-    const detalleFactura = detallePedido.map((d) => ({
-      COD_SERV: d.COD_SERV,
-      DESCRIPCION: d.DESCRIPCION,
-      CANTIDAD: d.CANTIDAD,
-      PRECIO: d.PRECIO,
-      SUBTOTAL: d.SUBTOTAL,
-      DESCUENTO: d.DESCUENTO,
-      TOTAL: d.TOTAL,
-      ALICUOTA: d.ALICUOTA,
-      MONTO_IVA: d.MONTO_IVA
-    }));
-
-    const facturaMirror = await upsertDocumentoVentaUnifiedTx(tx, {
-      tipoOperacion: "FACT",
-      documento: facturaDoc,
-      detalle: detalleFactura,
-      formasPago: payload.formasPago ?? [],
-      docOrigen: numFactPedido,
-      tipoDocOrigen: "PEDIDO"
-    });
-
-    const patch: string[] = [];
-    if (headCols.has("FACTURADA")) patch.push("FACTURADA = 'S'");
-    if (headCols.has("FECHA_REPORTE")) patch.push("FECHA_REPORTE = GETDATE()");
-    if (patch.length) {
-      await txExec(
-        tx,
-        `UPDATE [dbo].[DocumentosVenta] SET ${patch.join(", ")} WHERE ${quoteIdent(headNum)} = @numDoc AND TIPO_OPERACION = 'PEDIDO'`,
-        { numDoc: numFactPedido }
-      );
-    }
-
-    await tx.commit();
-    return {
-      ok: true,
-      pedido: numFactPedido,
-      factura: numFactFactura,
-      inventarioReDescontado: false,
-      facturaResult: {
-        ok: true,
-        numFact: facturaMirror.numDoc,
-        detalleRows: facturaMirror.detalleRows,
-        formaPagoRows: facturaMirror.formasPagoRows,
-        executionMode: "unified"
-      }
-    };
-  } catch (err) {
-    try { await tx.rollback(); } catch {}
-    throw err;
+  const result = rows[0];
+  if (!result?.ok) {
+    throw new Error(result?.mensaje ?? "facturacion_fallida");
   }
+
+  return {
+    ok: true,
+    pedido: numFactPedido,
+    factura: numFactFactura,
+    inventarioReDescontado: false,
+    facturaResult: {
+      ok: true,
+      numFact: numFactFactura,
+      detalleRows: 0,
+      formaPagoRows: payments.length,
+      saldoPendiente: 0,
+      executionMode: "unified"
+    }
+  };
 }

@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+﻿import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import type { Provider } from 'next-auth/providers';
 import { AuthError } from 'next-auth';
@@ -34,6 +34,7 @@ const PUBLIC_ROUTES = [
   '/authentication/register',
   '/authentication/forgot-password',
   '/authentication/reset-password',
+  '/authentication/verify-email',
   '/api/register',
   '/api/auth-test',
 ];
@@ -42,24 +43,45 @@ const providers: Provider[] = [
   Credentials({
     credentials: {
       username: { label: 'Usuario', type: 'text' },
-      password: { label: 'Contraseña', type: 'password' },
+      password: { label: 'Contrasena', type: 'password' },
+      companyId: { label: 'Empresa', type: 'text' },
+      branchId: { label: 'Sucursal', type: 'text' },
+      captchaToken: { label: 'Captcha', type: 'text' },
     },
     authorize: async (credentials) => {
       try {
-        const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
+        const BACKEND_URL =
+          process.env.BACKEND_URL ||
+          process.env.NEXT_PUBLIC_API_BASE ||
+          process.env.NEXT_PUBLIC_API_BASE_URL ||
+          process.env.NEXT_PUBLIC_API_URL ||
+          process.env.NEXT_PUBLIC_BACKEND_URL ||
+          process.env.API_URL ||
+          'http://localhost:4000';
 
-        const username = credentials?.username as string | undefined;
-        const password = credentials?.password as string | undefined;
+        const incoming = credentials as
+          | Partial<Record<'username' | 'password' | 'companyId' | 'branchId' | 'captchaToken', unknown>>
+          | undefined;
+        const username = typeof incoming?.username === 'string' ? incoming.username : undefined;
+        const password = typeof incoming?.password === 'string' ? incoming.password : undefined;
+        const captchaToken =
+          typeof incoming?.captchaToken === 'string' ? incoming.captchaToken : undefined;
 
         if (!username) {
           throw new CustomAuthError('invalid_credentials', 'Usuario es requerido');
         }
 
+        const companyId =
+          typeof incoming?.companyId === 'string' ? Number(incoming.companyId) : undefined;
+        const branchId =
+          typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
+
         const userData = {
-          usuario: username.includes('@')
-            ? username.split('@')[0]
-            : username,
+          usuario: username.includes('@') ? username.split('@')[0] : username,
           clave: password || '',
+          companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
+          branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
+          captchaToken,
         };
 
         const response = await fetch(`${BACKEND_URL}/v1/auth/login`, {
@@ -69,17 +91,28 @@ const providers: Provider[] = [
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
+          let backendErrorCode = response.status.toString();
+          let backendErrorMessage = 'Error de autenticacion';
+
+          try {
+            const payload = (await response.json()) as { error?: string; message?: string };
+            backendErrorCode = String(payload?.error || backendErrorCode);
+            backendErrorMessage = String(payload?.message || backendErrorMessage);
+          } catch {
+            const errorText = await response.text();
+            backendErrorMessage = errorText || backendErrorMessage;
+          }
+
           throw new CustomAuthError(
-            response.status.toString(),
-            `Error de autenticación: ${errorText}`
+            backendErrorCode,
+            `Error de autenticacion: ${backendErrorMessage}`
           );
         }
 
         const data = await response.json();
 
         if (!data || !data.token) {
-          throw new CustomAuthError('no_token', 'No se recibió un token válido');
+          throw new CustomAuthError('no_token', 'No se recibio un token valido');
         }
 
         return {
@@ -91,10 +124,12 @@ const providers: Provider[] = [
           tipo: data.usuario?.tipo || null,
           permisos: data.permisos || null,
           modulos: data.modulos || [],
+          company: data.company || null,
+          companyAccesses: data.companyAccesses || [],
         };
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (error instanceof CustomAuthError) throw error;
-        throw new CustomAuthError('unknown_error', 'Error en la autenticación');
+        throw new CustomAuthError('unknown_error', 'Error en la autenticacion');
       }
     },
   }),
@@ -110,7 +145,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // @ts-ignore – extended user object from authorize
+        // @ts-ignore
         token.accessToken = user.token;
         // @ts-ignore
         token.accessTokenExpires = getJwtExpMs(user.token as string);
@@ -122,9 +157,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.permisos = user.permisos;
         // @ts-ignore
         token.modulos = user.modulos;
+        // @ts-ignore
+        token.company = user.company;
+        // @ts-ignore
+        token.companyAccesses = user.companyAccesses;
       }
 
-      // Si ya está vencido, invalidar access token para forzar re-autenticación en cliente
       // @ts-ignore
       const accessTokenExpires = token.accessTokenExpires as number | undefined;
       if (accessTokenExpires && Date.now() >= accessTokenExpires) {
@@ -147,13 +185,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.permisos = token.permisos;
       // @ts-ignore
       session.modulos = token.modulos;
+      // @ts-ignore
+      session.company = token.company;
+      // @ts-ignore
+      session.companyAccesses = token.companyAccesses;
       return session;
     },
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
-      const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-        nextUrl.pathname.startsWith(route)
-      );
+      const isPublicRoute = PUBLIC_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
       const isStaticAsset =
         nextUrl.pathname.startsWith('/_next') ||
         nextUrl.pathname.includes('/images/') ||

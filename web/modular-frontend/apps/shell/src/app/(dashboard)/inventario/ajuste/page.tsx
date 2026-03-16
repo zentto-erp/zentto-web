@@ -1,10 +1,6 @@
-// app/(dashboard)/inventario/ajuste/page.tsx
-import { AjusteInventarioForm } from "@datqbox/module-admin";
+"use client";
 
-export const metadata = {
-  title: "Ajuste de Inventario | DatqBox",
-  description: "Registrar ajuste de inventario",
-};
+import { AjusteInventarioForm } from "@zentto/module-inventario";
 
 export default function AjusteInventarioPage() {
   return <AjusteInventarioForm />;

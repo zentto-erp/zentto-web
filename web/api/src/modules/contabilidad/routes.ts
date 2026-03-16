@@ -1,5 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
+import { advancedRouter } from "./routes-advanced.js";
+import { legalRouter } from "./routes-legal.js";
+import { activosFijosRouter } from "./activos-fijos.routes.js";
+import { fiscalTributariaRouter } from "./fiscal-tributaria.routes.js";
 import {
   anularAsiento,
   balanceComprobacion,
@@ -12,11 +16,24 @@ import {
   libroMayor,
   listAsientos,
   mayorAnalitico,
-  seedPlanCuentas
+  seedPlanCuentas,
+  getDefaultCompanyId,
+  normalizeTipoCuenta,
+  listCuentas,
+  getCuenta,
+  insertCuenta,
+  updateCuenta,
+  deleteCuenta,
+  libroDiario,
+  dashboardResumen
 } from "./service.js";
-import { getPool, sql } from "../../db/mssql.js";
 
 export const contabilidadRouter = Router();
+
+contabilidadRouter.use("/", advancedRouter);
+contabilidadRouter.use("/", legalRouter);
+contabilidadRouter.use("/activos-fijos", activosFijosRouter);
+contabilidadRouter.use("/fiscal", fiscalTributariaRouter);
 
 const listSchema = z.object({
   fechaDesde: z.string().optional(),
@@ -208,6 +225,24 @@ contabilidadRouter.get("/reportes/balance-general", async (req, res) => {
   return res.json(data);
 });
 
+contabilidadRouter.get("/reportes/libro-diario", async (req, res) => {
+  const parsed = rangoSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  }
+  const rows = await libroDiario(parsed.data.fechaDesde, parsed.data.fechaHasta);
+  return res.json({ rows });
+});
+
+contabilidadRouter.get("/dashboard/resumen", async (req, res) => {
+  const parsed = rangoSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  }
+  const data = await dashboardResumen(parsed.data.fechaDesde, parsed.data.fechaHasta);
+  return res.json(data);
+});
+
 contabilidadRouter.post("/setup/seed-plan-cuentas", async (req, res) => {
   const user = (req as any).user?.username || "API";
   const data = await seedPlanCuentas(user);
@@ -215,7 +250,7 @@ contabilidadRouter.post("/setup/seed-plan-cuentas", async (req, res) => {
 });
 
 
-// GET /v1/contabilidad/cuentas - Listar cuentas contables (Plan de Cuentas)
+// GET /v1/contabilidad/cuentas - Listar cuentas contables (canonico acct.Account)
 contabilidadRouter.get("/cuentas", async (req, res) => {
   const querySchema = z.object({
     search: z.string().optional(),
@@ -232,79 +267,54 @@ contabilidadRouter.get("/cuentas", async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
-    // Consulta simple sin paginación para máxima compatibilidad
-    const result = await pool.query(`SELECT TOP 100 * FROM Cuentas ORDER BY Cod_Cuenta`);
-
-    // Mapear columnas dinámicamente - soporta múltiples nombres de columnas
-    const rows = (result.recordset || []).map((row: any) => {
-      // Debug en desarrollo
-      if (process.env.NODE_ENV === "development" && row.COD_CUENTA === "1") {
-        console.log("DEBUG - Row keys:", Object.keys(row));
-        console.log("DEBUG - DESCRIPCION:", row.DESCRIPCION, "Desc_Cta:", row.Desc_Cta);
-      }
-      
-      return {
-        codCuenta: row.Cod_Cuenta || row.COD_CUENTA || row.cod_cuenta,
-        descripcion: row.DESCRIPCION || row.Desc_Cta || row.DESC_CTA || row.Desc_Cuenta || row.DESC_CUENTA || row.descripcion || "",
-        tipo: row.TIPO || row.Tipo || row.tipo,
-        nivel: row.Nivel || row.NIVEL || row.nivel || 1,
-      };
-    });
-
-    return res.json({
-      data: rows,
-      page: 1,
-      limit: 100,
-      total: rows.length,
-    });
-  } catch (err: any) {
-    // Fallback: devolver array vacío con mensaje
-    return res.json({
-      data: [],
-      page: 1,
-      limit: 50,
-      total: 0,
-      message: "Tabla Cuentas no disponible o estructura diferente",
-      error: process.env.NODE_ENV === "development" ? String(err) : undefined,
-    });
-  }
-});
-
-// GET /v1/contabilidad/cuentas/:codCuenta - Obtener cuenta específica
-contabilidadRouter.get("/cuentas/:codCuenta", async (req, res) => {
-  try {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), req.params.codCuenta)
-      .query(`SELECT TOP 1 * FROM Cuentas WHERE Cod_Cuenta = @CodCuenta`);
-
-    if (!result.recordset[0]) {
-      return res.status(404).json({ error: "not_found" });
+    const companyId = await getDefaultCompanyId();
+    const tipo = normalizeTipoCuenta(parsed.data.tipo);
+    if (parsed.data.tipo && !tipo) {
+      return res.status(400).json({ error: "invalid_tipo", message: "Tipo debe ser A/P/C/I/G" });
     }
 
-    const row = result.recordset[0];
-    return res.json({
-      codCuenta: row.Cod_Cuenta || row.COD_CUENTA || row.cod_cuenta,
-      descripcion: row.Desc_Cta || row.DESC_CTA || row.Desc_Cuenta || row.DESC_CUENTA || row.descripcion,
-      tipo: row.Tipo || row.TIPO || row.tipo,
-      nivel: row.Nivel || row.NIVEL || row.nivel,
+    if (parsed.data.nivel) {
+      const nivel = Number(parsed.data.nivel);
+      if (!Number.isFinite(nivel) || nivel < 1) return res.status(400).json({ error: "invalid_nivel" });
+    }
+
+    const result = await listCuentas({
+      companyId,
+      search: parsed.data.search,
+      tipo: tipo || undefined,
+      nivel: parsed.data.nivel ? Number(parsed.data.nivel) : undefined,
+      activo: String(parsed.data.activo ?? "true").toLowerCase() !== "false",
+      page: Number(parsed.data.page ?? "1") || 1,
+      limit: Number(parsed.data.limit ?? "50") || 50
     });
+
+    return res.json(result);
   } catch (err: any) {
     return res.status(500).json({ error: String(err) });
   }
 });
 
-// ─── CRUD Cuentas ─────────────────────────────────────────────────
+// GET /v1/contabilidad/cuentas/:codCuenta
+contabilidadRouter.get("/cuentas/:codCuenta", async (req, res) => {
+  try {
+    const companyId = await getDefaultCompanyId();
+    const cuenta = await getCuenta(companyId, req.params.codCuenta);
+
+    if (!cuenta) return res.status(404).json({ error: "not_found" });
+    return res.json(cuenta);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err) });
+  }
+});
 
 const cuentaBodySchema = z.object({
-  codCuenta: z.string().min(1, "Código de cuenta requerido"),
-  descripcion: z.string().min(1, "Descripción requerida"),
+  codCuenta: z.string().min(1, "Codigo de cuenta requerido"),
+  descripcion: z.string().min(1, "Descripcion requerida"),
   tipo: z.string().min(1, "Tipo requerido"),
   nivel: z.number().int().min(1).max(10).default(1),
 });
 
-// POST /v1/contabilidad/cuentas - Crear cuenta contable
+// POST /v1/contabilidad/cuentas
 contabilidadRouter.post("/cuentas", async (req, res) => {
   const parsed = cuentaBodySchema.safeParse(req.body);
   if (!parsed.success) {
@@ -312,23 +322,28 @@ contabilidadRouter.post("/cuentas", async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
+    const companyId = await getDefaultCompanyId();
     const { codCuenta, descripcion, tipo, nivel } = parsed.data;
-
-    const exists = await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), codCuenta)
-      .query(`SELECT 1 FROM Cuentas WHERE Cod_Cuenta = @CodCuenta`);
-
-    if (exists.recordset.length > 0) {
-      return res.status(409).json({ error: "duplicate", message: `La cuenta ${codCuenta} ya existe` });
+    const normalizedTipo = normalizeTipoCuenta(tipo);
+    if (!normalizedTipo) {
+      return res.status(400).json({ error: "invalid_tipo", message: "Tipo debe ser A/P/C/I/G" });
     }
 
-    await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), codCuenta)
-      .input("Descripcion", sql.NVarChar(150), descripcion)
-      .input("Tipo", sql.NVarChar(5), tipo)
-      .input("Nivel", sql.Int, nivel)
-      .query(`INSERT INTO Cuentas (Cod_Cuenta, Desc_Cta, Tipo, Nivel) VALUES (@CodCuenta, @Descripcion, @Tipo, @Nivel)`);
+    const result = await insertCuenta({
+      companyId,
+      codCuenta,
+      descripcion,
+      tipo: normalizedTipo,
+      nivel
+    });
+
+    if (!result.ok) {
+      // El SP retorna mensaje indicando duplicado
+      if (result.mensaje.includes("Ya existe")) {
+        return res.status(409).json({ error: "duplicate", message: result.mensaje });
+      }
+      return res.status(400).json({ error: "insert_failed", message: result.mensaje });
+    }
 
     return res.status(201).json({ ok: true, codCuenta });
   } catch (err: any) {
@@ -336,7 +351,7 @@ contabilidadRouter.post("/cuentas", async (req, res) => {
   }
 });
 
-// PUT /v1/contabilidad/cuentas/:codCuenta - Actualizar cuenta contable
+// PUT /v1/contabilidad/cuentas/:codCuenta
 contabilidadRouter.put("/cuentas/:codCuenta", async (req, res) => {
   const updateSchema = z.object({
     descripcion: z.string().min(1).optional(),
@@ -350,69 +365,55 @@ contabilidadRouter.put("/cuentas/:codCuenta", async (req, res) => {
   }
 
   try {
-    const pool = await getPool();
+    const companyId = await getDefaultCompanyId();
     const codCuenta = req.params.codCuenta;
-
-    const exists = await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), codCuenta)
-      .query(`SELECT 1 FROM Cuentas WHERE Cod_Cuenta = @CodCuenta`);
-
-    if (exists.recordset.length === 0) {
-      return res.status(404).json({ error: "not_found", message: `Cuenta ${codCuenta} no encontrada` });
+    const normalizedTipo = parsed.data.tipo !== undefined ? normalizeTipoCuenta(parsed.data.tipo) : null;
+    if (parsed.data.tipo !== undefined && !normalizedTipo) {
+      return res.status(400).json({ error: "invalid_tipo", message: "Tipo debe ser A/P/C/I/G" });
     }
 
-    const sets: string[] = [];
-    const request = pool.request().input("CodCuenta", sql.NVarChar(25), codCuenta);
-
-    if (parsed.data.descripcion !== undefined) {
-      sets.push("Desc_Cta = @Descripcion");
-      request.input("Descripcion", sql.NVarChar(150), parsed.data.descripcion);
-    }
-    if (parsed.data.tipo !== undefined) {
-      sets.push("Tipo = @Tipo");
-      request.input("Tipo", sql.NVarChar(5), parsed.data.tipo);
-    }
-    if (parsed.data.nivel !== undefined) {
-      sets.push("Nivel = @Nivel");
-      request.input("Nivel", sql.Int, parsed.data.nivel);
-    }
-
-    if (sets.length === 0) {
+    if (!parsed.data.descripcion && !parsed.data.tipo && parsed.data.nivel === undefined) {
       return res.status(400).json({ error: "no_fields", message: "No se proporcionaron campos para actualizar" });
     }
 
-    await request.query(`UPDATE Cuentas SET ${sets.join(", ")} WHERE Cod_Cuenta = @CodCuenta`);
+    const result = await updateCuenta({
+      companyId,
+      codCuenta,
+      descripcion: parsed.data.descripcion,
+      tipo: normalizedTipo || undefined,
+      nivel: parsed.data.nivel
+    });
+
+    if (!result.ok) {
+      if (result.mensaje.includes("No se encontro")) {
+        return res.status(404).json({ error: "not_found", message: result.mensaje });
+      }
+      return res.status(400).json({ error: "update_failed", message: result.mensaje });
+    }
+
     return res.json({ ok: true, codCuenta });
   } catch (err: any) {
     return res.status(500).json({ error: String(err) });
   }
 });
 
-// DELETE /v1/contabilidad/cuentas/:codCuenta - Eliminar cuenta contable
+// DELETE /v1/contabilidad/cuentas/:codCuenta
 contabilidadRouter.delete("/cuentas/:codCuenta", async (req, res) => {
   try {
-    const pool = await getPool();
+    const companyId = await getDefaultCompanyId();
     const codCuenta = req.params.codCuenta;
 
-    const exists = await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), codCuenta)
-      .query(`SELECT 1 FROM Cuentas WHERE Cod_Cuenta = @CodCuenta`);
+    const result = await deleteCuenta({ companyId, codCuenta });
 
-    if (exists.recordset.length === 0) {
-      return res.status(404).json({ error: "not_found", message: `Cuenta ${codCuenta} no encontrada` });
+    if (!result.ok) {
+      if (result.mensaje.includes("No se encontro") || result.mensaje.includes("ya fue eliminada")) {
+        return res.status(404).json({ error: "not_found", message: result.mensaje });
+      }
+      if (result.mensaje.includes("cuentas hijas")) {
+        return res.status(409).json({ error: "has_children", message: result.mensaje });
+      }
+      return res.status(400).json({ error: "delete_failed", message: result.mensaje });
     }
-
-    const hasMovements = await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), codCuenta)
-      .query(`SELECT TOP 1 1 FROM DtllAsiento WHERE Cod_Cuenta = @CodCuenta`);
-
-    if (hasMovements.recordset.length > 0) {
-      return res.status(409).json({ error: "has_movements", message: "No se puede eliminar: la cuenta tiene movimientos contables" });
-    }
-
-    await pool.request()
-      .input("CodCuenta", sql.NVarChar(25), codCuenta)
-      .query(`DELETE FROM Cuentas WHERE Cod_Cuenta = @CodCuenta`);
 
     return res.json({ ok: true, codCuenta });
   } catch (err: any) {

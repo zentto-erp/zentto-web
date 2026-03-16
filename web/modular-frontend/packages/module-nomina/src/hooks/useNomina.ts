@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiDelete } from "@zentto/shared-api";
 
 const QK_CONCEPTOS = "nomina-conceptos";
 const QK_NOMINAS = "nomina-list";
@@ -17,6 +17,7 @@ export interface ConceptoFilter {
   search?: string;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 export interface ConceptoInput {
@@ -43,6 +44,7 @@ export interface NominaFilter {
   soloAbiertas?: boolean;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
 }
 
 export interface ProcesarEmpleadoInput {
@@ -94,6 +96,14 @@ export function useSaveConcepto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ConceptoInput) => apiPost("/v1/nomina/conceptos", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCEPTOS] }),
+  });
+}
+
+export function useDeleteConcepto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (codigo: string) => apiDelete(`/v1/nomina/conceptos/${encodeURIComponent(codigo)}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCEPTOS] }),
   });
 }
@@ -208,5 +218,80 @@ export function useSaveConstante() {
   return useMutation({
     mutationFn: (data: ConstanteInput) => apiPost("/v1/nomina/constantes", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONSTANTES] }),
+  });
+}
+
+export function useDeleteConstante() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (codigo: string) => apiDelete(`/v1/nomina/constantes/${encodeURIComponent(codigo)}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONSTANTES] }),
+  });
+}
+
+// ─── Document Templates ─────────────────────────────────────────────────────
+
+export interface DocumentTemplate {
+  templateId?: number;
+  templateCode: string;
+  templateName: string;
+  templateType: string;
+  countryCode: string;
+  payrollCode?: string;
+  contentMD?: string;
+  isDefault?: boolean;
+  isSystem?: boolean;
+  isActive?: boolean;
+}
+
+export interface RenderedDocument {
+  templateCode: string;
+  templateName: string;
+  contentRendered: string;
+  format: 'markdown';
+}
+
+export function useDocumentTemplatesList(countryCode?: string, templateType?: string) {
+  return useQuery({
+    queryKey: ['documentTemplates', countryCode, templateType],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (countryCode) params.set('countryCode', countryCode);
+      if (templateType) params.set('templateType', templateType);
+      return apiGet(`/v1/nomina/documentos/templates?${params}`);
+    },
+  });
+}
+
+export function useDocumentTemplate(templateCode: string) {
+  return useQuery({
+    queryKey: ['documentTemplate', templateCode],
+    queryFn: () => apiGet(`/v1/nomina/documentos/templates/${templateCode}`),
+    enabled: !!templateCode,
+  });
+}
+
+export function useSaveDocumentTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: DocumentTemplate) =>
+      apiPost('/v1/nomina/documentos/templates', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['documentTemplates'] }),
+  });
+}
+
+export function useDeleteDocumentTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (templateCode: string) =>
+      apiDelete(`/v1/nomina/documentos/templates/${templateCode}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['documentTemplates'] }),
+  });
+}
+
+export function useRenderDocument() {
+  return useMutation({
+    mutationFn: ({ templateCode, ...source }: { templateCode: string; payrollRunId?: number; batchId?: number; employeeCode?: string }) =>
+      apiPost(`/v1/nomina/documentos/templates/${templateCode}/render`, source),
   });
 }

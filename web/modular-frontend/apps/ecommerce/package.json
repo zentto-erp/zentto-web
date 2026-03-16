@@ -1,0 +1,40 @@
+{
+    "name": "@zentto/ecommerce",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 3009",
+        "build": "next build",
+        "start": "next start -p 3009",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@zentto/shared-api": "*",
+        "@zentto/shared-auth": "*",
+        "@zentto/shared-ui": "*",
+        "@zentto/module-ecommerce": "*",
+        "@emotion/cache": "^11.14.0",
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
+        "@mui/icons-material": "^6.4.1",
+        "@mui/material": "^6.4.1",
+        "@mui/material-nextjs": "^6.4.1",
+        "@mui/system": "^6.4.6",
+        "@mui/x-data-grid": "^7.24.0",
+        "@mui/x-date-pickers": "^7.26.0",
+        "@tanstack/react-query": "^5.64.1",
+        "dayjs": "^1.11.13",
+        "next": "15.5.12",
+        "next-auth": "5.0.0-beta.25",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20",
+        "@types/react": "^18",
+        "@types/react-dom": "^18",
+        "eslint": "^9",
+        "eslint-config-next": "15.5.12",
+        "typescript": "^5"
+    }
+}

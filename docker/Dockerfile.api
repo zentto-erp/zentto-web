@@ -1,0 +1,27 @@
+# ── Stage 1: build ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY web/api/package*.json ./
+RUN npm ci
+
+COPY web/api/ .
+RUN npm run build
+
+# ── Stage 2: runtime ─────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copiar solo lo necesario para producción
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+
+# Reinstalar solo dependencias de producción
+RUN npm ci --omit=dev
+
+# Carpeta de media persistente
+RUN mkdir -p /app/storage/media
+
+EXPOSE 4000
+CMD ["node", "dist/index.js"]

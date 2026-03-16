@@ -1,0 +1,55 @@
+name: DB Governance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "web/api/src/tools/db-governance-report.ts"
+      - "web/api/sql/governance/**"
+      - "web/api/package.json"
+      - ".github/workflows/db-governance.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "web/api/src/tools/db-governance-report.ts"
+      - "web/api/sql/governance/**"
+      - "web/api/package.json"
+      - ".github/workflows/db-governance.yml"
+
+jobs:
+  governance-report:
+    name: Governance Readiness Report
+    runs-on: ubuntu-latest
+    if: ${{ secrets.DB_SERVER != '' && secrets.DB_DATABASE != '' && secrets.DB_USER != '' && secrets.DB_PASSWORD != '' }}
+    defaults:
+      run:
+        working-directory: web/api
+    env:
+      DB_SERVER: ${{ secrets.DB_SERVER }}
+      DB_DATABASE: ${{ secrets.DB_DATABASE }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_ENCRYPT: ${{ secrets.DB_ENCRYPT || 'false' }}
+      DB_TRUST_CERT: ${{ secrets.DB_TRUST_CERT || 'true' }}
+      NODE_ENV: development
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build API
+        run: npm run build
+
+      - name: Run DB governance report
+        run: npm run db:governance:report
+

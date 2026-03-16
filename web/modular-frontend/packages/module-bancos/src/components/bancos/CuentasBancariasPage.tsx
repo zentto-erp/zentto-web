@@ -1,125 +1,237 @@
 "use client";
-
 import { useMemo, useState } from "react";
-import {
-  Box,
-  Grid,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography
-} from "@mui/material";
+import { useRouter } from "next/navigation";
+import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import PrintIcon from "@mui/icons-material/Print";
+import Grid from "@mui/material/Grid2";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { type Dayjs } from "dayjs";
+import "dayjs/locale/es";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
 
-function firstDayOfCurrentMonth() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-}
+const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "default"> = {
+  DEP: "success",
+  PCH: "error",
+  NCR: "info",
+  NDB: "warning",
+  IDB: "default",
+};
 
-function lastDayOfCurrentMonth() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
-}
+const colsCuentas: GridColDef[] = [
+  { field: "Nro_Cta", headerName: "Nro Cuenta", width: 150 },
+  {
+    field: "BancoNombre",
+    headerName: "Banco",
+    flex: 1,
+    valueGetter: (value, row) => row.BancoNombre ?? row.Banco ?? "",
+  },
+  {
+    field: "Saldo",
+    headerName: "Saldo",
+    width: 140,
+    align: "right",
+    headerAlign: "right",
+    renderCell: (p) => {
+      const val = Number(p.value ?? 0);
+      return (
+        <Chip
+          size="small"
+          label={formatCurrency(val)}
+          color={val >= 0 ? "success" : "error"}
+          variant="outlined"
+        />
+      );
+    },
+  },
+];
 
 export default function CuentasBancariasPage() {
-  const [nroCta, setNroCta] = useState("");
-  const [desde, setDesde] = useState(firstDayOfCurrentMonth());
-  const [hasta, setHasta] = useState(lastDayOfCurrentMonth());
-  const [page, setPage] = useState(1);
-  const [limit] = useState(50);
+  const router = useRouter();
+  const { timeZone } = useTimezone();
+
+  const colsMovimientos: GridColDef[] = [
+    {
+      field: "Fecha",
+      headerName: "Fecha",
+      width: 140,
+      renderCell: (p) => toDateOnly(p.value as string, timeZone),
+    },
+    {
+      field: "Tipo",
+      headerName: "Tipo",
+      width: 90,
+      renderCell: (p) => (
+        <Chip
+          size="small"
+          label={String(p.value)}
+          color={tipoColors[String(p.value)] ?? "default"}
+        />
+      ),
+    },
+    { field: "Nro_Ref", headerName: "Referencia", width: 130 },
+    { field: "Beneficiario", headerName: "Beneficiario", flex: 1, minWidth: 180 },
+    {
+      field: "Monto",
+      headerName: "Monto",
+      width: 140,
+      align: "right",
+      headerAlign: "right",
+      renderCell: (p) => formatCurrency(Number(p.value ?? 0)),
+    },
+  ];
+  const [nroCta, setNroCta] = useState<string>("");
+  const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().tz(timeZone).startOf("month"));
+  const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().tz(timeZone));
+  const [page, setPage] = useState<number>(1);
+  const [limit] = useState<number>(50);
 
   const { data: cuentasData, isLoading: loadingCtas } = useCuentasBancarias();
-  const input = useMemo(() => ({ nroCta: nroCta || undefined, desde, hasta, page, limit }), [nroCta, desde, hasta, page, limit]);
+
+  const input = useMemo(
+    () => ({
+      nroCta: nroCta || undefined,
+      desde: fechaDesde?.format("YYYY-MM-DD"),
+      hasta: fechaHasta?.format("YYYY-MM-DD"),
+      page,
+      limit,
+    }),
+    [nroCta, fechaDesde, fechaHasta, page, limit],
+  );
+
   const { data: movsData, isLoading: loadingMovs } = useMovimientosCuenta(input);
 
-  const cuentas = cuentasData?.rows ?? [];
-  const movs = movsData?.rows ?? [];
+  const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
+  const movs = (movsData?.rows ?? []) as Record<string, any>[];
 
   return (
     <Box>
+      <ContextActionHeader
+        title="Cuentas Bancarias"
+        secondaryActions={[
+          {
+            label: "Imprimir",
+            onClick: () => window.print(),
+          },
+          {
+            label: "Nueva Conciliación",
+            onClick: () => {
+              window.location.href = "/conciliacion/wizard";
+            },
+          },
+        ]}
+      />
+
+      {/* Print header (hidden on screen, visible on print) */}
+      <Box className="print-only" sx={{ display: "none", mb: 2 }}>
+        <Typography variant="h5" fontWeight={700}>Estado de Cuenta Bancaria</Typography>
+        {nroCta && <Typography variant="subtitle1">Cuenta: {nroCta}</Typography>}
+        <Typography variant="body2" color="text.secondary">
+          Período: {fechaDesde?.format("DD/MM/YYYY") ?? "—"} al {fechaHasta?.format("DD/MM/YYYY") ?? "—"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Generado: {new Date().toLocaleString("es-VE")}
+        </Typography>
+      </Box>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} lg={5}>
+        {/* Panel izquierdo: Cuentas */}
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Cuentas</Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nro Cta</TableCell>
-                  <TableCell>Banco</TableCell>
-                  <TableCell align="right">Saldo</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loadingCtas && <TableRow><TableCell colSpan={3}>Cargando...</TableCell></TableRow>}
-                {!loadingCtas && cuentas.length === 0 && <TableRow><TableCell colSpan={3}>Sin cuentas.</TableCell></TableRow>}
-                {!loadingCtas && cuentas.map((c: any) => (
-                  <TableRow key={String(c.Nro_Cta)} selected={nroCta === String(c.Nro_Cta)} onClick={() => setNroCta(String(c.Nro_Cta))} sx={{ cursor: "pointer" }}>
-                    <TableCell>{String(c.Nro_Cta)}</TableCell>
-                    <TableCell>{String(c.BancoNombre ?? c.Banco ?? "")}</TableCell>
-                    <TableCell align="right">{Number(c.Saldo ?? 0).toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+              Cuentas
+            </Typography>
+            <DataGrid
+              rows={cuentas}
+              columns={colsCuentas}
+              loading={loadingCtas}
+              onRowClick={(params) => setNroCta(String(params.row.Nro_Cta))}
+              getRowId={(r) => r.Nro_Cta ?? r.nroCta ?? Math.random()}
+              density="compact"
+              hideFooter
+              disableRowSelectionOnClick
+              sx={{
+                minHeight: 400,
+                "& .MuiDataGrid-row.Mui-selected": { bgcolor: "action.selected" },
+              }}
+            />
           </Paper>
         </Grid>
 
-        <Grid item xs={12} lg={7}>
-          <Paper sx={{ p: 2, mb: 1 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Filtro Movimientos</Typography>
-            <Grid container spacing={1}>
-              <Grid item xs={12} md={4}>
-                <TextField fullWidth size="small" label="Cuenta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField fullWidth size="small" type="date" label="Desde" InputLabelProps={{ shrink: true }} value={desde} onChange={(e) => setDesde(e.target.value)} />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField fullWidth size="small" type="date" label="Hasta" InputLabelProps={{ shrink: true }} value={hasta} onChange={(e) => setHasta(e.target.value)} />
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <TextField fullWidth size="small" type="number" label="Pagina" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />
-              </Grid>
-            </Grid>
-          </Paper>
-
+        {/* Panel derecho: Movimientos */}
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Movimientos</Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Ref</TableCell>
-                  <TableCell>Beneficiario</TableCell>
-                  <TableCell align="right">Monto</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loadingMovs && <TableRow><TableCell colSpan={6}>Cargando...</TableCell></TableRow>}
-                {!loadingMovs && movs.length === 0 && <TableRow><TableCell colSpan={6}>Sin movimientos.</TableCell></TableRow>}
-                {!loadingMovs && movs.map((m: any) => (
-                  <TableRow key={String(m.id ?? m.ID)}>
-                    <TableCell>{String(m.id ?? m.ID)}</TableCell>
-                    <TableCell>{String(m.Fecha ?? "").slice(0, 19).replace("T", " ")}</TableCell>
-                    <TableCell>{String(m.Tipo ?? "")}</TableCell>
-                    <TableCell>{String(m.Nro_Ref ?? "")}</TableCell>
-                    <TableCell>{String(m.Beneficiario ?? "")}</TableCell>
-                    <TableCell align="right">{Number(m.Monto ?? 0).toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                Movimientos
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddIcon />}
+                disabled={!nroCta}
+                onClick={() => router.push(`/bancos/movimientos/generar?cuenta=${nroCta}`)}
+              >
+                Agregar Movimiento
+              </Button>
+            </Stack>
+
+            <Stack direction="row" spacing={2} mb={2} alignItems="center">
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                <DatePicker
+                  label="Desde"
+                  value={fechaDesde}
+                  onChange={setFechaDesde}
+                  slotProps={{ textField: { size: "small" } }}
+                />
+                <DatePicker
+                  label="Hasta"
+                  value={fechaHasta}
+                  onChange={setFechaHasta}
+                  slotProps={{ textField: { size: "small" } }}
+                />
+              </LocalizationProvider>
+              {nroCta && (
+                <Chip
+                  label={`Cuenta: ${nroCta}`}
+                  onDelete={() => setNroCta("")}
+                  color="primary"
+                />
+              )}
+            </Stack>
+
+            <DataGrid
+              rows={movs}
+              columns={colsMovimientos}
+              loading={loadingMovs}
+              rowCount={movsData?.total ?? movs.length}
+              pageSizeOptions={[25, 50, 100]}
+              paginationModel={{ page: page - 1, pageSize: limit }}
+              onPaginationModelChange={(m) => setPage(m.page + 1)}
+              paginationMode="server"
+              disableRowSelectionOnClick
+              getRowId={(r) => r.id ?? r.ID ?? Math.random()}
+              density="compact"
+              sx={{ minHeight: 400 }}
+            />
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .print-only { display: block !important; }
+          body { background: white !important; }
+          nav, header, .MuiAppBar-root, .MuiDrawer-root { display: none !important; }
+        }
+      `}</style>
     </Box>
   );
 }
-

@@ -2,16 +2,28 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Inventario, CreateInventarioDTO, UpdateInventarioDTO, CrudFilter, PaginatedResponse } from "@datqbox/shared-api/types";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "inventario";
 const API_BASE = "/api/v1/inventario";
 
+interface InventarioListResponse {
+  rows: Record<string, unknown>[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface InventarioListFilter {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 // ============ QUERIES ============
 
-export function useInventarioList(filter?: CrudFilter) {
-  return useQuery<PaginatedResponse<Inventario>>({
+export function useInventarioList(filter?: InventarioListFilter) {
+  return useQuery<InventarioListResponse>({
     queryKey: [QUERY_KEY, "list", filter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -24,7 +36,7 @@ export function useInventarioList(filter?: CrudFilter) {
 }
 
 export function useInventarioById(codigoArticulo: string) {
-  return useQuery<Inventario>({
+  return useQuery({
     queryKey: [QUERY_KEY, codigoArticulo],
     queryFn: () => apiGet(`${API_BASE}/${codigoArticulo}`),
     enabled: !!codigoArticulo,
@@ -36,7 +48,7 @@ export function useInventarioById(codigoArticulo: string) {
 export function useCreateMovimiento() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateInventarioDTO) => apiPost(`${API_BASE}/movimientos`, data),
+    mutationFn: (data: Record<string, unknown>) => apiPost(`${API_BASE}/movimientos`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
@@ -46,7 +58,7 @@ export function useCreateMovimiento() {
 export function useUpdateInventario(codigoArticulo: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateInventarioDTO) => apiPut(`${API_BASE}/${codigoArticulo}`, data),
+    mutationFn: (data: Record<string, unknown>) => apiPut(`${API_BASE}/${codigoArticulo}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, codigoArticulo] });

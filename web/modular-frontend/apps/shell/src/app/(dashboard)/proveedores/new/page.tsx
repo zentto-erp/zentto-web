@@ -1,8 +1,8 @@
 // app/(dashboard)/proveedores/new/page.tsx
-import { ProveedorForm } from "@datqbox/module-admin";
+import { ProveedorForm } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Nuevo Proveedor | DatqBox",
+  title: "Nuevo Proveedor | Zentto",
   description: "Crear nuevo proveedor",
 };
 

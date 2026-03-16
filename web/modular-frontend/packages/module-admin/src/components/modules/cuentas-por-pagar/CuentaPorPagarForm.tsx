@@ -14,7 +14,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useCuentaPorPagarById, useCreateCuentaPorPagar, useUpdateCuentaPorPagar } from "../../../hooks/useCuentasPorPagar";
-import { CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO } from "@datqbox/shared-api/types";
+import { CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO } from "@zentto/shared-api/types";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 
 interface CuentaPorPagarFormProps {
   id?: string;
@@ -22,6 +24,7 @@ interface CuentaPorPagarFormProps {
 
 export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const isEdit = !!id;
 
   const [formData, setFormData] = useState({
@@ -30,8 +33,8 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
     numeroReferencia: "",
     montoTotal: 0,
     saldo: 0,
-    fechaCreacion: new Date().toISOString().split("T")[0],
-    fechaVencimiento: new Date().toISOString().split("T")[0],
+    fechaCreacion: toDateOnly(new Date(), timeZone),
+    fechaVencimiento: toDateOnly(new Date(), timeZone),
     descripcion: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});

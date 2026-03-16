@@ -1,4 +1,4 @@
-﻿import { query } from "../../db/query.js";
+import { callSp } from "../../db/query.js";
 
 export type TableColumn = {
   columnName: string;
@@ -43,46 +43,25 @@ let cache: TableMetadata[] | null = null;
 let cacheAt = 0;
 const CACHE_TTL_MS = 60_000;
 
+function normalizeColumnName(name: string) {
+  return name.replace(/[\s_]/g, "").toLowerCase();
+}
+
+function isExcludedMetadataColumn(name: string) {
+  return normalizeColumnName(name) === "upsizets";
+}
+
 export async function getMetadata(force = false): Promise<TableMetadata[]> {
   const now = Date.now();
   if (!force && cache && now - cacheAt < CACHE_TTL_MS) {
     return cache;
   }
 
-  const tables = await query<TableRow>(`
-    SELECT TABLE_SCHEMA, TABLE_NAME
-    FROM INFORMATION_SCHEMA.TABLES
-    WHERE TABLE_TYPE = 'BASE TABLE'
-    ORDER BY TABLE_SCHEMA, TABLE_NAME
-  `);
+  const tables = await callSp<TableRow>("usp_Sys_Metadata_Tables");
 
-  const columns = await query<ColumnRow>(`
-    SELECT
-      c.TABLE_SCHEMA,
-      c.TABLE_NAME,
-      c.COLUMN_NAME,
-      c.DATA_TYPE,
-      c.IS_NULLABLE,
-      CONVERT(int, COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity')) AS is_identity,
-      CONVERT(int, COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsComputed')) AS is_computed
-    FROM INFORMATION_SCHEMA.COLUMNS c
-    ORDER BY c.TABLE_SCHEMA, c.TABLE_NAME, c.ORDINAL_POSITION
-  `);
+  const columns = await callSp<ColumnRow>("usp_Sys_Metadata_Columns");
 
-  const pks = await query<PkRow>(`
-    SELECT
-      ku.TABLE_SCHEMA,
-      ku.TABLE_NAME,
-      ku.COLUMN_NAME,
-      ku.ORDINAL_POSITION
-    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
-    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku
-      ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
-      AND tc.TABLE_SCHEMA = ku.TABLE_SCHEMA
-      AND tc.TABLE_NAME = ku.TABLE_NAME
-    WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
-    ORDER BY ku.TABLE_SCHEMA, ku.TABLE_NAME, ku.ORDINAL_POSITION
-  `);
+  const pks = await callSp<PkRow>("usp_Sys_Metadata_PrimaryKeys");
 
   const pkMap = new Map<string, string[]>();
   for (const pk of pks) {
@@ -94,6 +73,7 @@ export async function getMetadata(force = false): Promise<TableMetadata[]> {
 
   const colMap = new Map<string, TableColumn[]>();
   for (const col of columns) {
+    if (isExcludedMetadataColumn(col.COLUMN_NAME)) continue;
     const key = `${col.TABLE_SCHEMA}.${col.TABLE_NAME}`;
     const arr = colMap.get(key) ?? [];
     arr.push({

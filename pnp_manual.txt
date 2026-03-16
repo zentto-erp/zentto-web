@@ -1,0 +1,461 @@
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           1
+MANUAL TÉCNICO
+PROTOCOLO DE COMUNICACIÓN 
+FISCAL PNP V 5,4
+PF220A
+PF220DA
+PF300A
+PF950A
+PF675A
+PFT88A
+URL: www.desarrollospnp.com  
+E-mail: fiscales@desarrollospnp.com
+Todos los derechos reservados.  Ninguna parte de este documento podrá ser reproducida, almacenada en un sistema
+que permita su recuperación posterior o transmitida en cualquier  forma o por cualquier medio sin previa autorización
+escrita de DESARROLLOS PNP, C.A. . Si bien se han tomado todas las precauciones del caso en la preparación de este
+libro, DESARROLLOS PNP, C.A. no asume ninguna responsabilidad por errores u omisiones; tampoco se asume
+ninguna responsabilidad por daños y perjuicios resultantes del uso de la información contenida en el presente manual.
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           2
+CONTROL VERSIONESCONTROL VERSIONES
+2022-04-02 Se modifica la base de calculo del IGTF según nuevas instrucciones. Ver fw 26.4
+2022-03-24 Se corrige respuesta comando 0xC2
+2022-03-13 Se agrega soporte al IGTF 3%. Cambios entre otros: Respuesta 0x43 0x45 0x38
+entre otros. Se agrega cambio de tipo de antena wifi.
+2021-07-12 Se corrigen errores de sintaxis en varios comandos
+2021-06-03 Se corrige comando código de barra 0x54 y se agrega comando logo en d/fiscal
+2021-05-05 Se agrega campo en comando 0x45
+2021-02-22 Se corrigen campos en respuesta comando X y memoria fiscal
+2021-01-22 Se agregan nuevas funciones de comunicación
+2021-01-10 Se agrega comando de SSID, Estatus, ip fijo, prueba de comunicación, etc.
+2020-12-10 Se agrega comando 0x80 seriales fiscales.
+2020-12-05 Se revisan parámetros de salida
+2020-09-12 Se anexa comunicación  WIFI
+2020-09-01 Se agrega descripción de impuesto percibido
+2020-08-20 Se revisa parámetros de comandos de reporte de memoria resumida
+2020-06-01 Se agrega comandos nuevos Memoria Auditoria
+2019-09-02 Se generan los nuevos comandos providencia 0141 y modelos nuevos
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           3
+CONTENIDOCONTENIDO
+CONTROL VERSIONES ................................................................................................................................................ 2
+CONTENIDO.................................................................................................................................................................... 3
+TERMINOLOG I8A............................................................................................................................................................ 5
+INTRODUCCI O 8N............................................................................................................................................................ 7
+Funciones de la impresora fiscal ............................................................................................................................ 7
+Firmware.......................................................................................................................................................................... 8
+PRUEBA DEL RELOJ DE TIEMPO REAL ............................................................................................................... 8
+PRUEBA DE LA MEMORIA FISCAL ......................................................................................................................... 8
+PRUEBA DE FACTURAS .............................................................................................................................................. 9
+TIPOS DE DOCUMENTOS ........................................................................................................................................... 9
+Interfaz host - Impresora Fiscal ........................................................................................................................... 12
+Protocolo de comunicaci o >n fiscal........................................................................................................................ 13
+Respuestas de la impresora fiscal ....................................................................................................................... 14
+NU 8MERO DE ERROR................................................................................................................................................. 16
+RESET............................................................................................................................................................................. 16
+INDICADORES DE ESTADO .................................................................................................................................... 16
+ESTADO FISCAL.......................................................................................................................................................... 17
+ESTADO DE LA IMPRESORA .................................................................................................................................. 17
+COMANDOS DE CONTROL FISCAL ...................................................................................................................... 18
+Reporte Z - Reporte X (0x39) : .............................................................................................................................. 23
+Reporte memoria fiscal consulta por fecha (0x3A): .................................................................................... 25
+Reporte memoria fiscal consulta por numero (0x3B): ............................................................................... 26
+Reporte memoria de auditor í>a consulta por numero de documento y tipo (0xBA): .....................28
+COMANDOS PARA GENERAR FACTURAS FISCALES .................................................................................... 30
+Abrir factura fiscal (0x40) ...................................................................................................................................... 30
+Imprimir texto en factura fiscal (0x41) ............................................................................................................. 31
+Imprimir Rengl o >n en factura fiscal (0x42) ...................................................................................................... 32
+Subtotal en factura fiscal (0x43) .......................................................................................................................... 34
+Cerrar factura fiscal (0x45) .................................................................................................................................... 35
+COMANDOS PARA GENERAR DOCUMENTOS NO FISCALES .................................................................... 37
+Abrir documento no fiscal (0x48) ....................................................................................................................... 37
+Imprimir texto en documento no fiscal (0x49) ............................................................................................. 37
+Cerrar documento no fiscal (0x4A) .................................................................................................................... 38
+........................................................................................................................................................................................... 38
+COMANDOS DE CONTROL DE LA IMPRESORA .............................................................................................. 39
+Cortar papel (0x4B) .................................................................................................................................................. 39
+Avance papel (0x50) ................................................................................................................................................. 40
+Activar slip (0xA0) ..................................................................................................................................................... 40
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           4
+Desactivar slip (0xA1) .............................................................................................................................................. 41
+Formato cheque (0xAA) .......................................................................................................................................... 42
+Formato endoso (0xAB) .......................................................................................................................................... 43
+COMANDOS GENERALES ........................................................................................................................................ 44
+Establecer fecha y hora (0x58) ............................................................................................................................. 45
+Obtener fecha y hora (0x59) ................................................................................................................................. 46
+Encabezados (0x5D) Pie de p a>gina (0x5E)..................................................................................................... 46
+........................................................................................................................................................................................... 46
+Abrir Gaveta 1 (0x7B) Abrir Gaveta 2 (0x7C) ................................................................................................. 47
+ Generar C o >digo de Barra (0x54) ......................................................................................................................... 48
+ Emitir Logo almacenado (0xCC) ......................................................................................................................... 50
+Eliminar Logo almacenado (0xCD) ..................................................................................................................... 50
+COMANDOS DE COMUNICACI O 8N WIFI............................................................................................................. 52
+Clave de Encriptado Transmisi o >n (0xBB)........................................................................................................ 52
+........................................................................................................................................................................................... 52
+Seriales Fiscales (0x80) ........................................................................................................................................... 52
+........................................................................................................................................................................................... 52
+Transmisi o >n de reporte Z (0xBC) ........................................................................................................................ 53
+........................................................................................................................................................................................... 53
+Configuraci o >n WIFI (0xBE).................................................................................................................................... 54
+........................................................................................................................................................................................... 54
+Estatus WIFI (0xBD) ................................................................................................................................................. 55
+........................................................................................................................................................................................... 55
+Prueba de comunicaci o >n ESTATUS (0xB8) ...................................................................................................... 56
+Prueba de comunicaci o >n PETICION (0xB9) .................................................................................................... 57
+Eliminar configuraci o >n WIFI (0xC0).................................................................................................................. 57
+........................................................................................................................................................................................... 57
+Configuraci o >n IP (0xC1).......................................................................................................................................... 58
+Generar CONSTANCIA DE TRANSMISI O 8N SISTEMA CENTRALIZADO (0xC2) ..................................59
+Redes WiFi definidas (0xC3) ................................................................................................................................. 60
+Datos de conexi o >n (0xC4)....................................................................................................................................... 61
+Prueba de COMUNICACI O 8N SERVIDOR SISTEMA CENTRALIZADO (0xC5) ....................................... 62
+Conectarse al WIFI (0xC6) ..................................................................................................................................... 63
+Conectarse al WIFI (0xC7) ..................................................................................................................................... 64
+Comandos REST API (v í>a WIFI)........................................................................................................................... 65
+........................................................................................................................................................................................... 65
+APE 8NDICE A – DESCRIPCI O 8N DE LA INTERF A 8Z CON EL HOST.............................................................. 66
+........................................................................................................................................................................................... 66
+APE 8NDICE B – EJ. DEL PROTOCOLO DE COMUNICACI O 8N FISCAL......................................................... 67
+APENDICE C – MAPA DE ERRORES ..................................................................................................................... 69
+APENDICE D – GUI A 8 DEL PANEL DE CONTROL ............................................................................................ 71
+PANEL DE CONTROL ................................................................................................................................................ 71
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           5
+Reporte Fiscal Z.......................................................................................................................................................... 71
+ Reporte Fiscal Z Diario ........................................................................................................................................... 71
+ Reporte Fiscal Z Mensual ....................................................................................................................................... 71
+TERMINOLOGÍATERMINOLOGÍA
+Base imponible (BI):  es el valor de un determinado ítem, sobre el que se calcula el impuesto
+asociado.
+Controlador  fiscal:  placa  de  circuito  impreso  con  microprocesador,  memoria  y  otros
+dispositivos que restringen y controla la información impresa en una factura fiscal. 
+Factura fiscal (FF): factura, recibo, ticket. Documento emitido por la impresora fiscal para ser
+entregado al comprador como constancia de cualquier operación generadora de ingresos y relativas
+a la actividad del usuario. 
+Documento no fiscal:  se utiliza para generar en la impresora fiscal reportes detallados de
+ventas, cupones de clientes frecuentes, etc. Los documentos no fiscales pueden contener múltiples
+líneas de “texto fiscal”. 
+Estado fiscal & Estado impresora:  campos de información alfanumérica que se incluyen en
+cada una de las respuestas que la impresora fiscal emite después de recibir un comando. Reflejan el
+estado del controlador fiscal y de la impresora. 
+Gabinete fiscal:  caja que suministra confinamiento mecánico y el montaje del controlador fiscal.
+Host: equipo de punto de venta (POS) donde se encuentra la aplicación que interactúa con la
+impresora fiscal.  
+Interfaz con el host: se refiere a la interfaz eléctrica que utiliza el host para comunicarse con el
+controlador fiscal. Está basada en el protocolo RS-232.  
+Impresora: terminal de impresión EPSON para punto de venta, utilizado por el controlador fiscal
+para imprimir los documentos. 
+Impresora fiscal:  equipo conformado por un controlador fiscal y una impresora, que se conecta
+como un periférico de un punto de venta, y cuya única entrada de datos es una interfaz normalizada.
+Este equipo permite generar facturas de ventas que cumplen con la normativa vigente.  
+Identificación fiscal:  tabla de información que identifican al propietario del controlador fiscal
+(razón social, domicilio comercial, RIF, etc.).
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           6
+ 
+Impuesto al Valor Agregado (IVA):  impuesto para el usuario final de un bien o servicio, y
+generalmente es un porcentaje de la base imponible. 
+Jornada fiscal:  período transcurrido desde la emisión del último reporte Z. 
+Memoria de trabajo:  parte  de  la  memoria  del  controlador  fiscal  no  volátil,  que  permite
+múltiples accesos de escritura/lectura. En esta memoria se registran los totales diarios.
+ 
+Memoria fiscal:  parte de la memoria del controlador fiscal no volátil, de acceso secuencial,
+donde se almacenan datos descriptivos de las transacciones fiscales.
+ 
+Precinto fiscal:  un medio mecánico para conectar el gabinete fiscal a la impresora, de modo tal
+que se impida el acceso no autorizado a los componentes internos del controlador fiscal. 
+Protocolo fiscal:  comprende un conjunto de comandos y reglas de comunicación que debe
+tomar en cuenta el host para comunicarse con la impresora fiscal. 
+Reporte (cierre) ‘Z’:  documento emitido por la impresora fiscal donde se registran los datos
+relativos a las ventas realizadas durante la jornada fiscal. Cuando se realiza esta operación los
+totales diarios almacenados en la memoria de trabajo son escritos en la memoria fiscal. Se ejecuta
+mediante el comando de cierre diario (Z). 
+Reporte (cierre) ‘X’:  documento donde se refleja el valor de las operaciones realizadas desde la
+emisión del último reporte Z o del último reporte X. Muestra parcialmente las ventas realizadas en
+una jornada fiscal y se utiliza normalmente para hacer un cambio de cajero en el punto de venta. 
+Reporte de auditoría:  documento emitido por la impresora fiscal que muestra el contenido de
+la información almacenada en la memoria fiscal durante el período seleccionado. 
+Texto fiscal: está restringido a caracteres ASCII de 0x20 a 0x7F y a una  cantidad limitada de
+valores sobre 0x7F necesarios para generar caracteres especiales (á, é, í, ó, etc.). Se excluye el
+carácter 0x1B. Esta limitación asegura que la aplicación que utiliza la impresora fiscal no pueda
+generar datos de gráficos. Para definir el tipo de letra se utilizan los caracteres 0xF0 a 0xFF, validos
+únicamente  para  ser  aplicados  en  algunos  campos  de  los  documentos.  Dentro  de los  campos
+definidos para descripción de mercadería y texto en general, la palabra “TOTAL” se convierte
+“+OTAL” y “FACTURA” en “+ACTURA”, con el fin de cumplir con la normativa vigente.
+ 
+Totales generales:  se refiere a los montos totales de los productos vendidos y los impuestos
+cobrados, el total de las facturas emitidos, etc., a lo largo del funcionamiento de la impresora fiscal. 
+Totales diarios:  se refiere a los montos totales de los productos vendidos y los impuestos
+cobrados, el total de las facturas emitidas, etc., durante la jornada fiscal.
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           7
+INTRODUCCIÓNINTRODUCCIÓN
+La impresora fiscal es un dispositivo que permite registrar y controlar la información que se
+imprime en una factura de venta (factura). El valor de las transacciones es almacenado en un
+registro ubicado en una memoria fiscal, el cual puede ser revisado contablemente con posterioridad
+por las autoridades y/o el usuario.
+La impresora fiscal consta de un terminal de impresión y un controlador fiscal. 
+ 
+Funciones De La Impresora FiscalFunciones De La Impresora Fiscal
+ 
+La impresora fiscal suministra las siguientes funciones:  
+Restringir la información que se puede imprimir en la factura de venta, y validar los datos
+recibidos de acuerdo con la transacción que se esté realizando. 
+Asegurar que se imprima la información precisa para cada transacción fiscal. 
+Asegurar que se imprima información coincidente en la factura y en la cinta de auditoría. 
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           8
+Acumular los motos totales del valor de los productos facturados y los impuestos cobrados. 
+Registrar la cantidad de facturas emitidas durante el día. 
+Numera e identifica las facturas fiscales y demás documentos. 
+Generar reportes para extraer la información registrada en la memoria fiscal y de auditoría. 
+Controlar la secuencia temporal de los cierres de la jornada fiscal.  
+Impedir cualquier actividad no autorizada que intente interferir con alguna de las funciones
+indicadas anteriormente.
+Los dispositivos de seguridad de la impresora fiscal se clasifican en dos categorías: hardware y
+software. 
+El gabinete y el precinto fiscal proporcionan la seguridad de hardware.
+La seguridad de software se suministra mediante un amplio conjunto de comandos que el host usa
+para interactuar con la impresora fiscal. El firmware contenido en el controlador fiscal no permite el
+acceso directo al dispositivo de impresión, la memoria fiscal o la memoria de trabajo. El Firmware
+del controlador fiscal reside en PROM (memoria no volátil). 
+Al activar la impresora fiscal se realizan varias pruebas para verificar la integridad de: 
+Firmware PROM. 
+Reloj de tiempo real. 
+Memoria fiscal. 
+Pruebas de factura. 
+FirmwareFirmware
+El  Firmware reside en una memoria CMOS PROM de 16Kbytes.  Si la verificación de chequeo
+fracasa, la impresora fiscal no permite generar ningún tipo de documento. 
+PRUEBA DEL RELOJ DE TIEMPO REAL
+Se verifica el reloj de tiempo real (RTC) para comprobar que esté operando, y además se verifica el
+estado de la batería utilizada por para respaldar el mismo. Sí la tensión de la batería está por debajo
+de un valor mínimo, de tal forma que no se garantice el buen funcionamiento del equipo, la
+impresora fiscal se bloquea y no permite generar ningún tipo de factura. 
+PRUEBA DE LA MEMORIA FISCAL
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           9
+Se realiza una verificación de la integridad de la memoria fiscal, que incluye la secuencia de fechas,
+los datos del contribuyente, etc. Sí el último cierre Z fue realizado hace más de 24 horas el equipo
+no permite generar facturas fiscales hasta tanto no se realice un nuevo cierre Z. 
+PRUEBA DE FACTURAS
+Sí existe una factura fiscal abierto y no se ejecuto el comando “CERRAR FACTURA FISCAL”,  se
+cancela y se imprime la siguiente línea: 
+** INTERRUPCION ELÉCTRICA **
+******** DOCUMENTO CANCELADO ********
+Sí existe una factura fiscal abierta y el corte de energía se produjo después de ejecutar el comando 
+“CERRAR FACTURA FISCAL” se completa el documento y se intercala la siguiente línea:
+ 
+** INTERRUPCIÓN ELÉCTRICA **
+Sí  existe  un  reporte  Z  abierto  e  impreso  parcialmente,  se  cancela  y  se  imprime  la  línea
+“CANCELADO POR INTERRUPCIÓN. ELÉCTRICA”, y luego se procede a imprimir el reporte
+de nuevo desde el comienzo. Este proceso se repite las veces necesarias hasta generar un reporte Z
+de completo.
+TIPOS DE DOCUMENTOSTIPOS DE DOCUMENTOS
+Una  vez  que  se  ha  llenado  la  tabla  de  identificación  con  la  información  relacionada  con  el
+propietario del equipo (razón social, domicilio, RIF) y el valor correspondiente a la tasa de I.V .A.
+vigente, el equipo podrá emitir los siguientes documentos: 
+Documentos no fiscales:  se usan para producir documentos distintos a Documentos Fiscales
+(Facturas, Notas de Crédito, Reportes X o Z, etc.). 
+Facturas fiscales:  son documentos que tienen el logotipo fiscal (MH) y sirven como facturas de
+una transacción comercial.
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           10
+Reportes fiscales:  los comandos que producen los reportes fiscales se utilizan en general para
+almacenar los totales diarios en la memoria fiscal, y según las necesidades de las autoridades para la
+revisión contable de la impresora fiscal. 
+Los reportes fiscales pueden ser:
+ 
+Cierre (reporte) X:  es un informe parcial que se emite generalmente al finalizar el turno del
+cajero.
+ 
+Cierre (reporte diario) Z:  es el cierre fiscal que vuelca el TOTAL de la facturación de la
+jornada a la memoria fiscal. Por lo tanto, la duración de la memoria fiscal es independiente de la
+cantidad de transacciones que se realizan en el día. 
+Reporte de memoria fiscal por día:  informa los datos almacenados en la memoria fiscal,
+desde la fecha inicial a la final en forma detallada.
+ 
+Reporte de memoria fiscal por mes:  informa los datos almacenados en la memoria fiscal,
+para los meses comprendidos entre la fecha inicial y la final. 
+Reporte de memoria fiscal por número de Z:  informa los datos almacenados en la
+memoria fiscal, desde el número de cierre inicial hasta el número de cierre final. 
+Reporte de memoria  de auditoría: informa los  datos  almacenados  en la memoria de
+auditoría, utiliza como parámetros el numero y tipo de documento, así como el numero de Z de un
+ejercicio completo.
+RESUMEN DE DOCUMENTOS
+A.Documentos no fiscales: Se usan para producir documentos que no son facturas de
+ventas, como por ejemplo, comprobante de pago con tarjetas de crédito o reportes detallados
+de inventario. Los comandos asociados son los siguientes:
+1.Abrir documento no fiscal (ABRIR_DNF): Es el primer paso a realizar para que
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.comNota: consulte los comandos individuales donde hallar a > una 
+descripci o >n ma >s detallada.  
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           11
+la impresora  fiscal acepte  líneas  de “texto  fiscal”. Este comando  será rechazado si se
+encuentra abierto una factura fiscal o un documento no fiscal. El documento se identifica
+como "DOCUMENTO NO FISCAL" y se imprime el encabezado del mismo.  
+2.Imprimir texto no fiscal (TEXTO_DNF):  La impresora fiscal acepta todas las
+líneas de “texto fiscal” que se requieran para producir el documento. Este comando es válido
+sólo si hay un DNF abierto. Aplican las limitaciones a las palabras “TOTAL” y “Factura”.
+3.Cerrar documento no fiscal (CERRAR_DNF): Es el último paso para realizar un
+documento no fiscal. Este comando será rechazado si no hay un DNF abierto. Se imprime la
+cola del documento y se realiza el avance y el corte del mismo.  
+B.FACTURAS FISCALES:  Se usan para emitir facturas de ventas, los montos asociados e
+impresos afectan a nuestro acumulado diario o reporte Z:
+Existen seis comandos para producir facturas fiscales. Salvo el primero (ABRIR_CF),  todos
+serán rechazados si una factura fiscal no está abierto.  
+1.Abrir factura fiscal (ABRIR_FF):  Es el primer comando que debe ejecutarse si se
+desea realizar una factura fiscal. Este comando será rechazado si un CF o cualquier otro
+documento está abierto. Se incrementa el contador de los documentos fiscales. Se imprime
+el  encabezado de la factura.  
+2.Imprimir texto fiscal (TEXTO_CF):  La impresora fiscal acepta hasta un máximo de
+tres (6) líneas de “texto fiscal” para complementar la descripción de un producto.  
+3.Imprimir ítem (ITEM_CF):  Este comando tiene campos para la descripción, cantidad,
+tasa impositiva y precio unitario del ítem a facturar. La descripción adicional de un producto
+debe ser realizada mediante el comando “TEXTO_CF” con anterioridad a la aplicación de
+este comando. 
+4.Subtotal (SUB_CF):  La respuesta que envía la impresora fiscal después de recibir este
+comando contiene el valor de las ventas acumuladas para cada base imponible durante la
+emisión de la factura fiscal que se está emitiendo. Este comando puede ser utilizado durante
+la emisión de la factura para verificar que la información enviada por el host se está
+registrando correctamente en la impresora fiscal.
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           12
+5.Cerrar factura fiscal (CERRAR_FF): Es el último paso que se debe realizarse para
+elaborar un realizados, se calcula el vuelto, se efectúa el avance y el corte de la cola de venta
+se acumulan en la memoria de trabajo. 
+C.REPORTES DE AUDITORIA: Los reportes de auditoría permiten llevar un control
+de las transacciones realizadas mediante la impresora fiscal. Estos documentos reflejan la
+información que se ha emitido en la impresora.
+ 
+Los reportes de auditoría disponibles son los siguientes: 
+Reporte por numero de factura.
+Reporte por numero de Nota de Crédito.
+Reporte por documento no fiscal. 
+Reporte por numero de cierre Z.
+Reporte de documentos de un ejercicio asociados a un reporte Z. 
+Interfaz host - Impresora Fiscal
+La conexión entre el host y la impresora fiscal se realiza a través de un cable serial USB con la
+siguiente disposición:
+El conector Micro USB Hembra se encuentra en la parte posterior de la impresora.
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           13
+El valor de la velocidad de comunicación es de 9600 baudios. El formato de la data es 8 bits, sin
+paridad, uno o más bits de stop. 
+Protocolo De Comunicación FiscalProtocolo De Comunicación Fiscal
+ 
+La comunicación entre el host y la impresora fiscal es bi-direccional. El protocolo es del tipo
+“maestro/esclavo” y se basa en los siguientes principios: 
+El host (“maestro”) inicia todas las comunicaciones.  
+La impresora fiscal (“esclavo”) nunca enviará un mensaje no solicitado.  
+El formato de los mensajes intercambiados entre el host y la impresora fiscal es el siguiente:
+ 
+Campo Descripción de los campos del comando
+STX Inicio de texto [0x20 – 0x7F]
+Sec Número de secuencia [0x20 – 0x7F]
+Comando Número de comando [0x30 – 0xAF]
+- Separador de Campo [0x1C]
+Campo 1 Campo de datos
+.. ..
+- Separador de campo [0x1C]
+Campo n Campo de datos
+ETX Fin de texto [0x03]
+BCC BCC [nnnn]
+Tanto  los  comandos  enviados  por  el  host  como  las  respuestas  de  la  impresora  fiscal,  están
+enmarcadas por los códigos de control ASCII de “inicio de texto” (STX) (0x02) y de “fin de texto”
+(ETX) (0x03). 
+Los caracteres de verificación de bloque (BCC <nnnn>) deben ser enviados al final de la trama de
+datos.  El BCC <nnnn> es la suma sencilla de todos los caracteres desde el inicio (STX) hasta el fin
+de datos (ETX), y se representa mediante 4 caracteres hexadecimales. 
+Los comandos enviados  por el host a la impresora fiscal deben tener un número de secuencia en el
+rango desde 0x20 a 0x7F (hexadecimal) o desde 32 a 127 (decimal). Las respuestas de la impresora
+fiscal tendrán un número de secuencia coincidente. No es necesario que los números de secuencia
+sean correlativos, pero deberán ser diferentes del número de secuencia del comando anterior. 
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           14
+Para cada comando enviado por el host, éste deberá recibir una respuesta de la impresora fiscal
+antes de que se envíe el próximo.
+  
+El host debe analizar la respuesta a cada comando para garantizar que no ha ocurrido ningún error
+con el manejo de la impresora fiscal. 
+IMPORTANTE:  las respuestas deben ser siempre analizadas, debido a que es la única forma de
+garantizar  que  la  secuencia  de  comandos  enviados  desde  el  HOST a  la  impresora  fiscal  sea
+ejecutada completamente.
+IMPORTANTE:  Se recomienda no realizar  más de un cierre fiscal por día, este procedimiento
+acorta la vida útil de la memoria fiscal, siendo responsabilidad del usuario la disminución de la
+duración de la misma.
+Respuestas de la impresora fiscal
+Las respuestas de la impresora fiscal se ajustan a la definición general del formato indicado para los
+comandos enviados por el host.
+Campo Descripción de los campos del comando
+STX Inicio de texto [0x20 – 0x7F]
+Sec Número de secuencia [0x20 – 0x7F]
+Comando Número de comando [0x30 – 0xAF]
+- Separador de Campo [0x1C]
+Campo 1 Estado de impresora [nnnn]
+- Separador de campo [0x1C]
+Campo 2 Estado fiscal [nnnn]
+- Separador de campo [0x1C]
+Campo 3 Campo de datos
+.. ..
+- Separador de campo [0x1C]
+Campo n Campo de datos
+ETC Fin de texto [0x03]
+BCC BCC [nnnn]
+Algunos comandos toman un largo tiempo para finalizar. En estos casos la impresora fiscal envía
+periódicamente un código de continuación ó equipo procesando, a fin de indicar que todavía hay un
+comando de este tipo en desarrollo. Si el host recibe un carácter (0x12) desde la impresora fiscal
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com
+DESARROLLOS PNP , C.A.     J293668700  (v5,4)           15
+deberá continuar a la espera de una respuesta completa, incrementando en 800 ms el tiempo
+máximo que se espera la llegada de la respuesta. Si se excede el tiempo de espera el host deberá
+considerar que la interfaz no es funcional y se debe declarar un error de comunicación.
+ 
+La respuesta enviada por la impresora fiscal para un comando en específico puede ser de dos tipos:
+Positiva: indicando que el comando fue ejecutado con éxito. Cada instrucción enviada por
+el host tiene una respuesta con un formato exclusivo en cuanto al número y significado de
+los campos que ella contiene. En las descripciones de los comandos individuales hallará una
+definición detallada de la respuesta asociada. 
+Negativa: indicando que ocurrió una falla de ejecución relacionada con el comando. Al
+recibir un “ERROR” como respuesta el host deberá tomar las medidas pertinentes para
+recuperar el control del proceso (cancelar la factura, verificar los totales, etc.). Los campos
+que  se  incluyen  en  una  respuesta  “positiva”  para  un  comando  determinado  no  están
+presentes en caso de error. 
+Para poder determinar si un comando fue ejecutado con éxito se debe esperar la respuesta y
+verificar, antes que nada, que la trama de datos que la componen no contiene el string “ERROR”. El
+formato general para una respuesta “negativa” enviada por la impresora fiscal (caso de error) es el
+siguiente:
+Campo Descripción de los campos del comando
+STX Inicio de texto [0x20 – 0x7F]
+Sec Número de secuencia [0x20 – 0x7F]
+Comando Número de comando [0x30 – 0xAF]
+- Separador de Campo [0x1C]
+Campo 1 Estado de impresora [nnnn]
+- Separador de campo [0x1C]
+Campo 2 Estado fiscal [nnnn]
+- Separador de campo [0x1C]
+Campo 3 Número de error
+- Separador de campo [0x1C]
+Campo 4 “ERROR” + Número de error
+ETC Fin de texto [0x03]
+BCC BCC [nnnn]
+IMPORTANTE:  siempre deberá analizar la respuesta a un comando para saber si fue ejecutado
+de forma correcta o incorrecta.
+Av. Sucre Torre Centro Piso 20 Of 204. Los dos caminos. Caracas 1071.Venezuela.
+Telfs: +58-212-3153173 al 76, 2858668, 2838587, www.desarrollospnp.com - integracion@abacco.com

@@ -1,4 +1,4 @@
-# DatqBox Modular Frontend Skeleton
+# Zentto Modular Frontend Skeleton
 
 Arquitectura recomendada: modular monolith con monorepo.
 
