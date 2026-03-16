@@ -463,6 +463,12 @@
 \echo '--- Seed Demo Finanzas y Contabilidad ---'
 \i includes/sp/seed_demo_finanzas_contabilidad.sql
 
+\echo '--- Seed Usuarios Demo (admin, gerente, cajero / pass: Admin123!) ---'
+\i includes/sp/seed_demo_users.sql
+
+\echo '--- Seed Live Data (exportado desde SQL Server) ---'
+\i includes/sp/seed_live_data.sql
+
 -- ====================================================================
 -- FASE 6: Corrección de tipos de retorno (character varying vs text)
 -- Los archivos includes/sp/ crean funciones con tipos que pueden
