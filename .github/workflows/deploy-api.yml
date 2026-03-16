@@ -108,6 +108,38 @@ jobs:
             set -e
             NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
             grep -qF "$NEW_KEY" ~/.ssh/authorized_keys 2>/dev/null || echo "$NEW_KEY" >> ~/.ssh/authorized_keys
+
+            # ── Firewall: Docker (172.18.x) → PostgreSQL ──
+            if ! ufw status | grep -q '172.18.0.0/16.*5432'; then
+              ufw allow from 172.18.0.0/16 to any port 5432 comment 'Docker zentto-net to PostgreSQL'
+              echo "✓ UFW rule added: Docker→PG"
+            fi
+            if ! iptables -L DOCKER-USER -n 2>/dev/null | grep -q '172.18.0.0/16.*5432'; then
+              iptables -I DOCKER-USER -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT
+              echo "✓ iptables DOCKER-USER rule added"
+            fi
+            # Persist iptables rule across reboots
+            if ! grep -q 'Docker PostgreSQL zentto' /etc/ufw/after.rules 2>/dev/null; then
+              sed -i '/^COMMIT$/i -A DOCKER-USER -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT # Docker PostgreSQL zentto' /etc/ufw/after.rules
+              echo "✓ iptables rule persisted in ufw/after.rules"
+            fi
+
+            # ── pg_hba.conf: allow Docker network ──
+            PG_HBA=$(find /etc/postgresql -name pg_hba.conf 2>/dev/null | head -1)
+            if [ -n "$PG_HBA" ] && ! grep -q '172.18.0.0/16' "$PG_HBA"; then
+              echo 'host    zentto_prod    zentto_app    172.18.0.0/16    scram-sha-256' >> "$PG_HBA"
+              systemctl reload postgresql
+              echo "✓ pg_hba.conf updated for Docker network"
+            fi
+
+            # ── Nginx CORS for api.zentto.net ──
+            NGINX_CONF="/etc/nginx/sites-available/zentto"
+            if [ -f "$NGINX_CONF" ] && ! grep -q 'Access-Control-Allow-Origin' "$NGINX_CONF"; then
+              echo "⚠ Nginx CORS missing — update /etc/nginx/sites-available/zentto manually"
+              echo "  See: nginx/zentto.conf in repo for reference config with CORS"
+            fi
+
+            # ── Deploy container ──
             cd /opt/zentto
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull api
