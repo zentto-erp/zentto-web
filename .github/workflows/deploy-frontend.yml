@@ -1,0 +1,90 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/modular-frontend/**'
+      - 'docker/Dockerfile.frontend'
+      - 'docker/pm2.config.cjs'
+      - 'docker-compose.prod.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/zentto-erp/zentto-web/frontend:latest
+
+jobs:
+  build:
+    name: Build & Push Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.frontend
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://api.zentto.net
+            NEXT_PUBLIC_API_BASE=https://api.zentto.net
+            NEXT_PUBLIC_API_URL=https://api.zentto.net
+            NEXT_PUBLIC_BACKEND_URL=https://api.zentto.net
+
+  deploy:
+    name: Deploy Frontend to server
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.prod.yml
+          target: /opt/zentto/
+
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN,GITHUB_ACTOR
+          script: |
+            set -e
+            cd /opt/zentto
+            if [ ! -f /opt/zentto/.env.frontend ]; then
+              echo "AUTH_SECRET=$(openssl rand -base64 32)" > /opt/zentto/.env.frontend
+              chmod 600 /opt/zentto/.env.frontend
+            fi
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            docker compose -f docker-compose.prod.yml pull frontend
+            docker compose -f docker-compose.prod.yml up -d --no-deps frontend
+            docker image prune -f
+            echo "✓ Frontend desplegado: $(date -u)"

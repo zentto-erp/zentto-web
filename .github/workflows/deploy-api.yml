@@ -1,0 +1,82 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/api/**'
+      - 'docker/Dockerfile.api'
+      - 'docker-compose.prod.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/zentto-erp/zentto-web/api:latest
+
+jobs:
+  build:
+    name: Build & Push API
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy API to server
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.prod.yml
+          target: /opt/zentto/
+
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN,GITHUB_ACTOR
+          script: |
+            set -e
+            NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
+            grep -qF "$NEW_KEY" ~/.ssh/authorized_keys 2>/dev/null || echo "$NEW_KEY" >> ~/.ssh/authorized_keys
+            cd /opt/zentto
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            docker compose -f docker-compose.prod.yml pull api
+            docker compose -f docker-compose.prod.yml up -d --no-deps api
+            docker image prune -f
+            echo "✓ API desplegada: $(date -u)"
