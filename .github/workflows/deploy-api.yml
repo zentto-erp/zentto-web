@@ -43,9 +43,43 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  migrate-pg:
+    name: Run PostgreSQL migrations
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: web/api/sqlweb-pg
+          target: /opt/zentto/
+          strip_components: 2
+
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
+          PG_USER: ${{ secrets.PG_USER }}
+          PG_DATABASE: ${{ secrets.PG_DATABASE }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: PG_PASSWORD,PG_USER,PG_DATABASE
+          script: |
+            set -e
+            cd /opt/zentto/sqlweb-pg
+            PGPASSWORD="$PG_PASSWORD" psql -U "$PG_USER" -h 127.0.0.1 -d "$PG_DATABASE" -f run_all.sql
+            echo "✓ Migraciones PG ejecutadas: $(date -u)"
+
   deploy:
     name: Deploy API to server
-    needs: build
+    needs: migrate-pg
     runs-on: ubuntu-latest
     permissions:
       contents: read
