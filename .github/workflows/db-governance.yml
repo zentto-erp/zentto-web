@@ -21,7 +21,7 @@ jobs:
   governance-report:
     name: Governance Readiness Report
     runs-on: ubuntu-latest
-    if: ${{ vars.DB_GOVERNANCE_ENABLED != 'false' }}
+    if: ${{ vars.DB_GOVERNANCE_ENABLED == 'true' }}
     defaults:
       run:
         working-directory: web/api
