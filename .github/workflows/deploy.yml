@@ -109,6 +109,10 @@ jobs:
           envs: GHCR_TOKEN,GITHUB_ACTOR
           script: |
             set -e
+            # Agregar clave SSH local de zentto-server a authorized_keys si no existe
+            NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
+            grep -qF "$NEW_KEY" ~/.ssh/authorized_keys 2>/dev/null || echo "$NEW_KEY" >> ~/.ssh/authorized_keys
+
             cd /opt/zentto
             if [ ! -f /opt/zentto/.env.frontend ]; then
               echo "AUTH_SECRET=$(openssl rand -base64 32)" > /opt/zentto/.env.frontend
