@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/datqbox/zentto-web
+  IMAGE_PREFIX: ghcr.io/zentto-erp/zentto-web
 
 jobs:
   # ── 1. Build y push imágenes Docker ─────────────────────────────────────────

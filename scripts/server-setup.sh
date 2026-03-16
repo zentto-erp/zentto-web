@@ -3,7 +3,7 @@
 # Ejecutar como root en el servidor Hetzner CX33 (Ubuntu 22.04+)
 # Servidor: zentto-server | IP: 178.104.56.185
 #
-# Uso:  curl -sSL https://raw.githubusercontent.com/datqbox/zentto-web/main/scripts/server-setup.sh | bash
+# Uso:  curl -sSL https://raw.githubusercontent.com/zentto-erp/zentto-web/main/scripts/server-setup.sh | bash
 # O:    bash server-setup.sh
 
 set -e
