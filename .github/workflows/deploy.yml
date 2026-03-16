@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:   # permite lanzar manualmente desde GitHub UI
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/zentto-erp/zentto-web
