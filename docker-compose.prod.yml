@@ -13,6 +13,8 @@ services:
       - "4000:4000"
     env_file:
       - /opt/zentto/.env.api
+    environment:
+      - CORS_ORIGINS=https://zentto.net,https://www.zentto.net,https://app.zentto.net
     volumes:
       - api_storage:/app/storage/media
     networks:
