@@ -23,6 +23,7 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,4 +34,15 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Claude trabajará en un branch aislado y abrirá un PR
+          model: "claude-sonnet-4-5"
+          max_turns: "10"
+          custom_instructions: |
+            Eres un agente de desarrollo para Zentto ERP.
+            Lee SIEMPRE CLAUDE.md antes de empezar cualquier tarea.
+            Reglas criticas:
+            - Todo cambio SQL va en AMBOS motores: sqlweb/ y sqlweb-pg/
+            - Ramas: feature/nombre -> develop (nunca a main directamente)
+            - No hacer commits directos a develop ni main
+            - Abre un PR con descripcion clara del cambio
+            - Fechas siempre en UTC-0
+            - No exponer secrets ni credenciales
