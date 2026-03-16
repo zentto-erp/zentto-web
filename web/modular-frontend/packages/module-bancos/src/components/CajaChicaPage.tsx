@@ -29,8 +29,8 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
-import { formatCurrency } from "@datqbox/shared-api";
-import { ContextActionHeader, useToast } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { ContextActionHeader, useToast } from "@zentto/shared-ui";
 import {
   useCajaChicaBoxes,
   useCreateCajaChicaBox,

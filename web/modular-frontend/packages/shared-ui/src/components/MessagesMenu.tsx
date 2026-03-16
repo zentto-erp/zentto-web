@@ -4,7 +4,7 @@ import {
     List, ListItem, ListItemAvatar, ListItemText, Avatar
 } from '@mui/material';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
-import { apiGet, apiPatch } from '@datqbox/shared-api';
+import { apiGet, apiPatch } from '@zentto/shared-api';
 
 type Message = {
     id: string;

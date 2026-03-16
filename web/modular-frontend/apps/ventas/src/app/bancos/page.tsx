@@ -1,3 +1,3 @@
 'use client';
-import { BancosPage } from '@datqbox/module-admin';
+import { BancosPage } from '@zentto/module-admin';
 export default function Page() { return <BancosPage />; }

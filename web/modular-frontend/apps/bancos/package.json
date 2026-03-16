@@ -1,5 +1,5 @@
 {
-    "name": "@datqbox/bancos",
+    "name": "@zentto/bancos",
     "version": "0.1.0",
     "private": true,
     "scripts": {
@@ -9,9 +9,9 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@datqbox/shared-api": "*",
-        "@datqbox/shared-auth": "*",
-        "@datqbox/shared-ui": "*",
+        "@zentto/shared-api": "*",
+        "@zentto/shared-auth": "*",
+        "@zentto/shared-ui": "*",
         "@emotion/cache": "^11.14.0",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",

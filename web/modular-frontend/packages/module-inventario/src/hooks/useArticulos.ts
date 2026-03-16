@@ -4,8 +4,8 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Articulo, CreateArticuloDTO, UpdateArticuloDTO, ArticuloFilter, ArticuloFilterOptions, PaginatedResponse } from "@datqbox/shared-api/types";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { Articulo, CreateArticuloDTO, UpdateArticuloDTO, ArticuloFilter, ArticuloFilterOptions, PaginatedResponse } from "@zentto/shared-api/types";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "articulos";
 const API_BASE = "/api/v1/articulos";

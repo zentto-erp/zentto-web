@@ -25,7 +25,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   usePlanCuentas,
   useCreateCuenta,

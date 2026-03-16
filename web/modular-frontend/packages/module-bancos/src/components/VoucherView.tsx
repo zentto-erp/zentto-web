@@ -23,7 +23,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import DownloadIcon from "@mui/icons-material/Download";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { useMovimientoDetalle } from "../hooks/useBancosAuxiliares";
 import { generateVoucherPdf, type VoucherData } from "./VoucherPdf";
 
@@ -211,7 +211,7 @@ export default function VoucherView({ movimientoId }: { movimientoId: string }) 
 
           {/* Footer */}
           <Typography variant="caption" color="text.disabled" sx={{ display: "block", textAlign: "center", mt: 4 }}>
-            Generado por DatqBox Web — {new Date().toLocaleString("es-VE")}
+            Generado por Zentto — {new Date().toLocaleString("es-VE")}
           </Typography>
         </CardContent>
       </Card>

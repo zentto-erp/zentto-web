@@ -27,8 +27,8 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useFacturasList, useDeleteFactura } from "../../../hooks/useFacturas";
-import { formatCurrency, formatDate } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, formatDate } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
 export default function FacturasTable() {

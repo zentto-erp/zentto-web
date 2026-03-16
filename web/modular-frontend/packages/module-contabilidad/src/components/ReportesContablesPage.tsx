@@ -18,8 +18,8 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import PrintIcon from "@mui/icons-material/Print";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   useLibroMayor,
   useBalanceComprobacion,

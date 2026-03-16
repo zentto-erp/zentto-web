@@ -9,7 +9,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiDelete, apiGet, apiPost, apiPut } from '@datqbox/shared-api';
+import { apiDelete, apiGet, apiPost, apiPut } from '@zentto/shared-api';
 
 interface CrudGenericOptions {
   baseUrl: string;
@@ -162,7 +162,7 @@ import {
   CreateProveedorDTO,
   Articulo,
   CreateArticuloDTO,
-} from '@datqbox/shared-api/types';
+} from '@zentto/shared-api/types';
 
 /**
  * Hook para CLIENTES

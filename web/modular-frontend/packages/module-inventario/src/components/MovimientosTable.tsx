@@ -28,8 +28,8 @@ import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
 export default function MovimientosTable() {

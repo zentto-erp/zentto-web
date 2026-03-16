@@ -100,7 +100,7 @@ export const useConfigStore = create<GlobalConfigState>()(
                 set((state) => ({ config: { ...state.config, inventario: { ...state.config.inventario, ...updates } } })),
         }),
         {
-            name: 'datqbox-global-config',
+            name: 'zentto-global-config',
         }
     )
 );

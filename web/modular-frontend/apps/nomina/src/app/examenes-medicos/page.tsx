@@ -1,5 +1,5 @@
 'use client';
-import { ExamenesMedicosPage } from '@datqbox/module-nomina';
+import { ExamenesMedicosPage } from '@zentto/module-nomina';
 
 export default function Page() {
     return <ExamenesMedicosPage />;

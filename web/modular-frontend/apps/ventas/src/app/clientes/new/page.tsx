@@ -1,3 +1,3 @@
 'use client';
-import { ClienteForm } from '@datqbox/module-admin';
+import { ClienteForm } from '@zentto/module-admin';
 export default function Page() { return <ClienteForm />; }

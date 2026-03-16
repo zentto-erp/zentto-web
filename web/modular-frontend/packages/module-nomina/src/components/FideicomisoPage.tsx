@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useTrustList,
   useCalculateTrust,

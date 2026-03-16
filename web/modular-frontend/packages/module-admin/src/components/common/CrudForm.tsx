@@ -31,7 +31,7 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { FormField } from '@datqbox/shared-api/types';
+import { FormField } from '@zentto/shared-api/types';
 
 interface CrudFormProps {
   fields: FormField[];

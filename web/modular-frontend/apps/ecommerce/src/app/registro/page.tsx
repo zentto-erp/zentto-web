@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink, Grid } from '@mui/material';
-import { useCustomerRegister } from '@datqbox/module-ecommerce';
+import { useCustomerRegister } from '@zentto/module-ecommerce';
 
 export default function RegistroPage() {
     const router = useRouter();

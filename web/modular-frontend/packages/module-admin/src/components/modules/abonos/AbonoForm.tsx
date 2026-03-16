@@ -14,9 +14,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useAbonoById, useCreateAbono, useUpdateAbono } from "../../../hooks/useAbonos";
-import { CreateAbonoDTO, UpdateAbonoDTO } from "@datqbox/shared-api/types";
-import { useTimezone } from "@datqbox/shared-auth";
-import { toDateOnly } from "@datqbox/shared-api";
+import { CreateAbonoDTO, UpdateAbonoDTO } from "@zentto/shared-api/types";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 
 interface AbonoFormProps {
   numeroAbono?: string;

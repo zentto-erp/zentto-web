@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
-import { CheckoutForm, useCartStore } from '@datqbox/module-ecommerce';
+import { CheckoutForm, useCartStore } from '@zentto/module-ecommerce';
 
 export default function CheckoutPage() {
     const router = useRouter();

@@ -14,8 +14,8 @@ import {
   Typography
 } from "@mui/material";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../../hooks/useBancosAuxiliares";
-import { toDateOnly, formatDateTime } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 type CuentaRow = Record<string, unknown>;
 type MovimientoRow = Record<string, unknown>;

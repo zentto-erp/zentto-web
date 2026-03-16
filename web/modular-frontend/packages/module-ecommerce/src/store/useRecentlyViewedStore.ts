@@ -43,7 +43,7 @@ export const useRecentlyViewedStore = create<RecentlyViewedState>()(
       },
     }),
     {
-      name: "datqbox-ecommerce-recently-viewed",
+      name: "zentto-ecommerce-recently-viewed",
       partialize: (state) => ({ items: state.items }),
     }
   )

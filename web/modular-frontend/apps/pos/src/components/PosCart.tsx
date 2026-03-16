@@ -10,7 +10,7 @@ import {
     Button,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
-import { usePosStore } from '@datqbox/shared-api';
+import { usePosStore } from '@zentto/shared-api';
 
 // Iconos dinámicos
 const CloseIcon = dynamic(() => import('@mui/icons-material/Close'), { ssr: false });

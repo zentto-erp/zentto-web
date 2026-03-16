@@ -1,6 +1,6 @@
 "use client";
 
-import { SaludOcupacionalPage } from "@datqbox/module-nomina";
+import { SaludOcupacionalPage } from "@zentto/module-nomina";
 
 export default function SaludOcupacionalRoute() {
   return <SaludOcupacionalPage />;

@@ -1,7 +1,7 @@
-import { CobroTxForm } from "@datqbox/module-admin";
+import { CobroTxForm } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Cobro CxC TX | DatqBox",
+  title: "Cobro CxC TX | Zentto",
   description: "Aplicar cobro transaccional para cuentas por cobrar"
 };
 

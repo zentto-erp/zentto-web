@@ -22,8 +22,8 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockIcon from "@mui/icons-material/Lock";
-import { formatCurrency } from "@datqbox/shared-api";
-import { ContextActionHeader } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import {
   useNominasList,
   useNominaDetalle,

@@ -1,6 +1,6 @@
 "use client";
 
-import { OrdenesMedicasPage } from "@datqbox/module-nomina";
+import { OrdenesMedicasPage } from "@zentto/module-nomina";
 
 export default function OrdenesMedicasRoute() {
   return <OrdenesMedicasPage />;

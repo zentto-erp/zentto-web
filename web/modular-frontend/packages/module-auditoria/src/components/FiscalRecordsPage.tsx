@@ -9,9 +9,9 @@ import {
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader } from "@datqbox/shared-ui";
-import { formatDateTime } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import { formatDateTime } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
 
 export default function FiscalRecordsPage() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@datqbox/shared-api";
+import { apiGet, apiPost } from "@zentto/shared-api";
 
 const QK = "caja-chica";
 const API = "/api/v1/bancos/caja-chica";

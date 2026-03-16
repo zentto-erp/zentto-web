@@ -1,6 +1,6 @@
 "use client";
 
-import { LibroInventarioPage } from "@datqbox/module-inventario";
+import { LibroInventarioPage } from "@zentto/module-inventario";
 
 export default function LibroInventarioRoute() {
   return <LibroInventarioPage />;

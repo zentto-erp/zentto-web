@@ -118,7 +118,7 @@ export function generateVoucherPdf(data: VoucherData): Blob {
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(150);
-  doc.text(`Generado el ${new Date().toLocaleString("es-VE")} — DatqBox Web`, w / 2, y, { align: "center" });
+  doc.text(`Generado el ${new Date().toLocaleString("es-VE")} — Zentto`, w / 2, y, { align: "center" });
 
   return doc.output("blob");
 }

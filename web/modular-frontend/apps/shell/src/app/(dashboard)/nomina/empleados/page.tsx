@@ -1,6 +1,6 @@
 "use client";
 
-import { EmpleadosPage } from "@datqbox/module-nomina";
+import { EmpleadosPage } from "@zentto/module-nomina";
 
 export default function EmpleadosRoute() {
   return <EmpleadosPage />;

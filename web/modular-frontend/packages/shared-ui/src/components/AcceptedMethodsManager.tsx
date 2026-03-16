@@ -16,7 +16,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 
-import type { PaymentMethod, AcceptedPaymentMethod, PaymentProvider } from '@datqbox/shared-api';
+import type { PaymentMethod, AcceptedPaymentMethod, PaymentProvider } from '@zentto/shared-api';
 
 interface AcceptedMethodsManagerProps {
   allMethods: PaymentMethod[];

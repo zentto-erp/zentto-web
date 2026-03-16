@@ -586,6 +586,75 @@ CREATE TABLE IF NOT EXISTS rest."PurchaseLine" (
 );
 
 -- ============================================================
+-- hr."PayrollBatch"
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hr."PayrollBatch" (
+  "BatchId"         BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+  "CompanyId"       INT NOT NULL,
+  "PayrollCode"     VARCHAR(20) NOT NULL,
+  "FromDate"        DATE NOT NULL,
+  "ToDate"          DATE NOT NULL,
+  "Status"          VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+  "Notes"           VARCHAR(500) NULL,
+  "CreatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "UpdatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "CreatedByUserId" INT NULL,
+  "UpdatedByUserId" INT NULL,
+  "IsDeleted"       BOOLEAN NOT NULL DEFAULT FALSE,
+  "DeletedAt"       TIMESTAMP NULL,
+  "DeletedByUserId" INT NULL,
+  "RowVer"          INT NOT NULL DEFAULT 1,
+  CONSTRAINT "FK_hr_PayrollBatch_Company" FOREIGN KEY ("CompanyId") REFERENCES cfg."Company"("CompanyId")
+);
+
+-- ============================================================
+-- hr."PayrollBatchLine"
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hr."PayrollBatchLine" (
+  "LineId"          BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+  "BatchId"         BIGINT NOT NULL,
+  "EmployeeId"      BIGINT NULL,
+  "EmployeeCode"    VARCHAR(24) NOT NULL,
+  "EmployeeName"    VARCHAR(200) NOT NULL,
+  "ConceptCode"     VARCHAR(20) NOT NULL,
+  "ConceptName"     VARCHAR(100) NOT NULL,
+  "ConceptType"     VARCHAR(20) NOT NULL,
+  "Quantity"        DECIMAL(18,4) NOT NULL DEFAULT 1,
+  "Amount"          DECIMAL(18,2) NOT NULL DEFAULT 0,
+  "Total"           DECIMAL(18,2) NOT NULL DEFAULT 0,
+  "IsModified"      BOOLEAN NOT NULL DEFAULT FALSE,
+  "Notes"           VARCHAR(500) NULL,
+  "UpdatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  CONSTRAINT "FK_hr_PayrollBatchLine_Batch" FOREIGN KEY ("BatchId") REFERENCES hr."PayrollBatch"("BatchId") ON DELETE CASCADE
+);
+
+-- ============================================================
+-- hr."DocumentTemplate"
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
+  "TemplateId"      BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+  "CompanyId"       INT NOT NULL,
+  "TemplateCode"    VARCHAR(50) NOT NULL,
+  "TemplateName"    VARCHAR(200) NOT NULL,
+  "TemplateType"    VARCHAR(30) NOT NULL DEFAULT 'PAYROLL',
+  "CountryCode"     CHAR(2) NOT NULL DEFAULT 'VE',
+  "PayrollCode"     VARCHAR(20) NULL,
+  "ContentMD"       TEXT NOT NULL DEFAULT '',
+  "IsDefault"       BOOLEAN NOT NULL DEFAULT FALSE,
+  "IsActive"        BOOLEAN NOT NULL DEFAULT TRUE,
+  "CreatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "UpdatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "CreatedByUserId" INT NULL,
+  "UpdatedByUserId" INT NULL,
+  "IsDeleted"       BOOLEAN NOT NULL DEFAULT FALSE,
+  "DeletedAt"       TIMESTAMP NULL,
+  "DeletedByUserId" INT NULL,
+  "RowVer"          INT NOT NULL DEFAULT 1,
+  CONSTRAINT "UQ_hr_DocumentTemplate" UNIQUE ("CompanyId", "TemplateCode"),
+  CONSTRAINT "FK_hr_DocumentTemplate_Company" FOREIGN KEY ("CompanyId") REFERENCES cfg."Company"("CompanyId")
+);
+
+-- ============================================================
 -- SEED DATA
 -- ============================================================
 DO $$

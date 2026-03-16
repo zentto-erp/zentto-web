@@ -102,7 +102,7 @@ export const useCartStore = create<CartState>()(
       getItemCount: () => get().items.reduce((sum, c) => sum + c.quantity, 0),
     }),
     {
-      name: "datqbox-ecommerce-cart",
+      name: "zentto-ecommerce-cart",
       partialize: (state) => ({
         items: state.items,
         customerInfo: state.customerInfo,

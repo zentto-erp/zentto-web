@@ -32,7 +32,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import SearchIcon from "@mui/icons-material/Search";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useCentrosCostoList,
   useCreateCentroCosto,
@@ -42,8 +42,8 @@ import {
   type CentroCosto,
   type CentroCostoInput,
 } from "../hooks/useContabilidadAdvanced";
-import { toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 // ─── Types ───────────────────────────────────────────────────
 

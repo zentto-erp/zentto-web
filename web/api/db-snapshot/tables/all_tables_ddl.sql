@@ -63,6 +63,102 @@ GO
  
  
 -- =============================================
+-- TABLE: acct.AccountMonetaryClass
+-- =============================================
+CREATE TABLE [acct].[AccountMonetaryClass] (
+    [AccountMonetaryClassId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[AccountId] BIGINT NOT NULL
+   ,[Classification] NVARCHAR(20) NOT NULL
+   ,[SubClassification] NVARCHAR(40) NULL
+   ,[ReexpressionAccountId] BIGINT NULL
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__AccountM__A562835E4A275BA7] PRIMARY KEY CLUSTERED ([AccountMonetaryClassId])
+   ,CONSTRAINT [UQ_acct_AMC] UNIQUE NONCLUSTERED ([CompanyId], [AccountId])
+   ,CONSTRAINT [CK_acct_AMC_Class] CHECK ([Classification]='NON_MONETARY' OR [Classification]='MONETARY')
+);
+GO
+ALTER TABLE [acct].[AccountMonetaryClass] ADD CONSTRAINT [FK_acct_AMC_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.Budget
+-- =============================================
+CREATE TABLE [acct].[Budget] (
+    [BudgetId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[BudgetName] NVARCHAR(200) NOT NULL
+   ,[FiscalYear] SMALLINT NOT NULL
+   ,[CostCenterCode] NVARCHAR(20) NULL
+   ,[Status] NVARCHAR(10) NOT NULL DEFAULT ('DRAFT')
+   ,[Notes] NVARCHAR(500) NULL
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Budget__E38E7924DF5073CA] PRIMARY KEY CLUSTERED ([BudgetId])
+   ,CONSTRAINT [CK_acct_Bud_Status] CHECK ([Status]='CLOSED' OR [Status]='APPROVED' OR [Status]='DRAFT')
+);
+GO
+ALTER TABLE [acct].[Budget] ADD CONSTRAINT [FK_acct_Bud_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.BudgetLine
+-- =============================================
+CREATE TABLE [acct].[BudgetLine] (
+    [BudgetLineId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[BudgetId] INT NOT NULL
+   ,[AccountCode] NVARCHAR(20) NOT NULL
+   ,[Month01] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month02] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month03] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month04] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month05] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month06] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month07] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month08] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month09] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month10] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month11] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Month12] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[AnnualTotal] DECIMAL(29,2) NULL
+   ,[Notes] NVARCHAR(200) NULL
+   ,CONSTRAINT [PK__BudgetLi__321CF542DC0B455A] PRIMARY KEY CLUSTERED ([BudgetLineId])
+);
+GO
+ALTER TABLE [acct].[BudgetLine] ADD CONSTRAINT [FK_acct_BL_Budget] FOREIGN KEY ([BudgetId]) REFERENCES [acct].[Budget] ([BudgetId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.CostCenter
+-- =============================================
+CREATE TABLE [acct].[CostCenter] (
+    [CostCenterId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[CostCenterCode] NVARCHAR(20) NOT NULL
+   ,[CostCenterName] NVARCHAR(200) NOT NULL
+   ,[ParentCostCenterId] INT NULL
+   ,[Level] TINYINT NOT NULL DEFAULT ((1))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__CostCent__89D876F140050F30] PRIMARY KEY CLUSTERED ([CostCenterId])
+   ,CONSTRAINT [UQ_acct_CC] UNIQUE NONCLUSTERED ([CompanyId], [CostCenterCode])
+);
+GO
+ALTER TABLE [acct].[CostCenter] ADD CONSTRAINT [FK_acct_CC_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ALTER TABLE [acct].[CostCenter] ADD CONSTRAINT [FK_acct_CC_Parent] FOREIGN KEY ([ParentCostCenterId]) REFERENCES [acct].[CostCenter] ([CostCenterId]);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: acct.DocumentLink
 -- =============================================
 CREATE TABLE [acct].[DocumentLink] (
@@ -84,6 +180,270 @@ GO
 ALTER TABLE [acct].[DocumentLink] ADD CONSTRAINT [FK_acct_DocLink_Branch] FOREIGN KEY ([BranchId]) REFERENCES [cfg].[Branch] ([BranchId]);
 GO
 ALTER TABLE [acct].[DocumentLink] ADD CONSTRAINT [FK_acct_DocLink_JE] FOREIGN KEY ([JournalEntryId]) REFERENCES [acct].[JournalEntry] ([JournalEntryId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.EquityMovement
+-- =============================================
+CREATE TABLE [acct].[EquityMovement] (
+    [EquityMovementId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[BranchId] INT NOT NULL DEFAULT ((1))
+   ,[FiscalYear] SMALLINT NOT NULL
+   ,[AccountId] BIGINT NOT NULL
+   ,[AccountCode] NVARCHAR(30) NOT NULL
+   ,[AccountName] NVARCHAR(200) NULL
+   ,[MovementType] NVARCHAR(30) NOT NULL
+   ,[MovementDate] DATE NOT NULL
+   ,[Amount] DECIMAL(18,2) NOT NULL
+   ,[JournalEntryId] BIGINT NULL
+   ,[Description] NVARCHAR(400) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__EquityMo__4E3968DCDC2E789E] PRIMARY KEY CLUSTERED ([EquityMovementId])
+   ,CONSTRAINT [CK_acct_EM_Type] CHECK ([MovementType]='OPENING_BALANCE' OR [MovementType]='OTHER_COMPREHENSIVE' OR [MovementType]='NET_LOSS' OR [MovementType]='NET_INCOME' OR [MovementType]='INFLATION_ADJUST' OR [MovementType]='REVALUATION_SURPLUS' OR [MovementType]='DIVIDEND_STOCK' OR [MovementType]='DIVIDEND_CASH' OR [MovementType]='ACCUMULATED_DEFICIT' OR [MovementType]='RETAINED_EARNINGS' OR [MovementType]='RESERVE_VOLUNTARY' OR [MovementType]='RESERVE_STATUTORY' OR [MovementType]='RESERVE_LEGAL' OR [MovementType]='CAPITAL_DECREASE' OR [MovementType]='CAPITAL_INCREASE')
+);
+GO
+ALTER TABLE [acct].[EquityMovement] ADD CONSTRAINT [FK_acct_EM_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_acct_EM_Year] ON [acct].[EquityMovement] ([CompanyId] ASC, [FiscalYear] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.FiscalPeriod
+-- =============================================
+CREATE TABLE [acct].[FiscalPeriod] (
+    [FiscalPeriodId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[PeriodCode] CHAR(6) NOT NULL
+   ,[PeriodName] NVARCHAR(50) NULL
+   ,[YearCode] SMALLINT NOT NULL
+   ,[MonthCode] TINYINT NOT NULL
+   ,[StartDate] DATE NOT NULL
+   ,[EndDate] DATE NOT NULL
+   ,[Status] NVARCHAR(10) NOT NULL DEFAULT ('OPEN')
+   ,[ClosedAt] DATETIME2(0) NULL
+   ,[ClosedByUserId] INT NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__FiscalPe__9E68FFEBDBAF5F13] PRIMARY KEY CLUSTERED ([FiscalPeriodId])
+   ,CONSTRAINT [UQ_acct_FP] UNIQUE NONCLUSTERED ([CompanyId], [PeriodCode])
+   ,CONSTRAINT [CK_acct_FP_Status] CHECK ([Status]='LOCKED' OR [Status]='CLOSED' OR [Status]='OPEN')
+);
+GO
+ALTER TABLE [acct].[FiscalPeriod] ADD CONSTRAINT [FK_acct_FP_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.FixedAsset
+-- =============================================
+CREATE TABLE [acct].[FixedAsset] (
+    [AssetId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[BranchId] INT NOT NULL DEFAULT ((0))
+   ,[AssetCode] NVARCHAR(40) NOT NULL
+   ,[Description] NVARCHAR(250) NOT NULL
+   ,[CategoryId] INT NULL
+   ,[AcquisitionDate] DATE NOT NULL
+   ,[AcquisitionCost] DECIMAL(18,2) NOT NULL
+   ,[ResidualValue] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[UsefulLifeMonths] INT NOT NULL
+   ,[DepreciationMethod] NVARCHAR(20) NOT NULL DEFAULT ('STRAIGHT_LINE')
+   ,[AssetAccountCode] NVARCHAR(20) NOT NULL
+   ,[DeprecAccountCode] NVARCHAR(20) NOT NULL
+   ,[ExpenseAccountCode] NVARCHAR(20) NOT NULL
+   ,[CostCenterCode] NVARCHAR(20) NULL
+   ,[Location] NVARCHAR(200) NULL
+   ,[SerialNumber] NVARCHAR(100) NULL
+   ,[Status] NVARCHAR(20) NULL DEFAULT ('ACTIVE')
+   ,[DisposalDate] DATE NULL
+   ,[DisposalAmount] DECIMAL(18,2) NULL
+   ,[DisposalReason] NVARCHAR(500) NULL
+   ,[DisposalEntryId] BIGINT NULL
+   ,[AcquisitionEntryId] BIGINT NULL
+   ,[UnitsCapacity] INT NULL
+   ,[CurrencyCode] NVARCHAR(3) NULL DEFAULT ('VES')
+   ,[IsDeleted] BIT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME NULL
+   ,[CreatedBy] NVARCHAR(40) NULL
+   ,[UpdatedBy] NVARCHAR(40) NULL
+   ,CONSTRAINT [PK__FixedAss__43492352BB5A3ABF] PRIMARY KEY CLUSTERED ([AssetId])
+   ,CONSTRAINT [UQ_FixedAsset_Code] UNIQUE NONCLUSTERED ([CompanyId], [AssetCode])
+);
+GO
+ALTER TABLE [acct].[FixedAsset] ADD CONSTRAINT [FK_FA_Category] FOREIGN KEY ([CategoryId]) REFERENCES [acct].[FixedAssetCategory] ([CategoryId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.FixedAssetCategory
+-- =============================================
+CREATE TABLE [acct].[FixedAssetCategory] (
+    [CategoryId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[CategoryCode] NVARCHAR(20) NOT NULL
+   ,[CategoryName] NVARCHAR(200) NOT NULL
+   ,[DefaultUsefulLifeMonths] INT NOT NULL
+   ,[DefaultDepreciationMethod] NVARCHAR(20) NOT NULL DEFAULT ('STRAIGHT_LINE')
+   ,[DefaultResidualPercent] DECIMAL(5,2) NULL DEFAULT ((0))
+   ,[DefaultAssetAccountCode] NVARCHAR(20) NULL
+   ,[DefaultDeprecAccountCode] NVARCHAR(20) NULL
+   ,[DefaultExpenseAccountCode] NVARCHAR(20) NULL
+   ,[CountryCode] NVARCHAR(2) NULL
+   ,[IsActive] BIT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__FixedAss__19093A0B3BF42A13] PRIMARY KEY CLUSTERED ([CategoryId])
+   ,CONSTRAINT [UQ_FixedAssetCategory] UNIQUE NONCLUSTERED ([CompanyId], [CategoryCode], [CountryCode])
+);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.FixedAssetDepreciation
+-- =============================================
+CREATE TABLE [acct].[FixedAssetDepreciation] (
+    [DepreciationId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[AssetId] BIGINT NOT NULL
+   ,[PeriodCode] NVARCHAR(7) NOT NULL
+   ,[DepreciationDate] DATE NOT NULL
+   ,[Amount] DECIMAL(18,2) NOT NULL
+   ,[AccumulatedDepreciation] DECIMAL(18,2) NOT NULL
+   ,[BookValue] DECIMAL(18,2) NOT NULL
+   ,[JournalEntryId] BIGINT NULL
+   ,[Status] NVARCHAR(20) NULL DEFAULT ('GENERATED')
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__FixedAss__DEEBFFC961CE6443] PRIMARY KEY CLUSTERED ([DepreciationId])
+   ,CONSTRAINT [UQ_AssetDeprec] UNIQUE NONCLUSTERED ([AssetId], [PeriodCode])
+);
+GO
+ALTER TABLE [acct].[FixedAssetDepreciation] ADD CONSTRAINT [FK_FAD_Asset] FOREIGN KEY ([AssetId]) REFERENCES [acct].[FixedAsset] ([AssetId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.FixedAssetImprovement
+-- =============================================
+CREATE TABLE [acct].[FixedAssetImprovement] (
+    [ImprovementId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[AssetId] BIGINT NOT NULL
+   ,[ImprovementDate] DATE NOT NULL
+   ,[Description] NVARCHAR(500) NOT NULL
+   ,[Amount] DECIMAL(18,2) NOT NULL
+   ,[AdditionalLifeMonths] INT NULL DEFAULT ((0))
+   ,[JournalEntryId] BIGINT NULL
+   ,[CreatedBy] NVARCHAR(40) NULL
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__FixedAss__77BDEAC5DD0EA388] PRIMARY KEY CLUSTERED ([ImprovementId])
+);
+GO
+ALTER TABLE [acct].[FixedAssetImprovement] ADD CONSTRAINT [FK_FAI_Asset] FOREIGN KEY ([AssetId]) REFERENCES [acct].[FixedAsset] ([AssetId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.FixedAssetRevaluation
+-- =============================================
+CREATE TABLE [acct].[FixedAssetRevaluation] (
+    [RevaluationId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[AssetId] BIGINT NOT NULL
+   ,[RevaluationDate] DATE NOT NULL
+   ,[PreviousCost] DECIMAL(18,2) NOT NULL
+   ,[NewCost] DECIMAL(18,2) NOT NULL
+   ,[PreviousAccumDeprec] DECIMAL(18,2) NOT NULL
+   ,[NewAccumDeprec] DECIMAL(18,2) NOT NULL
+   ,[IndexFactor] DECIMAL(12,6) NOT NULL
+   ,[JournalEntryId] BIGINT NULL
+   ,[CountryCode] NVARCHAR(2) NOT NULL
+   ,[CreatedBy] NVARCHAR(40) NULL
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__FixedAss__FFC2ECE8E5764375] PRIMARY KEY CLUSTERED ([RevaluationId])
+);
+GO
+ALTER TABLE [acct].[FixedAssetRevaluation] ADD CONSTRAINT [FK_FAR_Asset] FOREIGN KEY ([AssetId]) REFERENCES [acct].[FixedAsset] ([AssetId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.InflationAdjustment
+-- =============================================
+CREATE TABLE [acct].[InflationAdjustment] (
+    [InflationAdjustmentId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[BranchId] INT NOT NULL DEFAULT ((1))
+   ,[CountryCode] CHAR(2) NOT NULL DEFAULT ('VE')
+   ,[PeriodCode] CHAR(6) NOT NULL
+   ,[FiscalYear] SMALLINT NOT NULL
+   ,[AdjustmentDate] DATE NOT NULL
+   ,[BaseIndexValue] DECIMAL(18,6) NOT NULL
+   ,[EndIndexValue] DECIMAL(18,6) NOT NULL
+   ,[AccumulatedInflation] DECIMAL(18,6) NULL
+   ,[ReexpressionFactor] DECIMAL(18,8) NOT NULL
+   ,[JournalEntryId] BIGINT NULL
+   ,[TotalMonetaryGainLoss] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[TotalAdjustmentAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT ('DRAFT')
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedByUserId] INT NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Inflatio__C6D0E7F00589B719] PRIMARY KEY CLUSTERED ([InflationAdjustmentId])
+   ,CONSTRAINT [UQ_acct_IA] UNIQUE NONCLUSTERED ([CompanyId], [BranchId], [PeriodCode])
+   ,CONSTRAINT [CK_acct_IA_Status] CHECK ([Status]='VOIDED' OR [Status]='POSTED' OR [Status]='DRAFT')
+);
+GO
+ALTER TABLE [acct].[InflationAdjustment] ADD CONSTRAINT [FK_acct_IA_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.InflationAdjustmentLine
+-- =============================================
+CREATE TABLE [acct].[InflationAdjustmentLine] (
+    [LineId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[InflationAdjustmentId] INT NOT NULL
+   ,[AccountId] BIGINT NOT NULL
+   ,[AccountCode] NVARCHAR(30) NOT NULL
+   ,[AccountName] NVARCHAR(200) NULL
+   ,[Classification] NVARCHAR(20) NOT NULL
+   ,[HistoricalBalance] DECIMAL(18,2) NOT NULL
+   ,[ReexpressionFactor] DECIMAL(18,8) NOT NULL
+   ,[AdjustedBalance] DECIMAL(18,2) NOT NULL
+   ,[AdjustmentAmount] DECIMAL(18,2) NOT NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Inflatio__2EAE65292856A9EB] PRIMARY KEY CLUSTERED ([LineId])
+);
+GO
+ALTER TABLE [acct].[InflationAdjustmentLine] ADD CONSTRAINT [FK_acct_IAL_Header] FOREIGN KEY ([InflationAdjustmentId]) REFERENCES [acct].[InflationAdjustment] ([InflationAdjustmentId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_acct_IAL_Header] ON [acct].[InflationAdjustmentLine] ([InflationAdjustmentId] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.InflationIndex
+-- =============================================
+CREATE TABLE [acct].[InflationIndex] (
+    [InflationIndexId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[IndexName] NVARCHAR(30) NOT NULL
+   ,[PeriodCode] CHAR(6) NOT NULL
+   ,[IndexValue] DECIMAL(18,6) NOT NULL
+   ,[SourceReference] NVARCHAR(200) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Inflatio__38D6F076D54479DF] PRIMARY KEY CLUSTERED ([InflationIndexId])
+   ,CONSTRAINT [UQ_acct_II] UNIQUE NONCLUSTERED ([CompanyId], [CountryCode], [IndexName], [PeriodCode])
+   ,CONSTRAINT [CK_acct_II_Country] CHECK ([CountryCode]='US' OR [CountryCode]='MX' OR [CountryCode]='CO' OR [CountryCode]='ES' OR [CountryCode]='VE')
+);
+GO
+ALTER TABLE [acct].[InflationIndex] ADD CONSTRAINT [FK_acct_II_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
 GO
  
  
@@ -162,6 +522,100 @@ GO
 ALTER TABLE [acct].[JournalEntryLine] ADD CONSTRAINT [FK_acct_JEL_Account] FOREIGN KEY ([AccountId]) REFERENCES [acct].[Account] ([AccountId]);
 GO
 CREATE NONCLUSTERED INDEX [IX_acct_JEL_Account] ON [acct].[JournalEntryLine] ([AccountId] ASC, [JournalEntryId] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.RecurringEntry
+-- =============================================
+CREATE TABLE [acct].[RecurringEntry] (
+    [RecurringEntryId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[TemplateName] NVARCHAR(200) NOT NULL
+   ,[Frequency] NVARCHAR(10) NOT NULL DEFAULT ('MONTHLY')
+   ,[NextExecutionDate] DATE NOT NULL
+   ,[LastExecutedDate] DATE NULL
+   ,[TimesExecuted] INT NOT NULL DEFAULT ((0))
+   ,[MaxExecutions] INT NULL
+   ,[TipoAsiento] NVARCHAR(20) NOT NULL DEFAULT ('DIARIO')
+   ,[Concepto] NVARCHAR(300) NOT NULL
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Recurrin__F10085A13D526510] PRIMARY KEY CLUSTERED ([RecurringEntryId])
+   ,CONSTRAINT [CK_acct_RE_Freq] CHECK ([Frequency]='YEARLY' OR [Frequency]='QUARTERLY' OR [Frequency]='MONTHLY' OR [Frequency]='WEEKLY' OR [Frequency]='DAILY')
+);
+GO
+ALTER TABLE [acct].[RecurringEntry] ADD CONSTRAINT [FK_acct_RE_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.RecurringEntryLine
+-- =============================================
+CREATE TABLE [acct].[RecurringEntryLine] (
+    [LineId] INT IDENTITY(1,1) NOT NULL
+   ,[RecurringEntryId] INT NOT NULL
+   ,[AccountCode] NVARCHAR(20) NOT NULL
+   ,[Description] NVARCHAR(200) NULL
+   ,[CostCenterCode] NVARCHAR(20) NULL
+   ,[Debit] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Credit] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,CONSTRAINT [PK__Recurrin__2EAE6529DA3A0B71] PRIMARY KEY CLUSTERED ([LineId])
+);
+GO
+ALTER TABLE [acct].[RecurringEntryLine] ADD CONSTRAINT [FK_acct_REL_RE] FOREIGN KEY ([RecurringEntryId]) REFERENCES [acct].[RecurringEntry] ([RecurringEntryId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.ReportTemplate
+-- =============================================
+CREATE TABLE [acct].[ReportTemplate] (
+    [ReportTemplateId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[ReportCode] NVARCHAR(50) NOT NULL
+   ,[ReportName] NVARCHAR(200) NOT NULL
+   ,[LegalFramework] NVARCHAR(50) NOT NULL
+   ,[LegalReference] NVARCHAR(300) NULL
+   ,[TemplateContent] NVARCHAR(MAX) NOT NULL
+   ,[HeaderJson] NVARCHAR(MAX) NULL
+   ,[FooterJson] NVARCHAR(MAX) NULL
+   ,[IsDefault] BIT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[Version] INT NOT NULL DEFAULT ((1))
+   ,[CreatedByUserId] INT NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ReportTe__C7EA2806940B1904] PRIMARY KEY CLUSTERED ([ReportTemplateId])
+   ,CONSTRAINT [UQ_acct_RT] UNIQUE NONCLUSTERED ([CompanyId], [CountryCode], [ReportCode])
+   ,CONSTRAINT [CK_acct_RT_Framework] CHECK ([LegalFramework]='NIIF-FULL' OR [LegalFramework]='NIIF-PYME' OR [LegalFramework]='PGC-PYME' OR [LegalFramework]='PGC' OR [LegalFramework]='VEN-NIF')
+);
+GO
+ALTER TABLE [acct].[ReportTemplate] ADD CONSTRAINT [FK_acct_RT_Company] FOREIGN KEY ([CompanyId]) REFERENCES [cfg].[Company] ([CompanyId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: acct.ReportTemplateVariable
+-- =============================================
+CREATE TABLE [acct].[ReportTemplateVariable] (
+    [VariableId] INT IDENTITY(1,1) NOT NULL
+   ,[ReportTemplateId] INT NOT NULL
+   ,[VariableName] NVARCHAR(100) NOT NULL
+   ,[VariableType] NVARCHAR(20) NOT NULL
+   ,[DataSource] NVARCHAR(200) NULL
+   ,[DefaultValue] NVARCHAR(500) NULL
+   ,[Description] NVARCHAR(300) NULL
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,CONSTRAINT [PK__ReportTe__3D2C1333E0DD0947] PRIMARY KEY CLUSTERED ([VariableId])
+   ,CONSTRAINT [CK_acct_RTV_Type] CHECK ([VariableType]='BOOLEAN' OR [VariableType]='NUMBER' OR [VariableType]='CURRENCY' OR [VariableType]='TABLE' OR [VariableType]='DATE' OR [VariableType]='TEXT')
+);
+GO
+ALTER TABLE [acct].[ReportTemplateVariable] ADD CONSTRAINT [FK_acct_RTV_Template] FOREIGN KEY ([ReportTemplateId]) REFERENCES [acct].[ReportTemplate] ([ReportTemplateId]) ON DELETE CASCADE;
+GO
+CREATE NONCLUSTERED INDEX [IX_acct_RTV_Template] ON [acct].[ReportTemplateVariable] ([ReportTemplateId] ASC);
 GO
  
  
@@ -283,6 +737,7 @@ CREATE TABLE [ap].[PurchaseDocument] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[FiscalMemoryNumber] NVARCHAR(80) NULL DEFAULT ('')
    ,CONSTRAINT [PK_PurchaseDocument] PRIMARY KEY CLUSTERED ([DocumentId])
    ,CONSTRAINT [UQ_PurchaseDocument_NumDocOp] UNIQUE NONCLUSTERED ([DocumentNumber], [OperationType])
 );
@@ -322,6 +777,8 @@ CREATE TABLE [ap].[PurchaseDocumentLine] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[SerialType] NVARCHAR(60) NOT NULL DEFAULT ('')
+   ,[FiscalMemoryNumber] NVARCHAR(80) NULL DEFAULT ('')
    ,CONSTRAINT [PK_PurchaseDocumentLine] PRIMARY KEY CLUSTERED ([LineId])
 );
 GO
@@ -354,6 +811,8 @@ CREATE TABLE [ap].[PurchaseDocumentPayment] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[SerialType] NVARCHAR(60) NOT NULL DEFAULT ('')
+   ,[FiscalMemoryNumber] NVARCHAR(80) NULL DEFAULT ('')
    ,CONSTRAINT [PK_PurchaseDocumentPayment] PRIMARY KEY CLUSTERED ([PaymentId])
 );
 GO
@@ -473,6 +932,7 @@ CREATE TABLE [ar].[SalesDocument] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[FiscalMemoryNumber] NVARCHAR(80) NULL DEFAULT ('')
    ,CONSTRAINT [PK_SalesDocument] PRIMARY KEY CLUSTERED ([DocumentId])
    ,CONSTRAINT [UQ_SalesDocument_NumDocOp] UNIQUE NONCLUSTERED ([DocumentNumber], [OperationType])
 );
@@ -515,6 +975,8 @@ CREATE TABLE [ar].[SalesDocumentLine] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[SerialType] NVARCHAR(60) NOT NULL DEFAULT ('')
+   ,[FiscalMemoryNumber] NVARCHAR(80) NULL DEFAULT ('')
    ,CONSTRAINT [PK_SalesDocumentLine] PRIMARY KEY CLUSTERED ([LineId])
 );
 GO
@@ -549,12 +1011,43 @@ CREATE TABLE [ar].[SalesDocumentPayment] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[SerialType] NVARCHAR(60) NOT NULL DEFAULT ('')
+   ,[FiscalMemoryNumber] NVARCHAR(80) NULL DEFAULT ('')
    ,CONSTRAINT [PK_SalesDocumentPayment] PRIMARY KEY CLUSTERED ([PaymentId])
 );
 GO
 ALTER TABLE [ar].[SalesDocumentPayment] ADD CONSTRAINT [FK_SalesDocPay_SalesDoc] FOREIGN KEY ([DocumentNumber], [OperationType]) REFERENCES [ar].[SalesDocument] ([DocumentNumber], [OperationType]);
 GO
 CREATE NONCLUSTERED INDEX [IX_SalesDocPayment_DocNum] ON [ar].[SalesDocumentPayment] ([DocumentNumber] ASC, [OperationType] ASC) WHERE ([IsDeleted]=(0));
+GO
+ 
+ 
+-- =============================================
+-- TABLE: audit.AuditLog
+-- =============================================
+CREATE TABLE [audit].[AuditLog] (
+    [AuditLogId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[BranchId] INT NOT NULL
+   ,[UserId] INT NULL
+   ,[UserName] NVARCHAR(100) NULL
+   ,[ModuleName] NVARCHAR(50) NOT NULL
+   ,[EntityName] NVARCHAR(100) NOT NULL
+   ,[EntityId] NVARCHAR(50) NULL
+   ,[ActionType] VARCHAR(10) NOT NULL
+   ,[Summary] NVARCHAR(500) NULL
+   ,[OldValues] NVARCHAR(MAX) NULL
+   ,[NewValues] NVARCHAR(MAX) NULL
+   ,[IpAddress] NVARCHAR(50) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__AuditLog__EB5F6CBD30E12718] PRIMARY KEY CLUSTERED ([AuditLogId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_AuditLog_Company_Date] ON [audit].[AuditLog] ([CompanyId] ASC, [BranchId] ASC, [CreatedAt] DESC);
+GO
+CREATE NONCLUSTERED INDEX [IX_AuditLog_Module] ON [audit].[AuditLog] ([ModuleName] ASC, [CreatedAt] DESC);
+GO
+CREATE NONCLUSTERED INDEX [IX_AuditLog_User] ON [audit].[AuditLog] ([UserName] ASC, [CreatedAt] DESC);
 GO
  
  
@@ -634,6 +1127,9 @@ CREATE TABLE [cfg].[Company] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[Address] NVARCHAR(500) NULL
+   ,[LegalRep] NVARCHAR(200) NULL
+   ,[Phone] NVARCHAR(50) NULL
    ,CONSTRAINT [PK__Company__2D971CAC15398BC8] PRIMARY KEY CLUSTERED ([CompanyId])
    ,CONSTRAINT [UQ_cfg_Company_CompanyCode] UNIQUE NONCLUSTERED ([CompanyCode])
 );
@@ -682,6 +1178,15 @@ CREATE TABLE [cfg].[Country] (
    ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
    ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
    ,[TimeZoneIana] NVARCHAR(64) NULL
+   ,[CurrencySymbol] NVARCHAR(5) NOT NULL DEFAULT (N'$')
+   ,[ReferenceCurrency] CHAR(3) NOT NULL DEFAULT ('USD')
+   ,[ReferenceCurrencySymbol] NVARCHAR(5) NOT NULL DEFAULT (N'$')
+   ,[DefaultExchangeRate] DECIMAL(18,4) NOT NULL DEFAULT ((1.0))
+   ,[PricesIncludeTax] BIT NOT NULL DEFAULT ((0))
+   ,[SpecialTaxRate] DECIMAL(5,2) NOT NULL DEFAULT ((0))
+   ,[SpecialTaxEnabled] BIT NOT NULL DEFAULT ((0))
+   ,[PhonePrefix] NVARCHAR(5) NULL
+   ,[SortOrder] INT NOT NULL DEFAULT ((100))
    ,CONSTRAINT [PK__Country__5D9B0D2D6125EA6F] PRIMARY KEY CLUSTERED ([CountryCode])
 );
 GO
@@ -864,6 +1369,83 @@ GO
  
  
 -- =============================================
+-- TABLE: dbo.ConciliacionBancaria
+-- =============================================
+CREATE TABLE [dbo].[ConciliacionBancaria] (
+    [ID] INT IDENTITY(1,1) NOT NULL
+   ,[Nro_Cta] NVARCHAR(20) NOT NULL
+   ,[Fecha_Desde] DATETIME NOT NULL
+   ,[Fecha_Hasta] DATETIME NOT NULL
+   ,[Saldo_Inicial_Sistema] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Saldo_Final_Sistema] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Saldo_Inicial_Banco] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Saldo_Final_Banco] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Diferencia] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Estado] NVARCHAR(20) NULL DEFAULT ('PENDIENTE')
+   ,[Observaciones] NVARCHAR(500) NULL
+   ,[Co_Usuario] NVARCHAR(60) NULL DEFAULT ('API')
+   ,[Fecha_Creacion] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,[Fecha_Cierre] DATETIME NULL
+   ,CONSTRAINT [PK__Concilia__3214EC27CDDED96B] PRIMARY KEY CLUSTERED ([ID])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_Conciliacion_NroCta] ON [dbo].[ConciliacionBancaria] ([Nro_Cta] ASC, [Fecha_Desde] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: dbo.ConciliacionDetalle
+-- =============================================
+CREATE TABLE [dbo].[ConciliacionDetalle] (
+    [ID] INT IDENTITY(1,1) NOT NULL
+   ,[Conciliacion_ID] INT NOT NULL
+   ,[Tipo_Origen] NVARCHAR(20) NOT NULL
+   ,[MovCuentas_ID] INT NULL
+   ,[Extracto_ID] INT NULL
+   ,[Fecha] DATETIME NULL
+   ,[Descripcion] NVARCHAR(255) NULL
+   ,[Referencia] NVARCHAR(50) NULL
+   ,[Debito] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Credito] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Conciliado] BIT NULL DEFAULT ((0))
+   ,[Tipo_Ajuste] NVARCHAR(20) NULL
+   ,[Co_Usuario] NVARCHAR(60) NULL DEFAULT ('API')
+   ,CONSTRAINT [PK__Concilia__3214EC273B18266F] PRIMARY KEY CLUSTERED ([ID])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ConcDet_Conciliacion] ON [dbo].[ConciliacionDetalle] ([Conciliacion_ID] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: dbo.Empleados
+-- =============================================
+CREATE TABLE [dbo].[Empleados] (
+    [CEDULA] NVARCHAR(20) NOT NULL
+   ,[GRUPO] NVARCHAR(50) NULL
+   ,[NOMBRE] NVARCHAR(100) NOT NULL
+   ,[DIRECCION] NVARCHAR(255) NULL
+   ,[TELEFONO] NVARCHAR(60) NULL
+   ,[NACIMIENTO] DATETIME NULL
+   ,[CARGO] NVARCHAR(50) NULL
+   ,[NOMINA] NVARCHAR(50) NULL
+   ,[SUELDO] FLOAT NULL DEFAULT ((0))
+   ,[INGRESO] DATETIME NULL
+   ,[RETIRO] DATETIME NULL
+   ,[STATUS] NVARCHAR(50) NULL DEFAULT (N'ACTIVO')
+   ,[COMISION] FLOAT NULL DEFAULT ((0))
+   ,[UTILIDAD] FLOAT NULL DEFAULT ((0))
+   ,[CO_Usuario] NVARCHAR(10) NULL
+   ,[SEXO] NVARCHAR(10) NULL
+   ,[NACIONALIDAD] NVARCHAR(50) NULL
+   ,[Autoriza] BIT NOT NULL DEFAULT ((0))
+   ,[Apodo] NVARCHAR(50) NULL
+   ,CONSTRAINT [PK__Empleado__06BB84495C9204E6] PRIMARY KEY CLUSTERED ([CEDULA])
+);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: dbo.EndpointDependency
 -- =============================================
 CREATE TABLE [dbo].[EndpointDependency] (
@@ -878,6 +1460,34 @@ CREATE TABLE [dbo].[EndpointDependency] (
    ,CONSTRAINT [PK__Endpoint__3214EC075FE6263F] PRIMARY KEY CLUSTERED ([Id])
    ,CONSTRAINT [UQ_EndpointDependency] UNIQUE NONCLUSTERED ([ModuleName], [ObjectType], [ObjectName], [SourceTag])
 );
+GO
+ 
+ 
+-- =============================================
+-- TABLE: dbo.ExtractoBancario
+-- =============================================
+CREATE TABLE [dbo].[ExtractoBancario] (
+    [ID] INT IDENTITY(1,1) NOT NULL
+   ,[Nro_Cta] NVARCHAR(20) NOT NULL
+   ,[Fecha] DATETIME NOT NULL
+   ,[Descripcion] NVARCHAR(255) NULL
+   ,[Referencia] NVARCHAR(50) NULL
+   ,[Tipo] NVARCHAR(10) NULL
+   ,[Monto] DECIMAL(18,2) NOT NULL
+   ,[Saldo] DECIMAL(18,2) NULL
+   ,[Conciliado] BIT NULL DEFAULT ((0))
+   ,[Fecha_Conciliacion] DATETIME NULL
+   ,[MovCuentas_ID] INT NULL
+   ,[Co_Usuario] NVARCHAR(60) NULL DEFAULT ('API')
+   ,[Fecha_Reg] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Extracto__3214EC275BBA08EF] PRIMARY KEY CLUSTERED ([ID])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_Extracto_NroCta] ON [dbo].[ExtractoBancario] ([Nro_Cta] ASC, [Fecha] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_Extracto_Conciliado] ON [dbo].[ExtractoBancario] ([Conciliado] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_Extracto_Ref] ON [dbo].[ExtractoBancario] ([Referencia] ASC);
 GO
  
  
@@ -1184,6 +1794,72 @@ GO
  
  
 -- =============================================
+-- TABLE: fin.PettyCashBox
+-- =============================================
+CREATE TABLE [fin].[PettyCashBox] (
+    [Id] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[BranchId] INT NOT NULL DEFAULT ((1))
+   ,[Name] NVARCHAR(100) NOT NULL
+   ,[AccountCode] NVARCHAR(20) NULL
+   ,[MaxAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[CurrentBalance] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Responsible] NVARCHAR(100) NULL
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT ('ACTIVE')
+   ,[CreatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,[CreatedByUserId] INT NULL
+   ,CONSTRAINT [PK__PettyCas__3214EC07346BFA25] PRIMARY KEY CLUSTERED ([Id])
+);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: fin.PettyCashExpense
+-- =============================================
+CREATE TABLE [fin].[PettyCashExpense] (
+    [Id] INT IDENTITY(1,1) NOT NULL
+   ,[SessionId] INT NOT NULL
+   ,[BoxId] INT NOT NULL
+   ,[Category] NVARCHAR(50) NOT NULL
+   ,[Description] NVARCHAR(255) NOT NULL
+   ,[Amount] DECIMAL(18,2) NOT NULL
+   ,[Beneficiary] NVARCHAR(150) NULL
+   ,[ReceiptNumber] NVARCHAR(50) NULL
+   ,[AccountCode] NVARCHAR(20) NULL
+   ,[CreatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,[CreatedByUserId] INT NULL
+   ,CONSTRAINT [PK__PettyCas__3214EC07B308A4F7] PRIMARY KEY CLUSTERED ([Id])
+);
+GO
+ALTER TABLE [fin].[PettyCashExpense] ADD CONSTRAINT [FK__PettyCash__Sessi__178E47FC] FOREIGN KEY ([SessionId]) REFERENCES [fin].[PettyCashSession] ([Id]);
+GO
+ALTER TABLE [fin].[PettyCashExpense] ADD CONSTRAINT [FK__PettyCash__BoxId__18826C35] FOREIGN KEY ([BoxId]) REFERENCES [fin].[PettyCashBox] ([Id]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: fin.PettyCashSession
+-- =============================================
+CREATE TABLE [fin].[PettyCashSession] (
+    [Id] INT IDENTITY(1,1) NOT NULL
+   ,[BoxId] INT NOT NULL
+   ,[OpeningAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[ClosingAmount] DECIMAL(18,2) NULL
+   ,[TotalExpenses] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT ('OPEN')
+   ,[OpenedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,[ClosedAt] DATETIME2(7) NULL
+   ,[OpenedByUserId] INT NULL
+   ,[ClosedByUserId] INT NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,CONSTRAINT [PK__PettyCas__3214EC07DF452F7F] PRIMARY KEY CLUSTERED ([Id])
+);
+GO
+ALTER TABLE [fin].[PettyCashSession] ADD CONSTRAINT [FK__PettyCash__BoxId__10E14A6D] FOREIGN KEY ([BoxId]) REFERENCES [fin].[PettyCashBox] ([Id]);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: fiscal.CountryConfig
 -- =============================================
 CREATE TABLE [fiscal].[CountryConfig] (
@@ -1234,6 +1910,26 @@ GO
  
  
 -- =============================================
+-- TABLE: fiscal.DeclarationTemplate
+-- =============================================
+CREATE TABLE [fiscal].[DeclarationTemplate] (
+    [TemplateId] INT IDENTITY(1,1) NOT NULL
+   ,[CountryCode] NVARCHAR(2) NOT NULL
+   ,[DeclarationType] NVARCHAR(30) NOT NULL
+   ,[TemplateName] NVARCHAR(200) NOT NULL
+   ,[FileFormat] NVARCHAR(10) NOT NULL
+   ,[FormatVersion] NVARCHAR(20) NULL
+   ,[AuthorityName] NVARCHAR(100) NULL
+   ,[AuthorityUrl] NVARCHAR(500) NULL
+   ,[IsActive] BIT NULL DEFAULT ((1))
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_DeclarationTemplate] PRIMARY KEY CLUSTERED ([TemplateId])
+   ,CONSTRAINT [UQ_DeclTemplate] UNIQUE NONCLUSTERED ([CountryCode], [DeclarationType])
+);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: fiscal.InvoiceType
 -- =============================================
 CREATE TABLE [fiscal].[InvoiceType] (
@@ -1261,6 +1957,25 @@ GO
 ALTER TABLE [fiscal].[InvoiceType] ADD CONSTRAINT [FK_fiscal_InvType_CreatedBy] FOREIGN KEY ([CreatedByUserId]) REFERENCES [sec].[User] ([UserId]);
 GO
 ALTER TABLE [fiscal].[InvoiceType] ADD CONSTRAINT [FK_fiscal_InvType_UpdatedBy] FOREIGN KEY ([UpdatedByUserId]) REFERENCES [sec].[User] ([UserId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: fiscal.ISLRTariff
+-- =============================================
+CREATE TABLE [fiscal].[ISLRTariff] (
+    [TariffId] INT IDENTITY(1,1) NOT NULL
+   ,[CountryCode] NVARCHAR(2) NOT NULL DEFAULT ('VE')
+   ,[TaxYear] INT NOT NULL
+   ,[BracketFrom] DECIMAL(18,2) NOT NULL
+   ,[BracketTo] DECIMAL(18,2) NULL
+   ,[Rate] DECIMAL(5,2) NOT NULL
+   ,[Subtrahend] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[IsActive] BIT NULL DEFAULT ((1))
+   ,CONSTRAINT [PK_ISLRTariff] PRIMARY KEY CLUSTERED ([TariffId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ISLRTariff_Year] ON [fiscal].[ISLRTariff] ([CountryCode] ASC, [TaxYear] ASC, [IsActive] ASC);
 GO
  
  
@@ -1304,6 +2019,84 @@ GO
  
  
 -- =============================================
+-- TABLE: fiscal.TaxBookEntry
+-- =============================================
+CREATE TABLE [fiscal].[TaxBookEntry] (
+    [EntryId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[BookType] NVARCHAR(10) NOT NULL
+   ,[PeriodCode] NVARCHAR(7) NOT NULL
+   ,[EntryDate] DATE NOT NULL
+   ,[DocumentNumber] NVARCHAR(60) NOT NULL
+   ,[DocumentType] NVARCHAR(30) NULL
+   ,[ControlNumber] NVARCHAR(40) NULL
+   ,[ThirdPartyId] NVARCHAR(40) NULL
+   ,[ThirdPartyName] NVARCHAR(200) NULL
+   ,[TaxableBase] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[ExemptAmount] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[TaxRate] DECIMAL(5,2) NOT NULL DEFAULT ((0))
+   ,[TaxAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[WithholdingRate] DECIMAL(5,2) NULL DEFAULT ((0))
+   ,[WithholdingAmount] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[TotalAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[SourceDocumentId] BIGINT NULL
+   ,[SourceModule] NVARCHAR(20) NULL
+   ,[CountryCode] NVARCHAR(2) NOT NULL
+   ,[DeclarationId] BIGINT NULL
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_TaxBookEntry] PRIMARY KEY CLUSTERED ([EntryId])
+);
+GO
+ALTER TABLE [fiscal].[TaxBookEntry] ADD CONSTRAINT [FK_TaxBookEntry_Declaration] FOREIGN KEY ([DeclarationId]) REFERENCES [fiscal].[TaxDeclaration] ([DeclarationId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_TaxBookEntry_Period_Book] ON [fiscal].[TaxBookEntry] ([CompanyId] ASC, [BookType] ASC, [PeriodCode] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_TaxBookEntry_Declaration] ON [fiscal].[TaxBookEntry] ([DeclarationId] ASC) WHERE ([DeclarationId] IS NOT NULL);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: fiscal.TaxDeclaration
+-- =============================================
+CREATE TABLE [fiscal].[TaxDeclaration] (
+    [DeclarationId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[BranchId] INT NOT NULL DEFAULT ((0))
+   ,[CountryCode] NVARCHAR(2) NOT NULL
+   ,[DeclarationType] NVARCHAR(30) NOT NULL
+   ,[PeriodCode] NVARCHAR(7) NOT NULL
+   ,[PeriodStart] DATE NOT NULL
+   ,[PeriodEnd] DATE NOT NULL
+   ,[SalesBase] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[SalesTax] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[PurchasesBase] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[PurchasesTax] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[TaxableBase] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[TaxAmount] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[WithholdingsCredit] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[PreviousBalance] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[NetPayable] DECIMAL(18,2) NULL DEFAULT ((0))
+   ,[Status] NVARCHAR(20) NULL DEFAULT ('DRAFT')
+   ,[SubmittedAt] DATETIME NULL
+   ,[SubmittedFile] NVARCHAR(500) NULL
+   ,[AuthorityResponse] NVARCHAR(MAX) NULL
+   ,[PaidAt] DATETIME NULL
+   ,[PaymentReference] NVARCHAR(100) NULL
+   ,[JournalEntryId] BIGINT NULL
+   ,[Notes] NVARCHAR(1000) NULL
+   ,[CreatedBy] NVARCHAR(40) NULL
+   ,[UpdatedBy] NVARCHAR(40) NULL
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME NULL
+   ,CONSTRAINT [PK_TaxDeclaration] PRIMARY KEY CLUSTERED ([DeclarationId])
+   ,CONSTRAINT [UQ_TaxDeclaration] UNIQUE NONCLUSTERED ([CompanyId], [DeclarationType], [PeriodCode])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_TaxDeclaration_Country_Period] ON [fiscal].[TaxDeclaration] ([CountryCode] ASC, [PeriodCode] ASC, [Status] ASC);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: fiscal.TaxRate
 -- =============================================
 CREATE TABLE [fiscal].[TaxRate] (
@@ -1334,6 +2127,357 @@ GO
 ALTER TABLE [fiscal].[TaxRate] ADD CONSTRAINT [FK_fiscal_TaxRate_CreatedBy] FOREIGN KEY ([CreatedByUserId]) REFERENCES [sec].[User] ([UserId]);
 GO
 ALTER TABLE [fiscal].[TaxRate] ADD CONSTRAINT [FK_fiscal_TaxRate_UpdatedBy] FOREIGN KEY ([UpdatedByUserId]) REFERENCES [sec].[User] ([UserId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: fiscal.WithholdingVoucher
+-- =============================================
+CREATE TABLE [fiscal].[WithholdingVoucher] (
+    [VoucherId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[VoucherNumber] NVARCHAR(40) NOT NULL
+   ,[VoucherDate] DATE NOT NULL
+   ,[WithholdingType] NVARCHAR(20) NOT NULL
+   ,[ThirdPartyId] NVARCHAR(40) NOT NULL
+   ,[ThirdPartyName] NVARCHAR(200) NULL
+   ,[DocumentNumber] NVARCHAR(60) NOT NULL
+   ,[DocumentDate] DATE NULL
+   ,[TaxableBase] DECIMAL(18,2) NOT NULL
+   ,[WithholdingRate] DECIMAL(5,2) NOT NULL
+   ,[WithholdingAmount] DECIMAL(18,2) NOT NULL
+   ,[PeriodCode] NVARCHAR(7) NOT NULL
+   ,[Status] NVARCHAR(20) NULL DEFAULT ('ACTIVE')
+   ,[CountryCode] NVARCHAR(2) NOT NULL
+   ,[JournalEntryId] BIGINT NULL
+   ,[CreatedBy] NVARCHAR(40) NULL
+   ,[CreatedAt] DATETIME NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_WithholdingVoucher] PRIMARY KEY CLUSTERED ([VoucherId])
+   ,CONSTRAINT [UQ_WithholdingVoucher] UNIQUE NONCLUSTERED ([CompanyId], [VoucherNumber])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_WithholdingVoucher_Period] ON [fiscal].[WithholdingVoucher] ([CompanyId] ASC, [PeriodCode] ASC, [WithholdingType] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.DocumentTemplate
+-- =============================================
+CREATE TABLE [hr].[DocumentTemplate] (
+    [TemplateId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[TemplateCode] NVARCHAR(80) NOT NULL
+   ,[TemplateName] NVARCHAR(200) NOT NULL
+   ,[TemplateType] NVARCHAR(40) NOT NULL
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[PayrollCode] NVARCHAR(20) NULL
+   ,[ContentMD] NVARCHAR(MAX) NOT NULL
+   ,[IsDefault] BIT NOT NULL DEFAULT ((1))
+   ,[IsSystem] BIT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[CreatedAt] DATETIME2(3) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(3) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_DocumentTemplate] PRIMARY KEY CLUSTERED ([TemplateId])
+   ,CONSTRAINT [UQ_DocumentTemplate_Code] UNIQUE NONCLUSTERED ([CompanyId], [TemplateCode])
+);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.EmployeeObligation
+-- =============================================
+CREATE TABLE [hr].[EmployeeObligation] (
+    [EmployeeObligationId] INT IDENTITY(1,1) NOT NULL
+   ,[EmployeeId] BIGINT NOT NULL
+   ,[LegalObligationId] INT NOT NULL
+   ,[AffiliationNumber] NVARCHAR(50) NULL
+   ,[InstitutionCode] NVARCHAR(50) NULL
+   ,[RiskLevelId] INT NULL
+   ,[EnrollmentDate] DATE NOT NULL
+   ,[DisenrollmentDate] DATE NULL
+   ,[Status] NVARCHAR(15) NOT NULL DEFAULT ('ACTIVE')
+   ,[CustomRate] DECIMAL(8,5) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_EmployeeObligation] PRIMARY KEY CLUSTERED ([EmployeeObligationId])
+);
+GO
+ALTER TABLE [hr].[EmployeeObligation] ADD CONSTRAINT [FK_EmployeeObligation_Obligation] FOREIGN KEY ([LegalObligationId]) REFERENCES [hr].[LegalObligation] ([LegalObligationId]);
+GO
+ALTER TABLE [hr].[EmployeeObligation] ADD CONSTRAINT [FK_EmployeeObligation_RiskLevel] FOREIGN KEY ([RiskLevelId]) REFERENCES [hr].[ObligationRiskLevel] ([ObligationRiskLevelId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_EmployeeObligation_Employee] ON [hr].[EmployeeObligation] ([EmployeeId] ASC, [Status] ASC) INCLUDE ([LegalObligationId], [EnrollmentDate], [DisenrollmentDate]);
+GO
+CREATE NONCLUSTERED INDEX [IX_EmployeeObligation_Obligation] ON [hr].[EmployeeObligation] ([LegalObligationId] ASC, [Status] ASC) INCLUDE ([EmployeeId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.LegalObligation
+-- =============================================
+CREATE TABLE [hr].[LegalObligation] (
+    [LegalObligationId] INT IDENTITY(1,1) NOT NULL
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[Code] NVARCHAR(30) NOT NULL
+   ,[Name] NVARCHAR(200) NOT NULL
+   ,[InstitutionName] NVARCHAR(200) NULL
+   ,[ObligationType] NVARCHAR(20) NOT NULL
+   ,[CalculationBasis] NVARCHAR(30) NOT NULL
+   ,[SalaryCap] DECIMAL(18,2) NULL
+   ,[SalaryCapUnit] NVARCHAR(20) NULL
+   ,[EmployerRate] DECIMAL(8,5) NOT NULL DEFAULT ((0))
+   ,[EmployeeRate] DECIMAL(8,5) NOT NULL DEFAULT ((0))
+   ,[RateVariableByRisk] BIT NOT NULL DEFAULT ((0))
+   ,[FilingFrequency] NVARCHAR(15) NOT NULL
+   ,[FilingDeadlineRule] NVARCHAR(200) NULL
+   ,[EffectiveFrom] DATE NOT NULL
+   ,[EffectiveTo] DATE NULL
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_LegalObligation] PRIMARY KEY CLUSTERED ([LegalObligationId])
+   ,CONSTRAINT [UQ_LegalObligation_Country_Code_From] UNIQUE NONCLUSTERED ([CountryCode], [Code], [EffectiveFrom])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_LegalObligation_Country_Active] ON [hr].[LegalObligation] ([CountryCode] ASC, [IsActive] ASC) INCLUDE ([Code], [Name], [ObligationType], [EmployerRate], [EmployeeRate], [EffectiveFrom], [EffectiveTo]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.MedicalExam
+-- =============================================
+CREATE TABLE [hr].[MedicalExam] (
+    [MedicalExamId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[ExamType] NVARCHAR(20) NOT NULL
+   ,[ExamDate] DATE NOT NULL
+   ,[NextDueDate] DATE NULL
+   ,[Result] NVARCHAR(20) NOT NULL DEFAULT ('PENDING')
+   ,[Restrictions] NVARCHAR(500) NULL
+   ,[PhysicianName] NVARCHAR(200) NULL
+   ,[ClinicName] NVARCHAR(200) NULL
+   ,[DocumentUrl] NVARCHAR(500) NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__MedicalE__EF819922A8A35884] PRIMARY KEY CLUSTERED ([MedicalExamId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_MedExam_Company_Type] ON [hr].[MedicalExam] ([CompanyId] ASC, [ExamType] ASC, [ExamDate] DESC);
+GO
+CREATE NONCLUSTERED INDEX [IX_MedExam_NextDue] ON [hr].[MedicalExam] ([CompanyId] ASC, [NextDueDate] ASC) WHERE ([NextDueDate] IS NOT NULL);
+GO
+CREATE NONCLUSTERED INDEX [IX_MedExam_Employee] ON [hr].[MedicalExam] ([EmployeeCode] ASC, [CompanyId] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.MedicalOrder
+-- =============================================
+CREATE TABLE [hr].[MedicalOrder] (
+    [MedicalOrderId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[OrderType] NVARCHAR(20) NOT NULL
+   ,[OrderDate] DATE NOT NULL
+   ,[Diagnosis] NVARCHAR(500) NULL
+   ,[PhysicianName] NVARCHAR(200) NULL
+   ,[Prescriptions] NVARCHAR(MAX) NULL
+   ,[EstimatedCost] DECIMAL(18,2) NULL
+   ,[ApprovedAmount] DECIMAL(18,2) NULL
+   ,[Status] NVARCHAR(15) NOT NULL DEFAULT ('PENDIENTE')
+   ,[ApprovedBy] INT NULL
+   ,[ApprovedAt] DATETIME2(0) NULL
+   ,[DocumentUrl] NVARCHAR(500) NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__MedicalO__C13820EBC2E96AF5] PRIMARY KEY CLUSTERED ([MedicalOrderId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_MedOrder_Company_Status] ON [hr].[MedicalOrder] ([CompanyId] ASC, [Status] ASC, [OrderDate] DESC);
+GO
+CREATE NONCLUSTERED INDEX [IX_MedOrder_Employee] ON [hr].[MedicalOrder] ([EmployeeCode] ASC, [CompanyId] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.ObligationFiling
+-- =============================================
+CREATE TABLE [hr].[ObligationFiling] (
+    [ObligationFilingId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[LegalObligationId] INT NOT NULL
+   ,[FilingPeriodStart] DATE NOT NULL
+   ,[FilingPeriodEnd] DATE NOT NULL
+   ,[DueDate] DATE NOT NULL
+   ,[FiledDate] DATE NULL
+   ,[ConfirmationNumber] NVARCHAR(100) NULL
+   ,[TotalEmployerAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[TotalEmployeeAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[TotalAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[EmployeeCount] INT NOT NULL DEFAULT ((0))
+   ,[Status] NVARCHAR(15) NOT NULL DEFAULT ('PENDING')
+   ,[FiledByUserId] INT NULL
+   ,[DocumentUrl] NVARCHAR(500) NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK_ObligationFiling] PRIMARY KEY CLUSTERED ([ObligationFilingId])
+);
+GO
+ALTER TABLE [hr].[ObligationFiling] ADD CONSTRAINT [FK_ObligationFiling_Obligation] FOREIGN KEY ([LegalObligationId]) REFERENCES [hr].[LegalObligation] ([LegalObligationId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_ObligationFiling_Company_Period] ON [hr].[ObligationFiling] ([CompanyId] ASC, [LegalObligationId] ASC, [FilingPeriodStart] ASC, [FilingPeriodEnd] ASC) INCLUDE ([Status], [TotalAmount]);
+GO
+CREATE NONCLUSTERED INDEX [IX_ObligationFiling_Status] ON [hr].[ObligationFiling] ([Status] ASC, [DueDate] ASC) INCLUDE ([CompanyId], [LegalObligationId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.ObligationFilingDetail
+-- =============================================
+CREATE TABLE [hr].[ObligationFilingDetail] (
+    [DetailId] INT IDENTITY(1,1) NOT NULL
+   ,[ObligationFilingId] INT NOT NULL
+   ,[EmployeeId] BIGINT NOT NULL
+   ,[BaseSalary] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[EmployerAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[EmployeeAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[DaysWorked] SMALLINT NULL
+   ,[NoveltyType] NVARCHAR(20) NULL
+   ,CONSTRAINT [PK_ObligationFilingDetail] PRIMARY KEY CLUSTERED ([DetailId])
+   ,CONSTRAINT [UQ_ObligationFilingDetail] UNIQUE NONCLUSTERED ([ObligationFilingId], [EmployeeId])
+);
+GO
+ALTER TABLE [hr].[ObligationFilingDetail] ADD CONSTRAINT [FK_ObligationFilingDetail_Filing] FOREIGN KEY ([ObligationFilingId]) REFERENCES [hr].[ObligationFiling] ([ObligationFilingId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_ObligationFilingDetail_Filing] ON [hr].[ObligationFilingDetail] ([ObligationFilingId] ASC) INCLUDE ([EmployeeId], [EmployerAmount], [EmployeeAmount]);
+GO
+CREATE NONCLUSTERED INDEX [IX_ObligationFilingDetail_Employee] ON [hr].[ObligationFilingDetail] ([EmployeeId] ASC) INCLUDE ([ObligationFilingId], [BaseSalary], [EmployerAmount], [EmployeeAmount]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.ObligationRiskLevel
+-- =============================================
+CREATE TABLE [hr].[ObligationRiskLevel] (
+    [ObligationRiskLevelId] INT IDENTITY(1,1) NOT NULL
+   ,[LegalObligationId] INT NOT NULL
+   ,[RiskLevel] SMALLINT NOT NULL
+   ,[RiskDescription] NVARCHAR(100) NULL
+   ,[EmployerRate] DECIMAL(8,5) NOT NULL DEFAULT ((0))
+   ,[EmployeeRate] DECIMAL(8,5) NOT NULL DEFAULT ((0))
+   ,CONSTRAINT [PK_ObligationRiskLevel] PRIMARY KEY CLUSTERED ([ObligationRiskLevelId])
+   ,CONSTRAINT [UQ_ObligationRiskLevel] UNIQUE NONCLUSTERED ([LegalObligationId], [RiskLevel])
+);
+GO
+ALTER TABLE [hr].[ObligationRiskLevel] ADD CONSTRAINT [FK_ObligationRiskLevel_Obligation] FOREIGN KEY ([LegalObligationId]) REFERENCES [hr].[LegalObligation] ([LegalObligationId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.OccupationalHealth
+-- =============================================
+CREATE TABLE [hr].[OccupationalHealth] (
+    [OccupationalHealthId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[RecordType] NVARCHAR(25) NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NULL
+   ,[EmployeeName] NVARCHAR(200) NULL
+   ,[OccurrenceDate] DATETIME2(0) NOT NULL
+   ,[ReportDeadline] DATETIME2(0) NULL
+   ,[ReportedDate] DATETIME2(0) NULL
+   ,[Severity] NVARCHAR(15) NULL
+   ,[BodyPartAffected] NVARCHAR(100) NULL
+   ,[DaysLost] INT NULL
+   ,[Location] NVARCHAR(200) NULL
+   ,[Description] NVARCHAR(MAX) NULL
+   ,[RootCause] NVARCHAR(500) NULL
+   ,[CorrectiveAction] NVARCHAR(500) NULL
+   ,[InvestigationDueDate] DATE NULL
+   ,[InvestigationCompletedDate] DATE NULL
+   ,[InstitutionReference] NVARCHAR(100) NULL
+   ,[Status] NVARCHAR(15) NOT NULL DEFAULT ('OPEN')
+   ,[DocumentUrl] NVARCHAR(500) NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedBy] INT NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Occupati__3C0A0540233CBEFA] PRIMARY KEY CLUSTERED ([OccupationalHealthId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_OccHealth_Company_Status] ON [hr].[OccupationalHealth] ([CompanyId] ASC, [Status] ASC) INCLUDE ([RecordType], [OccurrenceDate], [EmployeeCode], [Severity]);
+GO
+CREATE NONCLUSTERED INDEX [IX_OccHealth_Company_RecordType] ON [hr].[OccupationalHealth] ([CompanyId] ASC, [RecordType] ASC, [OccurrenceDate] DESC);
+GO
+CREATE NONCLUSTERED INDEX [IX_OccHealth_Employee] ON [hr].[OccupationalHealth] ([EmployeeId] ASC) WHERE ([EmployeeId] IS NOT NULL);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.PayrollBatch
+-- =============================================
+CREATE TABLE [hr].[PayrollBatch] (
+    [BatchId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[BranchId] INT NOT NULL
+   ,[PayrollCode] NVARCHAR(15) NOT NULL
+   ,[FromDate] DATE NOT NULL
+   ,[ToDate] DATE NOT NULL
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT (N'BORRADOR')
+   ,[TotalEmployees] INT NOT NULL DEFAULT ((0))
+   ,[TotalGross] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[TotalDeductions] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[TotalNet] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[CreatedBy] INT NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[ApprovedBy] INT NULL
+   ,[ApprovedAt] DATETIME2(0) NULL
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__PayrollB__5D55CE58B585EC35] PRIMARY KEY CLUSTERED ([BatchId])
+   ,CONSTRAINT [CK_hr_PayrollBatch_Status] CHECK ([Status]=N'CERRADA' OR [Status]=N'PROCESADA' OR [Status]=N'APROBADA' OR [Status]=N'EN_REVISION' OR [Status]=N'BORRADOR')
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_hr_PayrollBatch_Company] ON [hr].[PayrollBatch] ([CompanyId] ASC, [PayrollCode] ASC, [Status] ASC) INCLUDE ([FromDate], [ToDate]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.PayrollBatchLine
+-- =============================================
+CREATE TABLE [hr].[PayrollBatchLine] (
+    [LineId] INT IDENTITY(1,1) NOT NULL
+   ,[BatchId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[ConceptCode] NVARCHAR(20) NOT NULL
+   ,[ConceptName] NVARCHAR(120) NOT NULL
+   ,[ConceptType] NVARCHAR(15) NOT NULL DEFAULT (N'ASIGNACION')
+   ,[Quantity] DECIMAL(18,4) NOT NULL DEFAULT ((1))
+   ,[Amount] DECIMAL(18,4) NOT NULL DEFAULT ((0))
+   ,[Total] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[IsModified] BIT NOT NULL DEFAULT ((0))
+   ,[Notes] NVARCHAR(500) NULL
+   ,[UpdatedAt] DATETIME2(0) NULL
+   ,CONSTRAINT [PK__PayrollB__2EAE65290E04D7F7] PRIMARY KEY CLUSTERED ([LineId])
+   ,CONSTRAINT [CK_hr_PayrollBatchLine_Type] CHECK ([ConceptType]=N'BONO' OR [ConceptType]=N'DEDUCCION' OR [ConceptType]=N'ASIGNACION')
+);
+GO
+ALTER TABLE [hr].[PayrollBatchLine] ADD CONSTRAINT [FK_hr_PayrollBatchLine_Batch] FOREIGN KEY ([BatchId]) REFERENCES [hr].[PayrollBatch] ([BatchId]) ON DELETE CASCADE;
+GO
+CREATE NONCLUSTERED INDEX [IX_hr_PayrollBatchLine_Batch] ON [hr].[PayrollBatchLine] ([BatchId] ASC, [EmployeeCode] ASC, [ConceptType] ASC) INCLUDE ([ConceptCode], [Total]);
+GO
+CREATE NONCLUSTERED INDEX [IX_hr_PayrollBatchLine_Employee] ON [hr].[PayrollBatchLine] ([BatchId] ASC, [EmployeeCode] ASC) INCLUDE ([ConceptType], [Total], [IsModified]);
 GO
  
  
@@ -1384,7 +2528,7 @@ CREATE TABLE [hr].[PayrollConcept] (
    ,[RowVer] TIMESTAMP NOT NULL
    ,CONSTRAINT [PK__PayrollC__B70D1E9358EE67DB] PRIMARY KEY CLUSTERED ([PayrollConceptId])
    ,CONSTRAINT [UQ_hr_PayrollConcept] UNIQUE NONCLUSTERED ([CompanyId], [PayrollCode], [ConceptCode], [ConventionCode], [CalculationType])
-   ,CONSTRAINT [CK_hr_PayrollConcept_Type] CHECK ([ConceptType]=N'BONO' OR [ConceptType]=N'DEDUCCION' OR [ConceptType]=N'ASIGNACION')
+   ,CONSTRAINT [CK_hr_PayrollConcept_Type] CHECK ([ConceptType]=N'PATRONAL' OR [ConceptType]=N'BONO' OR [ConceptType]=N'DEDUCCION' OR [ConceptType]=N'ASIGNACION')
 );
 GO
 ALTER TABLE [hr].[PayrollConcept] ADD CONSTRAINT [FK_hr_PayrollConcept_PayrollType] FOREIGN KEY ([CompanyId], [PayrollCode]) REFERENCES [hr].[PayrollType] ([CompanyId], [PayrollCode]);
@@ -1524,6 +2668,203 @@ GO
  
  
 -- =============================================
+-- TABLE: hr.ProfitSharing
+-- =============================================
+CREATE TABLE [hr].[ProfitSharing] (
+    [ProfitSharingId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[BranchId] INT NOT NULL
+   ,[FiscalYear] INT NOT NULL
+   ,[DaysGranted] INT NOT NULL
+   ,[TotalCompanyProfits] DECIMAL(18,2) NULL
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT ('BORRADOR')
+   ,[CreatedBy] INT NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[ApprovedBy] INT NULL
+   ,[ApprovedAt] DATETIME2(0) NULL
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProfitSh__D77589BC5B7DD5FB] PRIMARY KEY CLUSTERED ([ProfitSharingId])
+   ,CONSTRAINT [CK_ProfitSharing_Days] CHECK ([DaysGranted]>=(30) AND [DaysGranted]<=(120))
+   ,CONSTRAINT [CK_ProfitSharing_Status] CHECK ([Status]='CERRADA' OR [Status]='PROCESADA' OR [Status]='CALCULADA' OR [Status]='BORRADOR')
+);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.ProfitSharingLine
+-- =============================================
+CREATE TABLE [hr].[ProfitSharingLine] (
+    [LineId] INT IDENTITY(1,1) NOT NULL
+   ,[ProfitSharingId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[MonthlySalary] DECIMAL(18,2) NOT NULL
+   ,[DailySalary] DECIMAL(18,2) NOT NULL
+   ,[DaysWorked] INT NOT NULL
+   ,[DaysEntitled] INT NOT NULL
+   ,[GrossAmount] DECIMAL(18,2) NOT NULL
+   ,[InceDeduction] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[NetAmount] DECIMAL(18,2) NOT NULL
+   ,[IsPaid] BIT NOT NULL DEFAULT ((0))
+   ,[PaidAt] DATETIME2(0) NULL
+   ,CONSTRAINT [PK__ProfitSh__2EAE6529C570FA6F] PRIMARY KEY CLUSTERED ([LineId])
+);
+GO
+ALTER TABLE [hr].[ProfitSharingLine] ADD CONSTRAINT [FK_ProfitSharingLine_Header] FOREIGN KEY ([ProfitSharingId]) REFERENCES [hr].[ProfitSharing] ([ProfitSharingId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProfitSharingLine_Header] ON [hr].[ProfitSharingLine] ([ProfitSharingId] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProfitSharingLine_Employee] ON [hr].[ProfitSharingLine] ([EmployeeCode] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SafetyCommittee
+-- =============================================
+CREATE TABLE [hr].[SafetyCommittee] (
+    [SafetyCommitteeId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[CommitteeName] NVARCHAR(200) NOT NULL
+   ,[FormationDate] DATE NOT NULL
+   ,[MeetingFrequency] NVARCHAR(15) NOT NULL DEFAULT ('MONTHLY')
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__SafetyCo__29C9E554C73616AA] PRIMARY KEY CLUSTERED ([SafetyCommitteeId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_Committee_Company] ON [hr].[SafetyCommittee] ([CompanyId] ASC, [IsActive] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SafetyCommitteeMeeting
+-- =============================================
+CREATE TABLE [hr].[SafetyCommitteeMeeting] (
+    [MeetingId] INT IDENTITY(1,1) NOT NULL
+   ,[SafetyCommitteeId] INT NOT NULL
+   ,[MeetingDate] DATETIME2(0) NOT NULL
+   ,[MinutesUrl] NVARCHAR(500) NULL
+   ,[TopicsSummary] NVARCHAR(MAX) NULL
+   ,[ActionItems] NVARCHAR(MAX) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__SafetyCo__E9F9E94CE11811F9] PRIMARY KEY CLUSTERED ([MeetingId])
+);
+GO
+ALTER TABLE [hr].[SafetyCommitteeMeeting] ADD CONSTRAINT [FK_CommitteeMeeting_Committee] FOREIGN KEY ([SafetyCommitteeId]) REFERENCES [hr].[SafetyCommittee] ([SafetyCommitteeId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_CommitteeMeeting_Committee] ON [hr].[SafetyCommitteeMeeting] ([SafetyCommitteeId] ASC, [MeetingDate] DESC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SafetyCommitteeMember
+-- =============================================
+CREATE TABLE [hr].[SafetyCommitteeMember] (
+    [MemberId] INT IDENTITY(1,1) NOT NULL
+   ,[SafetyCommitteeId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[Role] NVARCHAR(25) NOT NULL
+   ,[StartDate] DATE NOT NULL
+   ,[EndDate] DATE NULL
+   ,CONSTRAINT [PK__SafetyCo__0CF04B18ECCEBE79] PRIMARY KEY CLUSTERED ([MemberId])
+);
+GO
+ALTER TABLE [hr].[SafetyCommitteeMember] ADD CONSTRAINT [FK_CommitteeMember_Committee] FOREIGN KEY ([SafetyCommitteeId]) REFERENCES [hr].[SafetyCommittee] ([SafetyCommitteeId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_CommitteeMember_Committee] ON [hr].[SafetyCommitteeMember] ([SafetyCommitteeId] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SavingsFund
+-- =============================================
+CREATE TABLE [hr].[SavingsFund] (
+    [SavingsFundId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[EmployeeContribution] DECIMAL(8,4) NOT NULL
+   ,[EmployerMatch] DECIMAL(8,4) NOT NULL
+   ,[EnrollmentDate] DATE NOT NULL
+   ,[Status] NVARCHAR(15) NOT NULL DEFAULT ('ACTIVO')
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__SavingsF__9A53C67E762B1374] PRIMARY KEY CLUSTERED ([SavingsFundId])
+   ,CONSTRAINT [CK_SavingsFund_Status] CHECK ([Status]='RETIRADO' OR [Status]='SUSPENDIDO' OR [Status]='ACTIVO')
+);
+GO
+CREATE UNIQUE NONCLUSTERED INDEX [UX_SavingsFund_Employee] ON [hr].[SavingsFund] ([CompanyId] ASC, [EmployeeCode] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_SavingsFund_Status] ON [hr].[SavingsFund] ([CompanyId] ASC, [Status] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SavingsFundTransaction
+-- =============================================
+CREATE TABLE [hr].[SavingsFundTransaction] (
+    [TransactionId] INT IDENTITY(1,1) NOT NULL
+   ,[SavingsFundId] INT NOT NULL
+   ,[TransactionDate] DATE NOT NULL
+   ,[TransactionType] NVARCHAR(20) NOT NULL
+   ,[Amount] DECIMAL(18,2) NOT NULL
+   ,[Balance] DECIMAL(18,2) NOT NULL
+   ,[Reference] NVARCHAR(100) NULL
+   ,[PayrollBatchId] INT NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__SavingsF__55433A6BAF319E7B] PRIMARY KEY CLUSTERED ([TransactionId])
+   ,CONSTRAINT [CK_SavingsTx_Type] CHECK ([TransactionType]='INTERES' OR [TransactionType]='PAGO_PRESTAMO' OR [TransactionType]='PRESTAMO' OR [TransactionType]='RETIRO' OR [TransactionType]='APORTE_PATRONAL' OR [TransactionType]='APORTE_EMPLEADO')
+);
+GO
+ALTER TABLE [hr].[SavingsFundTransaction] ADD CONSTRAINT [FK_SavingsTx_Fund] FOREIGN KEY ([SavingsFundId]) REFERENCES [hr].[SavingsFund] ([SavingsFundId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_SavingsTx_Fund] ON [hr].[SavingsFundTransaction] ([SavingsFundId] ASC, [TransactionDate] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_SavingsTx_Type] ON [hr].[SavingsFundTransaction] ([TransactionType] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SavingsLoan
+-- =============================================
+CREATE TABLE [hr].[SavingsLoan] (
+    [LoanId] INT IDENTITY(1,1) NOT NULL
+   ,[SavingsFundId] INT NOT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[RequestDate] DATE NOT NULL
+   ,[ApprovedDate] DATE NULL
+   ,[LoanAmount] DECIMAL(18,2) NOT NULL
+   ,[InterestRate] DECIMAL(8,5) NOT NULL DEFAULT ((0))
+   ,[TotalPayable] DECIMAL(18,2) NOT NULL
+   ,[MonthlyPayment] DECIMAL(18,2) NOT NULL
+   ,[InstallmentsTotal] INT NOT NULL
+   ,[InstallmentsPaid] INT NOT NULL DEFAULT ((0))
+   ,[OutstandingBalance] DECIMAL(18,2) NOT NULL
+   ,[Status] NVARCHAR(15) NOT NULL DEFAULT ('SOLICITADO')
+   ,[ApprovedBy] INT NULL
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__SavingsL__4F5AD45725968AC2] PRIMARY KEY CLUSTERED ([LoanId])
+   ,CONSTRAINT [CK_SavingsLoan_Status] CHECK ([Status]='RECHAZADO' OR [Status]='PAGADO' OR [Status]='ACTIVO' OR [Status]='APROBADO' OR [Status]='SOLICITADO')
+);
+GO
+ALTER TABLE [hr].[SavingsLoan] ADD CONSTRAINT [FK_SavingsLoan_Fund] FOREIGN KEY ([SavingsFundId]) REFERENCES [hr].[SavingsFund] ([SavingsFundId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_SavingsLoan_Fund] ON [hr].[SavingsLoan] ([SavingsFundId] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_SavingsLoan_Employee] ON [hr].[SavingsLoan] ([EmployeeCode] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_SavingsLoan_Status] ON [hr].[SavingsLoan] ([Status] ASC);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: hr.SettlementProcess
 -- =============================================
 CREATE TABLE [hr].[SettlementProcess] (
@@ -1572,6 +2913,74 @@ CREATE TABLE [hr].[SettlementProcessLine] (
 );
 GO
 ALTER TABLE [hr].[SettlementProcessLine] ADD CONSTRAINT [FK_hr_SettlementProcessLine_Process] FOREIGN KEY ([SettlementProcessId]) REFERENCES [hr].[SettlementProcess] ([SettlementProcessId]) ON DELETE CASCADE;
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.SocialBenefitsTrust
+-- =============================================
+CREATE TABLE [hr].[SocialBenefitsTrust] (
+    [TrustId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[FiscalYear] INT NOT NULL
+   ,[Quarter] TINYINT NOT NULL
+   ,[DailySalary] DECIMAL(18,2) NOT NULL
+   ,[DaysDeposited] INT NOT NULL DEFAULT ((15))
+   ,[BonusDays] INT NOT NULL DEFAULT ((0))
+   ,[DepositAmount] DECIMAL(18,2) NOT NULL
+   ,[InterestRate] DECIMAL(8,5) NOT NULL DEFAULT ((0))
+   ,[InterestAmount] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[AccumulatedBalance] DECIMAL(18,2) NOT NULL
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT ('PENDIENTE')
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__SocialBe__A8BC6F11B29895D3] PRIMARY KEY CLUSTERED ([TrustId])
+   ,CONSTRAINT [CK_Trust_Quarter] CHECK ([Quarter]>=(1) AND [Quarter]<=(4))
+   ,CONSTRAINT [CK_Trust_Status] CHECK ([Status]='PAGADO' OR [Status]='DEPOSITADO' OR [Status]='PENDIENTE')
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_Trust_Company_Year] ON [hr].[SocialBenefitsTrust] ([CompanyId] ASC, [FiscalYear] ASC, [Quarter] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_Trust_Employee] ON [hr].[SocialBenefitsTrust] ([EmployeeCode] ASC, [FiscalYear] ASC);
+GO
+CREATE UNIQUE NONCLUSTERED INDEX [UX_Trust_Employee_Quarter] ON [hr].[SocialBenefitsTrust] ([CompanyId] ASC, [EmployeeCode] ASC, [FiscalYear] ASC, [Quarter] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.TrainingRecord
+-- =============================================
+CREATE TABLE [hr].[TrainingRecord] (
+    [TrainingRecordId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL
+   ,[CountryCode] CHAR(2) NOT NULL
+   ,[TrainingType] NVARCHAR(25) NOT NULL
+   ,[Title] NVARCHAR(200) NOT NULL
+   ,[Provider] NVARCHAR(200) NULL
+   ,[StartDate] DATE NOT NULL
+   ,[EndDate] DATE NULL
+   ,[DurationHours] DECIMAL(6,2) NOT NULL
+   ,[EmployeeId] BIGINT NULL
+   ,[EmployeeCode] NVARCHAR(24) NOT NULL
+   ,[EmployeeName] NVARCHAR(200) NOT NULL
+   ,[CertificateNumber] NVARCHAR(100) NULL
+   ,[CertificateUrl] NVARCHAR(500) NULL
+   ,[Result] NVARCHAR(15) NULL
+   ,[IsRegulatory] BIT NOT NULL DEFAULT ((0))
+   ,[Notes] NVARCHAR(500) NULL
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Training__DC437F5C1607445A] PRIMARY KEY CLUSTERED ([TrainingRecordId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_Training_Company_Type] ON [hr].[TrainingRecord] ([CompanyId] ASC, [TrainingType] ASC, [StartDate] DESC);
+GO
+CREATE NONCLUSTERED INDEX [IX_Training_Employee] ON [hr].[TrainingRecord] ([EmployeeCode] ASC, [CompanyId] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_Training_Regulatory] ON [hr].[TrainingRecord] ([CompanyId] ASC, [IsRegulatory] ASC) WHERE ([IsRegulatory]=(1));
 GO
  
  
@@ -1627,6 +3036,57 @@ CREATE TABLE [hr].[VacationProcessLine] (
 );
 GO
 ALTER TABLE [hr].[VacationProcessLine] ADD CONSTRAINT [FK_hr_VacationProcessLine_Process] FOREIGN KEY ([VacationProcessId]) REFERENCES [hr].[VacationProcess] ([VacationProcessId]) ON DELETE CASCADE;
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.VacationRequest
+-- =============================================
+CREATE TABLE [hr].[VacationRequest] (
+    [RequestId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[BranchId] INT NOT NULL DEFAULT ((1))
+   ,[EmployeeCode] NVARCHAR(60) NOT NULL
+   ,[RequestDate] DATE NOT NULL DEFAULT (CONVERT([date],getdate()))
+   ,[StartDate] DATE NOT NULL
+   ,[EndDate] DATE NOT NULL
+   ,[TotalDays] INT NOT NULL
+   ,[IsPartial] BIT NOT NULL DEFAULT ((0))
+   ,[Status] NVARCHAR(20) NOT NULL DEFAULT ('PENDIENTE')
+   ,[Notes] NVARCHAR(500) NULL
+   ,[ApprovedBy] NVARCHAR(60) NULL
+   ,[ApprovalDate] DATETIME NULL
+   ,[RejectionReason] NVARCHAR(500) NULL
+   ,[VacationId] BIGINT NULL
+   ,[CreatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Vacation__33A8517A1A54BDDE] PRIMARY KEY CLUSTERED ([RequestId])
+   ,CONSTRAINT [CK_VacationRequest_Status] CHECK ([Status]='PROCESADA' OR [Status]='CANCELADA' OR [Status]='RECHAZADA' OR [Status]='APROBADA' OR [Status]='PENDIENTE')
+   ,CONSTRAINT [CK_VacationRequest_Dates] CHECK ([EndDate]>=[StartDate])
+   ,CONSTRAINT [CK_VacationRequest_Days] CHECK ([TotalDays]>(0))
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_VacationRequest_Employee] ON [hr].[VacationRequest] ([CompanyId] ASC, [EmployeeCode] ASC, [Status] ASC);
+GO
+CREATE NONCLUSTERED INDEX [IX_VacationRequest_Status] ON [hr].[VacationRequest] ([Status] ASC, [RequestDate] ASC);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: hr.VacationRequestDay
+-- =============================================
+CREATE TABLE [hr].[VacationRequestDay] (
+    [DayId] BIGINT IDENTITY(1,1) NOT NULL
+   ,[RequestId] BIGINT NOT NULL
+   ,[SelectedDate] DATE NOT NULL
+   ,[DayType] NVARCHAR(20) NOT NULL DEFAULT ('COMPLETO')
+   ,CONSTRAINT [PK__Vacation__BF3DD8C57BBE6FBB] PRIMARY KEY CLUSTERED ([DayId])
+   ,CONSTRAINT [CK_VacationRequestDay_Type] CHECK ([DayType]='MEDIO_DIA' OR [DayType]='COMPLETO')
+);
+GO
+ALTER TABLE [hr].[VacationRequestDay] ADD CONSTRAINT [FK__VacationR__Reque__6A7BAA63] FOREIGN KEY ([RequestId]) REFERENCES [hr].[VacationRequest] ([RequestId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_VacationRequestDay_Request] ON [hr].[VacationRequestDay] ([RequestId] ASC);
 GO
  
  
@@ -1732,6 +3192,58 @@ GO
  
  
 -- =============================================
+-- TABLE: master.CustomerAddress
+-- =============================================
+CREATE TABLE [master].[CustomerAddress] (
+    [AddressId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[CustomerCode] NVARCHAR(24) NOT NULL
+   ,[Label] NVARCHAR(50) NOT NULL
+   ,[RecipientName] NVARCHAR(200) NOT NULL
+   ,[Phone] NVARCHAR(40) NULL
+   ,[AddressLine] NVARCHAR(300) NOT NULL
+   ,[City] NVARCHAR(100) NULL
+   ,[State] NVARCHAR(100) NULL
+   ,[ZipCode] NVARCHAR(20) NULL
+   ,[Country] NVARCHAR(50) NOT NULL DEFAULT ('Venezuela')
+   ,[Instructions] NVARCHAR(300) NULL
+   ,[IsDefault] BIT NOT NULL DEFAULT ((0))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Customer__091C2AFB8736B265] PRIMARY KEY CLUSTERED ([AddressId])
+);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: master.CustomerPaymentMethod
+-- =============================================
+CREATE TABLE [master].[CustomerPaymentMethod] (
+    [PaymentMethodId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[CustomerCode] NVARCHAR(24) NOT NULL
+   ,[MethodType] NVARCHAR(30) NOT NULL
+   ,[Label] NVARCHAR(50) NOT NULL
+   ,[BankName] NVARCHAR(100) NULL
+   ,[AccountPhone] NVARCHAR(40) NULL
+   ,[AccountNumber] NVARCHAR(40) NULL
+   ,[AccountEmail] NVARCHAR(150) NULL
+   ,[HolderName] NVARCHAR(200) NULL
+   ,[HolderFiscalId] NVARCHAR(30) NULL
+   ,[CardType] NVARCHAR(20) NULL
+   ,[CardLast4] NVARCHAR(4) NULL
+   ,[CardExpiry] NVARCHAR(7) NULL
+   ,[IsDefault] BIT NOT NULL DEFAULT ((0))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Customer__DC31C1D36068FAF9] PRIMARY KEY CLUSTERED ([PaymentMethodId])
+);
+GO
+ 
+ 
+-- =============================================
 -- TABLE: master.Employee
 -- =============================================
 CREATE TABLE [master].[Employee] (
@@ -1751,6 +3263,9 @@ CREATE TABLE [master].[Employee] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[PositionName] NVARCHAR(150) NULL
+   ,[DepartmentName] NVARCHAR(150) NULL
+   ,[Salary] DECIMAL(18,2) NULL
    ,CONSTRAINT [PK__Employee__7AD04F111B0DC47D] PRIMARY KEY CLUSTERED ([EmployeeId])
    ,CONSTRAINT [UQ_master_Employee] UNIQUE NONCLUSTERED ([CompanyId], [EmployeeCode])
 );
@@ -1784,6 +3299,8 @@ CREATE TABLE [master].[InventoryMovement] (
    ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
    ,[CreatedByUserId] INT NULL
    ,[UpdatedByUserId] INT NULL
+   ,[WarehouseFrom] NVARCHAR(20) NULL
+   ,[WarehouseTo] NVARCHAR(20) NULL
    ,CONSTRAINT [PK_InventoryMovement] PRIMARY KEY CLUSTERED ([MovementId])
 );
 GO
@@ -1839,6 +3356,20 @@ CREATE TABLE [master].[Product] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[ShortDescription] NVARCHAR(500) NULL
+   ,[LongDescription] NVARCHAR(MAX) NULL
+   ,[BrandCode] NVARCHAR(20) NULL
+   ,[BarCode] NVARCHAR(50) NULL
+   ,[CompareAtPrice] DECIMAL(18,2) NULL
+   ,[WeightKg] DECIMAL(10,3) NULL
+   ,[WidthCm] DECIMAL(10,2) NULL
+   ,[HeightCm] DECIMAL(10,2) NULL
+   ,[DepthCm] DECIMAL(10,2) NULL
+   ,[WarrantyMonths] INT NULL
+   ,[Slug] NVARCHAR(200) NULL
+   ,[IsVariantParent] BIT NOT NULL DEFAULT ((0))
+   ,[ParentProductCode] NVARCHAR(80) NULL
+   ,[IndustryTemplateCode] NVARCHAR(30) NULL
    ,CONSTRAINT [PK__Product__B40CC6CDEBD75ADC] PRIMARY KEY CLUSTERED ([ProductId])
    ,CONSTRAINT [UQ_master_Product] UNIQUE NONCLUSTERED ([CompanyId], [ProductCode])
 );
@@ -1983,6 +3514,22 @@ CREATE TABLE [master].[Supplier] (
    ,[DeletedAt] DATETIME2(0) NULL
    ,[DeletedByUserId] INT NULL
    ,[RowVer] TIMESTAMP NOT NULL
+   ,[NIT] NVARCHAR(20) NULL
+   ,[Direccion] NVARCHAR(255) NULL
+   ,[Direccion1] NVARCHAR(255) NULL
+   ,[Sucursal] NVARCHAR(50) NULL
+   ,[Telefono] NVARCHAR(60) NULL
+   ,[Fax] NVARCHAR(10) NULL
+   ,[Contacto] NVARCHAR(30) NULL
+   ,[VENDEDOR] NVARCHAR(2) NULL
+   ,[ESTADO] NVARCHAR(60) NULL
+   ,[Ciudad] NVARCHAR(30) NULL
+   ,[CodPostal] NVARCHAR(10) NULL
+   ,[PaginaWww] NVARCHAR(50) NULL
+   ,[CodUsuario] NVARCHAR(10) NULL
+   ,[Credito] FLOAT NULL
+   ,[ListaPrecio] INT NULL
+   ,[Notas] NVARCHAR(50) NULL
    ,CONSTRAINT [PK__Supplier__4BE666B49B4E54B4] PRIMARY KEY CLUSTERED ([SupplierId])
    ,CONSTRAINT [UQ_master_Supplier] UNIQUE NONCLUSTERED ([CompanyId], [SupplierCode])
 );
@@ -3053,6 +4600,226 @@ GO
 ALTER TABLE [sec].[UserRole] ADD CONSTRAINT [FK_sec_UserRole_User] FOREIGN KEY ([UserId]) REFERENCES [sec].[User] ([UserId]);
 GO
 ALTER TABLE [sec].[UserRole] ADD CONSTRAINT [FK_sec_UserRole_Role] FOREIGN KEY ([RoleId]) REFERENCES [sec].[Role] ([RoleId]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.IndustryTemplate
+-- =============================================
+CREATE TABLE [store].[IndustryTemplate] (
+    [IndustryTemplateId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[TemplateCode] NVARCHAR(30) NOT NULL
+   ,[TemplateName] NVARCHAR(100) NOT NULL
+   ,[Description] NVARCHAR(500) NULL
+   ,[IconName] NVARCHAR(50) NULL
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Industry__5CB205041BBCE71D] PRIMARY KEY CLUSTERED ([IndustryTemplateId])
+   ,CONSTRAINT [UQ_IndustryTemplate_Code] UNIQUE NONCLUSTERED ([CompanyId], [TemplateCode])
+);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.IndustryTemplateAttribute
+-- =============================================
+CREATE TABLE [store].[IndustryTemplateAttribute] (
+    [TemplateAttributeId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[TemplateCode] NVARCHAR(30) NOT NULL
+   ,[AttributeKey] NVARCHAR(50) NOT NULL
+   ,[AttributeLabel] NVARCHAR(100) NOT NULL
+   ,[DataType] NVARCHAR(20) NOT NULL DEFAULT (N'TEXT')
+   ,[IsRequired] BIT NOT NULL DEFAULT ((0))
+   ,[DefaultValue] NVARCHAR(200) NULL
+   ,[ListOptions] NVARCHAR(MAX) NULL
+   ,[DisplayGroup] NVARCHAR(100) NOT NULL DEFAULT (N'General')
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__Industry__E2F7773C23B31E2A] PRIMARY KEY CLUSTERED ([TemplateAttributeId])
+   ,CONSTRAINT [UQ_TemplateAttribute_Key] UNIQUE NONCLUSTERED ([CompanyId], [TemplateCode], [AttributeKey])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_TemplateAttribute_Template] ON [store].[IndustryTemplateAttribute] ([CompanyId] ASC, [TemplateCode] ASC, [IsDeleted] ASC, [IsActive] ASC) INCLUDE ([AttributeKey], [AttributeLabel], [DataType], [DisplayGroup], [SortOrder]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductAttribute
+-- =============================================
+CREATE TABLE [store].[ProductAttribute] (
+    [ProductAttributeId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[ProductCode] NVARCHAR(80) NOT NULL
+   ,[TemplateCode] NVARCHAR(30) NOT NULL
+   ,[AttributeKey] NVARCHAR(50) NOT NULL
+   ,[ValueText] NVARCHAR(500) NULL
+   ,[ValueNumber] DECIMAL(18,4) NULL
+   ,[ValueDate] DATE NULL
+   ,[ValueBoolean] BIT NULL
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,[UpdatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductA__00CE6747BDF62F16] PRIMARY KEY CLUSTERED ([ProductAttributeId])
+   ,CONSTRAINT [UQ_ProductAttribute_Key] UNIQUE NONCLUSTERED ([CompanyId], [ProductCode], [AttributeKey])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductAttribute_Product] ON [store].[ProductAttribute] ([CompanyId] ASC, [ProductCode] ASC, [IsDeleted] ASC, [IsActive] ASC) INCLUDE ([TemplateCode], [AttributeKey], [ValueText], [ValueNumber], [ValueDate], [ValueBoolean]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductHighlight
+-- =============================================
+CREATE TABLE [store].[ProductHighlight] (
+    [HighlightId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[ProductCode] NVARCHAR(80) NOT NULL
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[HighlightText] NVARCHAR(500) NOT NULL
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductH__B11CEDF0C4CECEB4] PRIMARY KEY CLUSTERED ([HighlightId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductHighlight_Product] ON [store].[ProductHighlight] ([CompanyId] ASC, [ProductCode] ASC, [IsActive] ASC) INCLUDE ([SortOrder], [HighlightText]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductReview
+-- =============================================
+CREATE TABLE [store].[ProductReview] (
+    [ReviewId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[ProductCode] NVARCHAR(80) NOT NULL
+   ,[Rating] INT NOT NULL
+   ,[Title] NVARCHAR(200) NULL
+   ,[Comment] NVARCHAR(2000) NOT NULL
+   ,[ReviewerName] NVARCHAR(200) NOT NULL DEFAULT (N'Cliente')
+   ,[ReviewerEmail] NVARCHAR(150) NULL
+   ,[IsVerified] BIT NOT NULL DEFAULT ((0))
+   ,[IsApproved] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(7) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductR__74BC79CEAF7BA830] PRIMARY KEY CLUSTERED ([ReviewId])
+   ,CONSTRAINT [CK__ProductRe__Ratin__662BF692] CHECK ([Rating]>=(1) AND [Rating]<=(5))
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductReview_Product] ON [store].[ProductReview] ([CompanyId] ASC, [ProductCode] ASC, [IsDeleted] ASC, [IsApproved] ASC) INCLUDE ([Rating]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductSpec
+-- =============================================
+CREATE TABLE [store].[ProductSpec] (
+    [SpecId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[ProductCode] NVARCHAR(80) NOT NULL
+   ,[SpecGroup] NVARCHAR(100) NOT NULL DEFAULT (N'General')
+   ,[SpecKey] NVARCHAR(100) NOT NULL
+   ,[SpecValue] NVARCHAR(500) NOT NULL
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductS__883D567B0B185FBB] PRIMARY KEY CLUSTERED ([SpecId])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductSpec_Product] ON [store].[ProductSpec] ([CompanyId] ASC, [ProductCode] ASC, [IsActive] ASC) INCLUDE ([SpecGroup], [SpecKey], [SpecValue], [SortOrder]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductVariant
+-- =============================================
+CREATE TABLE [store].[ProductVariant] (
+    [ProductVariantId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[ParentProductCode] NVARCHAR(80) NOT NULL
+   ,[VariantProductCode] NVARCHAR(80) NOT NULL
+   ,[SKU] NVARCHAR(80) NULL
+   ,[PriceDelta] DECIMAL(18,2) NOT NULL DEFAULT ((0))
+   ,[StockOverride] DECIMAL(18,4) NULL
+   ,[IsDefault] BIT NOT NULL DEFAULT ((0))
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductV__E4D66745D0FA2295] PRIMARY KEY CLUSTERED ([ProductVariantId])
+   ,CONSTRAINT [UQ_ProductVariant_Code] UNIQUE NONCLUSTERED ([CompanyId], [ParentProductCode], [VariantProductCode])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductVariant_Parent] ON [store].[ProductVariant] ([CompanyId] ASC, [ParentProductCode] ASC, [IsDeleted] ASC, [IsActive] ASC) INCLUDE ([VariantProductCode], [PriceDelta], [StockOverride], [IsDefault], [SortOrder]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductVariantGroup
+-- =============================================
+CREATE TABLE [store].[ProductVariantGroup] (
+    [VariantGroupId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[GroupCode] NVARCHAR(30) NOT NULL
+   ,[GroupName] NVARCHAR(100) NOT NULL
+   ,[DisplayType] NVARCHAR(20) NOT NULL DEFAULT (N'BUTTON')
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductV__C8C70D9C660683D6] PRIMARY KEY CLUSTERED ([VariantGroupId])
+   ,CONSTRAINT [UQ_ProductVariantGroup_Code] UNIQUE NONCLUSTERED ([CompanyId], [GroupCode])
+);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductVariantGroup_Company] ON [store].[ProductVariantGroup] ([CompanyId] ASC, [IsDeleted] ASC, [IsActive] ASC) INCLUDE ([GroupCode], [GroupName], [DisplayType], [SortOrder]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductVariantOption
+-- =============================================
+CREATE TABLE [store].[ProductVariantOption] (
+    [VariantOptionId] INT IDENTITY(1,1) NOT NULL
+   ,[CompanyId] INT NOT NULL DEFAULT ((1))
+   ,[VariantGroupId] INT NOT NULL
+   ,[OptionCode] NVARCHAR(30) NOT NULL
+   ,[OptionLabel] NVARCHAR(100) NOT NULL
+   ,[ColorHex] NVARCHAR(7) NULL
+   ,[ImageUrl] NVARCHAR(500) NULL
+   ,[SortOrder] INT NOT NULL DEFAULT ((0))
+   ,[IsActive] BIT NOT NULL DEFAULT ((1))
+   ,[IsDeleted] BIT NOT NULL DEFAULT ((0))
+   ,[CreatedAt] DATETIME2(0) NOT NULL DEFAULT (sysutcdatetime())
+   ,CONSTRAINT [PK__ProductV__E535859878CD80B9] PRIMARY KEY CLUSTERED ([VariantOptionId])
+   ,CONSTRAINT [UQ_VariantOption_Code] UNIQUE NONCLUSTERED ([CompanyId], [VariantGroupId], [OptionCode])
+);
+GO
+ALTER TABLE [store].[ProductVariantOption] ADD CONSTRAINT [FK_VariantOption_Group] FOREIGN KEY ([VariantGroupId]) REFERENCES [store].[ProductVariantGroup] ([VariantGroupId]);
+GO
+CREATE NONCLUSTERED INDEX [IX_ProductVariantOption_Group] ON [store].[ProductVariantOption] ([VariantGroupId] ASC, [IsDeleted] ASC, [IsActive] ASC) INCLUDE ([OptionCode], [OptionLabel], [ColorHex], [SortOrder]);
+GO
+ 
+ 
+-- =============================================
+-- TABLE: store.ProductVariantOptionValue
+-- =============================================
+CREATE TABLE [store].[ProductVariantOptionValue] (
+    [VariantOptionValueId] INT IDENTITY(1,1) NOT NULL
+   ,[ProductVariantId] INT NOT NULL
+   ,[VariantOptionId] INT NOT NULL
+   ,CONSTRAINT [PK__ProductV__6582C338E8E75C52] PRIMARY KEY CLUSTERED ([VariantOptionValueId])
+   ,CONSTRAINT [UQ_PVOV] UNIQUE NONCLUSTERED ([ProductVariantId], [VariantOptionId])
+);
+GO
+ALTER TABLE [store].[ProductVariantOptionValue] ADD CONSTRAINT [FK_PVOV_Variant] FOREIGN KEY ([ProductVariantId]) REFERENCES [store].[ProductVariant] ([ProductVariantId]);
+GO
+ALTER TABLE [store].[ProductVariantOptionValue] ADD CONSTRAINT [FK_PVOV_Option] FOREIGN KEY ([VariantOptionId]) REFERENCES [store].[ProductVariantOption] ([VariantOptionId]);
 GO
  
  

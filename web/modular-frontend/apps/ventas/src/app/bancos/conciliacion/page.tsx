@@ -1,3 +1,3 @@
 'use client';
-import { ConciliacionBancariaPage } from '@datqbox/module-admin';
+import { ConciliacionBancariaPage } from '@zentto/module-admin';
 export default function Page() { return <ConciliacionBancariaPage />; }

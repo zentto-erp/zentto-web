@@ -39,10 +39,10 @@ import SaveIcon from "@mui/icons-material/Save";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { CustomStepper, useToast } from "@datqbox/shared-ui";
-import type { StepDef } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { CustomStepper, useToast } from "@zentto/shared-ui";
+import type { StepDef } from "@zentto/shared-ui";
 
 import { useProcesarVacaciones } from "../hooks/useNomina";
 import { useEmpleadosList } from "../hooks/useEmpleados";

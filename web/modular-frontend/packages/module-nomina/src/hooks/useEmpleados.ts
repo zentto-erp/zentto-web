@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QK = "empleados";
 

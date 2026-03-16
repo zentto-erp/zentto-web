@@ -25,7 +25,7 @@ import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
 import CheckIcon from "@mui/icons-material/Check";
 import IconButton from "@mui/material/IconButton";
-import { formatCurrency, useCountries } from "@datqbox/shared-api";
+import { formatCurrency, useCountries } from "@zentto/shared-api";
 import {
   useObligationsList,
   useSaveObligation,

@@ -16,8 +16,8 @@ import Grid from '@mui/material/Grid2';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Logo } from '@datqbox/shared-ui';
-import { TurnstileCaptcha } from '@datqbox/shared-auth';
+import { Logo } from '@zentto/shared-ui';
+import { TurnstileCaptcha } from '@zentto/shared-auth';
 
 const registerSchema = z
   .object({

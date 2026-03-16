@@ -8,7 +8,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
-import { apiGet, apiPost } from '@datqbox/shared-api';
+import { apiGet, apiPost } from '@zentto/shared-api';
 
 type Notification = {
     id: string;

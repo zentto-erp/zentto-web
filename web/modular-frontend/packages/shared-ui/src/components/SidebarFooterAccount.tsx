@@ -4,8 +4,8 @@ import { Box, Avatar, Menu, MenuItem, ListItemIcon, Divider, Typography, Stack }
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { signOut } from 'next-auth/react';
-import { useAuth } from '@datqbox/shared-auth';
-import { apiGet } from '@datqbox/shared-api';
+import { useAuth } from '@zentto/shared-auth';
+import { apiGet } from '@zentto/shared-api';
 import { useRouter } from 'next/navigation';
 import type { SidebarFooterProps } from '@toolpad/core/DashboardLayout';
 import PerfilDrawer from './PerfilDrawer';
@@ -22,7 +22,7 @@ export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
   // Load avatar: from localStorage (instant), then verify with API (authoritative)
   React.useEffect(() => {
     if (!userId || typeof window === 'undefined') return;
-    const key = `datqbox_avatar_img_${userId}`;
+    const key = `zentto_avatar_img_${userId}`;
     const cached = localStorage.getItem(key);
     // Show cached version immediately (no flash of initials on page load)
     if (cached) setAvatarSrc(cached);
@@ -45,8 +45,8 @@ export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
       const detail = (e as CustomEvent<{ userId: string; src: string | null }>).detail;
       if (detail.userId === userId) setAvatarSrc(detail.src);
     };
-    window.addEventListener('datqbox-avatar-updated', onAvatarUpdated);
-    return () => window.removeEventListener('datqbox-avatar-updated', onAvatarUpdated);
+    window.addEventListener('zentto-avatar-updated', onAvatarUpdated);
+    return () => window.removeEventListener('zentto-avatar-updated', onAvatarUpdated);
   }, [userId]);
 
   const handlePerfilClose = React.useCallback(() => setPerfilOpen(false), []);

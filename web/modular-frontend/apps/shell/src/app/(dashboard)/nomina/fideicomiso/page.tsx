@@ -1,6 +1,6 @@
 "use client";
 
-import { FideicomisoPage } from "@datqbox/module-nomina";
+import { FideicomisoPage } from "@zentto/module-nomina";
 
 export default function FideicomisoRoute() {
   return <FideicomisoPage />;

@@ -1,5 +1,5 @@
 {
-  "name": "@datqbox/module-bancos",
+  "name": "@zentto/module-bancos",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
@@ -10,10 +10,10 @@
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
-    "@datqbox/module-contabilidad": "*",
-    "@datqbox/shared-api": "*",
-    "@datqbox/shared-auth": "*",
-    "@datqbox/shared-ui": "*",
+    "@zentto/module-contabilidad": "*",
+    "@zentto/shared-api": "*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-ui": "*",
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.5.0",
     "@mui/x-data-grid": "^8.5.0",

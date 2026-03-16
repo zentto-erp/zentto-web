@@ -13,8 +13,8 @@ import PeopleIcon from "@mui/icons-material/People";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import PaymentIcon from "@mui/icons-material/Payment";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 import { useBatchSummary } from "../hooks/useNominaBatch";
 
 interface Props {

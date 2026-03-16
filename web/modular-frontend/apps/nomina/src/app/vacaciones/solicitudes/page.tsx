@@ -1,5 +1,5 @@
 'use client';
-import { VacacionesSolicitudesPage } from '@datqbox/module-nomina';
+import { VacacionesSolicitudesPage } from '@zentto/module-nomina';
 
 export default function Page() {
     return <VacacionesSolicitudesPage />;

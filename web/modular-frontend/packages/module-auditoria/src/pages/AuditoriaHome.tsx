@@ -22,11 +22,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
-import { formatCurrency, toDateOnly, formatDateTime } from "@datqbox/shared-api";
-import { ContextActionHeader } from "@datqbox/shared-ui";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
-import { brandColors } from "@datqbox/shared-ui";
+import { brandColors } from "@zentto/shared-ui";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",

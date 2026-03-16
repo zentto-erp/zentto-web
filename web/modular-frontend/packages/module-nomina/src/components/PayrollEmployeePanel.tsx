@@ -13,8 +13,9 @@ import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import DescriptionIcon from "@mui/icons-material/Description";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 import {
   useBatchEmployeeLines,
   useSaveDraftLine,
@@ -22,6 +23,8 @@ import {
   useBatchRemoveLine,
   type EmployeeLine,
 } from "../hooks/useNominaBatch";
+import dynamic from "next/dynamic";
+const DocumentViewerModal = dynamic(() => import("./DocumentViewerModal"), { ssr: false });
 
 interface Props {
   batchId: number;
@@ -30,6 +33,7 @@ interface Props {
 }
 
 export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }: Props) {
+  const [docViewerOpen, setDocViewerOpen] = React.useState(false);
   const lines = useBatchEmployeeLines(batchId, employeeCode);
   const saveLine = useSaveDraftLine();
   const addLine = useBatchAddLine();
@@ -187,9 +191,22 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
               Cédula: {employeeCode}
             </Typography>
           </Box>
-          <IconButton onClick={onClose} sx={{ color: "#fff" }}>
-            <CloseIcon />
-          </IconButton>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Tooltip title="Generar Recibo de Pago">
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<DescriptionIcon />}
+                onClick={() => setDocViewerOpen(true)}
+                sx={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)", "&:hover": { borderColor: "#fff" } }}
+              >
+                Recibo
+              </Button>
+            </Tooltip>
+            <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
         </Box>
 
         {lines.isLoading ? (
@@ -282,6 +299,15 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
           </Box>
         )}
       </Drawer>
+
+      {/* Document Viewer */}
+      <DocumentViewerModal
+        open={docViewerOpen}
+        onClose={() => setDocViewerOpen(false)}
+        batchId={batchId}
+        employeeCode={employeeCode ?? undefined}
+        documentType="payroll"
+      />
 
       {/* Add Line Dialog */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="sm" fullWidth>

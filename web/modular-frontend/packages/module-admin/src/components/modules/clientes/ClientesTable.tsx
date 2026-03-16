@@ -26,7 +26,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import DataGrid, { Column, Action } from '../../common/DataGrid';
 import { DeleteDialog, ConfirmDialog } from '../../common/Dialogs';
 import { useCrudGeneric } from '../../../hooks/useCrudGeneric';
-import { Cliente } from '@datqbox/shared-api/types';
+import { Cliente } from '@zentto/shared-api/types';
 
 export default function ClientesTable() {
   const router = useRouter();

@@ -28,7 +28,7 @@ import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useCreateMovimiento, useInventarioList } from "../hooks/useInventario";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { debounce } from "lodash";
 
 interface SelectedArticulo {

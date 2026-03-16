@@ -31,8 +31,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   usePresupuestosList,
   usePresupuestoGet,

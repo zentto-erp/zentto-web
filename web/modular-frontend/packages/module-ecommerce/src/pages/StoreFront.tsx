@@ -87,7 +87,7 @@ function HeroCarousel({ onAction }: { onAction: () => void }) {
     >
       <Box sx={{ p: { xs: 3, md: 5 }, maxWidth: 550, zIndex: 1 }}>
         <Typography variant="overline" sx={{ color: b.accent, fontWeight: "bold", letterSpacing: 2, fontSize: { xs: 10, md: 12 } }}>
-          DATQBOX STORE
+          ZENTTO STORE
         </Typography>
         <Typography sx={{ color: "#fff", fontWeight: "bold", mb: 1.5, fontSize: { xs: 20, sm: 26, md: 34 }, lineHeight: 1.2 }}>
           {b.title}

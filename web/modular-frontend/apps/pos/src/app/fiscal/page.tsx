@@ -11,8 +11,8 @@ import {
     Typography,
     Tooltip
 } from '@mui/material';
-import { usePosStore } from '@datqbox/shared-api';
-import { apiGet, apiPost } from '@datqbox/shared-api';
+import { usePosStore } from '@zentto/shared-api';
+import { apiGet, apiPost } from '@zentto/shared-api';
 
 export default function PosFiscalPage() {
     const fiscalPrinter = usePosStore((s) => s.fiscalPrinter);

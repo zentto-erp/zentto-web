@@ -3,7 +3,7 @@
 ## 1. Visión General de la Decisión Architectural (ADR)
 
 **Estado Actual:** `apps/shell` actúa como un monolito modular. Las rutas de contabilidad (`/contabilidad/...`) se renderizan dentro de la aplicación principal que corre en un solo servidor de Next.js (Puerto 3000). Componentes lógicos y visuales residen en `packages/module-contabilidad`.
-**Problema:** A medida que el ecosistema crece, cualquier cambio en Contabilidad requiere recompilar todo el portal de DatqBox, incluyendo Nómina, Bancos, etc. Equipos humanos o agentes de IA colisionan en un solo proyecto, afectando los tiempos de despliegue y estabilidad.
+**Problema:** A medida que el ecosistema crece, cualquier cambio en Contabilidad requiere recompilar todo el portal de Zentto, incluyendo Nómina, Bancos, etc. Equipos humanos o agentes de IA colisionan en un solo proyecto, afectando los tiempos de despliegue y estabilidad.
 **Decisión:** Convertir `Contabilidad` en su propio servidor Next.js totalmente aislado bajo la estrategia **Next.js Multi-Zones** (o Reverse Proxy). 
 
 ## 2. Estructura de Carpetas Físicas Propuestas
@@ -26,7 +26,7 @@ web/modular-frontend/
 
 ## 3. Red y Puertos (Next.js Multi-Zones / Rewrites)
 
-El `Shell` se convierte en un enrutador inteligente. Para el usuario final, no cambia la URL. Sigue viendo `datqbox.local/contabilidad`.
+El `Shell` se convierte en un enrutador inteligente. Para el usuario final, no cambia la URL. Sigue viendo `zentto.local/contabilidad`.
 
 **Configuración en `apps/shell/next.config.mjs`:**
 ```javascript
@@ -56,7 +56,7 @@ export default {
 ## 4. Compartición de Sesión (Auth)
 
 **Reto:** El usuario se loguea en el puerto 3000 (Shell) pero viaja al puerto 3001 (Contabilidad).
-**Solución:** Al estar bajo el mismo dominio base en producción (Ej. `.datqbox.com`) o `localhost` en desarrollo, la cookie de NextAuth (`next-auth.session-token`) es válida en ambas si comparten la misma firma de secreto (`NEXTAUTH_SECRET`). Ambas aplicaciones invocarán `useAuth()` desde `@datqbox/shared-auth`, y este extraerá la sesión mágica centralizada del navegador. Ninguna app de negocio (Contabilidad) tendrá página de login propia; si no hay sesión, devuelven error o redirigen al Shell.
+**Solución:** Al estar bajo el mismo dominio base en producción (Ej. `.zentto.com`) o `localhost` en desarrollo, la cookie de NextAuth (`next-auth.session-token`) es válida en ambas si comparten la misma firma de secreto (`NEXTAUTH_SECRET`). Ambas aplicaciones invocarán `useAuth()` desde `@zentto/shared-auth`, y este extraerá la sesión mágica centralizada del navegador. Ninguna app de negocio (Contabilidad) tendrá página de login propia; si no hay sesión, devuelven error o redirigen al Shell.
 
 ## 5. Pros y Contras de esta Decisión
 
@@ -72,7 +72,7 @@ export default {
 ## 6. Checklist de Implementación para el 'Super Developer'
 
 - [ ] 1. Crear la plantilla básica de frontend (`npx create-next-app` o copia limpia manual) dentro de `apps/contabilidad`.
-- [ ] 2. Ajustar `apps/contabilidad/package.json` para heredar los local packages (`@datqbox/shared-ui`, `@datqbox/shared-auth`).
+- [ ] 2. Ajustar `apps/contabilidad/package.json` para heredar los local packages (`@zentto/shared-ui`, `@zentto/shared-auth`).
 - [ ] 3. Configurar su `next.config.mjs` con `basePath: '/contabilidad'`.
 - [ ] 4. Escribir el Layout raíz de `apps/contabilidad` para que monte y lea el `<OdooLayout>` usando los menús de Contabilidad aislados.
 - [ ] 5. Mapear en `apps/shell/next.config.mjs` los `rewrites` hacia `http://localhost:3001`.

@@ -1,6 +1,6 @@
 "use client";
 
-import { ComprasTable } from "@datqbox/module-compras";
+import { ComprasTable } from "@zentto/module-compras";
 
 export default function ComprasListaPage() {
   return <ComprasTable />;

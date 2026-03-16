@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { apiGet } from "@datqbox/shared-api";
+import { apiGet } from "@zentto/shared-api";
 
 export interface ClienteListItem {
   codigo: string;

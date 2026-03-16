@@ -356,7 +356,7 @@ export const usePosStore = create<PosState>()(
                 const data = await apiGet('/v1/pos/fiscal/agent/service-status');
                 return {
                     success: Boolean(data.success),
-                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    serviceName: String(data.serviceName ?? 'ZenttoHardwareHub'),
                     displayName: data.displayName ? String(data.displayName) : undefined,
                     status: String(data.status ?? 'Unknown'),
                     running: Boolean(data.running),
@@ -368,7 +368,7 @@ export const usePosStore = create<PosState>()(
                 const data = await apiPost('/v1/pos/fiscal/agent/start', {});
                 const result: FiscalAgentServiceStatus = {
                     success: Boolean(data.success),
-                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    serviceName: String(data.serviceName ?? 'ZenttoHardwareHub'),
                     displayName: data.displayName ? String(data.displayName) : undefined,
                     status: String(data.status ?? 'Unknown'),
                     running: Boolean(data.running),
@@ -386,7 +386,7 @@ export const usePosStore = create<PosState>()(
                 const data = await apiPost('/v1/pos/fiscal/agent/stop', {});
                 const result: FiscalAgentServiceStatus = {
                     success: Boolean(data.success),
-                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    serviceName: String(data.serviceName ?? 'ZenttoHardwareHub'),
                     displayName: data.displayName ? String(data.displayName) : undefined,
                     status: String(data.status ?? 'Unknown'),
                     running: Boolean(data.running),
@@ -401,7 +401,7 @@ export const usePosStore = create<PosState>()(
                 const data = await apiPost('/v1/pos/fiscal/agent/restart', {});
                 const result: FiscalAgentServiceStatus = {
                     success: Boolean(data.success),
-                    serviceName: String(data.serviceName ?? 'DatqBoxHardwareHub'),
+                    serviceName: String(data.serviceName ?? 'ZenttoHardwareHub'),
                     displayName: data.displayName ? String(data.displayName) : undefined,
                     status: String(data.status ?? 'Unknown'),
                     running: Boolean(data.running),
@@ -866,7 +866,7 @@ export const usePosStore = create<PosState>()(
             },
         }),
         {
-            name: 'datqbox-pos-store',
+            name: 'zentto-pos-store',
             version: 2,
             migrate: (persistedState: unknown) => {
                 const nextState = { ...((persistedState as Record<string, unknown>) || {}) } as Record<string, unknown>;

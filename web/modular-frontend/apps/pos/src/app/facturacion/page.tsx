@@ -42,7 +42,7 @@ import {
     enrollSupervisorBiometricCredential,
     isWebAuthnSupported,
     usePosStore,
-} from '@datqbox/shared-api';
+} from '@zentto/shared-api';
 
 // Iconos dinámicos
 const PersonIcon = dynamic(() => import('@mui/icons-material/Person'), { ssr: false });

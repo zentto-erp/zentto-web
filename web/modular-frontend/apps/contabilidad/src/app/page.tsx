@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ContabilidadHome } from '@datqbox/module-contabilidad';
+import { ContabilidadHome } from '@zentto/module-contabilidad';
 
 export default function ContabilidadRootPage() {
     return <ContabilidadHome />;

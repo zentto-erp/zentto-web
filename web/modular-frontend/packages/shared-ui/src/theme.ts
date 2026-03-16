@@ -3,7 +3,7 @@ import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
 import type { } from '@mui/x-data-grid/themeAugmentation';
 
-/* ── DatqBox Brand Colors (derivados del ecommerce) ── */
+/* ── Zentto Brand Colors (derivados del ecommerce) ── */
 export const brandColors = {
   dark: '#131921',
   darkSecondary: '#232f3e',

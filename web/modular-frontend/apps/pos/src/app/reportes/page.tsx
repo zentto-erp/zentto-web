@@ -22,7 +22,7 @@ import {
     Autocomplete,
     Tooltip
 } from '@mui/material';
-import { DatePicker } from '@datqbox/shared-ui';
+import { DatePicker } from '@zentto/shared-ui';
 import dayjs, { Dayjs } from 'dayjs';
 import dynamic from 'next/dynamic';
 import {
@@ -32,8 +32,8 @@ import {
     usePosReporteVentas,
     usePosReporteCajas,
 } from '@/hooks';
-import { useTimezone } from '@datqbox/shared-auth';
-import { toDateOnly, formatDateTime } from '@datqbox/shared-api';
+import { useTimezone } from '@zentto/shared-auth';
+import { toDateOnly, formatDateTime } from '@zentto/shared-api';
 
 const DownloadIcon = dynamic(() => import('@mui/icons-material/Download'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });

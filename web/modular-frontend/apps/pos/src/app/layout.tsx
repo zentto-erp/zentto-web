@@ -6,8 +6,8 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider, useHydrateLocalizacion } from '@datqbox/shared-api';
+import { AuthProvider, useAuth } from '@zentto/shared-auth';
+import { QueryProvider, useHydrateLocalizacion } from '@zentto/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
@@ -15,8 +15,8 @@ import {
     LocalizationProviderWrapper,
     theme,
     OdooLayout
-} from '@datqbox/shared-ui';
-import '@datqbox/shared-ui/globals.css';
+} from '@zentto/shared-ui';
+import '@zentto/shared-ui/globals.css';
 
 import { buildPosNav } from './nav';
 
@@ -67,9 +67,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" suppressHydrationWarning>
             <head>
-                <title>POS - Punto de Venta - DatqBox App</title>
+                <title>POS - Punto de Venta - Zentto App</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-                <meta name="description" content="Sistema de Punto de Venta DatqBox - Facturación rápida y gestión de caja" />
+                <meta name="description" content="Sistema de Punto de Venta Zentto - Facturación rápida y gestión de caja" />
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>

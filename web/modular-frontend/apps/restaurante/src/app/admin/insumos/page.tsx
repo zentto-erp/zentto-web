@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { useUpsertProductoAdminMutation } from '@/hooks/useRestauranteAdmin';
 import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@datqbox/module-admin';
+import { EditableDataGrid } from '@zentto/module-admin';
 import { useInsumosAdminQuery, useProductosAdminQuery } from '@/hooks/useRestauranteAdmin';
 
 type InsumoRow = {

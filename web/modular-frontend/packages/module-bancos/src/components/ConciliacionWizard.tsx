@@ -38,11 +38,11 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SaveIcon from "@mui/icons-material/Save";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { CustomStepper, useToast } from "@datqbox/shared-ui";
-import type { StepDef } from "@datqbox/shared-ui";
-import { EditableDataGrid } from "@datqbox/module-contabilidad";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { CustomStepper, useToast } from "@zentto/shared-ui";
+import type { StepDef } from "@zentto/shared-ui";
+import { EditableDataGrid } from "@zentto/module-contabilidad";
 
 import {
   useCuentasBank,

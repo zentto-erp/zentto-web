@@ -1,6 +1,6 @@
 "use client";
 
-import { ConstantesPage } from "@datqbox/module-nomina";
+import { ConstantesPage } from "@zentto/module-nomina";
 
 export default function ConstantesRoute() {
   return <ConstantesPage />;

@@ -40,12 +40,15 @@ import GavelIcon from "@mui/icons-material/Gavel";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import SaveIcon from "@mui/icons-material/Save";
+import DescriptionIcon from "@mui/icons-material/Description";
+import dynamic from "next/dynamic";
+const DocumentViewerModal = dynamic(() => import("./DocumentViewerModal"), { ssr: false });
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { CustomStepper, useToast } from "@datqbox/shared-ui";
-import type { StepDef } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { CustomStepper, useToast } from "@zentto/shared-ui";
+import type { StepDef } from "@zentto/shared-ui";
 
 import { useCalcularLiquidacion } from "../hooks/useNomina";
 import { useEmpleadosList } from "../hooks/useEmpleados";
@@ -80,6 +83,7 @@ export default function LiquidacionesWizard({ initialCedula, onClose }: Liquidac
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
   const hasInitialCedula = !!initialCedula;
+  const [docViewerOpen, setDocViewerOpen] = React.useState(false);
   const [activeStep, setActiveStep] = useState(hasInitialCedula ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
 
@@ -469,6 +473,13 @@ export default function LiquidacionesWizard({ initialCedula, onClose }: Liquidac
                   Cancelar
                 </Button>
                 <Button
+                  variant="outlined"
+                  startIcon={<DescriptionIcon />}
+                  onClick={() => setDocViewerOpen(true)}
+                >
+                  Generar Liquidación
+                </Button>
+                <Button
                   variant="contained"
                   color="success"
                   startIcon={<SaveIcon />}
@@ -477,6 +488,45 @@ export default function LiquidacionesWizard({ initialCedula, onClose }: Liquidac
                   Confirmar Liquidación
                 </Button>
               </Stack>
+
+              {/* Document Viewer para liquidación — render local con datos del wizard */}
+              <DocumentViewerModal
+                open={docViewerOpen}
+                onClose={() => setDocViewerOpen(false)}
+                documentType="liquidacion"
+                employeeName={empleadoObj ? empNombre(empleadoObj) : undefined}
+                directVars={{
+                  'empleado.nombre': empNombre(empleadoObj),
+                  'empleado.cedula': empCedula(empleadoObj),
+                  'empleado.cargo': empCargo(empleadoObj),
+                  'empleado.departamento': '',
+                  'empleado.fechaIngreso': empIngreso(empleadoObj) ?? '',
+                  'empleado.antiguedad': '',
+                  'periodo.desde': empIngreso(empleadoObj) ?? '',
+                  'periodo.hasta': fechaRetiro?.format('DD/MM/YYYY') ?? '',
+                  'periodo.tipo': 'LIQUIDACION',
+                  'nomina.tipo': 'LIQUIDACION',
+                  'nomina.totalAsignaciones': totalLiquidacion.toFixed(2),
+                  'nomina.totalDeducciones': '0.00',
+                  'nomina.neto': totalLiquidacion.toFixed(2),
+                  'nomina.netoLetras': `${totalLiquidacion.toFixed(2)} bolívares`,
+                  'liquidacion.causa': causaLabels[causaRetiro] ?? causaRetiro,
+                  'fecha.generacion': new Date().toLocaleDateString('es-VE'),
+                  'anio': new Date().getFullYear().toString(),
+                  'mes': new Date().toLocaleDateString('es-VE', { month: 'long' }),
+                  'empresa.nombre': '',
+                  'empresa.rif': '',
+                  'empresa.direccion': '',
+                  'empresa.representante': '',
+                }}
+                directLines={desglose.map((item, i) => ({
+                  ConceptCode: `LIQ_${i}`,
+                  ConceptName: item.concepto,
+                  ConceptType: 'ASIGNACION',
+                  Total: item.monto,
+                  Quantity: 1,
+                }))}
+              />
             </CardContent>
           </Card>
         );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from './AuthContext';
-import { useCountries } from '@datqbox/shared-api';
+import { useCountries } from '@zentto/shared-api';
 
 export function useTimezone() {
   const { company } = useAuth();

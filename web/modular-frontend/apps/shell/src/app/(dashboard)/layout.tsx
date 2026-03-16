@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import { OdooLayout } from '@datqbox/shared-ui';
-import { useAuth } from '@datqbox/shared-auth';
+import { OdooLayout } from '@zentto/shared-ui';
+import { useAuth } from '@zentto/shared-auth';
 import { buildNavigation } from '../../lib/navigation';
 
 export default function Layout({ children }: { children: React.ReactNode }) {

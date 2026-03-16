@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { SystemModule } from '@datqbox/shared-auth';
+import type { SystemModule } from '@zentto/shared-auth';
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -41,6 +41,8 @@ import SchoolIcon from '@mui/icons-material/School';
 import GroupsIcon from '@mui/icons-material/Groups';
 import GavelIcon from '@mui/icons-material/Gavel';
 import EventIcon from '@mui/icons-material/Event';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -51,7 +53,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // If we are on the App Selector or Home, show the general landing/support sidebar
     if (pathname === '/' || pathname === '/aplicaciones') {
-        nav.push({ kind: 'header', title: 'DATQBOX' });
+        nav.push({ kind: 'header', title: 'ZENTTO' });
         nav.push({ kind: 'page', segment: '', title: 'Inicio / Aplicaciones', icon: <AppsIcon /> });
         nav.push({ kind: 'header', title: 'RECURSOS' });
         nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });
@@ -77,6 +79,15 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'contabilidad/conciliacion', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> });
         nav.push({ kind: 'page', segment: 'contabilidad/presupuestos', title: 'Presupuestos', icon: <CalculateIcon /> });
         nav.push({ kind: 'page', segment: 'contabilidad/cierre', title: 'Cierre Contable', icon: <LockIcon /> });
+        nav.push({ kind: 'header', title: 'Activos Fijos' });
+        nav.push({ kind: 'page', segment: 'contabilidad/activos-fijos', title: 'Activos Fijos', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/activos-fijos/categorias', title: 'Categorías AF', icon: <CategoryIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/activos-fijos/depreciacion', title: 'Depreciación', icon: <HistoryIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/activos-fijos/reportes', title: 'Reportes AF', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'header', title: 'Gestión Fiscal' });
+        nav.push({ kind: 'page', segment: 'contabilidad/fiscal/libros', title: 'Libros Fiscales', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/fiscal/declaraciones', title: 'Declaraciones', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'contabilidad/fiscal/retenciones', title: 'Retenciones', icon: <PaymentsIcon /> });
         nav.push({ kind: 'header', title: 'Informes' });
         nav.push({ kind: 'page', segment: 'contabilidad/reportes', title: 'Reportes', icon: <AssessmentIcon /> });
         return nav;
@@ -106,9 +117,11 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'header', title: 'Obligaciones Legales' });
         nav.push({ kind: 'page', segment: 'nomina/obligaciones', title: 'Obligaciones y Aportes', icon: <GavelIcon /> });
         nav.push({ kind: 'header', title: 'Administración' });
+        nav.push({ kind: 'page', segment: 'nomina/procesar', title: 'Procesar Nómina', icon: <PlayArrowIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/liquidaciones', title: 'Liquidaciones', icon: <AccountBalanceWalletIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/constantes', title: 'Constantes', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'nomina/feriados', title: 'Feriados', icon: <EventIcon /> });
+        nav.push({ kind: 'page', segment: 'nomina/documentos', title: 'Plantillas de Documentos', icon: <DescriptionIcon /> });
         return nav;
     }
 

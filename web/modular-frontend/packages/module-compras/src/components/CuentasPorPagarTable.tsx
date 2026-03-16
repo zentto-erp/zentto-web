@@ -27,8 +27,8 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
-import { formatCurrency, formatDate } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, formatDate } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
 export default function CuentasPorPagarTable() {

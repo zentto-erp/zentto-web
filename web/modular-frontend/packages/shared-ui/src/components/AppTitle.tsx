@@ -18,7 +18,7 @@ export default function AppTitle({ lightText = false }: { lightText?: boolean })
       <Box sx={{ overflow: 'hidden' }}>
         <Typography variant="subtitle1" component="span" display="block"
           sx={{ fontWeight: 800, letterSpacing: '0.1em', color: lightText ? '#ffffff' : 'text.primary', lineHeight: 1, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-          DATQBOX
+          ZENTTO
         </Typography>
         <Typography variant="caption" component="span" display="block"
           sx={{ color: lightText ? 'rgba(255,255,255,0.7)' : 'text.secondary', fontWeight: 600, fontSize: '0.65rem', whiteSpace: 'nowrap', mt: 0.2 }}>

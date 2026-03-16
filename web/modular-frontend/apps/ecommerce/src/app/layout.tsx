@@ -6,9 +6,9 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { theme } from '@datqbox/shared-ui';
-import '@datqbox/shared-ui/globals.css';
-import { StoreLayout } from '@datqbox/module-ecommerce';
+import { theme } from '@zentto/shared-ui';
+import '@zentto/shared-ui/globals.css';
+import { StoreLayout } from '@zentto/module-ecommerce';
 import { useRouter } from 'next/navigation';
 import { CircularProgress, Box } from '@mui/material';
 
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" suppressHydrationWarning>
             <head>
-                <title>DatqBox Store - Tienda en linea</title>
+                <title>Zentto Store - Tienda en linea</title>
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>

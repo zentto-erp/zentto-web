@@ -42,8 +42,8 @@ import {
   useCxpDocumentosPendientes,
   useCxpSaldo,
 } from "../hooks/useCxpTx";
-import { useTimezone } from "@datqbox/shared-auth";
-import { toDateOnly, formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly, formatDate } from "@zentto/shared-api";
 
 // --- Tipos internos ---
 

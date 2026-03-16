@@ -2,8 +2,8 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CuentaPorPagar, CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO, CrudFilter, PaginatedResponse } from "@datqbox/shared-api/types";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { CuentaPorPagar, CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO, CrudFilter, PaginatedResponse } from "@zentto/shared-api/types";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "cuentas-por-pagar";
 const API_BASE = "/api/v1/cuentas-por-pagar";

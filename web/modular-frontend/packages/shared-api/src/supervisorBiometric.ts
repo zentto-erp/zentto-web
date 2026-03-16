@@ -71,11 +71,11 @@ export async function enrollSupervisorBiometricCredential(input: {
             challenge: randomChallenge(32),
             rp: {
                 id: window.location.hostname,
-                name: 'DatqBox',
+                name: 'Zentto',
             },
             user: {
                 id: new TextEncoder().encode(`SUP:${supervisorUser}`),
-                name: `${supervisorUser}@datqbox.local`,
+                name: `${supervisorUser}@zentto.local`,
                 displayName: `Supervisor ${supervisorUser}`,
             },
             pubKeyCredParams: [
@@ -121,7 +121,7 @@ export async function enrollSupervisorBiometricCredential(input: {
 export async function authenticateSupervisorBiometricCredential(supervisorUser?: string) {
     assertWebAuthnSupported();
     const normalizedUser = normalizeSupervisorUser(supervisorUser ?? '');
-    const LAST_CREDENTIAL_KEY = 'datqbox:last-biometric-credential-id';
+    const LAST_CREDENTIAL_KEY = 'zentto:last-biometric-credential-id';
 
     const credentials = await listSupervisorBiometricCredentials(normalizedUser || undefined);
     if (credentials.length === 0) {

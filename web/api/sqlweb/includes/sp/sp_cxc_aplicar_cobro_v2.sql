@@ -8,6 +8,9 @@ IF OBJECT_ID(N'dbo.usp_CxC_AplicarCobro', N'P') IS NOT NULL
     DROP PROCEDURE dbo.usp_CxC_AplicarCobro;
 GO
 
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE PROCEDURE dbo.usp_CxC_AplicarCobro
     @RequestId       NVARCHAR(100),
     @CodCliente      NVARCHAR(24),

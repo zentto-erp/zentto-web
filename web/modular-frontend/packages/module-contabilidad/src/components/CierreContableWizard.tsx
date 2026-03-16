@@ -28,7 +28,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   usePeriodosList,
   useEnsureYear,

@@ -1,5 +1,5 @@
 "use client";
-import { TrasladoForm } from "@datqbox/module-inventario";
+import { TrasladoForm } from "@zentto/module-inventario";
 export default function TrasladosPage() {
   return <TrasladoForm />;
 }

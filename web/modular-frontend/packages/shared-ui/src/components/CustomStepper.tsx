@@ -68,7 +68,7 @@ const ColorlibStepIconRoot = styled("div")<{
 
 export interface StepDef {
   label: string;
-  icon: React.ReactElement;
+  icon?: React.ReactElement;
 }
 
 export interface CustomStepperProps {
@@ -84,7 +84,7 @@ export interface CustomStepperProps {
 
 /**
  * Stepper con estilo de gradiente, íconos personalizados y conector coloreado.
- * Inspirado en el diseño de SpainInside, adaptado a la marca DatqBox.
+ * Inspirado en el diseño de SpainInside, adaptado a la marca Zentto.
  */
 export default function CustomStepper({
   activeStep,

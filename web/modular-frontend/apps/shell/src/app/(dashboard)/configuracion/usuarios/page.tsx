@@ -14,14 +14,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import SecurityIcon from '@mui/icons-material/Security';
 import SearchIcon from '@mui/icons-material/Search';
-import { useAuth } from '@datqbox/shared-auth';
-import { SYSTEM_MODULES } from '@datqbox/shared-auth';
-import { useToast } from '@datqbox/shared-ui';
+import { useAuth } from '@zentto/shared-auth';
+import { SYSTEM_MODULES } from '@zentto/shared-auth';
+import { useToast } from '@zentto/shared-ui';
 import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
-} from '@datqbox/shared-api';
-import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@datqbox/shared-api';
+} from '@zentto/shared-api';
+import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@zentto/shared-api';
 
 // ─── Module labels ──────────────────────────────────────────
 const MODULE_LABELS: Record<string, string> = {

@@ -5,7 +5,7 @@ import { Box, Typography, ButtonBase, useTheme, Avatar } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@datqbox/shared-auth';
+import { useAuth } from '@zentto/shared-auth';
 
 // Icons - Importar todos los necesarios
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });

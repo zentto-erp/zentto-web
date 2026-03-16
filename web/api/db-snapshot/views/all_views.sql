@@ -25,62 +25,33 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- --- dbo.DocumentosCompra ---
 CREATE VIEW dbo.DocumentosCompra AS
 SELECT
-    DocumentId                     AS ID,
-    DocumentNumber                 AS NUM_DOC,
-    SerialType                     AS SERIALTIPO,
-    OperationType                  AS TIPO_OPERACION,
-    SupplierCode                   AS COD_PROVEEDOR,
-    SupplierName                   AS NOMBRE,
-    FiscalId                       AS RIF,
-    DocumentDate                   AS FECHA,
-    DueDate                        AS FECHA_VENCE,
-    ReceiptDate                    AS FECHA_RECIBO,
-    PaymentDate                    AS FECHA_PAGO,
-    DocumentTime                   AS HORA,
-    CAST(SubTotal           AS FLOAT)  AS SUBTOTAL,
-    CAST(TaxableAmount      AS FLOAT)  AS MONTO_GRA,
-    CAST(ExemptAmount       AS FLOAT)  AS MONTO_EXE,
-    CAST(TaxAmount          AS FLOAT)  AS IVA,
-    CAST(TaxRate            AS FLOAT)  AS ALICUOTA,
-    CAST(TotalAmount        AS FLOAT)  AS TOTAL,
-    CAST(ExemptTotalAmount  AS FLOAT)  AS EXENTO,
-    CAST(DiscountAmount     AS FLOAT)  AS DESCUENTO,
-    IsVoided                           AS ANULADA,
-    IsPaid                             AS CANCELADA,
-    IsReceived                         AS RECIBIDA,
-    IsLegal                            AS LEGAL,
-    OriginDocumentNumber               AS DOC_ORIGEN,
-    ControlNumber                      AS NUM_CONTROL,
-    VoucherNumber                      AS NRO_COMPROBANTE,
-    VoucherDate                        AS FECHA_COMPROBANTE,
-    CAST(RetainedTax        AS FLOAT)  AS IVA_RETENIDO,
-    IsrCode                            AS ISLR,
-    CAST(IsrAmount          AS FLOAT)  AS MONTO_ISLR,
-    IsrCode                            AS CODIGO_ISLR,
-    CAST(IsrSubjectAmount   AS FLOAT)  AS SUJETO_ISLR,
-    CAST(RetentionRate      AS FLOAT)  AS TASA_RETENCION,
-    CAST(ImportAmount       AS FLOAT)  AS IMPORTACION,
-    CAST(ImportTax          AS FLOAT)  AS IVA_IMPORT,
-    CAST(ImportBase         AS FLOAT)  AS BASE_IMPORT,
-    CAST(FreightAmount      AS FLOAT)  AS FLETE,
-    Concept                            AS CONCEPTO,
-    Notes                              AS OBSERV,
-    OrderNumber                        AS PEDIDO,
-    ReceivedBy                         AS RECIBIDO,
-    WarehouseCode                      AS ALMACEN,
-    CurrencyCode                       AS MONEDA,
-    CAST(ExchangeRate       AS FLOAT)  AS TASA_CAMBIO,
-    CAST(UsdAmount          AS FLOAT)  AS PRECIO_DOLLAR,
-    UserCode                           AS COD_USUARIO,
-    ShortUserCode                      AS CO_USUARIO,
-    ReportDate                         AS FECHA_REPORTE,
-    HostName                           AS COMPUTER,
-    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
-    IsDeleted, DeletedAt, DeletedByUserId,
-    RowVer
+    DocumentId AS ID, DocumentNumber AS NUM_DOC,
+    SerialType AS SERIALTIPO, FiscalMemoryNumber AS MEMORIA,
+    OperationType AS TIPO_OPERACION,
+    SupplierCode AS COD_PROVEEDOR, SupplierName AS NOMBRE, FiscalId AS RIF,
+    DocumentDate AS FECHA, DueDate AS FECHA_VENCE, ReceiptDate AS FECHA_RECIBO,
+    PaymentDate AS FECHA_PAGO, DocumentTime AS HORA,
+    CAST(SubTotal AS FLOAT) AS SUBTOTAL, CAST(TaxableAmount AS FLOAT) AS MONTO_GRA,
+    CAST(ExemptAmount AS FLOAT) AS MONTO_EXE, CAST(TaxAmount AS FLOAT) AS IVA,
+    CAST(TaxRate AS FLOAT) AS ALICUOTA, CAST(TotalAmount AS FLOAT) AS TOTAL,
+    CAST(ExemptTotalAmount AS FLOAT) AS EXENTO, CAST(DiscountAmount AS FLOAT) AS DESCUENTO,
+    IsVoided AS ANULADA, IsPaid AS CANCELADA, IsReceived AS RECIBIDA, IsLegal AS LEGAL,
+    OriginDocumentNumber AS DOC_ORIGEN, ControlNumber AS NUM_CONTROL,
+    VoucherNumber AS NRO_COMPROBANTE, VoucherDate AS FECHA_COMPROBANTE,
+    CAST(RetainedTax AS FLOAT) AS IVA_RETENIDO, IsrCode AS ISLR,
+    CAST(IsrAmount AS FLOAT) AS MONTO_ISLR, IsrCode AS CODIGO_ISLR,
+    CAST(IsrSubjectAmount AS FLOAT) AS SUJETO_ISLR, CAST(RetentionRate AS FLOAT) AS TASA_RETENCION,
+    CAST(ImportAmount AS FLOAT) AS IMPORTACION, CAST(ImportTax AS FLOAT) AS IVA_IMPORT,
+    CAST(ImportBase AS FLOAT) AS BASE_IMPORT, CAST(FreightAmount AS FLOAT) AS FLETE,
+    Concept AS CONCEPTO, Notes AS OBSERV, OrderNumber AS PEDIDO,
+    ReceivedBy AS RECIBIDO, WarehouseCode AS ALMACEN,
+    CurrencyCode AS MONEDA, CAST(ExchangeRate AS FLOAT) AS TASA_CAMBIO,
+    CAST(UsdAmount AS FLOAT) AS PRECIO_DOLLAR,
+    UserCode AS COD_USUARIO, ShortUserCode AS CO_USUARIO,
+    ReportDate AS FECHA_REPORTE, HostName AS COMPUTER,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId, RowVer
 FROM ap.PurchaseDocument;
 
 GO
@@ -93,29 +64,19 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- --- dbo.DocumentosCompraDetalle ---
 CREATE VIEW dbo.DocumentosCompraDetalle AS
 SELECT
-    LineId                         AS ID,
-    DocumentNumber                 AS NUM_DOC,
-    OperationType                  AS TIPO_OPERACION,
-    LineNumber                     AS RENGLON,
-    ProductCode                    AS COD_SERV,
-    Description                    AS DESCRIPCION,
-    CAST(Quantity       AS FLOAT)  AS CANTIDAD,
-    CAST(UnitPrice      AS FLOAT)  AS PRECIO,
-    CAST(UnitCost       AS FLOAT)  AS COSTO,
-    CAST(SubTotal       AS FLOAT)  AS SUBTOTAL,
-    CAST(DiscountAmount AS FLOAT)  AS DESCUENTO,
-    CAST(TotalAmount    AS FLOAT)  AS TOTAL,
-    CAST(TaxRate        AS FLOAT)  AS ALICUOTA,
-    CAST(TaxAmount      AS FLOAT)  AS MONTO_IVA,
-    IsVoided                       AS ANULADA,
-    UserCode                       AS CO_USUARIO,
-    LineDate                       AS FECHA,
-    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
-    IsDeleted, DeletedAt, DeletedByUserId,
-    RowVer
+    LineId AS ID, DocumentNumber AS NUM_DOC,
+    SerialType AS SERIALTIPO, FiscalMemoryNumber AS MEMORIA,
+    OperationType AS TIPO_OPERACION,
+    LineNumber AS RENGLON, ProductCode AS COD_SERV, Description AS DESCRIPCION,
+    CAST(Quantity AS FLOAT) AS CANTIDAD, CAST(UnitPrice AS FLOAT) AS PRECIO,
+    CAST(UnitCost AS FLOAT) AS COSTO,
+    CAST(SubTotal AS FLOAT) AS SUBTOTAL, CAST(DiscountAmount AS FLOAT) AS DESCUENTO,
+    CAST(TotalAmount AS FLOAT) AS TOTAL, CAST(TaxRate AS FLOAT) AS ALICUOTA,
+    CAST(TaxAmount AS FLOAT) AS MONTO_IVA,
+    IsVoided AS ANULADA, UserCode AS CO_USUARIO, LineDate AS FECHA,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId, RowVer
 FROM ap.PurchaseDocumentLine;
 
 GO
@@ -128,23 +89,16 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- --- dbo.DocumentosCompraPago ---
 CREATE VIEW dbo.DocumentosCompraPago AS
 SELECT
-    PaymentId                      AS ID,
-    DocumentNumber                 AS NUM_DOC,
-    OperationType                  AS TIPO_OPERACION,
-    PaymentMethod                  AS TIPO_PAGO,
-    BankCode                       AS BANCO,
-    PaymentNumber                  AS NUMERO,
-    CAST(Amount         AS FLOAT)  AS MONTO,
-    PaymentDate                    AS FECHA,
-    DueDate                        AS FECHA_VENCE,
-    ReferenceNumber                AS REFERENCIA,
-    UserCode                       AS CO_USUARIO,
-    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
-    IsDeleted, DeletedAt, DeletedByUserId,
-    RowVer
+    PaymentId AS ID, DocumentNumber AS NUM_DOC,
+    SerialType AS SERIALTIPO, FiscalMemoryNumber AS MEMORIA,
+    OperationType AS TIPO_OPERACION,
+    PaymentMethod AS TIPO_PAGO, BankCode AS BANCO, PaymentNumber AS NUMERO,
+    CAST(Amount AS FLOAT) AS MONTO,
+    PaymentDate AS FECHA, DueDate AS FECHA_VENCE, ReferenceNumber AS REFERENCIA,
+    UserCode AS CO_USUARIO,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId, RowVer
 FROM ap.PurchaseDocumentPayment;
 
 GO
@@ -157,59 +111,26 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- =============================================================================
--- SECCIÇ"N 5: VISTAS DE COMPATIBILIDAD dbo.* ƒÅ' canÇünicas
--- Exponen los nombres de columna originales para que el cÇüdigo TypeScript
--- no necesite cambios (INFORMATION_SCHEMA.COLUMNS las devuelve correctamente)
--- =============================================================================
-
--- --- dbo.DocumentosVenta ---
 CREATE VIEW dbo.DocumentosVenta AS
 SELECT
-    DocumentId                     AS ID,
-    DocumentNumber                 AS NUM_DOC,
-    SerialType                     AS SERIALTIPO,
-    OperationType                  AS TIPO_OPERACION,
-    CustomerCode                   AS CODIGO,
-    CustomerName                   AS NOMBRE,
-    FiscalId                       AS RIF,
-    DocumentDate                   AS FECHA,
-    DueDate                        AS FECHA_VENCE,
-    DocumentTime                   AS HORA,
-    CAST(SubTotal       AS FLOAT)  AS SUBTOTAL,
-    CAST(TaxableAmount  AS FLOAT)  AS MONTO_GRA,
-    CAST(ExemptAmount   AS FLOAT)  AS MONTO_EXE,
-    CAST(TaxAmount      AS FLOAT)  AS IVA,
-    CAST(TaxRate        AS FLOAT)  AS ALICUOTA,
-    CAST(TotalAmount    AS FLOAT)  AS TOTAL,
-    CAST(DiscountAmount AS FLOAT)  AS DESCUENTO,
-    IsVoided                       AS ANULADA,
-    IsPaid                         AS CANCELADA,
-    IsInvoiced                     AS FACTURADA,
-    IsDelivered                    AS ENTREGADA,
-    OriginDocumentNumber           AS DOC_ORIGEN,
-    OriginDocumentType             AS TIPO_DOC_ORIGEN,
-    ControlNumber                  AS NUM_CONTROL,
-    IsLegal                        AS LEGAL,
-    IsPrinted                      AS IMPRESA,
-    Notes                          AS OBSERV,
-    Concept                        AS CONCEPTO,
-    PaymentTerms                   AS TERMINOS,
-    ShipToAddress                  AS DESPACHAR,
-    SellerCode                     AS VENDEDOR,
-    DepartmentCode                 AS DEPARTAMENTO,
-    LocationCode                   AS LOCACION,
-    CurrencyCode                   AS MONEDA,
-    CAST(ExchangeRate   AS FLOAT)  AS TASA_CAMBIO,
-    UserCode                       AS COD_USUARIO,
-    ReportDate                     AS FECHA_REPORTE,
-    HostName                       AS COMPUTER,
-    VehiclePlate                   AS PLACAS,
-    Mileage                        AS KILOMETROS,
-    CAST(TollAmount     AS FLOAT)  AS PEAJE,
-    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
-    IsDeleted, DeletedAt, DeletedByUserId,
-    RowVer
+    DocumentId AS ID, DocumentNumber AS NUM_DOC,
+    SerialType AS SERIALTIPO, FiscalMemoryNumber AS MEMORIA,
+    OperationType AS TIPO_OPERACION,
+    CustomerCode AS CODIGO, CustomerName AS NOMBRE, FiscalId AS RIF,
+    DocumentDate AS FECHA, DueDate AS FECHA_VENCE, DocumentTime AS HORA,
+    CAST(SubTotal AS FLOAT) AS SUBTOTAL, CAST(TaxableAmount AS FLOAT) AS MONTO_GRA,
+    CAST(ExemptAmount AS FLOAT) AS MONTO_EXE, CAST(TaxAmount AS FLOAT) AS IVA,
+    CAST(TaxRate AS FLOAT) AS ALICUOTA, CAST(TotalAmount AS FLOAT) AS TOTAL,
+    CAST(DiscountAmount AS FLOAT) AS DESCUENTO,
+    IsVoided AS ANULADA, IsPaid AS CANCELADA, IsInvoiced AS FACTURADA, IsDelivered AS ENTREGADA,
+    OriginDocumentNumber AS DOC_ORIGEN, OriginDocumentType AS TIPO_DOC_ORIGEN,
+    ControlNumber AS NUM_CONTROL, IsLegal AS LEGAL, IsPrinted AS IMPRESA,
+    Notes AS OBSERV, Concept AS CONCEPTO, PaymentTerms AS TERMINOS, ShipToAddress AS DESPACHAR,
+    SellerCode AS VENDEDOR, DepartmentCode AS DEPARTAMENTO, LocationCode AS LOCACION,
+    CurrencyCode AS MONEDA, CAST(ExchangeRate AS FLOAT) AS TASA_CAMBIO,
+    UserCode AS COD_USUARIO, ReportDate AS FECHA_REPORTE, HostName AS COMPUTER,
+    VehiclePlate AS PLACAS, Mileage AS KILOMETROS, CAST(TollAmount AS FLOAT) AS PEAJE,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId, RowVer
 FROM ar.SalesDocument;
 
 GO
@@ -222,32 +143,21 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- --- dbo.DocumentosVentaDetalle ---
 CREATE VIEW dbo.DocumentosVentaDetalle AS
 SELECT
-    LineId                             AS ID,
-    DocumentNumber                     AS NUM_DOC,
-    OperationType                      AS TIPO_OPERACION,
-    LineNumber                         AS RENGLON,
-    ProductCode                        AS COD_SERV,
-    Description                        AS DESCRIPCION,
-    AlternateCode                      AS COD_ALTERNO,
-    CAST(Quantity       AS FLOAT)      AS CANTIDAD,
-    CAST(UnitPrice      AS FLOAT)      AS PRECIO,
-    CAST(DiscountedPrice AS FLOAT)     AS PRECIO_DESCUENTO,
-    CAST(UnitCost       AS FLOAT)      AS COSTO,
-    CAST(SubTotal       AS FLOAT)      AS SUBTOTAL,
-    CAST(DiscountAmount AS FLOAT)      AS DESCUENTO,
-    CAST(TotalAmount    AS FLOAT)      AS TOTAL,
-    CAST(TaxRate        AS FLOAT)      AS ALICUOTA,
-    CAST(TaxAmount      AS FLOAT)      AS MONTO_IVA,
-    IsVoided                           AS ANULADA,
-    RelatedRef                         AS RELACIONADA,
-    UserCode                           AS CO_USUARIO,
-    LineDate                           AS FECHA,
-    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
-    IsDeleted, DeletedAt, DeletedByUserId,
-    RowVer
+    LineId AS ID, DocumentNumber AS NUM_DOC,
+    SerialType AS SERIALTIPO, FiscalMemoryNumber AS MEMORIA,
+    OperationType AS TIPO_OPERACION,
+    LineNumber AS RENGLON, ProductCode AS COD_SERV, Description AS DESCRIPCION,
+    AlternateCode AS COD_ALTERNO,
+    CAST(Quantity AS FLOAT) AS CANTIDAD, CAST(UnitPrice AS FLOAT) AS PRECIO,
+    CAST(DiscountedPrice AS FLOAT) AS PRECIO_DESCUENTO, CAST(UnitCost AS FLOAT) AS COSTO,
+    CAST(SubTotal AS FLOAT) AS SUBTOTAL, CAST(DiscountAmount AS FLOAT) AS DESCUENTO,
+    CAST(TotalAmount AS FLOAT) AS TOTAL, CAST(TaxRate AS FLOAT) AS ALICUOTA,
+    CAST(TaxAmount AS FLOAT) AS MONTO_IVA,
+    IsVoided AS ANULADA, RelatedRef AS RELACIONADA,
+    UserCode AS CO_USUARIO, LineDate AS FECHA,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId, RowVer
 FROM ar.SalesDocumentLine;
 
 GO
@@ -260,25 +170,17 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- --- dbo.DocumentosVentaPago ---
 CREATE VIEW dbo.DocumentosVentaPago AS
 SELECT
-    PaymentId                          AS ID,
-    DocumentNumber                     AS NUM_DOC,
-    OperationType                      AS TIPO_OPERACION,
-    PaymentMethod                      AS TIPO_PAGO,
-    BankCode                           AS BANCO,
-    PaymentNumber                      AS NUMERO,
-    CAST(Amount         AS FLOAT)      AS MONTO,
-    CAST(AmountBs       AS FLOAT)      AS MONTO_BS,
-    CAST(ExchangeRate   AS FLOAT)      AS TASA_CAMBIO,
-    PaymentDate                        AS FECHA,
-    DueDate                            AS FECHA_VENCE,
-    ReferenceNumber                    AS REFERENCIA,
-    UserCode                           AS CO_USUARIO,
-    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId,
-    IsDeleted, DeletedAt, DeletedByUserId,
-    RowVer
+    PaymentId AS ID, DocumentNumber AS NUM_DOC,
+    SerialType AS SERIALTIPO, FiscalMemoryNumber AS MEMORIA,
+    OperationType AS TIPO_OPERACION,
+    PaymentMethod AS TIPO_PAGO, BankCode AS BANCO, PaymentNumber AS NUMERO,
+    CAST(Amount AS FLOAT) AS MONTO, CAST(AmountBs AS FLOAT) AS MONTO_BS,
+    CAST(ExchangeRate AS FLOAT) AS TASA_CAMBIO,
+    PaymentDate AS FECHA, DueDate AS FECHA_VENCE, ReferenceNumber AS REFERENCIA,
+    UserCode AS CO_USUARIO,
+    CreatedAt, UpdatedAt, CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId, RowVer
 FROM ar.SalesDocumentPayment;
 
 GO
@@ -558,43 +460,40 @@ GO
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE VIEW [doc].[PurchaseDocument]
-AS
+
+CREATE VIEW doc.PurchaseDocument AS
 SELECT
-  dc.[ID] AS [DocumentId],
-  dc.[NUM_DOC] AS [DocumentNumber],
-  dc.[SERIALTIPO] AS [SerialType],
-  dc.[TIPO_OPERACION] AS [DocumentType],
-  dc.[COD_PROVEEDOR] AS [SupplierCode],
-  dc.[NOMBRE] AS [SupplierName],
-  dc.[RIF] AS [FiscalId],
-  dc.[FECHA] AS [IssueDate],
-  dc.[FECHA_VENCE] AS [DueDate],
-  dc.[SUBTOTAL] AS [Subtotal],
-  dc.[MONTO_GRA] AS [TaxableAmount],
-  dc.[MONTO_EXE] AS [ExemptAmount],
-  dc.[IVA] AS [TaxAmount],
-  dc.[ALICUOTA] AS [TaxRate],
-  dc.[TOTAL] AS [TotalAmount],
-  dc.[DESCUENTO] AS [DiscountAmount],
-  dc.[ANULADA] AS [IsVoided],
-  dc.[CANCELADA] AS [IsCanceled],
-  dc.[DOC_ORIGEN] AS [SourceDocumentNumber],
-  dc.[NUM_CONTROL] AS [ControlNumber],
-  dc.[OBSERV] AS [Notes],
-  dc.[CONCEPTO] AS [Concept],
-  dc.[MONEDA] AS [CurrencyCode],
-  dc.[TASA_CAMBIO] AS [ExchangeRate],
-  dc.[COD_USUARIO] AS [LegacyUserCode],
-  dc.[CreatedAt],
-  dc.[UpdatedAt],
-  dc.[CreatedByUserId],
-  dc.[UpdatedByUserId],
-  dc.[IsDeleted],
-  dc.[DeletedAt],
-  dc.[DeletedByUserId],
-  dc.[RowVer]
-FROM [dbo].[DocumentosCompra] dc;
+    dc.ID AS DocumentId, dc.NUM_DOC AS DocumentNumber,
+    dc.SERIALTIPO AS SerialType, dc.MEMORIA AS FiscalMemoryNumber,
+    dc.TIPO_OPERACION AS DocumentType,
+    dc.COD_PROVEEDOR AS SupplierCode, dc.NOMBRE AS SupplierName, dc.RIF AS FiscalId,
+    dc.FECHA AS IssueDate, dc.FECHA_VENCE AS DueDate,
+    dc.FECHA_RECIBO AS ReceiptDate, dc.FECHA_PAGO AS PaymentDate,
+    dc.HORA AS DocumentTime,
+    dc.SUBTOTAL AS SubTotal, dc.MONTO_GRA AS TaxableAmount, dc.MONTO_EXE AS ExemptAmount,
+    dc.IVA AS TaxAmount, dc.ALICUOTA AS TaxRate, dc.TOTAL AS TotalAmount,
+    dc.EXENTO AS ExemptTotal, dc.DESCUENTO AS DiscountAmount,
+    dc.ANULADA AS IsVoided, dc.CANCELADA AS IsCanceled,
+    dc.CANCELADA AS IsPaid,
+    dc.RECIBIDA AS IsReceived,
+    dc.LEGAL AS IsLegal,
+    dc.DOC_ORIGEN AS OriginDocumentNumber,
+    dc.NUM_CONTROL AS ControlNumber,
+    dc.NRO_COMPROBANTE AS VoucherNumber, dc.FECHA_COMPROBANTE AS VoucherDate,
+    dc.IVA_RETENIDO AS RetainedTax,
+    dc.ISLR AS IsrCode, dc.MONTO_ISLR AS IsrAmount,
+    dc.CODIGO_ISLR AS IsrSubjectCode, dc.SUJETO_ISLR AS IsrSubjectAmount,
+    dc.TASA_RETENCION AS RetentionRate,
+    dc.IMPORTACION AS ImportAmount, dc.IVA_IMPORT AS ImportTax, dc.BASE_IMPORT AS ImportBase,
+    dc.FLETE AS FreightAmount,
+    dc.OBSERV AS Notes, dc.CONCEPTO AS Concept,
+    dc.PEDIDO AS OrderNumber, dc.RECIBIDO AS ReceivedBy, dc.ALMACEN AS WarehouseCode,
+    dc.MONEDA AS CurrencyCode, dc.TASA_CAMBIO AS ExchangeRate, dc.PRECIO_DOLLAR AS UsdAmount,
+    dc.COD_USUARIO AS UserCode, dc.CO_USUARIO AS ShortUserCode,
+    dc.FECHA_REPORTE AS ReportDate, dc.COMPUTER AS HostName,
+    dc.CreatedAt, dc.UpdatedAt, dc.CreatedByUserId, dc.UpdatedByUserId,
+    dc.IsDeleted, dc.DeletedAt, dc.DeletedByUserId, dc.RowVer
+FROM dbo.DocumentosCompra dc;
 
 GO
  
@@ -605,33 +504,20 @@ GO
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE VIEW [doc].[PurchaseDocumentLine]
-AS
+
+CREATE VIEW doc.PurchaseDocumentLine AS
 SELECT
-  d.[ID] AS [LineId],
-  d.[NUM_DOC] AS [DocumentNumber],
-  d.[TIPO_OPERACION] AS [DocumentType],
-  d.[RENGLON] AS [LineNumber],
-  d.[COD_SERV] AS [ProductCode],
-  d.[DESCRIPCION] AS [Description],
-  d.[CANTIDAD] AS [Quantity],
-  d.[PRECIO] AS [UnitPrice],
-  d.[COSTO] AS [UnitCost],
-  d.[SUBTOTAL] AS [Subtotal],
-  d.[DESCUENTO] AS [DiscountAmount],
-  d.[TOTAL] AS [LineTotal],
-  d.[ALICUOTA] AS [TaxRate],
-  d.[MONTO_IVA] AS [TaxAmount],
-  d.[ANULADA] AS [IsVoided],
-  d.[CreatedAt],
-  d.[UpdatedAt],
-  d.[CreatedByUserId],
-  d.[UpdatedByUserId],
-  d.[IsDeleted],
-  d.[DeletedAt],
-  d.[DeletedByUserId],
-  d.[RowVer]
-FROM [dbo].[DocumentosCompraDetalle] d;
+    d.ID AS LineId, d.NUM_DOC AS DocumentNumber,
+    d.SERIALTIPO AS SerialType, d.MEMORIA AS FiscalMemoryNumber,
+    d.TIPO_OPERACION AS DocumentType,
+    d.RENGLON AS LineNumber, d.COD_SERV AS ProductCode, d.DESCRIPCION AS Description,
+    d.CANTIDAD AS Quantity, d.PRECIO AS UnitPrice, d.COSTO AS UnitCost,
+    d.SUBTOTAL AS SubTotal, d.DESCUENTO AS DiscountAmount, d.TOTAL AS TotalAmount,
+    d.ALICUOTA AS TaxRate, d.MONTO_IVA AS TaxAmount, d.ANULADA AS IsVoided,
+    d.CO_USUARIO AS UserCode, d.FECHA AS LineDate,
+    d.CreatedAt, d.UpdatedAt, d.CreatedByUserId, d.UpdatedByUserId,
+    d.IsDeleted, d.DeletedAt, d.DeletedByUserId, d.RowVer
+FROM dbo.DocumentosCompraDetalle d;
 
 GO
  
@@ -642,28 +528,19 @@ GO
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE VIEW [doc].[PurchaseDocumentPayment]
-AS
+
+CREATE VIEW doc.PurchaseDocumentPayment AS
 SELECT
-  p.[ID] AS [PaymentId],
-  p.[NUM_DOC] AS [DocumentNumber],
-  p.[TIPO_OPERACION] AS [DocumentType],
-  p.[TIPO_PAGO] AS [PaymentType],
-  p.[BANCO] AS [BankCode],
-  p.[NUMERO] AS [ReferenceNumber],
-  p.[MONTO] AS [Amount],
-  p.[FECHA] AS [ApplyDate],
-  p.[FECHA_VENCE] AS [DueDate],
-  p.[REFERENCIA] AS [PaymentReference],
-  p.[CreatedAt],
-  p.[UpdatedAt],
-  p.[CreatedByUserId],
-  p.[UpdatedByUserId],
-  p.[IsDeleted],
-  p.[DeletedAt],
-  p.[DeletedByUserId],
-  p.[RowVer]
-FROM [dbo].[DocumentosCompraPago] p;
+    p.ID AS PaymentId, p.NUM_DOC AS DocumentNumber,
+    p.SERIALTIPO AS SerialType, p.MEMORIA AS FiscalMemoryNumber,
+    p.TIPO_OPERACION AS DocumentType,
+    p.TIPO_PAGO AS PaymentMethod, p.BANCO AS BankCode, p.NUMERO AS PaymentNumber,
+    p.MONTO AS Amount, p.FECHA AS PaymentDate, p.FECHA_VENCE AS DueDate,
+    p.REFERENCIA AS ReferenceNumber,
+    p.CO_USUARIO AS UserCode,
+    p.CreatedAt, p.UpdatedAt, p.CreatedByUserId, p.UpdatedByUserId,
+    p.IsDeleted, p.DeletedAt, p.DeletedByUserId, p.RowVer
+FROM dbo.DocumentosCompraPago p;
 
 GO
  
@@ -674,46 +551,23 @@ GO
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE VIEW [doc].[SalesDocument]
-AS
+
+CREATE VIEW doc.SalesDocument AS
 SELECT
-  dv.[ID] AS [DocumentId],
-  dv.[NUM_DOC] AS [DocumentNumber],
-  dv.[SERIALTIPO] AS [SerialType],
-  dv.[TIPO_OPERACION] AS [DocumentType],
-  dv.[CODIGO] AS [CustomerCode],
-  dv.[NOMBRE] AS [CustomerName],
-  dv.[RIF] AS [FiscalId],
-  dv.[FECHA] AS [IssueDate],
-  dv.[FECHA_VENCE] AS [DueDate],
-  dv.[SUBTOTAL] AS [Subtotal],
-  dv.[MONTO_GRA] AS [TaxableAmount],
-  dv.[MONTO_EXE] AS [ExemptAmount],
-  dv.[IVA] AS [TaxAmount],
-  dv.[ALICUOTA] AS [TaxRate],
-  dv.[TOTAL] AS [TotalAmount],
-  dv.[DESCUENTO] AS [DiscountAmount],
-  dv.[ANULADA] AS [IsVoided],
-  dv.[CANCELADA] AS [IsCanceled],
-  dv.[FACTURADA] AS [IsInvoiced],
-  dv.[ENTREGADA] AS [IsDelivered],
-  dv.[DOC_ORIGEN] AS [SourceDocumentNumber],
-  dv.[TIPO_DOC_ORIGEN] AS [SourceDocumentType],
-  dv.[NUM_CONTROL] AS [ControlNumber],
-  dv.[OBSERV] AS [Notes],
-  dv.[CONCEPTO] AS [Concept],
-  dv.[MONEDA] AS [CurrencyCode],
-  dv.[TASA_CAMBIO] AS [ExchangeRate],
-  dv.[COD_USUARIO] AS [LegacyUserCode],
-  dv.[CreatedAt],
-  dv.[UpdatedAt],
-  dv.[CreatedByUserId],
-  dv.[UpdatedByUserId],
-  dv.[IsDeleted],
-  dv.[DeletedAt],
-  dv.[DeletedByUserId],
-  dv.[RowVer]
-FROM [dbo].[DocumentosVenta] dv;
+    dv.ID, dv.NUM_DOC AS DocumentNumber, dv.SERIALTIPO AS SerialType,
+    dv.MEMORIA AS FiscalMemoryNumber, dv.TIPO_OPERACION AS OperationType,
+    dv.CODIGO AS CustomerCode, dv.NOMBRE AS CustomerName, dv.RIF AS FiscalId,
+    dv.FECHA AS IssueDate, dv.FECHA_VENCE AS DueDate, dv.HORA AS DocumentTime,
+    dv.SUBTOTAL AS Subtotal, dv.MONTO_GRA AS TaxableAmount, dv.MONTO_EXE AS ExemptAmount,
+    dv.IVA AS TaxAmount, dv.ALICUOTA AS TaxRate, dv.TOTAL AS TotalAmount,
+    dv.DESCUENTO AS DiscountAmount, dv.ANULADA AS IsVoided, dv.CANCELADA AS IsCanceled,
+    dv.FACTURADA AS IsInvoiced, dv.ENTREGADA AS IsDelivered,
+    dv.DOC_ORIGEN AS SourceDocumentNumber, dv.TIPO_DOC_ORIGEN AS SourceDocumentType,
+    dv.NUM_CONTROL AS ControlNumber, dv.OBSERV AS Notes, dv.CONCEPTO AS Concept,
+    dv.MONEDA AS CurrencyCode, dv.TASA_CAMBIO AS ExchangeRate, dv.COD_USUARIO AS LegacyUserCode,
+    dv.CreatedAt, dv.UpdatedAt, dv.CreatedByUserId, dv.UpdatedByUserId,
+    dv.IsDeleted, dv.DeletedAt, dv.DeletedByUserId, dv.RowVer
+FROM dbo.DocumentosVenta dv;
 
 GO
  
@@ -724,35 +578,20 @@ GO
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE VIEW [doc].[SalesDocumentLine]
-AS
+
+CREATE VIEW doc.SalesDocumentLine AS
 SELECT
-  d.[ID] AS [LineId],
-  d.[NUM_DOC] AS [DocumentNumber],
-  d.[TIPO_OPERACION] AS [DocumentType],
-  d.[RENGLON] AS [LineNumber],
-  d.[COD_SERV] AS [ProductCode],
-  d.[DESCRIPCION] AS [Description],
-  d.[COD_ALTERNO] AS [AlternateCode],
-  d.[CANTIDAD] AS [Quantity],
-  d.[PRECIO] AS [UnitPrice],
-  d.[PRECIO_DESCUENTO] AS [DiscountUnitPrice],
-  d.[COSTO] AS [UnitCost],
-  d.[SUBTOTAL] AS [Subtotal],
-  d.[DESCUENTO] AS [DiscountAmount],
-  d.[TOTAL] AS [LineTotal],
-  d.[ALICUOTA] AS [TaxRate],
-  d.[MONTO_IVA] AS [TaxAmount],
-  d.[ANULADA] AS [IsVoided],
-  d.[CreatedAt],
-  d.[UpdatedAt],
-  d.[CreatedByUserId],
-  d.[UpdatedByUserId],
-  d.[IsDeleted],
-  d.[DeletedAt],
-  d.[DeletedByUserId],
-  d.[RowVer]
-FROM [dbo].[DocumentosVentaDetalle] d;
+    d.ID AS LineId, d.NUM_DOC AS DocumentNumber,
+    d.SERIALTIPO AS SerialType, d.MEMORIA AS FiscalMemoryNumber,
+    d.TIPO_OPERACION AS DocumentType,
+    d.RENGLON AS LineNumber, d.COD_SERV AS ProductCode, d.DESCRIPCION AS Description,
+    d.COD_ALTERNO AS AlternateCode, d.CANTIDAD AS Quantity, d.PRECIO AS UnitPrice,
+    d.PRECIO_DESCUENTO AS DiscountUnitPrice, d.COSTO AS UnitCost,
+    d.SUBTOTAL AS Subtotal, d.DESCUENTO AS DiscountAmount, d.TOTAL AS LineTotal,
+    d.ALICUOTA AS TaxRate, d.MONTO_IVA AS TaxAmount, d.ANULADA AS IsVoided,
+    d.CreatedAt, d.UpdatedAt, d.CreatedByUserId, d.UpdatedByUserId,
+    d.IsDeleted, d.DeletedAt, d.DeletedByUserId, d.RowVer
+FROM dbo.DocumentosVentaDetalle d;
 
 GO
  
@@ -763,30 +602,18 @@ GO
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE VIEW [doc].[SalesDocumentPayment]
-AS
+
+CREATE VIEW doc.SalesDocumentPayment AS
 SELECT
-  p.[ID] AS [PaymentId],
-  p.[NUM_DOC] AS [DocumentNumber],
-  p.[TIPO_OPERACION] AS [DocumentType],
-  p.[TIPO_PAGO] AS [PaymentType],
-  p.[BANCO] AS [BankCode],
-  p.[NUMERO] AS [ReferenceNumber],
-  p.[MONTO] AS [Amount],
-  p.[MONTO_BS] AS [AmountLocal],
-  p.[TASA_CAMBIO] AS [ExchangeRate],
-  p.[FECHA] AS [ApplyDate],
-  p.[FECHA_VENCE] AS [DueDate],
-  p.[REFERENCIA] AS [PaymentReference],
-  p.[CreatedAt],
-  p.[UpdatedAt],
-  p.[CreatedByUserId],
-  p.[UpdatedByUserId],
-  p.[IsDeleted],
-  p.[DeletedAt],
-  p.[DeletedByUserId],
-  p.[RowVer]
-FROM [dbo].[DocumentosVentaPago] p;
+    p.ID AS PaymentId, p.NUM_DOC AS DocumentNumber,
+    p.SERIALTIPO AS SerialType, p.MEMORIA AS FiscalMemoryNumber,
+    p.TIPO_OPERACION AS DocumentType,
+    p.TIPO_PAGO AS PaymentType, p.BANCO AS BankCode, p.NUMERO AS ReferenceNumber,
+    p.MONTO AS Amount, p.MONTO_BS AS AmountLocal, p.TASA_CAMBIO AS ExchangeRate,
+    p.FECHA AS ApplyDate, p.FECHA_VENCE AS DueDate, p.REFERENCIA AS PaymentReference,
+    p.CreatedAt, p.UpdatedAt, p.CreatedByUserId, p.UpdatedByUserId,
+    p.IsDeleted, p.DeletedAt, p.DeletedByUserId, p.RowVer
+FROM dbo.DocumentosVentaPago p;
 
 GO
  

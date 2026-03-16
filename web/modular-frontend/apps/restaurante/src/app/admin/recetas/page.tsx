@@ -23,7 +23,7 @@ import {
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@datqbox/module-admin';
+import { EditableDataGrid } from '@zentto/module-admin';
 import {
     ProductoMenuAdmin,
     RecetaItemAdmin,

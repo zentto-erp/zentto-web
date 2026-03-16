@@ -1,5 +1,5 @@
 'use client';
-import { CajaChicaPage } from '@datqbox/module-bancos';
+import { CajaChicaPage } from '@zentto/module-bancos';
 export default function Page() {
     return <CajaChicaPage />;
 }

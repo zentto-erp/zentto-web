@@ -1,5 +1,5 @@
 {
-  "name": "@datqbox/module-ecommerce",
+  "name": "@zentto/module-ecommerce",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
@@ -11,7 +11,7 @@
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
-    "@datqbox/shared-ui": "*",
+    "@zentto/shared-ui": "*",
     "@mui/material": "^6.5.0",
     "@mui/icons-material": "^6.5.0",
     "@mui/x-data-grid": "^8.5.0",

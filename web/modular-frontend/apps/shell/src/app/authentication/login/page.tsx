@@ -3,8 +3,8 @@
 import { Box, Card, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import React from 'react';
-import { AuthLogin } from '@datqbox/shared-auth';
-import { Logo } from '@datqbox/shared-ui';
+import { AuthLogin } from '@zentto/shared-auth';
+import { Logo } from '@zentto/shared-ui';
 
 export default function LoginPage() {
   return (

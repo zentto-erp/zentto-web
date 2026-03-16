@@ -1,3 +1,3 @@
 'use client';
-import { AbonosTable } from '@datqbox/module-admin';
+import { AbonosTable } from '@zentto/module-admin';
 export default function Page() { return <AbonosTable />; }

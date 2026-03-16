@@ -1,8 +1,8 @@
 // app/(dashboard)/pagos/page.tsx
-import { PagosTable } from "@datqbox/module-admin";
+import { PagosTable } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Pagos | DatqBox",
+  title: "Pagos | Zentto",
   description: "Registro de pagos",
 };
 

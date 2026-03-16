@@ -26,7 +26,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { useInventarioList } from "../hooks/useInventario";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { debounce } from "lodash";
 
 interface EtiquetaItem {

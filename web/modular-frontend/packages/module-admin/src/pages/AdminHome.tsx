@@ -22,8 +22,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useFacturasList } from "../hooks/useFacturas";
 import { useClientesList } from "../hooks/useClientes";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 
 export default function AdminHome() {
   const facturas = useFacturasList({ limit: 5 });

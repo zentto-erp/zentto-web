@@ -14,8 +14,8 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 import {
   useBatchGrid,
   useBatchBulkUpdate,

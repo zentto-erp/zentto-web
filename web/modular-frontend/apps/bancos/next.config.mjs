@@ -2,7 +2,7 @@
 const nextConfig = {
     reactStrictMode: true,
     basePath: '/bancos',
-    transpilePackages: ['@datqbox/shared-ui', '@datqbox/shared-auth', '@datqbox/shared-api'],
+    transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api'],
 };
 
 export default nextConfig;

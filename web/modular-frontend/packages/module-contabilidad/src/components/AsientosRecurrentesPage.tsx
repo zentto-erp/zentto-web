@@ -31,7 +31,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useRecurrentesList,
   useCreateRecurrente,

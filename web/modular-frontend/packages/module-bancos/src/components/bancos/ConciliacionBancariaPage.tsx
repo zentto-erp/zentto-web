@@ -27,9 +27,9 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockIcon from "@mui/icons-material/Lock";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useRouter } from "next/navigation";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { useToast } from "@datqbox/shared-ui";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { useToast } from "@zentto/shared-ui";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,

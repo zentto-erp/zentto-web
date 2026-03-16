@@ -6,8 +6,8 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider, useHydrateModuleSettings } from '@datqbox/shared-api';
+import { AuthProvider, useAuth } from '@zentto/shared-auth';
+import { QueryProvider, useHydrateModuleSettings } from '@zentto/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
@@ -15,8 +15,8 @@ import {
     LocalizationProviderWrapper,
     theme,
     OdooLayout
-} from '@datqbox/shared-ui';
-import '@datqbox/shared-ui/globals.css';
+} from '@zentto/shared-ui';
+import '@zentto/shared-ui/globals.css';
 
 import { buildNav } from './nav';
 
@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" suppressHydrationWarning>
             <head>
-                <title>Bancos e Inst. - DatqBox App</title>
+                <title>Bancos e Inst. - Zentto App</title>
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>

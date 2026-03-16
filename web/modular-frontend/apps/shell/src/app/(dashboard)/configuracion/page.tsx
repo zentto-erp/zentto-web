@@ -25,15 +25,15 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaymentsIcon from '@mui/icons-material/Payments';
 
-import { useAuth } from '@datqbox/shared-auth';
-import { apiPut, useAllSettings } from '@datqbox/shared-api';
+import { useAuth } from '@zentto/shared-auth';
+import { apiPut, useAllSettings } from '@zentto/shared-api';
 import {
   PaymentSettingsPanel,
   SettingsInputGroup,
   SettingsItem,
   SettingsLayout,
   SettingsSection,
-} from '@datqbox/shared-ui';
+} from '@zentto/shared-ui';
 
 type LocalSettings = Record<string, Record<string, any>>;
 

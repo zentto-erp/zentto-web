@@ -257,12 +257,9 @@ export async function crearAjuste(
   );
 }
 
-export async function generarDepreciacion(periodo: string, _centroCosto?: string, _codUsuario?: string) {
-  return {
-    ok: true,
-    resultado: 1,
-    mensaje: `Depreciacion automatica no implementada en modelo canonico (${periodo})`
-  };
+export async function generarDepreciacion(periodo: string, centroCosto?: string, codUsuario?: string) {
+  const { calculateDepreciation } = await import("./activos-fijos.service.js");
+  return calculateDepreciation(periodo, false, centroCosto, codUsuario);
 }
 
 export async function libroMayor(fechaDesde: string, fechaHasta: string) {

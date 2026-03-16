@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiDelete, apiGet, apiPost, apiPut } from "@datqbox/shared-api";
+import { apiDelete, apiGet, apiPost, apiPut } from "@zentto/shared-api";
 
 const QUERY_KEY = "bancos-aux";
 const API_BASE = "/api/v1/bancos";

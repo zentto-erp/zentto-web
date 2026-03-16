@@ -1,4 +1,4 @@
-import { ConciliacionWizard } from "@datqbox/module-bancos";
+import { ConciliacionWizard } from "@zentto/module-bancos";
 
 export const metadata = {
   title: "Conciliacion Bancaria",

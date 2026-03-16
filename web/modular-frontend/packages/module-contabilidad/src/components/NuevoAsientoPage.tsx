@@ -34,8 +34,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import ArticleIcon from "@mui/icons-material/Article";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { useRouter } from "next/navigation";
 import { useCreateAsiento, usePlanCuentas } from "../hooks/useContabilidad";
 

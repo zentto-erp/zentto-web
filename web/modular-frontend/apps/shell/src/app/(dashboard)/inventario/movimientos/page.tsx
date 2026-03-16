@@ -1,6 +1,6 @@
 "use client";
 
-import { MovimientosTable } from "@datqbox/module-inventario";
+import { MovimientosTable } from "@zentto/module-inventario";
 
 export default function MovimientosPage() {
   return <MovimientosTable />;

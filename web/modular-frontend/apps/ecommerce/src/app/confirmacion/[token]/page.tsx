@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Box, Typography, Paper, Button, CircularProgress, Divider, List, ListItem, ListItemText, Alert } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useOrderByToken } from '@datqbox/module-ecommerce';
+import { useOrderByToken } from '@zentto/module-ecommerce';
 
 export default function ConfirmacionPage() {
     const { token } = useParams<{ token: string }>();

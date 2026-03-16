@@ -62,3 +62,41 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_beneficios.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_obligaciones_legales.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_salud_ocupacional.sql
+
+-- ====================================================================
+-- Nómina: Sistema de cálculo, Constantes, Convenios, Documentos Legales
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_nomina_sistema.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_nomina_calculo.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_nomina_constantes_venezuela.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_nomina_constantes_convenios.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_nomina_documentos.sql
+
+-- ====================================================================
+-- Contabilidad Legal: Inflacion, Patrimonio, Plantillas Reportes
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\acct_legal_tables.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_acct_inflation.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_acct_templates.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_acct_equity.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_report_templates.sql
+
+-- ====================================================================
+-- Activos Fijos: Tablas canonicas + Seed categorias
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\create_activos_fijos.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_acct_fixedassets.sql
+
+-- ====================================================================
+-- Gestion Fiscal/Tributaria: Declaraciones, Libros, Retenciones
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\create_fiscal_tributaria.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fiscal_tributaria.sql
+
+-- ====================================================================
+-- Seeds Demo: Datos completos para demos y pruebas
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_contabilidad_demo.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_clientes_documentos.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_finanzas_contabilidad.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_ecommerce_pos.sql

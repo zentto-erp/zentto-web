@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 // ─── Query Keys ──────────────────────────────────────────────
 const QK_PERIODOS = "contabilidad-periodos";
@@ -90,7 +90,7 @@ export interface CreatePresupuestoInput {
 }
 
 // BankStatement, BankStatementLine, BankReconSummary: eliminados.
-// Usar tipos de @datqbox/module-bancos/hooks/useConciliacionBancaria
+// Usar tipos de @zentto/module-bancos/hooks/useConciliacionBancaria
 
 export interface RecurrenteTemplate {
   id: number;
@@ -349,9 +349,9 @@ export function usePresupuestoVarianza(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CONCILIACION BANCARIA: usar hooks de @datqbox/module-bancos
+// CONCILIACION BANCARIA: usar hooks de @zentto/module-bancos
 // Los hooks de conciliación bancaria fueron eliminados de este archivo
-// para evitar duplicación. Importar desde @datqbox/module-bancos:
+// para evitar duplicación. Importar desde @zentto/module-bancos:
 //   useConciliaciones, useCuentasBank, useConciliacionDetalle,
 //   useCrearConciliacion, useImportarExtracto, useConciliarMovimiento,
 //   useGenerarAjuste, useCerrarConciliacion

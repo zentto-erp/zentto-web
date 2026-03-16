@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 import { advancedRouter } from "./routes-advanced.js";
+import { legalRouter } from "./routes-legal.js";
+import { activosFijosRouter } from "./activos-fijos.routes.js";
+import { fiscalTributariaRouter } from "./fiscal-tributaria.routes.js";
 import {
   anularAsiento,
   balanceComprobacion,
@@ -28,6 +31,9 @@ import {
 export const contabilidadRouter = Router();
 
 contabilidadRouter.use("/", advancedRouter);
+contabilidadRouter.use("/", legalRouter);
+contabilidadRouter.use("/activos-fijos", activosFijosRouter);
+contabilidadRouter.use("/fiscal", fiscalTributariaRouter);
 
 const listSchema = z.object({
   fechaDesde: z.string().optional(),

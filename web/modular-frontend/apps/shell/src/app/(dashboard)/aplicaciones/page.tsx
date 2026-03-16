@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@datqbox/shared-auth';
+import { useAuth } from '@zentto/shared-auth';
 import { useRouter } from 'next/navigation';
 
 // Icons
@@ -68,7 +68,7 @@ const CATALOG: StoreApp[] = [
         path: '/contabilidad',
         features: ['Asientos contables', 'Plan de cuentas', 'Mayores automáticos', 'Balances', 'Reportes financieros'],
         version: '2.1.0',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'nomina',
@@ -81,7 +81,7 @@ const CATALOG: StoreApp[] = [
         path: '/nomina',
         features: ['Gestión de empleados', 'Cálculo de nómina', 'Vacaciones', 'Liquidaciones', 'Roles de pago'],
         version: '1.8.5',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'bancos',
@@ -94,7 +94,7 @@ const CATALOG: StoreApp[] = [
         path: '/bancos',
         features: ['Múltiples cuentas', 'Conciliación bancaria', 'Movimientos', 'Reportes', 'Integración contable'],
         version: '1.5.2',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'inventario',
@@ -107,7 +107,7 @@ const CATALOG: StoreApp[] = [
         path: '/inventario',
         features: ['Múltiples bodegas', 'Kardex valorizado', 'Movimientos', 'Alertas de stock', 'Reportes'],
         version: '3.0.1',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'ventas',
@@ -120,7 +120,7 @@ const CATALOG: StoreApp[] = [
         path: '/ventas',
         features: ['Facturación', 'Cuentas por cobrar', 'Abonos', 'Notas crédito/débito', 'Clientes'],
         version: '2.5.0',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'compras',
@@ -133,7 +133,7 @@ const CATALOG: StoreApp[] = [
         path: '/compras',
         features: ['Órdenes de compra', 'Recepciones', 'Cuentas por pagar', 'Proveedores', 'Reportes'],
         version: '2.0.3',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'pos',
@@ -146,7 +146,7 @@ const CATALOG: StoreApp[] = [
         path: '/pos',
         features: ['Interfaz táctil', 'Múltiples formas de pago', 'Cierre de caja', 'Reportes Z', 'Facturación'],
         version: '1.9.0',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'restaurante',
@@ -159,7 +159,7 @@ const CATALOG: StoreApp[] = [
         path: '/restaurante',
         features: ['Mapa de mesas', 'Salones múltiples', 'Comandas cocina', 'Propinas', 'Integración POS'],
         version: '1.2.0',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'ecommerce',
@@ -172,7 +172,7 @@ const CATALOG: StoreApp[] = [
         path: '/ecommerce',
         features: ['Tienda online', 'B2B/B2C', 'Sincronización inventario', 'Pagos en línea', 'Envíos'],
         version: '1.0.5',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
     {
         id: 'auditoria',
@@ -185,7 +185,7 @@ const CATALOG: StoreApp[] = [
         path: '/auditoria',
         features: ['Libros legales', 'Declaraciones', 'Reportes fiscales', 'Auditorías', 'Compliance'],
         version: '1.3.2',
-        author: 'DatqBox'
+        author: 'Zentto'
     },
 ];
 

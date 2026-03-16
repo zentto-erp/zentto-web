@@ -26,8 +26,8 @@ import {
   useCxpDocumentosPendientes,
   useCxpSaldo
 } from "../hooks/useCxpTx";
-import { useTimezone } from "@datqbox/shared-auth";
-import { toDateOnly, formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly, formatDate } from "@zentto/shared-api";
 
 type SelDoc = CxpDocumentoPendiente & { checked: boolean; montoAplicar: number };
 type FormaPagoLine = { formaPago: string; monto: number; banco?: string; numCheque?: string; fechaVencimiento?: string };

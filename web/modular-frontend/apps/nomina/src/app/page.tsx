@@ -1,5 +1,5 @@
 'use client';
-import { NominaHome } from '@datqbox/module-nomina';
+import { NominaHome } from '@zentto/module-nomina';
 
 export default function Page() {
     return <NominaHome />;

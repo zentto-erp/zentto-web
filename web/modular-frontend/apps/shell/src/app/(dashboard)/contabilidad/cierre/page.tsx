@@ -1,6 +1,6 @@
 "use client";
 
-import { CierreContableWizard } from "@datqbox/module-contabilidad";
+import { CierreContableWizard } from "@zentto/module-contabilidad";
 
 export default function CierreContablePage() {
   return <CierreContableWizard />;

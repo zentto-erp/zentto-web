@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost, apiPut } from "@datqbox/shared-api";
+import { apiGet, apiPost, apiPut } from "@zentto/shared-api";
 
 const QK = "vacaciones-solicitudes";
 const QK_DIAS = "vacaciones-dias-disponibles";

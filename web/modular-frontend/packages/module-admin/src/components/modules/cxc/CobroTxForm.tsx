@@ -19,8 +19,8 @@ import {
   Typography
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import { toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   CxcAplicarCobroPayload,
   CxcDocumentoPendiente,

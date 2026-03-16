@@ -36,7 +36,7 @@ import {
   GridToolbarFilterButton,
   GridToolbarQuickFilter,
 } from '@mui/x-data-grid';
-import { ContextActionHeader } from '@datqbox/shared-ui';
+import { ContextActionHeader } from '@zentto/shared-ui';
 
 export type CatalogField = {
   name: string;

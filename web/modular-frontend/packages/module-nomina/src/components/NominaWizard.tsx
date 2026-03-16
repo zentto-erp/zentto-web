@@ -46,11 +46,11 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { CustomStepper, useToast } from "@datqbox/shared-ui";
-import type { StepDef } from "@datqbox/shared-ui";
-import { EditableDataGrid } from "@datqbox/module-contabilidad";
+import { formatCurrency } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { CustomStepper, useToast } from "@zentto/shared-ui";
+import type { StepDef } from "@zentto/shared-ui";
+import { EditableDataGrid } from "@zentto/module-contabilidad";
 import type { GridColDef } from "@mui/x-data-grid";
 
 import {

@@ -1,8 +1,8 @@
 // app/(dashboard)/articulos/page.tsx
-import { ArticulosTable } from "@datqbox/module-admin";
+import { ArticulosTable } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Artículos | DatqBox",
+  title: "Artículos | Zentto",
   description: "Gestión de artículos",
 };
 

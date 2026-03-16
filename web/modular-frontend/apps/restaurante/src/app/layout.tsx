@@ -4,16 +4,16 @@ import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { SessionProvider } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider, useHydrateLocalizacion } from '@datqbox/shared-api';
+import { AuthProvider, useAuth } from '@zentto/shared-auth';
+import { QueryProvider, useHydrateLocalizacion } from '@zentto/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
     ToastProvider,
     LocalizationProviderWrapper,
     OdooLayout
-} from '@datqbox/shared-ui';
-import '@datqbox/shared-ui/globals.css';
+} from '@zentto/shared-ui';
+import '@zentto/shared-ui/globals.css';
 
 import { buildRestauranteNav } from './nav';
 
@@ -56,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" data-toolpad-color-scheme="light" suppressHydrationWarning>
             <head>
-                <title>Restaurante - DatqBox App</title>
+                <title>Restaurante - Zentto App</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
             </head>
             <body>

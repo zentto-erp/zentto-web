@@ -14,9 +14,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useCuentaPorPagarById, useCreateCuentaPorPagar, useUpdateCuentaPorPagar } from "../hooks/useCuentasPorPagar";
-import { CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO } from "@datqbox/shared-api/types";
-import { useTimezone } from "@datqbox/shared-auth";
-import { toDateOnly } from "@datqbox/shared-api";
+import { CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO } from "@zentto/shared-api/types";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 
 interface CuentaPorPagarFormProps {
   id?: string;

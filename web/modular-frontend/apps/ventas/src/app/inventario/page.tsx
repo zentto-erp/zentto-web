@@ -1,3 +1,3 @@
 'use client';
-import { InventarioTable } from '@datqbox/module-admin';
+import { InventarioTable } from '@zentto/module-admin';
 export default function Page() { return <InventarioTable />; }

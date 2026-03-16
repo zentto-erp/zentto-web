@@ -17,7 +17,7 @@ import {
     CircularProgress,
 } from '@mui/material';
 import { getSession } from 'next-auth/react';
-import { useCountries, type CountryRecord } from '@datqbox/shared-api';
+import { useCountries, type CountryRecord } from '@zentto/shared-api';
 
 export interface LocalizacionConfig {
     pais: string;

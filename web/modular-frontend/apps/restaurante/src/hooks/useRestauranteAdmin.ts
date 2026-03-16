@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiDelete, apiGet, apiPost, apiPut } from '@datqbox/shared-api';
+import { apiDelete, apiGet, apiPost, apiPut } from '@zentto/shared-api';
 
 export interface CategoriaMenu {
     id: number;

@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { useComprasList } from "../hooks/useCompras";
 import { useProveedoresList } from "../hooks/useProveedores";
 import { useCuentasPorPagarList } from "../hooks/useCuentasPorPagar";
-import { brandColors } from "@datqbox/shared-ui";
+import { brandColors } from "@zentto/shared-ui";
 
 export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();

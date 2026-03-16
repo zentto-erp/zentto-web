@@ -2,8 +2,8 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pago, CreatePagoDTO, UpdatePagoDTO, CrudFilter, PaginatedResponse } from "@datqbox/shared-api/types";
-import { apiGet, apiPost, apiPut, apiDelete } from "@datqbox/shared-api";
+import { Pago, CreatePagoDTO, UpdatePagoDTO, CrudFilter, PaginatedResponse } from "@zentto/shared-api/types";
+import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "pagos";
 const API_BASE = "/api/v1/pagos";

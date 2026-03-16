@@ -14,7 +14,7 @@ import {
     ProductGrid,
     CategorySidebar,
     SearchBar,
-} from '@datqbox/module-ecommerce';
+} from '@zentto/module-ecommerce';
 
 interface SidebarFilters {
     category?: string;

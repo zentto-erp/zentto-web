@@ -18,9 +18,9 @@ import {
   MenuItem,
 } from "@mui/material";
 import { usePagoById, useCreatePago, useUpdatePago } from "../../../hooks/usePagos";
-import { CreatePagoDTO, UpdatePagoDTO } from "@datqbox/shared-api/types";
-import { useTimezone } from "@datqbox/shared-auth";
-import { toDateOnly } from "@datqbox/shared-api";
+import { CreatePagoDTO, UpdatePagoDTO } from "@zentto/shared-api/types";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 
 interface PagoFormProps {
   numeroPago?: string;

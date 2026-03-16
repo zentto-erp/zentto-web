@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@datqbox/shared-api";
+import { apiGet, apiPost } from "@zentto/shared-api";
 
 export type CxpDocumentoPendiente = {
   tipoDoc: string;

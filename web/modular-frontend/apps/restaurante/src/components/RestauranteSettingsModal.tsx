@@ -33,13 +33,13 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import { useAuth } from '@datqbox/shared-auth';
+import { useAuth } from '@zentto/shared-auth';
 import {
     apiPut, useModuleSettings, usePosStore,
     useCountries, getCountryDefaults, fetchBcvRates as fetchBcvRatesApi, settingsToLocalizacion,
     type BcvRates,
-} from '@datqbox/shared-api';
-import { PaymentSettingsPanel } from '@datqbox/shared-ui';
+} from '@zentto/shared-api';
+import { PaymentSettingsPanel } from '@zentto/shared-ui';
 
 type Settings = Record<string, unknown>;
 

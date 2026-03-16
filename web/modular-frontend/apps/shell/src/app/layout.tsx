@@ -7,8 +7,8 @@ import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppProvider } from '@toolpad/core/nextjs';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider } from '@datqbox/shared-api';
+import { AuthProvider, useAuth } from '@zentto/shared-auth';
+import { QueryProvider } from '@zentto/shared-api';
 import {
   AppBarWrapper,
   AppTitle,
@@ -16,8 +16,8 @@ import {
   ToastProvider,
   LocalizationProviderWrapper,
   theme,
-} from '@datqbox/shared-ui';
-import '@datqbox/shared-ui/globals.css';
+} from '@zentto/shared-ui';
+import '@zentto/shared-ui/globals.css';
 
 import { buildNavigation } from '../lib/navigation';
 
@@ -72,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        <title>DatqBox Web</title>
+        <title>Zentto</title>
         <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
       </head>
       <body>

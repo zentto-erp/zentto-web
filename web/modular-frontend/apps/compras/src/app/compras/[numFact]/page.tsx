@@ -1,5 +1,5 @@
 'use client';
-import { CompraDetail } from '@datqbox/module-compras';
+import { CompraDetail } from '@zentto/module-compras';
 import { useParams } from 'next/navigation';
 
 export default function Page() {

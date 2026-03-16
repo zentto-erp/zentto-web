@@ -1,3 +1,3 @@
 'use client';
-import { ArticulosTable } from '@datqbox/module-admin';
+import { ArticulosTable } from '@zentto/module-admin';
 export default function Page() { return <ArticulosTable />; }

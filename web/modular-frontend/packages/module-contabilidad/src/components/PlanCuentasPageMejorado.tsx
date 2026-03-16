@@ -38,9 +38,9 @@ import {
   useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
-import { ContextActionHeader } from "@datqbox/shared-ui";
-import { toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 

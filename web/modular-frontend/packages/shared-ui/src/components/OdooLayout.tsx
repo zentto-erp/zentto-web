@@ -168,7 +168,9 @@ export default function OdooLayout({
     const companyLabel = activeCompany
         ? `${activeCompany.companyCode ?? ''}/${activeCompany.branchCode ?? ''} - ${activeCompany.companyName ?? ''}`
         : 'Sin empresa activa';
-    const dbName = process.env.NEXT_PUBLIC_DB_NAME || 'DatqBoxWeb';
+    const dbName = process.env.NEXT_PUBLIC_DB_NAME || 'ZenttoWeb';
+    const shellUrl = process.env.NEXT_PUBLIC_SHELL_URL || 'http://localhost:3000';
+    const goToShell = () => { window.location.href = shellUrl; };
 
     return (
         <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -190,7 +192,7 @@ export default function OdooLayout({
                             width: drawerPaperWidth,
                             boxSizing: 'border-box',
                             borderRight: 'none',
-                            bgcolor: brandColors.dark, /* DatqBox Brand Dark */
+                            bgcolor: brandColors.dark, /* Zentto Brand Dark */
                             color: '#fff',
                             boxShadow: 'none',
                             transition: 'width 0.2s',
@@ -206,7 +208,7 @@ export default function OdooLayout({
                         </Tooltip>
                         {isSidebarOpen && (
                             <Tooltip title="Ir al Inicio">
-                                <Box onClick={() => router.push('/')} sx={{ cursor: 'pointer', ml: 1 }}>
+                                <Box onClick={goToShell} sx={{ cursor: 'pointer', ml: 1 }}>
                                     <AppTitle lightText={true} />
                                 </Box>
                             </Tooltip>
@@ -236,11 +238,11 @@ export default function OdooLayout({
                             {hideSidebar && (
                                 <React.Fragment>
                                     <Tooltip title="Ir al Inicio">
-                                        <IconButton onClick={() => router.push('/')} size="small" sx={{ mr: 2, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                                        <IconButton onClick={goToShell} size="small" sx={{ mr: 2, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                                             <AppsIcon fontSize="large" />
                                         </IconButton>
                                     </Tooltip>
-                                    <Typography variant="h5" color="#fff" onClick={() => router.push('/')} sx={{ fontWeight: 700, letterSpacing: -0.5, cursor: 'pointer' }}>
+                                    <Typography variant="h5" color="#fff" onClick={goToShell} sx={{ fontWeight: 700, letterSpacing: -0.5, cursor: 'pointer' }}>
                                         <AppTitle lightText={true} />
                                     </Typography>
                                 </React.Fragment>
@@ -249,7 +251,7 @@ export default function OdooLayout({
                             {/* Breadcrumbs */}
                             {!hideSidebar && (
                                 <Typography variant="body1" sx={{ ml: { xs: 0, sm: 2 }, color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <span style={{ color: brandColors.accent, cursor: 'pointer', fontWeight: 500 }} onClick={() => router.push('/')}>Home</span>
+                                    <span style={{ color: brandColors.accent, cursor: 'pointer', fontWeight: 500 }} onClick={goToShell}>Home</span>
                                     <span style={{ display: isMobile ? 'none' : 'inline' }}>/</span>
                                     <span style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize', display: isMobile ? 'none' : 'inline' }}>
                                         {(pathname || '').split('/').filter(Boolean).join(' / ') || 'Dashboard'}

@@ -34,7 +34,7 @@ import {
   useCrearSolicitudVacaciones,
   useVacacionSolicitudesList,
 } from "../hooks/useVacacionesSolicitudes";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 
 dayjs.locale("es");
 

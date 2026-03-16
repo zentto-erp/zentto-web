@@ -1,5 +1,5 @@
 'use client';
-import { CuentaPorPagarForm } from '@datqbox/module-compras';
+import { CuentaPorPagarForm } from '@zentto/module-compras';
 
 export default function Page() {
     return <CuentaPorPagarForm />;

@@ -5,6 +5,7 @@ import {
   Box, Paper, Typography, Button, TextField, Stepper, Step, StepLabel,
   Select, MenuItem, FormControl, InputLabel, Switch, FormControlLabel,
   CircularProgress, Alert, Stack, Chip, Divider, LinearProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -16,13 +17,18 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
-import { brandColors } from "@datqbox/shared-ui";
-import { formatCurrency } from "@datqbox/shared-api";
+import DescriptionIcon from "@mui/icons-material/Description";
+import dynamic from "next/dynamic";
+const DocumentViewerModal = dynamic(() => import("./DocumentViewerModal"), { ssr: false });
+import { brandColors } from "@zentto/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useGenerateDraft,
   useBatchSummary,
+  useBatchGrid,
   useApproveDraft,
   useProcessBatch,
+  type BatchGridRow,
 } from "../hooks/useNominaBatch";
 import PayrollBatchGrid from "./PayrollBatchGrid";
 import PayrollPreview from "./PayrollPreview";
@@ -42,6 +48,7 @@ interface Props {
 export default function NominaBatchWizard({ onBack }: Props) {
   const [activeStep, setActiveStep] = useState(0);
   const [batchId, setBatchId] = useState<number | null>(null);
+  const [docEmployee, setDocEmployee] = useState<string | null>(null);
   const [config, setConfig] = useState({
     nomina: "QUINCENAL",
     fechaInicio: "",
@@ -52,8 +59,13 @@ export default function NominaBatchWizard({ onBack }: Props) {
 
   const generateDraft = useGenerateDraft();
   const summary = useBatchSummary(batchId);
+  const batchGrid = useBatchGrid(docEmployee === "__batch__" ? batchId : null);
   const approveDraft = useApproveDraft();
   const processBatch = useProcessBatch();
+
+  const batchEmployees: BatchGridRow[] = Array.isArray((batchGrid.data as any)?.data)
+    ? (batchGrid.data as any).data
+    : Array.isArray(batchGrid.data) ? batchGrid.data : [];
 
   const summaryData = summary.data?.data ?? summary.data ?? null;
 
@@ -365,11 +377,20 @@ export default function NominaBatchWizard({ onBack }: Props) {
                     </Box>
                   )}
                 </Stack>
-                {onBack && (
-                  <Button variant="outlined" onClick={onBack}>
-                    Volver a Nóminas
+                <Stack direction="row" spacing={2} justifyContent="center">
+                  <Button
+                    variant="contained"
+                    startIcon={<DescriptionIcon />}
+                    onClick={() => setDocEmployee("__batch__")}
+                  >
+                    Generar Recibos de Pago
                   </Button>
-                )}
+                  {onBack && (
+                    <Button variant="outlined" onClick={onBack}>
+                      Volver a Nóminas
+                    </Button>
+                  )}
+                </Stack>
               </Box>
             )}
 
@@ -381,6 +402,65 @@ export default function NominaBatchWizard({ onBack }: Props) {
           </Paper>
         )}
       </Box>
+
+      {/* Batch Documents Dialog — lista de empleados para generar recibos */}
+      <Dialog
+        open={docEmployee === "__batch__"}
+        onClose={() => setDocEmployee(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DescriptionIcon color="primary" />
+            <Typography fontWeight={700}>Generar Recibos de Pago</Typography>
+            {batchId && <Chip label={`Lote #${batchId}`} size="small" color="primary" variant="outlined" />}
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {batchGrid.isLoading && <Box textAlign="center" py={3}><CircularProgress /></Box>}
+          {!batchGrid.isLoading && batchEmployees.length === 0 && (
+            <Alert severity="info">No hay empleados en este lote.</Alert>
+          )}
+          <Stack spacing={1}>
+            {batchEmployees.map((emp) => (
+              <Paper key={emp.employeeCode} variant="outlined" sx={{ p: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>{emp.employeeName}</Typography>
+                  <Typography variant="caption" color="text.secondary">{emp.employeeCode}</Typography>
+                </Box>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" color="success.main" fontWeight={600}>
+                    {formatCurrency(emp.totalNeto)}
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<DescriptionIcon />}
+                    onClick={() => setDocEmployee(emp.employeeCode)}
+                  >
+                    Recibo
+                  </Button>
+                </Stack>
+              </Paper>
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDocEmployee(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Individual document viewer */}
+      {docEmployee && docEmployee !== "__batch__" && batchId && (
+        <DocumentViewerModal
+          open={!!docEmployee && docEmployee !== "__batch__"}
+          onClose={() => setDocEmployee("__batch__")}
+          batchId={batchId}
+          employeeCode={docEmployee}
+          documentType="payroll"
+        />
+      )}
 
       {/* Navigation Buttons */}
       {activeStep > 0 && activeStep < 4 && (

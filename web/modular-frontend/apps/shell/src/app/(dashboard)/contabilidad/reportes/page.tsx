@@ -1,6 +1,6 @@
 "use client";
 
-import { ReportesAvanzadosPage } from "@datqbox/module-contabilidad";
+import { ReportesAvanzadosPage } from "@zentto/module-contabilidad";
 
 export default function ReportesPage() {
   return <ReportesAvanzadosPage />;

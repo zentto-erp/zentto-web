@@ -19,8 +19,8 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import { useAuth } from '@datqbox/shared-auth';
-import { apiGet, apiPost, apiPut } from '@datqbox/shared-api';
+import { useAuth } from '@zentto/shared-auth';
+import { apiGet, apiPost, apiPut } from '@zentto/shared-api';
 import dynamic from 'next/dynamic';
 
 const EditIcon = dynamic(() => import('@mui/icons-material/Edit'), { ssr: false });
@@ -39,7 +39,7 @@ const AVATAR_COLORS = [
     '#1565c0', '#00695c',
 ];
 
-const AVATAR_STORAGE_KEY = 'datqbox_avatar_color';
+const AVATAR_STORAGE_KEY = 'zentto_avatar_color';
 
 type ProfileData = {
     Cod_Usuario?: string;

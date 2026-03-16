@@ -1,7 +1,7 @@
-import { PagoTxForm } from "@datqbox/module-admin";
+import { PagoTxForm } from "@zentto/module-admin";
 
 export const metadata = {
-  title: "Pago CxP TX | DatqBox",
+  title: "Pago CxP TX | Zentto",
   description: "Aplicar pago transaccional para cuentas por pagar"
 };
 

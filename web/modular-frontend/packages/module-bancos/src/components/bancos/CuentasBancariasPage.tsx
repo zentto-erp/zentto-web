@@ -11,9 +11,9 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/es";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { ContextActionHeader } from "@datqbox/shared-ui";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
 
 const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "default"> = {

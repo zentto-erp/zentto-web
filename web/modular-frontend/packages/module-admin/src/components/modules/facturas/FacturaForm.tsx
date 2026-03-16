@@ -25,9 +25,9 @@ import {
 } from "@mui/material";
 import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
 import { useFacturaById, useCreateFactura, useUpdateFactura } from "../../../hooks/useFacturas";
-import { Factura, CreateFacturaDTO, UpdateFacturaDTO } from "@datqbox/shared-api/types";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { Factura, CreateFacturaDTO, UpdateFacturaDTO } from "@zentto/shared-api/types";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 interface FacturaFormProps {
   numeroFactura?: string;

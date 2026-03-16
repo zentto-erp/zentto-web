@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { StoreFront } from '@datqbox/module-ecommerce';
+import { StoreFront } from '@zentto/module-ecommerce';
 
 export default function Page() {
     const router = useRouter();

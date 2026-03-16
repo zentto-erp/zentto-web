@@ -1,5 +1,5 @@
 'use client';
-import { ComitesPage } from '@datqbox/module-nomina';
+import { ComitesPage } from '@zentto/module-nomina';
 
 export default function Page() {
     return <ComitesPage />;

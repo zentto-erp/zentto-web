@@ -2,8 +2,8 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiDelete, apiGet, apiPost, apiPut } from "@datqbox/shared-api";
-import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO, ProveedorFilter, PaginatedResponse } from "@datqbox/shared-api/types";
+import { apiDelete, apiGet, apiPost, apiPut } from "@zentto/shared-api";
+import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO, ProveedorFilter, PaginatedResponse } from "@zentto/shared-api/types";
 
 type RawRow = Record<string, unknown>;
 

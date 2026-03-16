@@ -5,7 +5,7 @@ param (
     [string]$iconName
 )
 
-$baseDir = "D:\DatqBoxWorkspace\DatqBoxWeb\web\modular-frontend\apps\$appName"
+$baseDir = "D:\ZenttoWorkspace\ZenttoWeb\web\modular-frontend\apps\$appName"
 $srcDir = "$baseDir\src\app"
 
 if (-Not (Test-Path -Path $baseDir)) {
@@ -15,7 +15,7 @@ if (-Not (Test-Path -Path $baseDir)) {
 
 $packageJson = @"
 {
-    "name": "@datqbox/$appName",
+    "name": "@zentto/$appName",
     "version": "0.1.0",
     "private": true,
     "scripts": {
@@ -25,9 +25,9 @@ $packageJson = @"
         "lint": "next lint"
     },
     "dependencies": {
-        "@datqbox/shared-api": "workspace:*",
-        "@datqbox/shared-auth": "workspace:*",
-        "@datqbox/shared-ui": "workspace:*",
+        "@zentto/shared-api": "workspace:*",
+        "@zentto/shared-auth": "workspace:*",
+        "@zentto/shared-ui": "workspace:*",
         "@emotion/cache": "^11.14.0",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",
@@ -61,7 +61,7 @@ $nextConfig = @"
 const nextConfig = {
     reactStrictMode: true,
     basePath: '/$appName',
-    transpilePackages: ['@datqbox/shared-ui', '@datqbox/shared-auth', '@datqbox/shared-api'],
+    transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api'],
 };
 
 export default nextConfig;
@@ -132,8 +132,8 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@datqbox/shared-auth';
-import { QueryProvider } from '@datqbox/shared-api';
+import { AuthProvider, useAuth } from '@zentto/shared-auth';
+import { QueryProvider } from '@zentto/shared-api';
 import {
     AppBarWrapper,
     LoadingFallback,
@@ -141,8 +141,8 @@ import {
     LocalizationProviderWrapper,
     theme,
     OdooLayout
-} from '@datqbox/shared-ui';
-import '@datqbox/shared-ui/globals.css';
+} from '@zentto/shared-ui';
+import '@zentto/shared-ui/globals.css';
 
 import { buildNav } from './nav';
 
@@ -182,7 +182,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" suppressHydrationWarning>
             <head>
-                <title>$appTitle - DatqBox App</title>
+                <title>$appTitle - Zentto App</title>
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>

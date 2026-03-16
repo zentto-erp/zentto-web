@@ -1,5 +1,5 @@
 'use client';
-import { CapacitacionPage } from '@datqbox/module-nomina';
+import { CapacitacionPage } from '@zentto/module-nomina';
 
 export default function Page() {
     return <CapacitacionPage />;

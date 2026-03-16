@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Stack, TextField, Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import EditableDataGrid from '../../EditableDataGrid';
-import { ContextActionHeader } from '@datqbox/shared-ui';
+import { ContextActionHeader } from '@zentto/shared-ui';
 
 export type CatalogField = {
   name: string;

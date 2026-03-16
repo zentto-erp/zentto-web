@@ -21,8 +21,8 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import BlockIcon from "@mui/icons-material/Block";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { formatCurrency } from "@datqbox/shared-api";
-import { ContextActionHeader } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import {
   useAsientosList,
   useAsientoDetalle,

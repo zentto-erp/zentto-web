@@ -34,7 +34,7 @@ import {
     authenticateSupervisorBiometricCredential,
     enrollSupervisorBiometricCredential,
     isWebAuthnSupported,
-} from '@datqbox/shared-api';
+} from '@zentto/shared-api';
 
 export default function RestaurantePage() {
     const {

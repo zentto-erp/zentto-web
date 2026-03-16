@@ -19,7 +19,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import IconButton from "@mui/material/IconButton";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useVacacionesList,
   useVacacionDetalle,

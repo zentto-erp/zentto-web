@@ -22,9 +22,9 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import { usePosStore, type VentaEnEspera } from '@datqbox/shared-api';
-import { useTimezone } from '@datqbox/shared-auth';
-import { formatDateTime } from '@datqbox/shared-api';
+import { usePosStore, type VentaEnEspera } from '@zentto/shared-api';
+import { useTimezone } from '@zentto/shared-auth';
+import { formatDateTime } from '@zentto/shared-api';
 
 interface PosEsperaDrawerProps {
     open: boolean;

@@ -25,7 +25,7 @@ import LinkIcon from "@mui/icons-material/Link";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingIcon from "@mui/icons-material/Pending";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useConciliaciones,
   useCuentasBank,
@@ -36,7 +36,7 @@ import {
   useGenerarAjuste,
   useCerrarConciliacion,
   type ConciliacionFilter,
-} from "@datqbox/module-bancos";
+} from "@zentto/module-bancos";
 import { useAsientosList } from "../hooks/useContabilidad";
 
 // ─── Summary Cards ───────────────────────────────────────────

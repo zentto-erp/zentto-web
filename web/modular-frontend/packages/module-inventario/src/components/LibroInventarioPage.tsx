@@ -21,8 +21,8 @@ import Grid from "@mui/material/Grid2";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import DownloadIcon from "@mui/icons-material/Download";
 import { useLibroInventario } from "../hooks/useInventario";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 export default function LibroInventarioPage() {
   const { timeZone } = useTimezone();

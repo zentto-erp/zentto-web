@@ -1,6 +1,6 @@
 "use client";
 
-import { ContabilidadDashboardPro } from "@datqbox/module-contabilidad";
+import { ContabilidadDashboardPro } from "@zentto/module-contabilidad";
 
 export default function ContabilidadPage() {
   return <ContabilidadDashboardPro />;

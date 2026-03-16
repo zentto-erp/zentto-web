@@ -20,7 +20,7 @@ import {
 import Grid from "@mui/material/Grid2";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { useCreateTraslado } from "../hooks/useInventario";
-import { apiGet } from "@datqbox/shared-api";
+import { apiGet } from "@zentto/shared-api";
 
 interface ArticuloOption {
   CODIGO: string;

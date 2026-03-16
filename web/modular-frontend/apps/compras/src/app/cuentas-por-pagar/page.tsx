@@ -1,5 +1,5 @@
 'use client';
-import { CuentasPorPagarTable } from '@datqbox/module-compras';
+import { CuentasPorPagarTable } from '@zentto/module-compras';
 
 export default function Page() {
     return <CuentasPorPagarTable />;

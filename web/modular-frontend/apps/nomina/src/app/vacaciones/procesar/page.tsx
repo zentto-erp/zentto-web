@@ -1,5 +1,5 @@
 "use client";
-import { VacacionesWizard } from "@datqbox/module-nomina";
+import { VacacionesWizard } from "@zentto/module-nomina";
 
 export default function ProcesarVacacionesPage() {
   return <VacacionesWizard />;

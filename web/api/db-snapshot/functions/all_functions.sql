@@ -55,9 +55,40 @@ CREATE FUNCTION dbo.fn_Nomina_ContarFeriados(
 RETURNS INT
 AS
 BEGIN
-  -- En DatqBoxWeb can¢nico no se depende de dbo.Feriados legacy.
-  -- Se deja en 0 y puede ser reemplazado por cat†logo can¢nico si se incorpora.
+  -- En DatqBoxWeb can√≥nico no se depende de dbo.Feriados legacy.
+  -- Se deja en 0 y puede ser reemplazado por cat√°logo can√≥nico si se incorpora.
   RETURN 0;
+END
+
+GO
+ 
+ 
+-- =============================================
+-- FUNCTION: dbo.fn_Nomina_ContarLunes (SQL_SCALAR_FUNCTION)
+-- =============================================
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+CREATE FUNCTION dbo.fn_Nomina_ContarLunes(
+  @FechaDesde DATE,
+  @FechaHasta DATE
+)
+RETURNS INT
+AS
+BEGIN
+  DECLARE @Actual DATE = @FechaDesde;
+  DECLARE @Lunes INT = 0;
+
+  WHILE (@Actual <= @FechaHasta)
+  BEGIN
+    -- (DATEDIFF(DAY, '2000-01-03', @Actual) % 7) = 0 identifica lunes
+    -- independientemente del valor de DATEFIRST.
+    IF (DATEDIFF(DAY, '2000-01-03', @Actual) % 7) = 0
+      SET @Lunes = @Lunes + 1;
+    SET @Actual = DATEADD(DAY, 1, @Actual);
+  END
+
+  RETURN @Lunes;
 END
 
 GO

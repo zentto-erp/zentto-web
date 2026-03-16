@@ -23,9 +23,9 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@datqbox/module-admin';
-import { useTimezone } from '@datqbox/shared-auth';
-import { formatDateTime } from '@datqbox/shared-api';
+import { EditableDataGrid } from '@zentto/module-admin';
+import { useTimezone } from '@zentto/shared-auth';
+import { formatDateTime } from '@zentto/shared-api';
 import {
     CompraRestauranteAdmin,
     CompraDetalleRowAdmin,

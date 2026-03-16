@@ -1,5 +1,5 @@
 {
-    "name":  "@datqbox/shell",
+    "name":  "@zentto/shell",
     "version":  "0.1.0",
     "private":  true,
     "scripts":  {
@@ -8,15 +8,15 @@
                     "start":  "next start -p 3000"
                 },
     "dependencies":  {
-                         "@datqbox/module-admin":  "*",
-                         "@datqbox/module-bancos":  "*",
-                         "@datqbox/module-compras":  "*",
-                         "@datqbox/module-inventario":  "*",
-                         "@datqbox/module-contabilidad":  "*",
-                         "@datqbox/module-nomina":  "*",
-                         "@datqbox/shared-api":  "*",
-                         "@datqbox/shared-auth":  "*",
-                         "@datqbox/shared-ui":  "*",
+                         "@zentto/module-admin":  "*",
+                         "@zentto/module-bancos":  "*",
+                         "@zentto/module-compras":  "*",
+                         "@zentto/module-inventario":  "*",
+                         "@zentto/module-contabilidad":  "*",
+                         "@zentto/module-nomina":  "*",
+                         "@zentto/shared-api":  "*",
+                         "@zentto/shared-auth":  "*",
+                         "@zentto/shared-ui":  "*",
                          "@emotion/react":  "^11.14.0",
                          "@emotion/styled":  "^11.14.0",
                          "@mui/icons-material":  "^6.5.0",

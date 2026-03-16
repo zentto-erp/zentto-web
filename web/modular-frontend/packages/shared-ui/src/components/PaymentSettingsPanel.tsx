@@ -18,8 +18,8 @@ import {
   usePaymentProviders, usePaymentPlugins,
   useCompanyPaymentConfigs, useSaveCompanyPaymentConfig, useDeleteCompanyPaymentConfig,
   usePaymentMethods, useAcceptedPaymentMethods, useSaveAcceptedPaymentMethod, useRemoveAcceptedPaymentMethod,
-} from '@datqbox/shared-api';
-import type { PaymentProvider, CompanyPaymentConfig, ConfigField } from '@datqbox/shared-api';
+} from '@zentto/shared-api';
+import type { PaymentProvider, CompanyPaymentConfig, ConfigField } from '@zentto/shared-api';
 
 import ProviderConfigCard from './ProviderConfigCard';
 import AcceptedMethodsManager from './AcceptedMethodsManager';

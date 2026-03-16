@@ -42,7 +42,7 @@ import {
   type EmpleadoFilter,
   type EmpleadoInput,
 } from "../hooks/useEmpleados";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { useNominasList } from "../hooks/useNomina";
 
 const GRUPOS = ["ADMIN", "ALMACEN", "GERENCIA", "PRODUCCION", "VENTAS"];

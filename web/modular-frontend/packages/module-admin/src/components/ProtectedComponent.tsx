@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { useAuth } from '@datqbox/shared-auth';
+import { useAuth } from '@zentto/shared-auth';
 
 interface ProtectedComponentProps {
   requiredAdmin?: boolean;

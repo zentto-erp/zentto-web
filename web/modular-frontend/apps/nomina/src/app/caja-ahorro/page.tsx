@@ -1,5 +1,5 @@
 'use client';
-import { CajaAhorroPage } from '@datqbox/module-nomina';
+import { CajaAhorroPage } from '@zentto/module-nomina';
 
 export default function Page() {
     return <CajaAhorroPage />;

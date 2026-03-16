@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useArticuloById } from '@datqbox/module-inventario';
+import { useArticuloById } from '@zentto/module-inventario';
 import {
     Box,
     Button,

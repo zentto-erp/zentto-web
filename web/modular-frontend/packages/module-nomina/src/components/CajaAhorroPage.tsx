@@ -20,7 +20,7 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import IconButton from "@mui/material/IconButton";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import {
   useSavingsList,
   useEnrollSavings,

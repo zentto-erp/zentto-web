@@ -9,8 +9,8 @@
 
 import React from 'react';
 import { Box, Typography, Alert } from '@mui/material';
-import { useAuth } from '@datqbox/shared-auth';
-import { PaymentSettingsPanel } from '@datqbox/shared-ui';
+import { useAuth } from '@zentto/shared-auth';
+import { PaymentSettingsPanel } from '@zentto/shared-ui';
 
 export default function FormasDePagoPage() {
   const { isAdmin, company } = useAuth();

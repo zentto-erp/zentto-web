@@ -19,9 +19,9 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader } from "@datqbox/shared-ui";
-import { formatDateTime } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import { formatDateTime } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
 
 const ACTION_TYPES = ["", "CREATE", "UPDATE", "DELETE", "VOID", "LOGIN"];

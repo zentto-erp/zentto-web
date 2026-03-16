@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@datqbox/module-admin';
+import { EditableDataGrid } from '@zentto/module-admin';
 import {
     AmbienteAdmin,
     useAmbientesAdminQuery,

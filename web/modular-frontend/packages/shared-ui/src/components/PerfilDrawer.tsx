@@ -27,8 +27,8 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import BusinessIcon from '@mui/icons-material/Business';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useAuth } from '@datqbox/shared-auth';
-import { apiGet, apiPost, apiPut } from '@datqbox/shared-api';
+import { useAuth } from '@zentto/shared-auth';
+import { apiGet, apiPost, apiPut } from '@zentto/shared-api';
 
 // ──────────────────────────────────────────────
 const AVATAR_COLORS = [
@@ -36,8 +36,8 @@ const AVATAR_COLORS = [
     '#f57c00', '#c62828', '#6a1b9a', '#37474f',
     '#1565c0', '#00695c',
 ];
-const AVATAR_STORAGE_KEY = 'datqbox_avatar_color';
-const avatarImgKey = (uid: string) => `datqbox_avatar_img_${uid}`;
+const AVATAR_STORAGE_KEY = 'zentto_avatar_color';
+const avatarImgKey = (uid: string) => `zentto_avatar_img_${uid}`;
 
 type ProfileData = {
     Cod_Usuario?: string;
@@ -121,7 +121,7 @@ export default function PerfilDrawer({ open, onClose }: PerfilDrawerProps) {
                     setAvatarSrc(d.Avatar);
                     if (userId) {
                         localStorage.setItem(avatarImgKey(userId), d.Avatar);
-                        window.dispatchEvent(new CustomEvent('datqbox-avatar-updated', { detail: { userId, src: d.Avatar } }));
+                        window.dispatchEvent(new CustomEvent('zentto-avatar-updated', { detail: { userId, src: d.Avatar } }));
                     }
                 } else {
                     // d.Avatar === null could mean "column not yet migrated" or "no avatar".
@@ -176,7 +176,7 @@ export default function PerfilDrawer({ open, onClose }: PerfilDrawerProps) {
                 setAvatarSrc(dataUrl);
                 if (userId) {
                     localStorage.setItem(avatarImgKey(userId), dataUrl);
-                    window.dispatchEvent(new CustomEvent('datqbox-avatar-updated', { detail: { userId, src: dataUrl } }));
+                    window.dispatchEvent(new CustomEvent('zentto-avatar-updated', { detail: { userId, src: dataUrl } }));
                 }
                 // Persist to API
                 setUploadingAvatar(true);
@@ -188,7 +188,7 @@ export default function PerfilDrawer({ open, onClose }: PerfilDrawerProps) {
                     setAvatarSrc(null);
                     if (userId) {
                         localStorage.removeItem(avatarImgKey(userId));
-                        window.dispatchEvent(new CustomEvent('datqbox-avatar-updated', { detail: { userId, src: null } }));
+                        window.dispatchEvent(new CustomEvent('zentto-avatar-updated', { detail: { userId, src: null } }));
                     }
                 } finally {
                     setUploadingAvatar(false);
@@ -207,7 +207,7 @@ export default function PerfilDrawer({ open, onClose }: PerfilDrawerProps) {
         setAvatarSrc(null);
         if (userId) {
             localStorage.removeItem(avatarImgKey(userId));
-            window.dispatchEvent(new CustomEvent('datqbox-avatar-updated', { detail: { userId, src: null } }));
+            window.dispatchEvent(new CustomEvent('zentto-avatar-updated', { detail: { userId, src: null } }));
         }
         try {
             await apiPost('/v1/usuarios/me/avatar', { avatar: null });

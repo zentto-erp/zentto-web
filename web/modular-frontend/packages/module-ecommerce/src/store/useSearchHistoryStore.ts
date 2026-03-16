@@ -33,7 +33,7 @@ export const useSearchHistoryStore = create<SearchHistoryState>()(
       clearHistory: () => set({ terms: [] }),
     }),
     {
-      name: "datqbox-ecommerce-search-history",
+      name: "zentto-ecommerce-search-history",
       partialize: (state) => ({ terms: state.terms }),
     }
   )

@@ -8,6 +8,9 @@ IF OBJECT_ID(N'dbo.usp_CxP_AplicarPago', N'P') IS NOT NULL
     DROP PROCEDURE dbo.usp_CxP_AplicarPago;
 GO
 
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE PROCEDURE dbo.usp_CxP_AplicarPago
     @RequestId       NVARCHAR(100),
     @CodProveedor    NVARCHAR(24),

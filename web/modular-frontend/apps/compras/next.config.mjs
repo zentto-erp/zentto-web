@@ -2,7 +2,7 @@
 const nextConfig = {
     reactStrictMode: true,
     basePath: '/compras',
-    transpilePackages: ['@datqbox/shared-ui', '@datqbox/shared-auth', '@datqbox/shared-api', '@datqbox/module-compras'],
+    transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/module-compras'],
 };
 
 export default nextConfig;

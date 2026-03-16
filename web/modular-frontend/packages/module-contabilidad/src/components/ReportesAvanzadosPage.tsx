@@ -31,8 +31,8 @@ import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import CloseIcon from "@mui/icons-material/Close";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   useLibroMayor,
   useBalanceComprobacion,

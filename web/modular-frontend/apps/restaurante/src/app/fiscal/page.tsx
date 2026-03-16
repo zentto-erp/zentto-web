@@ -11,7 +11,7 @@ import {
     Typography,
     Tooltip
 } from '@mui/material';
-import { apiGet, apiPost, usePosStore } from '@datqbox/shared-api';
+import { apiGet, apiPost, usePosStore } from '@zentto/shared-api';
 
 export default function RestauranteFiscalPage() {
     const fiscalPrinter = usePosStore((s) => s.fiscalPrinter);

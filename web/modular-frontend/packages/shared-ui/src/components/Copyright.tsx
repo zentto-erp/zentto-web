@@ -14,7 +14,7 @@ export default function Copyright(props: { sx?: SxProps<Theme> }) {
         ...(Array.isArray(props.sx) ? props.sx : [props.sx].filter(Boolean)),
       ]}
     >
-      {'© DatqBox '}
+      {'© Zentto '}
       {new Date().getFullYear()}
       {'.'}
     </Typography>

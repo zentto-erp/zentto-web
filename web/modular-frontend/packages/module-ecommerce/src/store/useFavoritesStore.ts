@@ -49,7 +49,7 @@ export const useFavoritesStore = create<FavoritesState>()(
       clearFavorites: () => set({ items: [] }),
     }),
     {
-      name: "datqbox-ecommerce-favorites",
+      name: "zentto-ecommerce-favorites",
       partialize: (state) => ({ items: state.items }),
     }
   )

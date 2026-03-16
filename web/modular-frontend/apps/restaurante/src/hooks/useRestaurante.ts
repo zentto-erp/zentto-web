@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { usePosStore, calcTotals, apiGet, apiPost, resolveAssetUrl } from '@datqbox/shared-api';
+import { usePosStore, calcTotals, apiGet, apiPost, resolveAssetUrl } from '@zentto/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS — Modelo de datos del Restaurante

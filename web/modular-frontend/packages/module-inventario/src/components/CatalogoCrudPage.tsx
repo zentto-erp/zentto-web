@@ -1,6 +1,6 @@
 'use client';
 
-import { apiDelete, apiGet, apiPost, apiPut } from '@datqbox/shared-api';
+import { apiDelete, apiGet, apiPost, apiPut } from '@zentto/shared-api';
 import CatalogoCrudBase, { CatalogField, CatalogoCrudApiClient } from './CatalogoCrudBase';
 
 interface CatalogoCrudPageProps {

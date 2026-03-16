@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Typography, Alert } from '@mui/material';
-import { useCartStore, useMyOrders, OrderHistory } from '@datqbox/module-ecommerce';
+import { useCartStore, useMyOrders, OrderHistory } from '@zentto/module-ecommerce';
 
 export default function PedidosPage() {
     const router = useRouter();

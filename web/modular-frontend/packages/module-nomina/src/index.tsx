@@ -196,6 +196,24 @@ export { default as ExamenesMedicosPage } from "./components/ExamenesMedicosPage
 export { default as OrdenesMedicasPage } from "./components/OrdenesMedicasPage";
 export { default as CapacitacionPage } from "./components/CapacitacionPage";
 export { default as ComitesPage } from "./components/ComitesPage";
+export { default as DocumentosMainPage } from "./components/DocumentosMainPage";
+export { default as DocumentosPage } from "./components/DocumentosPage";
+export { default as TemplateEditorPage } from "./components/TemplateEditorPage";
+export { default as DocumentViewerModal } from "./components/DocumentViewerModal";
+
+// ─── Document Templates hooks & types ─────────────────────────
+export {
+  useDocumentTemplatesList,
+  useDocumentTemplate,
+  useSaveDocumentTemplate,
+  useDeleteDocumentTemplate,
+  useRenderDocument,
+} from "./hooks/useNomina";
+
+export type {
+  DocumentTemplate,
+  RenderedDocument,
+} from "./hooks/useNomina";
 
 // ─── Pages ────────────────────────────────────────────────────
 export { default as NominaHome } from "./pages/NominaHome";

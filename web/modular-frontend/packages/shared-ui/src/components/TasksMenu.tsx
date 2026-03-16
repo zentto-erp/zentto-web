@@ -7,7 +7,7 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import { apiGet, apiPatch } from '@datqbox/shared-api';
+import { apiGet, apiPatch } from '@zentto/shared-api';
 
 type Task = {
     id: string;

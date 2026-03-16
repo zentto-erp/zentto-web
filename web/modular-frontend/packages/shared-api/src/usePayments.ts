@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * DatqBox Payment Gateway — Shared React hooks (TanStack Query)
+ * Zentto Payment Gateway — Shared React hooks (TanStack Query)
  *
  * Reusable across Shell, POS, Restaurante and any micro-frontend.
  * Consumes the `/v1/payments/*` API endpoints.

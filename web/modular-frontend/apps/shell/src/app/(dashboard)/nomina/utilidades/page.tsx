@@ -1,6 +1,6 @@
 "use client";
 
-import { UtilidadesPage } from "@datqbox/module-nomina";
+import { UtilidadesPage } from "@zentto/module-nomina";
 
 export default function UtilidadesRoute() {
   return <UtilidadesPage />;

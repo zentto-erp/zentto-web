@@ -1,6 +1,6 @@
 "use client";
 
-import { VacacionesCalendarPage } from "@datqbox/module-nomina";
+import { VacacionesCalendarPage } from "@zentto/module-nomina";
 
 export default function SolicitarVacacionesRoute() {
   return <VacacionesCalendarPage />;

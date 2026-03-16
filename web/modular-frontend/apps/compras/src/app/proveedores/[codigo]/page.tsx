@@ -1,5 +1,5 @@
 'use client';
-import { ProveedorForm } from '@datqbox/module-compras';
+import { ProveedorForm } from '@zentto/module-compras';
 import { useParams } from 'next/navigation';
 
 export default function Page() {

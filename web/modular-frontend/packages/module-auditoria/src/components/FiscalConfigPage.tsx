@@ -16,7 +16,7 @@ import {
   Divider,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
-import { ContextActionHeader } from "@datqbox/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
 
 export default function FiscalConfigPage() {

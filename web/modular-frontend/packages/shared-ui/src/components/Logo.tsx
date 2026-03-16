@@ -27,7 +27,7 @@ export default function Logo({ size = 'medium' }: LogoProps) {
       <Box textAlign="center">
         <Typography variant={s.title} component="h1"
           sx={{ fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'text.primary', lineHeight: 1.2 }}>
-          DatqBox
+          Zentto
         </Typography>
         <Typography variant={s.subtitle}
           sx={{ color: 'text.secondary', letterSpacing: '0.1em', fontWeight: 500 }}>

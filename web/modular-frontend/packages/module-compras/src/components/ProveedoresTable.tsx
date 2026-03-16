@@ -26,7 +26,7 @@ import {
 } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Add as AddIcon } from "@mui/icons-material";
 import { useProveedoresList, useDeleteProveedor } from "../hooks/useProveedores";
-import { Proveedor, ProveedorFilter } from "@datqbox/shared-api/types";
+import { Proveedor, ProveedorFilter } from "@zentto/shared-api/types";
 
 export default function ProveedoresTable() {
   const router = useRouter();

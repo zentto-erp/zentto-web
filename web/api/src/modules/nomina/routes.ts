@@ -5,11 +5,15 @@ import { Router } from "express";
 import { z } from "zod";
 import * as nominaService from "./service.js";
 import { conceptoLegalRouter } from "./conceptolegal.routes.js";
+import documentosRouter from "./documentos.routes.js";
 
 export const nominaRouter = Router();
 
 // Sub-rutas para ConceptoLegal (tabla existente del usuario)
 nominaRouter.use("/", conceptoLegalRouter);
+
+// Sub-rutas para Plantillas de Documentos de Nómina
+nominaRouter.use("/documentos", documentosRouter);
 
 // Esquemas de validación
 const conceptoSchema = z.object({

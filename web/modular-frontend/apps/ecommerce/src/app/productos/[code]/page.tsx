@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { useProductDetail, ProductDetail, ProductReviews } from '@datqbox/module-ecommerce';
+import { useProductDetail, ProductDetail, ProductReviews } from '@zentto/module-ecommerce';
 
 export default function ProductDetailPage() {
     const { code } = useParams<{ code: string }>();

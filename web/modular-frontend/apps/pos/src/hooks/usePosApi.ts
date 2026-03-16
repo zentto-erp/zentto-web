@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPut, resolveAssetUrl, usePosStore } from '@datqbox/shared-api';
+import { apiGet, apiPut, resolveAssetUrl, usePosStore } from '@zentto/shared-api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS

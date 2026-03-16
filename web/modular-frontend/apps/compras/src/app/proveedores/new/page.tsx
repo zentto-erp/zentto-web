@@ -1,5 +1,5 @@
 'use client';
-import { ProveedorForm } from '@datqbox/module-compras';
+import { ProveedorForm } from '@zentto/module-compras';
 
 export default function Page() {
     return <ProveedorForm />;

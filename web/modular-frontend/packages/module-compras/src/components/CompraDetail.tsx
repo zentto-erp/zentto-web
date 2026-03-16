@@ -16,8 +16,8 @@ import {
   Typography
 } from "@mui/material";
 import { useCompraById, useDetalleCompra, useIndicadoresCompra } from "../hooks/useCompras";
-import { useTimezone } from "@datqbox/shared-auth";
-import { formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { formatDate } from "@zentto/shared-api";
 
 interface CompraDetailProps {
   numFact: string;

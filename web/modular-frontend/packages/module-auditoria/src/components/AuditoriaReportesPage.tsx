@@ -16,9 +16,9 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import PrintIcon from "@mui/icons-material/Print";
-import { ContextActionHeader } from "@datqbox/shared-ui";
-import { toDateOnly, formatDateTime } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import { toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useFiscalRecords } from "../hooks/useAuditoria";
 
 const TAB_LABELS = ["Por Módulo", "Por Usuario", "Registros Fiscales"];

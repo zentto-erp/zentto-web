@@ -1,6 +1,6 @@
 "use client";
 
-import { PresupuestosPage } from "@datqbox/module-contabilidad";
+import { PresupuestosPage } from "@zentto/module-contabilidad";
 
 export default function PresupuestosRoute() {
   return <PresupuestosPage />;

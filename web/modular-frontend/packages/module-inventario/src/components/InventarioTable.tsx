@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useInventarioList } from "../hooks/useInventario";
-import { formatCurrency } from "@datqbox/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { debounce } from "lodash";
 
 export default function InventarioTable() {

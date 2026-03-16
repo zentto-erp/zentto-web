@@ -25,7 +25,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
-import { useToast } from '@datqbox/shared-ui';
+import { useToast } from '@zentto/shared-ui';
 
 interface loginType {
   title?: string;

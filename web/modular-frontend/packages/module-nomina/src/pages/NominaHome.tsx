@@ -26,8 +26,8 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useRouter } from "next/navigation";
 import { useEmpleadosList } from "../hooks/useEmpleados";
 import { useNominasList } from "../hooks/useNomina";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 
 export default function NominaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();

@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { Logo } from '@datqbox/shared-ui';
+import { Logo } from '@zentto/shared-ui';
 
 function getBackendUrl() {
   return (

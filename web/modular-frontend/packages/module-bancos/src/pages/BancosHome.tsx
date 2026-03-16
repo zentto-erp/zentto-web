@@ -21,8 +21,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useBancosList, useCuentasBancarias } from "../hooks/useBancosAuxiliares";
 import { useConciliaciones } from "../hooks/useConciliacionBancaria";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 
 export default function BancosHome() {
   const cuentas = useCuentasBancarias();

@@ -1,6 +1,6 @@
 "use client";
 
-import { EtiquetasPage } from "@datqbox/module-inventario";
+import { EtiquetasPage } from "@zentto/module-inventario";
 
 export default function EtiquetasRoute() {
   return <EtiquetasPage />;

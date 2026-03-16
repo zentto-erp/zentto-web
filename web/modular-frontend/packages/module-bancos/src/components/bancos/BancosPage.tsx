@@ -17,7 +17,7 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useToast } from "@datqbox/shared-ui";
+import { useToast } from "@zentto/shared-ui";
 import {
   useBancosList,
   useCreateBanco,

@@ -5,7 +5,7 @@ import { Box, Typography, Button, Divider, Grid, Paper } from '@mui/material';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import { useCartStore, CartItem, OrderSummary } from '@datqbox/module-ecommerce';
+import { useCartStore, CartItem, OrderSummary } from '@zentto/module-ecommerce';
 
 export default function CarritoPage() {
     const router = useRouter();

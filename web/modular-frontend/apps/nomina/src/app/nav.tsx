@@ -19,6 +19,8 @@ const SchoolIcon = dynamic(() => import('@mui/icons-material/School'), { ssr: fa
 const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
 const GavelIcon = dynamic(() => import('@mui/icons-material/Gavel'), { ssr: false });
 const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
+const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
+const PlayArrowIcon = dynamic(() => import('@mui/icons-material/PlayArrow'), { ssr: false });
 
 export function buildNominaNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -48,9 +50,11 @@ export function buildNominaNav(isAdmin: boolean, modulos: string[]): Array<Recor
         nav.push({ kind: 'header', title: 'Obligaciones Legales' });
         nav.push({ kind: 'page', segment: 'obligaciones', title: 'Obligaciones y Aportes', icon: <GavelIcon /> });
         nav.push({ kind: 'header', title: 'Administración' });
+        nav.push({ kind: 'page', segment: 'procesar', title: 'Procesar Nómina', icon: <PlayArrowIcon /> });
         nav.push({ kind: 'page', segment: 'liquidaciones', title: 'Liquidaciones', icon: <AccountBalanceWalletIcon /> });
         nav.push({ kind: 'page', segment: 'constantes', title: 'Constantes', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'feriados', title: 'Feriados', icon: <EventIcon /> });
+        nav.push({ kind: 'page', segment: 'documentos', title: 'Plantillas de Documentos', icon: <DescriptionIcon /> });
     }
 
     return nav;

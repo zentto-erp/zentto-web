@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import { usePrinterStatus } from '../hooks';
-import { usePosStore } from '@datqbox/shared-api';
+import { usePosStore } from '@zentto/shared-api';
 import { PosSettingsModal } from './PosSettingsModal';
 
 const SearchIcon = dynamic(() => import('@mui/icons-material/Search'), { ssr: false });

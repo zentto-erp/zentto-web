@@ -29,7 +29,7 @@ export {
   useGenerateClosingEntries, usePeriodoChecklist,
   useCentrosCostoList, useCentroCostoGet, useCreateCentroCosto, useUpdateCentroCosto, useDeleteCentroCosto,
   usePresupuestosList, usePresupuestoGet, useCreatePresupuesto, useUpdatePresupuesto, useDeletePresupuesto, usePresupuestoVarianza,
-  // Conciliación bancaria: usar hooks de @datqbox/module-bancos
+  // Conciliación bancaria: usar hooks de @zentto/module-bancos
   useRecurrentesList, useRecurrenteGet, useCreateRecurrente, useUpdateRecurrente, useDeleteRecurrente, useExecuteRecurrente, useDueRecurrentes,
   useReverseEntry,
   useCashFlowReport, useBalanceCompMultiPeriod, usePnLMultiPeriod, useAgingCxC, useAgingCxP, useFinancialRatios, useTaxSummary, useDrillDown,
@@ -55,7 +55,7 @@ export type {
   PresupuestoDetalle,
   PresupuestoLinea,
   CreatePresupuestoInput,
-  // BankStatement, BankStatementLine, BankReconSummary: usar @datqbox/module-bancos
+  // BankStatement, BankStatementLine, BankReconSummary: usar @zentto/module-bancos
   RecurrenteTemplate,
   RecurrenteLinea,
   CreateRecurrenteInput,
@@ -84,6 +84,42 @@ export { default as CentrosCostoPage } from "./components/CentrosCostoPage";
 export { default as PresupuestosPage } from "./components/PresupuestosPage";
 export { default as AsientosRecurrentesPage } from "./components/AsientosRecurrentesPage";
 export { default as ReportesAvanzadosPage } from "./components/ReportesAvanzadosPage";
+
+// ─── Hooks Activos Fijos ─────────────────────────────────────
+export {
+  useCategoriasList, useCategoriaDetalle, useUpsertCategoria,
+  useActivosFijosList, useActivoFijoDetalle,
+  useCreateActivoFijo, useUpdateActivoFijo, useDisposeActivoFijo,
+  useCalcularDepreciacion, usePreviewDepreciacion, useDepreciacionHistorial,
+  useAddMejora, useRevaluarActivo,
+  useReporteLibroActivos, useReporteCuadroDepreciacion, useReporteActivosPorCategoria,
+} from "./hooks/useActivosFijos";
+
+export type {
+  FixedAssetCategory, FixedAsset, DepreciationRecord,
+  AssetFilter, CreateAssetInput, DisposeAssetInput, ImprovementInput, RevalueInput,
+} from "./hooks/useActivosFijos";
+
+// ─── Hooks Fiscal Tributaria ─────────────────────────────────
+export {
+  useGenerarLibroFiscal, useLibroFiscal, useResumenLibroFiscal, useExportarLibro,
+  useCalcularDeclaracion, useDeclaracionesList, useDeclaracionDetalle,
+  usePresentarDeclaracion, useEnmendarDeclaracion, useExportarDeclaracion,
+  useGenerarRetencion, useRetencionesList, useRetencionDetalle,
+} from "./hooks/useFiscalTributaria";
+
+export type {
+  TaxBookEntry, TaxBookSummary, TaxDeclaration, WithholdingVoucher,
+  TaxBookFilter, DeclarationFilter, WithholdingFilter,
+} from "./hooks/useFiscalTributaria";
+
+// ─── Componentes Activos Fijos y Fiscal ─────────────────────
+export { default as ActivosFijosListPage } from "./components/ActivosFijosListPage";
+export { default as CategoriasActivosPage } from "./components/CategoriasActivosPage";
+export { default as DepreciacionWizard } from "./components/DepreciacionWizard";
+export { default as LibroFiscalPage } from "./components/LibroFiscalPage";
+export { default as DeclaracionesPage } from "./components/DeclaracionesPage";
+export { default as RetencionesPage } from "./components/RetencionesPage";
 
 // ─── Pages ────────────────────────────────────────────────────
 export { default as ContabilidadHome } from "./pages/ContabilidadHome";

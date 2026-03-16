@@ -28,7 +28,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PrintIcon from '@mui/icons-material/Print';
 
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import { usePosStore } from '@datqbox/shared-api';
+import { usePosStore } from '@zentto/shared-api';
 
 interface PaymentMethod {
     id: string;

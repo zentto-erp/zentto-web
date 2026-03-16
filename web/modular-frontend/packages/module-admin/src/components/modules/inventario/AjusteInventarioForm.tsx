@@ -18,7 +18,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useCreateMovimiento } from "../../../hooks/useInventario";
-import { CreateInventarioDTO } from "@datqbox/shared-api/types";
+import { CreateInventarioDTO } from "@zentto/shared-api/types";
 
 export default function AjusteInventarioForm() {
   const router = useRouter();

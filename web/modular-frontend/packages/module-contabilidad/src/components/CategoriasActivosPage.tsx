@@ -1,0 +1,280 @@
+"use client";
+
+import React, { useState } from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  TextField,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Tooltip,
+  CircularProgress,
+} from "@mui/material";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import EditIcon from "@mui/icons-material/Edit";
+import AddIcon from "@mui/icons-material/Add";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import {
+  useCategoriasList,
+  useUpsertCategoria,
+  type FixedAssetCategory,
+} from "../hooks/useActivosFijos";
+
+const DEPRECIATION_METHODS = [
+  { value: "STRAIGHT_LINE", label: "Linea Recta" },
+  { value: "DOUBLE_DECLINING", label: "Doble Declinacion" },
+  { value: "UNITS_PRODUCED", label: "Unidades Producidas" },
+  { value: "NONE", label: "Sin Depreciacion" },
+];
+
+const methodLabel = (m: string) =>
+  DEPRECIATION_METHODS.find((d) => d.value === m)?.label ?? m;
+
+interface CategoryForm {
+  categoryCode: string;
+  categoryName: string;
+  defaultUsefulLifeMonths: number;
+  defaultDepreciationMethod: string;
+  defaultResidualPercent: number;
+  defaultAssetAccountCode: string;
+  defaultDeprecAccountCode: string;
+  defaultExpenseAccountCode: string;
+  countryCode: string;
+}
+
+const emptyForm: CategoryForm = {
+  categoryCode: "",
+  categoryName: "",
+  defaultUsefulLifeMonths: 60,
+  defaultDepreciationMethod: "STRAIGHT_LINE",
+  defaultResidualPercent: 0,
+  defaultAssetAccountCode: "",
+  defaultDeprecAccountCode: "",
+  defaultExpenseAccountCode: "",
+  countryCode: "",
+};
+
+function formatLifespan(months: number): string {
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} año${years > 1 ? "s" : ""}`);
+  if (rem > 0) parts.push(`${rem} mes${rem > 1 ? "es" : ""}`);
+  return parts.join(" ") || "0 meses";
+}
+
+export default function CategoriasActivosPage() {
+  const [openDialog, setOpenDialog] = useState(false);
+  const [form, setForm] = useState<CategoryForm>({ ...emptyForm });
+  const [isEditing, setIsEditing] = useState(false);
+
+  const { data, isLoading } = useCategoriasList();
+  const upsertMutation = useUpsertCategoria();
+
+  const rows = data?.rows ?? [];
+
+  const columns: GridColDef[] = [
+    { field: "CategoryCode", headerName: "Codigo", width: 120 },
+    { field: "CategoryName", headerName: "Nombre", flex: 1, minWidth: 200 },
+    {
+      field: "DefaultUsefulLifeMonths",
+      headerName: "Vida Util",
+      width: 150,
+      renderCell: (p) => formatLifespan(p.value),
+    },
+    {
+      field: "DefaultDepreciationMethod",
+      headerName: "Metodo Dep.",
+      width: 170,
+      renderCell: (p) => <Chip label={methodLabel(p.value)} size="small" variant="outlined" />,
+    },
+    {
+      field: "DefaultResidualPercent",
+      headerName: "% Residual",
+      width: 110,
+      renderCell: (p) => `${p.value ?? 0}%`,
+    },
+    { field: "CountryCode", headerName: "Pais", width: 80 },
+    {
+      field: "acciones",
+      headerName: "",
+      width: 70,
+      sortable: false,
+      renderCell: (p) => (
+        <Tooltip title="Editar">
+          <IconButton size="small" onClick={() => handleEdit(p.row)}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
+
+  const handleEdit = (row: FixedAssetCategory) => {
+    setForm({
+      categoryCode: row.CategoryCode,
+      categoryName: row.CategoryName,
+      defaultUsefulLifeMonths: row.DefaultUsefulLifeMonths,
+      defaultDepreciationMethod: row.DefaultDepreciationMethod,
+      defaultResidualPercent: row.DefaultResidualPercent ?? 0,
+      defaultAssetAccountCode: row.DefaultAssetAccountCode ?? "",
+      defaultDeprecAccountCode: row.DefaultDeprecAccountCode ?? "",
+      defaultExpenseAccountCode: row.DefaultExpenseAccountCode ?? "",
+      countryCode: row.CountryCode ?? "",
+    });
+    setIsEditing(true);
+    setOpenDialog(true);
+  };
+
+  const handleNew = () => {
+    setForm({ ...emptyForm });
+    setIsEditing(false);
+    setOpenDialog(true);
+  };
+
+  const handleSave = async () => {
+    await upsertMutation.mutateAsync(form);
+    setOpenDialog(false);
+    setForm({ ...emptyForm });
+  };
+
+  const setField = <K extends keyof CategoryForm>(key: K, val: CategoryForm[K]) =>
+    setForm((f) => ({ ...f, [key]: val }));
+
+  return (
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <ContextActionHeader
+        title="Categorias de Activos Fijos"
+        primaryAction={{
+          label: "Nueva Categoria",
+          onClick: handleNew,
+        }}
+      />
+
+      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            loading={isLoading}
+            pageSizeOptions={[25, 50]}
+            disableRowSelectionOnClick
+            getRowId={(row) => row.CategoryId}
+            sx={{ border: "none" }}
+          />
+        </Paper>
+      </Box>
+
+      {/* Dialog Crear/Editar Categoria */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{isEditing ? "Editar Categoria" : "Nueva Categoria"}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Codigo"
+                fullWidth
+                size="small"
+                value={form.categoryCode}
+                onChange={(e) => setField("categoryCode", e.target.value)}
+                disabled={isEditing}
+              />
+              <TextField
+                label="Nombre"
+                fullWidth
+                size="small"
+                value={form.categoryName}
+                onChange={(e) => setField("categoryName", e.target.value)}
+              />
+            </Stack>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Vida Util (meses)"
+                type="number"
+                fullWidth
+                size="small"
+                value={form.defaultUsefulLifeMonths}
+                onChange={(e) => setField("defaultUsefulLifeMonths", Number(e.target.value))}
+              />
+              <FormControl size="small" fullWidth>
+                <InputLabel>Metodo Depreciacion</InputLabel>
+                <Select
+                  label="Metodo Depreciacion"
+                  value={form.defaultDepreciationMethod}
+                  onChange={(e) => setField("defaultDepreciationMethod", e.target.value)}
+                >
+                  {DEPRECIATION_METHODS.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="% Residual"
+                type="number"
+                fullWidth
+                size="small"
+                value={form.defaultResidualPercent}
+                onChange={(e) => setField("defaultResidualPercent", Number(e.target.value))}
+              />
+              <TextField
+                label="Pais"
+                fullWidth
+                size="small"
+                value={form.countryCode}
+                onChange={(e) => setField("countryCode", e.target.value)}
+                placeholder="VE, ES, CO..."
+              />
+            </Stack>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Cuenta Activo"
+                fullWidth
+                size="small"
+                value={form.defaultAssetAccountCode}
+                onChange={(e) => setField("defaultAssetAccountCode", e.target.value)}
+              />
+              <TextField
+                label="Cuenta Dep. Acum."
+                fullWidth
+                size="small"
+                value={form.defaultDeprecAccountCode}
+                onChange={(e) => setField("defaultDeprecAccountCode", e.target.value)}
+              />
+              <TextField
+                label="Cuenta Gasto"
+                fullWidth
+                size="small"
+                value={form.defaultExpenseAccountCode}
+                onChange={(e) => setField("defaultExpenseAccountCode", e.target.value)}
+              />
+            </Stack>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={upsertMutation.isPending || !form.categoryCode || !form.categoryName}
+            startIcon={upsertMutation.isPending ? <CircularProgress size={16} /> : <AddIcon />}
+          >
+            {isEditing ? "Guardar" : "Crear"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}

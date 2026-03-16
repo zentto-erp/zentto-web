@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPut } from "@datqbox/shared-api";
+import { apiGet, apiPut } from "@zentto/shared-api";
 
 // ─── Query Keys ───────────────────────────────────
 const QK_AUDIT_LOGS = "auditoria-logs";

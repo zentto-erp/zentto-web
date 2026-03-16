@@ -20,8 +20,8 @@ import {
 } from "@mui/material";
 import { Add, Search, Visibility } from "@mui/icons-material";
 import { useComprasList } from "../hooks/useCompras";
-import { useTimezone } from "@datqbox/shared-auth";
-import { toDateOnly, formatDate } from "@datqbox/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly, formatDate } from "@zentto/shared-api";
 
 export default function ComprasTable() {
   const router = useRouter();

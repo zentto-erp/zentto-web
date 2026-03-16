@@ -20,8 +20,8 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import { toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,

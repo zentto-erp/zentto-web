@@ -25,8 +25,8 @@ import {
   Typography
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import { apiGet, apiPost, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { apiGet, apiPost, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { useEmitirCompraTx } from "../../../hooks/useCompras";
 
 type ProveedorRow = {

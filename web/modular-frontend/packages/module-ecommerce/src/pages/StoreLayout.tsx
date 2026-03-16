@@ -135,7 +135,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
             <StoreIcon sx={{ fontSize: { xs: 24, md: 28 }, color: "#ff9900" }} />
             {!isSmall && (
               <Typography variant="h6" fontWeight="bold" sx={{ letterSpacing: -0.5, fontSize: { xs: 16, md: 20 }, lineHeight: 1 }}>
-                DatqBox<span style={{ color: "#ff9900" }}>Store</span>
+                Zentto<span style={{ color: "#ff9900" }}>Store</span>
               </Typography>
             )}
           </Box>
@@ -435,8 +435,8 @@ export default function StoreLayout({ children, onNavigate }: Props) {
         <Container maxWidth="xl">
           <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 4 }}>
             {[
-              { title: "Conócenos", items: ["Acerca de DatqBox", "Trabaja con nosotros", "Prensa"] },
-              { title: "Gana dinero", items: ["Vende en DatqBox Store", "Programa de afiliados"] },
+              { title: "Conócenos", items: ["Acerca de Zentto", "Trabaja con nosotros", "Prensa"] },
+              { title: "Gana dinero", items: ["Vende en Zentto Store", "Programa de afiliados"] },
               { title: "Ayuda", items: ["Centro de ayuda", "Devoluciones", "Contacto"] },
             ].map((col) => (
               <Box key={col.title}>
@@ -453,7 +453,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
       </Box>
       <Box sx={{ bgcolor: "#131921", color: "#999", py: 2, textAlign: "center" }}>
         <Typography variant="caption">
-          &copy; {new Date().getFullYear()} DatqBox Store. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()} Zentto Store. Todos los derechos reservados.
         </Typography>
       </Box>
 

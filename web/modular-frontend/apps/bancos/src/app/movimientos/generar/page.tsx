@@ -1,5 +1,5 @@
 'use client';
-import { MovimientoBancarioWizard } from '@datqbox/module-bancos';
+import { MovimientoBancarioWizard } from '@zentto/module-bancos';
 export default function Page() {
     return <MovimientoBancarioWizard />;
 }

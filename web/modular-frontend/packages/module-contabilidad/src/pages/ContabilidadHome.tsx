@@ -24,9 +24,9 @@ import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
-import { formatCurrency, toDateOnly } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
+import { brandColors } from "@zentto/shared-ui";
 import { useRouter } from "next/navigation";
 import { useDashboardResumen, useAsientosList } from "../hooks/useContabilidad";
 

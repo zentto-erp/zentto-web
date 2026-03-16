@@ -16,13 +16,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useAuth } from '@datqbox/shared-auth';
+import { useAuth } from '@zentto/shared-auth';
 import {
   apiPut, useModuleSettings, usePosStore,
   useCountries, getCountryDefaults, fetchBcvRates as fetchBcvRatesApi, settingsToLocalizacion,
   type BcvRates,
-} from '@datqbox/shared-api';
-import { PaymentSettingsPanel } from '@datqbox/shared-ui';
+} from '@zentto/shared-api';
+import { PaymentSettingsPanel } from '@zentto/shared-ui';
 
 type PosSettings = Record<string, any>;
 
@@ -255,7 +255,7 @@ export default function PosConfiguracionPage() {
           </Tooltip>
         </Stack>
 
-        <Tooltip title="Dirección de red o IP local donde reside ejecutándose el DatqBox Fiscal Agent." arrow placement="top">
+        <Tooltip title="Dirección de red o IP local donde reside ejecutándose el Zentto Fiscal Agent." arrow placement="top">
           <TextField
             label="Agent URL"
             value={draft['impresora.agentUrl'] ?? 'http://localhost:5059'}

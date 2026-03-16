@@ -8,7 +8,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@datqbox/module-admin';
+import { EditableDataGrid } from '@zentto/module-admin';
 import {
     CategoriaMenu,
     ProductoMenuAdmin,

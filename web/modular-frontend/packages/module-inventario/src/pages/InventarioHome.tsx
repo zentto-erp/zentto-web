@@ -34,8 +34,8 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useRouter } from "next/navigation";
 import { useInventarioDashboard, useMovimientosList } from "../hooks/useInventario";
-import { formatCurrency } from "@datqbox/shared-api";
-import { brandColors } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { brandColors } from "@zentto/shared-ui";
 
 export default function InventarioHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();

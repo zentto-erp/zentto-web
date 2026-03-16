@@ -34,9 +34,9 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SaveIcon from "@mui/icons-material/Save";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { formatCurrency } from "@datqbox/shared-api";
-import { CustomStepper, useToast } from "@datqbox/shared-ui";
-import type { StepDef } from "@datqbox/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
+import { CustomStepper, useToast } from "@zentto/shared-ui";
+import type { StepDef } from "@zentto/shared-ui";
 
 import { useCuentasBancarias, useGenerarMovimientoBancario } from "../hooks/useBancosAuxiliares";
 

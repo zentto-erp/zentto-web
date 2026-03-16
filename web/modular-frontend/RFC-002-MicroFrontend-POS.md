@@ -37,7 +37,7 @@ web/modular-frontend/
 
 ## 3. Red y Puertos (Next.js Multi-Zones / Rewrites)
 
-El `Shell` actúa como enrutador inteligente. Para el usuario final: `datqbox.local/pos`.
+El `Shell` actúa como enrutador inteligente. Para el usuario final: `zentto.local/pos`.
 
 **Configuración en `apps/shell/next.config.mjs` (AGREGAR):**
 ```javascript
@@ -60,7 +60,7 @@ async rewrites() {
 ```javascript
 export default {
   basePath: '/pos', // Aislar estáticos de esta app
-  transpilePackages: ['@datqbox/shared-ui', '@datqbox/shared-auth', '@datqbox/shared-api'],
+  transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api'],
 }
 ```
 
@@ -68,12 +68,12 @@ export default {
 
 Mismo esquema que Contabilidad:
 - Cookie de NextAuth (`next-auth.session-token`) compartida vía dominio base
-- Ambas apps usan `useAuth()` desde `@datqbox/shared-auth`
+- Ambas apps usan `useAuth()` desde `@zentto/shared-auth`
 - Si no hay sesión, redirigir al Shell (login centralizado)
 
 ## 5. Funcionalidades del Subsistema POS
 
-Basado en el legado `DatQBox PtoVenta` (VB6) y la imagen de referencia:
+Basado en el legado `Zentto PtoVenta` (VB6) y la imagen de referencia:
 
 ### Módulos Core:
 1. **Facturación Rápida** - Interfaz touch para agregar productos al carrito
@@ -107,9 +107,9 @@ Basado en el legado `DatQBox PtoVenta` (VB6) y la imagen de referencia:
 ```json
 {
   "dependencies": {
-    "@datqbox/shared-api": "workspace:*",
-    "@datqbox/shared-auth": "workspace:*",
-    "@datqbox/shared-ui": "workspace:*",
+    "@zentto/shared-api": "workspace:*",
+    "@zentto/shared-auth": "workspace:*",
+    "@zentto/shared-ui": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.1",
@@ -139,6 +139,6 @@ Basado en el legado `DatQBox PtoVenta` (VB6) y la imagen de referencia:
 ## 9. Notas de Implementación
 
 - Puerto asignado: **3002** (Shell: 3000, Contabilidad: 3001, POS: 3002)
-- Módulo VB6 de referencia: `DatQBox PtoVenta/`
+- Módulo VB6 de referencia: `Zentto PtoVenta/`
 - El diseño debe ser touch-friendly (mínimo 44px touch targets)
 - Integración futura con spooler fiscal vía API

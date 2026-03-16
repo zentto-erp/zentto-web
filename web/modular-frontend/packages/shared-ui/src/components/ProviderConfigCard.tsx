@@ -22,7 +22,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 
-import type { CompanyPaymentConfig, ConfigField, PaymentProvider } from '@datqbox/shared-api';
+import type { CompanyPaymentConfig, ConfigField, PaymentProvider } from '@zentto/shared-api';
 
 interface ProviderConfigCardProps {
   provider: PaymentProvider;

@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, CircularProgress } from "@mui/material";
-import { formatDate } from "@datqbox/shared-api";
-import { useTimezone } from "@datqbox/shared-auth";
+import { formatDate } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 
 interface OrderRow {
   orderNumber: string;
