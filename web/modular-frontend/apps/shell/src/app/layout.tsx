@@ -20,6 +20,7 @@ import {
 import '@zentto/shared-ui/globals.css';
 
 import { buildNavigation } from '../lib/navigation';
+import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
 
 const AUTHENTICATION = { signIn, signOut };
 
@@ -54,6 +55,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
         title: '',
       }}
     >
+      <HardwareAgentBanner modulos={modulos} />
       <AppBarWrapper>
         {!showContent ? (
           <LoadingFallback />
