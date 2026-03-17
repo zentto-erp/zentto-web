@@ -1188,7 +1188,7 @@ BEGIN
       AND (p_tipo IS NULL OR "MovementType"=p_tipo);
 
     RETURN QUERY SELECT m."MovementId",m."ProductCode",m."ProductName",m."DocumentRef",
-        m."MovementType",m."MovementDate",m."Quantity",m."UnitCost",m."TotalCost",m."Notes",v_total
+        m."MovementType",m."MovementDate"::TIMESTAMPTZ,m."Quantity",m."UnitCost",m."TotalCost",m."Notes",v_total
     FROM master."InventoryMovement" m
     WHERE m."IsDeleted"=FALSE
       AND (p_search IS NULL OR m."ProductCode" LIKE p_search OR m."ProductName" LIKE p_search OR m."DocumentRef" LIKE p_search)
@@ -1205,7 +1205,7 @@ RETURNS TABLE("MovementId" BIGINT,"Codigo" VARCHAR,"Product" VARCHAR,"Documento"
     "Tipo" VARCHAR,"Fecha" TIMESTAMPTZ,"Quantity" NUMERIC,"UnitCost" NUMERIC,"TotalCost" NUMERIC,"Notes" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT m."MovementId",m."ProductCode",m."ProductName",m."DocumentRef",
-        m."MovementType",m."MovementDate",m."Quantity",m."UnitCost",m."TotalCost",m."Notes"
+        m."MovementType",m."MovementDate"::TIMESTAMPTZ,m."Quantity",m."UnitCost",m."TotalCost",m."Notes"
     FROM master."InventoryMovement" m WHERE m."MovementId"=p_id AND m."IsDeleted"=FALSE;
 END; $$;
 
