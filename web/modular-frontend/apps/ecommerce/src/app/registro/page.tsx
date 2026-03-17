@@ -45,12 +45,31 @@ export default function RegistroPage() {
 
     if (success) {
         return (
-            <Box sx={{ maxWidth: 400, mx: 'auto', py: 4 }}>
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                    <Alert severity="success" sx={{ mb: 2 }}>Cuenta creada exitosamente</Alert>
-                    <Button variant="contained" onClick={() => router.push('/login')}>
-                        Iniciar sesion
+            <Box sx={{ maxWidth: 480, mx: 'auto', py: 6 }}>
+                <Paper sx={{ p: 5, textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: 56, lineHeight: 1, mb: 2 }}>&#9993;</Typography>
+                    <Typography variant="h5" fontWeight={700} gutterBottom>
+                        Revisa tu correo
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Enviamos un enlace de confirmacion a:
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600} sx={{ mb: 2 }}>
+                        {email}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 3, maxWidth: 340, mx: 'auto' }}>
+                        Haz clic en el enlace del email para activar tu cuenta.
+                        Si no lo ves, revisa la carpeta de spam o correo no deseado.
+                    </Typography>
+                    <Button variant="contained" size="large" sx={{ px: 5, mb: 2 }} onClick={() => router.push('/login')}>
+                        Ir al login
                     </Button>
+                    <Typography variant="caption" display="block" color="text.secondary">
+                        No recibiste el email?{' '}
+                        <MuiLink component="span" sx={{ cursor: 'pointer', fontSize: 'inherit' }} onClick={() => setSuccess(false)}>
+                            Intentar de nuevo
+                        </MuiLink>
+                    </Typography>
                 </Paper>
             </Box>
         );
