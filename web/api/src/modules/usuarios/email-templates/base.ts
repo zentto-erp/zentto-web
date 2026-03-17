@@ -1,22 +1,49 @@
 // Templates de email Zentto — HTML puro, sin dependencias externas
+// Cumple: CAN-SPAM Act, GDPR, Ley de Protección de Datos
 
 const BRAND = {
   name: "Zentto",
+  legalName: "Zentto ERP, C.A.",
   url: "https://zentto.net",
   appUrl: "https://app.zentto.net",
   color: "#6C63FF",
   colorSecondary: "#FF6584",
   supportEmail: "soporte@zentto.net",
+  privacyUrl: "https://zentto.net/privacidad",
+  termsUrl: "https://zentto.net/terminos-y-condiciones",
+  unsubscribeUrl: "https://app.zentto.net/settings/notifications",
+  address: "Zentto ERP — zentto.net",
   year: new Date().getFullYear(),
 };
 
-function layout(content: string, preheader = "") {
+interface LayoutOptions {
+  preheader?: string;
+  reason?: string;       // Por qué recibe este email
+  unsubscribe?: boolean; // Mostrar link de unsub (default: true)
+  transactional?: boolean; // Email transaccional (no marketing)
+}
+
+function layout(content: string, opts: LayoutOptions = {}) {
+  const {
+    preheader = "",
+    reason = "Recibes este correo porque tienes una cuenta en Zentto.",
+    unsubscribe = true,
+    transactional = false,
+  } = opts;
+
+  const unsubSection = unsubscribe ? `
+      <p style="margin-top:16px">
+        <a href="${BRAND.unsubscribeUrl}" style="color:#9b9bb0;text-decoration:underline;font-size:11px">Gestionar preferencias de notificación</a>
+        ${!transactional ? ` &middot; <a href="${BRAND.unsubscribeUrl}?action=unsubscribe" style="color:#9b9bb0;text-decoration:underline;font-size:11px">Cancelar suscripción</a>` : ""}
+      </p>` : "";
+
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <title>${BRAND.name}</title>
 <!--[if mso]><style>table,td{font-family:Arial,sans-serif!important}</style><![endif]-->
 <style>
@@ -36,10 +63,9 @@ function layout(content: string, preheader = "") {
   .info-box p{margin:0 0 4px;font-size:13px;color:#6b6b80}
   .info-box strong{color:#1a1a2e}
   .footer{padding:24px 40px;text-align:center;border-top:1px solid #f0f0f5}
-  .footer p{margin:0 0 8px;color:#9b9bb0;font-size:12px;line-height:1.5}
+  .footer p{margin:0 0 8px;color:#9b9bb0;font-size:11px;line-height:1.5}
   .footer a{color:${BRAND.color};text-decoration:none}
-  .social{margin:12px 0}
-  .social a{display:inline-block;margin:0 6px;color:#9b9bb0;font-size:12px;text-decoration:none}
+  .legal{font-size:10px;color:#b0b0c8;line-height:1.4;margin-top:16px}
   @media(prefers-color-scheme:dark){
     body{background:#1a1a2e!important}
     .card{background:#0a0a0e!important;box-shadow:0 4px 24px rgba(0,0,0,0.3)!important}
@@ -52,7 +78,7 @@ function layout(content: string, preheader = "") {
 </style>
 </head>
 <body>
-${preheader ? `<div style="display:none;max-height:0;overflow:hidden">${preheader}</div>` : ""}
+${preheader ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${preheader}${"&nbsp;".repeat(80)}</div>` : ""}
 <div class="container">
   <div class="card">
     <div class="header">
@@ -62,10 +88,16 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden">${preheade
       ${content}
     </div>
     <div class="footer">
-      <p><a href="${BRAND.url}">zentto.net</a> &middot; <a href="${BRAND.appUrl}">Acceder a la app</a></p>
+      <p><a href="${BRAND.url}">zentto.net</a> &middot; <a href="${BRAND.appUrl}">Acceder a la app</a> &middot; <a href="${BRAND.privacyUrl}">Privacidad</a> &middot; <a href="${BRAND.termsUrl}">Términos</a></p>
       <p>ERP SaaS para PYMEs latinoamericanas<br>Facturación &middot; Contabilidad &middot; Inventario &middot; Nómina &middot; POS &middot; Ecommerce</p>
-      <p>&copy; ${BRAND.year} ${BRAND.name}. Todos los derechos reservados.</p>
-      <p style="margin-top:12px"><a href="mailto:${BRAND.supportEmail}">${BRAND.supportEmail}</a></p>
+      <p>&copy; ${BRAND.year} ${BRAND.legalName}. Todos los derechos reservados.</p>
+      <p><a href="mailto:${BRAND.supportEmail}">${BRAND.supportEmail}</a></p>
+      ${unsubSection}
+      <div class="legal">
+        <p>${reason}</p>
+        <p>${BRAND.legalName} &middot; ${BRAND.address}</p>
+        ${!transactional ? `<p>Si no deseas recibir más correos de este tipo, puedes <a href="${BRAND.unsubscribeUrl}?action=unsubscribe" style="color:#9b9bb0;text-decoration:underline">cancelar tu suscripción</a> en cualquier momento.</p>` : ""}
+      </div>
     </div>
   </div>
 </div>
@@ -81,7 +113,7 @@ function escapeHtml(str: string): string {
 
 export function verifyEmailTemplate(userCode: string, verificationUrl: string) {
   const subject = "Confirma tu cuenta — Zentto";
-  const text = `Hola ${userCode}, confirma tu cuenta en Zentto: ${verificationUrl}`;
+  const text = `Hola ${userCode}, confirma tu cuenta en Zentto: ${verificationUrl}\n\nSi no solicitaste este registro, ignora este mensaje.\n\n${BRAND.legalName} — ${BRAND.url}`;
   const html = layout(`
     <h2>Confirma tu cuenta</h2>
     <p>Hola <strong>${escapeHtml(userCode)}</strong>,</p>
@@ -94,15 +126,19 @@ export function verifyEmailTemplate(userCode: string, verificationUrl: string) {
       <p style="word-break:break-all;color:${BRAND.color};font-size:12px">${verificationUrl}</p>
     </div>
     <div class="divider"></div>
-    <p style="font-size:13px;color:#9b9bb0">Este enlace expira en 24 horas. Si no solicitaste este registro, puedes ignorar este mensaje.</p>
-  `, "Confirma tu cuenta en Zentto para comenzar tu prueba gratuita");
+    <p style="font-size:13px;color:#9b9bb0">Este enlace expira en 24 horas. Si no solicitaste este registro, puedes ignorar este mensaje de forma segura.</p>
+  `, {
+    preheader: "Confirma tu cuenta en Zentto para comenzar tu prueba gratuita",
+    reason: "Recibes este correo porque alguien usó esta dirección para registrarse en Zentto. Si no fuiste tú, ignóralo.",
+    transactional: true,
+  });
 
   return { subject, text, html };
 }
 
 export function resetPasswordTemplate(userCode: string, resetUrl: string) {
   const subject = "Restablecer contraseña — Zentto";
-  const text = `Hola ${userCode}, restablece tu contraseña en Zentto: ${resetUrl}`;
+  const text = `Hola ${userCode}, restablece tu contraseña en Zentto: ${resetUrl}\n\nSi no lo solicitaste, ignora este correo.\n\n${BRAND.legalName} — ${BRAND.url}`;
   const html = layout(`
     <h2>Restablecer contraseña</h2>
     <p>Hola <strong>${escapeHtml(userCode)}</strong>,</p>
@@ -116,14 +152,18 @@ export function resetPasswordTemplate(userCode: string, resetUrl: string) {
     </div>
     <div class="divider"></div>
     <p style="font-size:13px;color:#9b9bb0">Este enlace expira en 30 minutos. Si no solicitaste este cambio, ignora este correo — tu contraseña actual seguirá siendo la misma.</p>
-  `, "Solicitud para restablecer tu contraseña en Zentto");
+  `, {
+    preheader: "Solicitud para restablecer tu contraseña en Zentto",
+    reason: "Recibes este correo porque se solicitó un restablecimiento de contraseña para tu cuenta en Zentto.",
+    transactional: true,
+  });
 
   return { subject, text, html };
 }
 
 export function welcomeTemplate(userName: string, loginUrl: string) {
   const subject = "Bienvenido a Zentto — Tu prueba gratuita está activa";
-  const text = `Bienvenido a Zentto, ${userName}. Tu prueba gratuita de 30 días está activa. Accede en: ${loginUrl}`;
+  const text = `Bienvenido a Zentto, ${userName}. Tu prueba gratuita de 30 días está activa. Accede en: ${loginUrl}\n\nPara dejar de recibir emails: ${BRAND.unsubscribeUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
   const html = layout(`
     <h2>¡Bienvenido a Zentto!</h2>
     <p>Hola <strong>${escapeHtml(userName)}</strong>,</p>
@@ -132,12 +172,12 @@ export function welcomeTemplate(userName: string, loginUrl: string) {
     <div class="info-box">
       <p><strong>Lo que puedes hacer ahora:</strong></p>
       <p style="margin-top:8px">
-        ✓ Facturación electrónica fiscal<br>
-        ✓ Contabilidad con asientos automáticos<br>
-        ✓ Inventario multi-almacén<br>
-        ✓ Punto de venta (POS)<br>
-        ✓ Nómina y RRHH<br>
-        ✓ Ecommerce integrado
+        &#10003; Facturación electrónica fiscal<br>
+        &#10003; Contabilidad con asientos automáticos<br>
+        &#10003; Inventario multi-almacén<br>
+        &#10003; Punto de venta (POS)<br>
+        &#10003; Nómina y RRHH<br>
+        &#10003; Ecommerce integrado
       </p>
     </div>
 
@@ -147,14 +187,18 @@ export function welcomeTemplate(userName: string, loginUrl: string) {
 
     <div class="divider"></div>
     <p style="font-size:13px;color:#9b9bb0">¿Necesitas ayuda? Responde a este correo o escríbenos a <a href="mailto:soporte@zentto.net" style="color:${BRAND.color}">soporte@zentto.net</a>. Estamos aquí para ayudarte.</p>
-  `, `Bienvenido a Zentto, ${userName}. Tu prueba gratuita de 30 días está activa.`);
+  `, {
+    preheader: `Bienvenido a Zentto, ${userName}. Tu prueba gratuita de 30 días está activa.`,
+    reason: "Recibes este correo porque acabas de crear una cuenta en Zentto.",
+    transactional: false,
+  });
 
   return { subject, text, html };
 }
 
 export function welcomeStoreTemplate(customerName: string, storeUrl: string) {
   const subject = "Bienvenido a Zentto Store";
-  const text = `Bienvenido a Zentto Store, ${customerName}. Explora nuestro catálogo en: ${storeUrl}`;
+  const text = `Bienvenido a Zentto Store, ${customerName}. Explora nuestro catálogo en: ${storeUrl}\n\nPara dejar de recibir emails: ${BRAND.unsubscribeUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
   const html = layout(`
     <h2>¡Bienvenido a Zentto Store!</h2>
     <p>Hola <strong>${escapeHtml(customerName)}</strong>,</p>
@@ -164,23 +208,114 @@ export function welcomeStoreTemplate(customerName: string, storeUrl: string) {
     </p>
     <div class="divider"></div>
     <p style="font-size:13px;color:#9b9bb0">¿Preguntas sobre tu pedido? Escríbenos a <a href="mailto:soporte@zentto.net" style="color:${BRAND.color}">soporte@zentto.net</a>.</p>
-  `, `Bienvenido a Zentto Store, ${customerName}`);
+  `, {
+    preheader: `Bienvenido a Zentto Store, ${customerName}`,
+    reason: "Recibes este correo porque creaste una cuenta en Zentto Store.",
+    transactional: false,
+  });
 
   return { subject, text, html };
 }
 
 export function passwordChangedTemplate(userCode: string) {
   const subject = "Contraseña actualizada — Zentto";
-  const text = `Hola ${userCode}, tu contraseña en Zentto ha sido actualizada exitosamente.`;
+  const text = `Hola ${userCode}, tu contraseña en Zentto ha sido actualizada exitosamente. Si no fuiste tú, contacta soporte@zentto.net inmediatamente.\n\n${BRAND.legalName} — ${BRAND.url}`;
   const html = layout(`
     <h2>Contraseña actualizada</h2>
     <p>Hola <strong>${escapeHtml(userCode)}</strong>,</p>
     <p>Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.</p>
     <div class="info-box">
       <p><strong>¿No fuiste tú?</strong></p>
-      <p>Si no realizaste este cambio, contacta inmediatamente a nuestro equipo de soporte en <a href="mailto:soporte@zentto.net" style="color:${BRAND.color}">soporte@zentto.net</a>.</p>
+      <p>Si no realizaste este cambio, contacta inmediatamente a nuestro equipo de soporte en <a href="mailto:soporte@zentto.net" style="color:${BRAND.color}">soporte@zentto.net</a> para proteger tu cuenta.</p>
     </div>
-  `, "Tu contraseña en Zentto ha sido actualizada");
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#9b9bb0">
+      <strong>Detalles de seguridad:</strong><br>
+      Fecha: ${new Date().toISOString().split("T")[0]}<br>
+      Si no reconoces esta actividad, cambia tu contraseña inmediatamente.
+    </p>
+  `, {
+    preheader: "Tu contraseña en Zentto ha sido actualizada",
+    reason: "Recibes este correo porque se actualizó la contraseña de tu cuenta en Zentto.",
+    transactional: true,
+    unsubscribe: false,
+  });
+
+  return { subject, text, html };
+}
+
+export function invoiceTemplate(customerName: string, invoiceNumber: string, amount: string, currency: string, downloadUrl: string) {
+  const subject = `Factura ${invoiceNumber} — Zentto`;
+  const text = `Hola ${customerName}, tu factura ${invoiceNumber} por ${currency} ${amount} está disponible. Descárgala en: ${downloadUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>Tu factura está lista</h2>
+    <p>Hola <strong>${escapeHtml(customerName)}</strong>,</p>
+    <p>Se ha generado una nueva factura en tu cuenta:</p>
+    <div class="info-box">
+      <p><strong>Factura:</strong> ${escapeHtml(invoiceNumber)}</p>
+      <p><strong>Monto:</strong> ${escapeHtml(currency)} ${escapeHtml(amount)}</p>
+      <p><strong>Fecha:</strong> ${new Date().toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })}</p>
+    </div>
+    <p style="text-align:center">
+      <a href="${downloadUrl}" class="btn">Descargar factura</a>
+    </p>
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#9b9bb0">Si tienes preguntas sobre esta factura, escríbenos a <a href="mailto:soporte@zentto.net" style="color:${BRAND.color}">soporte@zentto.net</a>.</p>
+  `, {
+    preheader: `Factura ${invoiceNumber} por ${currency} ${amount}`,
+    reason: "Recibes este correo porque se generó una factura asociada a tu cuenta en Zentto.",
+    transactional: true,
+  });
+
+  return { subject, text, html };
+}
+
+export function trialExpiringTemplate(userName: string, daysLeft: number, upgradeUrl: string) {
+  const subject = `Tu prueba gratuita expira en ${daysLeft} día${daysLeft > 1 ? "s" : ""} — Zentto`;
+  const text = `Hola ${userName}, tu prueba gratuita de Zentto expira en ${daysLeft} días. Actualiza tu plan en: ${upgradeUrl}\n\nPara dejar de recibir emails: ${BRAND.unsubscribeUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>Tu prueba está por terminar</h2>
+    <p>Hola <strong>${escapeHtml(userName)}</strong>,</p>
+    <p>Tu prueba gratuita de Zentto expira en <strong>${daysLeft} día${daysLeft > 1 ? "s" : ""}</strong>. Para no perder acceso a tus datos y seguir usando todas las funcionalidades, actualiza tu plan:</p>
+    <p style="text-align:center">
+      <a href="${upgradeUrl}" class="btn">Elegir un plan</a>
+    </p>
+    <div class="info-box">
+      <p><strong>¿Qué pasa si no actualizo?</strong></p>
+      <p>Tu cuenta pasará a modo lectura. No perderás tus datos, pero no podrás crear nuevos documentos hasta que actives un plan.</p>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#9b9bb0">Planes desde $29/mes. <a href="${BRAND.url}/#pricing" style="color:${BRAND.color}">Ver precios</a></p>
+  `, {
+    preheader: `Tu prueba gratuita expira en ${daysLeft} días — actualiza tu plan`,
+    reason: "Recibes este correo porque tienes una prueba gratuita activa en Zentto.",
+    transactional: false,
+  });
+
+  return { subject, text, html };
+}
+
+export function paymentSuccessTemplate(customerName: string, planName: string, amount: string, nextBillingDate: string) {
+  const subject = "Pago confirmado — Zentto";
+  const text = `Hola ${customerName}, tu pago de ${amount} para el plan ${planName} ha sido procesado. Próxima facturación: ${nextBillingDate}.\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>Pago confirmado</h2>
+    <p>Hola <strong>${escapeHtml(customerName)}</strong>,</p>
+    <p>Tu pago ha sido procesado exitosamente. Aquí están los detalles:</p>
+    <div class="info-box">
+      <p><strong>Plan:</strong> ${escapeHtml(planName)}</p>
+      <p><strong>Monto:</strong> ${escapeHtml(amount)}</p>
+      <p><strong>Próxima facturación:</strong> ${escapeHtml(nextBillingDate)}</p>
+    </div>
+    <p>Gracias por confiar en Zentto para gestionar tu negocio.</p>
+    <p style="text-align:center">
+      <a href="${BRAND.appUrl}" class="btn">Ir a Zentto</a>
+    </p>
+  `, {
+    preheader: `Pago de ${amount} confirmado para tu plan ${planName}`,
+    reason: "Recibes este correo porque realizaste un pago en Zentto.",
+    transactional: true,
+  });
 
   return { subject, text, html };
 }
