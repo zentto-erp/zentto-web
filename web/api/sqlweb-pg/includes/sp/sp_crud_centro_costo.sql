@@ -1,32 +1,34 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - sp_crud_centro_costo.sql
--- CRUD de Centro de Costo (public."Centro_Costo")
+-- CRUD de Centro de Costo (acct."CostCenter")
+-- Tabla canonica: acct."CostCenter" (CostCenterId, CostCenterCode, CostCenterName)
+-- Columnas legacy (Presupuestado, Saldo_Real) retornan NULL para compatibilidad
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_centrocosto_list(VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_centrocosto_list(
-    p_search VARCHAR(100) DEFAULT NULL,
-    p_page   INT          DEFAULT 1,
-    p_limit  INT          DEFAULT 50
+    p_search VARCHAR DEFAULT NULL,
+    p_page   INT     DEFAULT 1,
+    p_limit  INT     DEFAULT 50
 )
 RETURNS TABLE(
-    "Codigo"        VARCHAR(50),
-    "Descripcion"   VARCHAR(100),
-    "Presupuestado" VARCHAR(50),
-    "Saldo_Real"    VARCHAR(50),
-    "TotalCount"    INT
+    "Codigo"        character varying,
+    "Descripcion"   character varying,
+    "Presupuestado" character varying,
+    "Saldo_Real"    character varying,
+    "TotalCount"    integer
 )
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql AS $func$
 DECLARE
     v_offset INT;
     v_limit  INT;
-    v_search VARCHAR(100);
     v_total  INT;
+    v_search VARCHAR(100);
 BEGIN
     v_limit  := COALESCE(NULLIF(p_limit, 0), 50);
-    IF v_limit < 1  THEN v_limit := 50;  END IF;
+    IF v_limit < 1   THEN v_limit := 50;  END IF;
     IF v_limit > 500 THEN v_limit := 500; END IF;
-
     v_offset := (COALESCE(NULLIF(p_page, 0), 1) - 1) * v_limit;
     IF v_offset < 0 THEN v_offset := 0; END IF;
 
@@ -37,25 +39,25 @@ BEGIN
 
     -- Conteo total
     SELECT COUNT(1) INTO v_total
-    FROM public."Centro_Costo" cc
-    WHERE v_search IS NULL
-       OR (cc."Codigo" ILIKE v_search OR cc."Descripcion" ILIKE v_search);
+    FROM acct."CostCenter" cc
+    WHERE COALESCE(cc."IsDeleted", FALSE) = FALSE
+      AND (v_search IS NULL OR cc."CostCenterCode" ILIKE v_search OR cc."CostCenterName" ILIKE v_search);
 
     -- Resultados paginados
     RETURN QUERY
     SELECT
-        cc."Codigo",
-        cc."Descripcion",
-        cc."Presupuestado",
-        cc."Saldo_Real",
-        v_total AS "TotalCount"
-    FROM public."Centro_Costo" cc
-    WHERE v_search IS NULL
-       OR (cc."Codigo" ILIKE v_search OR cc."Descripcion" ILIKE v_search)
-    ORDER BY cc."Codigo"
+        cc."CostCenterCode"::VARCHAR,
+        cc."CostCenterName"::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        v_total::INT
+    FROM acct."CostCenter" cc
+    WHERE COALESCE(cc."IsDeleted", FALSE) = FALSE
+      AND (v_search IS NULL OR cc."CostCenterCode" ILIKE v_search OR cc."CostCenterName" ILIKE v_search)
+    ORDER BY cc."CostCenterCode"
     LIMIT v_limit OFFSET v_offset;
 END;
-$$;
+$func$;
 
 -- ---------- 2. Get by Codigo ----------
 CREATE OR REPLACE FUNCTION usp_centrocosto_getbycodigo(

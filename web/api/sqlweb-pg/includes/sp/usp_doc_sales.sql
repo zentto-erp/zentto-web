@@ -8,87 +8,97 @@
 -- =============================================================================
 -- 1. usp_Doc_SalesDocument_List
 -- Lista paginada de documentos de venta con filtros.
+-- Tabla canonica: doc."SalesDocument"
+-- Mapeado de columnas legacy -> canonico:
+--   IssueDate      -> "DocumentDate"
+--   Subtotal       -> "SubTotal" (cast numeric)
+--   IsCanceled     -> "IsPaid"
+--   SourceDocumentNumber -> "OriginDocumentNumber"
+--   SourceDocumentType   -> "OriginDocumentType"
+--   LegacyUserCode -> "UserCode"
+--   Columnas inexistentes retornan NULL (IsLegal, IsPrinted, PaymentTerms, etc.)
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP) CASCADE;
 DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_list(
-    p_tipo_operacion VARCHAR(20),
-    p_search         VARCHAR(100)  DEFAULT NULL,
-    p_codigo         VARCHAR(60)   DEFAULT NULL,
-    p_from_date      DATE          DEFAULT NULL,
-    p_to_date        DATE          DEFAULT NULL,
-    p_page           INT           DEFAULT 1,
-    p_limit          INT           DEFAULT 50
+    p_tipo_operacion  VARCHAR    DEFAULT NULL,
+    p_page            INT        DEFAULT 1,
+    p_limit           INT        DEFAULT 50,
+    p_search          VARCHAR    DEFAULT NULL,
+    p_codigo          VARCHAR    DEFAULT NULL,
+    p_from_date       TIMESTAMP  DEFAULT NULL,
+    p_to_date         TIMESTAMP  DEFAULT NULL
 )
 RETURNS TABLE(
-    "DocumentId"            INT,
-    "DocumentNumber"        VARCHAR,
-    "SerialType"            VARCHAR,
-    "FiscalMemoryNumber"    VARCHAR,
-    "OperationType"         VARCHAR,
-    "CustomerCode"          VARCHAR,
-    "CustomerName"          VARCHAR,
-    "FiscalId"              VARCHAR,
-    "DocumentDate"          TIMESTAMP,
-    "DueDate"               TIMESTAMP,
-    "DocumentTime"          VARCHAR,
-    "SubTotal"              NUMERIC,
-    "TaxableAmount"         NUMERIC,
-    "ExemptAmount"          NUMERIC,
-    "TaxAmount"             NUMERIC,
-    "TaxRate"               NUMERIC,
-    "TotalAmount"           NUMERIC,
-    "DiscountAmount"        NUMERIC,
-    "IsVoided"              BOOLEAN,
-    "IsPaid"                VARCHAR,
-    "IsInvoiced"            VARCHAR,
-    "IsDelivered"           VARCHAR,
-    "OriginDocumentNumber"  VARCHAR,
-    "OriginDocumentType"    VARCHAR,
-    "ControlNumber"         VARCHAR,
-    "IsLegal"               BOOLEAN,
-    "IsPrinted"             BOOLEAN,
-    "Notes"                 TEXT,
-    "Concept"               VARCHAR,
-    "PaymentTerms"          VARCHAR,
-    "ShipToAddress"         VARCHAR,
-    "SellerCode"            VARCHAR,
-    "DepartmentCode"        VARCHAR,
-    "LocationCode"          VARCHAR,
-    "CurrencyCode"          VARCHAR,
-    "ExchangeRate"          NUMERIC,
-    "UserCode"              VARCHAR,
-    "ReportDate"            TIMESTAMP,
-    "HostName"              VARCHAR,
-    "VehiclePlate"          VARCHAR,
-    "Mileage"               INT,
-    "TollAmount"            NUMERIC,
-    "CreatedAt"             TIMESTAMP,
-    "UpdatedAt"             TIMESTAMP,
-    "IsDeleted"             BOOLEAN,
-    "TotalCount"            BIGINT
+    "SalesDocumentId"       bigint,
+    "DocumentNumber"        character varying,
+    "SerialType"            character varying,
+    "FiscalMemoryNumber"    character varying,
+    "OperationType"         character varying,
+    "CustomerCode"          character varying,
+    "CustomerName"          character varying,
+    "FiscalId"              character varying,
+    "DocumentDate"          timestamp without time zone,
+    "DueDate"               timestamp without time zone,
+    "DocumentTime"          character varying,
+    "SubTotal"              numeric,
+    "TaxableAmount"         numeric,
+    "ExemptAmount"          numeric,
+    "TaxAmount"             numeric,
+    "TaxRate"               numeric,
+    "TotalAmount"           numeric,
+    "DiscountAmount"        numeric,
+    "IsVoided"              boolean,
+    "IsPaid"                character varying,
+    "IsInvoiced"            character varying,
+    "IsDelivered"           character varying,
+    "OriginDocumentNumber"  character varying,
+    "OriginDocumentType"    character varying,
+    "ControlNumber"         character varying,
+    "IsLegal"               character varying,
+    "IsPrinted"             boolean,
+    "Notes"                 character varying,
+    "Concept"               character varying,
+    "PaymentTerms"          character varying,
+    "ShipToAddress"         character varying,
+    "SellerCode"            character varying,
+    "DepartmentCode"        character varying,
+    "LocationCode"          character varying,
+    "CurrencyCode"          character varying,
+    "ExchangeRate"          numeric,
+    "UserCode"              character varying,
+    "ReportDate"            timestamp without time zone,
+    "HostName"              character varying,
+    "VehiclePlate"          character varying,
+    "Mileage"               numeric,
+    "TollAmount"            numeric,
+    "CreatedAt"             timestamp without time zone,
+    "UpdatedAt"             timestamp without time zone,
+    "IsDeleted"             boolean,
+    "TotalCount"            bigint
 )
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql AS $func$
 DECLARE
     v_total  BIGINT;
     v_page   INT := GREATEST(p_page, 1);
     v_limit  INT := LEAST(GREATEST(p_limit, 1), 500);
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM ar."SalesDocument" sd_cnt
-    WHERE sd_cnt."OperationType" = p_tipo_operacion
-      AND sd_cnt."IsDeleted" = FALSE
+    FROM doc."SalesDocument" sd_c
+    WHERE COALESCE(sd_c."IsDeleted", FALSE) = FALSE
+      AND (p_tipo_operacion IS NULL OR sd_c."OperationType" = p_tipo_operacion)
       AND (p_search IS NULL OR (
-            sd_cnt."DocumentNumber" LIKE '%' || p_search || '%'
-            OR sd_cnt."CustomerName" LIKE '%' || p_search || '%'
-            OR sd_cnt."FiscalId" LIKE '%' || p_search || '%'
-          ))
-      AND (p_codigo IS NULL OR sd_cnt."CustomerCode" = p_codigo)
-      AND (p_from_date IS NULL OR sd_cnt."DocumentDate" >= p_from_date)
-      AND (p_to_date IS NULL OR sd_cnt."DocumentDate" < (p_to_date + INTERVAL '1 day'));
+            sd_c."DocumentNumber" LIKE '%' || p_search || '%'
+            OR sd_c."CustomerName" LIKE '%' || p_search || '%'
+            OR sd_c."FiscalId"     LIKE '%' || p_search || '%'
+           ))
+      AND (p_codigo    IS NULL OR sd_c."CustomerCode" = p_codigo)
+      AND (p_from_date IS NULL OR sd_c."IssueDate" >= p_from_date)
+      AND (p_to_date   IS NULL OR sd_c."IssueDate" <  (p_to_date + INTERVAL '1 day'));
 
     RETURN QUERY
     SELECT
-        sd."DocumentId",
+        sd."DocumentId"::bigint,
         sd."DocumentNumber"::VARCHAR,
         sd."SerialType"::VARCHAR,
         sd."FiscalMemoryNumber"::VARCHAR,
@@ -96,59 +106,59 @@ BEGIN
         sd."CustomerCode"::VARCHAR,
         sd."CustomerName"::VARCHAR,
         sd."FiscalId"::VARCHAR,
-        sd."DocumentDate",
+        sd."IssueDate",
         sd."DueDate",
         sd."DocumentTime"::VARCHAR,
-        sd."SubTotal",
-        sd."TaxableAmount",
-        sd."ExemptAmount",
-        sd."TaxAmount",
-        sd."TaxRate",
-        sd."TotalAmount",
-        sd."DiscountAmount",
+        sd."Subtotal"::numeric,
+        sd."TaxableAmount"::numeric,
+        sd."ExemptAmount"::numeric,
+        sd."TaxAmount"::numeric,
+        sd."TaxRate"::numeric,
+        sd."TotalAmount"::numeric,
+        sd."DiscountAmount"::numeric,
         sd."IsVoided",
-        sd."IsPaid"::VARCHAR,
+        sd."IsCanceled"::VARCHAR,
         sd."IsInvoiced"::VARCHAR,
         sd."IsDelivered"::VARCHAR,
-        sd."OriginDocumentNumber"::VARCHAR,
-        sd."OriginDocumentType"::VARCHAR,
+        sd."SourceDocumentNumber"::VARCHAR,
+        sd."SourceDocumentType"::VARCHAR,
         sd."ControlNumber"::VARCHAR,
-        sd."IsLegal",
-        sd."IsPrinted",
-        sd."Notes"::TEXT,
+        NULL::VARCHAR,
+        NULL::boolean,
+        sd."Notes"::VARCHAR,
         sd."Concept"::VARCHAR,
-        sd."PaymentTerms"::VARCHAR,
-        sd."ShipToAddress"::VARCHAR,
-        sd."SellerCode"::VARCHAR,
-        sd."DepartmentCode"::VARCHAR,
-        sd."LocationCode"::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
         sd."CurrencyCode"::VARCHAR,
-        sd."ExchangeRate",
-        sd."UserCode"::VARCHAR,
-        sd."ReportDate",
-        sd."HostName"::VARCHAR,
-        sd."VehiclePlate"::VARCHAR,
-        sd."Mileage",
-        sd."TollAmount",
+        sd."ExchangeRate"::numeric,
+        sd."LegacyUserCode"::VARCHAR,
+        NULL::timestamp,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::numeric,
+        NULL::numeric,
         sd."CreatedAt",
         sd."UpdatedAt",
-        sd."IsDeleted",
+        COALESCE(sd."IsDeleted", FALSE),
         v_total
-    FROM ar."SalesDocument" sd
-    WHERE sd."OperationType" = p_tipo_operacion
-      AND sd."IsDeleted" = FALSE
+    FROM doc."SalesDocument" sd
+    WHERE COALESCE(sd."IsDeleted", FALSE) = FALSE
+      AND (p_tipo_operacion IS NULL OR sd."OperationType" = p_tipo_operacion)
       AND (p_search IS NULL OR (
             sd."DocumentNumber" LIKE '%' || p_search || '%'
             OR sd."CustomerName" LIKE '%' || p_search || '%'
-            OR sd."FiscalId" LIKE '%' || p_search || '%'
-          ))
-      AND (p_codigo IS NULL OR sd."CustomerCode" = p_codigo)
-      AND (p_from_date IS NULL OR sd."DocumentDate" >= p_from_date)
-      AND (p_to_date IS NULL OR sd."DocumentDate" < (p_to_date + INTERVAL '1 day'))
-    ORDER BY sd."DocumentDate" DESC, sd."DocumentNumber" DESC
+            OR sd."FiscalId"     LIKE '%' || p_search || '%'
+           ))
+      AND (p_codigo    IS NULL OR sd."CustomerCode" = p_codigo)
+      AND (p_from_date IS NULL OR sd."IssueDate" >= p_from_date)
+      AND (p_to_date   IS NULL OR sd."IssueDate" <  (p_to_date + INTERVAL '1 day'))
+    ORDER BY sd."IssueDate" DESC
     LIMIT v_limit OFFSET (v_page - 1) * v_limit;
 END;
-$$;
+$func$;
 
 -- =============================================================================
 -- 2. usp_Doc_SalesDocument_Get

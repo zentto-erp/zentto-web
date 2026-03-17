@@ -682,23 +682,32 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_List
+-- FIX: id BIGINT (WaitTicketId is bigint), fechaCreacion TIMESTAMP (not TIMESTAMPTZ)
 DROP FUNCTION IF EXISTS usp_pos_waitticket_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_list(
     p_company_id INT,
     p_branch_id  INT
 )
-RETURNS TABLE("id" INTEGER, "cajaId" VARCHAR, "estacionNombre" VARCHAR, "clienteNombre" VARCHAR, "motivo" VARCHAR, "total" NUMERIC, "fechaCreacion" TIMESTAMPTZ)
+RETURNS TABLE(
+    id               bigint,
+    "cajaId"         character varying,
+    "estacionNombre" character varying,
+    "clienteNombre"  character varying,
+    motivo           character varying,
+    total            numeric,
+    "fechaCreacion"  timestamp without time zone
+)
 LANGUAGE plpgsql
-AS $$
+AS $func$
 BEGIN
     RETURN QUERY
-    SELECT wt."WaitTicketId"::INTEGER, wt."CashRegisterCode", wt."StationName",
-           wt."CustomerName", wt."Reason", wt."TotalAmount", wt."CreatedAt"::TIMESTAMPTZ
+    SELECT wt."WaitTicketId"::bigint, wt."CashRegisterCode"::VARCHAR, wt."StationName"::VARCHAR,
+           wt."CustomerName"::VARCHAR, wt."Reason"::VARCHAR, wt."TotalAmount", wt."CreatedAt"
     FROM pos."WaitTicket" wt
     WHERE wt."CompanyId" = p_company_id AND wt."BranchId" = p_branch_id AND wt."Status" = 'WAITING'
     ORDER BY wt."CreatedAt";
 END;
-$$;
+$func$;
 
 -- usp_POS_WaitTicket_GetHeader
 DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader(INT, INT, INT) CASCADE;

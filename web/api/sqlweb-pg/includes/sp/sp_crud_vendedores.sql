@@ -4,42 +4,52 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+-- RETURNS TABLE ampliado para compatibilidad con produccion (24 columnas + TotalCount)
+-- Columnas legacy sin equivalente en master.Seller retornan NULL
 DROP FUNCTION IF EXISTS usp_vendedores_list(VARCHAR, BOOLEAN, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_vendedores_list(
-    p_search VARCHAR(100) DEFAULT NULL,
-    p_status BOOLEAN DEFAULT NULL,
-    p_tipo VARCHAR(50) DEFAULT NULL,
-    p_page INT DEFAULT 1,
-    p_limit INT DEFAULT 50
+    p_search  VARCHAR  DEFAULT NULL,
+    p_status  BOOLEAN  DEFAULT NULL,
+    p_tipo    VARCHAR  DEFAULT NULL,
+    p_page    INT      DEFAULT 1,
+    p_limit   INT      DEFAULT 50
 )
 RETURNS TABLE(
-    "Codigo" VARCHAR,
-    "Nombre" VARCHAR,
-    "Comision" NUMERIC,
-    "Status" BOOLEAN,
-    "IsActive" BOOLEAN,
-    "IsDeleted" BOOLEAN,
-    "CompanyId" INT,
-    "SellerCode" VARCHAR,
-    "SellerName" VARCHAR,
-    "Commission" NUMERIC,
-    "Direccion" VARCHAR,
-    "Telefonos" VARCHAR,
-    "Email" VARCHAR,
-    "Tipo" VARCHAR,
-    "Clave" VARCHAR,
-    "TotalCount" BIGINT
+    "Codigo"              character varying,
+    "Nombre"              character varying,
+    "Comision"            numeric,
+    "Status"              boolean,
+    "IsActive"            boolean,
+    "IsDeleted"           boolean,
+    "CompanyId"           integer,
+    "SellerCode"          character varying,
+    "SellerName"          character varying,
+    "Commission"          numeric,
+    "Direccion"           character varying,
+    "Telefonos"           character varying,
+    "Email"               character varying,
+    "Tipo"                character varying,
+    "Clave"               character varying,
+    "RangoVentasUno"      numeric,
+    "ComisionVentasUno"   numeric,
+    "RangoVentasDos"      numeric,
+    "ComisionVentasDos"   numeric,
+    "RangoVentasTres"     numeric,
+    "ComisionVentasTres"  numeric,
+    "RangoVentasCuatro"   numeric,
+    "ComisionVentasCuatro" numeric,
+    "TotalCount"          bigint
 )
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql AS $func$
 DECLARE
-    v_offset INT;
-    v_total BIGINT;
+    v_offset       INT;
+    v_total        BIGINT;
     v_search_param VARCHAR(100);
 BEGIN
     v_offset := (COALESCE(NULLIF(p_page, 0), 1) - 1) * COALESCE(NULLIF(p_limit, 0), 50);
-    IF v_offset < 0 THEN v_offset := 0; END IF;
-    IF p_limit < 1 THEN p_limit := 50; END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
+    IF v_offset < 0  THEN v_offset := 0;   END IF;
+    IF p_limit < 1   THEN p_limit := 50;   END IF;
+    IF p_limit > 500 THEN p_limit := 500;  END IF;
 
     v_search_param := NULL;
     IF p_search IS NOT NULL AND TRIM(p_search) <> '' THEN
@@ -49,43 +59,44 @@ BEGIN
     SELECT COUNT(1) INTO v_total
     FROM master."Seller" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
-      AND (v_search_param IS NULL
-           OR s."SellerCode" LIKE v_search_param
-           OR s."SellerName" LIKE v_search_param
-           OR s."Email" LIKE v_search_param)
+      AND (v_search_param IS NULL OR s."SellerCode" LIKE v_search_param OR s."SellerName" LIKE v_search_param OR s."Email" LIKE v_search_param)
       AND (p_status IS NULL OR s."IsActive" = p_status)
       AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."SellerType" = p_tipo);
 
     RETURN QUERY
-    SELECT
-        s."SellerCode",
-        s."SellerName",
-        s."Commission",
-        s."IsActive",
-        s."IsActive",
-        s."IsDeleted",
-        s."CompanyId",
-        s."SellerCode",
-        s."SellerName",
-        s."Commission",
-        s."Address",
-        s."Phone",
-        s."Email",
-        s."SellerType",
-        NULL::VARCHAR,
-        v_total
+    SELECT s."SellerCode"::VARCHAR,
+           s."SellerName"::VARCHAR,
+           s."Commission",
+           s."IsActive",
+           s."IsActive",
+           s."IsDeleted",
+           s."CompanyId",
+           s."SellerCode"::VARCHAR,
+           s."SellerName"::VARCHAR,
+           s."Commission",
+           s."Address"::VARCHAR,
+           s."Phone"::VARCHAR,
+           s."Email"::VARCHAR,
+           s."SellerType"::VARCHAR,
+           NULL::VARCHAR,
+           NULL::numeric,
+           NULL::numeric,
+           NULL::numeric,
+           NULL::numeric,
+           NULL::numeric,
+           NULL::numeric,
+           NULL::numeric,
+           NULL::numeric,
+           v_total
     FROM master."Seller" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
-      AND (v_search_param IS NULL
-           OR s."SellerCode" LIKE v_search_param
-           OR s."SellerName" LIKE v_search_param
-           OR s."Email" LIKE v_search_param)
+      AND (v_search_param IS NULL OR s."SellerCode" LIKE v_search_param OR s."SellerName" LIKE v_search_param OR s."Email" LIKE v_search_param)
       AND (p_status IS NULL OR s."IsActive" = p_status)
       AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."SellerType" = p_tipo)
     ORDER BY s."SellerCode"
     LIMIT p_limit OFFSET v_offset;
 END;
-$$;
+$func$;
 
 -- ---------- 2. Get by Codigo ----------
 CREATE OR REPLACE FUNCTION usp_vendedores_getbycodigo(
