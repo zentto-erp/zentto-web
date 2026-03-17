@@ -441,7 +441,7 @@ CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_list(
   "Status"            VARCHAR,
   "SubmittedAt"       TIMESTAMP,
   "SubmittedFile"     VARCHAR,
-  "AuthorityResponse" VARCHAR,
+  "AuthorityResponse" TEXT,
   "PaidAt"            TIMESTAMP,
   "PaymentReference"  VARCHAR,
   "JournalEntryId"    BIGINT,
@@ -463,7 +463,7 @@ BEGIN
          td."SalesBase", td."SalesTax", td."PurchasesBase", td."PurchasesTax",
          td."TaxableBase", td."TaxAmount", td."WithholdingsCredit",
          td."PreviousBalance", td."NetPayable", td."Status",
-         td."SubmittedAt", td."SubmittedFile", td."AuthorityResponse",
+         td."SubmittedAt", td."SubmittedFile", td."AuthorityResponse"::TEXT,
          td."PaidAt", td."PaymentReference", td."JournalEntryId", td."Notes",
          td."CreatedBy", td."UpdatedBy", td."CreatedAt", td."UpdatedAt"
   FROM fiscal."TaxDeclaration" td
@@ -622,7 +622,7 @@ GRANT EXECUTE ON FUNCTION usp_fiscal_export_taxbook(INT,VARCHAR,VARCHAR,VARCHAR)
 -- NUEVAS CORRECCIONES — Ambiguedad + type mismatch + cast bug
 -- ============================================================
 
--- 17. usp_acct_equitymovement_list — alias em. elimina ambiguedad
+-- 17. usp_acct_equitymovement_list — alias em. elimina ambiguedad; tipos corregidos
 DROP FUNCTION IF EXISTS usp_acct_equitymovement_list(integer, integer, smallint) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_equitymovement_list(
   p_company_id  INT,
@@ -630,7 +630,7 @@ CREATE OR REPLACE FUNCTION usp_acct_equitymovement_list(
   p_fiscal_year SMALLINT
 ) RETURNS TABLE(
   p_total_count      BIGINT,
-  "EquityMovementId" BIGINT,
+  "EquityMovementId" INT,
   "AccountId"        BIGINT,
   "AccountCode"      VARCHAR,
   "AccountName"      VARCHAR,
@@ -1139,7 +1139,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_cotizacion_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 28. usp_facturas_list — fix cast bug
+-- 28. usp_facturas_list — fix cast bug + col mismatch (Id→DocumentId, ClientCode→CustomerCode, etc.)
 DROP FUNCTION IF EXISTS usp_facturas_list(character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION usp_facturas_list(
   p_num_fact    VARCHAR DEFAULT NULL,
@@ -1188,10 +1188,23 @@ BEGIN
     AND (p_to IS NULL OR sd."DocumentDate" <= p_to);
 
   RETURN QUERY
-  SELECT v_total, sd."Id", sd."DocumentNumber", sd."OperationType",
-         sd."DocumentDate", sd."UserCode", sd."ClientCode", sd."ClientName",
-         sd."SubTotal", sd."TaxAmount", sd."TotalAmount", sd."Currency",
-         sd."ExchangeRate", sd."Notes", sd."IsDeleted", sd."CreatedAt", sd."UpdatedAt"
+  SELECT v_total,
+         sd."DocumentId",
+         sd."DocumentNumber",
+         sd."OperationType",
+         sd."DocumentDate",
+         sd."UserCode",
+         sd."CustomerCode",
+         sd."CustomerName",
+         sd."SubTotal",
+         sd."TaxAmount",
+         sd."TotalAmount",
+         sd."CurrencyCode",
+         sd."ExchangeRate",
+         sd."Notes",
+         sd."IsDeleted",
+         sd."CreatedAt",
+         sd."UpdatedAt"
   FROM ar."SalesDocument" sd
   WHERE sd."OperationType" = 'FACT'
     AND sd."IsDeleted" = FALSE
@@ -1495,7 +1508,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_unidades_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 36. usp_usuarios_list — fix cast bug
+-- 36. usp_usuarios_list — fix cast bug; Avatar es TEXT en sec."User"
 DROP FUNCTION IF EXISTS usp_usuarios_list(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION usp_usuarios_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1516,7 +1529,7 @@ CREATE OR REPLACE FUNCTION usp_usuarios_list(
   "PrecioMinimo" BOOLEAN,
   "Credito"      BOOLEAN,
   "IsAdmin"      BOOLEAN,
-  "Avatar"       VARCHAR
+  "Avatar"       TEXT
 ) LANGUAGE plpgsql AS $$
 DECLARE
   v_offset INT;
@@ -1612,7 +1625,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_vehiculos_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 38. usp_vendedores_list — fix cast bug
+-- 38. usp_vendedores_list — fix cast bug + col mismatch vs master."Seller" real schema
 DROP FUNCTION IF EXISTS usp_vendedores_list(character varying, boolean, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION usp_vendedores_list(
   p_search VARCHAR  DEFAULT NULL,
@@ -1621,30 +1634,21 @@ CREATE OR REPLACE FUNCTION usp_vendedores_list(
   p_page   INT DEFAULT 1,
   p_limit  INT DEFAULT 50
 ) RETURNS TABLE(
-  "Codigo"               VARCHAR,
-  "Nombre"               VARCHAR,
-  "Comision"             NUMERIC,
-  "Status"               BOOLEAN,
-  "IsActive"             BOOLEAN,
-  "IsDeleted"            BOOLEAN,
-  "CompanyId"            INT,
-  "SellerCode"           VARCHAR,
-  "SellerName"           VARCHAR,
-  "Commission"           NUMERIC,
-  "Direccion"            VARCHAR,
-  "Telefonos"            VARCHAR,
-  "Email"                VARCHAR,
-  "Tipo"                 VARCHAR,
-  "Clave"                VARCHAR,
-  "RangoVentasUno"       NUMERIC,
-  "ComisionVentasUno"    NUMERIC,
-  "RangoVentasDos"       NUMERIC,
-  "ComisionVentasDos"    NUMERIC,
-  "RangoVentasTres"      NUMERIC,
-  "ComisionVentasTres"   NUMERIC,
-  "RangoVentasCuatro"    NUMERIC,
-  "ComisionVentasCuatro" NUMERIC,
-  "TotalCount"           BIGINT
+  "Codigo"     VARCHAR,
+  "Nombre"     VARCHAR,
+  "Comision"   NUMERIC,
+  "Status"     BOOLEAN,
+  "IsActive"   BOOLEAN,
+  "IsDeleted"  BOOLEAN,
+  "CompanyId"  INT,
+  "SellerCode" VARCHAR,
+  "SellerName" VARCHAR,
+  "Commission" NUMERIC,
+  "Direccion"  VARCHAR,
+  "Telefonos"  VARCHAR,
+  "Email"      VARCHAR,
+  "SellerType" VARCHAR,
+  "TotalCount" BIGINT
 ) LANGUAGE plpgsql AS $$
 DECLARE
   v_offset       INT;
@@ -1666,39 +1670,83 @@ BEGIN
   WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
     AND (v_search_param IS NULL OR s."SellerCode" LIKE v_search_param OR s."SellerName" LIKE v_search_param OR s."Email" LIKE v_search_param)
     AND (p_status IS NULL OR s."IsActive" = p_status)
-    AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."Tipo" = p_tipo);
+    AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."SellerType" = p_tipo);
 
   RETURN QUERY
-  SELECT s."SellerCode"          AS "Codigo",
-         s."SellerName"          AS "Nombre",
-         s."Commission"          AS "Comision",
-         s."IsActive"            AS "Status",
+  SELECT s."SellerCode" AS "Codigo",
+         s."SellerName" AS "Nombre",
+         s."Commission" AS "Comision",
+         s."IsActive"   AS "Status",
          s."IsActive",
          s."IsDeleted",
          s."CompanyId",
          s."SellerCode",
          s."SellerName",
          s."Commission",
-         s."Direccion",
-         s."Telefonos",
+         s."Address"    AS "Direccion",
+         s."Phone"      AS "Telefonos",
          s."Email",
-         s."Tipo",
-         s."Clave",
-         s."RangoVentasUno",
-         s."ComisionVentasUno",
-         s."RangoVentasDos",
-         s."ComisionVentasDos",
-         s."RangoVentasTres",
-         s."ComisionVentasTres",
-         s."RangoVentasCuatro",
-         s."ComisionVentasCuatro",
-         v_total                 AS "TotalCount"
+         s."SellerType",
+         v_total        AS "TotalCount"
   FROM master."Seller" s
   WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
     AND (v_search_param IS NULL OR s."SellerCode" LIKE v_search_param OR s."SellerName" LIKE v_search_param OR s."Email" LIKE v_search_param)
     AND (p_status IS NULL OR s."IsActive" = p_status)
-    AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."Tipo" = p_tipo)
+    AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."SellerType" = p_tipo)
   ORDER BY s."SellerCode"
   LIMIT p_limit OFFSET v_offset;
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_vendedores_list(VARCHAR,BOOLEAN,VARCHAR,INT,INT) TO zentto_app;
+
+-- 17. usp_fiscal_declaration_get — AuthorityResponse TEXT fix + aliases
+DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_get(integer, bigint) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_get(
+  p_company_id     INT,
+  p_declaration_id BIGINT
+) RETURNS TABLE(
+  "DeclarationId"      BIGINT,
+  "CompanyId"          INT,
+  "BranchId"           INT,
+  "CountryCode"        VARCHAR,
+  "DeclarationType"    VARCHAR,
+  "PeriodCode"         VARCHAR,
+  "PeriodStart"        DATE,
+  "PeriodEnd"          DATE,
+  "SalesBase"          NUMERIC,
+  "SalesTax"           NUMERIC,
+  "PurchasesBase"      NUMERIC,
+  "PurchasesTax"       NUMERIC,
+  "TaxableBase"        NUMERIC,
+  "TaxAmount"          NUMERIC,
+  "WithholdingsCredit" NUMERIC,
+  "PreviousBalance"    NUMERIC,
+  "NetPayable"         NUMERIC,
+  "Status"             VARCHAR,
+  "SubmittedAt"        TIMESTAMP,
+  "SubmittedFile"      VARCHAR,
+  "AuthorityResponse"  TEXT,
+  "PaidAt"             TIMESTAMP,
+  "PaymentReference"   VARCHAR,
+  "JournalEntryId"     BIGINT,
+  "Notes"              VARCHAR,
+  "CreatedBy"          VARCHAR,
+  "UpdatedBy"          VARCHAR,
+  "CreatedAt"          TIMESTAMP,
+  "UpdatedAt"          TIMESTAMP
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  SELECT td."DeclarationId", td."CompanyId", td."BranchId", td."CountryCode",
+         td."DeclarationType", td."PeriodCode", td."PeriodStart", td."PeriodEnd",
+         td."SalesBase", td."SalesTax", td."PurchasesBase", td."PurchasesTax",
+         td."TaxableBase", td."TaxAmount", td."WithholdingsCredit",
+         td."PreviousBalance", td."NetPayable", td."Status",
+         td."SubmittedAt", td."SubmittedFile", td."AuthorityResponse"::TEXT,
+         td."PaidAt", td."PaymentReference", td."JournalEntryId", td."Notes",
+         td."CreatedBy", td."UpdatedBy", td."CreatedAt", td."UpdatedAt"
+  FROM fiscal."TaxDeclaration" td
+  WHERE td."CompanyId"     = p_company_id
+    AND td."DeclarationId" = p_declaration_id
+  LIMIT 1;
+END; $$;
+GRANT EXECUTE ON FUNCTION usp_fiscal_declaration_get(INT,BIGINT) TO zentto_app;
