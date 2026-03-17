@@ -39,7 +39,7 @@ type SendTokenInput = {
 
 type MailResult = {
   sent: boolean;
-  channel: "webhook" | "console";
+  channel: "smtp" | "webhook" | "console";
   verificationUrl?: string;
   resetUrl?: string;
 };
