@@ -4,6 +4,12 @@ import { hashPassword } from "../../auth/password.js";
 import { env } from "../../config/env.js";
 import { ensureUserDefaultCompanyAccess } from "./usuarios.service.js";
 import { getAuthPublicBaseUrl, sendAuthMail } from "./auth-mailer.service.js";
+import {
+  verifyEmailTemplate,
+  resetPasswordTemplate,
+  welcomeTemplate,
+  passwordChangedTemplate,
+} from "./email-templates/base.js";
 
 type TokenType = "VERIFY_EMAIL" | "RESET_PASSWORD";
 
@@ -175,14 +181,7 @@ async function sendVerificationEmail(
   const baseUrl = getAuthPublicBaseUrl();
   const verificationUrl = `${baseUrl}/authentication/verify-email?token=${encodeURIComponent(rawToken)}`;
 
-  const subject = "Confirma tu cuenta DatqBox";
-  const text = `Hola ${userCode}, confirma tu cuenta con este enlace: ${verificationUrl}`;
-  const html = `
-    <p>Hola <strong>${userCode}</strong>,</p>
-    <p>Confirma tu cuenta para activar el acceso a DatqBox:</p>
-    <p><a href="${verificationUrl}">Confirmar cuenta</a></p>
-    <p>Si no solicitaste este registro, puedes ignorar este mensaje.</p>
-  `;
+  const { subject, text, html } = verifyEmailTemplate(userCode, verificationUrl);
 
   const delivery = await sendAuthMail({ to: email, subject, text, html });
   return {
@@ -200,14 +199,7 @@ async function sendResetEmail(
   const baseUrl = getAuthPublicBaseUrl();
   const resetUrl = `${baseUrl}/authentication/reset-password?token=${encodeURIComponent(rawToken)}`;
 
-  const subject = "Restablecer contrasena DatqBox";
-  const text = `Hola ${userCode}, usa este enlace para restablecer tu contrasena: ${resetUrl}`;
-  const html = `
-    <p>Hola <strong>${userCode}</strong>,</p>
-    <p>Recibimos una solicitud para restablecer tu contrasena:</p>
-    <p><a href="${resetUrl}">Restablecer contrasena</a></p>
-    <p>Si no fuiste tu, ignora este correo.</p>
-  `;
+  const { subject, text, html } = resetPasswordTemplate(userCode, resetUrl);
 
   const delivery = await sendAuthMail({ to: email, subject, text, html });
   return {
@@ -355,6 +347,12 @@ export async function verifyEmailWithToken(token: string) {
     "usp_Sec_Auth_VerifyEmail",
     { UserCode: userCode }
   );
+
+  // Enviar email de bienvenida tras verificación
+  const emailNorm = consumed[0].EmailNormalized;
+  const loginUrl = `${getAuthPublicBaseUrl()}/authentication/login`;
+  const { subject, text, html } = welcomeTemplate(userCode, loginUrl);
+  sendAuthMail({ to: emailNorm, subject, text, html }).catch(() => {});
 
   return { success: true, userCode };
 }

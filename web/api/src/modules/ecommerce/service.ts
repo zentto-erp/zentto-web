@@ -1,5 +1,7 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { signJwt, verifyJwt, type JwtPayload } from "../../auth/jwt.js";
+import { sendAuthMail } from "../usuarios/auth-mailer.service.js";
+import { welcomeStoreTemplate } from "../usuarios/email-templates/base.js";
 import bcrypt from "bcryptjs";
 
 const DEFAULT_COMPANY = 1;
@@ -258,6 +260,11 @@ export async function registerCustomer(data: {
   if (resultado !== 1) {
     return { ok: false, error: mensaje };
   }
+
+  // Email de bienvenida (silencioso, no bloquea el registro)
+  const storeUrl = process.env.STORE_URL || "https://app.zentto.net";
+  const { subject, text, html } = welcomeStoreTemplate(data.name, storeUrl);
+  sendAuthMail({ to: data.email, subject, text, html }).catch(() => {});
 
   return { ok: true, message: mensaje };
 }
