@@ -1,10 +1,11 @@
 -- ============================================================
--- DatqBoxWeb PostgreSQL - sp_crud_clientes.sql
--- CRUD de Clientes (master."Customer")
+-- FIX: sp_crud_clientes.sql - Adapted for production schema
+-- master."Customer" has: CustomerCode, CustomerName, FiscalId,
+--   Email, Phone, AddressLine, CreditLimit, TotalBalance, IsActive, IsDeleted, CompanyId
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
-DROP FUNCTION IF EXISTS usp_clientes_list(VARCHAR(100), VARCHAR(20), VARCHAR(60), INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_clientes_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_list(
     p_search   VARCHAR(100) DEFAULT NULL,
     p_estado   VARCHAR(20)  DEFAULT NULL,
@@ -13,30 +14,30 @@ CREATE OR REPLACE FUNCTION usp_clientes_list(
     p_limit    INT          DEFAULT 50
 )
 RETURNS TABLE(
-    "CODIGO"          VARCHAR(12),
-    "NOMBRE"          VARCHAR(255),
-    "RIF"             VARCHAR(20),
+    "CODIGO"          VARCHAR,
+    "NOMBRE"          VARCHAR,
+    "RIF"             VARCHAR,
     "SALDO_TOT"       DOUBLE PRECISION,
     "LIMITE"          DOUBLE PRECISION,
     "IsActive"        BOOLEAN,
     "IsDeleted"       BOOLEAN,
     "CompanyId"       INT,
-    "CustomerCode"    VARCHAR(12),
-    "CustomerName"    VARCHAR(255),
-    "FiscalId"        VARCHAR(20),
+    "CustomerCode"    VARCHAR,
+    "CustomerName"    VARCHAR,
+    "FiscalId"        VARCHAR,
     "TotalBalance"    DOUBLE PRECISION,
     "CreditLimit"     DOUBLE PRECISION,
-    "NIT"             VARCHAR(20),
-    "Direccion"       VARCHAR(255),
-    "Telefono"        VARCHAR(60),
-    "Contacto"        VARCHAR(30),
-    "SalespersonCode" VARCHAR(4),
-    "PriceListCode"   VARCHAR(50),
-    "Ciudad"          VARCHAR(20),
-    "CodPostal"       VARCHAR(10),
-    "Email"           VARCHAR(50),
-    "PaginaWww"       VARCHAR(50),
-    "CodUsuario"      VARCHAR(10),
+    "NIT"             VARCHAR,
+    "Direccion"       VARCHAR,
+    "Telefono"        VARCHAR,
+    "Contacto"        VARCHAR,
+    "SalespersonCode" VARCHAR,
+    "PriceListCode"   VARCHAR,
+    "Ciudad"          VARCHAR,
+    "CodPostal"       VARCHAR,
+    "Email"           VARCHAR,
+    "PaginaWww"       VARCHAR,
+    "CodUsuario"      VARCHAR,
     "Credito"         DOUBLE PRECISION,
     "TotalCount"      INT
 )
@@ -63,110 +64,106 @@ BEGIN
     SELECT COUNT(1) INTO v_total
     FROM master."Customer" c
     WHERE COALESCE(c."IsDeleted", FALSE) = FALSE
-      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR c."FiscalId" ILIKE v_search))
-      AND (p_estado IS NULL OR TRIM(p_estado) = '' OR c."ESTADO" = p_estado)
-      AND (p_vendedor IS NULL OR TRIM(p_vendedor) = '' OR c."SalespersonCode" = p_vendedor);
+      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",'') ILIKE v_search));
 
     -- Resultados paginados
     RETURN QUERY
     SELECT
-        c."CustomerCode"    AS "CODIGO",
-        c."CustomerName"    AS "NOMBRE",
-        c."FiscalId"        AS "RIF",
-        c."TotalBalance"    AS "SALDO_TOT",
-        c."CreditLimit"     AS "LIMITE",
+        c."CustomerCode"::VARCHAR                        AS "CODIGO",
+        c."CustomerName"::VARCHAR                        AS "NOMBRE",
+        COALESCE(c."FiscalId",'')::VARCHAR               AS "RIF",
+        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION   AS "SALDO_TOT",
+        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "LIMITE",
         c."IsActive",
         c."IsDeleted",
         c."CompanyId",
-        c."CustomerCode",
-        c."CustomerName",
-        c."FiscalId",
-        c."TotalBalance",
-        c."CreditLimit",
-        c."NIT",
-        c."Direccion",
-        c."Telefono",
-        c."Contacto",
-        c."SalespersonCode",
-        c."PriceListCode",
-        c."Ciudad",
-        c."CodPostal",
-        c."Email",
-        c."PaginaWww",
-        c."CodUsuario",
-        c."Credito",
-        v_total             AS "TotalCount"
+        c."CustomerCode"::VARCHAR,
+        c."CustomerName"::VARCHAR,
+        COALESCE(c."FiscalId",'')::VARCHAR,
+        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION,
+        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION,
+        NULL::VARCHAR                                    AS "NIT",
+        COALESCE(c."AddressLine",'')::VARCHAR            AS "Direccion",
+        COALESCE(c."Phone",'')::VARCHAR                  AS "Telefono",
+        NULL::VARCHAR                                    AS "Contacto",
+        NULL::VARCHAR                                    AS "SalespersonCode",
+        NULL::VARCHAR                                    AS "PriceListCode",
+        NULL::VARCHAR                                    AS "Ciudad",
+        NULL::VARCHAR                                    AS "CodPostal",
+        COALESCE(c."Email",'')::VARCHAR                  AS "Email",
+        NULL::VARCHAR                                    AS "PaginaWww",
+        NULL::VARCHAR                                    AS "CodUsuario",
+        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "Credito",
+        v_total                                          AS "TotalCount"
     FROM master."Customer" c
     WHERE COALESCE(c."IsDeleted", FALSE) = FALSE
-      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR c."FiscalId" ILIKE v_search))
-      AND (p_estado IS NULL OR TRIM(p_estado) = '' OR c."ESTADO" = p_estado)
-      AND (p_vendedor IS NULL OR TRIM(p_vendedor) = '' OR c."SalespersonCode" = p_vendedor)
+      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",'') ILIKE v_search))
     ORDER BY c."CustomerCode"
     LIMIT v_limit OFFSET v_offset;
 END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
-DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(VARCHAR(12)) CASCADE;
+DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_getbycodigo(
-    p_codigo VARCHAR(12)
+    p_codigo VARCHAR(24)
 )
 RETURNS TABLE(
-    "CODIGO"          VARCHAR(12),
-    "NOMBRE"          VARCHAR(255),
-    "RIF"             VARCHAR(20),
+    "CODIGO"          VARCHAR,
+    "NOMBRE"          VARCHAR,
+    "RIF"             VARCHAR,
     "SALDO_TOT"       DOUBLE PRECISION,
     "LIMITE"          DOUBLE PRECISION,
     "IsActive"        BOOLEAN,
     "IsDeleted"       BOOLEAN,
     "CompanyId"       INT,
-    "CustomerCode"    VARCHAR(12),
-    "CustomerName"    VARCHAR(255),
-    "FiscalId"        VARCHAR(20),
+    "CustomerCode"    VARCHAR,
+    "CustomerName"    VARCHAR,
+    "FiscalId"        VARCHAR,
     "TotalBalance"    DOUBLE PRECISION,
     "CreditLimit"     DOUBLE PRECISION,
-    "NIT"             VARCHAR(20),
-    "Direccion"       VARCHAR(255),
-    "Telefono"        VARCHAR(60),
-    "Contacto"        VARCHAR(30),
-    "SalespersonCode" VARCHAR(4),
-    "PriceListCode"   VARCHAR(50),
-    "Ciudad"          VARCHAR(20),
-    "CodPostal"       VARCHAR(10),
-    "Email"           VARCHAR(50),
-    "PaginaWww"       VARCHAR(50),
-    "CodUsuario"      VARCHAR(10),
+    "NIT"             VARCHAR,
+    "Direccion"       VARCHAR,
+    "Telefono"        VARCHAR,
+    "Contacto"        VARCHAR,
+    "SalespersonCode" VARCHAR,
+    "PriceListCode"   VARCHAR,
+    "Ciudad"          VARCHAR,
+    "CodPostal"       VARCHAR,
+    "Email"           VARCHAR,
+    "PaginaWww"       VARCHAR,
+    "CodUsuario"      VARCHAR,
     "Credito"         DOUBLE PRECISION
 )
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        c."CustomerCode"    AS "CODIGO",
-        c."CustomerName"    AS "NOMBRE",
-        c."FiscalId"        AS "RIF",
-        c."TotalBalance"    AS "SALDO_TOT",
-        c."CreditLimit"     AS "LIMITE",
+        c."CustomerCode"::VARCHAR                        AS "CODIGO",
+        c."CustomerName"::VARCHAR                        AS "NOMBRE",
+        COALESCE(c."FiscalId",'')::VARCHAR               AS "RIF",
+        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION   AS "SALDO_TOT",
+        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "LIMITE",
         c."IsActive",
         c."IsDeleted",
         c."CompanyId",
-        c."CustomerCode",
-        c."CustomerName",
-        c."FiscalId",
-        c."TotalBalance",
-        c."CreditLimit",
-        c."NIT",
-        c."Direccion",
-        c."Telefono",
-        c."Contacto",
-        c."SalespersonCode",
-        c."PriceListCode",
-        c."Ciudad",
-        c."CodPostal",
-        c."Email",
-        c."PaginaWww",
-        c."CodUsuario",
-        c."Credito"
+        c."CustomerCode"::VARCHAR,
+        c."CustomerName"::VARCHAR,
+        COALESCE(c."FiscalId",'')::VARCHAR,
+        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION,
+        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION,
+        NULL::VARCHAR                                    AS "NIT",
+        COALESCE(c."AddressLine",'')::VARCHAR            AS "Direccion",
+        COALESCE(c."Phone",'')::VARCHAR                  AS "Telefono",
+        NULL::VARCHAR                                    AS "Contacto",
+        NULL::VARCHAR                                    AS "SalespersonCode",
+        NULL::VARCHAR                                    AS "PriceListCode",
+        NULL::VARCHAR                                    AS "Ciudad",
+        NULL::VARCHAR                                    AS "CodPostal",
+        COALESCE(c."Email",'')::VARCHAR                  AS "Email",
+        NULL::VARCHAR                                    AS "PaginaWww",
+        NULL::VARCHAR                                    AS "CodUsuario",
+        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "Credito"
     FROM master."Customer" c
     WHERE c."CustomerCode" = p_codigo
       AND COALESCE(c."IsDeleted", FALSE) = FALSE;
@@ -185,9 +182,8 @@ RETURNS TABLE(
 LANGUAGE plpgsql AS $$
 DECLARE
     v_company_id INT;
-    v_codigo     VARCHAR(12);
+    v_codigo     VARCHAR(24);
 BEGIN
-    -- Obtener CompanyId por defecto
     SELECT co."CompanyId" INTO v_company_id
     FROM cfg."Company" co
     WHERE COALESCE(co."IsDeleted", FALSE) = FALSE
@@ -196,9 +192,13 @@ BEGIN
 
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(p_row_json->>'CODIGO', '');
+    v_codigo := NULLIF(TRIM(COALESCE(p_row_json->>'CODIGO', p_row_json->>'CodCliente', '')), '');
 
-    -- Verificar duplicado
+    IF v_codigo IS NULL THEN
+        RETURN QUERY SELECT -1, 'CODIGO requerido'::VARCHAR(500);
+        RETURN;
+    END IF;
+
     IF EXISTS (
         SELECT 1 FROM master."Customer"
         WHERE "CustomerCode" = v_codigo AND "CompanyId" = v_company_id
@@ -208,41 +208,21 @@ BEGIN
     END IF;
 
     INSERT INTO master."Customer" (
-        "CustomerCode", "CustomerName", "FiscalId", "NIT",
-        "Direccion", "Direccion1", "Sucursal", "Telefono",
-        "Contacto", "SalespersonCode", "ESTADO", "Ciudad",
-        "CodPostal", "Email", "PaginaWww", "CodUsuario",
-        "CreditLimit", "Credito", "PriceListCode",
-        "IsActive", "IsDeleted", "CompanyId"
+        "CustomerCode", "CustomerName", "FiscalId",
+        "Email", "Phone", "AddressLine",
+        "CreditLimit", "IsActive", "IsDeleted", "CompanyId"
     )
     VALUES (
         v_codigo,
-        NULLIF(p_row_json->>'NOMBRE', ''),
+        COALESCE(NULLIF(COALESCE(p_row_json->>'NOMBRE', p_row_json->>'Nombre'), ''), v_codigo),
         NULLIF(p_row_json->>'RIF', ''),
-        NULLIF(p_row_json->>'NIT', ''),
-        NULLIF(p_row_json->>'DIRECCION', ''),
-        NULLIF(p_row_json->>'DIRECCION1', ''),
-        NULLIF(p_row_json->>'SUCURSAL', ''),
-        NULLIF(p_row_json->>'TELEFONO', ''),
-        NULLIF(p_row_json->>'CONTACTO', ''),
-        NULLIF(p_row_json->>'VENDEDOR', ''),
-        NULLIF(p_row_json->>'ESTADO', ''),
-        NULLIF(p_row_json->>'CIUDAD', ''),
-        NULLIF(p_row_json->>'CPOSTAL', ''),
-        NULLIF(p_row_json->>'EMAIL', ''),
-        NULLIF(p_row_json->>'PAGINA_WWW', ''),
-        NULLIF(p_row_json->>'COD_USUARIO', ''),
-        CASE WHEN p_row_json->>'LIMITE' IS NULL OR p_row_json->>'LIMITE' = ''
-             THEN NULL
-             ELSE (p_row_json->>'LIMITE')::DOUBLE PRECISION END,
-        CASE WHEN p_row_json->>'CREDITO' IS NULL OR p_row_json->>'CREDITO' = ''
-             THEN NULL
-             ELSE (p_row_json->>'CREDITO')::DOUBLE PRECISION END,
-        CASE WHEN p_row_json->>'LISTA_PRECIO' IS NULL OR p_row_json->>'LISTA_PRECIO' = ''
-             THEN NULL
-             ELSE NULLIF(p_row_json->>'LISTA_PRECIO', '') END,
-        TRUE,   -- IsActive
-        FALSE,  -- IsDeleted
+        NULLIF(COALESCE(p_row_json->>'EMAIL', p_row_json->>'Email'), ''),
+        NULLIF(COALESCE(p_row_json->>'TELEFONO', p_row_json->>'Telefono'), ''),
+        NULLIF(COALESCE(p_row_json->>'DIRECCION', p_row_json->>'Direccion'), ''),
+        CASE WHEN COALESCE(p_row_json->>'LIMITE','') = '' THEN 0
+             ELSE (p_row_json->>'LIMITE')::NUMERIC END,
+        TRUE,
+        FALSE,
         v_company_id
     );
 
@@ -254,9 +234,9 @@ END;
 $$;
 
 -- ---------- 4. Update ----------
-DROP FUNCTION IF EXISTS usp_clientes_update(VARCHAR(12), JSONB) CASCADE;
+DROP FUNCTION IF EXISTS usp_clientes_update(VARCHAR, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_update(
-    p_codigo   VARCHAR(12),
+    p_codigo   VARCHAR(24),
     p_row_json JSONB
 )
 RETURNS TABLE(
@@ -265,7 +245,6 @@ RETURNS TABLE(
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-    -- Verificar existencia
     IF NOT EXISTS (
         SELECT 1 FROM master."Customer"
         WHERE "CustomerCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE
@@ -275,30 +254,16 @@ BEGIN
     END IF;
 
     UPDATE master."Customer" SET
-        "CustomerName"    = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''), "CustomerName"),
-        "FiscalId"        = COALESCE(NULLIF(p_row_json->>'RIF', ''), "FiscalId"),
-        "NIT"             = COALESCE(NULLIF(p_row_json->>'NIT', ''), "NIT"),
-        "Direccion"       = COALESCE(NULLIF(p_row_json->>'DIRECCION', ''), "Direccion"),
-        "Direccion1"      = COALESCE(NULLIF(p_row_json->>'DIRECCION1', ''), "Direccion1"),
-        "Sucursal"        = COALESCE(NULLIF(p_row_json->>'SUCURSAL', ''), "Sucursal"),
-        "Telefono"        = COALESCE(NULLIF(p_row_json->>'TELEFONO', ''), "Telefono"),
-        "Contacto"        = COALESCE(NULLIF(p_row_json->>'CONTACTO', ''), "Contacto"),
-        "SalespersonCode" = COALESCE(NULLIF(p_row_json->>'VENDEDOR', ''), "SalespersonCode"),
-        "ESTADO"          = COALESCE(NULLIF(p_row_json->>'ESTADO', ''), "ESTADO"),
-        "Ciudad"          = COALESCE(NULLIF(p_row_json->>'CIUDAD', ''), "Ciudad"),
-        "CodPostal"       = COALESCE(NULLIF(p_row_json->>'CPOSTAL', ''), "CodPostal"),
-        "Email"           = COALESCE(NULLIF(p_row_json->>'EMAIL', ''), "Email"),
-        "PaginaWww"       = COALESCE(NULLIF(p_row_json->>'PAGINA_WWW', ''), "PaginaWww"),
-        "CodUsuario"      = COALESCE(NULLIF(p_row_json->>'COD_USUARIO', ''), "CodUsuario"),
-        "CreditLimit"     = CASE WHEN p_row_json->>'LIMITE' IS NULL OR p_row_json->>'LIMITE' = ''
-                                 THEN "CreditLimit"
-                                 ELSE (p_row_json->>'LIMITE')::DOUBLE PRECISION END,
-        "Credito"         = CASE WHEN p_row_json->>'CREDITO' IS NULL OR p_row_json->>'CREDITO' = ''
-                                 THEN "Credito"
-                                 ELSE (p_row_json->>'CREDITO')::DOUBLE PRECISION END,
-        "PriceListCode"   = CASE WHEN p_row_json->>'LISTA_PRECIO' IS NULL OR p_row_json->>'LISTA_PRECIO' = ''
-                                 THEN "PriceListCode"
-                                 ELSE NULLIF(p_row_json->>'LISTA_PRECIO', '') END
+        "CustomerName" = COALESCE(NULLIF(COALESCE(p_row_json->>'NOMBRE', p_row_json->>'Nombre'), ''), "CustomerName"),
+        "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''), "FiscalId"),
+        "Email"        = COALESCE(NULLIF(COALESCE(p_row_json->>'EMAIL', p_row_json->>'Email'), ''), "Email"),
+        "Phone"        = COALESCE(NULLIF(COALESCE(p_row_json->>'TELEFONO', p_row_json->>'Telefono'), ''), "Phone"),
+        "AddressLine"  = COALESCE(NULLIF(COALESCE(p_row_json->>'DIRECCION', p_row_json->>'Direccion'), ''), "AddressLine"),
+        "CreditLimit"  = CASE WHEN COALESCE(p_row_json->>'LIMITE','') = '' THEN "CreditLimit"
+                              ELSE (p_row_json->>'LIMITE')::NUMERIC END,
+        "IsActive"     = CASE WHEN p_row_json->>'Activo' = 'true' OR p_row_json->>'ESTADO' = 'A' THEN TRUE
+                              WHEN p_row_json->>'Activo' = 'false' OR p_row_json->>'ESTADO' = 'I' THEN FALSE
+                              ELSE "IsActive" END
     WHERE "CustomerCode" = p_codigo
       AND COALESCE("IsDeleted", FALSE) = FALSE;
 
@@ -310,9 +275,9 @@ END;
 $$;
 
 -- ---------- 5. Delete (soft delete via IsDeleted) ----------
-DROP FUNCTION IF EXISTS usp_clientes_delete(VARCHAR(12)) CASCADE;
+DROP FUNCTION IF EXISTS usp_clientes_delete(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_delete(
-    p_codigo VARCHAR(12)
+    p_codigo VARCHAR(24)
 )
 RETURNS TABLE(
     "Resultado" INT,

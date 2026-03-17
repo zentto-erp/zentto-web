@@ -3,6 +3,21 @@
 -- Funciones de seguridad (autenticación, permisos, usuarios)
 -- ============================================================
 
+-- sec."UserCompanyAccess" table: user-company-branch access control
+-- Required by usp_Sec_User_EnsureDefaultCompanyAccess and usp_Sec_User_GetCompanyAccesses
+-- Must be created by a superuser or schema owner (zentto_app needs GRANT ALL ON SCHEMA sec)
+CREATE TABLE IF NOT EXISTS sec."UserCompanyAccess" (
+    "AccessId"   SERIAL PRIMARY KEY,
+    "CodUsuario" VARCHAR(50) NOT NULL,
+    "CompanyId"  INT NOT NULL,
+    "BranchId"   INT NOT NULL,
+    "IsActive"   BOOLEAN NOT NULL DEFAULT TRUE,
+    "IsDefault"  BOOLEAN NOT NULL DEFAULT FALSE,
+    "CreatedAt"  TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"  TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    CONSTRAINT "UQ_sec_UserCompanyAccess" UNIQUE ("CodUsuario", "CompanyId", "BranchId")
+);
+
 -- usp_Sec_User_Authenticate: datos del usuario para autenticación
 -- La verificación bcrypt se hace en Node.js
 DROP FUNCTION IF EXISTS usp_Sec_User_Authenticate(VARCHAR(60)) CASCADE;
@@ -203,8 +218,8 @@ BEGIN
     VALUES
         (p_cod_usuario, v_company_id, v_branch_id, TRUE, TRUE)
     ON CONFLICT ("CodUsuario", "CompanyId", "BranchId")
-    DO UPDATE SET "IsActive" = TRUE, "IsDefault" = TRUE
-    WHERE sec."UserCompanyAccess"."IsActive" = FALSE;
+    DO UPDATE SET "IsActive" = TRUE, "IsDefault" = TRUE,
+                  "UpdatedAt" = NOW() AT TIME ZONE 'UTC';
 END;
 $$;
 

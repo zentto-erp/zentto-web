@@ -58,20 +58,41 @@ $$;
 
 -- =============================================================================
 -- 2. usp_CFG_Country_Save
+-- Full-parameter version: API sends TimeZoneIana -> p_time_zone_iana (with underscore)
+-- Drop ALL overloads before recreating
 -- =============================================================================
-DROP FUNCTION IF EXISTS public.usp_CFG_Country_Save(CHAR(2), VARCHAR(80), CHAR(3), VARCHAR(20), VARCHAR(20), BOOLEAN, INTEGER, VARCHAR(500)) CASCADE;
+DO $$
+DECLARE r record;
+BEGIN
+    FOR r IN SELECT oid, pg_get_function_identity_arguments(oid) as args
+             FROM pg_proc WHERE proname = 'usp_cfg_country_save'
+    LOOP
+        EXECUTE 'DROP FUNCTION IF EXISTS public.usp_cfg_country_save(' || r.args || ') CASCADE';
+    END LOOP;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.usp_CFG_Country_Save(
-    p_country_code      CHAR(2),
-    p_country_name      VARCHAR(80),
-    p_currency_code     CHAR(3),
-    p_tax_authority_code VARCHAR(20),
-    p_fiscal_id_name    VARCHAR(20),
-    p_is_active         BOOLEAN,
-    OUT p_resultado     INTEGER,
-    OUT p_mensaje       VARCHAR(500)
+    p_country_code              VARCHAR(3),
+    p_country_name              VARCHAR(80),
+    p_currency_code             VARCHAR(5),
+    p_currency_symbol           VARCHAR(10) DEFAULT '$',
+    p_reference_currency        VARCHAR(5) DEFAULT 'USD',
+    p_reference_currency_symbol VARCHAR(10) DEFAULT '$',
+    p_default_exchange_rate     NUMERIC(18,6) DEFAULT 1.0,
+    p_prices_include_tax        BOOLEAN DEFAULT FALSE,
+    p_special_tax_rate          NUMERIC(10,4) DEFAULT 0,
+    p_special_tax_enabled       BOOLEAN DEFAULT FALSE,
+    p_tax_authority_code        VARCHAR(20) DEFAULT NULL,
+    p_fiscal_id_name            VARCHAR(20) DEFAULT NULL,
+    p_time_zone_iana            VARCHAR(60) DEFAULT NULL,
+    p_phone_prefix              VARCHAR(10) DEFAULT NULL,
+    p_sort_order                INT DEFAULT 100,
+    p_is_active                 BOOLEAN DEFAULT TRUE,
+    OUT p_resultado             INTEGER,
+    OUT p_mensaje               VARCHAR(500)
 )
-LANGUAGE plpgsql
-AS $$
+LANGUAGE plpgsql AS $$
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
@@ -88,14 +109,13 @@ BEGIN
             WHERE "CountryCode" = p_country_code;
 
             p_resultado := 0;
-            p_mensaje   := 'País actualizado correctamente.';
+            p_mensaje   := 'Pais actualizado correctamente.';
         ELSE
             INSERT INTO cfg."Country" (
                 "CountryCode", "CountryName", "CurrencyCode",
                 "TaxAuthorityCode", "FiscalIdName",
                 "IsActive", "CreatedAt", "UpdatedAt"
-            )
-            VALUES (
+            ) VALUES (
                 p_country_code, p_country_name, p_currency_code,
                 p_tax_authority_code, p_fiscal_id_name,
                 p_is_active,
@@ -103,7 +123,7 @@ BEGIN
             );
 
             p_resultado := 0;
-            p_mensaje   := 'País creado correctamente.';
+            p_mensaje   := 'Pais creado correctamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
