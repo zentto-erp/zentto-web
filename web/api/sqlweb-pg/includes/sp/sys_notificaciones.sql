@@ -50,7 +50,7 @@ RETURNS TABLE (
     "Id"             INTEGER,
     "Tipo"           VARCHAR,
     "Titulo"         VARCHAR,
-    "Mensaje"        VARCHAR,
+    "Mensaje"        TEXT,
     "Leido"          BOOLEAN,
     "FechaCreacion"  TIMESTAMP,
     "RutaNavegacion" VARCHAR
@@ -89,7 +89,7 @@ CREATE OR REPLACE FUNCTION usp_sys_tarea_list(
 RETURNS TABLE (
     "Id"               INTEGER,
     "Titulo"           VARCHAR,
-    "Descripcion"      VARCHAR,
+    "Descripcion"      TEXT,
     "Progreso"         INTEGER,
     "Color"            VARCHAR,
     "AsignadoA"        VARCHAR,

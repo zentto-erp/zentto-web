@@ -19,14 +19,15 @@ CREATE OR REPLACE FUNCTION usp_acct_account_list(
     p_limit        INT           DEFAULT 50
 )
 RETURNS TABLE(
-    "AccountId"      BIGINT,
-    "AccountCode"    VARCHAR(20),
-    "AccountName"    VARCHAR(200),
-    "AccountType"    VARCHAR(1),
-    "AccountLevel"   INT,
-    "AllowsPosting"  BOOLEAN,
-    "IsActive"       BOOLEAN,
-    "TotalCount"     BIGINT
+    "AccountId"       BIGINT,
+    "AccountCode"     VARCHAR,
+    "AccountName"     VARCHAR,
+    "AccountType"     VARCHAR,
+    "AccountLevel"    INT,
+    "ParentAccountId" BIGINT,
+    "AllowsPosting"   BOOLEAN,
+    "IsActive"        BOOLEAN,
+    "TotalCount"      BIGINT
 )
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -48,8 +49,9 @@ BEGIN
     SELECT a."AccountId",
            a."AccountCode",
            a."AccountName",
-           a."AccountType"::VARCHAR(1),
+           a."AccountType"::VARCHAR,
            a."AccountLevel",
+           a."ParentAccountId",
            a."AllowsPosting",
            a."IsActive",
            v_total
