@@ -136,9 +136,6 @@
 \echo '--- Funciones Fiscal Tributaria ---'
 \i includes/sp/usp_fiscal_tributaria.sql
 
-\echo '--- Funciones Pagos ---'
-\i includes/sp/usp_pay.sql
-
 \echo '--- Funciones Miscelaneas ---'
 \i includes/sp/usp_misc.sql
 
@@ -484,6 +481,9 @@
 \echo '[F6-11] Pagos...'
 \i 11_pay.sql
 
+\echo '--- Funciones Pagos (overrides 11_pay.sql con tipos correctos) ---'
+\i includes/sp/usp_pay.sql
+
 \echo '[F6-12] Sistema...'
 \i 12_sys.sql
 
@@ -531,6 +531,7 @@
 \i fixes/fix_inv_movement_types.sql
 \i fixes/fix_bank_reconciliation_timestamps.sql
 \i fixes/fix_bigint_and_char_mismatches.sql
+\i fixes/fix_cfg_appsetting_types.sql
 
 -- ====================================================================
 -- FASE 7: Permisos de aplicacion
