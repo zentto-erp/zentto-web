@@ -7,6 +7,7 @@ import {
   listBrands,
   registerCustomer,
   loginCustomer,
+  googleAuthCustomer,
   verifyCustomerToken,
   checkout,
   getOrderByToken,
@@ -122,6 +123,23 @@ storeRouter.post("/auth/login", async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: "invalid_body" });
 
     const result = await loginCustomer(parsed.data.email, parsed.data.password);
+    if (!result.ok) return res.status(401).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Google OAuth ──────────────────────────────────────
+
+storeRouter.post("/auth/google", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken || typeof idToken !== "string") {
+      return res.status(400).json({ error: "invalid_body", message: "idToken es requerido" });
+    }
+
+    const result = await googleAuthCustomer(idToken);
     if (!result.ok) return res.status(401).json(result);
     res.json(result);
   } catch (err: any) {

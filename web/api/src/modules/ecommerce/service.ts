@@ -298,6 +298,128 @@ export async function loginCustomer(email: string, password: string) {
   };
 }
 
+/**
+ * Google OAuth: verifica token de Google y registra/loguea al cliente.
+ * Usa el endpoint de Google para verificar el ID token.
+ */
+export async function googleAuthCustomer(idToken: string) {
+  // Verificar token con Google
+  const googleRes = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
+  );
+  if (!googleRes.ok) {
+    return { ok: false, error: "Token de Google inválido" };
+  }
+
+  const google = (await googleRes.json()) as {
+    email: string;
+    name: string;
+    given_name?: string;
+    family_name?: string;
+    picture?: string;
+    email_verified?: string;
+    sub: string;
+  };
+
+  if (!google.email) {
+    return { ok: false, error: "No se pudo obtener email de Google" };
+  }
+
+  const email = google.email.toLowerCase().trim();
+  const name = google.name || `${google.given_name || ""} ${google.family_name || ""}`.trim() || email;
+
+  // Buscar si ya existe
+  const existing = await callSp<CustomerLoginRow>(
+    "usp_Store_Customer_Login",
+    { Email: email }
+  );
+
+  if (existing[0]) {
+    // Ya existe — login directo (sin verificar password)
+    const user = existing[0];
+    if (!user.isActive) return { ok: false, error: "Cuenta desactivada" };
+
+    const token = signJwt({
+      sub: String(user.userId),
+      name: user.displayName,
+      isAdmin: false,
+      modulos: ["ecommerce"],
+      companyId: DEFAULT_COMPANY,
+      branchId: DEFAULT_BRANCH,
+    } as JwtPayload);
+
+    return {
+      ok: true,
+      token,
+      isNew: false,
+      customer: {
+        email: user.email,
+        name: user.displayName,
+        customerCode: user.customerCode,
+        phone: user.phone,
+        address: user.address,
+        fiscalId: user.fiscalId,
+      },
+    };
+  }
+
+  // No existe — registrar con password random (no usará password, siempre Google)
+  const randomPwd = crypto.randomUUID();
+  const hash = await bcrypt.hash(randomPwd, 10);
+
+  const { output } = await callSpOut(
+    "usp_Store_Customer_Register",
+    {
+      CompanyId: DEFAULT_COMPANY,
+      Email: email,
+      Name: name,
+      PasswordHash: hash,
+      Phone: null,
+      Address: null,
+      FiscalId: null,
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+    }
+  );
+
+  if ((output.Resultado as number) !== 1) {
+    return { ok: false, error: output.Mensaje as string };
+  }
+
+  // Buscar el recién creado para obtener userId
+  const newRows = await callSp<CustomerLoginRow>(
+    "usp_Store_Customer_Login",
+    { Email: email }
+  );
+  const newUser = newRows[0];
+  if (!newUser) return { ok: false, error: "Error al crear cuenta" };
+
+  const token = signJwt({
+    sub: String(newUser.userId),
+    name: newUser.displayName,
+    isAdmin: false,
+    modulos: ["ecommerce"],
+    companyId: DEFAULT_COMPANY,
+    branchId: DEFAULT_BRANCH,
+  } as JwtPayload);
+
+  return {
+    ok: true,
+    token,
+    isNew: true,
+    customer: {
+      email: newUser.email,
+      name: newUser.displayName,
+      customerCode: newUser.customerCode,
+      phone: newUser.phone,
+      address: newUser.address,
+      fiscalId: newUser.fiscalId,
+    },
+  };
+}
+
 export function verifyCustomerToken(authHeader?: string) {
   if (!authHeader) return null;
   const [scheme, token] = authHeader.split(" ");
