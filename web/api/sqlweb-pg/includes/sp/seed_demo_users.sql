@@ -48,5 +48,11 @@ BEGIN
   WHERE u."UserCode" = 'admin' AND r."RoleCode" = 'ADMIN'
   ON CONFLICT ("UserId", "RoleId") DO NOTHING;
 
-  RAISE NOTICE '✓ Usuarios demo creados (admin, gerente, cajero) — pass: Admin123!';
+  -- Uniformar clave a todos los usuarios importados del live data
+  UPDATE sec."User"
+  SET "PasswordHash" = v_hash
+  WHERE "PasswordHash" IS NOT NULL
+    AND "PasswordHash" <> v_hash;
+
+  RAISE NOTICE '✓ Usuarios demo creados y claves uniformadas — pass: Admin123!';
 END $$;
