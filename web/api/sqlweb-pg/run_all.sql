@@ -527,6 +527,10 @@
 \i fixes/fix_recurringentry_crud.sql
 \i fixes/fix_recurringentry_get.sql
 \i fixes/fix_recurringentry_execute.sql
+\i fixes/fix_timestamp_type_mismatches.sql
+\i fixes/fix_inv_movement_types.sql
+\i fixes/fix_bank_reconciliation_timestamps.sql
+\i fixes/fix_bigint_and_char_mismatches.sql
 
 -- ====================================================================
 -- FASE 7: Permisos de aplicacion
