@@ -30,6 +30,9 @@
 \echo '[04/17] Operations Core (ar, ap, fiscal, pos, rest)...'
 \i 04_operations_core.sql
 
+\echo '[04b/17] Auth Security Hardening (sec.AuthIdentity, sec.AuthToken)...'
+\i 005_auth_security_hardening.sql
+
 \echo '[05/17] API Compat Bridge (legacy tables)...'
 \i 05_api_compat_bridge.sql
 
