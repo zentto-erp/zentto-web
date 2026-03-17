@@ -32,7 +32,7 @@ services:
       - NODE_ENV=production
       # Auth (shell app — runtime)
       - AUTH_TRUST_HOST=true
-      - NEXTAUTH_URL=https://zentto.net
+      - NEXTAUTH_URL=https://app.zentto.net
       # API URLs para SSR (server-side rendering en runtime)
       - BACKEND_URL=http://zentto-api:4000
       - API_URL=http://zentto-api:4000
