@@ -75,18 +75,18 @@ BEGIN
 
     -- Contar total
     SELECT COUNT(1) INTO v_total
-    FROM master."Product"
-    WHERE COALESCE("IsDeleted", FALSE) = FALSE
+    FROM master."Product" pr
+    WHERE COALESCE(pr."IsDeleted", FALSE) = FALSE
       AND (v_search IS NULL OR
-           "ProductCode" LIKE v_search OR "Referencia" LIKE v_search OR
-           "ProductName" LIKE v_search OR "Categoria" LIKE v_search OR
-           "Tipo" LIKE v_search OR "Marca" LIKE v_search OR
-           "Clase" LIKE v_search OR "Linea" LIKE v_search)
-      AND (p_categoria IS NULL OR TRIM(p_categoria) = '' OR "Categoria" = p_categoria)
-      AND (p_marca IS NULL OR TRIM(p_marca) = '' OR "Marca" = p_marca)
-      AND (p_linea IS NULL OR TRIM(p_linea) = '' OR "Linea" = p_linea)
-      AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR "Tipo" = p_tipo)
-      AND (p_clase IS NULL OR TRIM(p_clase) = '' OR "Clase" = p_clase);
+           pr."ProductCode" LIKE v_search OR pr."Referencia" LIKE v_search OR
+           pr."ProductName" LIKE v_search OR pr."Categoria" LIKE v_search OR
+           pr."Tipo" LIKE v_search OR pr."Marca" LIKE v_search OR
+           pr."Clase" LIKE v_search OR pr."Linea" LIKE v_search)
+      AND (p_categoria IS NULL OR TRIM(p_categoria) = '' OR pr."Categoria" = p_categoria)
+      AND (p_marca IS NULL OR TRIM(p_marca) = '' OR pr."Marca" = p_marca)
+      AND (p_linea IS NULL OR TRIM(p_linea) = '' OR pr."Linea" = p_linea)
+      AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR pr."Tipo" = p_tipo)
+      AND (p_clase IS NULL OR TRIM(p_clase) = '' OR pr."Clase" = p_clase);
 
     RETURN QUERY
     SELECT

@@ -434,6 +434,33 @@
 -- ====================================================================
 \echo '[F6.5] Aplicando correcciones de ambiguedad y tipos...'
 \i fixes/fix_all_ambiguity.sql
+\i fixes/fix_account_list.sql
+\i fixes/fix_acct_crud.sql
+\i fixes/fix_nomina_rrhh.sql
+\i fixes/fix_nomina_rrhh_p2.sql
+\i fixes/fix_nomina_rrhh_p3.sql
+\i fixes/fix_nomina_rrhh_p4.sql
+\i fixes/fix_nomina_rrhh_p5.sql
+\i fixes/fix_nomina_rrhh_p6.sql
+\i fixes/fix_nomina_rrhh_p7.sql
+\i fixes/fix_nomina_rrhh_p8.sql
+\i fixes/fix_nomina_rrhh_p9.sql
+\i fixes/fix_clientes_pg.sql
+\i fixes/fix_proveedores_pg.sql
+\i fixes/fix_empleados_pg.sql
+\i fixes/fix_categorias_marcas_unidades_pg.sql
+\i fixes/fix_costcenter_period_list.sql
+\i fixes/fix_costcenter_crud.sql
+\i fixes/fix_inventario_movimientos_pg.sql
+\i fixes/fix_remaining_ambiguous.sql
+\i fixes/fix_period_userid.sql
+\i fixes/fix_recurringentry_getdue.sql
+\i fixes/fix_budget_functions.sql
+\i fixes/fix_budget_v2.sql
+\i fixes/fix_budget_no_annualtotal.sql
+\i fixes/fix_recurringentry_crud.sql
+\i fixes/fix_recurringentry_get.sql
+\i fixes/fix_recurringentry_execute.sql
 
 -- ====================================================================
 -- FASE 7: Permisos de aplicacion
