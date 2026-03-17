@@ -1001,7 +1001,7 @@ $$;
 --     Nota: el parámetro XML de T-SQL se reemplaza por JSON array en PG.
 --     Formato JSON: '[{"code":"EMP001"},{"code":"EMP002"}]'
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT, JSON array: '[{"code":"EMP001"}, OUT p_affected_count INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
     p_batch_id       INTEGER,
     p_concept_code   VARCHAR(20),
