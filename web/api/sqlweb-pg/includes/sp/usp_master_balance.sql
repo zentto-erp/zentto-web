@@ -15,6 +15,7 @@
 --    Recalcula el saldo total de un cliente sumando los montos pendientes
 --    de todos sus documentos por cobrar que no esten anulados.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_master_customer_updatebalance(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_master_customer_updatebalance(
     p_customer_id       BIGINT,
     p_updated_by_user_id INT DEFAULT NULL
@@ -45,6 +46,7 @@ $$;
 --    Recalcula el saldo total de un proveedor sumando los montos pendientes
 --    de todos sus documentos por pagar que no esten anulados.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_master_supplier_updatebalance(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_master_supplier_updatebalance(
     p_supplier_id       BIGINT,
     p_updated_by_user_id INT DEFAULT NULL

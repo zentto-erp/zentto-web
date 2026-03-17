@@ -9,6 +9,7 @@
 --  1. usp_Acct_Account_List
 --  Lista paginada de cuentas contables con filtros opcionales.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_account_list(INT, VARCHAR(100), VARCHAR(1), VARCHAR(20), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_list(
     p_company_id   INT,
     p_search       VARCHAR(100)  DEFAULT NULL,
@@ -69,6 +70,7 @@ $$;
 --  2. usp_Acct_Account_Get
 --  Obtiene todos los campos de una cuenta contable dado su codigo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_account_get(INT, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_get(
     p_company_id   INT,
     p_account_code VARCHAR(20)
@@ -90,6 +92,7 @@ $$;
 --  3. usp_Acct_Account_Insert
 --  Inserta una nueva cuenta contable.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_account_insert(INT, VARCHAR(20), VARCHAR(200), VARCHAR(1), INT, INT, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_insert(
     p_company_id        INT,
     p_account_code      VARCHAR(20),
@@ -166,6 +169,7 @@ $$;
 --  4. usp_Acct_Account_Update
 --  Actualiza campos de una cuenta existente.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_account_update(INT, VARCHAR(20), VARCHAR(200), VARCHAR(1), INT, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_update(
     p_company_id     INT,
     p_account_code   VARCHAR(20),
@@ -209,6 +213,7 @@ $$;
 --  5. usp_Acct_Account_Delete
 --  Eliminacion logica (soft delete).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_account_delete(INT, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_delete(
     p_company_id   INT,
     p_account_code VARCHAR(20)
@@ -259,6 +264,7 @@ $$;
 --  6. usp_Acct_Infra_Check
 --  Verifica si las tablas de contabilidad existen.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_infra_check() CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_infra_check()
 RETURNS TABLE("ok" INT)
 LANGUAGE plpgsql AS $$
@@ -276,6 +282,7 @@ $$;
 --  7. usp_Acct_Account_Exists
 --  Verifica si una cuenta existe por su codigo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_account_exists(INT, VARCHAR(40)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_exists(
     p_company_id   INT,
     p_account_code VARCHAR(40)
@@ -297,6 +304,7 @@ $$;
 --  8. usp_Acct_Policy_Load
 --  Carga las politicas contables para un modulo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_policy_load(INT, VARCHAR(40)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_policy_load(
     p_company_id INT,
     p_module     VARCHAR(40)
@@ -329,6 +337,7 @@ $$;
 --  9. usp_Acct_Entry_FindByOrigin
 --  Busca un asiento contable existente por origen (modulo + doc).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_findbyorigin(INT, INT, VARCHAR(40), VARCHAR(120)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_findbyorigin(
     p_company_id      INT,
     p_branch_id       INT,
@@ -356,6 +365,7 @@ $$;
 --  10. usp_Acct_Entry_ResolveIdBySource
 --  Resuelve el JournalEntryId por modulo/documento origen.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_resolveidbysource(INT, INT, VARCHAR(40), VARCHAR(120)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_resolveidbysource(
     p_company_id      INT,
     p_branch_id       INT,
@@ -382,6 +392,7 @@ $$;
 --  11. usp_Acct_DocumentLink_Upsert
 --  Inserta un link de documento contable si no existe.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_documentlink_upsert(INT, INT, VARCHAR(40), VARCHAR(40), VARCHAR(120), BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_documentlink_upsert(
     p_company_id       INT,
     p_branch_id        INT,
@@ -426,6 +437,7 @@ $$;
 --  12. usp_Acct_Pos_GetHeader
 --  Obtiene cabecera de una venta POS para contabilizacion.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_pos_getheader(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_pos_getheader(
     p_sale_ticket_id INT
 )
@@ -462,6 +474,7 @@ $$;
 --  13. usp_Acct_Pos_GetTaxSummary
 --  Resumen de impuestos por tasa de una venta POS.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_pos_gettaxsummary(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_pos_gettaxsummary(
     p_sale_ticket_id INT
 )
@@ -489,6 +502,7 @@ $$;
 --  14. usp_Acct_Rest_GetHeader
 --  Cabecera de un pedido restaurante para contabilizacion.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_rest_getheader(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_rest_getheader(
     p_order_ticket_id INT
 )
@@ -518,6 +532,7 @@ $$;
 --  15. usp_Acct_Rest_GetTaxSummary
 --  Resumen de impuestos por tasa de un pedido restaurante.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_rest_gettaxsummary(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_rest_gettaxsummary(
     p_order_ticket_id INT
 )
@@ -545,6 +560,7 @@ $$;
 --  16. usp_Acct_Entry_List
 --  Lista paginada de asientos contables con filtros opcionales.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_list(INT, INT, DATE, DATE, VARCHAR(20), VARCHAR(20), VARCHAR(40), VARCHAR(120), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_list(
     p_company_id        INT,
     p_branch_id         INT,
@@ -628,6 +644,7 @@ $$;
 --  17. usp_Acct_Entry_Get
 --  Obtiene la cabecera de un asiento contable por su ID.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_get(INT, INT, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_get(
     p_company_id INT,
     p_branch_id  INT,
@@ -680,6 +697,7 @@ $$;
 --  18. usp_Acct_Entry_GetDetail
 --  Obtiene el detalle (lineas) de un asiento contable.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_getdetail(INT, INT, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_getdetail(
     p_company_id INT,
     p_branch_id  INT,
@@ -728,6 +746,7 @@ $$;
 --  Crea un asiento contable completo (cabecera + lineas) en una transaccion.
 --  Recibe las lineas como JSONB.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_insert(INT, INT, VARCHAR(40), DATE, VARCHAR(10), VARCHAR(20), VARCHAR(120), VARCHAR(400), CHAR(3), NUMERIC(18,6), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(40), VARCHAR(120), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_insert(
     p_company_id        INT,
     p_branch_id         INT,
@@ -846,6 +865,7 @@ $$;
 --  20. usp_Acct_Entry_Void
 --  Anula un asiento contable.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_entry_void(INT, INT, BIGINT, VARCHAR(400)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_entry_void(
     p_company_id INT,
     p_branch_id  INT,
@@ -900,6 +920,7 @@ $$;
 --  21. usp_Acct_Report_LibroMayor
 --  Reporte de libro mayor.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_report_libromayor(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_report_libromayor(
     p_company_id  INT,
     p_branch_id   INT,
@@ -949,6 +970,7 @@ $$;
 --  22. usp_Acct_Report_MayorAnalitico
 --  Reporte de mayor analitico para una cuenta especifica.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_report_mayoranalitico(INT, INT, VARCHAR(40), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_report_mayoranalitico(
     p_company_id  INT,
     p_branch_id   INT,
@@ -996,6 +1018,7 @@ $$;
 --  23. usp_Acct_Report_BalanceComprobacion
 --  Reporte de balance de comprobacion.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_report_balancecomprobacion(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_report_balancecomprobacion(
     p_company_id  INT,
     p_branch_id   INT,
@@ -1036,6 +1059,7 @@ $$;
 --  24. usp_Acct_Report_EstadoResultados
 --  Reporte de estado de resultados (ingresos y gastos).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_report_estadoresultados(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_report_estadoresultados(
     p_company_id  INT,
     p_branch_id   INT,
@@ -1083,6 +1107,7 @@ $$;
 --  25. usp_Acct_Report_BalanceGeneral
 --  Reporte de balance general (activos, pasivos, patrimonio).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_report_balancegeneral(INT, INT, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_report_balancegeneral(
     p_company_id INT,
     p_branch_id  INT,
@@ -1128,6 +1153,7 @@ $$;
 --  26. usp_Acct_SeedPlanCuentas
 --  Siembra el plan de cuentas base para una empresa.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_seedplancuentas(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_seedplancuentas(
     p_company_id    INT,
     p_system_user_id INT DEFAULT NULL
@@ -1233,6 +1259,7 @@ $$;
 --  27. usp_Acct_Scope_GetDefault
 --  Obtiene el CompanyId y BranchId por defecto.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_scope_getdefault() CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_scope_getdefault()
 RETURNS TABLE("CompanyId" INT, "BranchId" INT)
 LANGUAGE plpgsql AS $$
@@ -1254,6 +1281,7 @@ $$;
 --  28. usp_Acct_Scope_GetDefaultForSeed
 --  Obtiene CompanyId, BranchId y SystemUserId para seed.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_scope_getdefaultforseed() CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_scope_getdefaultforseed()
 RETURNS TABLE("CompanyId" INT, "BranchId" INT, "SystemUserId" INT)
 LANGUAGE plpgsql AS $$
@@ -1272,6 +1300,7 @@ $$;
 --  29. usp_Acct_Report_LibroDiario
 --  Reporte de Libro Diario.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_report_librodiario(BIGINT, BIGINT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_report_librodiario(
     p_company_id  BIGINT,
     p_branch_id   BIGINT,
@@ -1327,6 +1356,7 @@ $$;
 --  30. usp_Acct_Dashboard_Resumen
 --  Resumen de dashboard del modulo contable.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_acct_dashboard_resumen(BIGINT, BIGINT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_dashboard_resumen(
     p_company_id  BIGINT,
     p_branch_id   BIGINT,

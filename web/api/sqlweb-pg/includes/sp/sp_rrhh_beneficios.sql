@@ -30,6 +30,7 @@
 -- =============================================================================
 -- 1. usp_HR_ProfitSharing_Generate
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Generate(INTEGER, INTEGER, INTEGER, INTEGER, NUMERIC(18,2), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Generate(
     p_company_id            INTEGER,
     p_branch_id             INTEGER,
@@ -207,6 +208,7 @@ $$;
 -- =============================================================================
 -- 2. usp_HR_ProfitSharing_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_GetSummary(
     p_profit_sharing_id INTEGER
 )
@@ -270,6 +272,7 @@ $$;
 -- =============================================================================
 -- 3. usp_HR_ProfitSharing_Approve
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Approve(INTEGER, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Approve(
     p_profit_sharing_id INTEGER,
     p_approved_by       INTEGER,
@@ -315,6 +318,7 @@ $$;
 -- =============================================================================
 -- 4. usp_HR_ProfitSharing_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_List(
     p_company_id    INTEGER,
     p_branch_id     INTEGER         DEFAULT NULL,
@@ -373,6 +377,7 @@ $$;
 -- =============================================================================
 -- 5. usp_HR_Trust_CalculateQuarter
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_CalculateQuarter(INTEGER, INTEGER, SMALLINT, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_CalculateQuarter(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER,
@@ -539,6 +544,7 @@ $$;
 -- =============================================================================
 -- 6. usp_HR_Trust_GetEmployeeBalance
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetEmployeeBalance(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetEmployeeBalance(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -593,6 +599,7 @@ $$;
 -- =============================================================================
 -- 7. usp_HR_Trust_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetSummary(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER,
@@ -647,6 +654,7 @@ $$;
 -- =============================================================================
 -- 8. usp_HR_Trust_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_List(INTEGER, INTEGER, SMALLINT, VARCHAR(24), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_List(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER         DEFAULT NULL,
@@ -709,6 +717,7 @@ $$;
 -- =============================================================================
 -- 9. usp_HR_Savings_Enroll
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_Enroll(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), NUMERIC(8,4), NUMERIC(8,4), DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_Enroll(
     p_company_id                INTEGER,
     p_employee_id               BIGINT          DEFAULT NULL,
@@ -765,6 +774,7 @@ $$;
 -- =============================================================================
 -- 10. usp_HR_Savings_ProcessMonthly
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessMonthly(INTEGER, DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessMonthly(
     p_company_id        INTEGER,
     p_process_date      DATE,
@@ -859,6 +869,7 @@ $$;
 -- =============================================================================
 -- 11. usp_HR_Savings_GetBalance
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_GetBalance(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_GetBalance(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -916,6 +927,7 @@ $$;
 -- =============================================================================
 -- 12. usp_HR_Savings_RequestLoan
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_RequestLoan(INTEGER, VARCHAR(24), NUMERIC(18,2), NUMERIC(8,5), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_RequestLoan(
     p_company_id        INTEGER,
     p_employee_code     VARCHAR(24),
@@ -998,6 +1010,7 @@ $$;
 -- =============================================================================
 -- 13. usp_HR_Savings_ApproveLoan
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_ApproveLoan(INTEGER, BOOLEAN, INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ApproveLoan(
     p_loan_id       INTEGER,
     p_approved      BOOLEAN,
@@ -1092,6 +1105,7 @@ $$;
 -- =============================================================================
 -- 14. usp_HR_Savings_ProcessLoanPayment
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessLoanPayment(INTEGER, NUMERIC(18,2), DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessLoanPayment(
     p_loan_id           INTEGER,
     p_payment_amount    NUMERIC(18,2)   DEFAULT NULL,
@@ -1193,6 +1207,7 @@ $$;
 -- =============================================================================
 -- 15. usp_HR_Savings_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_List(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_List(
     p_company_id    INTEGER,
     p_status        VARCHAR(15)     DEFAULT NULL,
@@ -1245,6 +1260,7 @@ $$;
 -- =============================================================================
 -- 16. usp_HR_Savings_LoanList
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_LoanList(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_LoanList(
     p_company_id    INTEGER,
     p_status        VARCHAR(15)     DEFAULT NULL,

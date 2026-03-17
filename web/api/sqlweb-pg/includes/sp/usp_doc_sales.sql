@@ -9,6 +9,7 @@
 -- 1. usp_Doc_SalesDocument_List
 -- Lista paginada de documentos de venta con filtros.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_list(
     p_tipo_operacion VARCHAR(20),
     p_search         VARCHAR(100)  DEFAULT NULL,
@@ -153,6 +154,7 @@ $$;
 -- 2. usp_Doc_SalesDocument_Get
 -- Obtener un documento de venta individual.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_get(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_get(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60)
@@ -174,6 +176,7 @@ $$;
 -- 3. usp_Doc_SalesDocument_GetDetail
 -- Obtener las lineas de detalle de un documento de venta.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_getdetail(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_getdetail(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60)
@@ -195,6 +198,7 @@ $$;
 -- 4. usp_Doc_SalesDocument_GetPayments
 -- Obtener las formas de pago de un documento de venta.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_getpayments(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_getpayments(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60)
@@ -215,6 +219,7 @@ $$;
 -- 5. usp_Doc_SalesDocument_Void
 -- Anular un documento de venta. Transaccional.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_void(VARCHAR(20), VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_void(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60),
@@ -336,6 +341,7 @@ $$;
 -- 6. usp_Doc_SalesDocument_InvoiceFromOrder
 -- Convertir un PEDIDO en FACTURA. Transaccional.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_invoicefromorder(VARCHAR(60), VARCHAR(60), JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_invoicefromorder(
     p_num_doc_pedido  VARCHAR(60),
     p_num_doc_factura VARCHAR(60),
@@ -512,6 +518,7 @@ $$;
 -- Sincroniza ar.ReceivableDocument para FACT/NOTADEB/NOTACRED.
 -- Transaccional.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_upsert(VARCHAR(20), JSONB, JSONB, JSONB, VARCHAR(60), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_upsert(
     p_tipo_operacion  VARCHAR(20),
     p_header_json     JSONB,

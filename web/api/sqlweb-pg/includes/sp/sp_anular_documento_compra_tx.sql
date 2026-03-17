@@ -5,6 +5,7 @@
 -- DEPRECATED: Usa tablas legacy
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_anular_documento_compra_tx(VARCHAR(60), VARCHAR(20), VARCHAR(60), VARCHAR(500), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_documento_compra_tx(
     p_num_doc             VARCHAR(60),
     p_tipo_operacion      VARCHAR(20),

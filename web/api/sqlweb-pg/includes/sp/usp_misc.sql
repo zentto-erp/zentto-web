@@ -23,6 +23,7 @@
 --  Aplica un cobro transaccional a documentos CxC de un cliente.
 --  Recibe la lista de documentos como JSON.
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_applypayment(
     p_cod_cliente      VARCHAR(24),
     p_fecha            DATE             DEFAULT NULL,
@@ -136,6 +137,7 @@ $$;
 --  usp_ar_receivable_list
 --  Lista paginada de documentos CxC.
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_list(VARCHAR(24), VARCHAR(20), VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_list(
     p_cod_cliente   VARCHAR(24)    DEFAULT NULL,
     p_tipo_doc      VARCHAR(20)    DEFAULT NULL,
@@ -195,6 +197,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_getpending
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_getpending(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_getpending(
     p_cod_cliente VARCHAR(24)
 )
@@ -226,6 +229,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_balance_getbycustomer
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_balance_getbycustomer(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_balance_getbycustomer(
     p_cod_cliente VARCHAR(24)
 )
@@ -259,6 +263,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_applypayment
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_applypayment(
     p_cod_proveedor    VARCHAR(24),
     p_fecha            DATE             DEFAULT NULL,
@@ -366,6 +371,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_list
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_list(VARCHAR(24), VARCHAR(20), VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_list(
     p_cod_proveedor  VARCHAR(24)    DEFAULT NULL,
     p_tipo_doc       VARCHAR(20)    DEFAULT NULL,
@@ -425,6 +431,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_getpending
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_getpending(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_getpending(
     p_cod_proveedor VARCHAR(24)
 )
@@ -456,6 +463,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_balance_getbysupplier
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_balance_getbysupplier(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_balance_getbysupplier(
     p_cod_proveedor VARCHAR(24)
 )
@@ -489,6 +497,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_listfull
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_listfull(VARCHAR(200), VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_listfull(
     p_search   VARCHAR(200)  DEFAULT NULL,
     p_codigo   VARCHAR(24)   DEFAULT NULL,
@@ -564,6 +573,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_getbyid
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_getbyid(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_getbyid(
     p_id BIGINT
 )
@@ -590,6 +600,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_create
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_create(VARCHAR(24), VARCHAR(20), VARCHAR(120), DATE, DATE, VARCHAR(10), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_create(
     p_codigo         VARCHAR(24),
     p_document_type  VARCHAR(20)    DEFAULT 'COMPRA',
@@ -649,6 +660,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_update
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_update(BIGINT, VARCHAR(20), VARCHAR(120), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), VARCHAR(20), VARCHAR(10), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_update(
     p_id              BIGINT,
     p_document_type   VARCHAR(20)    DEFAULT NULL,
@@ -684,6 +696,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_void
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ap_payable_void(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_void(
     p_id BIGINT
 )
@@ -709,6 +722,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_listfull
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_listfull(VARCHAR(200), VARCHAR(24), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_listfull(
     p_search        VARCHAR(200)  DEFAULT NULL,
     p_codigo        VARCHAR(24)   DEFAULT NULL,
@@ -769,6 +783,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_getbyid
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_getbyid(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_getbyid(p_id BIGINT)
 RETURNS TABLE(
     "id" BIGINT, "codigo" VARCHAR, "nombre" VARCHAR, "tipo" VARCHAR,
@@ -793,6 +808,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_create
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_create(VARCHAR(24), VARCHAR(20), VARCHAR(120), DATE, DATE, VARCHAR(10), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_create(
     p_codigo          VARCHAR(24),
     p_document_type   VARCHAR(20)    DEFAULT 'FACT',
@@ -852,6 +868,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_update
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_update(BIGINT, VARCHAR(20), VARCHAR(120), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), VARCHAR(20), VARCHAR(10), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_update(
     p_id              BIGINT,
     p_document_type   VARCHAR(20)    DEFAULT NULL,
@@ -887,6 +904,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_void
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_ar_receivable_void(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_void(p_id BIGINT)
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
 LANGUAGE plpgsql AS $$
@@ -910,6 +928,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_resolvescope
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_resolvescope() CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_resolvescope()
 RETURNS TABLE("companyId" INT, "branchId" INT, "systemUserId" INT)
 LANGUAGE plpgsql AS $$
@@ -934,6 +953,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_resolveuser
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_resolveuser(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_resolveuser(
     p_user_code VARCHAR(60) DEFAULT NULL
 )
@@ -962,6 +982,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getconstant
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getconstant(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getconstant(
     p_company_id INT,
     p_code       VARCHAR(60)
@@ -983,6 +1004,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_ensuretype
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_ensuretype(INT, VARCHAR(15), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_ensuretype(
     p_company_id   INT,
     p_payroll_code VARCHAR(15),
@@ -1004,6 +1026,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_ensureemployee
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_ensureemployee(INT, VARCHAR(24), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_ensureemployee(
     p_company_id INT,
     p_document   VARCHAR(24),
@@ -1047,6 +1070,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listconcepts
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_listconcepts(INT, VARCHAR(15), VARCHAR(15), VARCHAR(200), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listconcepts(
     p_company_id   INT,
     p_payroll_code VARCHAR(15)  DEFAULT NULL,
@@ -1101,6 +1125,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_saveconcept
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_saveconcept(INT, VARCHAR(15), VARCHAR(20), VARCHAR(120), VARCHAR(500), VARCHAR(200), VARCHAR(30), VARCHAR(15), VARCHAR(30), BOOLEAN, BOOLEAN, VARCHAR(50), BOOLEAN, NUMERIC(18,4), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconcept(
     p_company_id              INT,
     p_payroll_code            VARCHAR(15),
@@ -1173,6 +1198,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_loadconceptsforrun
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_loadconceptsforrun(INT, VARCHAR(15), VARCHAR(15), VARCHAR(30), VARCHAR(30), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_loadconceptsforrun(
     p_company_id       INT,
     p_payroll_code     VARCHAR(15),
@@ -1218,6 +1244,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertrun
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_upsertrun(INT, INT, VARCHAR(15), BIGINT, VARCHAR(24), VARCHAR(200), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(50), INT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertrun(
     p_company_id         INT,
     p_branch_id          INT,
@@ -1309,6 +1336,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listactiveemployees
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_listactiveemployees(INT, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listactiveemployees(
     p_company_id   INT,
     p_solo_activos BOOLEAN DEFAULT TRUE
@@ -1329,6 +1357,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listruns
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_listruns(INT, VARCHAR(15), VARCHAR(24), DATE, DATE, BOOLEAN, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listruns(
     p_company_id    INT,
     p_payroll_code  VARCHAR(15)  DEFAULT NULL,
@@ -1381,6 +1410,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_closerun
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_closerun(INT, VARCHAR(15), VARCHAR(24), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_closerun(
     p_company_id    INT,
     p_payroll_code  VARCHAR(15),
@@ -1416,6 +1446,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertvacation
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_upsertvacation(INT, INT, VARCHAR(60), BIGINT, VARCHAR(24), VARCHAR(200), DATE, DATE, DATE, NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertvacation(
     p_company_id        INT,
     p_branch_id         INT,
@@ -1481,6 +1512,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listvacations
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_listvacations(INT, VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listvacations(
     p_company_id    INT,
     p_employee_code VARCHAR(24) DEFAULT NULL,
@@ -1519,6 +1551,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertsettlement
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_upsertsettlement(INT, INT, VARCHAR(60), BIGINT, VARCHAR(24), VARCHAR(200), DATE, VARCHAR(120), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertsettlement(
     p_company_id       INT,
     p_branch_id        INT,
@@ -1584,6 +1617,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listsettlements
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_listsettlements(INT, VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listsettlements(
     p_company_id    INT,
     p_employee_code VARCHAR(24) DEFAULT NULL,
@@ -1620,6 +1654,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listconstants
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_listconstants(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listconstants(
     p_company_id INT,
     p_offset     INT DEFAULT 0,
@@ -1653,6 +1688,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_saveconstant
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_saveconstant(INT, VARCHAR(60), VARCHAR(200), NUMERIC(18,4), VARCHAR(120), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconstant(
     p_company_id  INT,
     p_code        VARCHAR(60),
@@ -1702,6 +1738,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_list
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_legalconcept_list(INT, VARCHAR(30), VARCHAR(30), VARCHAR(15), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_legalconcept_list(
     p_company_id       INT,
     p_convention_code  VARCHAR(30)  DEFAULT NULL,
@@ -1740,6 +1777,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_validateformulas
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_legalconcept_validateformulas(INT, VARCHAR(30), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_legalconcept_validateformulas(
     p_company_id       INT,
     p_convention_code  VARCHAR(30) DEFAULT NULL,
@@ -1764,6 +1802,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_listconventions
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_legalconcept_listconventions(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_legalconcept_listconventions(
     p_company_id INT
 )
@@ -1800,6 +1839,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getrunheader
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getrunheader(INT, VARCHAR(15), VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getrunheader(
     p_company_id    INT,
     p_payroll_code  VARCHAR(15),
@@ -1833,6 +1873,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getrunlines
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getrunlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getrunlines(p_run_id BIGINT)
 RETURNS TABLE(
     "coConcepto" VARCHAR, "nombreConcepto" VARCHAR, "tipoConcepto" VARCHAR,
@@ -1855,6 +1896,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getvacationheader
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationheader(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getvacationheader(
     p_company_id   INT,
     p_vacation_code VARCHAR(60)
@@ -1882,6 +1924,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getvacationlines
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getvacationlines(p_vacation_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
 LANGUAGE plpgsql AS $$
@@ -1897,6 +1940,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getsettlementheader
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementheader(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementheader(
     p_company_id      INT,
     p_settlement_code VARCHAR(60)
@@ -1915,6 +1959,7 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getsettlementlines
 -- -----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementlines(p_settlement_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
 LANGUAGE plpgsql AS $$

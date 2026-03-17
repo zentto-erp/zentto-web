@@ -73,6 +73,7 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
 -- 1. usp_HR_Payroll_GenerateDraft
 --    Genera un borrador de nómina en lote para todos los empleados activos.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100), INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_company_id        INTEGER,
     p_branch_id         INTEGER,
@@ -183,6 +184,7 @@ $$;
 -- 2. usp_HR_Payroll_SaveDraftLine
 --    Guarda cambios de una celda (autosave).
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
     p_line_id   INTEGER,
     p_quantity  NUMERIC(18,4),
@@ -248,6 +250,7 @@ $$;
 -- 3. usp_HR_Payroll_BatchAddLine
 --    Agrega un nuevo concepto a un empleado en el lote.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
     p_batch_id      INTEGER,
     p_employee_code VARCHAR(24),
@@ -354,6 +357,7 @@ $$;
 -- 4. usp_HR_Payroll_BatchRemoveLine
 --    Elimina una línea de concepto del lote.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
     p_line_id   INTEGER,
     p_user_id   INTEGER,
@@ -416,6 +420,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 
 -- 5a. Cabecera del batch con totales
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Header(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Header(
     p_batch_id INTEGER
 )
@@ -490,6 +495,7 @@ END;
 $$;
 
 -- 5b. Resumen general (sin columna departamento)
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_ByDept(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_ByDept(
     p_batch_id INTEGER
 )
@@ -519,6 +525,7 @@ END;
 $$;
 
 -- 5c. Alertas
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Alerts(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Alerts(
     p_batch_id INTEGER
 )
@@ -589,6 +596,7 @@ $$;
 -- 6. usp_HR_Payroll_GetDraftGrid
 --    Retorna los empleados con sus totales para la grilla.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(INTEGER, VARCHAR(100), VARCHAR(100), BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
     p_batch_id      INTEGER,
     p_search        VARCHAR(100) DEFAULT NULL,
@@ -662,6 +670,7 @@ $$;
 -- 7. usp_HR_Payroll_GetEmployeeLines
 --    Retorna todas las líneas de concepto de un empleado en un lote.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetEmployeeLines(
     p_batch_id      INTEGER,
     p_employee_code VARCHAR(24)
@@ -719,6 +728,7 @@ $$;
 -- 8. usp_HR_Payroll_ApproveDraft
 --    Aprueba un borrador de nómina.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
     p_batch_id   INTEGER,
     p_approved_by INTEGER,
@@ -784,6 +794,7 @@ $$;
 --    Nota: el XML de líneas se construye como JSON en PostgreSQL
 --    para compatibilidad con usp_HR_Payroll_UpsertRun.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
     p_batch_id  INTEGER,
     p_user_id   INTEGER,
@@ -924,6 +935,7 @@ $$;
 -- 10. usp_HR_Payroll_ListBatches
 --     Lista todos los lotes de nómina con paginación.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(15), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ListBatches(
     p_company_id   INTEGER,
     p_payroll_code VARCHAR(15) DEFAULT NULL,
@@ -989,6 +1001,7 @@ $$;
 --     Nota: el parámetro XML de T-SQL se reemplaza por JSON array en PG.
 --     Formato JSON: '[{"code":"EMP001"},{"code":"EMP002"}]'
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT, JSON array: '[{"code":"EMP001"}, OUT p_affected_count INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
     p_batch_id       INTEGER,
     p_concept_code   VARCHAR(20),

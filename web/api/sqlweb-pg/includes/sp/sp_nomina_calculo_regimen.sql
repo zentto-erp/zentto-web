@@ -6,6 +6,7 @@
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantesRegimen
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_cargar_constantes_regimen(VARCHAR(80), VARCHAR(10), VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes_regimen(
   p_session_id VARCHAR(80),
   p_regimen VARCHAR(10) DEFAULT 'LOT',
@@ -52,6 +53,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularVacacionesRegimen
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_vacaciones_regimen(VARCHAR(80), VARCHAR(10), INT, INT, NUMERIC(18,6), NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_vacaciones_regimen(
   p_session_id VARCHAR(80),
   p_regimen VARCHAR(10),
@@ -86,6 +88,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularUtilidadesRegimen
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_utilidades_regimen(VARCHAR(80), VARCHAR(10), INT, NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_utilidades_regimen(
   p_session_id VARCHAR(80),
   p_regimen VARCHAR(10),
@@ -125,6 +128,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularPrestacionesRegimen
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_prestaciones_regimen(VARCHAR(80), VARCHAR(10), INT, INT, NUMERIC(18,6), NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_prestaciones_regimen(
   p_session_id VARCHAR(80),
   p_regimen VARCHAR(10),
@@ -160,6 +164,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_PrepararVariablesRegimen
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_preparar_variables_regimen(VARCHAR(80), VARCHAR(32), VARCHAR(20), VARCHAR(15), VARCHAR(10), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_preparar_variables_regimen(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),
@@ -184,6 +189,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleadoRegimen
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_procesar_empleado_regimen(VARCHAR(20), VARCHAR(32), DATE, DATE, VARCHAR(10), VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado_regimen(
   p_nomina VARCHAR(20),
   p_cedula VARCHAR(32),

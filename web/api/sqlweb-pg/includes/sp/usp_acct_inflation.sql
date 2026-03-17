@@ -27,6 +27,7 @@
 --  SP 1: usp_Acct_InflationIndex_List
 --  Descripcion : Lista indices de precios por pais y rango de periodos.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_InflationIndex_List(INTEGER, CHAR(2), VARCHAR(30), SMALLINT, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_InflationIndex_List(
     p_company_id   INTEGER,
     p_country_code CHAR(2)      DEFAULT 'VE',
@@ -72,6 +73,7 @@ $$;
 --  SP 2: usp_Acct_InflationIndex_Upsert
 --  Descripcion : Inserta o actualiza un indice mensual.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_InflationIndex_Upsert(INTEGER, CHAR(2), VARCHAR(30), CHAR(6), NUMERIC(18,6), VARCHAR(200), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_InflationIndex_Upsert(
     p_company_id       INTEGER,
     p_country_code     CHAR(2),
@@ -130,6 +132,7 @@ $$;
 --  JSON format : [{"periodCode":"202601","indexValue":1234.56,"source":"BCV"}]
 --  Nota PG: Se usa json_to_recordset en lugar de OPENXML/MERGE de SQL Server.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_InflationIndex_BulkLoad(INTEGER, CHAR(2), VARCHAR(30), TEXT, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_InflationIndex_BulkLoad(
     p_company_id   INTEGER,
     p_country_code CHAR(2),
@@ -178,6 +181,7 @@ $$;
 --  SP 4: usp_Acct_AccountMonetaryClass_List
 --  Descripcion : Lista la clasificacion monetaria de cuentas contables.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_AccountMonetaryClass_List(INTEGER, VARCHAR(20), VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_AccountMonetaryClass_List(
     p_company_id    INTEGER,
     p_classification VARCHAR(20)  DEFAULT NULL,
@@ -231,6 +235,7 @@ $$;
 --  SP 5: usp_Acct_AccountMonetaryClass_Upsert
 --  Descripcion : Clasificar una cuenta como monetaria o no monetaria.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_AccountMonetaryClass_Upsert(INTEGER, BIGINT, VARCHAR(20), VARCHAR(40), BIGINT, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_AccountMonetaryClass_Upsert(
     p_company_id              INTEGER,
     p_account_id              BIGINT,
@@ -287,6 +292,7 @@ $$;
 --  Descripcion : Auto-clasifica cuentas segun tipo contable.
 --    Ref DPC-10 parrafos 15-22.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_AccountMonetaryClass_AutoClassify(INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_AccountMonetaryClass_AutoClassify(
     p_company_id INTEGER,
     OUT p_resultado INTEGER,
@@ -365,6 +371,7 @@ $$;
 --  Descripcion : Calcula ajuste por inflacion para un periodo usando metodo NGP.
 --    Ref: BA VEN-NIF 2, NIC 29 parrafos 11-28
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Inflation_Calculate(INTEGER, INTEGER, CHAR(6), SMALLINT, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Inflation_Calculate(
     p_company_id  INTEGER,
     p_branch_id   INTEGER,
@@ -544,6 +551,7 @@ $$;
 --  SP 8: usp_Acct_Inflation_Post
 --  Descripcion : Publica el ajuste generando un asiento contable.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Inflation_Post(INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Inflation_Post(
     p_company_id    INTEGER,
     p_adjustment_id INTEGER,
@@ -685,6 +693,7 @@ $$;
 --  SP 9: usp_Acct_Inflation_Void
 --  Descripcion : Anula un ajuste por inflacion y su asiento asociado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Inflation_Void(INTEGER, INTEGER, VARCHAR(200), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Inflation_Void(
     p_company_id    INTEGER,
     p_adjustment_id INTEGER,
@@ -739,6 +748,7 @@ $$;
 --  SP 10: usp_Acct_Report_BalanceReexpresado
 --  Descripcion : Balance General con columnas historico + reexpresado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_BalanceReexpresado(INTEGER, INTEGER, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_BalanceReexpresado(
     p_company_id INTEGER,
     p_branch_id  INTEGER,
@@ -838,6 +848,7 @@ $$;
 --  Nota PG: retorna cabecera de ajustes. Para detalle de lineas
 --           usar usp_Acct_Report_REME_Detail.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_REME(INTEGER, INTEGER, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_REME(
     p_company_id   INTEGER,
     p_branch_id    INTEGER,
@@ -882,6 +893,7 @@ END;
 $$;
 
 -- Detalle por cuenta del ultimo ajuste del rango
+DROP FUNCTION IF EXISTS usp_Acct_Report_REME_Detail(INTEGER, INTEGER, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_REME_Detail(
     p_company_id   INTEGER,
     p_branch_id    INTEGER,

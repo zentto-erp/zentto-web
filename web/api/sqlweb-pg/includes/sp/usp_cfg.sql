@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- usp_Cfg_ResolveContext: resuelve contexto empresa/sucursal/usuario
+DROP FUNCTION IF EXISTS usp_Cfg_ResolveContext(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_ResolveContext(
     p_user_code VARCHAR(60) DEFAULT NULL
 )
@@ -40,6 +41,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_List: lista configuraciones por empresa
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_List(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_List(
     p_company_id INT
 )
@@ -61,6 +63,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_ListByModule: lista configuraciones por módulo
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListByModule(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListByModule(
     p_company_id INT,
     p_module     VARCHAR(60)
@@ -84,6 +87,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_ListWithMeta: con metadatos completos
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListWithMeta(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListWithMeta(
     p_company_id INT,
     p_module     VARCHAR(60) DEFAULT NULL
@@ -107,6 +111,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_Upsert: insertar o actualizar configuración
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_Upsert(INT, VARCHAR(60), VARCHAR(128), TEXT, VARCHAR(30), VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_Upsert(
     p_company_id    INT,
     p_module        VARCHAR(60),
@@ -141,6 +146,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_ListModules: lista módulos distintos
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListModules(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListModules(
     p_company_id INT
 )
@@ -156,6 +162,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_ListValueTypes: lista tipos de valor
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListValueTypes() CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListValueTypes()
 RETURNS TABLE("ValueType" VARCHAR)
 LANGUAGE plpgsql AS $$

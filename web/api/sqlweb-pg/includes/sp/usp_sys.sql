@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- usp_Sys_HealthCheck: verificación rápida de salud
+DROP FUNCTION IF EXISTS usp_Sys_HealthCheck() CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sys_HealthCheck()
 RETURNS TABLE("ok" INT, "serverTime" TIMESTAMP, "dbName" TEXT)
 LANGUAGE plpgsql AS $$
@@ -14,6 +15,7 @@ END;
 $$;
 
 -- usp_Sys_GetTableColumns: lista columnas de una tabla
+DROP FUNCTION IF EXISTS usp_Sys_GetTableColumns(VARCHAR(20), VARCHAR(128)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sys_GetTableColumns(
     p_schema_name VARCHAR(20),
     p_table_name  VARCHAR(128)

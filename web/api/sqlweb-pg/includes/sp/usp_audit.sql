@@ -43,6 +43,7 @@ CREATE INDEX IF NOT EXISTS "IX_AuditLog_User"
 --  SP 1: usp_Audit_Log_Insert
 --  Inserta un registro en audit."AuditLog" y retorna el "AuditLogId" generado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_Log_Insert(INT, INT, INT, VARCHAR(100), VARCHAR(50), VARCHAR(100), VARCHAR(50), VARCHAR(10), VARCHAR(500), TEXT, TEXT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Log_Insert(
     p_company_id    INT,
     p_branch_id     INT,
@@ -83,6 +84,7 @@ $$;
 --  Retorna lista paginada de registros de auditoria con filtros opcionales.
 --  Nota: En PG retornamos una sola tabla; el TotalCount se incluye como columna.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_Log_List(INT, INT, DATE, DATE, VARCHAR(50), VARCHAR(100), VARCHAR(10), VARCHAR(100), VARCHAR(200), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Log_List(
     p_company_id    INT,
     p_branch_id     INT,
@@ -165,6 +167,7 @@ $$;
 --  SP 3: usp_Audit_Log_GetById
 --  Retorna el registro completo de auditoria incluyendo OldValues y NewValues.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_Log_GetById(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Log_GetById(
     p_audit_log_id  BIGINT
 )
@@ -213,6 +216,7 @@ $$;
 -- =============================================================================
 
 -- 4a. Totales generales
+DROP FUNCTION IF EXISTS usp_Audit_Dashboard_Totales(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Dashboard_Totales(
     p_company_id    INT,
     p_branch_id     INT,
@@ -249,6 +253,7 @@ END;
 $$;
 
 -- 4b. Top 10 modulos con mayor actividad
+DROP FUNCTION IF EXISTS usp_Audit_Dashboard_TopModulos(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Dashboard_TopModulos(
     p_company_id    INT,
     p_branch_id     INT,
@@ -276,6 +281,7 @@ END;
 $$;
 
 -- 4c. Ultimos 10 registros de auditoria
+DROP FUNCTION IF EXISTS usp_Audit_Dashboard_UltimosLogs(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Dashboard_UltimosLogs(
     p_company_id    INT,
     p_branch_id     INT,
@@ -316,6 +322,7 @@ $$;
 --  Lista paginada de registros fiscales desde fiscal."Record".
 --  Si la tabla no existe, retorna conjunto vacio.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_FiscalRecord_List(INT, INT, DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_FiscalRecord_List(
     p_company_id    INT,
     p_branch_id     INT,

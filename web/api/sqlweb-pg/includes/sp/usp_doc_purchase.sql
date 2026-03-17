@@ -10,6 +10,7 @@
 -- codigo de proveedor, y rango de fechas.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_List;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_List(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_List(
     p_tipo_operacion  VARCHAR(20)  DEFAULT 'COMPRA',
     p_search          VARCHAR(100) DEFAULT NULL,
@@ -172,6 +173,7 @@ $$;
 -- Obtener un documento de compra individual por numero y tipo de operacion.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Get;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Get(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_Get(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
@@ -299,6 +301,7 @@ $$;
 -- Obtener las lineas de detalle de un documento de compra.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetDetail;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetDetail(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_GetDetail(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
@@ -362,6 +365,7 @@ $$;
 -- Obtener las formas de pago de un documento de compra.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetPayments;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetPayments(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_GetPayments(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
@@ -413,6 +417,7 @@ $$;
 -- IsVoided, IsPaid, IsReceived.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetIndicadores;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetIndicadores(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_GetIndicadores(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
@@ -443,6 +448,7 @@ $$;
 -- Operacion transaccional.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Void;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Void(VARCHAR(20), VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_Void(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60),
@@ -571,6 +577,7 @@ $$;
 -- Marcar una orden de compra como recibida.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ReceiveOrder;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ReceiveOrder(VARCHAR(60), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_ReceiveOrder(
     p_num_doc      VARCHAR(60),
     p_cod_usuario  VARCHAR(60) DEFAULT 'API'
@@ -632,6 +639,7 @@ $$;
 -- Retorna: ok, numDoc, detalleRows, formasPagoRows, pendingAmount
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Upsert;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Upsert(VARCHAR(20), JSONB, JSONB, JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_Upsert(
     p_tipo_operacion  VARCHAR(20),
     p_header_json     JSONB,
@@ -937,6 +945,7 @@ $$;
 -- Retorna: ok, orden, compra, detalleRows, formasPagoRows, pendingAmount, mensaje
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ConvertOrder;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ConvertOrder(VARCHAR(60), VARCHAR(60), JSONB, JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_ConvertOrder(
     p_num_doc_orden         VARCHAR(60),
     p_num_doc_compra        VARCHAR(60),

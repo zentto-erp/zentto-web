@@ -8,6 +8,7 @@
 -- 1. EMITIR DOCUMENTO DE VENTA (legacy unificado)
 -- =============================================
 DROP FUNCTION IF EXISTS sp_emitir_documento_venta_tx CASCADE;
+DROP FUNCTION IF EXISTS sp_emitir_documento_venta_tx(VARCHAR(20), JSONB, JSONB, JSONB, VARCHAR(60), BOOLEAN, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION sp_emitir_documento_venta_tx(
     p_tipo_operacion         VARCHAR(20),
     p_doc_json               JSONB,
@@ -135,6 +136,7 @@ $$;
 -- 2. EMITIR DOCUMENTO DE COMPRA (legacy unificado)
 -- =============================================
 DROP FUNCTION IF EXISTS sp_emitir_documento_compra_tx CASCADE;
+DROP FUNCTION IF EXISTS sp_emitir_documento_compra_tx(VARCHAR(20), JSONB, JSONB, JSONB, VARCHAR(60), BOOLEAN, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION sp_emitir_documento_compra_tx(
     p_tipo_operacion         VARCHAR(20),
     p_doc_json               JSONB,
@@ -247,6 +249,7 @@ $$;
 -- =============================================
 -- 3. LISTAR DOCUMENTOS VENTA (legacy)
 -- =============================================
+DROP FUNCTION IF EXISTS sp_documentosventa_list_legacy(VARCHAR(20), VARCHAR(100), VARCHAR(12), DATE, DATE, BOOLEAN, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_documentosventa_list_legacy(
     p_tipo_operacion VARCHAR(20) DEFAULT NULL,
     p_search         VARCHAR(100) DEFAULT NULL,
@@ -315,6 +318,7 @@ $$;
 -- =============================================
 -- 4. LISTAR DOCUMENTOS COMPRA (legacy)
 -- =============================================
+DROP FUNCTION IF EXISTS sp_documentoscompra_list_legacy(VARCHAR(20), VARCHAR(100), VARCHAR(10), DATE, DATE, BOOLEAN, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_documentoscompra_list_legacy(
     p_tipo_operacion VARCHAR(20) DEFAULT NULL,
     p_search         VARCHAR(100) DEFAULT NULL,
@@ -374,6 +378,7 @@ $$;
 -- =============================================
 -- 5. ANULAR DOCUMENTO VENTA
 -- =============================================
+DROP FUNCTION IF EXISTS sp_anular_documento_venta_tx(VARCHAR(60), VARCHAR(20), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_documento_venta_tx(
     p_num_fact       VARCHAR(60),
     p_tipo_operacion VARCHAR(20) DEFAULT NULL,
@@ -415,6 +420,7 @@ $$;
 -- =============================================
 -- 6. ANULAR DOCUMENTO COMPRA
 -- =============================================
+DROP FUNCTION IF EXISTS sp_anular_documento_compra_tx(VARCHAR(60), VARCHAR(20), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_documento_compra_tx(
     p_num_fact       VARCHAR(60),
     p_tipo_operacion VARCHAR(20) DEFAULT NULL,

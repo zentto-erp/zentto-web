@@ -59,6 +59,7 @@ $$;
 -- =============================================================================
 -- 2. usp_CFG_Country_Save
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_CFG_Country_Save(CHAR(2), VARCHAR(80), CHAR(3), VARCHAR(20), VARCHAR(20), BOOLEAN, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_CFG_Country_Save(
     p_country_code      CHAR(2),
     p_country_name      VARCHAR(80),
@@ -115,6 +116,7 @@ $$;
 -- =============================================================================
 -- 3. usp_CFG_Country_Get
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_CFG_Country_Get(CHAR(2)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_CFG_Country_Get(
     p_country_code CHAR(2)
 )

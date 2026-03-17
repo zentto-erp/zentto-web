@@ -8,6 +8,7 @@
 -- Funcion: sp_Nomina_ReemplazarVariables
 -- Reemplaza variables en formula por sus valores
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_reemplazar_variables(VARCHAR(80), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_reemplazar_variables(
   p_session_id VARCHAR(80),
   p_formula TEXT
@@ -36,6 +37,7 @@ $$;
 -- Evalua una formula matematica con variables
 -- Retorna resultado y formula resuelta
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_evaluar_formula(VARCHAR(80), TEXT, NUMERIC(18,6), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_evaluar_formula(
   p_session_id VARCHAR(80),
   p_formula TEXT,
@@ -77,6 +79,7 @@ $$;
 -- Funcion: sp_Nomina_CalcularConcepto
 -- Calcula un concepto de nomina individual
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_concepto(VARCHAR(80), VARCHAR(32), VARCHAR(20), VARCHAR(20), NUMERIC(18,6), NUMERIC(18,6), NUMERIC(18,6), VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_concepto(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),
@@ -128,6 +131,7 @@ $$;
 -- Funcion: sp_Nomina_ProcesarEmpleado
 -- Procesa la nomina completa de un empleado
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_procesar_empleado(VARCHAR(20), VARCHAR(32), DATE, DATE, VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado(
   p_nomina VARCHAR(20),
   p_cedula VARCHAR(32),
@@ -287,6 +291,7 @@ $$;
 -- Funcion: sp_Nomina_ProcesarNomina
 -- Procesa la nomina para todos los empleados
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_procesar_nomina(VARCHAR(20), DATE, DATE, VARCHAR(50), BOOLEAN, INT, INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_nomina(
   p_nomina VARCHAR(20),
   p_fecha_inicio DATE,

@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashExpense" (
 -- =============================================
 -- 4. usp_Fin_PettyCash_Box_List
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_box_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_box_list(
     p_company_id INT
 )
@@ -95,6 +96,7 @@ $$;
 -- =============================================
 -- 5. usp_Fin_PettyCash_Box_Create
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_box_create(INT, INT, VARCHAR(100), VARCHAR(20), NUMERIC(18,2), VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_box_create(
     p_company_id       INT,
     p_branch_id        INT,
@@ -142,6 +144,7 @@ $$;
 -- =============================================
 -- 6. usp_Fin_PettyCash_Session_Open
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_session_open(INT, NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_session_open(
     p_box_id          INT,
     p_opening_amount  NUMERIC(18,2),
@@ -201,6 +204,7 @@ $$;
 -- =============================================
 -- 7. usp_Fin_PettyCash_Session_Close
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_session_close(INT, INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_session_close(
     p_box_id           INT,
     p_closed_by_user_id INT DEFAULT NULL,
@@ -254,6 +258,7 @@ $$;
 -- =============================================
 -- 8. usp_Fin_PettyCash_Session_GetActive
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_session_getactive(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_session_getactive(
     p_box_id INT
 )
@@ -291,6 +296,7 @@ $$;
 -- =============================================
 -- 9. usp_Fin_PettyCash_Expense_Add
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_expense_add(INT, INT, VARCHAR(50), VARCHAR(255), NUMERIC(18,2), VARCHAR(150), VARCHAR(50), VARCHAR(20), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_expense_add(
     p_session_id       INT,
     p_box_id           INT,
@@ -369,6 +375,7 @@ $$;
 -- =============================================
 -- 10. usp_Fin_PettyCash_Expense_List
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_expense_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_expense_list(
     p_box_id     INT,
     p_session_id INT DEFAULT NULL
@@ -404,6 +411,7 @@ $$;
 -- =============================================
 -- 11. usp_Fin_PettyCash_Summary
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_summary_box(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_summary_box(
     p_box_id INT
 )
@@ -432,6 +440,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_fin_pettycash_summary_session(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_summary_session(
     p_box_id INT
 )
@@ -462,6 +471,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_fin_pettycash_summary_categories(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_summary_categories(
     p_box_id INT
 )

@@ -51,6 +51,7 @@ $$;
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_List
 -- --------------------------------------------
+DROP FUNCTION IF EXISTS public.usp_HR_DocumentTemplate_List(INTEGER, CHAR(2), VARCHAR(40)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_DocumentTemplate_List(
     p_company_id    INTEGER,
     p_country_code  CHAR(2)     DEFAULT NULL,
@@ -96,6 +97,7 @@ $$;
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_Get
 -- --------------------------------------------
+DROP FUNCTION IF EXISTS public.usp_HR_DocumentTemplate_Get(INTEGER, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_DocumentTemplate_Get(
     p_company_id    INTEGER,
     p_template_code VARCHAR(80)
@@ -141,6 +143,7 @@ $$;
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_Save
 -- --------------------------------------------
+DROP FUNCTION IF EXISTS public.usp_HR_DocumentTemplate_Save(INTEGER, VARCHAR(80), VARCHAR(200), VARCHAR(40), CHAR(2), TEXT, VARCHAR(20), BOOLEAN, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_DocumentTemplate_Save(
     p_company_id    INTEGER,
     p_template_code VARCHAR(80),
@@ -202,6 +205,7 @@ $$;
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_Delete
 -- --------------------------------------------
+DROP FUNCTION IF EXISTS public.usp_HR_DocumentTemplate_Delete(INTEGER, VARCHAR(80), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_DocumentTemplate_Delete(
     p_company_id    INTEGER,
     p_template_code VARCHAR(80),

@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS master."CustomerPaymentMethod" (
 -- ───────────────────────────────────────────────────────
 -- 1. Catalogo publico de productos (con rating)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Product_List(INT, INT, VARCHAR(200), VARCHAR(100), VARCHAR(100), NUMERIC(18,2), NUMERIC(18,2), INT, BOOLEAN, VARCHAR(30), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_List(
     p_company_id    INT            DEFAULT 1,
     p_branch_id     INT            DEFAULT 1,
@@ -252,6 +253,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 2. Detalle de producto por codigo (recordset 1: producto)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Product_GetByCode(INT, INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetByCode(
     p_company_id  INT           DEFAULT 1,
     p_branch_id   INT           DEFAULT 1,
@@ -339,6 +341,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 2b. Imagenes del producto
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Product_GetImages(INT, INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetImages(
     p_company_id  INT           DEFAULT 1,
     p_branch_id   INT           DEFAULT 1,
@@ -380,6 +383,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 2c. Highlights del producto
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Product_GetHighlights(INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetHighlights(
     p_company_id  INT           DEFAULT 1,
     p_code        VARCHAR(80)   DEFAULT NULL
@@ -400,6 +404,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 2d. Especificaciones tecnicas del producto
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Product_GetSpecs(INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetSpecs(
     p_company_id  INT           DEFAULT 1,
     p_code        VARCHAR(80)   DEFAULT NULL
@@ -426,6 +431,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 3. Categorias con conteo de productos
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Category_List(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Category_List(
     p_company_id INT DEFAULT 1
 )
@@ -460,6 +466,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 4. Marcas
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Brand_List(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Brand_List(
     p_company_id INT DEFAULT 1
 )
@@ -486,6 +493,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 5. Buscar o crear cliente por email
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Customer_FindOrCreate(INT, VARCHAR(150), VARCHAR(200), VARCHAR(40), VARCHAR(250), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Customer_FindOrCreate(
     p_company_id    INT            DEFAULT 1,
     p_email         VARCHAR(150)   DEFAULT NULL,
@@ -537,6 +545,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 6. Registro de cuenta de cliente
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Customer_Register(INT, VARCHAR(150), VARCHAR(200), VARCHAR(500), VARCHAR(40), VARCHAR(250), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Customer_Register(
     p_company_id    INT            DEFAULT 1,
     p_email         VARCHAR(150)   DEFAULT NULL,
@@ -580,6 +589,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 7. Login de cliente
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Customer_Login(VARCHAR(150)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Customer_Login(
     p_email VARCHAR(150)
 )
@@ -619,6 +629,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 8. Crear pedido ecommerce (JSONB en lugar de XML)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Order_Create(INT, INT, VARCHAR(24), VARCHAR(200), VARCHAR(150), VARCHAR(30), VARCHAR(40), VARCHAR(250), VARCHAR(500), JSONB, INT, INT, VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_Create(
     p_company_id          INT             DEFAULT 1,
     p_branch_id           INT             DEFAULT 1,
@@ -735,6 +746,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 9. Historial de pedidos
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Order_List(INT, VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_List(
     p_company_id    INT DEFAULT 1,
     p_customer_code VARCHAR(24) DEFAULT NULL,
@@ -778,6 +790,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 10. Detalle de pedido por numero (cabecera)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Order_GetByNumber(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_GetByNumber(
     p_company_id   INT DEFAULT 1,
     p_order_number VARCHAR(60) DEFAULT NULL
@@ -814,6 +827,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 10b. Detalle de pedido por numero (lineas)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Order_GetByNumber_Lines(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_GetByNumber_Lines(
     p_order_number VARCHAR(60) DEFAULT NULL
 )
@@ -843,6 +857,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 11. Obtener pedido por token
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Order_GetByToken(INT, VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_GetByToken(
     p_company_id INT DEFAULT 1,
     p_token      VARCHAR(100) DEFAULT NULL
@@ -881,6 +896,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 12. Listar resenas de un producto (resumen + lista)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Review_List_Summary(INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Review_List_Summary(
     p_company_id   INT DEFAULT 1,
     p_product_code VARCHAR(80) DEFAULT NULL
@@ -909,6 +925,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_Store_Review_List_Items(INT, VARCHAR(80), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Review_List_Items(
     p_company_id   INT DEFAULT 1,
     p_product_code VARCHAR(80) DEFAULT NULL,
@@ -942,6 +959,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 13. Crear resena
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Review_Create(INT, VARCHAR(80), INT, VARCHAR(200), VARCHAR(2000), VARCHAR(200), VARCHAR(150)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Review_Create(
     p_company_id    INT DEFAULT 1,
     p_product_code  VARCHAR(80)  DEFAULT NULL,
@@ -977,6 +995,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 16. Listar direcciones del cliente
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Address_List(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Address_List(
     p_company_id    INT          DEFAULT 1,
     p_customer_code VARCHAR(24)  DEFAULT NULL
@@ -1010,6 +1029,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 17. Upsert direccion del cliente
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Address_Upsert(INT, INT, VARCHAR(24), VARCHAR(50), VARCHAR(200), VARCHAR(40), VARCHAR(300), VARCHAR(100), VARCHAR(100), VARCHAR(20), VARCHAR(50), VARCHAR(300), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Address_Upsert(
     p_address_id     INT           DEFAULT NULL,
     p_company_id     INT           DEFAULT 1,
@@ -1083,6 +1103,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 18. Eliminar direccion (soft delete)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Address_Delete(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Address_Delete(
     p_address_id    INT          DEFAULT NULL,
     p_customer_code VARCHAR(24)  DEFAULT NULL
@@ -1107,6 +1128,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 19. Listar metodos de pago del cliente
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_PaymentMethod_List(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_PaymentMethod_List(
     p_company_id    INT          DEFAULT 1,
     p_customer_code VARCHAR(24)  DEFAULT NULL
@@ -1144,6 +1166,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 20. Upsert metodo de pago del cliente
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_PaymentMethod_Upsert(INT, INT, VARCHAR(24), VARCHAR(30), VARCHAR(50), VARCHAR(100), VARCHAR(40), VARCHAR(40), VARCHAR(150), VARCHAR(200), VARCHAR(30), VARCHAR(20), VARCHAR(4), VARCHAR(7), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_PaymentMethod_Upsert(
     p_payment_method_id INT           DEFAULT NULL,
     p_company_id        INT           DEFAULT 1,
@@ -1221,6 +1244,7 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 21. Eliminar metodo de pago (soft delete)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_PaymentMethod_Delete(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_PaymentMethod_Delete(
     p_payment_method_id INT          DEFAULT NULL,
     p_customer_code     VARCHAR(24)  DEFAULT NULL

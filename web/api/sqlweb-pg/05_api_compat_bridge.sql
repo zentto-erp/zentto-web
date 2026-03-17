@@ -38,6 +38,7 @@ END $$;
 -- ============================================================
 
 -- sp_CxC_Documentos_List
+DROP FUNCTION IF EXISTS public."sp_CxC_Documentos_List"(VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public."sp_CxC_Documentos_List"(
   p_CodCliente  VARCHAR DEFAULT NULL,
   p_TipoDoc     VARCHAR DEFAULT NULL,
@@ -89,6 +90,7 @@ END;
 $$;
 
 -- sp_CxP_Documentos_List
+DROP FUNCTION IF EXISTS public."sp_CxP_Documentos_List"(VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public."sp_CxP_Documentos_List"(
   p_CodProveedor VARCHAR DEFAULT NULL,
   p_TipoDoc      VARCHAR DEFAULT NULL,
@@ -142,6 +144,7 @@ $$;
 -- ============================================================
 -- Funciones contables: usp_Contabilidad_Asientos_List
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asientos_List"(DATE, DATE, VARCHAR, VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asientos_List"(
   p_FechaDesde      DATE    DEFAULT NULL,
   p_FechaHasta      DATE    DEFAULT NULL,
@@ -215,6 +218,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Asiento_Get
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asiento_Get"(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Get"(
   p_AsientoId BIGINT
 )
@@ -260,6 +264,7 @@ $$;
 -- usp_Contabilidad_Asiento_Crear
 -- Usa JSON en lugar de XML para el detalle
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asiento_Crear"(DATE, VARCHAR, VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, VARCHAR, JSONB, BIGINT, VARCHAR, INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Crear"(
   p_Fecha          DATE,
   p_TipoAsiento    VARCHAR,
@@ -337,6 +342,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Asiento_Anular
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asiento_Anular"(BIGINT, VARCHAR, VARCHAR, INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Anular"(
   p_AsientoId  BIGINT,
   p_Motivo     VARCHAR,
@@ -366,6 +372,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Ajuste_Crear
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Ajuste_Crear"(DATE, VARCHAR, VARCHAR, VARCHAR, VARCHAR, JSONB, BIGINT, INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Ajuste_Crear"(
   p_Fecha       DATE,
   p_TipoAjuste  VARCHAR,
@@ -400,6 +407,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Depreciacion_Generar (stub)
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Depreciacion_Generar"(VARCHAR, VARCHAR, VARCHAR, INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Depreciacion_Generar"(
   p_Periodo     VARCHAR,
   p_CodUsuario  VARCHAR DEFAULT NULL,
@@ -417,6 +425,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Libro_Mayor
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Libro_Mayor"(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Libro_Mayor"(
   p_FechaDesde DATE,
   p_FechaHasta DATE
@@ -450,6 +459,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Mayor_Analitico
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Mayor_Analitico"(VARCHAR, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Mayor_Analitico"(
   p_CodCuenta  VARCHAR,
   p_FechaDesde DATE,
@@ -489,6 +499,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Balance_Comprobacion
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Balance_Comprobacion"(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Balance_Comprobacion"(
   p_FechaDesde DATE,
   p_FechaHasta DATE
@@ -522,6 +533,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Estado_Resultados
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Estado_Resultados"(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Estado_Resultados"(
   p_FechaDesde DATE,
   p_FechaHasta DATE
@@ -558,6 +570,7 @@ $$;
 -- ============================================================
 -- usp_Contabilidad_Balance_General
 -- ============================================================
+DROP FUNCTION IF EXISTS public."usp_Contabilidad_Balance_General"(DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Balance_General"(
   p_FechaCorte DATE
 )

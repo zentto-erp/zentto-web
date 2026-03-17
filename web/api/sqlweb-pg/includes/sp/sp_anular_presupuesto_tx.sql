@@ -4,6 +4,7 @@
 -- DEPRECATED: Usa tablas legacy
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_anular_presupuesto_tx(VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_presupuesto_tx(
     p_num_fact    VARCHAR(60),
     p_cod_usuario VARCHAR(60) DEFAULT 'API',

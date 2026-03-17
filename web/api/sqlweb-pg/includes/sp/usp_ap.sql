@@ -10,6 +10,7 @@
 --    Permite filtrar por proveedor, tipo de documento y rango de fechas.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_List;
+DROP FUNCTION IF EXISTS usp_AP_Application_List(BIGINT, VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_List(
     p_supplier_id    BIGINT       DEFAULT NULL,
     p_document_type  VARCHAR(20)  DEFAULT NULL,
@@ -87,6 +88,7 @@ $$;
 --    informacion del documento y del proveedor asociado.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_Get;
+DROP FUNCTION IF EXISTS usp_AP_Application_Get(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_Get(
     p_application_id  BIGINT
 )
@@ -156,6 +158,7 @@ $$;
 --    Retorna: ok, ApplicationId, NewPending, Message
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_Apply;
+DROP FUNCTION IF EXISTS usp_AP_Application_Apply(BIGINT, DECIMAL(18,2), VARCHAR(120), DATE, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_Apply(
     p_payable_document_id  BIGINT,
     p_amount               DECIMAL(18,2),
@@ -256,6 +259,7 @@ $$;
 --    Retorna: ok, NewPending, Message
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_Reverse;
+DROP FUNCTION IF EXISTS usp_AP_Application_Reverse(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_Reverse(
     p_application_id     BIGINT,
     p_updated_by_user_id INT DEFAULT NULL
@@ -335,6 +339,7 @@ $$;
 --    Retorna columnas con alias legacy y canonico para compatibilidad VB6.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_ListByContext;
+DROP FUNCTION IF EXISTS usp_AP_Application_ListByContext(INT, INT, VARCHAR(100), VARCHAR(60), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_ListByContext(
     p_company_id     INT,
     p_branch_id      INT,
@@ -441,6 +446,7 @@ $$;
 --    empresa/sucursal y opcionalmente moneda.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_GetByContext;
+DROP FUNCTION IF EXISTS usp_AP_Application_GetByContext(BIGINT, INT, INT, VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_GetByContext(
     p_application_id  BIGINT,
     p_company_id      INT,
@@ -511,6 +517,7 @@ $$;
 --    Usa FOR UPDATE para seguridad transaccional.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_Resolve;
+DROP FUNCTION IF EXISTS usp_AP_Application_Resolve(INT, INT, VARCHAR(120), VARCHAR(24), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_Resolve(
     p_company_id       INT,
     p_branch_id        INT,
@@ -561,6 +568,7 @@ $$;
 --    Retorna: ok (1=exito, 0=error), Message
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AP_Application_Update;
+DROP FUNCTION IF EXISTS usp_AP_Application_Update(BIGINT, DECIMAL(18,2), DATE, VARCHAR(120), VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AP_Application_Update(
     p_application_id     BIGINT,
     p_amount             DECIMAL(18,2)  DEFAULT NULL,

@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_clientes_list(VARCHAR(100), VARCHAR(20), VARCHAR(60), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_list(
     p_search   VARCHAR(100) DEFAULT NULL,
     p_estado   VARCHAR(20)  DEFAULT NULL,
@@ -106,6 +107,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(VARCHAR(12)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_getbycodigo(
     p_codigo VARCHAR(12)
 )
@@ -172,6 +174,7 @@ END;
 $$;
 
 -- ---------- 3. Insert ----------
+DROP FUNCTION IF EXISTS usp_clientes_insert(JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_insert(
     p_row_json JSONB
 )
@@ -251,6 +254,7 @@ END;
 $$;
 
 -- ---------- 4. Update ----------
+DROP FUNCTION IF EXISTS usp_clientes_update(VARCHAR(12), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_update(
     p_codigo   VARCHAR(12),
     p_row_json JSONB
@@ -306,6 +310,7 @@ END;
 $$;
 
 -- ---------- 5. Delete (soft delete via IsDeleted) ----------
+DROP FUNCTION IF EXISTS usp_clientes_delete(VARCHAR(12)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_delete(
     p_codigo VARCHAR(12)
 )

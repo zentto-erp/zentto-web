@@ -11,6 +11,7 @@
 -- =============================================================================
 --  1: usp_pay_method_list
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_method_list(CHAR(2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_method_list(
     p_country_code CHAR(2) DEFAULT NULL
 )
@@ -37,6 +38,7 @@ $$;
 -- =============================================================================
 --  2: usp_pay_method_upsert
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_method_upsert(VARCHAR(30), VARCHAR(100), CHAR(2), VARCHAR(30), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_method_upsert(
     p_method_code  VARCHAR(30),
     p_method_name  VARCHAR(100),
@@ -60,6 +62,7 @@ $$;
 -- =============================================================================
 --  3: usp_pay_provider_list
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_provider_list() CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_provider_list()
 RETURNS TABLE(
     "Id" INT, "Code" VARCHAR, "Name" VARCHAR, "CountryCode" VARCHAR,
@@ -81,6 +84,7 @@ $$;
 -- =============================================================================
 --  4: usp_pay_provider_get
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_provider_get(VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_provider_get(
     p_provider_code VARCHAR(30)
 )
@@ -106,6 +110,7 @@ $$;
 -- =============================================================================
 --  5: usp_pay_provider_getcapabilities
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_provider_getcapabilities(VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_provider_getcapabilities(
     p_provider_code VARCHAR(30)
 )
@@ -131,6 +136,7 @@ $$;
 -- =============================================================================
 --  6: usp_pay_companyconfig_list
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_companyconfig_list(
     p_company_id INT DEFAULT NULL
 )
@@ -158,6 +164,7 @@ $$;
 -- =============================================================================
 --  6b: usp_pay_companyconfig_listbycompany
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_listbycompany(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_companyconfig_listbycompany(
     p_company_id INT,
     p_branch_id  INT DEFAULT NULL
@@ -193,6 +200,7 @@ $$;
 -- =============================================================================
 --  7: usp_pay_companyconfig_upsert (legacy simple)
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_upsert(INT, VARCHAR(30), BOOLEAN, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_companyconfig_upsert(
     p_company_id    INT,
     p_provider_code VARCHAR(30),
@@ -232,6 +240,7 @@ $$;
 -- =============================================================================
 --  7b: usp_pay_companyconfig_upsertfull
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_upsertfull(INT, INT, CHAR(2), VARCHAR(30), VARCHAR(10), VARCHAR(500), VARCHAR(500), VARCHAR(100), VARCHAR(100), VARCHAR(50), VARCHAR(500), TEXT, BOOLEAN, BOOLEAN, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_companyconfig_upsertfull(
     p_company_id       INT,
     p_branch_id        INT            DEFAULT 0,
@@ -296,6 +305,7 @@ $$;
 -- =============================================================================
 --  8: usp_pay_companyconfig_deactivate
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_deactivate(INT, VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_companyconfig_deactivate(
     p_company_id    INT,
     p_provider_code VARCHAR(30)
@@ -316,6 +326,7 @@ $$;
 -- =============================================================================
 --  8b: usp_pay_companyconfig_deactivatebyid
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_deactivatebyid(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_companyconfig_deactivatebyid(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -330,6 +341,7 @@ $$;
 -- =============================================================================
 --  9: usp_pay_acceptedmethod_list
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_list(INT, INT, BOOLEAN, BOOLEAN, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_acceptedmethod_list(
     p_company_id           INT,
     p_sucursal_id          INT     DEFAULT NULL,
@@ -372,6 +384,7 @@ $$;
 -- =============================================================================
 --  10: usp_pay_acceptedmethod_upsert
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_upsert(INT, INT, INT, INT, BOOLEAN, BOOLEAN, BOOLEAN, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(5,4), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_acceptedmethod_upsert(
     p_company_id           INT,
     p_branch_id            INT,
@@ -416,6 +429,7 @@ $$;
 -- =============================================================================
 --  10b: usp_pay_acceptedmethod_deactivate
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_deactivate(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_acceptedmethod_deactivate(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -429,6 +443,7 @@ $$;
 -- =============================================================================
 --  11: usp_pay_cardreader_list
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_cardreader_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_cardreader_list(
     p_company_id INT DEFAULT NULL
 )
@@ -454,6 +469,7 @@ $$;
 -- =============================================================================
 --  11b: usp_pay_cardreader_listbycompany
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_cardreader_listbycompany(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_cardreader_listbycompany(
     p_company_id INT,
     p_branch_id  INT DEFAULT NULL
@@ -482,6 +498,7 @@ $$;
 -- =============================================================================
 --  12: usp_pay_cardreader_upsert
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_pay_cardreader_upsert(INT, INT, INT, VARCHAR(50), VARCHAR(100), VARCHAR(30), VARCHAR(30), VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_cardreader_upsert(
     p_device_id         INT           DEFAULT NULL,
     p_company_id        INT           DEFAULT NULL,

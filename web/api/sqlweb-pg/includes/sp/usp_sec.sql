@@ -5,6 +5,7 @@
 
 -- usp_Sec_User_Authenticate: datos del usuario para autenticación
 -- La verificación bcrypt se hace en Node.js
+DROP FUNCTION IF EXISTS usp_Sec_User_Authenticate(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_Authenticate(
     p_cod_usuario VARCHAR(60)
 )
@@ -36,6 +37,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetType: tipo/rol del usuario
+DROP FUNCTION IF EXISTS usp_Sec_User_GetType(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetType(
     p_cod_usuario VARCHAR(60)
 )
@@ -52,6 +54,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetModuleAccess: permisos de módulos
+DROP FUNCTION IF EXISTS usp_Sec_User_GetModuleAccess(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetModuleAccess(
     p_cod_usuario VARCHAR(60)
 )
@@ -66,6 +69,7 @@ END;
 $$;
 
 -- usp_Sec_User_ListCompanyAccesses_Default: empresas/sucursales activas (admin)
+DROP FUNCTION IF EXISTS usp_Sec_User_ListCompanyAccesses_Default() CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_ListCompanyAccesses_Default()
 RETURNS TABLE(
     "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
@@ -110,6 +114,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetCompanyAccesses: accesos empresa/sucursal de un usuario
+DROP FUNCTION IF EXISTS usp_Sec_User_GetCompanyAccesses(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetCompanyAccesses(
     p_cod_usuario VARCHAR(60)
 )
@@ -164,6 +169,7 @@ END;
 $$;
 
 -- usp_Sec_User_EnsureDefaultCompanyAccess: garantiza acceso a empresa DEFAULT
+DROP FUNCTION IF EXISTS usp_Sec_User_EnsureDefaultCompanyAccess(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_EnsureDefaultCompanyAccess(
     p_cod_usuario VARCHAR(60)
 )
@@ -203,6 +209,7 @@ END;
 $$;
 
 -- usp_Sec_User_SetModuleAccess: establece permisos desde JSON
+DROP FUNCTION IF EXISTS usp_Sec_User_SetModuleAccess(VARCHAR(60), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_SetModuleAccess(
     p_cod_usuario  VARCHAR(60),
     p_modules_json JSONB
@@ -224,6 +231,7 @@ END;
 $$;
 
 -- usp_Sec_User_UpdatePassword: actualiza hash de contraseña
+DROP FUNCTION IF EXISTS usp_Sec_User_UpdatePassword(VARCHAR(60), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_UpdatePassword(
     p_cod_usuario  VARCHAR(60),
     p_password_hash VARCHAR(255)
@@ -240,6 +248,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetAvatar: obtiene avatar del usuario
+DROP FUNCTION IF EXISTS usp_Sec_User_GetAvatar(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetAvatar(
     p_cod_usuario VARCHAR(60)
 )
@@ -255,6 +264,7 @@ END;
 $$;
 
 -- usp_Sec_User_SetAvatar: establece o elimina avatar
+DROP FUNCTION IF EXISTS usp_Sec_User_SetAvatar(VARCHAR(60), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_SetAvatar(
     p_cod_usuario VARCHAR(60),
     p_avatar      TEXT DEFAULT NULL
@@ -270,6 +280,7 @@ END;
 $$;
 
 -- usp_Sec_User_CheckExists: verifica si usuario existe
+DROP FUNCTION IF EXISTS usp_Sec_User_CheckExists(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_CheckExists(
     p_cod_usuario VARCHAR(60)
 )

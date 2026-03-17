@@ -4,6 +4,7 @@
 -- =============================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS sp_documentoscompra_list(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, BOOLEAN, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_documentoscompra_list(
     p_tipo_operacion VARCHAR(20) DEFAULT NULL,
     p_search         VARCHAR(100) DEFAULT NULL,
@@ -105,6 +106,7 @@ END;
 $$;
 
 -- ---------- 2. Get documento especifico con detalle ----------
+DROP FUNCTION IF EXISTS sp_documentoscompra_get(VARCHAR(60), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_documentoscompra_get(
     p_num_doc        VARCHAR(60),
     p_tipo_operacion VARCHAR(20)

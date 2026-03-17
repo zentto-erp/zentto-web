@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
 -- =============================================================================
 -- 1. usp_HR_Obligation_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Obligation_List(CHAR(2), VARCHAR(20), BOOLEAN, VARCHAR(100), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
     p_country_code      CHAR(2)         DEFAULT NULL,
     p_obligation_type   VARCHAR(20)     DEFAULT NULL,
@@ -199,6 +200,7 @@ $$;
 -- =============================================================================
 -- 2. usp_HR_Obligation_Save
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Obligation_Save(INTEGER, CHAR(2), VARCHAR(30), VARCHAR(200), VARCHAR(200), VARCHAR(20), VARCHAR(30), NUMERIC(18,2), VARCHAR(20), NUMERIC(8,5), NUMERIC(8,5), BOOLEAN, VARCHAR(15), VARCHAR(200), DATE, DATE, BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_Save(
     p_legal_obligation_id   INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -345,6 +347,7 @@ $$;
 -- =============================================================================
 -- 3. usp_HR_Obligation_GetByCountry
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Obligation_GetByCountry(CHAR(2), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_GetByCountry(
     p_country_code  CHAR(2),
     p_as_of_date    DATE DEFAULT NULL
@@ -406,6 +409,7 @@ $$;
 -- =============================================================================
 -- 4. usp_HR_EmployeeObligation_Enroll
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Enroll(BIGINT, INTEGER, VARCHAR(50), VARCHAR(50), INTEGER, DATE, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Enroll(
     p_employee_id           BIGINT,
     p_legal_obligation_id   INTEGER,
@@ -477,6 +481,7 @@ $$;
 -- =============================================================================
 -- 5. usp_HR_EmployeeObligation_Disenroll
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Disenroll(INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Disenroll(
     p_employee_obligation_id    INTEGER,
     p_disenrollment_date        DATE,
@@ -535,6 +540,7 @@ $$;
 -- =============================================================================
 -- 6. usp_HR_EmployeeObligation_GetByEmployee
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_GetByEmployee(BIGINT, VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_GetByEmployee(
     p_employee_id       BIGINT,
     p_status_filter     VARCHAR(15)     DEFAULT NULL
@@ -604,6 +610,7 @@ $$;
 -- =============================================================================
 -- 7. usp_HR_Filing_Generate
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_Generate(INTEGER, INTEGER, DATE, DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_Generate(
     p_company_id            INTEGER,
     p_legal_obligation_id   INTEGER,
@@ -774,6 +781,7 @@ $$;
 -- =============================================================================
 -- 8. usp_HR_Filing_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_GetSummary(
     p_obligation_filing_id INTEGER
 )
@@ -847,6 +855,7 @@ $$;
 -- =============================================================================
 -- 9. usp_HR_Filing_MarkFiled
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_MarkFiled(INTEGER, DATE, VARCHAR(100), INTEGER, VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_MarkFiled(
     p_obligation_filing_id  INTEGER,
     p_filed_date            DATE            DEFAULT NULL,
@@ -910,6 +919,7 @@ $$;
 -- =============================================================================
 -- 10. usp_HR_Filing_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, CHAR(2), VARCHAR(15), DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_List(
     p_company_id            INTEGER         DEFAULT NULL,
     p_legal_obligation_id   INTEGER         DEFAULT NULL,

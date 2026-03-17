@@ -4,6 +4,7 @@
 -- =============================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_bancos_list(VARCHAR(100), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bancos_list(
     p_search      VARCHAR(100) DEFAULT NULL,
     p_page        INT DEFAULT 1,
@@ -58,6 +59,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Nombre ----------
+DROP FUNCTION IF EXISTS usp_bancos_getbynombre(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bancos_getbynombre(
     p_nombre VARCHAR(50)
 )
@@ -79,6 +81,7 @@ END;
 $$;
 
 -- ---------- 3. Insert ----------
+DROP FUNCTION IF EXISTS usp_bancos_insert(JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bancos_insert(
     p_row_json JSONB
 )
@@ -113,6 +116,7 @@ END;
 $$;
 
 -- ---------- 4. Update ----------
+DROP FUNCTION IF EXISTS usp_bancos_update(VARCHAR(50), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bancos_update(
     p_nombre  VARCHAR(50),
     p_row_json JSONB
@@ -142,6 +146,7 @@ END;
 $$;
 
 -- ---------- 5. Delete ----------
+DROP FUNCTION IF EXISTS usp_bancos_delete(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bancos_delete(
     p_nombre VARCHAR(50)
 )

@@ -20,6 +20,7 @@
 -- =============================================================================
 
 -- usp_POS_ResolveDefaultScope
+DROP FUNCTION IF EXISTS usp_pos_resolvedefaultscope() CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_resolvedefaultscope()
 RETURNS TABLE("companyId" INT, "branchId" INT, "countryCode" VARCHAR)
 LANGUAGE plpgsql
@@ -40,6 +41,7 @@ END;
 $$;
 
 -- usp_POS_ResolveUserId
+DROP FUNCTION IF EXISTS usp_pos_resolveuserid(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_resolveuserid(
     p_user_code VARCHAR(60)
 )
@@ -58,6 +60,7 @@ END;
 $$;
 
 -- usp_POS_LoadCountryTaxRates
+DROP FUNCTION IF EXISTS usp_pos_loadcountrytaxrates(VARCHAR(5)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_loadcountrytaxrates(
     p_country_code VARCHAR(5)
 )
@@ -75,6 +78,7 @@ END;
 $$;
 
 -- usp_POS_ResolveProduct
+DROP FUNCTION IF EXISTS usp_pos_resolveproduct(INT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_resolveproduct(
     p_company_id  INT,
     p_identifier  VARCHAR(50)
@@ -106,6 +110,7 @@ END;
 $$;
 
 -- usp_POS_ResolveCustomerById
+DROP FUNCTION IF EXISTS usp_pos_resolvecustomerbyid(INT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_resolvecustomerbyid(
     p_company_id INT,
     p_id_input   VARCHAR(50)
@@ -129,6 +134,7 @@ END;
 $$;
 
 -- usp_POS_ResolveCustomerByRif
+DROP FUNCTION IF EXISTS usp_pos_resolvecustomerbyrif(INT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_resolvecustomerbyrif(
     p_company_id INT,
     p_rif        VARCHAR(50)
@@ -154,6 +160,7 @@ $$;
 -- =============================================================================
 
 -- usp_POS_Product_List
+DROP FUNCTION IF EXISTS usp_pos_product_list(INT, INT, VARCHAR(200), VARCHAR(100), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_product_list(
     p_company_id INT,
     p_branch_id  INT,
@@ -222,6 +229,7 @@ END;
 $$;
 
 -- usp_POS_Product_GetByCode
+DROP FUNCTION IF EXISTS usp_pos_product_getbycode(INT, INT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_product_getbycode(
     p_company_id INT,
     p_branch_id  INT,
@@ -273,6 +281,7 @@ END;
 $$;
 
 -- usp_POS_Customer_Search
+DROP FUNCTION IF EXISTS usp_pos_customer_search(INT, VARCHAR(200), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_customer_search(
     p_company_id INT,
     p_search     VARCHAR(200) DEFAULT NULL,
@@ -301,6 +310,7 @@ END;
 $$;
 
 -- usp_POS_Category_List
+DROP FUNCTION IF EXISTS usp_pos_category_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_category_list(
     p_company_id INT
 )
@@ -323,6 +333,7 @@ END;
 $$;
 
 -- usp_POS_FiscalCorrelative_List
+DROP FUNCTION IF EXISTS usp_pos_fiscalcorrelative_list(INT, INT, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_fiscalcorrelative_list(
     p_company_id INT,
     p_branch_id  INT,
@@ -354,6 +365,7 @@ END;
 $$;
 
 -- usp_POS_FiscalCorrelative_Upsert
+DROP FUNCTION IF EXISTS usp_pos_fiscalcorrelative_upsert(INT, INT, VARCHAR(20), VARCHAR(20), INT, VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_fiscalcorrelative_upsert(
     p_company_id         INT,
     p_branch_id          INT,
@@ -395,6 +407,7 @@ END;
 $$;
 
 -- usp_POS_Report_Resumen
+DROP FUNCTION IF EXISTS usp_pos_report_resumen(INT, INT, DATE, DATE, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_report_resumen(
     p_company_id INT,
     p_branch_id  INT,
@@ -437,6 +450,7 @@ END;
 $$;
 
 -- usp_POS_Report_Ventas
+DROP FUNCTION IF EXISTS usp_pos_report_ventas(INT, INT, DATE, DATE, VARCHAR(20), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_report_ventas(
     p_company_id INT,
     p_branch_id  INT,
@@ -487,6 +501,7 @@ END;
 $$;
 
 -- usp_POS_Report_ProductosTop
+DROP FUNCTION IF EXISTS usp_pos_report_productostop(INT, INT, DATE, DATE, VARCHAR(20), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_report_productostop(
     p_company_id INT,
     p_branch_id  INT,
@@ -514,6 +529,7 @@ END;
 $$;
 
 -- usp_POS_Report_FormasPago
+DROP FUNCTION IF EXISTS usp_pos_report_formaspago(INT, INT, DATE, DATE, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_report_formaspago(
     p_company_id INT,
     p_branch_id  INT,
@@ -540,6 +556,7 @@ END;
 $$;
 
 -- usp_POS_Report_Cajas
+DROP FUNCTION IF EXISTS usp_pos_report_cajas(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_report_cajas(
     p_company_id INT,
     p_branch_id  INT,
@@ -580,6 +597,7 @@ $$;
 -- =============================================================================
 
 -- usp_POS_WaitTicket_Create
+DROP FUNCTION IF EXISTS usp_pos_waitticket_create(INT, INT, VARCHAR(5), VARCHAR(20), VARCHAR(100), INT, INT, VARCHAR(50), VARCHAR(255), VARCHAR(50), VARCHAR(50), VARCHAR(500), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_create(
     p_company_id        INT,
     p_branch_id         INT,
@@ -623,6 +641,7 @@ END;
 $$;
 
 -- usp_POS_WaitTicketLine_Insert
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), NUMERIC(18,2), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), INT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_insert(
     p_wait_ticket_id        INT,
     p_line_number           INT,
@@ -663,6 +682,7 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_List
+DROP FUNCTION IF EXISTS usp_pos_waitticket_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_list(
     p_company_id INT,
     p_branch_id  INT
@@ -681,6 +701,7 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_GetHeader
+DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_getheader(
     p_company_id    INT,
     p_branch_id     INT,
@@ -706,6 +727,7 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_Recover
+DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(INT, INT, INT, INT, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_company_id         INT,
     p_branch_id          INT,
@@ -730,6 +752,7 @@ END;
 $$;
 
 -- usp_POS_WaitTicketLine_GetItems
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_getitems(
     p_wait_ticket_id INT
 )
@@ -758,6 +781,7 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_Void
+DROP FUNCTION IF EXISTS usp_pos_waitticket_void(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_void(
     p_company_id    INT,
     p_branch_id     INT,
@@ -777,6 +801,7 @@ END;
 $$;
 
 -- usp_POS_SaleTicket_Create
+DROP FUNCTION IF EXISTS usp_pos_saleticket_create(INT, INT, VARCHAR(5), VARCHAR(50), VARCHAR(20), INT, INT, VARCHAR(50), VARCHAR(255), VARCHAR(50), VARCHAR(50), VARCHAR(50), TEXT, INT, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticket_create(
     p_company_id        INT,
     p_branch_id         INT,
@@ -822,6 +847,7 @@ END;
 $$;
 
 -- usp_POS_SaleTicketLine_Insert
+DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), NUMERIC(18,2), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), INT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticketline_insert(
     p_sale_ticket_id        INT,
     p_line_number           INT,
@@ -870,6 +896,7 @@ $$;
 -- =============================================================================
 
 -- usp_Rest_DiningTable_List
+DROP FUNCTION IF EXISTS usp_rest_diningtable_list(INT, INT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_diningtable_list(
     p_company_id  INT,
     p_branch_id   INT,
@@ -909,6 +936,7 @@ END;
 $$;
 
 -- usp_Rest_DiningTable_GetById
+DROP FUNCTION IF EXISTS usp_rest_diningtable_getbyid(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_diningtable_getbyid(
     p_company_id INT, p_branch_id INT, p_mesa_id INT
 )
@@ -928,6 +956,7 @@ END;
 $$;
 
 -- usp_Rest_OrderTicket_GetOpenByTable
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getopenbytable(INT, INT, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getopenbytable(
     p_company_id INT, p_branch_id INT, p_table_number VARCHAR(20)
 )
@@ -945,6 +974,7 @@ END;
 $$;
 
 -- usp_Rest_OrderTicket_Create
+DROP FUNCTION IF EXISTS usp_rest_orderticket_create(INT, INT, VARCHAR(5), VARCHAR(20), INT, VARCHAR(255), VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_create(
     p_company_id INT, p_branch_id INT, p_country_code VARCHAR(5), p_table_number VARCHAR(20),
     p_opened_by_user_id INT DEFAULT NULL, p_customer_name VARCHAR(255) DEFAULT NULL,
@@ -965,6 +995,7 @@ END;
 $$;
 
 -- usp_Rest_OrderTicket_GetById
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbyid(p_pedido_id INT)
 RETURNS TABLE("orderId" INT,"companyId" INT,"branchId" INT,"countryCode" VARCHAR,"status" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -973,6 +1004,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicketLine_NextLineNumber
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_nextlinenumber(p_order_id INT)
 RETURNS TABLE("nextLine" INT)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -980,6 +1012,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicketLine_Insert
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(600), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_insert(
     p_order_id INT, p_line_number INT, p_country_code VARCHAR(5),
     p_product_id INT DEFAULT NULL, p_product_code VARCHAR(60) DEFAULT NULL,
@@ -1004,6 +1037,7 @@ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_RecalcTotals
+DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_recalctotals(p_order_id INT)
 RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE v_net NUMERIC(18,2); v_tax NUMERIC(18,2); v_total NUMERIC(18,2);
@@ -1015,6 +1049,7 @@ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_CheckPriorVoid
+DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_checkpriorvoid(p_pedido_id INT, p_item_id INT)
 RETURNS TABLE("alreadyVoided" INT) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT 1 FROM sec."SupervisorOverride"
@@ -1023,6 +1058,7 @@ RETURNS TABLE("alreadyVoided" INT) LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicketLine_GetById
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbyid(p_pedido_id INT, p_item_id INT)
 RETURNS TABLE("itemId" INT,"lineNumber" INT,"countryCode" VARCHAR,"productId" INT,
     "productCode" VARCHAR,"nombre" VARCHAR,"cantidad" NUMERIC,"unitPrice" NUMERIC,
@@ -1036,6 +1072,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_SendToKitchen
+DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_sendtokitchen(p_pedido_id INT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$ BEGIN
     UPDATE rest."OrderTicket" SET "Status"=CASE WHEN "Status"='OPEN' THEN 'SENT' ELSE "Status" END,
@@ -1044,6 +1081,7 @@ RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$ BE
 END; $$;
 
 -- usp_Rest_OrderTicket_InferCountryCode
+DROP FUNCTION IF EXISTS usp_rest_orderticket_infercountrycode(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_infercountrycode(p_empresa_id INT, p_sucursal_id INT)
 RETURNS TABLE("countryCode" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT cc."CountryCode" FROM fiscal."CountryConfig" cc
@@ -1052,6 +1090,7 @@ RETURNS TABLE("countryCode" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_GetHeaderForClose
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getheaderforclose(p_pedido_id INT)
 RETURNS TABLE("id" INT,"empresaId" INT,"sucursalId" INT,"countryCode" VARCHAR,"mesaId" INT,
     "clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC,
@@ -1068,6 +1107,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_Close
+DROP FUNCTION IF EXISTS usp_rest_orderticket_close(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_close(p_pedido_id INT, p_closed_by_user_id INT DEFAULT NULL)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$ BEGIN
     UPDATE rest."OrderTicket" SET "Status"='CLOSED',"ClosedByUserId"=p_closed_by_user_id,
@@ -1077,6 +1117,7 @@ RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$ BE
 END; $$;
 
 -- usp_Rest_OrderTicketLine_GetFiscalBreakdown
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id INT)
 RETURNS TABLE("itemId" INT,"productoId" VARCHAR,"nombre" VARCHAR,"quantity" NUMERIC,
     "unitPrice" NUMERIC,"baseAmount" NUMERIC,"taxCode" VARCHAR,"taxRate" NUMERIC,
@@ -1088,6 +1129,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_GetByMesaHeader
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getbymesaheader(INT, INT, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbymesaheader(p_company_id INT,p_branch_id INT,p_table_number VARCHAR(20))
 RETURNS TABLE("id" INT,"clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1098,6 +1140,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicketLine_GetByPedido
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbypedido(p_pedido_id INT)
 RETURNS TABLE("id" INT,"productoId" VARCHAR,"nombre" VARCHAR,"cantidad" NUMERIC,
     "precioUnitario" NUMERIC,"subtotal" NUMERIC,"iva" NUMERIC,"taxCode" VARCHAR,
@@ -1111,6 +1154,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicket_UpdateTimestamp
+DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_updatetimestamp(p_pedido_id INT)
 RETURNS VOID LANGUAGE plpgsql AS $$ BEGIN
     UPDATE rest."OrderTicket" SET "UpdatedAt"=NOW() AT TIME ZONE 'UTC' WHERE "OrderTicketId"=p_pedido_id;
@@ -1122,6 +1166,7 @@ END; $$;
 -- =============================================================================
 
 -- usp_Inv_Movement_List
+DROP FUNCTION IF EXISTS usp_inv_movement_list(VARCHAR(200), VARCHAR(50), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inv_movement_list(
     p_search VARCHAR(200) DEFAULT NULL,
     p_tipo   VARCHAR(50) DEFAULT NULL,
@@ -1154,6 +1199,7 @@ END;
 $$;
 
 -- usp_Inv_Movement_GetById
+DROP FUNCTION IF EXISTS usp_inv_movement_getbyid(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inv_movement_getbyid(p_id INT)
 RETURNS TABLE("MovementId" INT,"Codigo" VARCHAR,"Product" VARCHAR,"Documento" VARCHAR,
     "Tipo" VARCHAR,"Fecha" TIMESTAMPTZ,"Quantity" NUMERIC,"UnitCost" NUMERIC,"TotalCost" NUMERIC,"Notes" VARCHAR)
@@ -1164,6 +1210,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Inv_Movement_ListPeriodSummary
+DROP FUNCTION IF EXISTS usp_inv_movement_listperiodsummary(VARCHAR(10), VARCHAR(60), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inv_movement_listperiodsummary(
     p_periodo VARCHAR(10) DEFAULT NULL, p_codigo VARCHAR(60) DEFAULT NULL,
     p_offset INT DEFAULT 0, p_limit INT DEFAULT 50
@@ -1191,6 +1238,7 @@ END; $$;
 -- =============================================================================
 
 -- usp_Bank_ResolveScope
+DROP FUNCTION IF EXISTS usp_bank_resolvescope() CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_resolvescope()
 RETURNS TABLE("companyId" INT,"branchId" INT,"systemUserId" INT)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1202,12 +1250,14 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_ResolveUserId
+DROP FUNCTION IF EXISTS usp_bank_resolveuserid(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_resolveuserid(p_code VARCHAR(60))
 RETURNS TABLE("userId" INT) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT u."UserId" FROM sec."User" u WHERE UPPER(u."UserCode")=UPPER(p_code) ORDER BY u."UserId" LIMIT 1;
 END; $$;
 
 -- usp_Bank_Account_GetByNumber
+DROP FUNCTION IF EXISTS usp_bank_account_getbynumber(INT, VARCHAR(40)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_account_getbynumber(p_company_id INT, p_nro_cta VARCHAR(40))
 RETURNS TABLE("bankAccountId" BIGINT,"nroCta" VARCHAR,"bankName" VARCHAR,"balance" NUMERIC,"availableBalance" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1218,6 +1268,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Movement_Create
+DROP FUNCTION IF EXISTS usp_bank_movement_create(BIGINT, VARCHAR(12), SMALLINT, NUMERIC(18,2), NUMERIC(18,2), VARCHAR(50), VARCHAR(255), VARCHAR(255), VARCHAR(50), VARCHAR(60), VARCHAR(20), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_movement_create(
     p_bank_account_id BIGINT, p_movement_type VARCHAR(12), p_movement_sign SMALLINT,
     p_amount NUMERIC(18,2), p_net_amount NUMERIC(18,2),
@@ -1253,6 +1304,7 @@ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_GetNetTotal
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getnettotal(BIGINT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getnettotal(p_bank_account_id BIGINT, p_from_date DATE, p_to_date DATE)
 RETURNS TABLE("netTotal" NUMERIC) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT COALESCE(SUM("NetAmount"),0) FROM fin."BankMovement"
@@ -1260,6 +1312,7 @@ RETURNS TABLE("netTotal" NUMERIC) LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_Create
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_create(INT, INT, BIGINT, DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_create(
     p_company_id INT, p_branch_id INT, p_bank_account_id BIGINT,
     p_from_date DATE, p_to_date DATE, p_opening NUMERIC(18,2), p_closing NUMERIC(18,2),
@@ -1278,6 +1331,7 @@ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_List
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_list(INT, VARCHAR(40), VARCHAR(30), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_list(
     p_company_id INT, p_nro_cta VARCHAR(40) DEFAULT NULL, p_estado VARCHAR(30) DEFAULT NULL,
     p_offset INT DEFAULT 0, p_limit INT DEFAULT 50
@@ -1313,6 +1367,7 @@ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_GetById
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getbyid(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getbyid(p_company_id INT, p_id INT)
 RETURNS TABLE("ID" INT,"Nro_Cta" VARCHAR,"Fecha_Desde" VARCHAR,"Fecha_Hasta" VARCHAR,
     "Saldo_Inicial_Sistema" NUMERIC,"Saldo_Final_Sistema" NUMERIC,"Saldo_Inicial_Banco" NUMERIC,
@@ -1329,6 +1384,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_GetSystemMovements
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getsystemmovements(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getsystemmovements(p_id INT)
 RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMPTZ,"Tipo" VARCHAR,"Nro_Ref" VARCHAR,
     "Beneficiario" VARCHAR,"Concepto" VARCHAR,"Monto" NUMERIC,"MontoNeto" NUMERIC,
@@ -1343,6 +1399,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_GetPendingStatements
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getpendingstatements(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getpendingstatements(p_id INT)
 RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMPTZ,"Descripcion" VARCHAR,"Referencia" VARCHAR,
     "Tipo" VARCHAR,"Monto" NUMERIC,"Saldo" NUMERIC)
@@ -1354,6 +1411,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_GetOpenForAccount
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getopenforaccount(INT, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getopenforaccount(p_company_id INT, p_bank_account_id BIGINT)
 RETURNS TABLE("id" INT) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT br."BankReconciliationId" FROM fin."BankReconciliation" br
@@ -1362,6 +1420,7 @@ RETURNS TABLE("id" INT) LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_StatementLine_Insert
+DROP FUNCTION IF EXISTS usp_bank_statementline_insert(BIGINT, TIMESTAMPTZ, VARCHAR(255), VARCHAR(50), VARCHAR(12), NUMERIC(18,2), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_statementline_insert(
     p_reconciliation_id BIGINT, p_statement_date TIMESTAMPTZ,
     p_description_text VARCHAR(255) DEFAULT NULL, p_reference_no VARCHAR(50) DEFAULT NULL,
@@ -1381,6 +1440,7 @@ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_MatchMovement
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_matchmovement(BIGINT, BIGINT, BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_matchmovement(
     p_reconciliation_id BIGINT, p_movement_id BIGINT,
     p_statement_id BIGINT DEFAULT NULL, p_matched_by_user_id INT DEFAULT NULL
@@ -1430,6 +1490,7 @@ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_GetAccountNoById
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getaccountnobyid(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getaccountnobyid(p_id INT)
 RETURNS TABLE("accountNo" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT ba."AccountNumber" FROM fin."BankReconciliation" r
@@ -1438,6 +1499,7 @@ RETURNS TABLE("accountNo" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Reconciliation_Close
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_close(INT, NUMERIC(18,2), VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_close(
     p_id INT, p_bank_closing NUMERIC(18,2), p_notes VARCHAR(500) DEFAULT NULL,
     p_closed_by_user_id INT DEFAULT NULL
@@ -1471,6 +1533,7 @@ BEGIN
 END; $$;
 
 -- usp_Bank_Account_List
+DROP FUNCTION IF EXISTS usp_bank_account_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_account_list(p_company_id INT)
 RETURNS TABLE("Nro_Cta" VARCHAR,"Banco" VARCHAR,"Descripcion" VARCHAR,"Moneda" VARCHAR,
     "Saldo" NUMERIC,"Saldo_Disponible" NUMERIC,"BancoNombre" VARCHAR)
@@ -1483,6 +1546,7 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_Movement_ListByAccount
+DROP FUNCTION IF EXISTS usp_bank_movement_listbyaccount(INT, VARCHAR(40), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_movement_listbyaccount(
     p_company_id INT, p_nro_cta VARCHAR(40),
     p_from_date DATE DEFAULT NULL, p_to_date DATE DEFAULT NULL,
