@@ -60,6 +60,7 @@ import { settingsRouter } from "./modules/settings/routes.js";
 import { mediaRouter } from "./modules/media/routes.js";
 import { supervisionRouter } from "./modules/supervision/routes.js";
 import { storeRouter } from "./modules/ecommerce/routes.js";
+import { landingRouter } from "./modules/landing/routes.js";
 import rrhhRouter from "./modules/rrhh/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
@@ -165,6 +166,9 @@ export async function createApp() {
   });
 
   app.use("/health", healthRouter);
+
+  // Landing page — público (sin JWT)
+  app.use("/api/landing", landingRouter);
 
   // Ecommerce storefront — público (sin JWT)
   app.use("/store", storeRouter);

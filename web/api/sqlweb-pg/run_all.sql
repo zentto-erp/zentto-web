@@ -547,6 +547,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store GRANT EXECUTE ON FUNCTIONS TO zentto_app;
 
 -- ====================================================================
+-- FASE 7.5: Landing / Leads
+-- ====================================================================
+\echo 'Creando tabla Lead...'
+\i includes/sp/ddl_sys_Lead.sql
+\echo 'Creando funcion usp_sys_lead_upsert...'
+\i includes/sp/usp_sys_Lead_Upsert.sql
+
+-- ====================================================================
 -- FASE 8: Verificacion
 -- ====================================================================
 \echo ''
