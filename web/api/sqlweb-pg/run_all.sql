@@ -425,7 +425,20 @@
 \i 13_otros.sql
 
 -- ====================================================================
--- FASE 7: Verificacion
+-- FASE 7: Permisos de aplicacion
+-- ====================================================================
+\echo ''
+\echo '--- Permisos zentto_app en todos los schemas ---'
+GRANT USAGE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store GRANT ALL ON TABLES TO zentto_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store GRANT ALL ON SEQUENCES TO zentto_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store GRANT EXECUTE ON FUNCTIONS TO zentto_app;
+
+-- ====================================================================
+-- FASE 8: Verificacion
 -- ====================================================================
 \echo ''
 \echo '╔══════════════════════════════════════════════════════╗'
