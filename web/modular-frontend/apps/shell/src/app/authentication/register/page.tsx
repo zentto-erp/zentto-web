@@ -53,6 +53,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = React.useState<string | null>(null);
   const captchaEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const {
@@ -99,6 +100,7 @@ export default function RegisterPage() {
         return;
       }
       setSuccess(data?.message || 'Registro completado');
+      setRegisteredEmail(values.email);
     } catch {
       setError('Error de red al registrar usuario');
     } finally {
@@ -132,44 +134,87 @@ export default function RegisterPage() {
             <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
               <Logo />
             </Box>
-            <Typography variant="h5" fontWeight={700} textAlign="center" mb={1}>
-              Crear cuenta
-            </Typography>
-            <Typography variant="body2" textAlign="center" color="text.secondary" mb={3}>
-              Registro con verificacion por correo y proteccion anti-bot
-            </Typography>
 
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack spacing={2}>
-                <TextField label="Usuario" {...register('usuario')} error={!!errors.usuario} helperText={errors.usuario?.message} />
-                <TextField label="Nombre completo" {...register('nombre')} error={!!errors.nombre} helperText={errors.nombre?.message} />
-                <TextField label="Correo" type="email" {...register('email')} error={!!errors.email} helperText={errors.email?.message} />
-                <TextField label="Contrasena" type="password" {...register('password')} error={!!errors.password} helperText={errors.password?.message} />
-                <TextField
-                  label="Confirmar contrasena"
-                  type="password"
-                  {...register('confirmPassword')}
-                  error={!!errors.confirmPassword}
-                  helperText={errors.confirmPassword?.message}
-                />
-                <TurnstileCaptcha onTokenChange={setCaptchaToken} />
-                <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ py: 1.5 }}>
-                  {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Registrar'}
+            {registeredEmail ? (
+              /* ── Pantalla de confirmación de email ── */
+              <Stack spacing={3} alignItems="center" textAlign="center">
+                <Box sx={{ fontSize: 56, lineHeight: 1 }}>&#9993;</Box>
+                <Typography variant="h5" fontWeight={700}>
+                  Revisa tu correo
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Enviamos un enlace de confirmacion a:
+                </Typography>
+                <Typography variant="body1" fontWeight={600}>
+                  {registeredEmail}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 360 }}>
+                  Haz clic en el enlace del email para activar tu cuenta.
+                  Si no lo ves, revisa la carpeta de spam o correo no deseado.
+                </Typography>
+                <Button
+                  component={Link}
+                  href="/authentication/login"
+                  variant="contained"
+                  sx={{ py: 1.5, px: 6 }}
+                >
+                  Ir al login
                 </Button>
+                <Typography variant="caption" color="text.secondary">
+                  No recibiste el email?{' '}
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                    onClick={() => { setRegisteredEmail(null); setSuccess(null); }}
+                  >
+                    Intentar de nuevo
+                  </Typography>
+                </Typography>
               </Stack>
-            </form>
+            ) : (
+              /* ── Formulario de registro ── */
+              <>
+                <Typography variant="h5" fontWeight={700} textAlign="center" mb={1}>
+                  Crear cuenta
+                </Typography>
+                <Typography variant="body2" textAlign="center" color="text.secondary" mb={3}>
+                  Registro con verificacion por correo y proteccion anti-bot
+                </Typography>
 
-            <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
-              <Typography variant="body2" color="text.secondary">
-                Ya tienes cuenta?
-              </Typography>
-              <Typography component={Link} href="/authentication/login" variant="body2" sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                Iniciar sesion
-              </Typography>
-            </Stack>
+                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <Stack spacing={2}>
+                    <TextField label="Usuario" {...register('usuario')} error={!!errors.usuario} helperText={errors.usuario?.message} />
+                    <TextField label="Nombre completo" {...register('nombre')} error={!!errors.nombre} helperText={errors.nombre?.message} />
+                    <TextField label="Correo" type="email" {...register('email')} error={!!errors.email} helperText={errors.email?.message} />
+                    <TextField label="Contrasena" type="password" {...register('password')} error={!!errors.password} helperText={errors.password?.message} />
+                    <TextField
+                      label="Confirmar contrasena"
+                      type="password"
+                      {...register('confirmPassword')}
+                      error={!!errors.confirmPassword}
+                      helperText={errors.confirmPassword?.message}
+                    />
+                    <TurnstileCaptcha onTokenChange={setCaptchaToken} />
+                    <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ py: 1.5 }}>
+                      {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Registrar'}
+                    </Button>
+                  </Stack>
+                </form>
+
+                <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
+                  <Typography variant="body2" color="text.secondary">
+                    Ya tienes cuenta?
+                  </Typography>
+                  <Typography component={Link} href="/authentication/login" variant="body2" sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
+                    Iniciar sesion
+                  </Typography>
+                </Stack>
+              </>
+            )}
           </Card>
         </Grid>
       </Grid>
