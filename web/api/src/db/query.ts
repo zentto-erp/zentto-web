@@ -107,8 +107,10 @@ async function pgCallSp<T>(
     .join(", ");
   const values = entries.map(([, v]) => v);
 
+  // Strip dbo. prefix: PG no tiene schema dbo, funciones viven en public
+  const pgName = spName.replace(/^dbo\./i, '');
   // Sin comillas dobles: PG auto-lowercase el nombre → compatible con callSp('usp_Foo_Bar', ...)
-  const sql_text = `SELECT * FROM ${spName}(${namedArgs})`;
+  const sql_text = `SELECT * FROM ${pgName}(${namedArgs})`;
 
   const result = await pool.query(sql_text, values);
   return result.rows.map(normalizePgRow) as T[];
@@ -128,7 +130,8 @@ async function pgCallSpOut<T>(
     .join(", ");
   const values = entries.map(([, v]) => v);
 
-  const sql_text = `SELECT * FROM ${spName}(${namedArgs})`;
+  const pgName = spName.replace(/^dbo\./i, '');
+  const sql_text = `SELECT * FROM ${pgName}(${namedArgs})`;
 
   const result = await pool.query(sql_text, values);
   const firstRow = result.rows[0] ?? {};
