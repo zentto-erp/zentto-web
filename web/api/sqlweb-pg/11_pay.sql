@@ -1,4 +1,5 @@
 -- usp_pay_acceptedmethod_deactivate
+DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_deactivate(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_deactivate(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -12,6 +13,7 @@ $function$
 ;
 
 -- usp_pay_acceptedmethod_list
+DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_list(integer, integer, boolean, boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_list(p_company_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_applies_to_pos boolean DEFAULT NULL::boolean, p_applies_to_web boolean DEFAULT NULL::boolean, p_applies_to_restaurant boolean DEFAULT NULL::boolean)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "PaymentMethodId" integer, "MethodCode" character varying, "MethodName" character varying, "MethodCategory" character varying, "IconName" character varying, "ProviderId" integer, "ProviderCode" character varying, "ProviderName" character varying, "AppliesToPOS" boolean, "AppliesToWeb" boolean, "AppliesToRestaurant" boolean, "MinAmount" numeric, "MaxAmount" numeric, "CommissionPct" numeric, "CommissionFixed" numeric, "SortOrder" integer, "IsActive" boolean)
  LANGUAGE plpgsql
@@ -39,6 +41,7 @@ $function$
 ;
 
 -- usp_pay_acceptedmethod_upsert
+DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_upsert(integer, integer, integer, integer, boolean, boolean, boolean, numeric, numeric, numeric, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_upsert(p_company_id integer, p_branch_id integer, p_payment_method_id integer, p_provider_id integer DEFAULT NULL::integer, p_applies_to_pos boolean DEFAULT true, p_applies_to_web boolean DEFAULT true, p_applies_to_restaurant boolean DEFAULT true, p_min_amount numeric DEFAULT NULL::numeric, p_max_amount numeric DEFAULT NULL::numeric, p_commission_pct numeric DEFAULT NULL::numeric, p_commission_fixed numeric DEFAULT NULL::numeric, p_sort_order integer DEFAULT 0)
  RETURNS void
  LANGUAGE plpgsql
@@ -70,6 +73,7 @@ $function$
 ;
 
 -- usp_pay_cardreader_list
+DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "StationId" character varying, "DeviceName" character varying, "DeviceType" character varying, "ConnectionType" character varying, "ConnectionConfig" character varying, "ProviderId" integer, "IsActive" boolean, "LastSeenAt" timestamp with time zone, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
@@ -88,6 +92,7 @@ $function$
 ;
 
 -- usp_pay_cardreader_listbycompany
+DROP FUNCTION IF EXISTS public.usp_pay_cardreader_listbycompany(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_listbycompany(p_company_id integer, p_branch_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "StationId" character varying, "DeviceName" character varying, "DeviceType" character varying, "ConnectionType" character varying, "ConnectionConfig" character varying, "ProviderId" integer, "IsActive" boolean, "LastSeenAt" timestamp with time zone, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
@@ -108,6 +113,7 @@ $function$
 ;
 
 -- usp_pay_cardreader_upsert
+DROP FUNCTION IF EXISTS public.usp_pay_cardreader_upsert(integer, integer, integer, character varying, character varying, character varying, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_upsert(p_device_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT 0, p_station_id character varying DEFAULT 'DEFAULT'::character varying, p_device_name character varying DEFAULT NULL::character varying, p_device_type character varying DEFAULT NULL::character varying, p_connection_type character varying DEFAULT 'USB'::character varying, p_connection_config character varying DEFAULT NULL::character varying, p_provider_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -139,6 +145,7 @@ $function$
 ;
 
 -- usp_pay_companyconfig_deactivate
+DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_deactivate(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_deactivate(p_company_id integer, p_provider_code character varying)
  RETURNS void
  LANGUAGE plpgsql
@@ -156,6 +163,7 @@ $function$
 ;
 
 -- usp_pay_companyconfig_deactivatebyid
+DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_deactivatebyid(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_deactivatebyid(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -170,6 +178,7 @@ $function$
 ;
 
 -- usp_pay_companyconfig_list
+DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "CountryCode" character varying, "ProviderId" integer, "ProviderCode" character varying, "ProviderName" character varying, "ProviderType" character varying, "Environment" character varying, "AutoCapture" boolean, "AllowRefunds" boolean, "MaxRefundDays" integer, "IsActive" boolean, "CreatedAt" timestamp with time zone, "UpdatedAt" timestamp with time zone)
  LANGUAGE plpgsql
@@ -189,6 +198,7 @@ $function$
 ;
 
 -- usp_pay_companyconfig_listbycompany
+DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_listbycompany(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_listbycompany(p_company_id integer, p_branch_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "CountryCode" character varying, "ProviderId" integer, "ProviderCode" character varying, "ProviderName" character varying, "ProviderType" character varying, "Environment" character varying, "ClientId" character varying, "ClientSecret" character varying, "MerchantId" character varying, "TerminalId" character varying, "IntegratorId" character varying, "CertificatePath" character varying, "ExtraConfig" character varying, "AutoCapture" boolean, "AllowRefunds" boolean, "MaxRefundDays" integer, "IsActive" boolean, "CreatedAt" timestamp with time zone, "UpdatedAt" timestamp with time zone)
  LANGUAGE plpgsql
@@ -212,6 +222,7 @@ $function$
 ;
 
 -- usp_pay_companyconfig_upsert
+DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_upsert(integer, character varying, boolean, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_upsert(p_company_id integer, p_provider_code character varying, p_is_active boolean DEFAULT true, p_config_json text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
@@ -246,6 +257,7 @@ $function$
 ;
 
 -- usp_pay_companyconfig_upsertfull
+DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_upsertfull(integer, integer, character, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, text, boolean, boolean, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_upsertfull(p_company_id integer, p_branch_id integer DEFAULT 0, p_country_code character DEFAULT NULL::bpchar, p_provider_code character varying DEFAULT NULL::character varying, p_environment character varying DEFAULT 'sandbox'::character varying, p_client_id character varying DEFAULT NULL::character varying, p_client_secret character varying DEFAULT NULL::character varying, p_merchant_id character varying DEFAULT NULL::character varying, p_terminal_id character varying DEFAULT NULL::character varying, p_integrator_id character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_extra_config text DEFAULT NULL::text, p_auto_capture boolean DEFAULT true, p_allow_refunds boolean DEFAULT true, p_max_refund_days integer DEFAULT 30)
  RETURNS void
  LANGUAGE plpgsql
@@ -294,6 +306,7 @@ $function$
 ;
 
 -- usp_pay_method_list
+DROP FUNCTION IF EXISTS public.usp_pay_method_list(character) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_method_list(p_country_code character DEFAULT NULL::bpchar)
  RETURNS TABLE("Id" integer, "Code" character varying, "Name" character varying, "Category" character varying, "CountryCode" character varying, "IconName" character varying, "RequiresGateway" boolean, "IsActive" boolean, "SortOrder" integer)
  LANGUAGE plpgsql
@@ -314,6 +327,7 @@ $function$
 ;
 
 -- usp_pay_method_upsert
+DROP FUNCTION IF EXISTS public.usp_pay_method_upsert(character varying, character varying, character, character varying, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_method_upsert(p_method_code character varying, p_method_name character varying, p_country_code character DEFAULT NULL::bpchar, p_method_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT true)
  RETURNS void
  LANGUAGE plpgsql
@@ -331,6 +345,7 @@ $function$
 ;
 
 -- usp_pay_provider_get
+DROP FUNCTION IF EXISTS public.usp_pay_provider_get(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_provider_get(p_provider_code character varying)
  RETURNS TABLE("Id" integer, "Code" character varying, "Name" character varying, "CountryCode" character varying, "ProviderType" character varying, "BaseUrlSandbox" character varying, "BaseUrlProd" character varying, "AuthType" character varying, "DocsUrl" character varying, "LogoUrl" character varying, "IsActive" boolean, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
@@ -349,6 +364,7 @@ $function$
 ;
 
 -- usp_pay_provider_getcapabilities
+DROP FUNCTION IF EXISTS public.usp_pay_provider_getcapabilities(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_provider_getcapabilities(p_provider_code character varying)
  RETURNS TABLE("ProviderCode" character varying, "ProviderName" character varying, "ProviderType" character varying, "CapabilityId" integer, "Capability" character varying, "PaymentMethod" character varying, "EndpointPath" character varying, "HttpMethod" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
@@ -368,6 +384,7 @@ $function$
 ;
 
 -- usp_pay_provider_list
+DROP FUNCTION IF EXISTS public.usp_pay_provider_list() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_provider_list()
  RETURNS TABLE("Id" integer, "Code" character varying, "Name" character varying, "CountryCode" character varying, "ProviderType" character varying, "BaseUrlSandbox" character varying, "BaseUrlProd" character varying, "AuthType" character varying, "DocsUrl" character varying, "LogoUrl" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
@@ -385,6 +402,7 @@ $function$
 ;
 
 -- usp_pay_transaction_insert
+DROP FUNCTION IF EXISTS public.usp_pay_transaction_insert(character varying, integer, integer, character varying, integer, character varying, character varying, integer, character varying, numeric, character varying, character varying, character varying, character varying, text, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_transaction_insert(p_transaction_uuid character varying, p_empresa_id integer, p_sucursal_id integer, p_source_type character varying, p_source_id integer DEFAULT NULL::integer, p_source_number character varying DEFAULT NULL::character varying, p_payment_method_code character varying DEFAULT NULL::character varying, p_provider_id integer DEFAULT NULL::integer, p_currency character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT 0, p_trx_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_gateway_trx_id character varying DEFAULT NULL::character varying, p_gateway_auth_code character varying DEFAULT NULL::character varying, p_gateway_response text DEFAULT NULL::text, p_gateway_message character varying DEFAULT NULL::character varying, p_card_last_four character varying DEFAULT NULL::character varying, p_card_brand character varying DEFAULT NULL::character varying, p_mobile_number character varying DEFAULT NULL::character varying, p_bank_code character varying DEFAULT NULL::character varying, p_payment_ref character varying DEFAULT NULL::character varying, p_station_id character varying DEFAULT NULL::character varying, p_cashier_id character varying DEFAULT NULL::character varying, p_ip_address character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
@@ -414,6 +432,7 @@ $function$
 ;
 
 -- usp_pay_transaction_resolveconfig
+DROP FUNCTION IF EXISTS public.usp_pay_transaction_resolveconfig(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_transaction_resolveconfig(p_empresa_id integer, p_sucursal_id integer, p_provider_code character varying)
  RETURNS SETOF pay."CompanyPaymentConfig"
  LANGUAGE plpgsql
@@ -432,6 +451,7 @@ $function$
 ;
 
 -- usp_pay_transaction_search
+DROP FUNCTION IF EXISTS public.usp_pay_transaction_search(integer, integer, character varying, character varying, character varying, character varying, timestamp without time zone, timestamp without time zone, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_transaction_search(p_empresa_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_provider_code character varying DEFAULT NULL::character varying, p_source_type character varying DEFAULT NULL::character varying, p_source_number character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_date_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_date_to timestamp without time zone DEFAULT NULL::timestamp without time zone, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS SETOF pay."Transactions"
  LANGUAGE plpgsql
@@ -456,6 +476,7 @@ $function$
 ;
 
 -- usp_pay_transaction_searchcount
+DROP FUNCTION IF EXISTS public.usp_pay_transaction_searchcount(integer, integer, character varying, character varying, character varying, character varying, timestamp without time zone, timestamp without time zone) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_transaction_searchcount(p_empresa_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_provider_code character varying DEFAULT NULL::character varying, p_source_type character varying DEFAULT NULL::character varying, p_source_number character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_date_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_date_to timestamp without time zone DEFAULT NULL::timestamp without time zone)
  RETURNS TABLE(total bigint)
  LANGUAGE plpgsql
@@ -478,6 +499,7 @@ $function$
 ;
 
 -- usp_pay_transaction_updatestatus
+DROP FUNCTION IF EXISTS public.usp_pay_transaction_updatestatus(character varying, character varying, character varying, character varying, text, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_transaction_updatestatus(p_transaction_uuid character varying, p_status character varying, p_gateway_trx_id character varying DEFAULT NULL::character varying, p_gateway_auth_code character varying DEFAULT NULL::character varying, p_gateway_response text DEFAULT NULL::text, p_gateway_message character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql

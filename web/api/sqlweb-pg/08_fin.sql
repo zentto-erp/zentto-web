@@ -1,4 +1,5 @@
 -- sp_conciliacion_get_detalle_sistema
+DROP FUNCTION IF EXISTS public.sp_conciliacion_get_detalle_sistema(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_detalle_sistema(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Conciliacion_ID" integer, "Tipo_Origen" character varying, "MovCuentas_ID" integer, "Extracto_ID" integer, "Fecha" timestamp without time zone, "Descripcion" character varying, "Referencia" character varying, "Debito" numeric, "Credito" numeric, "Conciliado" boolean, "Nro_Ref" character varying, "MovFecha" timestamp without time zone)
  LANGUAGE plpgsql
@@ -19,6 +20,7 @@ $function$
 ;
 
 -- sp_conciliacion_get_extracto_pendiente
+DROP FUNCTION IF EXISTS public.sp_conciliacion_get_extracto_pendiente(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_extracto_pendiente(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha" timestamp without time zone, "Descripcion" character varying, "Referencia" character varying, "Tipo" character varying, "Monto" numeric, "Saldo" numeric, "Conciliado" boolean)
  LANGUAGE plpgsql
@@ -47,6 +49,7 @@ $function$
 ;
 
 -- sp_conciliacion_get_header
+DROP FUNCTION IF EXISTS public.sp_conciliacion_get_header(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_header(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha_Desde" timestamp without time zone, "Fecha_Hasta" timestamp without time zone, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Banco" character varying, "Descripcion" character varying)
  LANGUAGE plpgsql
@@ -67,6 +70,7 @@ $function$
 ;
 
 -- sp_conciliacion_list
+DROP FUNCTION IF EXISTS public.sp_conciliacion_list(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_conciliacion_list(p_nro_cta character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ID" integer, "Nro_Cta" character varying, "Fecha_Desde" timestamp without time zone, "Fecha_Hasta" timestamp without time zone, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Co_Usuario" character varying, "Fecha_Creacion" timestamp without time zone, "Fecha_Cierre" timestamp without time zone, "Banco" character varying, "Pendientes" bigint, "Conciliados" bigint)
  LANGUAGE plpgsql
@@ -102,6 +106,7 @@ $function$
 ;
 
 -- usp_ap_application_apply
+DROP FUNCTION IF EXISTS public.usp_ap_application_apply(bigint, numeric, character varying, date, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_apply(p_payable_document_id bigint, p_amount numeric, p_payment_reference character varying DEFAULT NULL::character varying, p_apply_date date DEFAULT NULL::date, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "ApplicationId" bigint, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
@@ -182,6 +187,7 @@ $function$
 ;
 
 -- usp_ap_application_get
+DROP FUNCTION IF EXISTS public.usp_ap_application_get(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_get(p_application_id bigint)
  RETURNS TABLE("PayableApplicationId" bigint, "PayableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "IssueDate" date, "DueDate" date, "CurrencyCode" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "PaidFlag" boolean, "DocumentStatus" character varying, "DocumentNotes" character varying, "SupplierId" bigint, "SupplierCode" character varying, "SupplierName" character varying, "SupplierFiscalId" character varying)
  LANGUAGE plpgsql
@@ -218,6 +224,7 @@ $function$
 ;
 
 -- usp_ap_application_getbycontext
+DROP FUNCTION IF EXISTS public.usp_ap_application_getbycontext(bigint, integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_getbycontext(p_application_id bigint, p_company_id integer, p_branch_id integer, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying)
  LANGUAGE plpgsql
@@ -258,6 +265,7 @@ $function$
 ;
 
 -- usp_ap_application_list
+DROP FUNCTION IF EXISTS public.usp_ap_application_list(bigint, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_list(p_supplier_id bigint DEFAULT NULL::bigint, p_document_type character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("PayableApplicationId" bigint, "PayableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "DocumentStatus" character varying, "SupplierId" bigint, "SupplierCode" character varying, "SupplierName" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -309,6 +317,7 @@ $function$
 ;
 
 -- usp_ap_application_listbycontext
+DROP FUNCTION IF EXISTS public.usp_ap_application_listbycontext(integer, integer, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_listbycontext(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -382,6 +391,7 @@ $function$
 ;
 
 -- usp_ap_application_resolve
+DROP FUNCTION IF EXISTS public.usp_ap_application_resolve(integer, integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_resolve(p_company_id integer, p_branch_id integer, p_document_number character varying, p_supplier_code character varying DEFAULT NULL::character varying, p_document_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("PayableDocumentId" bigint, "PendingAmount" numeric, "TotalAmount" numeric, "SupplierId" bigint, "CurrencyCode" character varying)
  LANGUAGE plpgsql
@@ -409,6 +419,7 @@ $function$
 ;
 
 -- usp_ap_application_reverse
+DROP FUNCTION IF EXISTS public.usp_ap_application_reverse(bigint, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_reverse(p_application_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
@@ -477,6 +488,7 @@ $function$
 ;
 
 -- usp_ap_application_update
+DROP FUNCTION IF EXISTS public.usp_ap_application_update(bigint, numeric, date, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_application_update(p_application_id bigint, p_amount numeric DEFAULT NULL::numeric, p_apply_date date DEFAULT NULL::date, p_payment_reference character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok integer, "Message" character varying)
  LANGUAGE plpgsql
@@ -571,6 +583,7 @@ $function$
 ;
 
 -- usp_ap_balance_getbysupplier
+DROP FUNCTION IF EXISTS public.usp_ap_balance_getbysupplier(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_balance_getbysupplier(p_cod_proveedor character varying)
  RETURNS TABLE("saldoTotal" numeric, saldo30 numeric, saldo60 numeric, saldo90 numeric, saldo91 numeric)
  LANGUAGE plpgsql
@@ -591,6 +604,7 @@ $function$
 ;
 
 -- usp_ap_payable_applypayment
+DROP FUNCTION IF EXISTS public.usp_ap_payable_applypayment(character varying, date, character varying, character varying, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_applypayment(p_cod_proveedor character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_pago character varying DEFAULT NULL::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -678,6 +692,7 @@ $function$
 ;
 
 -- usp_ap_payable_applypayment
+DROP FUNCTION IF EXISTS public.usp_ap_payable_applypayment(character varying, date, character varying, character varying, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_applypayment(p_cod_proveedor character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_pago character varying DEFAULT NULL::character varying, p_documentos_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -779,6 +794,7 @@ $function$
 ;
 
 -- usp_ap_payable_create
+DROP FUNCTION IF EXISTS public.usp_ap_payable_create(character varying, character varying, character varying, date, date, character varying, numeric, numeric, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_create(p_codigo character varying, p_document_type character varying DEFAULT 'COMPRA'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_currency_code character varying DEFAULT 'USD'::character varying, p_total_amount numeric DEFAULT 0, p_pending_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -828,6 +844,7 @@ $function$
 ;
 
 -- usp_ap_payable_getbyid
+DROP FUNCTION IF EXISTS public.usp_ap_payable_getbyid(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_getbyid(p_id bigint)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
@@ -847,6 +864,7 @@ $function$
 ;
 
 -- usp_ap_payable_getpending
+DROP FUNCTION IF EXISTS public.usp_ap_payable_getpending(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_getpending(p_cod_proveedor character varying)
  RETURNS TABLE("tipoDoc" character varying, "numDoc" character varying, fecha date, pendiente numeric, total numeric)
  LANGUAGE plpgsql
@@ -870,6 +888,7 @@ $function$
 ;
 
 -- usp_ap_payable_list
+DROP FUNCTION IF EXISTS public.usp_ap_payable_list(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_list(p_cod_proveedor character varying DEFAULT NULL::character varying, p_tipo_doc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "codProveedor" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying)
  LANGUAGE plpgsql
@@ -911,6 +930,7 @@ $function$
 ;
 
 -- usp_ap_payable_listfull
+DROP FUNCTION IF EXISTS public.usp_ap_payable_listfull(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_listfull(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
@@ -967,6 +987,7 @@ $function$
 ;
 
 -- usp_ap_payable_update
+DROP FUNCTION IF EXISTS public.usp_ap_payable_update(bigint, character varying, character varying, date, date, numeric, numeric, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_update(p_id bigint, p_document_type character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT NULL::numeric, p_pending_amount numeric DEFAULT NULL::numeric, p_status character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -991,6 +1012,7 @@ $function$
 ;
 
 -- usp_ap_payable_void
+DROP FUNCTION IF EXISTS public.usp_ap_payable_void(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ap_payable_void(p_id bigint)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -1009,6 +1031,7 @@ $function$
 ;
 
 -- usp_ar_application_apply
+DROP FUNCTION IF EXISTS public.usp_ar_application_apply(bigint, numeric, character varying, date, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_apply(p_receivable_document_id bigint, p_amount numeric, p_payment_reference character varying DEFAULT NULL::character varying, p_apply_date date DEFAULT NULL::date, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "ApplicationId" bigint, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
@@ -1089,6 +1112,7 @@ $function$
 ;
 
 -- usp_ar_application_get
+DROP FUNCTION IF EXISTS public.usp_ar_application_get(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_get(p_application_id bigint)
  RETURNS TABLE("ReceivableApplicationId" bigint, "ReceivableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "IssueDate" date, "DueDate" date, "CurrencyCode" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "PaidFlag" boolean, "DocumentStatus" character varying, "DocumentNotes" character varying, "CustomerId" bigint, "CustomerCode" character varying, "CustomerName" character varying, "CustomerFiscalId" character varying)
  LANGUAGE plpgsql
@@ -1125,6 +1149,7 @@ $function$
 ;
 
 -- usp_ar_application_getbycontext
+DROP FUNCTION IF EXISTS public.usp_ar_application_getbycontext(bigint, integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_getbycontext(p_application_id bigint, p_company_id integer, p_branch_id integer, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying)
  LANGUAGE plpgsql
@@ -1165,6 +1190,7 @@ $function$
 ;
 
 -- usp_ar_application_list
+DROP FUNCTION IF EXISTS public.usp_ar_application_list(bigint, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_list(p_customer_id bigint DEFAULT NULL::bigint, p_document_type character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("ReceivableApplicationId" bigint, "ReceivableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "DocumentStatus" character varying, "CustomerId" bigint, "CustomerCode" character varying, "CustomerName" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -1216,6 +1242,7 @@ $function$
 ;
 
 -- usp_ar_application_listbycontext
+DROP FUNCTION IF EXISTS public.usp_ar_application_listbycontext(integer, integer, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_listbycontext(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -1287,6 +1314,7 @@ $function$
 ;
 
 -- usp_ar_application_resolve
+DROP FUNCTION IF EXISTS public.usp_ar_application_resolve(integer, integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_resolve(p_company_id integer, p_branch_id integer, p_document_number character varying, p_customer_code character varying DEFAULT NULL::character varying, p_document_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ReceivableDocumentId" bigint, "PendingAmount" numeric, "TotalAmount" numeric, "CustomerId" bigint, "CurrencyCode" character varying)
  LANGUAGE plpgsql
@@ -1314,6 +1342,7 @@ $function$
 ;
 
 -- usp_ar_application_reverse
+DROP FUNCTION IF EXISTS public.usp_ar_application_reverse(bigint, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_reverse(p_application_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
@@ -1382,6 +1411,7 @@ $function$
 ;
 
 -- usp_ar_application_update
+DROP FUNCTION IF EXISTS public.usp_ar_application_update(bigint, numeric, date, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_application_update(p_application_id bigint, p_amount numeric DEFAULT NULL::numeric, p_apply_date date DEFAULT NULL::date, p_payment_reference character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok integer, "Message" character varying)
  LANGUAGE plpgsql
@@ -1485,6 +1515,7 @@ $function$
 ;
 
 -- usp_ar_balance_getbycustomer
+DROP FUNCTION IF EXISTS public.usp_ar_balance_getbycustomer(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_balance_getbycustomer(p_cod_cliente character varying)
  RETURNS TABLE("saldoTotal" numeric, saldo30 numeric, saldo60 numeric, saldo90 numeric, saldo91 numeric)
  LANGUAGE plpgsql
@@ -1505,6 +1536,7 @@ $function$
 ;
 
 -- usp_ar_receivable_applypayment
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_applypayment(character varying, date, character varying, character varying, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_applypayment(p_cod_cliente character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_recibo character varying DEFAULT NULL::character varying, p_documentos_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -1611,6 +1643,7 @@ $function$
 ;
 
 -- usp_ar_receivable_applypayment
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_applypayment(character varying, date, character varying, character varying, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_applypayment(p_cod_cliente character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_recibo character varying DEFAULT NULL::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -1698,6 +1731,7 @@ $function$
 ;
 
 -- usp_ar_receivable_create
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_create(character varying, character varying, character varying, date, date, character varying, numeric, numeric, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_create(p_codigo character varying, p_document_type character varying DEFAULT 'FACT'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_currency_code character varying DEFAULT 'USD'::character varying, p_total_amount numeric DEFAULT 0, p_pending_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -1747,6 +1781,7 @@ $function$
 ;
 
 -- usp_ar_receivable_getbyid
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_getbyid(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_getbyid(p_id bigint)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
@@ -1766,6 +1801,7 @@ $function$
 ;
 
 -- usp_ar_receivable_getpending
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_getpending(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_getpending(p_cod_cliente character varying)
  RETURNS TABLE("tipoDoc" character varying, "numDoc" character varying, fecha date, pendiente numeric, total numeric)
  LANGUAGE plpgsql
@@ -1789,6 +1825,7 @@ $function$
 ;
 
 -- usp_ar_receivable_list
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_list(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_list(p_cod_cliente character varying DEFAULT NULL::character varying, p_tipo_doc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "codCliente" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying)
  LANGUAGE plpgsql
@@ -1830,6 +1867,7 @@ $function$
 ;
 
 -- usp_ar_receivable_listfull
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_listfull(character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_listfull(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
@@ -1878,6 +1916,7 @@ $function$
 ;
 
 -- usp_ar_receivable_update
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_update(bigint, character varying, character varying, date, date, numeric, numeric, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_update(p_id bigint, p_document_type character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT NULL::numeric, p_pending_amount numeric DEFAULT NULL::numeric, p_status character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -1902,6 +1941,7 @@ $function$
 ;
 
 -- usp_ar_receivable_void
+DROP FUNCTION IF EXISTS public.usp_ar_receivable_void(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_ar_receivable_void(p_id bigint)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -1920,6 +1960,7 @@ $function$
 ;
 
 -- usp_bank_account_getbynumber
+DROP FUNCTION IF EXISTS public.usp_bank_account_getbynumber(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_account_getbynumber(p_company_id integer, p_nro_cta character varying)
  RETURNS TABLE("bankAccountId" bigint, "nroCta" character varying, "bankName" character varying, balance numeric, "availableBalance" numeric)
  LANGUAGE plpgsql
@@ -1932,6 +1973,7 @@ END; $function$
 ;
 
 -- usp_bank_account_list
+DROP FUNCTION IF EXISTS public.usp_bank_account_list(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_account_list(p_company_id integer)
  RETURNS TABLE("Nro_Cta" character varying, "Banco" character varying, "Descripcion" character varying, "Moneda" character varying, "Saldo" numeric, "Saldo_Disponible" numeric, "BancoNombre" character varying)
  LANGUAGE plpgsql
@@ -1945,6 +1987,7 @@ END; $function$
 ;
 
 -- usp_bank_movement_create
+DROP FUNCTION IF EXISTS public.usp_bank_movement_create(bigint, character varying, smallint, numeric, numeric, character varying, character varying, character varying, character varying, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_movement_create(p_bank_account_id bigint, p_movement_type character varying, p_movement_sign smallint, p_amount numeric, p_net_amount numeric, p_reference_no character varying DEFAULT NULL::character varying, p_beneficiary character varying DEFAULT NULL::character varying, p_concept character varying DEFAULT NULL::character varying, p_category_code character varying DEFAULT NULL::character varying, p_related_document_no character varying DEFAULT NULL::character varying, p_related_document_type character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "movementId" integer, "newBalance" numeric)
  LANGUAGE plpgsql
@@ -1975,6 +2018,7 @@ END; $function$
 ;
 
 -- usp_bank_movement_listbyaccount
+DROP FUNCTION IF EXISTS public.usp_bank_movement_listbyaccount(integer, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_movement_listbyaccount(p_company_id integer, p_nro_cta character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(id bigint, "Nro_Cta" character varying, "Fecha" timestamp with time zone, "Tipo" character varying, "Nro_Ref" character varying, "Beneficiario" character varying, "Monto" numeric, "MontoNeto" numeric, "Concepto" character varying, "Categoria" character varying, "Documento_Relacionado" character varying, "Tipo_Doc_Rel" character varying, "SaldoPosterior" numeric, "Conciliado" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -2000,6 +2044,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_close
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_close(integer, numeric, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_close(p_id integer, p_bank_closing numeric, p_notes character varying DEFAULT NULL::character varying, p_closed_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, diferencia numeric, estado character varying)
  LANGUAGE plpgsql
@@ -2032,6 +2077,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_create
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_create(integer, integer, bigint, date, date, numeric, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_create(p_company_id integer, p_branch_id integer, p_bank_account_id bigint, p_from_date date, p_to_date date, p_opening numeric, p_closing numeric, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2048,6 +2094,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_getaccountnobyid
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getaccountnobyid(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getaccountnobyid(p_id integer)
  RETURNS TABLE("accountNo" character varying)
  LANGUAGE plpgsql
@@ -2059,6 +2106,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_getbyid
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getbyid(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getbyid(p_company_id integer, p_id integer)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha_Desde" character varying, "Fecha_Hasta" character varying, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Banco" character varying)
  LANGUAGE plpgsql
@@ -2075,6 +2123,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_getnettotal
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getnettotal(bigint, date, date) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getnettotal(p_bank_account_id bigint, p_from_date date, p_to_date date)
  RETURNS TABLE("netTotal" numeric)
  LANGUAGE plpgsql
@@ -2085,6 +2134,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_getopenforaccount
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getopenforaccount(integer, bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getopenforaccount(p_company_id integer, p_bank_account_id bigint)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -2096,6 +2146,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_getpendingstatements
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getpendingstatements(p_id integer)
  RETURNS TABLE(id bigint, "Fecha" timestamp with time zone, "Descripcion" character varying, "Referencia" character varying, "Tipo" character varying, "Monto" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
@@ -2108,6 +2159,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_getsystemmovements
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getsystemmovements(p_id integer)
  RETURNS TABLE(id bigint, "Fecha" timestamp with time zone, "Tipo" character varying, "Nro_Ref" character varying, "Beneficiario" character varying, "Concepto" character varying, "Monto" numeric, "MontoNeto" numeric, "SaldoPosterior" numeric, "Conciliado" boolean)
  LANGUAGE plpgsql
@@ -2122,6 +2174,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_list
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_list(integer, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_list(p_company_id integer, p_nro_cta character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha_Desde" character varying, "Fecha_Hasta" character varying, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Banco" character varying, "Pendientes" bigint, "Conciliados" bigint, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -2153,6 +2206,7 @@ END; $function$
 ;
 
 -- usp_bank_reconciliation_matchmovement
+DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_matchmovement(bigint, bigint, bigint, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_matchmovement(p_reconciliation_id bigint, p_movement_id bigint, p_statement_id bigint DEFAULT NULL::bigint, p_matched_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2201,6 +2255,7 @@ END; $function$
 ;
 
 -- usp_bank_resolvescope
+DROP FUNCTION IF EXISTS public.usp_bank_resolvescope() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_resolvescope()
  RETURNS TABLE("companyId" integer, "branchId" integer, "systemUserId" integer)
  LANGUAGE plpgsql
@@ -2214,6 +2269,7 @@ END; $function$
 ;
 
 -- usp_bank_resolveuserid
+DROP FUNCTION IF EXISTS public.usp_bank_resolveuserid(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_resolveuserid(p_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
@@ -2223,6 +2279,7 @@ END; $function$
 ;
 
 -- usp_bank_statementline_insert
+DROP FUNCTION IF EXISTS public.usp_bank_statementline_insert(bigint, timestamp with time zone, character varying, character varying, character varying, numeric, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_bank_statementline_insert(p_reconciliation_id bigint, p_statement_date timestamp with time zone, p_description_text character varying DEFAULT NULL::character varying, p_reference_no character varying DEFAULT NULL::character varying, p_entry_type character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT NULL::numeric, p_balance numeric DEFAULT NULL::numeric, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2239,6 +2296,7 @@ END; $function$
 ;
 
 -- usp_cxc_aplicar_cobro
+DROP FUNCTION IF EXISTS public.usp_cxc_aplicar_cobro(character varying, character varying, character varying, numeric, character varying, character varying, jsonb, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_cxc_aplicar_cobro(p_request_id character varying, p_cod_cliente character varying, p_fecha character varying, p_monto_total numeric, p_cod_usuario character varying, p_observaciones character varying DEFAULT ''::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("NumRecibo" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2451,6 +2509,7 @@ $function$
 ;
 
 -- usp_cxp_aplicar_pago
+DROP FUNCTION IF EXISTS public.usp_cxp_aplicar_pago(character varying, character varying, character varying, numeric, character varying, character varying, jsonb, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_cxp_aplicar_pago(p_request_id character varying, p_cod_proveedor character varying, p_fecha character varying, p_monto_total numeric, p_cod_usuario character varying, p_observaciones character varying DEFAULT ''::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("NumPago" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2663,6 +2722,7 @@ $function$
 ;
 
 -- usp_fin_bank_delete
+DROP FUNCTION IF EXISTS public.usp_fin_bank_delete(integer, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_bank_delete(p_company_id integer, p_bank_name character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Success" boolean, "Message" character varying)
  LANGUAGE plpgsql
@@ -2684,6 +2744,7 @@ $function$
 ;
 
 -- usp_fin_bank_getbyname
+DROP FUNCTION IF EXISTS public.usp_fin_bank_getbyname(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_bank_getbyname(p_company_id integer, p_bank_name character varying)
  RETURNS TABLE("Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying)
  LANGUAGE plpgsql
@@ -2699,6 +2760,7 @@ $function$
 ;
 
 -- usp_fin_bank_insert
+DROP FUNCTION IF EXISTS public.usp_fin_bank_insert(integer, character varying, character varying, character varying, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_bank_insert(p_company_id integer, p_bank_code character varying, p_bank_name character varying, p_contact_name character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_phones character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Success" boolean, "Message" character varying)
  LANGUAGE plpgsql
@@ -2718,6 +2780,7 @@ $function$
 ;
 
 -- usp_fin_bank_list
+DROP FUNCTION IF EXISTS public.usp_fin_bank_list(integer, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_bank_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying)
  LANGUAGE plpgsql
@@ -2740,6 +2803,7 @@ $function$
 ;
 
 -- usp_fin_bank_update
+DROP FUNCTION IF EXISTS public.usp_fin_bank_update(integer, character varying, character varying, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_bank_update(p_company_id integer, p_bank_name character varying, p_contact_name character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_phones character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Success" boolean, "Message" character varying)
  LANGUAGE plpgsql
@@ -2765,6 +2829,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_box_create
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_box_create(integer, integer, character varying, character varying, numeric, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_box_create(p_company_id integer, p_branch_id integer, p_name character varying, p_account_code character varying DEFAULT NULL::character varying, p_max_amount numeric DEFAULT 0, p_responsible character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2803,6 +2868,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_box_list
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_box_list(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_box_list(p_company_id integer)
  RETURNS TABLE("Id" integer, "CompanyId" integer, "BranchId" integer, "Name" character varying, "AccountCode" character varying, "MaxAmount" numeric, "CurrentBalance" numeric, "Responsible" character varying, "Status" character varying, "CreatedAt" timestamp with time zone, "CreatedByUserId" integer)
  LANGUAGE plpgsql
@@ -2821,6 +2887,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_expense_add
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_expense_add(integer, integer, character varying, character varying, numeric, character varying, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_expense_add(p_session_id integer, p_box_id integer, p_category character varying, p_description character varying, p_amount numeric, p_beneficiary character varying DEFAULT NULL::character varying, p_receipt_number character varying DEFAULT NULL::character varying, p_account_code character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2888,6 +2955,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_expense_list
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_expense_list(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_expense_list(p_box_id integer, p_session_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "SessionId" integer, "BoxId" integer, "Category" character varying, "Description" character varying, "Amount" numeric, "Beneficiary" character varying, "ReceiptNumber" character varying, "AccountCode" character varying, "CreatedAt" timestamp with time zone, "CreatedByUserId" integer)
  LANGUAGE plpgsql
@@ -2907,6 +2975,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_session_close
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_close(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_close(p_box_id integer, p_closed_by_user_id integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2955,6 +3024,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_session_getactive
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_getactive(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_getactive(p_box_id integer)
  RETURNS TABLE("Id" integer, "BoxId" integer, "OpeningAmount" numeric, "ClosingAmount" numeric, "TotalExpenses" numeric, "Status" character varying, "OpenedAt" timestamp with time zone, "ClosedAt" timestamp with time zone, "OpenedByUserId" integer, "ClosedByUserId" integer, "Notes" character varying, "AvailableBalance" numeric, "ExpenseCount" bigint)
  LANGUAGE plpgsql
@@ -2975,6 +3045,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_session_open
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_open(integer, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_open(p_box_id integer, p_opening_amount numeric, p_opened_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -3029,6 +3100,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_summary_box
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_summary_box(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_summary_box(p_box_id integer)
  RETURNS TABLE("Id" integer, "CompanyId" integer, "BranchId" integer, "Name" character varying, "AccountCode" character varying, "MaxAmount" numeric, "CurrentBalance" numeric, "Responsible" character varying, "Status" character varying, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
@@ -3046,6 +3118,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_summary_categories
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_summary_categories(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_summary_categories(p_box_id integer)
  RETURNS TABLE("Category" character varying, "ExpenseCount" bigint, "TotalAmount" numeric)
  LANGUAGE plpgsql
@@ -3067,6 +3140,7 @@ $function$
 ;
 
 -- usp_fin_pettycash_summary_session
+DROP FUNCTION IF EXISTS public.usp_fin_pettycash_summary_session(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_summary_session(p_box_id integer)
  RETURNS TABLE("SessionId" integer, "OpeningAmount" numeric, "TotalExpenses" numeric, "AvailableBalance" numeric, "OpenedAt" timestamp with time zone, "OpenedByUserId" integer, "ExpenseCount" bigint)
  LANGUAGE plpgsql

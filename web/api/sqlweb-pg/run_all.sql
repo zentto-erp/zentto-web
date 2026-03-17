@@ -121,6 +121,9 @@
 \echo '--- Funciones Contabilidad Patrimonio ---'
 \i includes/sp/usp_acct_equity.sql
 
+\echo '--- Activos Fijos Tables (pre-requisito para funciones) ---'
+\i includes/sp/create_activos_fijos.sql
+
 \echo '--- Funciones Contabilidad Activos Fijos ---'
 \i includes/sp/usp_acct_fixedassets.sql
 
@@ -298,8 +301,6 @@
 \echo '--- Contabilidad General Tables ---'
 \i includes/sp/create_contabilidad_general.sql
 
-\echo '--- Activos Fijos Tables ---'
-\i includes/sp/create_activos_fijos.sql
 
 \echo '--- Fiscal Tributaria Tables ---'
 \i includes/sp/create_fiscal_tributaria.sql

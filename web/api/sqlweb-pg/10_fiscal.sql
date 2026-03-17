@@ -1,4 +1,5 @@
 -- sp_CxC_Documentos_List
+DROP FUNCTION IF EXISTS public."sp_CxC_Documentos_List"(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public."sp_CxC_Documentos_List"(p_codcliente character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("codCliente" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
@@ -34,6 +35,7 @@ $function$
 ;
 
 -- sp_CxP_Documentos_List
+DROP FUNCTION IF EXISTS public."sp_CxP_Documentos_List"(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public."sp_CxP_Documentos_List"(p_codproveedor character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("codProveedor" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
@@ -69,6 +71,7 @@ $function$
 ;
 
 -- usp_audit_dashboard_topmodulos
+DROP FUNCTION IF EXISTS public.usp_audit_dashboard_topmodulos(integer, integer, date, date) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_dashboard_topmodulos(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("ModuleName" character varying, "Total" bigint)
  LANGUAGE plpgsql
@@ -90,6 +93,7 @@ $function$
 ;
 
 -- usp_audit_dashboard_totales
+DROP FUNCTION IF EXISTS public.usp_audit_dashboard_totales(integer, integer, date, date) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_dashboard_totales(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("totalLogs" bigint, "totalCreates" bigint, "totalUpdates" bigint, "totalDeletes" bigint, "totalVoids" bigint, "totalLogins" bigint, "logsUltimas24h" bigint)
  LANGUAGE plpgsql
@@ -115,6 +119,7 @@ $function$
 ;
 
 -- usp_audit_dashboard_ultimoslogs
+DROP FUNCTION IF EXISTS public.usp_audit_dashboard_ultimoslogs(integer, integer, date, date) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_dashboard_ultimoslogs(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("AuditLogId" bigint, "CreatedAt" timestamp without time zone, "UserName" character varying, "ModuleName" character varying, "ActionType" character varying, "EntityName" character varying, "Summary" character varying)
  LANGUAGE plpgsql
@@ -140,6 +145,7 @@ $function$
 ;
 
 -- usp_audit_fiscalrecord_list
+DROP FUNCTION IF EXISTS public.usp_audit_fiscalrecord_list(integer, integer, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_fiscalrecord_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "FiscalRecordId" integer, "InvoiceId" integer, "InvoiceNumber" character varying, "InvoiceDate" date, "InvoiceType" character varying, "RecordHash" character varying, "SentToAuthority" boolean, "AuthorityStatus" character varying, "CountryCode" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -191,6 +197,7 @@ $function$
 ;
 
 -- usp_audit_log_getbyid
+DROP FUNCTION IF EXISTS public.usp_audit_log_getbyid(bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_log_getbyid(p_audit_log_id bigint)
  RETURNS TABLE("AuditLogId" bigint, "CompanyId" integer, "BranchId" integer, "UserId" integer, "UserName" character varying, "ModuleName" character varying, "EntityName" character varying, "EntityId" character varying, "ActionType" character varying, "Summary" character varying, "OldValues" character varying, "NewValues" character varying, "IpAddress" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -218,6 +225,7 @@ $function$
 ;
 
 -- usp_audit_log_insert
+DROP FUNCTION IF EXISTS public.usp_audit_log_insert(integer, integer, integer, character varying, character varying, character varying, character varying, character varying, character varying, text, text, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_log_insert(p_company_id integer, p_branch_id integer, p_user_id integer DEFAULT NULL::integer, p_user_name character varying DEFAULT NULL::character varying, p_module_name character varying DEFAULT NULL::character varying, p_entity_name character varying DEFAULT NULL::character varying, p_entity_id character varying DEFAULT NULL::character varying, p_action_type character varying DEFAULT NULL::character varying, p_summary character varying DEFAULT NULL::character varying, p_old_values text DEFAULT NULL::text, p_new_values text DEFAULT NULL::text, p_ip_address character varying DEFAULT NULL::character varying)
  RETURNS TABLE("AuditLogId" bigint)
  LANGUAGE plpgsql
@@ -243,6 +251,7 @@ $function$
 ;
 
 -- usp_audit_log_list
+DROP FUNCTION IF EXISTS public.usp_audit_log_list(integer, integer, date, date, character varying, character varying, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_audit_log_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_module_name character varying DEFAULT NULL::character varying, p_user_name character varying DEFAULT NULL::character varying, p_action_type character varying DEFAULT NULL::character varying, p_entity_name character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "AuditLogId" bigint, "CompanyId" integer, "BranchId" integer, "UserId" integer, "UserName" character varying, "ModuleName" character varying, "EntityName" character varying, "EntityId" character varying, "ActionType" character varying, "Summary" character varying, "IpAddress" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -298,6 +307,7 @@ $function$
 ;
 
 -- usp_fiscal_declaration_amend
+DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_amend(integer, bigint, character varying, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_amend(p_company_id integer, p_declaration_id bigint, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -337,6 +347,7 @@ $function$
 ;
 
 -- usp_fiscal_declaration_calculate
+DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_calculate(integer, character varying, character varying, character varying, character varying, bigint, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_calculate(p_company_id integer, p_declaration_type character varying, p_period_code character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_declaration_id bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -463,6 +474,7 @@ $function$
 ;
 
 -- usp_fiscal_declaration_get
+DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_get(integer, bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_get(p_company_id integer, p_declaration_id bigint)
  RETURNS TABLE("DeclarationId" bigint, "CompanyId" integer, "BranchId" integer, "CountryCode" character varying, "DeclarationType" character varying, "PeriodCode" character varying, "PeriodStart" date, "PeriodEnd" date, "SalesBase" numeric, "SalesTax" numeric, "PurchasesBase" numeric, "PurchasesTax" numeric, "TaxableBase" numeric, "TaxAmount" numeric, "WithholdingsCredit" numeric, "PreviousBalance" numeric, "NetPayable" numeric, "Status" character varying, "SubmittedAt" timestamp without time zone, "SubmittedFile" character varying, "AuthorityResponse" character varying, "PaidAt" timestamp without time zone, "PaymentReference" character varying, "JournalEntryId" bigint, "Notes" character varying, "CreatedBy" character varying, "UpdatedBy" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -486,6 +498,7 @@ $function$
 ;
 
 -- usp_fiscal_declaration_list
+DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_list(integer, character varying, integer, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_list(p_company_id integer, p_declaration_type character varying DEFAULT NULL::character varying, p_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "DeclarationId" bigint, "CompanyId" integer, "BranchId" integer, "CountryCode" character varying, "DeclarationType" character varying, "PeriodCode" character varying, "PeriodStart" date, "PeriodEnd" date, "SalesBase" numeric, "SalesTax" numeric, "PurchasesBase" numeric, "PurchasesTax" numeric, "TaxableBase" numeric, "TaxAmount" numeric, "WithholdingsCredit" numeric, "PreviousBalance" numeric, "NetPayable" numeric, "Status" character varying, "SubmittedAt" timestamp without time zone, "SubmittedFile" character varying, "AuthorityResponse" character varying, "PaidAt" timestamp without time zone, "PaymentReference" character varying, "JournalEntryId" bigint, "Notes" character varying, "CreatedBy" character varying, "UpdatedBy" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -517,6 +530,7 @@ $function$
 ;
 
 -- usp_fiscal_declaration_submit
+DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_submit(integer, bigint, character varying, text, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_submit(p_company_id integer, p_declaration_id bigint, p_cod_usuario character varying, p_file_path text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -558,6 +572,7 @@ $function$
 ;
 
 -- usp_fiscal_export_declaration
+DROP FUNCTION IF EXISTS public.usp_fiscal_export_declaration(integer, bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_export_declaration(p_company_id integer, p_declaration_id bigint)
  RETURNS TABLE("DeclarationId" bigint, "CompanyId" integer, "BranchId" integer, "CountryCode" character varying, "DeclarationType" character varying, "PeriodCode" character varying, "PeriodStart" date, "PeriodEnd" date, "SalesBase" numeric, "SalesTax" numeric, "PurchasesBase" numeric, "PurchasesTax" numeric, "TaxableBase" numeric, "TaxAmount" numeric, "WithholdingsCredit" numeric, "PreviousBalance" numeric, "NetPayable" numeric, "Status" character varying, "SubmittedAt" timestamp without time zone, "SubmittedFile" character varying, "AuthorityResponse" character varying, "PaidAt" timestamp without time zone, "PaymentReference" character varying, "JournalEntryId" bigint, "Notes" character varying, "CreatedBy" character varying, "UpdatedBy" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -580,6 +595,7 @@ $function$
 ;
 
 -- usp_fiscal_export_taxbook
+DROP FUNCTION IF EXISTS public.usp_fiscal_export_taxbook(integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_export_taxbook(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying)
  RETURNS TABLE("EntryId" bigint, "CompanyId" integer, "BookType" character varying, "PeriodCode" character varying, "EntryDate" date, "DocumentNumber" character varying, "DocumentType" character varying, "ControlNumber" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "TaxableBase" numeric, "ExemptAmount" numeric, "TaxRate" numeric, "TaxAmount" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "TotalAmount" numeric, "SourceDocumentId" bigint, "SourceModule" character varying, "CountryCode" character varying, "DeclarationId" bigint, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -604,6 +620,7 @@ $function$
 ;
 
 -- usp_fiscal_taxbook_list
+DROP FUNCTION IF EXISTS public.usp_fiscal_taxbook_list(integer, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_taxbook_list(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 100)
  RETURNS TABLE(p_total_count bigint, "EntryId" bigint, "CompanyId" integer, "BookType" character varying, "PeriodCode" character varying, "EntryDate" date, "DocumentNumber" character varying, "DocumentType" character varying, "ControlNumber" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "TaxableBase" numeric, "ExemptAmount" numeric, "TaxRate" numeric, "TaxAmount" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "TotalAmount" numeric, "SourceDocumentId" bigint, "SourceModule" character varying, "CountryCode" character varying, "DeclarationId" bigint, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -634,6 +651,7 @@ $function$
 ;
 
 -- usp_fiscal_taxbook_populate
+DROP FUNCTION IF EXISTS public.usp_fiscal_taxbook_populate(integer, character varying, character varying, character varying, character varying, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_taxbook_populate(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -759,6 +777,7 @@ $function$
 ;
 
 -- usp_fiscal_taxbook_summary
+DROP FUNCTION IF EXISTS public.usp_fiscal_taxbook_summary(integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_taxbook_summary(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying)
  RETURNS TABLE("TaxRate" numeric, "TaxableBase" numeric, "ExemptAmount" numeric, "TaxAmount" numeric, "WithholdingAmount" numeric, "TotalAmount" numeric, "EntryCount" bigint)
  LANGUAGE plpgsql
@@ -784,6 +803,7 @@ $function$
 ;
 
 -- usp_fiscal_withholding_generate
+DROP FUNCTION IF EXISTS public.usp_fiscal_withholding_generate(integer, bigint, character varying, character varying, character varying, bigint, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_withholding_generate(p_company_id integer, p_document_id bigint, p_withholding_type character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_voucher_id bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -874,6 +894,7 @@ $function$
 ;
 
 -- usp_fiscal_withholding_get
+DROP FUNCTION IF EXISTS public.usp_fiscal_withholding_get(integer, bigint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_withholding_get(p_company_id integer, p_voucher_id bigint)
  RETURNS TABLE("VoucherId" bigint, "CompanyId" integer, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "WithholdingType" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "DocumentNumber" character varying, "DocumentDate" date, "TaxableBase" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "PeriodCode" character varying, "Status" character varying, "CountryCode" character varying, "JournalEntryId" bigint, "CreatedBy" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -895,6 +916,7 @@ $function$
 ;
 
 -- usp_fiscal_withholding_list
+DROP FUNCTION IF EXISTS public.usp_fiscal_withholding_list(integer, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fiscal_withholding_list(p_company_id integer, p_withholding_type character varying DEFAULT NULL::character varying, p_period_code character varying DEFAULT NULL::character varying, p_country_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "VoucherId" bigint, "CompanyId" integer, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "WithholdingType" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "DocumentNumber" character varying, "DocumentDate" date, "TaxableBase" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "PeriodCode" character varying, "Status" character varying, "CountryCode" character varying, "JournalEntryId" bigint, "CreatedBy" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -924,6 +946,7 @@ $function$
 ;
 
 -- usp_tax_retention_count
+DROP FUNCTION IF EXISTS public.usp_tax_retention_count(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_tax_retention_count(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying)
  RETURNS TABLE(total bigint)
  LANGUAGE plpgsql
@@ -940,6 +963,7 @@ $function$
 ;
 
 -- usp_tax_retention_getbycode
+DROP FUNCTION IF EXISTS public.usp_tax_retention_getbycode(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_tax_retention_getbycode(p_codigo character varying)
  RETURNS TABLE("RetentionId" integer, "Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "Porcentaje" numeric, "Pais" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
@@ -956,6 +980,7 @@ $function$
 ;
 
 -- usp_tax_retention_list
+DROP FUNCTION IF EXISTS public.usp_tax_retention_list(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_tax_retention_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("RetentionId" integer, "Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "Porcentaje" numeric, "Pais" character varying, "IsActive" boolean)
  LANGUAGE plpgsql

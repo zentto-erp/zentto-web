@@ -1,4 +1,5 @@
 -- sp_anular_documento_compra_tx
+DROP FUNCTION IF EXISTS public.sp_anular_documento_compra_tx(character varying, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_anular_documento_compra_tx(p_num_fact character varying, p_tipo_operacion character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, mensaje character varying)
  LANGUAGE plpgsql
@@ -29,6 +30,7 @@ $function$
 ;
 
 -- sp_anular_documento_compra_tx
+DROP FUNCTION IF EXISTS public.sp_anular_documento_compra_tx(character varying, character varying, character varying, character varying, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_anular_documento_compra_tx(p_num_doc character varying, p_tipo_operacion character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying, p_revertir_inventario boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, mensaje character varying, "inventarioRevertido" boolean)
  LANGUAGE plpgsql
@@ -137,6 +139,7 @@ $function$
 ;
 
 -- sp_anular_documento_venta_tx
+DROP FUNCTION IF EXISTS public.sp_anular_documento_venta_tx(character varying, character varying, character varying, character varying, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_anular_documento_venta_tx(p_num_doc character varying, p_tipo_operacion character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying, p_revertir_inventario boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, mensaje character varying, "inventarioRevertido" boolean)
  LANGUAGE plpgsql
@@ -244,6 +247,7 @@ $function$
 ;
 
 -- sp_anular_documento_venta_tx
+DROP FUNCTION IF EXISTS public.sp_anular_documento_venta_tx(character varying, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_anular_documento_venta_tx(p_num_fact character varying, p_tipo_operacion character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, mensaje character varying)
  LANGUAGE plpgsql
@@ -277,6 +281,7 @@ $function$
 ;
 
 -- sp_documentoscompra_get
+DROP FUNCTION IF EXISTS public.sp_documentoscompra_get(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentoscompra_get(p_num_doc character varying, p_tipo_operacion character varying)
  RETURNS TABLE(result_set integer, data jsonb)
  LANGUAGE plpgsql
@@ -308,6 +313,7 @@ $function$
 ;
 
 -- sp_documentoscompra_list
+DROP FUNCTION IF EXISTS public.sp_documentoscompra_list(character varying, character varying, character varying, date, date, boolean, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentoscompra_list(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_cod_proveedor character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ID" integer, "NUM_DOC" character varying, "SERIALTIPO" character varying, "TIPO_OPERACION" character varying, "COD_PROVEEDOR" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "FECHA_VENCE" timestamp without time zone, "FECHA_RECIBO" timestamp without time zone, "HORA" character varying, "SUBTOTAL" double precision, "MONTO_GRA" double precision, "MONTO_EXE" double precision, "EXENTO" double precision, "IVA" double precision, "ALICUOTA" double precision, "TOTAL" double precision, "ANULADA" integer, "CANCELADA" character varying, "RECIBIDA" character varying, "DOC_ORIGEN" character varying, "NUM_CONTROL" character varying, "LEGAL" integer, "CONCEPTO" character varying, "OBSERV" character varying, "ALMACEN" character varying, "IVA_RETENIDO" double precision, "ISLR" character varying, "MONTO_ISLR" double precision, "COD_USUARIO" character varying, "FECHA_REPORTE" timestamp without time zone, "ESTADO" character varying)
  LANGUAGE plpgsql
@@ -368,6 +374,7 @@ $function$
 ;
 
 -- sp_documentoscompra_list_legacy
+DROP FUNCTION IF EXISTS public.sp_documentoscompra_list_legacy(character varying, character varying, character varying, date, date, boolean, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentoscompra_list_legacy(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_cod_proveedor character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "NUM_FACT" character varying, "COD_PROVEEDOR" character varying, "TIPO_OPERACION" character varying, "FECHA" timestamp without time zone, "NOMBRE" character varying, "RIF" character varying, "TOTAL" numeric, "COD_USUARIO" character varying, "ANULADA" integer, "ESTADO" character varying)
  LANGUAGE plpgsql
@@ -407,6 +414,7 @@ $function$
 ;
 
 -- sp_documentosventa_get
+DROP FUNCTION IF EXISTS public.sp_documentosventa_get(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentosventa_get(p_num_doc character varying, p_tipo_operacion character varying)
  RETURNS TABLE(result_set integer, data jsonb)
  LANGUAGE plpgsql
@@ -438,6 +446,7 @@ $function$
 ;
 
 -- sp_documentosventa_list
+DROP FUNCTION IF EXISTS public.sp_documentosventa_list(character varying, character varying, character varying, date, date, boolean, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentosventa_list(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ID" integer, "NUM_DOC" character varying, "SERIALTIPO" character varying, "TIPO_OPERACION" character varying, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "FECHA_VENCE" timestamp without time zone, "HORA" character varying, "SUBTOTAL" double precision, "MONTO_GRA" double precision, "MONTO_EXE" double precision, "IVA" double precision, "ALICUOTA" double precision, "TOTAL" double precision, "DESCUENTO" double precision, "ANULADA" integer, "CANCELADA" character varying, "FACTURADA" character varying, "ENTREGADA" character varying, "DOC_ORIGEN" character varying, "TIPO_DOC_ORIGEN" character varying, "NUM_CONTROL" character varying, "LEGAL" integer, "OBSERV" character varying, "VENDEDOR" character varying, "MONEDA" character varying, "TASA_CAMBIO" double precision, "COD_USUARIO" character varying, "FECHA_REPORTE" timestamp without time zone, "ESTADO" character varying)
  LANGUAGE plpgsql
@@ -495,6 +504,7 @@ $function$
 ;
 
 -- sp_documentosventa_list_legacy
+DROP FUNCTION IF EXISTS public.sp_documentosventa_list_legacy(character varying, character varying, character varying, date, date, boolean, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentosventa_list_legacy(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "NUM_FACT" character varying, "SERIALTIPO" character varying, "Tipo_Orden" character varying, "TIPO_OPERACION" character varying, "CODIGO" character varying, "FECHA" timestamp without time zone, "TOTAL" numeric, "COD_USUARIO" character varying, "OBSERV" character varying, "CANCELADA" character varying, "FECHA_ANULA" timestamp without time zone, "ESTADO" character varying)
  LANGUAGE plpgsql
@@ -541,6 +551,7 @@ $function$
 ;
 
 -- sp_documentosventa_tipos
+DROP FUNCTION IF EXISTS public.sp_documentosventa_tipos() CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_documentosventa_tipos()
  RETURNS TABLE(codigo character varying, nombre character varying, cantidad bigint)
  LANGUAGE plpgsql
@@ -569,6 +580,7 @@ $function$
 ;
 
 -- sp_emitir_compra_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_compra_tx(jsonb, jsonb, boolean, boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_compra_tx(p_compra_json jsonb, p_detalle_json jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxp boolean DEFAULT true, p_actualizar_saldos_proveedor boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer, "inventoryUpdated" boolean, "cxpGenerated" boolean)
  LANGUAGE plpgsql
@@ -735,6 +747,7 @@ $function$
 ;
 
 -- sp_emitir_cotizacion_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_cotizacion_tx(jsonb, jsonb, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_cotizacion_tx(p_cotizacion_json jsonb, p_detalle_json jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer)
  LANGUAGE plpgsql
@@ -825,6 +838,7 @@ $function$
 ;
 
 -- sp_emitir_documento_compra_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_documento_compra_tx(character varying, jsonb, jsonb, jsonb, character varying, boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_documento_compra_tx(p_tipo_operacion character varying, p_doc_json jsonb, p_detalle_json jsonb, p_pagos_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying, p_actualizar_inventario boolean DEFAULT true, p_generar_cxp boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, total double precision, lineas bigint)
  LANGUAGE plpgsql
@@ -1068,6 +1082,7 @@ $function$
 ;
 
 -- sp_emitir_documento_venta_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_documento_venta_tx(character varying, jsonb, jsonb, jsonb, character varying, boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_documento_venta_tx(p_tipo_operacion character varying, p_doc_json jsonb, p_detalle_json jsonb, p_pagos_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, total double precision, lineas bigint)
  LANGUAGE plpgsql
@@ -1311,6 +1326,7 @@ $function$
 ;
 
 -- sp_emitir_factura_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_factura_tx(jsonb, jsonb, jsonb, boolean, boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_factura_tx(p_factura_json jsonb, p_detalle_json jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true, p_actualizar_saldos_cliente boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer, "montoEfectivo" numeric, "montoCheque" numeric, "montoTarjeta" numeric, "saldoPendiente" numeric, abono numeric)
  LANGUAGE plpgsql
@@ -1569,6 +1585,7 @@ $function$
 ;
 
 -- sp_emitir_pedido_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_pedido_tx(jsonb, jsonb, boolean, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_pedido_tx(p_pedido_json jsonb, p_detalle_json jsonb, p_actualizar_inventario boolean DEFAULT true, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "numPedido" character varying, "detalleRows" integer, "inventoryUpdated" boolean)
  LANGUAGE plpgsql
@@ -1703,6 +1720,7 @@ $function$
 ;
 
 -- sp_emitir_presupuesto_tx
+DROP FUNCTION IF EXISTS public.sp_emitir_presupuesto_tx(jsonb, jsonb, jsonb, boolean, boolean, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.sp_emitir_presupuesto_tx(p_presupuesto_json jsonb, p_detalle_json jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true, p_actualizar_saldos_cliente boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer, "montoEfectivo" numeric, "montoCheque" numeric, "montoTarjeta" numeric, "saldoPendiente" numeric, abono numeric)
  LANGUAGE plpgsql
@@ -1950,6 +1968,7 @@ $function$
 ;
 
 -- usp_compras_getbynumfact
+DROP FUNCTION IF EXISTS public.usp_compras_getbynumfact(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_compras_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "COD_PROVEEDOR" character varying, "NOMBRE" character varying, "RIF" character varying, "TIPO" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric)
  LANGUAGE plpgsql
@@ -1973,6 +1992,7 @@ $function$
 ;
 
 -- usp_compras_list
+DROP FUNCTION IF EXISTS public.usp_compras_list(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_compras_list(p_search character varying DEFAULT NULL::character varying, p_proveedor character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "COD_PROVEEDOR" character varying, "NOMBRE" character varying, "RIF" character varying, "TIPO" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric, "TotalCount" integer)
  LANGUAGE plpgsql
@@ -2030,6 +2050,7 @@ $function$
 ;
 
 -- usp_cotizacion_getbynumfact
+DROP FUNCTION IF EXISTS public.usp_cotizacion_getbynumfact(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_cotizacion_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric)
  LANGUAGE plpgsql
@@ -2052,6 +2073,7 @@ $function$
 ;
 
 -- usp_cotizacion_list
+DROP FUNCTION IF EXISTS public.usp_cotizacion_list(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_cotizacion_list(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric, "TotalCount" integer)
  LANGUAGE plpgsql
@@ -2102,6 +2124,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_convertorder
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_convertorder(character varying, character varying, jsonb, jsonb, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_convertorder(p_num_doc_orden character varying, p_num_doc_compra character varying, p_compra_override_json jsonb DEFAULT NULL::jsonb, p_detalle_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, orden character varying, compra character varying, "detalleRows" integer, "formasPagoRows" integer, "pendingAmount" double precision, mensaje character varying)
  LANGUAGE plpgsql
@@ -2354,6 +2377,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_get
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_get(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_get(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("PurchaseDocumentId" bigint, "DocumentNumber" character varying, "SerialType" character varying, "DocumentType" character varying, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "IssueDate" timestamp without time zone, "DueDate" timestamp without time zone, "ReceiptDate" timestamp without time zone, "PaymentDate" timestamp without time zone, "DocumentTime" character varying, "SubTotal" double precision, "TaxableAmount" double precision, "ExemptAmount" double precision, "TaxAmount" double precision, "TaxRate" double precision, "TotalAmount" double precision, "DiscountAmount" double precision, "IsVoided" boolean, "IsPaid" character varying, "IsReceived" character varying, "IsLegal" boolean, "OriginDocumentNumber" character varying, "ControlNumber" character varying, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "RetainedTax" double precision, "IsrCode" character varying, "IsrAmount" double precision, "IsrSubjectCode" character varying, "IsrSubjectAmount" double precision, "RetentionRate" double precision, "ImportAmount" double precision, "ImportTax" double precision, "ImportBase" double precision, "FreightAmount" double precision, "Notes" character varying, "Concept" character varying, "OrderNumber" character varying, "ReceivedBy" character varying, "WarehouseCode" character varying, "CurrencyCode" character varying, "ExchangeRate" double precision, "UsdAmount" double precision, "UserCode" character varying, "ShortUserCode" character varying, "ReportDate" timestamp without time zone, "HostName" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -2423,6 +2447,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_getdetail
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_getdetail(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_getdetail(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("LineId" bigint, "DocumentNumber" character varying, "DocumentType" character varying, "LineNumber" integer, "ProductCode" character varying, "Description" character varying, "Quantity" double precision, "UnitPrice" double precision, "UnitCost" double precision, "SubTotal" double precision, "DiscountAmount" double precision, "TotalAmount" double precision, "TaxRate" double precision, "TaxAmount" double precision, "IsVoided" boolean, "IsDeleted" boolean, "UserCode" character varying, "LineDate" timestamp without time zone, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -2460,6 +2485,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_getindicadores
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_getindicadores(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_getindicadores(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("IsVoided" boolean, "IsPaid" character varying, "IsReceived" character varying)
  LANGUAGE plpgsql
@@ -2479,6 +2505,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_getpayments
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_getpayments(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_getpayments(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("PaymentId" bigint, "DocumentNumber" character varying, "DocumentType" character varying, "PaymentMethod" character varying, "BankCode" character varying, "PaymentNumber" character varying, "Amount" double precision, "PaymentDate" timestamp without time zone, "DueDate" timestamp without time zone, "ReferenceNumber" character varying, "UserCode" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -2509,6 +2536,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_list
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_list(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_list(p_tipo_operacion character varying DEFAULT 'COMPRA'::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("PurchaseDocumentId" bigint, "DocumentNumber" character varying, "SerialType" character varying, "DocumentType" character varying, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "IssueDate" timestamp without time zone, "DueDate" timestamp without time zone, "ReceiptDate" timestamp without time zone, "PaymentDate" timestamp without time zone, "DocumentTime" character varying, "SubTotal" double precision, "TaxableAmount" double precision, "ExemptAmount" double precision, "TaxAmount" double precision, "TaxRate" double precision, "TotalAmount" double precision, "DiscountAmount" double precision, "IsVoided" boolean, "IsPaid" character varying, "IsReceived" character varying, "IsLegal" boolean, "OriginDocumentNumber" character varying, "ControlNumber" character varying, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "RetainedTax" double precision, "IsrCode" character varying, "IsrAmount" double precision, "IsrSubjectCode" character varying, "IsrSubjectAmount" double precision, "RetentionRate" double precision, "ImportAmount" double precision, "ImportTax" double precision, "ImportBase" double precision, "FreightAmount" double precision, "Notes" character varying, "Concept" character varying, "OrderNumber" character varying, "ReceivedBy" character varying, "WarehouseCode" character varying, "CurrencyCode" character varying, "ExchangeRate" double precision, "UsdAmount" double precision, "UserCode" character varying, "ShortUserCode" character varying, "ReportDate" timestamp without time zone, "HostName" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -2607,6 +2635,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_receiveorder
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_receiveorder(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_receiveorder(p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, mensaje character varying)
  LANGUAGE plpgsql
@@ -2655,6 +2684,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_upsert
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_upsert(character varying, jsonb, jsonb, jsonb, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_upsert(p_tipo_operacion character varying, p_header_json jsonb, p_detail_json jsonb, p_payments_json jsonb DEFAULT NULL::jsonb, p_doc_origen character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "detalleRows" integer, "formasPagoRows" integer, "pendingAmount" double precision, mensaje character varying)
  LANGUAGE plpgsql
@@ -2915,6 +2945,7 @@ $function$
 ;
 
 -- usp_doc_purchasedocument_void
+DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_void(character varying, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_void(p_tipo_operacion character varying, p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "codProveedor" character varying, mensaje character varying)
  LANGUAGE plpgsql
@@ -3031,6 +3062,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_get
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_get(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_get(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS SETOF doc."SalesDocument"
  LANGUAGE plpgsql
@@ -3048,6 +3080,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_getdetail
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_getdetail(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_getdetail(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS SETOF doc."SalesDocumentLine"
  LANGUAGE plpgsql
@@ -3065,6 +3098,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_getpayments
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_getpayments(character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_getpayments(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS SETOF doc."SalesDocumentPayment"
  LANGUAGE plpgsql
@@ -3081,6 +3115,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_invoicefromorder
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_invoicefromorder(character varying, character varying, jsonb, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_invoicefromorder(p_num_doc_pedido character varying, p_num_doc_factura character varying, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, pedido character varying, factura character varying, mensaje character varying)
  LANGUAGE plpgsql
@@ -3249,6 +3284,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_list
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_list(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_list(p_tipo_operacion character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("SalesDocumentId" bigint, "DocumentNumber" character varying, "SerialType" character varying, "FiscalMemoryNumber" character varying, "OperationType" character varying, "CustomerCode" character varying, "CustomerName" character varying, "FiscalId" character varying, "DocumentDate" timestamp without time zone, "DueDate" timestamp without time zone, "DocumentTime" character varying, "SubTotal" numeric, "TaxableAmount" numeric, "ExemptAmount" numeric, "TaxAmount" numeric, "TaxRate" numeric, "TotalAmount" numeric, "DiscountAmount" numeric, "IsVoided" boolean, "IsPaid" character varying, "IsInvoiced" character varying, "IsDelivered" character varying, "OriginDocumentNumber" character varying, "OriginDocumentType" character varying, "ControlNumber" character varying, "IsLegal" character varying, "IsPrinted" boolean, "Notes" character varying, "Concept" character varying, "PaymentTerms" character varying, "ShipToAddress" character varying, "SellerCode" character varying, "DepartmentCode" character varying, "LocationCode" character varying, "CurrencyCode" character varying, "ExchangeRate" numeric, "UserCode" character varying, "ReportDate" timestamp without time zone, "HostName" character varying, "VehiclePlate" character varying, "Mileage" numeric, "TollAmount" numeric, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone, "IsDeleted" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -3337,6 +3373,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_upsert
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_upsert(character varying, jsonb, jsonb, jsonb, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_upsert(p_tipo_operacion character varying, p_header_json jsonb, p_detail_json jsonb, p_payments_json jsonb DEFAULT NULL::jsonb, p_doc_origen character varying DEFAULT NULL::character varying, p_tipo_doc_origen character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "detalleRows" integer, "formasPagoRows" integer, "pendingAmount" numeric)
  LANGUAGE plpgsql
@@ -3668,6 +3705,7 @@ $function$
 ;
 
 -- usp_doc_salesdocument_void
+DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_void(character varying, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_void(p_tipo_operacion character varying, p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "codCliente" character varying, mensaje character varying)
  LANGUAGE plpgsql
@@ -3783,6 +3821,7 @@ $function$
 ;
 
 -- usp_facturas_getbynumfact
+DROP FUNCTION IF EXISTS public.usp_facturas_getbynumfact(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_facturas_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("Id" integer, "DocumentNumber" character varying, "OperationType" character varying, "DocumentDate" timestamp without time zone, "UserCode" character varying, "ClientCode" character varying, "ClientName" character varying, "SubTotal" numeric, "TaxAmount" numeric, "TotalAmount" numeric, "Currency" character varying, "ExchangeRate" numeric, "Notes" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -3815,6 +3854,7 @@ $function$
 ;
 
 -- usp_facturas_list
+DROP FUNCTION IF EXISTS public.usp_facturas_list(character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_facturas_list(p_num_fact character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_from date DEFAULT NULL::date, p_to date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Id" integer, "DocumentNumber" character varying, "OperationType" character varying, "DocumentDate" timestamp without time zone, "UserCode" character varying, "ClientCode" character varying, "ClientName" character varying, "SubTotal" numeric, "TaxAmount" numeric, "TotalAmount" numeric, "Currency" character varying, "ExchangeRate" numeric, "Notes" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -3874,6 +3914,7 @@ $function$
 ;
 
 -- usp_pedidos_getbynumfact
+DROP FUNCTION IF EXISTS public.usp_pedidos_getbynumfact(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pedidos_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("NUM_FACT" character varying, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "SUBTOTAL" numeric, "IMPUESTO" numeric, "TOTAL" numeric)
  LANGUAGE plpgsql
@@ -3896,6 +3937,7 @@ $function$
 ;
 
 -- usp_pedidos_list
+DROP FUNCTION IF EXISTS public.usp_pedidos_list(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pedidos_list(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("NUM_FACT" character varying, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "SUBTOTAL" numeric, "IMPUESTO" numeric, "TOTAL" numeric, "TotalCount" bigint)
  LANGUAGE plpgsql

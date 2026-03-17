@@ -1,4 +1,5 @@
 -- usp_pos_categorias_list
+DROP FUNCTION IF EXISTS public.usp_pos_categorias_list() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_categorias_list()
  RETURNS TABLE(id character varying, nombre character varying, "productCount" bigint)
  LANGUAGE plpgsql
@@ -19,6 +20,7 @@ $function$
 ;
 
 -- usp_pos_category_list
+DROP FUNCTION IF EXISTS public.usp_pos_category_list(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_category_list(p_company_id integer)
  RETURNS TABLE(id character varying, nombre character varying, "productCount" bigint)
  LANGUAGE plpgsql
@@ -40,6 +42,7 @@ $function$
 ;
 
 -- usp_pos_clientes_search
+DROP FUNCTION IF EXISTS public.usp_pos_clientes_search(character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_clientes_search(p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE(id character varying, codigo character varying, nombre character varying, rif character varying, telefono character varying, email character varying, direccion character varying, "tipoPrecio" character varying, credito numeric)
  LANGUAGE plpgsql
@@ -71,6 +74,7 @@ $function$
 ;
 
 -- usp_pos_customer_search
+DROP FUNCTION IF EXISTS public.usp_pos_customer_search(integer, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_customer_search(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, rif character varying, telefono character varying, email character varying, direccion character varying, "tipoPrecio" character varying, credito numeric)
  LANGUAGE plpgsql
@@ -92,6 +96,7 @@ $function$
 ;
 
 -- usp_pos_espera_anular
+DROP FUNCTION IF EXISTS public.usp_pos_espera_anular(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_espera_anular(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -103,6 +108,7 @@ $function$
 ;
 
 -- usp_pos_espera_crear
+DROP FUNCTION IF EXISTS public.usp_pos_espera_crear(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_espera_crear(p_caja_id character varying, p_estacion_nombre character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_cliente_id character varying DEFAULT NULL::character varying, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_tipo_precio character varying DEFAULT 'Detal'::character varying, p_motivo character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("EsperaId" integer)
  LANGUAGE plpgsql
@@ -145,6 +151,7 @@ $function$
 ;
 
 -- usp_pos_espera_list
+DROP FUNCTION IF EXISTS public.usp_pos_espera_list() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_espera_list()
  RETURNS TABLE(id integer, "cajaId" character varying, "estacionNombre" character varying, "codUsuario" character varying, "clienteNombre" character varying, "clienteRif" character varying, "tipoPrecio" character varying, motivo character varying, total numeric, "fechaCreacion" timestamp without time zone, "cantItems" bigint)
  LANGUAGE plpgsql
@@ -171,6 +178,7 @@ $function$
 ;
 
 -- usp_pos_espera_recuperar_detalle
+DROP FUNCTION IF EXISTS public.usp_pos_espera_recuperar_detalle(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_espera_recuperar_detalle(p_id integer)
  RETURNS TABLE(id integer, "productoId" character varying, codigo character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, descuento numeric, iva numeric, subtotal numeric, orden integer)
  LANGUAGE plpgsql
@@ -189,6 +197,7 @@ $function$
 ;
 
 -- usp_pos_espera_recuperar_header
+DROP FUNCTION IF EXISTS public.usp_pos_espera_recuperar_header(integer, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_espera_recuperar_header(p_id integer, p_recuperado_por character varying DEFAULT NULL::character varying, p_recuperado_en character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, "cajaId" character varying, "clienteId" character varying, "clienteNombre" character varying, "clienteRif" character varying, "tipoPrecio" character varying, motivo character varying, subtotal numeric, descuento numeric, impuestos numeric, total numeric, "fechaCreacion" timestamp without time zone)
  LANGUAGE plpgsql
@@ -216,6 +225,7 @@ $function$
 ;
 
 -- usp_pos_fiscalcorrelative_list
+DROP FUNCTION IF EXISTS public.usp_pos_fiscalcorrelative_list(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_fiscalcorrelative_list(p_company_id integer, p_branch_id integer, p_caja_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE(tipo character varying, "cajaId" character varying, "serialFiscal" character varying, "correlativoActual" integer, descripcion character varying)
  LANGUAGE plpgsql
@@ -244,6 +254,7 @@ $function$
 ;
 
 -- usp_pos_fiscalcorrelative_upsert
+DROP FUNCTION IF EXISTS public.usp_pos_fiscalcorrelative_upsert(integer, integer, character varying, character varying, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_fiscalcorrelative_upsert(p_company_id integer, p_branch_id integer, p_caja_id character varying, p_serial_fiscal character varying, p_correlativo_actual integer DEFAULT 0, p_descripcion character varying DEFAULT ''::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -279,6 +290,7 @@ $function$
 ;
 
 -- usp_pos_loadcountrytaxrates
+DROP FUNCTION IF EXISTS public.usp_pos_loadcountrytaxrates(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_loadcountrytaxrates(p_country_code character varying)
  RETURNS TABLE("taxCode" character varying, rate numeric, "isDefault" boolean)
  LANGUAGE plpgsql
@@ -295,6 +307,7 @@ $function$
 ;
 
 -- usp_pos_product_getbycode
+DROP FUNCTION IF EXISTS public.usp_pos_product_getbycode(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_product_getbycode(p_company_id integer, p_branch_id integer, p_codigo character varying)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, imagen character varying, "precioDetal" numeric, existencia numeric, categoria character varying, iva numeric)
  LANGUAGE plpgsql
@@ -334,6 +347,7 @@ $function$
 ;
 
 -- usp_pos_product_list
+DROP FUNCTION IF EXISTS public.usp_pos_product_list(integer, integer, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_product_list(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, imagen character varying, "precioDetal" numeric, existencia numeric, categoria character varying, iva numeric, "TotalCount" bigint)
  LANGUAGE plpgsql
@@ -386,6 +400,7 @@ $function$
 ;
 
 -- usp_pos_producto_get_by_codigo
+DROP FUNCTION IF EXISTS public.usp_pos_producto_get_by_codigo(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_producto_get_by_codigo(p_codigo character varying)
  RETURNS TABLE(id character varying, codigo character varying, nombre character varying, "precioDetal" numeric, "precioMayor" numeric, "precioDistribuidor" numeric, existencia numeric, categoria character varying, iva numeric, barra character varying, referencia character varying)
  LANGUAGE plpgsql
@@ -423,6 +438,7 @@ $function$
 ;
 
 -- usp_pos_productos_list
+DROP FUNCTION IF EXISTS public.usp_pos_productos_list(character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_productos_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_almacen_id character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, id character varying, codigo character varying, nombre character varying, "precioDetal" numeric, "precioMayor" numeric, "precioDistribuidor" numeric, existencia numeric, categoria character varying, iva numeric, barra character varying, referencia character varying, "esServicio" boolean, "costoPromedio" numeric)
  LANGUAGE plpgsql
@@ -482,6 +498,7 @@ $function$
 ;
 
 -- usp_pos_report_cajas
+DROP FUNCTION IF EXISTS public.usp_pos_report_cajas(integer, integer, date, date) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_report_cajas(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date)
  RETURNS TABLE("cajaId" character varying, transacciones bigint, total numeric, "serialFiscal" character varying)
  LANGUAGE plpgsql
@@ -513,6 +530,7 @@ $function$
 ;
 
 -- usp_pos_report_formaspago
+DROP FUNCTION IF EXISTS public.usp_pos_report_formaspago(integer, integer, date, date, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_report_formaspago(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("metodoPago" character varying, transacciones bigint, total numeric)
  LANGUAGE plpgsql
@@ -534,6 +552,7 @@ $function$
 ;
 
 -- usp_pos_report_productostop
+DROP FUNCTION IF EXISTS public.usp_pos_report_productostop(integer, integer, date, date, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_report_productostop(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE("productoId" integer, codigo character varying, nombre character varying, cantidad numeric, total numeric)
  LANGUAGE plpgsql
@@ -555,6 +574,7 @@ $function$
 ;
 
 -- usp_pos_report_resumen
+DROP FUNCTION IF EXISTS public.usp_pos_report_resumen(integer, integer, date, date, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_report_resumen(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("totalVentas" numeric, transacciones bigint, "productosVendidos" numeric, "productosDiferentes" bigint, "ticketPromedio" numeric)
  LANGUAGE plpgsql
@@ -588,6 +608,7 @@ $function$
 ;
 
 -- usp_pos_report_ventas
+DROP FUNCTION IF EXISTS public.usp_pos_report_ventas(integer, integer, date, date, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_report_ventas(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 200)
  RETURNS TABLE(id integer, "numFactura" character varying, fecha timestamp with time zone, cliente character varying, "cajaId" character varying, total numeric, estado character varying, "metodoPago" character varying, "tramaFiscal" character varying, "serialFiscal" character varying, "correlativoFiscal" integer)
  LANGUAGE plpgsql
@@ -627,6 +648,7 @@ $function$
 ;
 
 -- usp_pos_resolvecustomerbyid
+DROP FUNCTION IF EXISTS public.usp_pos_resolvecustomerbyid(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_resolvecustomerbyid(p_company_id integer, p_id_input character varying)
  RETURNS TABLE("customerId" bigint, "customerCode" character varying, "customerName" character varying, "fiscalId" character varying)
  LANGUAGE plpgsql
@@ -648,6 +670,7 @@ $function$
 ;
 
 -- usp_pos_resolvecustomerbyrif
+DROP FUNCTION IF EXISTS public.usp_pos_resolvecustomerbyrif(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_resolvecustomerbyrif(p_company_id integer, p_rif character varying)
  RETURNS TABLE("customerId" bigint, "customerCode" character varying, "customerName" character varying, "fiscalId" character varying)
  LANGUAGE plpgsql
@@ -666,6 +689,7 @@ $function$
 ;
 
 -- usp_pos_resolvedefaultscope
+DROP FUNCTION IF EXISTS public.usp_pos_resolvedefaultscope() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_resolvedefaultscope()
  RETURNS TABLE("companyId" integer, "branchId" integer, "countryCode" character varying)
  LANGUAGE plpgsql
@@ -687,6 +711,7 @@ $function$
 ;
 
 -- usp_pos_resolveproduct
+DROP FUNCTION IF EXISTS public.usp_pos_resolveproduct(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_resolveproduct(p_company_id integer, p_identifier character varying)
  RETURNS TABLE("productId" bigint, "productCode" character varying, "productName" character varying, "defaultTaxCode" character varying, "defaultTaxRate" numeric)
  LANGUAGE plpgsql
@@ -710,6 +735,7 @@ $function$
 ;
 
 -- usp_pos_resolveuserid
+DROP FUNCTION IF EXISTS public.usp_pos_resolveuserid(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_resolveuserid(p_user_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
@@ -727,6 +753,7 @@ $function$
 ;
 
 -- usp_pos_saleticket_create
+DROP FUNCTION IF EXISTS public.usp_pos_saleticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, text, integer, numeric, numeric, numeric, numeric) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_saleticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_invoice_number character varying, p_cash_register_code character varying, p_sold_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_payment_method character varying DEFAULT NULL::character varying, p_fiscal_payload text DEFAULT NULL::text, p_wait_ticket_id integer DEFAULT NULL::integer, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -754,6 +781,7 @@ $function$
 ;
 
 -- usp_pos_saleticketline_insert
+DROP FUNCTION IF EXISTS public.usp_pos_saleticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, numeric, character varying, numeric, numeric, numeric, numeric, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_saleticketline_insert(p_sale_ticket_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_discount_amount numeric DEFAULT 0, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_supervisor_approval_id integer DEFAULT NULL::integer, p_line_meta_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -781,6 +809,7 @@ $function$
 ;
 
 -- usp_pos_venta_crear
+DROP FUNCTION IF EXISTS public.usp_pos_venta_crear(character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, text, integer, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_venta_crear(p_num_factura character varying, p_caja_id character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_cliente_id character varying DEFAULT NULL::character varying, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_tipo_precio character varying DEFAULT 'Detal'::character varying, p_metodo_pago character varying DEFAULT NULL::character varying, p_trama_fiscal text DEFAULT NULL::text, p_espera_origen_id integer DEFAULT NULL::integer, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("VentaId" integer)
  LANGUAGE plpgsql
@@ -821,6 +850,7 @@ $function$
 ;
 
 -- usp_pos_waitticket_create
+DROP FUNCTION IF EXISTS public.usp_pos_waitticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, numeric, numeric, numeric, numeric) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_cash_register_code character varying, p_station_name character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_reason character varying DEFAULT NULL::character varying, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -848,6 +878,7 @@ $function$
 ;
 
 -- usp_pos_waitticket_getheader
+DROP FUNCTION IF EXISTS public.usp_pos_waitticket_getheader(integer, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_getheader(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer)
  RETURNS TABLE(id integer, "cajaId" character varying, "estacionNombre" character varying, "clienteId" character varying, "clienteNombre" character varying, "clienteRif" character varying, "tipoPrecio" character varying, motivo character varying, subtotal numeric, impuestos numeric, total numeric, estado character varying, "fechaCreacion" timestamp with time zone)
  LANGUAGE plpgsql
@@ -865,6 +896,7 @@ $function$
 ;
 
 -- usp_pos_waitticket_list
+DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, "cajaId" character varying, "estacionNombre" character varying, "clienteNombre" character varying, motivo character varying, total numeric, "fechaCreacion" timestamp with time zone)
  LANGUAGE plpgsql
@@ -881,6 +913,7 @@ $function$
 ;
 
 -- usp_pos_waitticket_recover
+DROP FUNCTION IF EXISTS public.usp_pos_waitticket_recover(integer, integer, integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_recover(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer, p_recovered_by_user_id integer DEFAULT NULL::integer, p_recovered_at_register character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -900,6 +933,7 @@ $function$
 ;
 
 -- usp_pos_waitticket_void
+DROP FUNCTION IF EXISTS public.usp_pos_waitticket_void(integer, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_void(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -916,6 +950,7 @@ $function$
 ;
 
 -- usp_pos_waitticketline_getitems
+DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_getitems(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticketline_getitems(p_wait_ticket_id integer)
  RETURNS TABLE(id integer, "productoId" character varying, codigo character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, descuento numeric, iva numeric, subtotal numeric, total numeric, "supervisorApprovalId" integer, "lineMetaJson" character varying)
  LANGUAGE plpgsql
@@ -938,6 +973,7 @@ $function$
 ;
 
 -- usp_pos_waitticketline_insert
+DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, numeric, character varying, numeric, numeric, numeric, numeric, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pos_waitticketline_insert(p_wait_ticket_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_discount_amount numeric DEFAULT 0, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_supervisor_approval_id integer DEFAULT NULL::integer, p_line_meta_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -962,6 +998,7 @@ $function$
 ;
 
 -- usp_rest_admin_adjuststock
+DROP FUNCTION IF EXISTS public.usp_rest_admin_adjuststock(integer, numeric) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_adjuststock(p_product_id integer, p_delta_qty numeric)
  RETURNS void
  LANGUAGE plpgsql
@@ -980,6 +1017,7 @@ $function$
 ;
 
 -- usp_rest_admin_ambiente_list
+DROP FUNCTION IF EXISTS public.usp_rest_admin_ambiente_list(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_ambiente_list(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, nombre character varying, color character varying, orden integer)
  LANGUAGE plpgsql
@@ -1001,6 +1039,7 @@ $function$
 ;
 
 -- usp_rest_admin_ambiente_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_ambiente_upsert(integer, integer, integer, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_ambiente_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_nombre character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1036,6 +1075,7 @@ $function$
 ;
 
 -- usp_rest_admin_categoria_list
+DROP FUNCTION IF EXISTS public.usp_rest_admin_categoria_list(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_categoria_list(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, nombre character varying, descripcion character varying, color character varying, orden integer)
  LANGUAGE plpgsql
@@ -1058,6 +1098,7 @@ $function$
 ;
 
 -- usp_rest_admin_categoria_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_categoria_upsert(integer, integer, integer, character varying, character varying, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_categoria_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_nombre character varying DEFAULT NULL::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1096,6 +1137,7 @@ $function$
 ;
 
 -- usp_rest_admin_componente_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_componente_upsert(integer, integer, character varying, boolean, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_componente_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT NULL::integer, p_nombre character varying DEFAULT NULL::character varying, p_obligatorio boolean DEFAULT false, p_orden integer DEFAULT 0)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1126,6 +1168,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_getdetalle_header
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
  RETURNS TABLE(id integer, "numCompra" character varying, "proveedorId" character varying, "proveedorNombre" character varying, "fechaCompra" timestamp with time zone, estado character varying, subtotal numeric, iva numeric, total numeric, observaciones character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
@@ -1154,6 +1197,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_getdetalle_lines
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_lines(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_lines(p_compra_id integer)
  RETURNS TABLE(id integer, "compraId" integer, "inventarioId" character varying, descripcion character varying, cantidad numeric, "precioUnit" numeric, subtotal numeric, iva numeric)
  LANGUAGE plpgsql
@@ -1178,6 +1222,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_getnextseq
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getnextseq(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getnextseq(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(seq bigint)
  LANGUAGE plpgsql
@@ -1193,6 +1238,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_insert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_insert(integer, integer, character varying, integer, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_insert(p_company_id integer, p_branch_id integer, p_purchase_number character varying, p_supplier_id integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1216,6 +1262,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_list
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_list(integer, integer, character varying, timestamp with time zone, timestamp with time zone) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_list(p_company_id integer, p_branch_id integer, p_status character varying DEFAULT NULL::character varying, p_from_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_to_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS TABLE(id integer, "numCompra" character varying, "proveedorId" character varying, "proveedorNombre" character varying, "fechaCompra" timestamp with time zone, estado character varying, subtotal numeric, iva numeric, total numeric, observaciones character varying)
  LANGUAGE plpgsql
@@ -1246,6 +1293,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_recalctotals
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_recalctotals(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_recalctotals(p_purchase_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -1274,6 +1322,7 @@ $function$
 ;
 
 -- usp_rest_admin_compra_update
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_update(integer, integer, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_update(p_compra_id integer, p_supplier_id integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
@@ -1290,6 +1339,7 @@ $function$
 ;
 
 -- usp_rest_admin_compralinea_delete
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compralinea_delete(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compralinea_delete(p_compra_id integer, p_detalle_id integer)
  RETURNS TABLE("ingredientProductId" integer, quantity numeric)
  LANGUAGE plpgsql
@@ -1311,6 +1361,7 @@ $function$
 ;
 
 -- usp_rest_admin_compralinea_getprev
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compralinea_getprev(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compralinea_getprev(p_id integer, p_compra_id integer)
  RETURNS TABLE("ingredientProductId" integer, quantity numeric)
  LANGUAGE plpgsql
@@ -1327,6 +1378,7 @@ $function$
 ;
 
 -- usp_rest_admin_compralinea_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compralinea_upsert(integer, integer, integer, character varying, numeric, numeric, numeric, numeric) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compralinea_upsert(p_id integer DEFAULT 0, p_compra_id integer DEFAULT NULL::integer, p_ingredient_product_id integer DEFAULT NULL::integer, p_descripcion character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_tax_rate_percent numeric DEFAULT 16, p_subtotal numeric DEFAULT NULL::numeric)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1365,6 +1417,7 @@ $function$
 ;
 
 -- usp_rest_admin_insumo_search
+DROP FUNCTION IF EXISTS public.usp_rest_admin_insumo_search(integer, integer, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_insumo_search(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 30)
  RETURNS TABLE(codigo character varying, descripcion character varying, imagen character varying, unidad character varying, existencia numeric)
  LANGUAGE plpgsql
@@ -1406,6 +1459,7 @@ $function$
 ;
 
 -- usp_rest_admin_opcion_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_opcion_upsert(integer, integer, character varying, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_opcion_upsert(p_id integer DEFAULT 0, p_componente_id integer DEFAULT NULL::integer, p_nombre character varying DEFAULT NULL::character varying, p_precio_extra numeric DEFAULT 0, p_orden integer DEFAULT 0)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1436,6 +1490,7 @@ $function$
 ;
 
 -- usp_rest_admin_producto_delete
+DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_delete(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_delete(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -1451,6 +1506,7 @@ $function$
 ;
 
 -- usp_rest_admin_producto_get
+DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_get(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_get(p_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, "categoriaId" integer, precio numeric, "costoEstimado" numeric, iva numeric, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, "articuloInventarioId" character varying)
  LANGUAGE plpgsql
@@ -1496,6 +1552,7 @@ $function$
 ;
 
 -- usp_rest_admin_producto_get_componentes
+DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_get_componentes(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_get_componentes(p_id integer)
  RETURNS TABLE(id integer, nombre character varying, obligatorio boolean, orden integer, "opcionId" integer, "opcionNombre" character varying, "precioExtra" numeric, "opcionOrden" integer)
  LANGUAGE plpgsql
@@ -1523,6 +1580,7 @@ $function$
 ;
 
 -- usp_rest_admin_producto_get_receta
+DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_get_receta(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_get_receta(p_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, "productoId" integer, "inventarioId" character varying, descripcion character varying, imagen character varying, cantidad numeric, unidad character varying, comentario character varying)
  LANGUAGE plpgsql
@@ -1561,6 +1619,7 @@ $function$
 ;
 
 -- usp_rest_admin_producto_list
+DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_list(integer, integer, integer, character varying, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_list(p_company_id integer, p_branch_id integer, p_menu_category_id integer DEFAULT NULL::integer, p_search character varying DEFAULT NULL::character varying, p_solo_disponibles boolean DEFAULT true)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, "categoriaId" integer, "categoriaNombre" character varying, precio numeric, "costoEstimado" numeric, iva numeric, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, "articuloInventarioId" character varying)
  LANGUAGE plpgsql
@@ -1611,6 +1670,7 @@ $function$
 ;
 
 -- usp_rest_admin_producto_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_upsert(integer, integer, integer, character varying, character varying, character varying, integer, numeric, numeric, numeric, boolean, integer, character varying, boolean, boolean, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_menu_category_id integer DEFAULT NULL::integer, p_price numeric DEFAULT 0, p_estimated_cost numeric DEFAULT 0, p_tax_rate_percent numeric DEFAULT 16, p_is_composite boolean DEFAULT false, p_prep_minutes integer DEFAULT 0, p_image_url character varying DEFAULT NULL::character varying, p_is_daily_suggestion boolean DEFAULT false, p_is_available boolean DEFAULT true, p_inventory_product_id integer DEFAULT NULL::integer, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1662,6 +1722,7 @@ $function$
 ;
 
 -- usp_rest_admin_proveedor_search
+DROP FUNCTION IF EXISTS public.usp_rest_admin_proveedor_search(integer, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_proveedor_search(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, rif character varying, telefono character varying, direccion character varying)
  LANGUAGE plpgsql
@@ -1692,6 +1753,7 @@ $function$
 ;
 
 -- usp_rest_admin_receta_delete
+DROP FUNCTION IF EXISTS public.usp_rest_admin_receta_delete(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_receta_delete(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -1706,6 +1768,7 @@ $function$
 ;
 
 -- usp_rest_admin_receta_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_admin_receta_upsert(integer, integer, integer, numeric, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_receta_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT NULL::integer, p_ingredient_product_id integer DEFAULT NULL::integer, p_quantity numeric DEFAULT NULL::numeric, p_unit_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1738,6 +1801,7 @@ $function$
 ;
 
 -- usp_rest_admin_resolvemenucategory
+DROP FUNCTION IF EXISTS public.usp_rest_admin_resolvemenucategory(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_resolvemenucategory(p_menu_category_id integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
@@ -1753,6 +1817,7 @@ $function$
 ;
 
 -- usp_rest_admin_resolveproduct
+DROP FUNCTION IF EXISTS public.usp_rest_admin_resolveproduct(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_resolveproduct(p_company_id integer, p_key character varying)
  RETURNS TABLE("productId" bigint)
  LANGUAGE plpgsql
@@ -1775,6 +1840,7 @@ $function$
 ;
 
 -- usp_rest_admin_resolvesupplier
+DROP FUNCTION IF EXISTS public.usp_rest_admin_resolvesupplier(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_resolvesupplier(p_company_id integer, p_key character varying)
  RETURNS TABLE("supplierId" bigint)
  LANGUAGE plpgsql
@@ -1797,6 +1863,7 @@ $function$
 ;
 
 -- usp_rest_admin_syncmenuproductimage
+DROP FUNCTION IF EXISTS public.usp_rest_admin_syncmenuproductimage(integer, integer, integer, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_syncmenuproductimage(p_company_id integer, p_branch_id integer, p_menu_product_id integer, p_storage_key character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -1869,6 +1936,7 @@ $function$
 ;
 
 -- usp_rest_ambiente_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_ambiente_upsert(integer, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_ambiente_upsert(p_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_color character varying DEFAULT '#4CAF50'::character varying, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
@@ -1890,6 +1958,7 @@ $function$
 ;
 
 -- usp_rest_ambientes_list
+DROP FUNCTION IF EXISTS public.usp_rest_ambientes_list() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_ambientes_list()
  RETURNS TABLE(id integer, nombre character varying, color character varying, orden integer)
  LANGUAGE plpgsql
@@ -1903,6 +1972,7 @@ $function$
 ;
 
 -- usp_rest_categoria_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_categoria_upsert(integer, character varying, character varying, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_categoria_upsert(p_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
@@ -1924,6 +1994,7 @@ $function$
 ;
 
 -- usp_rest_categorias_list
+DROP FUNCTION IF EXISTS public.usp_rest_categorias_list() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_categorias_list()
  RETURNS TABLE(id integer, nombre character varying, descripcion character varying, color character varying, orden integer, "productCount" bigint)
  LANGUAGE plpgsql
@@ -1938,6 +2009,7 @@ $function$
 ;
 
 -- usp_rest_comanda_enviar
+DROP FUNCTION IF EXISTS public.usp_rest_comanda_enviar(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_comanda_enviar(p_pedido_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -1958,6 +2030,7 @@ $function$
 ;
 
 -- usp_rest_componente_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_componente_upsert(integer, integer, character varying, boolean, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_componente_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_obligatorio boolean DEFAULT false, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
@@ -1979,6 +2052,7 @@ $function$
 ;
 
 -- usp_rest_compra_crear
+DROP FUNCTION IF EXISTS public.usp_rest_compra_crear(character varying, character varying, character varying, jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_compra_crear(p_proveedor_id character varying DEFAULT NULL::character varying, p_observaciones character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("CompraId" integer)
  LANGUAGE plpgsql
@@ -2021,6 +2095,7 @@ $function$
 ;
 
 -- usp_rest_compras_list
+DROP FUNCTION IF EXISTS public.usp_rest_compras_list(character varying, timestamp without time zone, timestamp without time zone) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_compras_list(p_estado character varying DEFAULT NULL::character varying, p_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_to timestamp without time zone DEFAULT NULL::timestamp without time zone)
  RETURNS TABLE(id integer, "numCompra" character varying, "proveedorId" character varying, "proveedorNombre" character varying, "fechaCompra" timestamp without time zone, "fechaRecepcion" timestamp without time zone, estado character varying, subtotal numeric, iva numeric, total numeric, observaciones character varying)
  LANGUAGE plpgsql
@@ -2046,6 +2121,7 @@ $function$
 ;
 
 -- usp_rest_diningtable_getbyid
+DROP FUNCTION IF EXISTS public.usp_rest_diningtable_getbyid(integer, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_diningtable_getbyid(p_company_id integer, p_branch_id integer, p_mesa_id integer)
  RETURNS TABLE(id integer, "tableNumber" character varying, "tableName" character varying, capacity integer, "ambienteId" character varying, ambiente character varying, "posicionX" numeric, "posicionY" numeric)
  LANGUAGE plpgsql
@@ -2063,6 +2139,7 @@ $function$
 ;
 
 -- usp_rest_diningtable_list
+DROP FUNCTION IF EXISTS public.usp_rest_diningtable_list(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_diningtable_list(p_company_id integer, p_branch_id integer, p_ambiente_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, numero character varying, nombre character varying, capacidad integer, "ambienteId" character varying, ambiente character varying, "posicionX" numeric, "posicionY" numeric, estado character varying)
  LANGUAGE plpgsql
@@ -2095,6 +2172,7 @@ $function$
 ;
 
 -- usp_rest_mesas_list
+DROP FUNCTION IF EXISTS public.usp_rest_mesas_list(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_mesas_list(p_ambiente_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, numero integer, nombre character varying, capacidad integer, "ambienteId" character varying, ambiente character varying, "posicionX" integer, "posicionY" integer, estado character varying)
  LANGUAGE plpgsql
@@ -2120,6 +2198,7 @@ $function$
 ;
 
 -- usp_rest_opcion_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_opcion_upsert(integer, integer, character varying, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_opcion_upsert(p_id integer DEFAULT 0, p_componente_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_precio_extra numeric DEFAULT 0, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
@@ -2141,6 +2220,7 @@ $function$
 ;
 
 -- usp_rest_orderticket_checkpriorvoid
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_checkpriorvoid(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_checkpriorvoid(p_pedido_id integer, p_item_id integer)
  RETURNS TABLE("alreadyVoided" integer)
  LANGUAGE plpgsql
@@ -2152,6 +2232,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_close
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_close(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_close(p_pedido_id integer, p_closed_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2164,6 +2245,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_create
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_create(integer, integer, character varying, character varying, integer, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_table_number character varying, p_opened_by_user_id integer DEFAULT NULL::integer, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2181,6 +2263,7 @@ $function$
 ;
 
 -- usp_rest_orderticket_getbyid
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getbyid(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getbyid(p_pedido_id integer)
  RETURNS TABLE("orderId" integer, "companyId" integer, "branchId" integer, "countryCode" character varying, status character varying)
  LANGUAGE plpgsql
@@ -2191,6 +2274,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_getbymesaheader
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getbymesaheader(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getbymesaheader(p_company_id integer, p_branch_id integer, p_table_number character varying)
  RETURNS TABLE(id integer, "clienteNombre" character varying, "clienteRif" character varying, estado character varying, total numeric)
  LANGUAGE plpgsql
@@ -2203,6 +2287,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_getheaderforclose
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
  RETURNS TABLE(id integer, "empresaId" integer, "sucursalId" integer, "countryCode" character varying, "mesaId" integer, "clienteNombre" character varying, "clienteRif" character varying, estado character varying, total numeric, "fechaCierre" timestamp with time zone, "codUsuario" character varying)
  LANGUAGE plpgsql
@@ -2219,6 +2304,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_getopenbytable
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getopenbytable(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getopenbytable(p_company_id integer, p_branch_id integer, p_table_number character varying)
  RETURNS TABLE(id integer, status character varying)
  LANGUAGE plpgsql
@@ -2235,6 +2321,7 @@ $function$
 ;
 
 -- usp_rest_orderticket_infercountrycode
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_infercountrycode(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_infercountrycode(p_empresa_id integer, p_sucursal_id integer)
  RETURNS TABLE("countryCode" character varying)
  LANGUAGE plpgsql
@@ -2246,6 +2333,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_recalctotals
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_recalctotals(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_recalctotals(p_order_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -2260,6 +2348,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_sendtokitchen
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_sendtokitchen(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_sendtokitchen(p_pedido_id integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2271,6 +2360,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticket_updatetimestamp
+DROP FUNCTION IF EXISTS public.usp_rest_orderticket_updatetimestamp(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_updatetimestamp(p_pedido_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -2280,6 +2370,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticketline_getbyid
+DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_getbyid(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_getbyid(p_pedido_id integer, p_item_id integer)
  RETURNS TABLE("itemId" integer, "lineNumber" integer, "countryCode" character varying, "productId" integer, "productCode" character varying, nombre character varying, cantidad numeric, "unitPrice" numeric, "taxCode" character varying, "taxRate" numeric, "netAmount" numeric, "taxAmount" numeric, "totalAmount" numeric)
  LANGUAGE plpgsql
@@ -2293,6 +2384,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticketline_getbypedido
+DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_getbypedido(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_getbypedido(p_pedido_id integer)
  RETURNS TABLE(id integer, "productoId" character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, subtotal numeric, iva numeric, "taxCode" character varying, impuesto numeric, total numeric)
  LANGUAGE plpgsql
@@ -2306,6 +2398,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticketline_getfiscalbreakdown
+DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_getfiscalbreakdown(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id integer)
  RETURNS TABLE("itemId" integer, "productoId" character varying, nombre character varying, quantity numeric, "unitPrice" numeric, "baseAmount" numeric, "taxCode" character varying, "taxRate" numeric, "taxAmount" numeric, "totalAmount" numeric)
  LANGUAGE plpgsql
@@ -2317,6 +2410,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticketline_insert
+DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, character varying, numeric, numeric, numeric, numeric, character varying, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_insert(p_order_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying, p_supervisor_approval_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
@@ -2335,6 +2429,7 @@ END; $function$
 ;
 
 -- usp_rest_orderticketline_nextlinenumber
+DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_nextlinenumber(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_nextlinenumber(p_order_id integer)
  RETURNS TABLE("nextLine" integer)
  LANGUAGE plpgsql
@@ -2344,6 +2439,7 @@ END; $function$
 ;
 
 -- usp_rest_pedido_abrir
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_abrir(integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_pedido_abrir(p_mesa_id integer, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying)
  RETURNS TABLE("PedidoId" integer)
  LANGUAGE plpgsql
@@ -2366,6 +2462,7 @@ $function$
 ;
 
 -- usp_rest_pedido_cerrar
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_cerrar(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_pedido_cerrar(p_pedido_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -2388,6 +2485,7 @@ $function$
 ;
 
 -- usp_rest_pedido_get_by_mesa_header
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_header(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_pedido_get_by_mesa_header(p_mesa_id integer)
  RETURNS TABLE(id integer, "mesaId" integer, "clienteNombre" character varying, "clienteRif" character varying, estado character varying, total numeric, comentarios character varying, "fechaApertura" timestamp without time zone)
  LANGUAGE plpgsql
@@ -2412,6 +2510,7 @@ $function$
 ;
 
 -- usp_rest_pedido_get_by_mesa_items
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_items(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_pedido_get_by_mesa_items(p_mesa_id integer)
  RETURNS TABLE(id integer, "pedidoId" integer, "productoId" character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, subtotal numeric, iva numeric, estado character varying, "esCompuesto" boolean, componentes character varying, comentarios character varying, "enviadoACocina" boolean, "horaEnvio" timestamp without time zone)
  LANGUAGE plpgsql
@@ -2442,6 +2541,7 @@ $function$
 ;
 
 -- usp_rest_pedido_item_agregar
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_item_agregar(integer, character varying, character varying, numeric, numeric, numeric, boolean, text, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_pedido_item_agregar(p_pedido_id integer, p_producto_id character varying, p_nombre character varying, p_cantidad numeric, p_precio_unitario numeric, p_iva numeric DEFAULT NULL::numeric, p_es_compuesto boolean DEFAULT false, p_componentes text DEFAULT NULL::text, p_comentarios character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ItemId" integer)
  LANGUAGE plpgsql
@@ -2483,6 +2583,7 @@ $function$
 ;
 
 -- usp_rest_producto_delete
+DROP FUNCTION IF EXISTS public.usp_rest_producto_delete(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_producto_delete(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -2494,6 +2595,7 @@ $function$
 ;
 
 -- usp_rest_producto_get
+DROP FUNCTION IF EXISTS public.usp_rest_producto_get(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_producto_get(p_id integer)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, precio numeric, "categoriaId" integer, categoria character varying, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, iva numeric, "costoEstimado" numeric, "articuloInventarioId" character varying)
  LANGUAGE plpgsql
@@ -2515,6 +2617,7 @@ $function$
 ;
 
 -- usp_rest_producto_get_componentes
+DROP FUNCTION IF EXISTS public.usp_rest_producto_get_componentes(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_producto_get_componentes(p_id integer)
  RETURNS TABLE(id integer, nombre character varying, obligatorio boolean, orden integer, "opcionId" integer, "opcionNombre" character varying, "precioExtra" numeric, "opcionOrden" integer)
  LANGUAGE plpgsql
@@ -2533,6 +2636,7 @@ $function$
 ;
 
 -- usp_rest_producto_get_receta
+DROP FUNCTION IF EXISTS public.usp_rest_producto_get_receta(integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_producto_get_receta(p_id integer)
  RETURNS TABLE(id integer, "inventarioId" character varying, "inventarioNombre" character varying, cantidad numeric, unidad character varying, comentario character varying)
  LANGUAGE plpgsql
@@ -2551,6 +2655,7 @@ $function$
 ;
 
 -- usp_rest_producto_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_producto_upsert(integer, character varying, character varying, character varying, integer, numeric, numeric, numeric, boolean, integer, character varying, boolean, boolean, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_producto_upsert(p_id integer DEFAULT 0, p_codigo character varying DEFAULT ''::character varying, p_nombre character varying DEFAULT ''::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_categoria_id integer DEFAULT NULL::integer, p_precio numeric DEFAULT 0, p_costo_estimado numeric DEFAULT 0, p_iva numeric DEFAULT 16, p_es_compuesto boolean DEFAULT false, p_tiempo_preparacion integer DEFAULT 0, p_imagen character varying DEFAULT NULL::character varying, p_es_sugerencia_del_dia boolean DEFAULT false, p_disponible boolean DEFAULT true, p_articulo_inventario_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
@@ -2580,6 +2685,7 @@ $function$
 ;
 
 -- usp_rest_productos_list
+DROP FUNCTION IF EXISTS public.usp_rest_productos_list(integer, character varying, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_productos_list(p_categoria_id integer DEFAULT NULL::integer, p_search character varying DEFAULT NULL::character varying, p_solo_disponibles boolean DEFAULT true)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, precio numeric, "categoriaId" integer, categoria character varying, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, iva numeric, "costoEstimado" numeric)
  LANGUAGE plpgsql
@@ -2613,6 +2719,7 @@ $function$
 ;
 
 -- usp_rest_receta_upsert
+DROP FUNCTION IF EXISTS public.usp_rest_receta_upsert(integer, integer, character varying, numeric, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_receta_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT 0, p_inventario_id character varying DEFAULT ''::character varying, p_cantidad numeric DEFAULT 0, p_unidad character varying DEFAULT NULL::character varying, p_comentario character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
