@@ -919,16 +919,16 @@ $$;
 -- =============================================================================
 -- 10. usp_HR_Filing_List
 -- =============================================================================
-DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, CHAR(2), VARCHAR(15), DATE, DATE, INTEGER, INTEGER) CASCADE;
+-- usp_HR_Filing_List: service sends (p_company_id, p_obligation_id, p_status, p_offset, p_limit)
+-- Function accepts those exact param names and inlines the query.
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, CHAR, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_List(
-    p_company_id            INTEGER         DEFAULT NULL,
-    p_legal_obligation_id   INTEGER         DEFAULT NULL,
-    p_country_code          CHAR(2)         DEFAULT NULL,
-    p_status                VARCHAR(15)     DEFAULT NULL,
-    p_from_date             DATE            DEFAULT NULL,
-    p_to_date               DATE            DEFAULT NULL,
-    p_page                  INTEGER         DEFAULT 1,
-    p_limit                 INTEGER         DEFAULT 50
+    p_company_id    INTEGER,
+    p_obligation_id INTEGER     DEFAULT NULL,
+    p_status        VARCHAR     DEFAULT NULL,
+    p_offset        INTEGER     DEFAULT 0,
+    p_limit         INTEGER     DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -951,10 +951,8 @@ RETURNS TABLE(
     "Status"                VARCHAR(15),
     "CreatedAt"             TIMESTAMP
 )
-LANGUAGE plpgsql
-AS $$
+LANGUAGE plpgsql AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -981,14 +979,11 @@ BEGIN
         f."CreatedAt"
     FROM hr."ObligationFiling" f
     INNER JOIN hr."LegalObligation" lo ON lo."LegalObligationId" = f."LegalObligationId"
-    WHERE (p_company_id          IS NULL OR f."CompanyId"          = p_company_id)
-      AND (p_legal_obligation_id IS NULL OR f."LegalObligationId"  = p_legal_obligation_id)
-      AND (p_country_code        IS NULL OR lo."CountryCode"       = p_country_code)
-      AND (p_status              IS NULL OR f."Status"             = p_status)
-      AND (p_from_date           IS NULL OR f."FilingPeriodStart" >= p_from_date)
-      AND (p_to_date             IS NULL OR f."FilingPeriodEnd"   <= p_to_date)
+    WHERE (p_company_id    IS NULL OR f."CompanyId"         = p_company_id)
+      AND (p_obligation_id IS NULL OR f."LegalObligationId" = p_obligation_id)
+      AND (p_status        IS NULL OR f."Status"            = p_status)
     ORDER BY f."FilingPeriodStart" DESC, lo."Code"
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 

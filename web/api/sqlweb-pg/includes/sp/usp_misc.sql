@@ -1106,10 +1106,10 @@ BEGIN
         pc."ConceptCode", pc."PayrollCode", pc."ConceptName",
         pc."Formula", pc."BaseExpression", pc."ConceptClass",
         pc."ConceptType", pc."UsageType",
-        CASE WHEN pc."IsBonifiable" THEN 'S' ELSE 'N' END,
-        CASE WHEN pc."IsSeniority" THEN 'S' ELSE 'N' END,
+        CASE WHEN pc."IsBonifiable" THEN 'S'::VARCHAR ELSE 'N'::VARCHAR END,
+        CASE WHEN pc."IsSeniority"  THEN 'S'::VARCHAR ELSE 'N'::VARCHAR END,
         pc."AccountingAccountCode",
-        CASE WHEN pc."AppliesFlag" THEN 'S' ELSE 'N' END,
+        CASE WHEN pc."AppliesFlag"  THEN 'S'::VARCHAR ELSE 'N'::VARCHAR END,
         pc."DefaultValue"
     FROM hr."PayrollConcept" pc
     WHERE pc."CompanyId" = p_company_id
@@ -1697,7 +1697,7 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconstant(
     p_source_name VARCHAR(120)   DEFAULT NULL,
     p_user_id     INT            DEFAULT NULL
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_existing_id BIGINT;
@@ -1709,12 +1709,14 @@ BEGIN
 
     IF v_existing_id IS NOT NULL THEN
         UPDATE hr."PayrollConstant"
-        SET "ConstantName"  = COALESCE(p_name, "ConstantName"),
-            "ConstantValue" = COALESCE(p_value, "ConstantValue"),
-            "SourceName"    = COALESCE(p_source_name, "SourceName"),
-            "UpdatedAt"     = NOW() AT TIME ZONE 'UTC',
+        SET "ConstantName"    = COALESCE(p_name, "ConstantName"),
+            "ConstantValue"   = COALESCE(p_value, "ConstantValue"),
+            "SourceName"      = COALESCE(p_source_name, "SourceName"),
+            "UpdatedAt"       = NOW() AT TIME ZONE 'UTC',
             "UpdatedByUserId" = p_user_id
         WHERE "PayrollConstantId" = v_existing_id;
+
+        RETURN QUERY SELECT v_existing_id::INT, 'Constante actualizada'::VARCHAR;
     ELSE
         INSERT INTO hr."PayrollConstant" (
             "CompanyId", "ConstantCode", "ConstantName", "ConstantValue",
@@ -1724,9 +1726,12 @@ BEGIN
             p_company_id, p_code, COALESCE(p_name, p_code), COALESCE(p_value, 0),
             p_source_name, TRUE, p_user_id, p_user_id
         );
+
+        RETURN QUERY SELECT 1::INT, 'Constante creada'::VARCHAR;
     END IF;
 
-    RETURN QUERY SELECT 1, 'Constante guardada'::TEXT;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
 

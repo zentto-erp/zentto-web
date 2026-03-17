@@ -1412,3 +1412,304 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+
+
+-- =============================================================================
+-- SERVICE BRIDGE WRAPPERS
+-- These wrappers bridge the gap between the service parameter names
+-- (converted via toSnakeParam) and the underlying function signatures.
+-- =============================================================================
+
+-- Internal alias for usp_HR_OccHealth_Create (avoids overload ambiguity)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
+    p_company_id                INTEGER,
+    p_country_code              CHAR(2),
+    p_record_type               VARCHAR(25),
+    p_employee_id               BIGINT          DEFAULT NULL,
+    p_employee_code             VARCHAR(24)     DEFAULT NULL,
+    p_employee_name             VARCHAR(200)    DEFAULT NULL,
+    p_occurrence_date           TIMESTAMP       DEFAULT NULL,
+    p_report_deadline           TIMESTAMP       DEFAULT NULL,
+    p_reported_date             TIMESTAMP       DEFAULT NULL,
+    p_severity                  VARCHAR(15)     DEFAULT NULL,
+    p_body_part_affected        VARCHAR(100)    DEFAULT NULL,
+    p_days_lost                 INTEGER         DEFAULT NULL,
+    p_location                  VARCHAR(200)    DEFAULT NULL,
+    p_description               TEXT            DEFAULT NULL,
+    p_root_cause                VARCHAR(500)    DEFAULT NULL,
+    p_corrective_action         VARCHAR(500)    DEFAULT NULL,
+    p_investigation_due_date    DATE            DEFAULT NULL,
+    p_institution_reference     VARCHAR(100)    DEFAULT NULL,
+    p_document_url              VARCHAR(500)    DEFAULT NULL,
+    p_notes                     VARCHAR(500)    DEFAULT NULL,
+    p_created_by                INTEGER         DEFAULT NULL,
+    OUT p_resultado             INTEGER,
+    OUT p_mensaje               VARCHAR(500)
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    p_resultado := 0;
+    p_mensaje   := '';
+
+    IF p_record_type NOT IN ('ACCIDENT','DISEASE','NEAR_MISS','INSPECTION','RISK_NOTIFICATION') THEN
+        p_resultado := -1;
+        p_mensaje   := 'Tipo de registro no válido.';
+        RETURN;
+    END IF;
+
+    IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
+        p_resultado := -1;
+        p_mensaje   := 'Severidad no válida.';
+        RETURN;
+    END IF;
+
+    BEGIN
+        INSERT INTO hr."OccupationalHealth" (
+            "CompanyId", "CountryCode", "RecordType",
+            "EmployeeId", "EmployeeCode", "EmployeeName",
+            "OccurrenceDate", "ReportDeadline", "ReportedDate",
+            "Severity", "BodyPartAffected", "DaysLost",
+            "Location", "Description", "RootCause", "CorrectiveAction",
+            "InvestigationDueDate", "InstitutionReference",
+            "Status", "DocumentUrl", "Notes", "CreatedBy",
+            "CreatedAt", "UpdatedAt"
+        )
+        VALUES (
+            p_company_id, p_country_code, p_record_type,
+            p_employee_id, p_employee_code, p_employee_name,
+            p_occurrence_date, p_report_deadline, p_reported_date,
+            p_severity, p_body_part_affected, p_days_lost,
+            p_location, p_description, p_root_cause, p_corrective_action,
+            p_investigation_due_date, p_institution_reference,
+            'OPEN', p_document_url, p_notes, p_created_by,
+            (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
+        )
+        RETURNING "OccupationalHealthId" INTO p_resultado;
+
+        p_mensaje := 'Registro de salud ocupacional creado exitosamente.';
+    EXCEPTION WHEN OTHERS THEN
+        p_resultado := -1;
+        p_mensaje   := SQLERRM;
+    END;
+END;
+$$;
+
+-- Service wrapper: usp_HR_OccHealth_Create
+-- Service sends: p_company_id, p_branch_id, p_employee_code, p_record_type,
+--                p_incident_date (DATE), p_description, p_severity, p_user_id
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, CHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR, VARCHAR, INTEGER, VARCHAR, TEXT, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, VARCHAR, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, INTEGER, VARCHAR, VARCHAR, TIMESTAMP, TEXT, VARCHAR, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, TEXT, VARCHAR, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(
+    p_company_id    INTEGER,
+    p_branch_id     INTEGER     DEFAULT NULL,
+    p_employee_code VARCHAR     DEFAULT NULL,
+    p_record_type   VARCHAR     DEFAULT NULL,
+    p_incident_date DATE        DEFAULT NULL,
+    p_description   TEXT        DEFAULT NULL,
+    p_severity      VARCHAR     DEFAULT NULL,
+    p_user_id       INTEGER     DEFAULT NULL
+)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_country_code CHAR(2);
+    v_resultado    INTEGER;
+    v_mensaje      VARCHAR(500);
+BEGIN
+    SELECT COALESCE(c."FiscalCountryCode", 'VE')
+    INTO v_country_code
+    FROM cfg."Company" c
+    WHERE c."CompanyId" = p_company_id
+    LIMIT 1;
+
+    IF v_country_code IS NULL THEN v_country_code := 'VE'; END IF;
+
+    SELECT r.p_resultado, r.p_mensaje
+    INTO v_resultado, v_mensaje
+    FROM public.usp_hr_occhealth_create_internal(
+        p_company_id      := p_company_id,
+        p_country_code    := v_country_code,
+        p_record_type     := UPPER(COALESCE(p_record_type, 'ACCIDENT')),
+        p_employee_code   := p_employee_code,
+        p_occurrence_date := p_incident_date::TIMESTAMP,
+        p_description     := p_description,
+        p_severity        := UPPER(p_severity),
+        p_created_by      := p_user_id
+    ) r;
+
+    RETURN QUERY SELECT v_resultado, v_mensaje;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
+END;
+$$;
+
+
+-- Service wrapper: usp_HR_MedExam_Save
+-- Service sends: p_company_id, p_branch_id, p_exam_id, p_employee_code,
+--                p_exam_type, p_exam_date, p_result, p_notes, p_next_due_date, p_user_id
+DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, DATE, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
+    p_company_id    INTEGER,
+    p_branch_id     INTEGER     DEFAULT NULL,
+    p_exam_id       INTEGER     DEFAULT NULL,
+    p_employee_code VARCHAR     DEFAULT NULL,
+    p_exam_type     VARCHAR     DEFAULT NULL,
+    p_exam_date     DATE        DEFAULT NULL,
+    p_result        VARCHAR     DEFAULT NULL,
+    p_notes         VARCHAR     DEFAULT NULL,
+    p_next_due_date DATE        DEFAULT NULL,
+    p_user_id       INTEGER     DEFAULT NULL
+)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_resultado    INTEGER;
+    v_mensaje      VARCHAR(500);
+    v_employee_id  BIGINT;
+    v_employee_name VARCHAR(200);
+BEGIN
+    SELECT e."EmployeeId", e."EmployeeName"
+    INTO v_employee_id, v_employee_name
+    FROM master."Employee" e
+    WHERE e."EmployeeCode" = p_employee_code
+      AND e."CompanyId" = p_company_id
+    LIMIT 1;
+
+    IF v_employee_name IS NULL THEN
+        v_employee_name := p_employee_code;
+    END IF;
+
+    SELECT r.p_resultado, r.p_mensaje
+    INTO v_resultado, v_mensaje
+    FROM public.usp_hr_medexam_save(
+        p_medical_exam_id := p_exam_id,
+        p_company_id      := p_company_id,
+        p_employee_id     := v_employee_id,
+        p_employee_code   := p_employee_code,
+        p_employee_name   := v_employee_name,
+        p_exam_type       := UPPER(COALESCE(p_exam_type, 'PERIODIC')),
+        p_exam_date       := p_exam_date,
+        p_result          := UPPER(COALESCE(p_result, 'PENDING')),
+        p_notes           := p_notes,
+        p_next_due_date   := p_next_due_date
+    ) r;
+
+    RETURN QUERY SELECT v_resultado, v_mensaje;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
+END;
+$$;
+
+
+-- Service wrapper: usp_HR_Training_Save
+-- Service sends: p_company_id, p_branch_id, p_training_id, p_name, p_description,
+--                p_start_date, p_end_date, p_instructor, p_hours, p_participants, p_user_id
+DROP FUNCTION IF EXISTS public.usp_hr_training_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, VARCHAR, NUMERIC, VARCHAR, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
+    p_company_id    INTEGER,
+    p_branch_id     INTEGER     DEFAULT NULL,
+    p_training_id   INTEGER     DEFAULT NULL,
+    p_name          VARCHAR     DEFAULT NULL,
+    p_description   VARCHAR     DEFAULT NULL,
+    p_start_date    DATE        DEFAULT NULL,
+    p_end_date      DATE        DEFAULT NULL,
+    p_instructor    VARCHAR     DEFAULT NULL,
+    p_hours         NUMERIC     DEFAULT NULL,
+    p_participants  VARCHAR     DEFAULT NULL,
+    p_user_id       INTEGER     DEFAULT NULL
+)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_country_code CHAR(2);
+    v_resultado    INTEGER;
+    v_mensaje      VARCHAR(500);
+BEGIN
+    SELECT COALESCE(c."FiscalCountryCode", 'VE')
+    INTO v_country_code
+    FROM cfg."Company" c
+    WHERE c."CompanyId" = p_company_id
+    LIMIT 1;
+
+    IF v_country_code IS NULL THEN v_country_code := 'VE'; END IF;
+
+    SELECT r.p_resultado, r.p_mensaje
+    INTO v_resultado, v_mensaje
+    FROM public.usp_hr_training_save(
+        p_training_record_id := p_training_id,
+        p_company_id         := p_company_id,
+        p_country_code       := v_country_code,
+        p_training_type      := 'TECHNICAL',
+        p_title              := p_name,
+        p_provider           := p_instructor,
+        p_start_date         := p_start_date,
+        p_end_date           := p_end_date,
+        p_duration_hours     := COALESCE(p_hours, 1),
+        p_employee_code      := COALESCE(p_participants, 'GENERAL'),
+        p_employee_name      := COALESCE(p_participants, p_name, 'GENERAL'),
+        p_notes              := p_description
+    ) r;
+
+    RETURN QUERY SELECT v_resultado, v_mensaje;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
+END;
+$$;
+
+
+-- Service wrapper: usp_HR_Committee_Save
+-- Service sends: p_company_id, p_branch_id, p_committee_id, p_name,
+--                p_committee_type, p_start_date, p_end_date, p_user_id
+DROP FUNCTION IF EXISTS public.usp_hr_committee_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
+    p_company_id     INTEGER,
+    p_branch_id      INTEGER     DEFAULT NULL,
+    p_committee_id   INTEGER     DEFAULT NULL,
+    p_name           VARCHAR     DEFAULT NULL,
+    p_committee_type VARCHAR     DEFAULT NULL,
+    p_start_date     DATE        DEFAULT NULL,
+    p_end_date       DATE        DEFAULT NULL,
+    p_user_id        INTEGER     DEFAULT NULL
+)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_country_code CHAR(2);
+    v_resultado    INTEGER;
+    v_mensaje      VARCHAR(500);
+    v_meeting_freq VARCHAR(15);
+BEGIN
+    SELECT COALESCE(c."FiscalCountryCode", 'VE')
+    INTO v_country_code
+    FROM cfg."Company" c
+    WHERE c."CompanyId" = p_company_id
+    LIMIT 1;
+
+    IF v_country_code IS NULL THEN v_country_code := 'VE'; END IF;
+
+    v_meeting_freq := CASE UPPER(COALESCE(p_committee_type, ''))
+        WHEN 'MONTHLY'   THEN 'MONTHLY'
+        WHEN 'QUARTERLY' THEN 'QUARTERLY'
+        WHEN 'BIMONTHLY' THEN 'BIMONTHLY'
+        WHEN 'WEEKLY'    THEN 'WEEKLY'
+        ELSE 'MONTHLY'
+    END;
+
+    SELECT r.p_resultado, r.p_mensaje
+    INTO v_resultado, v_mensaje
+    FROM public.usp_hr_committee_save(
+        p_safety_committee_id := p_committee_id,
+        p_company_id          := p_company_id,
+        p_country_code        := v_country_code,
+        p_committee_name      := p_name,
+        p_formation_date      := p_start_date,
+        p_meeting_frequency   := v_meeting_freq,
+        p_is_active           := TRUE
+    ) r;
+
+    RETURN QUERY SELECT v_resultado, v_mensaje;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
+END;
+$$;
