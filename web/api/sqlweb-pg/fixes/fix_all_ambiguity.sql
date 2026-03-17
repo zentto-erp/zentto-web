@@ -1750,3 +1750,68 @@ BEGIN
   LIMIT 1;
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_fiscal_declaration_get(INT,BIGINT) TO zentto_app;
+
+-- ============================================================
+-- Fix bancos: CHAR vs VARCHAR, TIMESTAMP vs TIMESTAMPTZ
+-- ============================================================
+
+-- usp_bank_account_list: CurrencyCode CHAR(3) → ::VARCHAR cast
+DROP FUNCTION IF EXISTS public.usp_bank_account_list(integer) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_bank_account_list(p_company_id integer)
+RETURNS TABLE(
+  "Nro_Cta" character varying, "Banco" character varying,
+  "Descripcion" character varying, "Moneda" character varying,
+  "Saldo" numeric, "Saldo_Disponible" numeric, "BancoNombre" character varying
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  SELECT ba."AccountNumber"::VARCHAR, b."BankName"::VARCHAR,
+         ba."AccountName"::VARCHAR, ba."CurrencyCode"::VARCHAR,
+         ba."Balance", ba."AvailableBalance", b."BankName"::VARCHAR
+  FROM fin."BankAccount" ba
+  INNER JOIN fin."Bank" b ON b."BankId" = ba."BankId"
+  WHERE ba."CompanyId" = p_company_id
+    AND ba."IsActive" = TRUE AND b."IsActive" = TRUE
+  ORDER BY b."BankName", ba."AccountNumber";
+END; $$;
+GRANT EXECUTE ON FUNCTION usp_bank_account_list(integer) TO zentto_app;
+
+-- usp_bank_movement_listbyaccount: TIMESTAMPTZ → TIMESTAMP fix
+DROP FUNCTION IF EXISTS public.usp_bank_movement_listbyaccount(integer, character varying, date, date, integer, integer) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_bank_movement_listbyaccount(
+  p_company_id integer, p_nro_cta character varying,
+  p_from_date date DEFAULT NULL, p_to_date date DEFAULT NULL,
+  p_offset integer DEFAULT 0, p_limit integer DEFAULT 50
+) RETURNS TABLE(
+  id bigint, "Nro_Cta" character varying,
+  "Fecha" timestamp without time zone,
+  "Tipo" character varying, "Nro_Ref" character varying,
+  "Beneficiario" character varying, "Monto" numeric, "MontoNeto" numeric,
+  "Concepto" character varying, "Categoria" character varying,
+  "Documento_Relacionado" character varying, "Tipo_Doc_Rel" character varying,
+  "SaldoPosterior" numeric, "Conciliado" boolean, "TotalCount" bigint
+) LANGUAGE plpgsql AS $$
+DECLARE v_total BIGINT;
+BEGIN
+  SELECT COUNT(1) INTO v_total
+  FROM fin."BankMovement" m
+  INNER JOIN fin."BankAccount" ba ON ba."BankAccountId" = m."BankAccountId"
+  WHERE ba."CompanyId" = p_company_id AND ba."AccountNumber" = p_nro_cta
+    AND (p_from_date IS NULL OR m."MovementDate" >= p_from_date)
+    AND (p_to_date   IS NULL OR m."MovementDate" <= p_to_date);
+  RETURN QUERY
+  SELECT m."BankMovementId", ba."AccountNumber"::VARCHAR, m."MovementDate",
+         m."MovementType"::VARCHAR, m."ReferenceNo"::VARCHAR,
+         m."Beneficiary"::VARCHAR, m."Amount", m."NetAmount",
+         m."Concept"::VARCHAR, m."CategoryCode"::VARCHAR,
+         m."RelatedDocumentNo"::VARCHAR, m."RelatedDocumentType"::VARCHAR,
+         m."BalanceAfter", m."IsReconciled", v_total
+  FROM fin."BankMovement" m
+  INNER JOIN fin."BankAccount" ba ON ba."BankAccountId" = m."BankAccountId"
+  WHERE ba."CompanyId" = p_company_id AND ba."AccountNumber" = p_nro_cta
+    AND (p_from_date IS NULL OR m."MovementDate" >= p_from_date)
+    AND (p_to_date   IS NULL OR m."MovementDate" <= p_to_date)
+  ORDER BY m."MovementDate" DESC, m."BankMovementId" DESC
+  LIMIT p_limit OFFSET p_offset;
+END; $$;
+GRANT EXECUTE ON FUNCTION usp_bank_movement_listbyaccount(integer,varchar,date,date,integer,integer) TO zentto_app;

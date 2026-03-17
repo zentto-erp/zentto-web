@@ -842,10 +842,10 @@ DECLARE
     v_search  VARCHAR(100);
     v_total   INT;
 BEGIN
-    v_limit  := COALESCE(NULLIF(p_limit, 0), 50)::character varying;
+    v_limit  := COALESCE(NULLIF(p_limit, 0), 50);
     IF v_limit < 1 THEN v_limit := 50; END IF;
     IF v_limit > 500 THEN v_limit := 500; END IF;
-    v_offset := (COALESCE(NULLIF(p_page, 0), 1)::character varying - 1) * v_limit;
+    v_offset := (COALESCE(NULLIF(p_page, 0), 1) - 1) * v_limit;
     IF v_offset < 0 THEN v_offset := 0; END IF;
 
     v_search := NULL;
@@ -983,7 +983,7 @@ DECLARE
     v_total BIGINT;
     v_search_param VARCHAR(100);
 BEGIN
-    v_offset := (COALESCE(NULLIF(p_page, 0), 1)::character varying - 1) * COALESCE(NULLIF(p_limit, 0), 50)::character varying;
+    v_offset := (COALESCE(NULLIF(p_page, 0), 1) - 1) * COALESCE(NULLIF(p_limit, 0), 50);
     IF v_offset < 0 THEN v_offset := 0; END IF;
     IF p_limit < 1 THEN p_limit := 50; END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
