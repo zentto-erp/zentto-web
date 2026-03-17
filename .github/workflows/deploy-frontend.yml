@@ -48,6 +48,7 @@ jobs:
             NEXT_PUBLIC_API_BASE=https://api.zentto.net
             NEXT_PUBLIC_API_URL=https://api.zentto.net
             NEXT_PUBLIC_BACKEND_URL=https://api.zentto.net
+            NEXT_PUBLIC_SHELL_URL=https://app.zentto.net
 
   deploy:
     name: Deploy Frontend to server
