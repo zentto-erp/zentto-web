@@ -497,5 +497,94 @@ BEGIN
 END;
 $$;
 
+-- =============================================
+-- WRAPPERS en schema fin (requeridos por la API que llama fin.usp_Fin_PettyCash_*)
+-- =============================================
+GRANT CREATE ON SCHEMA fin TO zentto_app;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_list(p_company_id INTEGER)
+RETURNS TABLE("Id" INTEGER,"CompanyId" INTEGER,"BranchId" INTEGER,"Name" VARCHAR,
+    "AccountCode" VARCHAR,"MaxAmount" NUMERIC,"CurrentBalance" NUMERIC,
+    "Responsible" VARCHAR,"Status" VARCHAR,"CreatedAt" TIMESTAMPTZ,"CreatedByUserId" INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_list(p_company_id); END;
+$$;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_create(
+    p_company_id INTEGER, p_branch_id INTEGER, p_name VARCHAR,
+    p_account_code VARCHAR DEFAULT NULL, p_max_amount NUMERIC DEFAULT 0,
+    p_responsible VARCHAR DEFAULT NULL, p_created_by_user_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_create(
+    p_company_id, p_branch_id, p_name, p_account_code,
+    p_max_amount, p_responsible, p_created_by_user_id); END;
+$$;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_open(
+    p_box_id INTEGER, p_opening_amount NUMERIC, p_opened_by_user_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_open(
+    p_box_id, p_opening_amount, p_opened_by_user_id); END;
+$$;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_close(
+    p_box_id INTEGER, p_closed_by_user_id INTEGER DEFAULT NULL, p_notes VARCHAR DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_close(
+    p_box_id, p_closed_by_user_id, p_notes); END;
+$$;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
+RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmount" NUMERIC,
+    "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMPTZ,"ClosedAt" TIMESTAMPTZ,
+    "OpenedByUserId" INTEGER,"ClosedByUserId" INTEGER,"Notes" VARCHAR,
+    "AvailableBalance" NUMERIC,"ExpenseCount" BIGINT)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_getactive(p_box_id); END;
+$$;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_add(
+    p_session_id INTEGER, p_box_id INTEGER, p_category VARCHAR, p_description VARCHAR,
+    p_amount NUMERIC, p_beneficiary VARCHAR DEFAULT NULL, p_receipt_number VARCHAR DEFAULT NULL,
+    p_account_code VARCHAR DEFAULT NULL, p_created_by_user_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_add(
+    p_session_id, p_box_id, p_category, p_description, p_amount,
+    p_beneficiary, p_receipt_number, p_account_code, p_created_by_user_id); END;
+$$;
+
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_list(
+    p_box_id INTEGER, p_session_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Id" INTEGER,"SessionId" INTEGER,"BoxId" INTEGER,"Category" VARCHAR,
+    "Description" VARCHAR,"Amount" NUMERIC,"Beneficiary" VARCHAR,"ReceiptNumber" VARCHAR,
+    "AccountCode" VARCHAR,"CreatedAt" TIMESTAMPTZ,"CreatedByUserId" INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_list(p_box_id, p_session_id); END;
+$$;
+
+-- Combined summary (API calls fin.usp_Fin_PettyCash_Summary)
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_summary(p_box_id INTEGER)
+RETURNS TABLE(
+    "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,
+    "Status" VARCHAR, "SessionId" INTEGER, "OpeningAmount" NUMERIC, "TotalExpenses" NUMERIC,
+    "AvailableBalance" NUMERIC, "OpenedAt" TIMESTAMPTZ, "ExpenseCount" BIGINT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT b."Id", b."Name", b."MaxAmount", b."CurrentBalance", b."Status",
+        s."Id", s."OpeningAmount", s."TotalExpenses",
+        (s."OpeningAmount" - s."TotalExpenses"),
+        s."OpenedAt",
+        (SELECT COUNT(1) FROM fin."PettyCashExpense" e WHERE e."SessionId" = s."Id")
+    FROM fin."PettyCashBox" b
+    LEFT JOIN fin."PettyCashSession" s ON s."BoxId" = b."Id" AND s."Status" = 'OPEN'
+    WHERE b."Id" = p_box_id;
+END;
+$$;
+
 -- Verificacion
 DO $$ BEGIN RAISE NOTICE 'Modulo de Caja Chica (Petty Cash) creado exitosamente'; END $$;

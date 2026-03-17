@@ -935,32 +935,27 @@ $$;
 -- 10. usp_HR_Payroll_ListBatches
 --     Lista todos los lotes de nómina con paginación.
 -- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(20), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(15), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ListBatches(
     p_company_id   INTEGER,
-    p_payroll_code VARCHAR(15) DEFAULT NULL,
+    p_payroll_code VARCHAR(20) DEFAULT NULL,
     p_status       VARCHAR(20) DEFAULT NULL,
     p_offset       INTEGER     DEFAULT 0,
     p_limit        INTEGER     DEFAULT 25
 )
 RETURNS TABLE(
     p_total_count    BIGINT,
-    "BatchId"        INTEGER,
+    "BatchId"        BIGINT,
     "CompanyId"      INTEGER,
-    "BranchId"       INTEGER,
-    "PayrollCode"    VARCHAR(15),
+    "PayrollCode"    VARCHAR(20),
     "FromDate"       DATE,
     "ToDate"         DATE,
     "Status"         VARCHAR(20),
-    "TotalEmployees" INTEGER,
-    "TotalGross"     NUMERIC(18,2),
-    "TotalDeductions" NUMERIC(18,2),
-    "TotalNet"       NUMERIC(18,2),
-    "CreatedBy"      INTEGER,
+    "Notes"          VARCHAR(500),
     "CreatedAt"      TIMESTAMP,
-    "ApprovedBy"     INTEGER,
-    "ApprovedAt"     TIMESTAMP,
-    "UpdatedAt"      TIMESTAMP
+    "UpdatedAt"      TIMESTAMP,
+    "CreatedByUserId" INTEGER
 )
 LANGUAGE plpgsql
 AS $$
@@ -970,22 +965,17 @@ BEGIN
         COUNT(*) OVER()  AS p_total_count,
         b."BatchId",
         b."CompanyId",
-        b."BranchId",
         b."PayrollCode",
         b."FromDate",
         b."ToDate",
         b."Status",
-        b."TotalEmployees",
-        b."TotalGross",
-        b."TotalDeductions",
-        b."TotalNet",
-        b."CreatedBy",
+        b."Notes",
         b."CreatedAt",
-        b."ApprovedBy",
-        b."ApprovedAt",
-        b."UpdatedAt"
+        b."UpdatedAt",
+        b."CreatedByUserId"
     FROM hr."PayrollBatch" b
     WHERE b."CompanyId" = p_company_id
+      AND b."IsDeleted" = FALSE
       AND (p_payroll_code IS NULL OR b."PayrollCode" = p_payroll_code)
       AND (p_status       IS NULL OR b."Status"      = p_status)
     ORDER BY b."CreatedAt" DESC

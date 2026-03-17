@@ -693,11 +693,11 @@ CREATE OR REPLACE FUNCTION sp_get_movimiento_bancario_by_id(
     p_movimiento_id INT
 )
 RETURNS TABLE (
-    "id"                    INT,
-    "BankAccountId"         INT,
+    "id"                    BIGINT,
+    "BankAccountId"         BIGINT,
     "Fecha"                 TIMESTAMP,
     "Tipo"                  VARCHAR,
-    "MovementSign"          VARCHAR,
+    "MovementSign"          SMALLINT,
     "Monto"                 NUMERIC,
     "NetAmount"             NUMERIC,
     "Nro_Ref"               VARCHAR,
@@ -743,5 +743,23 @@ BEGIN
     INNER JOIN fin."BankAccount" a ON a."BankAccountId" = m."BankAccountId"
     LEFT JOIN fin."Bank" b ON b."BankId" = a."BankId"
     WHERE m."BankMovementId" = p_movimiento_id;
+END;
+$$;
+
+-- Alias usado por la API (sp_GetMovimientoBancarioById -> pgCallSp -> sp_getmovimientobancariobyid)
+DROP FUNCTION IF EXISTS sp_getmovimientobancariobyid(INT);
+CREATE OR REPLACE FUNCTION sp_getmovimientobancariobyid(p_movimiento_id INTEGER)
+RETURNS TABLE(
+    "id" BIGINT, "BankAccountId" BIGINT, "Fecha" TIMESTAMP,
+    "Tipo" VARCHAR, "MovementSign" SMALLINT, "Monto" NUMERIC,
+    "NetAmount" NUMERIC, "Nro_Ref" VARCHAR, "Beneficiario" VARCHAR,
+    "Concepto" VARCHAR, "Categoria" VARCHAR, "Documento_Relacionado" VARCHAR,
+    "Tipo_Doc_Rel" VARCHAR, "Saldo" NUMERIC, "IsReconciled" BOOLEAN,
+    "CreatedAt" TIMESTAMP, "Nro_Cta" VARCHAR, "CuentaDescripcion" VARCHAR,
+    "SaldoActual" NUMERIC, "BancoNombre" VARCHAR
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM sp_get_movimiento_bancario_by_id(p_movimiento_id);
 END;
 $$;

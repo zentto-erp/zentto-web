@@ -1,5 +1,7 @@
 import { callSp } from "../../db/query.js";
-import { getPool } from "../../db/mssql.js";
+import { env } from "../../config/env.js";
+
+const usePg = () => env.dbType === "postgres";
 
 export async function getRelations() {
   return callSp<{
@@ -14,6 +16,17 @@ export async function getRelations() {
 }
 
 export async function getTablesAndColumns() {
+  if (usePg()) {
+    // PG: 2 funciones separadas en lugar de 1 SP multi-recordset
+    const [tables, columns] = await Promise.all([
+      callSp<{ schema: string; table: string }>("usp_Sys_Meta_TablesAndColumns_Tables"),
+      callSp<{ schema: string; table: string; column: string; type: string; nullable: string }>("usp_Sys_Meta_TablesAndColumns_Columns"),
+    ]);
+    return { tables, columns };
+  }
+
+  // SQL Server: multi-recordset
+  const { getPool } = await import("../../db/mssql.js");
   const pool = await getPool();
   const request = pool.request();
   const result = await request.execute("usp_Sys_Meta_TablesAndColumns");

@@ -59,22 +59,28 @@ function normalizeCxCEstado(estado?: string | null) {
 }
 
 export async function aplicarCobro(input: AplicarCobroInput): Promise<AplicarCobroResult> {
-  const numRecibo = buildReceiptNumber("RCB");
-
-  const { output } = await callSpOut(
-    "usp_AR_Receivable_ApplyPayment",
+  const rows = await callSp<{
+    NumRecibo: string;
+    Resultado: number;
+    Mensaje: string;
+  }>(
+    "usp_cxc_aplicar_cobro",
     {
-      CodCliente: input.codCliente,
-      Fecha: input.fecha ? new Date(input.fecha) : null,
       RequestId: input.requestId,
-      NumRecibo: numRecibo,
+      CodCliente: input.codCliente,
+      Fecha: input.fecha,
+      MontoTotal: input.montoTotal,
+      CodUsuario: input.codUsuario || "API",
+      Observaciones: input.observaciones || "",
       DocumentosXml: arrayToXml(input.documentos ?? []),
-    },
-    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+      FormasPagoXml: input.formasPago?.length ? arrayToXml(input.formasPago) : null,
+    }
   );
 
-  const resultado = Number(output.Resultado ?? -99);
-  const mensaje = String(output.Mensaje ?? "Error desconocido");
+  const result = rows[0];
+  const resultado = Number(result?.Resultado ?? -99);
+  const mensaje = String(result?.Mensaje ?? "Error desconocido");
+  const numRecibo = String(result?.NumRecibo ?? "");
 
   if (resultado > 0) {
     return { success: true, numRecibo, message: mensaje };

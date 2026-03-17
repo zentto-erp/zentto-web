@@ -319,10 +319,10 @@ $$;
 -- 4. usp_HR_ProfitSharing_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_List(
     p_company_id    INTEGER,
-    p_branch_id     INTEGER         DEFAULT NULL,
-    p_fiscal_year   INTEGER         DEFAULT NULL,
+    p_year          INTEGER         DEFAULT NULL,
     p_status        VARCHAR(20)     DEFAULT NULL,
     p_offset        INTEGER         DEFAULT 0,
     p_limit         INTEGER         DEFAULT 50
@@ -331,15 +331,11 @@ RETURNS TABLE(
     p_total_count       BIGINT,
     "ProfitSharingId"   INTEGER,
     "CompanyId"         INTEGER,
-    "BranchId"          INTEGER,
     "FiscalYear"        INTEGER,
     "DaysGranted"       INTEGER,
     "TotalCompanyProfits" NUMERIC(18,2),
     "Status"            VARCHAR(20),
-    "CreatedBy"         INTEGER,
     "CreatedAt"         TIMESTAMP,
-    "ApprovedBy"        INTEGER,
-    "ApprovedAt"        TIMESTAMP,
     "UpdatedAt"         TIMESTAMP,
     "TotalEmployees"    BIGINT,
     "TotalNet"          NUMERIC
@@ -352,23 +348,18 @@ BEGIN
         COUNT(*) OVER()                                                                                           AS p_total_count,
         ps."ProfitSharingId",
         ps."CompanyId",
-        ps."BranchId",
         ps."FiscalYear",
         ps."DaysGranted",
         ps."TotalCompanyProfits",
         ps."Status",
-        ps."CreatedBy",
         ps."CreatedAt",
-        ps."ApprovedBy",
-        ps."ApprovedAt",
         ps."UpdatedAt",
-        (SELECT COUNT(*) FROM hr."ProfitSharingLine" WHERE "ProfitSharingId" = ps."ProfitSharingId")::BIGINT     AS "TotalEmployees",
-        COALESCE((SELECT SUM("NetAmount") FROM hr."ProfitSharingLine" WHERE "ProfitSharingId" = ps."ProfitSharingId"), 0) AS "TotalNet"
+        (SELECT COUNT(*) FROM hr."ProfitSharingLine" psl WHERE psl."ProfitSharingId" = ps."ProfitSharingId")::BIGINT     AS "TotalEmployees",
+        COALESCE((SELECT SUM(psl2."NetAmount") FROM hr."ProfitSharingLine" psl2 WHERE psl2."ProfitSharingId" = ps."ProfitSharingId"), 0) AS "TotalNet"
     FROM hr."ProfitSharing" ps
     WHERE ps."CompanyId" = p_company_id
-      AND (p_branch_id   IS NULL OR ps."BranchId"   = p_branch_id)
-      AND (p_fiscal_year IS NULL OR ps."FiscalYear"  = p_fiscal_year)
-      AND (p_status      IS NULL OR ps."Status"      = p_status)
+      AND (p_year     IS NULL OR ps."FiscalYear"  = p_year)
+      AND (p_status   IS NULL OR ps."Status"      = p_status)
     ORDER BY ps."FiscalYear" DESC, ps."CreatedAt" DESC
     LIMIT p_limit OFFSET p_offset;
 END;

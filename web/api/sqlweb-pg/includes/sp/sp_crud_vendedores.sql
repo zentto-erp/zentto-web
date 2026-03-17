@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_vendedores_list(VARCHAR, BOOLEAN, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_vendedores_list(
     p_search VARCHAR(100) DEFAULT NULL,
     p_status BOOLEAN DEFAULT NULL,
@@ -12,29 +13,21 @@ CREATE OR REPLACE FUNCTION usp_vendedores_list(
     p_limit INT DEFAULT 50
 )
 RETURNS TABLE(
-    "Codigo" VARCHAR(10),
-    "Nombre" VARCHAR(100),
-    "Comision" DOUBLE PRECISION,
+    "Codigo" VARCHAR,
+    "Nombre" VARCHAR,
+    "Comision" NUMERIC,
     "Status" BOOLEAN,
     "IsActive" BOOLEAN,
     "IsDeleted" BOOLEAN,
     "CompanyId" INT,
-    "SellerCode" VARCHAR(10),
-    "SellerName" VARCHAR(100),
-    "Commission" DOUBLE PRECISION,
-    "Direccion" VARCHAR(255),
-    "Telefonos" VARCHAR(60),
-    "Email" VARCHAR(100),
-    "Tipo" VARCHAR(50),
-    "Clave" VARCHAR(50),
-    "RangoVentasUno" DOUBLE PRECISION,
-    "ComisionVentasUno" DOUBLE PRECISION,
-    "RangoVentasDos" DOUBLE PRECISION,
-    "ComisionVentasDos" DOUBLE PRECISION,
-    "RangoVentasTres" DOUBLE PRECISION,
-    "ComisionVentasTres" DOUBLE PRECISION,
-    "RangoVentasCuatro" DOUBLE PRECISION,
-    "ComisionVentasCuatro" DOUBLE PRECISION,
+    "SellerCode" VARCHAR,
+    "SellerName" VARCHAR,
+    "Commission" NUMERIC,
+    "Direccion" VARCHAR,
+    "Telefonos" VARCHAR,
+    "Email" VARCHAR,
+    "Tipo" VARCHAR,
+    "Clave" VARCHAR,
     "TotalCount" BIGINT
 )
 LANGUAGE plpgsql AS $$
@@ -61,34 +54,26 @@ BEGIN
            OR s."SellerName" LIKE v_search_param
            OR s."Email" LIKE v_search_param)
       AND (p_status IS NULL OR s."IsActive" = p_status)
-      AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."Tipo" = p_tipo);
+      AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."SellerType" = p_tipo);
 
     RETURN QUERY
     SELECT
-        s."SellerCode"  AS "Codigo",
-        s."SellerName"  AS "Nombre",
-        s."Commission"  AS "Comision",
-        s."IsActive"    AS "Status",
+        s."SellerCode",
+        s."SellerName",
+        s."Commission",
+        s."IsActive",
         s."IsActive",
         s."IsDeleted",
         s."CompanyId",
         s."SellerCode",
         s."SellerName",
         s."Commission",
-        s."Direccion",
-        s."Telefonos",
+        s."Address",
+        s."Phone",
         s."Email",
-        s."Tipo",
-        s."Clave",
-        s."RangoVentasUno",
-        s."ComisionVentasUno",
-        s."RangoVentasDos",
-        s."ComisionVentasDos",
-        s."RangoVentasTres",
-        s."ComisionVentasTres",
-        s."RangoVentasCuatro",
-        s."ComisionVentasCuatro",
-        v_total AS "TotalCount"
+        s."SellerType",
+        NULL::VARCHAR,
+        v_total
     FROM master."Seller" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
       AND (v_search_param IS NULL
@@ -96,7 +81,7 @@ BEGIN
            OR s."SellerName" LIKE v_search_param
            OR s."Email" LIKE v_search_param)
       AND (p_status IS NULL OR s."IsActive" = p_status)
-      AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."Tipo" = p_tipo)
+      AND (p_tipo IS NULL OR TRIM(p_tipo) = '' OR s."SellerType" = p_tipo)
     ORDER BY s."SellerCode"
     LIMIT p_limit OFFSET v_offset;
 END;

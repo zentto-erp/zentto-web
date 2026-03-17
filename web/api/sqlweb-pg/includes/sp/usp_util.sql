@@ -152,8 +152,9 @@ LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        fc."CompanyId", fc."BranchId", fc."CountryCode",
-        fc."Currency", fc."TaxRegime", fc."DefaultTaxCode",
+        fc."CompanyId", fc."BranchId",
+        fc."CountryCode"::VARCHAR, fc."Currency"::VARCHAR,
+        fc."TaxRegime", fc."DefaultTaxCode",
         fc."DefaultTaxRate", fc."FiscalPrinterEnabled",
         fc."PrinterBrand", fc."PrinterPort",
         fc."VerifactuEnabled", fc."VerifactuMode",
@@ -437,7 +438,7 @@ BEGIN
     RETURN QUERY
     SELECT
         tr."RetentionId", tr."RetentionCode", tr."Description",
-        tr."RetentionType", tr."RetentionRate", tr."CountryCode", tr."IsActive"
+        tr."RetentionType", tr."RetentionRate", tr."CountryCode"::VARCHAR, tr."IsActive"
     FROM master."TaxRetention" tr
     WHERE tr."IsDeleted" = FALSE
       AND (p_search IS NULL OR (tr."RetentionCode" ILIKE '%' || p_search || '%' OR tr."Description" ILIKE '%' || p_search || '%'))

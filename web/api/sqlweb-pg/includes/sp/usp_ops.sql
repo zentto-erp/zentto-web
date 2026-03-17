@@ -460,7 +460,7 @@ CREATE OR REPLACE FUNCTION usp_pos_report_ventas(
     p_limit      INT DEFAULT 200
 )
 RETURNS TABLE(
-    "id" INT, "numFactura" VARCHAR, "fecha" TIMESTAMPTZ,
+    "id" BIGINT, "numFactura" VARCHAR, "fecha" TIMESTAMP,
     "cliente" VARCHAR, "cajaId" VARCHAR, "total" NUMERIC,
     "estado" VARCHAR, "metodoPago" VARCHAR, "tramaFiscal" TEXT,
     "serialFiscal" VARCHAR, "correlativoFiscal" INT
@@ -510,7 +510,7 @@ CREATE OR REPLACE FUNCTION usp_pos_report_productostop(
     p_caja_id    VARCHAR(20) DEFAULT NULL,
     p_limit      INT DEFAULT 20
 )
-RETURNS TABLE("productoId" INT, "codigo" VARCHAR, "nombre" VARCHAR, "cantidad" NUMERIC, "total" NUMERIC)
+RETURNS TABLE("productoId" BIGINT, "codigo" VARCHAR, "nombre" VARCHAR, "cantidad" NUMERIC, "total" NUMERIC)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -687,13 +687,13 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticket_list(
     p_company_id INT,
     p_branch_id  INT
 )
-RETURNS TABLE("id" INT, "cajaId" VARCHAR, "estacionNombre" VARCHAR, "clienteNombre" VARCHAR, "motivo" VARCHAR, "total" NUMERIC, "fechaCreacion" TIMESTAMPTZ)
+RETURNS TABLE("id" INTEGER, "cajaId" VARCHAR, "estacionNombre" VARCHAR, "clienteNombre" VARCHAR, "motivo" VARCHAR, "total" NUMERIC, "fechaCreacion" TIMESTAMPTZ)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT wt."WaitTicketId", wt."CashRegisterCode", wt."StationName",
-           wt."CustomerName", wt."Reason", wt."TotalAmount", wt."CreatedAt"
+    SELECT wt."WaitTicketId"::INTEGER, wt."CashRegisterCode", wt."StationName",
+           wt."CustomerName", wt."Reason", wt."TotalAmount", wt."CreatedAt"::TIMESTAMPTZ
     FROM pos."WaitTicket" wt
     WHERE wt."CompanyId" = p_company_id AND wt."BranchId" = p_branch_id AND wt."Status" = 'WAITING'
     ORDER BY wt."CreatedAt";
@@ -1174,7 +1174,7 @@ CREATE OR REPLACE FUNCTION usp_inv_movement_list(
     p_limit  INT DEFAULT 50
 )
 RETURNS TABLE(
-    "MovementId" INT, "Codigo" VARCHAR, "Product" VARCHAR, "Documento" VARCHAR,
+    "MovementId" BIGINT, "Codigo" VARCHAR, "Product" VARCHAR, "Documento" VARCHAR,
     "Tipo" VARCHAR, "Fecha" TIMESTAMPTZ, "Quantity" NUMERIC, "UnitCost" NUMERIC,
     "TotalCost" NUMERIC, "Notes" VARCHAR, "TotalCount" BIGINT
 )
@@ -1201,7 +1201,7 @@ $$;
 -- usp_Inv_Movement_GetById
 DROP FUNCTION IF EXISTS usp_inv_movement_getbyid(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inv_movement_getbyid(p_id INT)
-RETURNS TABLE("MovementId" INT,"Codigo" VARCHAR,"Product" VARCHAR,"Documento" VARCHAR,
+RETURNS TABLE("MovementId" BIGINT,"Codigo" VARCHAR,"Product" VARCHAR,"Documento" VARCHAR,
     "Tipo" VARCHAR,"Fecha" TIMESTAMPTZ,"Quantity" NUMERIC,"UnitCost" NUMERIC,"TotalCost" NUMERIC,"Notes" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT m."MovementId",m."ProductCode",m."ProductName",m."DocumentRef",
@@ -1538,7 +1538,7 @@ CREATE OR REPLACE FUNCTION usp_bank_account_list(p_company_id INT)
 RETURNS TABLE("Nro_Cta" VARCHAR,"Banco" VARCHAR,"Descripcion" VARCHAR,"Moneda" VARCHAR,
     "Saldo" NUMERIC,"Saldo_Disponible" NUMERIC,"BancoNombre" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ba."AccountNumber",b."BankName",ba."AccountName",ba."CurrencyCode",
+    RETURN QUERY SELECT ba."AccountNumber",b."BankName",ba."AccountName",ba."CurrencyCode"::VARCHAR,
         ba."Balance",ba."AvailableBalance",b."BankName"
     FROM fin."BankAccount" ba INNER JOIN fin."Bank" b ON b."BankId"=ba."BankId"
     WHERE ba."CompanyId"=p_company_id AND ba."IsActive"=TRUE AND b."IsActive"=TRUE
@@ -1567,7 +1567,7 @@ BEGIN
       AND (p_from_date IS NULL OR m."MovementDate">=p_from_date)
       AND (p_to_date IS NULL OR m."MovementDate"<=p_to_date);
 
-    RETURN QUERY SELECT m."BankMovementId",ba."AccountNumber",m."MovementDate",m."MovementType",
+    RETURN QUERY SELECT m."BankMovementId",ba."AccountNumber",m."MovementDate"::TIMESTAMPTZ,m."MovementType",
         m."ReferenceNo",m."Beneficiary",m."Amount",m."NetAmount",m."Concept",m."CategoryCode",
         m."RelatedDocumentNo",m."RelatedDocumentType",m."BalanceAfter",m."IsReconciled",v_total
     FROM fin."BankMovement" m INNER JOIN fin."BankAccount" ba ON ba."BankAccountId"=m."BankAccountId"

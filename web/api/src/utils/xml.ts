@@ -57,7 +57,8 @@ function parseXmlAttrs(attrStr: string): Record<string, unknown> {
  */
 export function xmlParamToJson(xml: string): string {
   const str = (xml ?? "").trim();
-  if (str.startsWith("<root>")) {
+  // Acepta <root> o <rows> como contenedor de multiples <row ... />
+  if (str.startsWith("<root>") || str.startsWith("<rows>")) {
     const rows: Record<string, unknown>[] = [];
     const re = /<row([^>]*?)\/>/g;
     let m: RegExpExecArray | null;

@@ -80,10 +80,10 @@ function adaptParamsForPg(
   if (!inputs) return inputs;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(inputs)) {
-    if (key.endsWith("Xml") && typeof value === "string") {
-      // Renombrar *Xml → *Json y convertir XML → JSON string
+    if (key.endsWith("Xml")) {
+      // Renombrar *Xml → *Json, convertir XML → JSON string (o null si valor es null/undefined)
       const jsonKey = key.slice(0, -3) + "Json";
-      out[jsonKey] = xmlParamToJson(value);
+      out[jsonKey] = (typeof value === "string") ? xmlParamToJson(value) : null;
     } else {
       out[key] = value;
     }

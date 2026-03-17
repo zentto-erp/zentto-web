@@ -24,7 +24,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT pm."Id", pm."Code", pm."Name", pm."Category",
-           pm."CountryCode", pm."IconName", pm."RequiresGateway",
+           pm."CountryCode"::VARCHAR, pm."IconName", pm."RequiresGateway",
            pm."IsActive", pm."SortOrder"
     FROM pay."PaymentMethods" pm
     WHERE pm."IsActive" = TRUE
@@ -72,7 +72,7 @@ RETURNS TABLE(
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
-    SELECT pp."Id", pp."Code", pp."Name", pp."CountryCode",
+    SELECT pp."Id", pp."Code", pp."Name", pp."CountryCode"::VARCHAR,
            pp."ProviderType", pp."BaseUrlSandbox", pp."BaseUrlProd",
            pp."AuthType", pp."DocsUrl", pp."LogoUrl", pp."IsActive"
     FROM pay."PaymentProviders" pp
@@ -97,7 +97,7 @@ RETURNS TABLE(
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
-    SELECT pp."Id", pp."Code", pp."Name", pp."CountryCode",
+    SELECT pp."Id", pp."Code", pp."Name", pp."CountryCode"::VARCHAR,
            pp."ProviderType", pp."BaseUrlSandbox", pp."BaseUrlProd",
            pp."AuthType", pp."DocsUrl", pp."LogoUrl",
            pp."IsActive", pp."CreatedAt"

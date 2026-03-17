@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_List(
     p_company_id INT
 )
 RETURNS TABLE(
-    "SettingId" BIGINT, "Module" VARCHAR, "SettingKey" VARCHAR,
+    "SettingId" INT, "Module" VARCHAR, "SettingKey" VARCHAR,
     "SettingValue" TEXT, "ValueType" VARCHAR, "Description" VARCHAR,
     "UpdatedAt" TIMESTAMP
 )
@@ -69,7 +69,7 @@ CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListByModule(
     p_module     VARCHAR(60)
 )
 RETURNS TABLE(
-    "SettingId" BIGINT, "Module" VARCHAR, "SettingKey" VARCHAR,
+    "SettingId" INT, "Module" VARCHAR, "SettingKey" VARCHAR,
     "SettingValue" TEXT, "ValueType" VARCHAR, "Description" VARCHAR,
     "UpdatedAt" TIMESTAMP
 )
