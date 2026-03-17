@@ -425,6 +425,17 @@
 \i 13_otros.sql
 
 -- ====================================================================
+-- FASE 6.5: Correcciones de column ambiguity y type mismatch
+-- Estos fixes sobreescriben funciones con errores de:
+--   - "column reference X is ambiguous" (sin alias de tabla)
+--   - "structure of query does not match" (TEXT vs VARCHAR)
+-- Se aplican DESPUES de todas las fases para garantizar que queden
+-- las versiones correctas en produccion.
+-- ====================================================================
+\echo '[F6.5] Aplicando correcciones de ambiguedad y tipos...'
+\i fixes/fix_all_ambiguity.sql
+
+-- ====================================================================
 -- FASE 7: Permisos de aplicacion
 -- ====================================================================
 \echo ''
