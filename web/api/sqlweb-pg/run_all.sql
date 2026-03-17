@@ -157,80 +157,14 @@
 \echo '--- Funciones Ecommerce Variants ---'
 \i includes/sp/usp_ecommerce_variants.sql
 
-\echo '--- Funciones CRUD Inventario ---'
-\i includes/sp/sp_crud_inventario.sql
-
-\echo '--- Funciones CRUD Categorias ---'
-\i includes/sp/sp_crud_categorias.sql
-
-\echo '--- Funciones CRUD Usuarios ---'
-\i includes/sp/sp_crud_usuarios.sql
-
-\echo '--- Funciones CRUD Vehiculos ---'
-\i includes/sp/sp_crud_vehiculos.sql
-
 \echo '--- Funciones CRUD Bancos ---'
 \i includes/sp/sp_crud_bancos.sql
 
 \echo '--- Funciones CRUD Almacen ---'
 \i includes/sp/sp_crud_almacen.sql
 
-\echo '--- Funciones CRUD Centro Costo ---'
-\i includes/sp/sp_crud_centro_costo.sql
-
-\echo '--- Funciones CRUD Clases ---'
-\i includes/sp/sp_crud_clases.sql
-
 \echo '--- Funciones CRUD Clientes ---'
 \i includes/sp/sp_crud_clientes.sql
-
-\echo '--- Funciones CRUD Compras ---'
-\i includes/sp/sp_crud_compras.sql
-
-\echo '--- Funciones CRUD Cotizacion ---'
-\i includes/sp/sp_crud_cotizacion.sql
-
-\echo '--- Funciones CRUD Cuentas ---'
-\i includes/sp/sp_crud_cuentas.sql
-
-\echo '--- Funciones CRUD Empleados ---'
-\i includes/sp/sp_crud_empleados.sql
-
-\echo '--- Funciones CRUD Empresa ---'
-\i includes/sp/sp_crud_empresa.sql
-
-\echo '--- Funciones CRUD Facturas ---'
-\i includes/sp/sp_crud_facturas.sql
-
-\echo '--- Funciones CRUD Feriados ---'
-\i includes/sp/sp_crud_feriados.sql
-
-\echo '--- Funciones CRUD Grupos ---'
-\i includes/sp/sp_crud_grupos.sql
-
-\echo '--- Funciones CRUD Lineas ---'
-\i includes/sp/sp_crud_lineas.sql
-
-\echo '--- Funciones CRUD Marcas ---'
-\i includes/sp/sp_crud_marcas.sql
-
-\echo '--- Funciones CRUD Moneda ---'
-\i includes/sp/sp_crud_moneda.sql
-
-\echo '--- Funciones CRUD Pedidos ---'
-\i includes/sp/sp_crud_pedidos.sql
-
-\echo '--- Funciones CRUD Proveedores ---'
-\i includes/sp/sp_crud_proveedores.sql
-
-\echo '--- Funciones CRUD Tipos ---'
-\i includes/sp/sp_crud_tipos.sql
-
-\echo '--- Funciones CRUD Unidades ---'
-\i includes/sp/sp_crud_unidades.sql
-
-\echo '--- Funciones CRUD Vendedores ---'
-\i includes/sp/sp_crud_vendedores.sql
 
 \echo '--- Funciones Documentos Unificado TX ---'
 \i includes/sp/sp_documentos_unificado_tx.sql
@@ -283,9 +217,6 @@
 \echo '--- Funciones Contabilidad General ---'
 \i includes/sp/sp_contabilidad_general.sql
 
-\echo '--- Funciones Bancos Conciliacion ---'
-\i includes/sp/sp_bancos_conciliacion.sql
-
 \echo '--- Funciones CxC Cobro ---'
 \i includes/sp/sp_cxc_aplicar_cobro_v2.sql
 
@@ -334,29 +265,8 @@
 \echo '--- Funciones RRHH Salud Ocupacional ---'
 \i includes/sp/sp_rrhh_salud_ocupacional.sql
 
-\echo '--- Funciones POS Ventas Espera ---'
-\i includes/sp/sp_pos_ventas_espera.sql
-
-\echo '--- Funciones POS Restaurante ---'
-\i includes/sp/sp_pos_restaurante.sql
-
-\echo '--- Funciones Restaurante Admin ---'
-\i includes/sp/sp_restaurante_admin.sql
-
-\echo '--- Funciones Restaurante Compra ---'
-\i includes/sp/sp_restaurante_compra_xml.sql
-
 \echo '--- Funciones Vacaciones ---'
 \i includes/sp/sp_vacation_request.sql
-
-\echo '--- Funciones Inventario Cierre Mes ---'
-\i includes/sp/sp_CerrarMesInventario.sql
-
-\echo '--- Funciones Mov Unidades ---'
-\i includes/sp/sp_MovUnidades.sql
-
-\echo '--- Funciones Mov Unidades Mes ---'
-\i includes/sp/sp_MovUnidadesMes.sql
 
 \echo '--- Funciones Caja Chica ---'
 \i includes/sp/usp_fin_pettycash.sql
@@ -409,9 +319,6 @@
 \echo '--- Indices Inventario Cierre ---'
 \i includes/sp/add_indexes_inventario_cierre.sql
 
-\echo '--- Fulltext Inventario ---'
-\i includes/sp/fulltext_index_inventario.sql
-
 \echo '--- Vacation Request Tables ---'
 \i includes/sp/create_vacation_request.sql
 
@@ -420,9 +327,6 @@
 
 \echo '--- Supervisor Override Controls ---'
 \i includes/sp/create_supervisor_override_controls.sql
-
-\echo '--- POS Restaurante Contabilidad Bridge ---'
-\i includes/sp/alter_pos_restaurante_contabilidad_bridge.sql
 
 \echo '--- Alter Employee Position Company Address ---'
 \i includes/sp/alter_employee_position_company_address.sql
