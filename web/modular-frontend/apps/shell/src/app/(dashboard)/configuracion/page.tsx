@@ -4,17 +4,20 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
   FormControl,
   FormControlLabel,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Stack,
   Switch,
   TextField,
   Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -24,6 +27,7 @@ import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaymentsIcon from '@mui/icons-material/Payments';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
 import { useAuth } from '@zentto/shared-auth';
 import { apiPut, useAllSettings } from '@zentto/shared-api';
@@ -42,6 +46,7 @@ function deepClone<T>(value: T): T {
 }
 
 export default function ConfiguracionPage() {
+  const router = useRouter();
   const { isAdmin, company, modulos } = useAuth();
   const companyId = company?.companyId ?? 1;
   const branchId = company?.branchId ?? 1;
@@ -77,6 +82,7 @@ export default function ConfiguracionPage() {
       { id: 'inventario', label: 'Inventario', icon: <InventoryIcon /> },
       { id: 'facturacion', label: 'Facturación / Fiscal', icon: <ReceiptLongIcon /> },
       { id: 'pagos', label: 'Formas de Pago', icon: <PaymentsIcon /> },
+      { id: 'suscripcion', label: 'Plan y Suscripción', icon: <WorkspacePremiumIcon /> },
     ];
 
     if (hasModule('pos')) {
@@ -624,6 +630,47 @@ export default function ConfiguracionPage() {
             countryCode={countryCode}
             channels={['POS', 'WEB', 'RESTAURANT']}
           />
+        </Box>
+      </SettingsSection>
+
+      <SettingsSection id="suscripcion" title="Plan y Suscripción">
+        <Box sx={{ gridColumn: '1 / -1' }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #131921 0%, #232f3e 100%)',
+              color: '#fff',
+            }}
+          >
+            <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} spacing={3}>
+              <WorkspacePremiumIcon sx={{ fontSize: 48, color: '#ff9900', flexShrink: 0 }} />
+              <Box flex={1}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  Gestiona tu suscripción Zentto
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                  Actualiza tu plan, cambia de Básico a Profesional o administra tu método de pago en cualquier momento.
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => router.push('/pricing')}
+                sx={{
+                  bgcolor: '#ff9900',
+                  color: '#131921',
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  '&:hover': { bgcolor: '#e68a00' },
+                }}
+              >
+                Ver planes
+              </Button>
+            </Stack>
+          </Paper>
         </Box>
       </SettingsSection>
     </SettingsLayout>
