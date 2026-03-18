@@ -183,6 +183,13 @@ export async function createApp() {
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);
 
+  // Paddle client token — público para inicializar checkout en frontend
+  app.get("/v1/billing/config", (_req, res) => {
+    const clientToken = process.env.PADDLE_CLIENT_TOKEN;
+    if (!clientToken) { res.status(500).json({ error: "paddle_not_configured" }); return; }
+    res.json({ ok: true, clientToken, environment: "production" });
+  });
+
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
   app.use("/v1", normalizeRequestDateTimesToUtc);
