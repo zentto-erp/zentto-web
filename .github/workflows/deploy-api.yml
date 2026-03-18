@@ -99,11 +99,12 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
+          NOTIFY_API_KEY: ${{ secrets.NOTIFY_API_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR
+          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY
           script: |
             set -e
             NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
@@ -137,6 +138,29 @@ jobs:
             if [ -f "$NGINX_CONF" ] && ! grep -q 'Access-Control-Allow-Origin' "$NGINX_CONF"; then
               echo "⚠ Nginx CORS missing — update /etc/nginx/sites-available/zentto manually"
               echo "  See: nginx/zentto.conf in repo for reference config with CORS"
+            fi
+
+            # ── Mail config (Zentto Notify webhook) ──
+            ENV_API="/opt/zentto/.env.api"
+            if [ -f "$ENV_API" ]; then
+              # Ensure mail webhook is configured
+              if ! grep -q '^AUTH_MAIL_WEBHOOK_URL=' "$ENV_API"; then
+                echo '' >> "$ENV_API"
+                echo '# Mail delivery via Zentto Notify' >> "$ENV_API"
+                echo 'AUTH_MAIL_WEBHOOK_URL=https://notify.zentto.net/api/email/send' >> "$ENV_API"
+                echo "AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY" >> "$ENV_API"
+                echo 'MAIL_FROM=Zentto <no-reply@zentto.net>' >> "$ENV_API"
+                echo "✓ Mail webhook configured in .env.api"
+              else
+                # Update token if it changed
+                sed -i "s|^AUTH_MAIL_WEBHOOK_TOKEN=.*|AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY|" "$ENV_API"
+                echo "✓ Mail webhook token updated"
+              fi
+              # Ensure STORE_URL is set for ecommerce emails
+              if ! grep -q '^STORE_URL=' "$ENV_API"; then
+                echo 'STORE_URL=https://app.zentto.net' >> "$ENV_API"
+                echo "✓ STORE_URL added"
+              fi
             fi
 
             # ── Deploy container ──

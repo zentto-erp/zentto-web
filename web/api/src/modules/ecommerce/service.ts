@@ -132,72 +132,29 @@ export async function getProductByCode(code: string) {
 }
 
 export async function getProductByCodeFull(code: string) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("BranchId", DEFAULT_BRANCH);
-  request.input("Code", code);
+  const params = { CompanyId: DEFAULT_COMPANY, BranchId: DEFAULT_BRANCH, Code: code };
 
-  const result = await request.execute("usp_Store_Product_GetByCode");
+  // Lanzar todas las consultas en paralelo
+  const [productRows, images, highlightRows, specRows] = await Promise.all([
+    callSp<any>("usp_Store_Product_GetByCode", params),
+    callSp<any>("usp_Store_Product_GetImages", params),
+    callSp<any>("usp_Store_Product_GetHighlights", { CompanyId: DEFAULT_COMPANY, Code: code }),
+    callSp<any>("usp_Store_Product_GetSpecs", { CompanyId: DEFAULT_COMPANY, Code: code }),
+  ]);
 
-  const sets = result.recordsets as any[];
-  const product = sets[0]?.[0] ?? null;
-  const images = sets[1] ?? [];
-  const highlights = (sets[2] ?? []).map((h: any) => h.text);
-  const specs = (sets[3] ?? []).map((s: any) => ({
+  const product = productRows[0] ?? null;
+  if (!product) return null;
+
+  const highlights = highlightRows.map((h: any) => h.text);
+  const specs = specRows.map((s: any) => ({
     group: s.group,
     key: s.key,
     value: s.value,
   }));
 
-  // Recordset 5: Variantes del producto
-  const variantsRaw = sets[4] ?? [];
-  // Recordset 6: Opciones de variante por código
-  const variantOptionsRaw = sets[5] ?? [];
-  // Recordset 7: Atributos de industria
-  const industryAttributesRaw = sets[6] ?? [];
-
-  // Agrupar opciones por código de variante
-  const optionsByCode: Record<string, any[]> = {};
-  for (const opt of variantOptionsRaw) {
-    (optionsByCode[opt.code] ??= []).push({
-      groupCode: opt.groupCode,
-      groupName: opt.groupName,
-      displayType: opt.displayType,
-      optionCode: opt.optionCode,
-      optionLabel: opt.optionLabel,
-      colorHex: opt.colorHex,
-      imageUrl: opt.optionImageUrl,
-    });
-  }
-
-  const variants = variantsRaw.map((v: any) => ({
-    variantId: v.variantId,
-    code: v.code,
-    name: v.name,
-    sku: v.sku,
-    price: v.price,
-    priceDelta: v.priceDelta,
-    stock: v.stock,
-    isDefault: v.isDefault,
-    sortOrder: v.sortOrder,
-    options: optionsByCode[v.code] ?? [],
-  }));
-
-  const industryAttributes = industryAttributesRaw.map((a: any) => ({
-    key: a.key,
-    label: a.label,
-    dataType: a.dataType,
-    displayGroup: a.displayGroup,
-    value: a.valueText ?? a.valueNumber ?? a.valueDate ?? a.valueBoolean,
-    valueText: a.valueText,
-    valueNumber: a.valueNumber,
-    valueDate: a.valueDate,
-    valueBoolean: a.valueBoolean,
-  }));
-
-  if (!product) return null;
+  // TODO: variantes e industryAttributes cuando las funciones PG estén listas
+  const variants: any[] = [];
+  const industryAttributes: any[] = [];
 
   // Resolver URLs de imágenes relativas a absolutas
   const resolvedImages = images.map((img: any) => ({
@@ -532,19 +489,18 @@ export async function checkout(data: {
 // ─── Consulta de pedidos ───────────────────────────────
 
 export async function getOrderByToken(token: string) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("Token", token);
-
-  const result = await request.execute("usp_Store_Order_GetByToken");
-
-  const sets = result.recordsets as any[];
-  const header = sets[0]?.[0] ?? null;
-  const lines = sets[1] ?? [];
-
+  const headers = await callSp<any>("usp_Store_Order_GetByToken", {
+    CompanyId: DEFAULT_COMPANY,
+    Token: token,
+  });
+  const header = headers[0] ?? null;
   if (!header) return null;
+
+  // Obtener líneas usando el número de orden del header
+  const lines = header.orderNumber
+    ? await callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: header.orderNumber })
+    : [];
+
   return { ...header, lines };
 }
 
@@ -571,20 +527,16 @@ export async function getMyOrders(customerCode: string, page = 1, limit = 20) {
 // ─── Reseñas ────────────────────────────────────────────
 
 export async function getProductReviews(productCode: string, page = 1, limit = 20) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("ProductCode", productCode);
-  request.input("Page", Math.max(page, 1));
-  request.input("Limit", Math.min(Math.max(limit, 1), 50));
+  const params = { CompanyId: DEFAULT_COMPANY, ProductCode: productCode };
+  const safePage = Math.max(page, 1);
+  const safeLimit = Math.min(Math.max(limit, 1), 50);
 
-  const result = await request.execute("usp_Store_Review_List");
+  const [summaryRows, reviews] = await Promise.all([
+    callSp<any>("usp_Store_Review_List_Summary", params),
+    callSp<any>("usp_Store_Review_List_Items", { ...params, Page: safePage, Limit: safeLimit }),
+  ]);
 
-  const sets = result.recordsets as any[];
-  const summary = sets[0]?.[0] ?? { avgRating: 0, totalCount: 0, star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
-  const reviews = sets[1] ?? [];
-
+  const summary = summaryRows[0] ?? { avgRating: 0, totalCount: 0, star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
   return { summary, reviews };
 }
 
@@ -741,18 +693,12 @@ export async function deletePaymentMethod(customerCode: string, paymentMethodId:
 }
 
 export async function getOrderByNumber(orderNumber: string) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("OrderNumber", orderNumber);
+  const [headers, lines] = await Promise.all([
+    callSp<any>("usp_Store_Order_GetByNumber", { CompanyId: DEFAULT_COMPANY, OrderNumber: orderNumber }),
+    callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: orderNumber }),
+  ]);
 
-  const result = await request.execute("usp_Store_Order_GetByNumber");
-
-  const sets = result.recordsets as any[];
-  const header = sets[0]?.[0] ?? null;
-  const lines = sets[1] ?? [];
-
+  const header = headers[0] ?? null;
   if (!header) return null;
   return { ...header, lines };
 }

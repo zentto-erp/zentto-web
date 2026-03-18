@@ -64,6 +64,7 @@ import { landingRouter } from "./modules/landing/routes.js";
 import rrhhRouter from "./modules/rrhh/routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
+import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -151,6 +152,7 @@ export async function createApp() {
   });
   // Webhooks externos — ANTES de express.json() para preservar raw body
   app.use("/api/webhooks", paddleWebhookRouter);
+  app.use("/v1/billing/webhook", billingWebhookHandler);
 
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan("dev"));
@@ -256,6 +258,10 @@ export async function createApp() {
   app.use("/v1/supervision", supervisionRouter);
   app.use("/v1/fiscal", fiscalRouter);
   app.use("/v1/sistema", sistemaRouter); // Added this line
+
+  // Billing SaaS (Paddle)
+  app.use("/v1/billing", billingRouter);
+
   app.use("/api/v1/config", configRouter);
 
   // Duplicate routes under /api/v1 for backward compatibility
