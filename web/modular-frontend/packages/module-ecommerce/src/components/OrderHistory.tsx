@@ -2,7 +2,6 @@
 
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, CircularProgress } from "@mui/material";
 import { formatDate } from "@zentto/shared-api";
-import { useTimezone } from "@zentto/shared-auth";
 
 interface OrderRow {
   orderNumber: string;
@@ -22,7 +21,7 @@ interface Props {
 }
 
 export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
-  const { timeZone } = useTimezone();
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
