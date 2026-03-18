@@ -186,6 +186,7 @@ export default function PricingPage() {
             const planMap: Record<string, string> = {
               basico: 'pri_01kky59xnge4kenjp2hav35rx0',
               profesional: 'pri_01kky5a0mwzk38j23hkcgmxn47',
+              test: 'pri_01km136n0k9xwj50e6s3t3jnk1',
             };
             const priceId = planMap[autoCheckoutPlan];
             if (priceId) {
