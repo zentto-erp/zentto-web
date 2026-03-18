@@ -42,6 +42,18 @@ CREATE TABLE IF NOT EXISTS sec."User"(
   "DeletedAt"         TIMESTAMP,
   "DeletedByUserId"   INT,
   "RowVer"            INT NOT NULL DEFAULT 1,
+  "UserType"          VARCHAR(10) DEFAULT 'USER',
+  "CanUpdate"         BOOLEAN NOT NULL DEFAULT TRUE,
+  "CanCreate"         BOOLEAN NOT NULL DEFAULT TRUE,
+  "CanDelete"         BOOLEAN NOT NULL DEFAULT FALSE,
+  "IsCreator"         BOOLEAN NOT NULL DEFAULT FALSE,
+  "CanChangePwd"      BOOLEAN NOT NULL DEFAULT TRUE,
+  "CanChangePrice"    BOOLEAN NOT NULL DEFAULT FALSE,
+  "CanGiveCredit"     BOOLEAN NOT NULL DEFAULT FALSE,
+  "Avatar"            TEXT,
+  "CompanyId"         INT DEFAULT 1,
+  "DisplayName"       VARCHAR(200),
+  "Role"              VARCHAR(30) DEFAULT 'admin',
   CONSTRAINT "UQ_sec_User_UserCode" UNIQUE ("UserCode")
 );
 

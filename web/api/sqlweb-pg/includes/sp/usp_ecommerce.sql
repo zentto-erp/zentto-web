@@ -562,10 +562,9 @@ RETURNS TABLE(
 LANGUAGE plpgsql AS $$
 DECLARE
     v_customer_code VARCHAR(24);
-    v_r INT;
-    v_m VARCHAR(500);
+    v_user_code VARCHAR(40);
 BEGIN
-    IF EXISTS (SELECT 1 FROM sec."Users" WHERE "Email" = p_email AND "IsDeleted" = FALSE) THEN
+    IF EXISTS (SELECT 1 FROM sec."User" WHERE "Email" = p_email AND "IsDeleted" = FALSE) THEN
         RETURN QUERY SELECT -1, 'Ya existe una cuenta con este email'::VARCHAR(500);
         RETURN;
     END IF;
@@ -574,12 +573,20 @@ BEGIN
     SELECT r."CustomerCode" INTO v_customer_code
     FROM usp_Store_Customer_FindOrCreate(p_company_id, p_email, p_name, p_phone, p_address, p_fiscal_id) r;
 
-    INSERT INTO sec."Users" (
-        "CompanyId", "UserName", "Email", "PasswordHash", "DisplayName",
-        "IsAdmin", "IsActive", "IsDeleted", "Role", "CreatedAt"
+    -- Generate UserCode from email prefix
+    v_user_code := UPPER(LEFT(SPLIT_PART(p_email, '@', 1), 40));
+    IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = v_user_code) THEN
+        v_user_code := LEFT(v_user_code, 34) || '_' || LPAD(FLOOR(RANDOM()*99999)::TEXT, 5, '0');
+    END IF;
+
+    INSERT INTO sec."User" (
+        "UserCode", "CompanyId", "UserName", "Email", "PasswordHash", "DisplayName",
+        "IsAdmin", "IsActive", "IsDeleted", "Role", "CreatedAt",
+        "CanUpdate", "CanCreate", "CanDelete", "IsCreator", "CanChangePwd", "CanChangePrice", "CanGiveCredit"
     ) VALUES (
-        p_company_id, p_email, p_email, p_password_hash, p_name,
-        FALSE, TRUE, FALSE, 'customer', NOW() AT TIME ZONE 'UTC'
+        v_user_code, p_company_id, p_email, p_email, p_password_hash, p_name,
+        FALSE, TRUE, FALSE, 'customer', NOW() AT TIME ZONE 'UTC',
+        FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE
     );
 
     RETURN QUERY SELECT 1, 'Cuenta creada exitosamente'::VARCHAR(500);
@@ -619,7 +626,7 @@ BEGIN
         c."Phone"::VARCHAR(40),
         c."AddressLine"::VARCHAR(250),
         c."FiscalId"::VARCHAR(30)
-    FROM sec."Users" u
+    FROM sec."User" u
     LEFT JOIN master."Customer" c ON c."Email" = u."Email" AND c."CompanyId" = u."CompanyId" AND c."IsDeleted" = FALSE
     WHERE u."Email" = p_email AND u."IsDeleted" = FALSE AND u."Role" = 'customer'
     LIMIT 1;
