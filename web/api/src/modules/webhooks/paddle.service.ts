@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { randomBytes } from "node:crypto";
 import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
+import { handleWebhookEvent } from "../billing/billing.service.js";
 
 export function verifyPaddleSignature(rawBody: Buffer, signatureHeader: string): boolean {
   const secret = process.env.PADDLE_WEBHOOK_SECRET ?? "";
@@ -75,6 +76,14 @@ export async function handlePaddleEvent(
   });
 
   if (result.ok) {
+    // Registrar suscripcion en tabla sys.Subscription (no bloquea provision)
+    handleWebhookEvent({
+      event_type: "subscription.created",
+      event_id: (event["event_id"] as string) ?? "",
+      occurred_at: (event["occurred_at"] as string) ?? new Date().toISOString(),
+      data: { ...data, custom_data: { companyId: String(result.companyId) } },
+    }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
+
     sendWelcomeEmail(customerEmail, customerEmail, tempPassword, result.companyId).catch(() => {});
   }
 

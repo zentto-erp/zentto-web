@@ -40,6 +40,33 @@ export async function getTenantInfo(companyId: number): Promise<TenantInfo | nul
   return rows[0] ?? null;
 }
 
+export async function resolveTenantByEmail(email: string) {
+  const rows = await callSp<{
+    CompanyId: number;
+    CompanyCode: string;
+    LegalName: string;
+    OwnerEmail: string;
+    Plan: string;
+    TenantStatus: string;
+    TenantSubdomain: string;
+    IsActive: boolean;
+  }>("usp_Cfg_Tenant_ResolveByEmail", { Email: email });
+  return rows[0] ?? null;
+}
+
+export async function resolveTenantBySubdomain(subdomain: string) {
+  const rows = await callSp<{
+    CompanyId: number;
+    CompanyCode: string;
+    LegalName: string;
+    Plan: string;
+    TenantStatus: string;
+    TenantSubdomain: string;
+    IsActive: boolean;
+  }>("usp_Cfg_Tenant_ResolveSubdomain", { Subdomain: subdomain });
+  return rows[0] ?? null;
+}
+
 export async function sendWelcomeEmail(
   ownerEmail: string,
   legalName: string,

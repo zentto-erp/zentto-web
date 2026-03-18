@@ -178,7 +178,18 @@ export default function PricingPage() {
 
         // 3. Initialize Paddle
         if (!cancelled && window.Paddle) {
-          window.Paddle.Initialize({ token: clientToken });
+          window.Paddle.Initialize({
+            token: clientToken,
+            eventCallback: (event: { name?: string; data?: { customer?: { email?: string } } }) => {
+              if (event.name === 'checkout.completed' && event.data?.customer?.email) {
+                // Redirigir a success con email para polling de tenant
+                const email = encodeURIComponent(event.data.customer.email);
+                setTimeout(() => {
+                  window.location.href = `/billing/success?customer_email=${email}`;
+                }, 1500);
+              }
+            },
+          } as any);
           setPaddleReady(true);
 
           // Auto-open checkout if redirected from docs-site with ?plan=
@@ -199,7 +210,7 @@ export default function PricingPage() {
                   items: [{ priceId, quantity: 1 }],
                   ...(customer ? { customer } : {}),
                   settings: {
-                    successUrl: 'https://app.zentto.net/billing/success',
+                    successUrl: 'https://app.zentto.net/billing/success?source=paddle',
                     displayMode: 'overlay',
                     theme: 'light',
                     locale: 'es',
@@ -230,7 +241,7 @@ export default function PricingPage() {
       window.Paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
         settings: {
-          successUrl: 'https://app.zentto.net/billing/success',
+          successUrl: 'https://app.zentto.net/billing/success?source=paddle',
           displayMode: 'overlay',
           theme: 'light',
           locale: 'es',

@@ -548,6 +548,15 @@
 \i includes/sp/usp_cfg_tenant_getinfo.sql
 
 -- ====================================================================
+-- FASE 6.10: Billing / Subscription (SaaS Paddle)
+-- ====================================================================
+\echo ''
+\echo '--- Billing: tablas + SPs ---'
+\i includes/sp/usp_sys_billing.sql
+\echo '--- SP usp_Cfg_Tenant_ResolveSubdomain ---'
+\i includes/sp/usp_cfg_tenant_resolve.sql
+
+-- ====================================================================
 -- FASE 7: Permisos de aplicacion
 -- ====================================================================
 \echo ''

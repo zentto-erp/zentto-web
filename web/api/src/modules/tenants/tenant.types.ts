@@ -28,6 +28,7 @@ export interface TenantInfo {
   FiscalCountryCode: string;
   ProvisionedAt: string | null;
   PaddleSubscriptionId: string | null;
+  TenantSubdomain: string | null;
   IsActive: boolean;
   BranchCount: number;
   UserCount: number;

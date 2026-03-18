@@ -15,6 +15,7 @@ RETURNS TABLE(
   "FiscalCountryCode"    CHAR(2),
   "ProvisionedAt"        TIMESTAMP,
   "PaddleSubscriptionId" VARCHAR,
+  "TenantSubdomain"      VARCHAR,
   "IsActive"             BOOLEAN,
   "BranchCount"          BIGINT,
   "UserCount"            BIGINT
@@ -33,6 +34,7 @@ BEGIN
     c."FiscalCountryCode",
     c."ProvisionedAt",
     c."PaddleSubscriptionId",
+    c."TenantSubdomain",
     c."IsActive",
     (SELECT COUNT(*) FROM cfg."Branch" b WHERE b."CompanyId" = c."CompanyId" AND b."IsDeleted" = FALSE),
     (SELECT COUNT(*) FROM sec."User" u WHERE u."CompanyId" = c."CompanyId" AND u."IsDeleted" = FALSE)

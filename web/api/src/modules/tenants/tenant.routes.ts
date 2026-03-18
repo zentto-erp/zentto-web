@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "node:crypto";
-import { provisionTenant, getTenantInfo, sendWelcomeEmail } from "./tenant.service.js";
+import { provisionTenant, getTenantInfo, sendWelcomeEmail, resolveTenantBySubdomain, resolveTenantByEmail } from "./tenant.service.js";
 
 export const tenantsRouter = Router();
 
@@ -70,6 +70,45 @@ tenantsRouter.post("/provision", requireMasterKey, async (req, res) => {
     const msg = err instanceof Error ? err.message : "internal_error";
     res.status(500).json({ error: msg });
   }
+});
+
+// GET /api/tenants/resolve-by-email/:email — Publico (para billing success page)
+tenantsRouter.get("/resolve-by-email/:email", async (req, res) => {
+  const email = decodeURIComponent(req.params.email || "").toLowerCase().trim();
+  if (!email || !email.includes("@")) {
+    res.status(400).json({ error: "invalid_email" });
+    return;
+  }
+  const tenant = await resolveTenantByEmail(email);
+  if (!tenant) {
+    res.status(404).json({ error: "tenant_not_found" });
+    return;
+  }
+  // No exponer datos sensibles
+  res.json({
+    CompanyId: tenant.CompanyId,
+    CompanyCode: tenant.CompanyCode,
+    LegalName: tenant.LegalName,
+    OwnerEmail: tenant.OwnerEmail,
+    Plan: tenant.Plan,
+    TenantStatus: tenant.TenantStatus,
+    TenantSubdomain: tenant.TenantSubdomain,
+  });
+});
+
+// GET /api/tenants/resolve/:subdomain — Publico (para routing multi-tenant)
+tenantsRouter.get("/resolve/:subdomain", async (req, res) => {
+  const subdomain = req.params.subdomain?.toLowerCase().trim();
+  if (!subdomain || subdomain.length < 3) {
+    res.status(400).json({ error: "invalid_subdomain" });
+    return;
+  }
+  const tenant = await resolveTenantBySubdomain(subdomain);
+  if (!tenant) {
+    res.status(404).json({ error: "tenant_not_found" });
+    return;
+  }
+  res.json(tenant);
 });
 
 // GET /api/tenants/:companyId
