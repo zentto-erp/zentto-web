@@ -32,7 +32,7 @@ declare global {
       Checkout: {
         open: (opts: {
           items: { priceId: string; quantity: number }[];
-          customer?: { email?: string };
+          customer?: { email?: string; id?: string };
           settings?: {
             successUrl?: string;
             displayMode?: string;
@@ -191,13 +191,13 @@ export default function PricingPage() {
             const priceId = planMap[autoCheckoutPlan];
             if (priceId) {
               setTimeout(() => {
+                const customer: { email?: string; id?: string } | undefined =
+                  autoCheckoutCustomerId ? { id: autoCheckoutCustomerId }
+                  : autoCheckoutEmail    ? { email: autoCheckoutEmail }
+                  : undefined;
                 window.Paddle?.Checkout.open({
                   items: [{ priceId, quantity: 1 }],
-                  ...(autoCheckoutCustomerId
-                    ? { customer: { id: autoCheckoutCustomerId } }
-                    : autoCheckoutEmail
-                      ? { customer: { email: autoCheckoutEmail } }
-                      : {}),
+                  ...(customer ? { customer } : {}),
                   settings: {
                     successUrl: 'https://app.zentto.net/billing/success',
                     displayMode: 'overlay',
