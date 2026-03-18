@@ -62,6 +62,8 @@ import { supervisionRouter } from "./modules/supervision/routes.js";
 import { storeRouter } from "./modules/ecommerce/routes.js";
 import { landingRouter } from "./modules/landing/routes.js";
 import rrhhRouter from "./modules/rrhh/routes.js";
+import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
+import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -147,6 +149,9 @@ export async function createApp() {
     res.setHeader("Expires", "0");
     next();
   });
+  // Webhooks externos — ANTES de express.json() para preservar raw body
+  app.use("/api/webhooks", paddleWebhookRouter);
+
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan("dev"));
 
@@ -172,6 +177,9 @@ export async function createApp() {
 
   // Ecommerce storefront — público (sin JWT)
   app.use("/store", storeRouter);
+
+  // Tenant provisioning — protegido por master key, sin JWT
+  app.use("/api/tenants", tenantsRouter);
 
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);

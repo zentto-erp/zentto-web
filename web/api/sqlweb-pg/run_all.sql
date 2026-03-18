@@ -537,6 +537,17 @@
 \i fixes/fix_cfg_appsetting_types.sql
 
 -- ====================================================================
+-- FASE 6.9: Multi-tenant — columnas y SPs de provisioning
+-- ====================================================================
+\echo ''
+\echo '--- Multi-tenant: ALTER cfg.Company ---'
+\i includes/sp/alter_cfg_company_tenant.sql
+\echo '--- SP usp_Cfg_Tenant_Provision ---'
+\i includes/sp/usp_cfg_tenant_provision.sql
+\echo '--- SP usp_Cfg_Tenant_GetInfo ---'
+\i includes/sp/usp_cfg_tenant_getinfo.sql
+
+-- ====================================================================
 -- FASE 7: Permisos de aplicacion
 -- ====================================================================
 \echo ''
