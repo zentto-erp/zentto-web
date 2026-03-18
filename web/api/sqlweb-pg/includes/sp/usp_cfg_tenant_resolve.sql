@@ -1,4 +1,25 @@
 -- ============================================================
+-- usp_Cfg_Tenant_SetSubdomain
+-- Actualiza el subdomain de un tenant
+-- ============================================================
+DROP FUNCTION IF EXISTS usp_Cfg_Tenant_SetSubdomain(INT, VARCHAR) CASCADE;
+
+CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_SetSubdomain(
+  p_company_id INT,
+  p_subdomain  VARCHAR(63)
+)
+RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE cfg."Company"
+  SET "TenantSubdomain" = LOWER(p_subdomain)
+  WHERE "CompanyId" = p_company_id;
+
+  RETURN QUERY SELECT TRUE, 'SUBDOMAIN_SET'::VARCHAR;
+END;
+$$;
+
+-- ============================================================
 -- usp_Cfg_Tenant_ResolveByEmail
 -- Resuelve un tenant por el email del owner (billing success)
 -- ============================================================

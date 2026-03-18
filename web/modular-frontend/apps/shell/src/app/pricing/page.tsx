@@ -133,10 +133,21 @@ const faqs = [
 
 /* ---------- Component ---------- */
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
+
 export default function PricingPage() {
   const [paddleReady, setPaddleReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Onboarding modal state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [selectedPriceId, setSelectedPriceId] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [subdomain, setSubdomain] = useState('');
+  const [subdomainError, setSubdomainError] = useState('');
+  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
+  const [subdomainOk, setSubdomainOk] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -235,20 +246,82 @@ export default function PricingPage() {
     };
   }, []);
 
+  // Sanitizar subdomain: solo letras, numeros, guiones
+  const sanitizeSubdomain = (val: string) =>
+    val.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '').slice(0, 30);
+
+  // Auto-generar subdomain desde nombre de empresa
+  const handleCompanyNameChange = (val: string) => {
+    setCompanyName(val);
+    const auto = sanitizeSubdomain(val.replace(/\s+/g, '-'));
+    setSubdomain(auto);
+    setSubdomainOk(false);
+    setSubdomainError('');
+  };
+
+  // Validar disponibilidad del subdomain
+  const checkSubdomainAvailability = useCallback(async (sub: string) => {
+    if (sub.length < 3) {
+      setSubdomainError('Minimo 3 caracteres');
+      setSubdomainOk(false);
+      return;
+    }
+    const reserved = ['app','www','api','notify','notify-dash','broker','vault','mail','admin','smtp','test'];
+    if (reserved.includes(sub)) {
+      setSubdomainError('Este subdominio esta reservado');
+      setSubdomainOk(false);
+      return;
+    }
+    setCheckingSubdomain(true);
+    setSubdomainError('');
+    try {
+      const res = await fetch(`${API_BASE}/api/tenants/resolve/${sub}`);
+      if (res.ok) {
+        setSubdomainError('Este subdominio ya esta en uso');
+        setSubdomainOk(false);
+      } else {
+        setSubdomainOk(true);
+        setSubdomainError('');
+      }
+    } catch {
+      setSubdomainOk(true); // Si la API falla, permitir (se validara en provision)
+    } finally {
+      setCheckingSubdomain(false);
+    }
+  }, []);
+
+  // Abrir modal de onboarding antes de Paddle
+  const openOnboarding = (priceId: string) => {
+    setSelectedPriceId(priceId);
+    setCompanyName('');
+    setSubdomain('');
+    setSubdomainError('');
+    setSubdomainOk(false);
+    setShowOnboarding(true);
+  };
+
+  // Proceder al checkout de Paddle con custom_data
+  const proceedToCheckout = useCallback(() => {
+    if (!paddleReady || !window.Paddle || !subdomainOk) return;
+    setShowOnboarding(false);
+    window.Paddle.Checkout.open({
+      items: [{ priceId: selectedPriceId, quantity: 1 }],
+      customData: { subdomain, companyName },
+      settings: {
+        successUrl: 'https://app.zentto.net/billing/success?source=paddle',
+        displayMode: 'overlay',
+        theme: 'light',
+        locale: 'es',
+      },
+    } as any);
+  }, [paddleReady, selectedPriceId, subdomain, companyName, subdomainOk]);
+
+  // Legacy handleCheckout para auto-checkout via URL params
   const handleCheckout = useCallback(
     (priceId: string) => {
-      if (!paddleReady || !window.Paddle) return;
-      window.Paddle.Checkout.open({
-        items: [{ priceId, quantity: 1 }],
-        settings: {
-          successUrl: 'https://app.zentto.net/billing/success?source=paddle',
-          displayMode: 'overlay',
-          theme: 'light',
-          locale: 'es',
-        },
-      });
+      openOnboarding(priceId);
     },
-    [paddleReady],
+    [],
   );
 
   return (
@@ -462,6 +535,123 @@ export default function PricingPage() {
           Precios en USD. Impuestos pueden aplicar según tu ubicación.
         </Typography>
       </Box>
+
+      {/* ── Modal Onboarding: nombre de empresa + subdomain ── */}
+      {showOnboarding && (
+        <Box
+          onClick={() => setShowOnboarding(false)}
+          sx={{
+            position: 'fixed', inset: 0, zIndex: 1300,
+            bgcolor: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            px: 2,
+          }}
+        >
+          <Paper
+            onClick={(e) => e.stopPropagation()}
+            elevation={12}
+            sx={{ p: { xs: 3, md: 5 }, borderRadius: 3, maxWidth: 480, width: '100%' }}
+          >
+            <Typography variant="h5" fontWeight={700} sx={{ color: COLORS.darkPrimary, mb: 1 }}>
+              Configura tu empresa
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+              Elige un nombre y subdominio para tu empresa. Este sera tu acceso exclusivo a Zentto.
+            </Typography>
+
+            {/* Nombre de empresa */}
+            <Box sx={{ mb: 2.5 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                Nombre de la empresa
+              </Typography>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => handleCompanyNameChange(e.target.value)}
+                placeholder="Mi Empresa S.A."
+                style={{
+                  width: '100%', padding: '12px 14px', fontSize: '15px',
+                  border: '1px solid #ddd', borderRadius: 8, outline: 'none',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </Box>
+
+            {/* Subdomain */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                Subdominio
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <input
+                  type="text"
+                  value={subdomain}
+                  onChange={(e) => {
+                    const val = sanitizeSubdomain(e.target.value);
+                    setSubdomain(val);
+                    setSubdomainOk(false);
+                    setSubdomainError('');
+                  }}
+                  onBlur={() => subdomain && checkSubdomainAvailability(subdomain)}
+                  placeholder="mi-empresa"
+                  style={{
+                    flex: 1, padding: '12px 14px', fontSize: '15px',
+                    border: `1px solid ${subdomainError ? '#e74c3c' : subdomainOk ? '#4caf50' : '#ddd'}`,
+                    borderRadius: '8px 0 0 8px', outline: 'none',
+                    fontFamily: 'monospace',
+                  }}
+                />
+                <Box sx={{
+                  bgcolor: '#f5f5f5', px: 2, py: '12px',
+                  border: '1px solid #ddd', borderLeft: 'none',
+                  borderRadius: '0 8px 8px 0', fontSize: '14px', color: '#666',
+                  whiteSpace: 'nowrap',
+                }}>
+                  .zentto.net
+                </Box>
+              </Box>
+              {checkingSubdomain && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                  Verificando disponibilidad...
+                </Typography>
+              )}
+              {subdomainError && (
+                <Typography variant="caption" sx={{ color: '#e74c3c', mt: 0.5, display: 'block' }}>
+                  {subdomainError}
+                </Typography>
+              )}
+              {subdomainOk && !subdomainError && (
+                <Typography variant="caption" sx={{ color: '#4caf50', mt: 0.5, display: 'block' }}>
+                  {subdomain}.zentto.net esta disponible
+                </Typography>
+              )}
+            </Box>
+
+            {/* Botones */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setShowOnboarding(false)}
+                sx={{ flex: 1, py: 1.5, borderRadius: 2, borderColor: '#ddd', color: '#666' }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                disabled={!subdomainOk || !companyName.trim() || checkingSubdomain}
+                onClick={proceedToCheckout}
+                sx={{
+                  flex: 1, py: 1.5, borderRadius: 2, fontWeight: 700,
+                  bgcolor: COLORS.accent, color: COLORS.darkPrimary,
+                  '&:hover': { bgcolor: '#e68a00' },
+                }}
+              >
+                Continuar al pago
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
     </Box>
   );
 }

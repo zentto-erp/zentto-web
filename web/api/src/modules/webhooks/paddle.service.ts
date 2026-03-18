@@ -46,6 +46,11 @@ export async function handlePaddleEvent(
   const priceName = (items?.[0]?.["price"] as Record<string, unknown>)?.["name"] as string | undefined;
   const subscriptionId = data["id"] as string | undefined;
 
+  // custom_data del checkout (subdomain + companyName elegidos por el usuario)
+  const customData = data["custom_data"] as Record<string, string> | undefined;
+  const chosenSubdomain = customData?.["subdomain"]?.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30) || "";
+  const chosenCompanyName = customData?.["companyName"] || customerEmail;
+
   // Determinar plan desde nombre del precio de Paddle
   const planMap: Record<string, "FREE" | "STARTER" | "PRO" | "ENTERPRISE"> = {
     free: "FREE", starter: "STARTER", pro: "PRO", enterprise: "ENTERPRISE",
@@ -53,19 +58,19 @@ export async function handlePaddleEvent(
   const planKey = (priceName ?? "starter").toLowerCase();
   const plan = planMap[planKey] ?? "STARTER";
 
-  // Generar companyCode único
-  const slug = customerEmail.split("@")[0]
-    .replace(/[^a-z0-9]/gi, "")
-    .toUpperCase()
-    .slice(0, 12);
-  const suffix = randomBytes(3).toString("hex").toUpperCase();
-  const companyCode = `${slug}${suffix}`;
+  // companyCode: usar subdomain elegido o generar uno
+  const companyCode = chosenSubdomain
+    ? chosenSubdomain.toUpperCase().replace(/-/g, "").slice(0, 20)
+    : (() => {
+        const slug = customerEmail.split("@")[0].replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 12);
+        return `${slug}${randomBytes(3).toString("hex").toUpperCase()}`;
+      })();
   const adminUserCode = customerEmail.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 40);
   const tempPassword = randomBytes(8).toString("hex");
 
   const result = await provisionTenant({
     companyCode,
-    legalName: customerEmail,
+    legalName: chosenCompanyName,
     ownerEmail: customerEmail,
     countryCode: "VE",
     baseCurrency: "USD",
@@ -76,6 +81,15 @@ export async function handlePaddleEvent(
   });
 
   if (result.ok) {
+    // Actualizar subdomain si el usuario eligió uno personalizado
+    if (chosenSubdomain) {
+      const { callSp } = await import("../../db/query.js");
+      await callSp("usp_Cfg_Tenant_SetSubdomain", {
+        CompanyId: result.companyId,
+        Subdomain: chosenSubdomain,
+      }).catch(() => {});
+    }
+
     // Registrar suscripcion en tabla sys.Subscription (no bloquea provision)
     handleWebhookEvent({
       event_type: "subscription.created",
@@ -84,7 +98,8 @@ export async function handlePaddleEvent(
       data: { ...data, custom_data: { companyId: String(result.companyId) } },
     }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
 
-    sendWelcomeEmail(customerEmail, customerEmail, tempPassword, result.companyId).catch(() => {});
+    const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
+    sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl).catch(() => {});
   }
 
   return { handled: true, companyId: result.companyId };

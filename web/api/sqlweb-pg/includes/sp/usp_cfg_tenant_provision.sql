@@ -104,10 +104,11 @@ BEGIN
     (UPPER(p_base_currency), 1.000000, CURRENT_DATE, 'PROVISION_SEED', v_system_id)
   ON CONFLICT DO NOTHING;
 
-  -- 6. Generar subdomain: companycode en minusculas
+  -- 6. Subdomain: usar companycode en minusculas con guiones
   UPDATE cfg."Company"
-  SET "TenantSubdomain" = LOWER(p_company_code)
-  WHERE "CompanyId" = v_company_id;
+  SET "TenantSubdomain" = LOWER(REPLACE(p_company_code, '_', '-'))
+  WHERE "CompanyId" = v_company_id
+    AND "TenantSubdomain" IS NULL;
 
   RETURN QUERY SELECT TRUE, 'TENANT_PROVISIONED'::VARCHAR, v_company_id, v_user_id;
 

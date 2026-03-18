@@ -71,7 +71,8 @@ export async function sendWelcomeEmail(
   ownerEmail: string,
   legalName: string,
   tempPassword: string,
-  companyId: number
+  companyId: number,
+  tenantUrl?: string
 ): Promise<void> {
   const notifyUrl = process.env.NOTIFY_BASE_URL ?? "https://notify.zentto.net";
   const notifyKey = process.env.NOTIFY_API_KEY;
@@ -96,8 +97,8 @@ export async function sendWelcomeEmail(
               <tr><td><strong>Contraseña temporal:</strong></td><td style="font-family:monospace">${tempPassword}</td></tr>
               <tr><td><strong>ID de empresa:</strong></td><td>${companyId}</td></tr>
             </table>
-            <p style="color:#e74c3c;margin-top:16px"><strong>⚠ Por seguridad, cambia tu contraseña en el primer inicio de sesión.</strong></p>
-            <p>Accede en: <a href="https://zentto.net">zentto.net</a></p>
+            <p style="color:#e74c3c;margin-top:16px"><strong>Por seguridad, cambia tu contrasena en el primer inicio de sesion.</strong></p>
+            <p>Accede en: <a href="${tenantUrl || "https://app.zentto.net"}">${tenantUrl || "app.zentto.net"}</a></p>
             <p style="color:#999;font-size:12px">— El equipo de Zentto</p>
           </div>
         `,
