@@ -94,13 +94,20 @@ async function sendByWebhook(payload: AuthMailPayload): Promise<boolean> {
   if (!url) return false;
 
   const token = String(process.env.AUTH_MAIL_WEBHOOK_TOKEN || "").trim();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["X-API-Key"] = token; // zentto-notify compatibility
+  }
+
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
+    headers,
+    body: JSON.stringify({
+      ...payload,
+      from: payload.from || MAIL_FROM,
+      track: true,
+    }),
   });
 
   return response.ok;
