@@ -107,7 +107,8 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       return;
     }
 
-    const loginUser = normalized.includes('@') ? normalized.split('@')[0] : normalized;
+    const loginUser = normalized.toUpperCase();
+    if (loginUser.length < 3) return;
 
     const timer = setTimeout(async () => {
       setLoadingCompanies(true);
