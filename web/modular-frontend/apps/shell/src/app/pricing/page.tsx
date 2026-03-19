@@ -311,7 +311,6 @@ export default function PricingPage() {
       items: [{ priceId: selectedPriceId, quantity: 1 }],
       customData: { subdomain, companyName },
       settings: {
-        successUrl: 'https://app.zentto.net/billing/success?source=paddle',
         displayMode: 'overlay',
         theme: 'light',
         locale: 'es',
