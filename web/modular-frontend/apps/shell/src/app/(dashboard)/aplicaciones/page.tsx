@@ -198,7 +198,8 @@ export default function AppsStorePage() {
     const [selectedApp, setSelectedApp] = useState<StoreApp | null>(null);
 
     const isInstalled = (id: string) => {
-        if (isAdmin) return true;
+        // Admin con todos los modulos = tiene suscripcion activa
+        if (isAdmin && modulos.length > 0) return true;
         if (id === 'ventas') return modulos.includes('facturas') || modulos.includes('cxc');
         if (id === 'compras') return modulos.includes('compras') || modulos.includes('cxp');
         return modulos.includes(id);

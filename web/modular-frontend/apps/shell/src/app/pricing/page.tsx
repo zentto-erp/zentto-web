@@ -65,6 +65,20 @@ const COLORS = {
 
 const plans: Plan[] = [
   {
+    name: 'Zentto Prueba',
+    price: 1,
+    priceId: 'pri_01km136n0k9xwj50e6s3t3jnk1',
+    highlighted: false,
+    features: [
+      '1 empresa',
+      '1 sucursal',
+      '2 usuarios',
+      'Todos los módulos',
+      'Ideal para probar el sistema',
+      '30 días de prueba',
+    ],
+  },
+  {
     name: 'Zentto Básico',
     price: 29,
     priceId: 'pri_01kky59xnge4kenjp2hav35rx0',
@@ -203,7 +217,7 @@ export default function PricingPage() {
           } as any);
           setPaddleReady(true);
 
-          // Auto-open checkout if redirected from docs-site with ?plan=
+          // Auto-open onboarding modal if redirected with ?plan=
           if (autoCheckoutPlan) {
             const planMap: Record<string, string> = {
               basico: 'pri_01kky59xnge4kenjp2hav35rx0',
@@ -213,20 +227,9 @@ export default function PricingPage() {
             const priceId = planMap[autoCheckoutPlan];
             if (priceId) {
               setTimeout(() => {
-                const customer: { email?: string; id?: string } | undefined =
-                  autoCheckoutCustomerId ? { id: autoCheckoutCustomerId }
-                  : autoCheckoutEmail    ? { email: autoCheckoutEmail }
-                  : undefined;
-                window.Paddle?.Checkout.open({
-                  items: [{ priceId, quantity: 1 }],
-                  ...(customer ? { customer } : {}),
-                  settings: {
-                    successUrl: 'https://app.zentto.net/billing/success?source=paddle',
-                    displayMode: 'overlay',
-                    theme: 'light',
-                    locale: 'es',
-                  },
-                });
+                // Abrir modal de onboarding (no Paddle directo)
+                setSelectedPriceId(priceId);
+                setShowOnboarding(true);
               }, 500);
             }
           }
@@ -369,7 +372,7 @@ export default function PricingPage() {
 
         <Grid container spacing={4} sx={{ justifyContent: 'center' }}>
           {plans.map((plan) => (
-            <Grid key={plan.priceId} size={{ xs: 12, sm: 6 }}>
+            <Grid key={plan.priceId} size={{ xs: 12, sm: 6, md: 4 }}>
               <Paper
                 elevation={plan.highlighted ? 12 : 3}
                 sx={{
