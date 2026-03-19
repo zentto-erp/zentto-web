@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useHardwareAgent } from '../hooks/useHardwareAgent';
 
 const DOWNLOAD_URL =
-  'https://github.com/zentto-erp/zentto-fiscal-agent/releases/latest/download/zentto-fiscal-agent-setup.exe';
+  'https://github.com/zentto-erp/zentto-fiscal-agent-releases/releases/latest';
 
 const SESSION_KEY = 'zentto_hardware_banner_dismissed';
 
