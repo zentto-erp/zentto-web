@@ -99,7 +99,9 @@ export async function handlePaddleEvent(
     }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
 
     const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
-    sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl).catch(() => {});
+    console.log(`[paddle] Tenant provisionado OK — companyId=${result.companyId}, email=${customerEmail}, subdomain=${chosenSubdomain || "(ninguno)"}`);
+    sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl)
+      .catch((err) => console.error("[paddle] Error enviando welcome email:", err));
   }
 
   return { handled: true, companyId: result.companyId };

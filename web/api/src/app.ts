@@ -115,19 +115,28 @@ export async function createApp() {
   const app = express();
   app.disable("etag");
   app.use(helmet());
-  // CORS: origins locales + produccion (via CORS_ORIGINS en .env)
-  const corsOrigins: string[] = [
+  // CORS: origins locales + produccion + subdominios dinamicos de tenants
+  const corsWhitelist = new Set([
     'http://localhost:3000', 'http://localhost:3100',
     'http://127.0.0.1:3000', 'http://127.0.0.1:3100',
     ...Array.from({ length: 10 }, (_, i) => `http://localhost:${3001 + i}`),
     ...Array.from({ length: 10 }, (_, i) => `http://127.0.0.1:${3001 + i}`),
-  ];
-  // Produccion: CORS_ORIGINS=https://zentto.net,https://www.zentto.net,https://app.zentto.net
+  ]);
   if (process.env.CORS_ORIGINS) {
-    corsOrigins.push(...process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean));
+    for (const o of process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) {
+      corsWhitelist.add(o);
+    }
   }
   app.use(cors({
-    origin: corsOrigins,
+    origin(origin, callback) {
+      // Permitir requests sin origin (Postman, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // Whitelist explicita
+      if (corsWhitelist.has(origin)) return callback(null, true);
+      // Cualquier subdominio *.zentto.net (tenants dinamicos)
+      if (/^https:\/\/[a-z0-9-]+\.zentto\.net$/.test(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} no permitido`));
+    },
     credentials: true,
   }));
   fs.mkdirSync(env.media.storagePath, { recursive: true });

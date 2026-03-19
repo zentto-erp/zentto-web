@@ -2,10 +2,12 @@
  * billing.service.ts — Lógica de negocio para facturación SaaS via Paddle
  */
 
+import { randomBytes } from "node:crypto";
 import { paddleApi } from "./paddle.client.js";
 import { PLANS, type WebhookEvent } from "./billing.types.js";
 import { callSp, callSpOut } from "../../db/query.js";
 import { invalidateSubscriptionCache } from "../../middleware/subscription.js";
+import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
 
 // ── Planes ───────────────────────────────────────────────────────────────────
 
@@ -115,7 +117,7 @@ async function handleSubscriptionCreated(
   const customerId = (data["customer_id"] as string) ?? null;
   const status = data["status"] as string;
   const customData = data["custom_data"] as Record<string, string> | undefined;
-  const companyId = customData?.["companyId"]
+  let companyId = customData?.["companyId"]
     ? Number(customData["companyId"])
     : null;
 
@@ -129,6 +131,82 @@ async function handleSubscriptionCreated(
     | Record<string, string>
     | undefined;
 
+  // ── Provisionar tenant si es nueva suscripción (checkout con subdomain/companyName) ──
+  const chosenSubdomain = customData?.["subdomain"]?.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30) || "";
+  const chosenCompanyName = customData?.["companyName"] || "";
+
+  if (!companyId && (chosenSubdomain || chosenCompanyName)) {
+    console.log("[billing] Nueva suscripción detectada — provisionando tenant...");
+
+    // Obtener email del customer via Paddle API
+    let customerEmail = "";
+    if (customerId) {
+      try {
+        const customer = await paddleApi.get<{ email: string }>(`/customers/${customerId}`);
+        customerEmail = customer.email;
+      } catch (err) {
+        console.error("[billing] Error obteniendo customer de Paddle:", err);
+      }
+    }
+
+    if (!customerEmail) {
+      console.error("[billing] No se pudo obtener email del customer — provisioning abortado");
+      return { handled: false, reason: "no_customer_email" };
+    }
+
+    // Determinar plan por priceId
+    const resolvedPlan: "FREE" | "STARTER" | "PRO" | "ENTERPRISE" =
+      plan?.id === "profesional" ? "PRO"
+      : plan?.id === "basico" ? "STARTER"
+      : "STARTER";
+
+    // Generar códigos
+    const companyCode = chosenSubdomain
+      ? chosenSubdomain.toUpperCase().replace(/-/g, "").slice(0, 20)
+      : (() => {
+          const slug = customerEmail.split("@")[0].replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 12);
+          return `${slug}${randomBytes(3).toString("hex").toUpperCase()}`;
+        })();
+    const adminUserCode = customerEmail.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 40);
+    const tempPassword = randomBytes(8).toString("hex");
+
+    try {
+      const result = await provisionTenant({
+        companyCode,
+        legalName: chosenCompanyName || customerEmail,
+        ownerEmail: customerEmail,
+        countryCode: "VE",
+        baseCurrency: "USD",
+        adminUserCode,
+        adminPassword: tempPassword,
+        plan: resolvedPlan,
+        paddleSubscriptionId: subscriptionId,
+      });
+
+      if (result.ok) {
+        companyId = result.companyId;
+        console.log(`[billing] Tenant provisionado: CompanyId=${companyId}`);
+
+        // Actualizar subdomain si fue personalizado
+        if (chosenSubdomain) {
+          await callSp("usp_Cfg_Tenant_SetSubdomain", {
+            CompanyId: companyId,
+            Subdomain: chosenSubdomain,
+          }).catch(() => {});
+        }
+
+        // Email de bienvenida
+        const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
+        sendWelcomeEmail(customerEmail, chosenCompanyName || customerEmail, tempPassword, companyId, tenantUrl).catch(() => {});
+      } else {
+        console.error(`[billing] Provisioning falló: ${result.mensaje}`);
+      }
+    } catch (err) {
+      console.error("[billing] Error provisionando tenant:", err);
+    }
+  }
+
+  // ── Registrar/actualizar suscripción en BD ──
   try {
     await callSpOut("usp_sys_Subscription_Upsert", {
       CompanyId: companyId,
