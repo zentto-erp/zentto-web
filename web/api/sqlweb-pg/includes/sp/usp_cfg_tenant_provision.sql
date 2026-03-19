@@ -3,6 +3,10 @@
 -- Aprovisiona un nuevo tenant: Company + Branch + User admin +
 -- UserCompanyAccess + seed moneda base
 -- Transaccional: si falla cualquier paso hace ROLLBACK
+--
+-- NOTA: Los nombres de columna de salida usan "New" prefix para
+-- evitar ambigüedad con columnas homónimas de las tablas en PL/pgSQL.
+-- El caller TS lee "NewCompanyId" y "NewUserId".
 -- ============================================================
 DROP FUNCTION IF EXISTS usp_Cfg_Tenant_Provision(
   VARCHAR, VARCHAR, VARCHAR, CHAR(2), CHAR(3), VARCHAR, VARCHAR, VARCHAR, VARCHAR
@@ -19,7 +23,7 @@ CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_Provision(
   p_plan                    VARCHAR(30)   DEFAULT 'STARTER',
   p_paddle_subscription_id  VARCHAR(100)  DEFAULT NULL
 )
-RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR, "CompanyId" INT, "UserId" INT)
+RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR, "NewCompanyId" INT, "NewUserId" INT)
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id   INT;
@@ -28,21 +32,21 @@ DECLARE
   v_system_id    INT := 1;
 BEGIN
   -- Obtener UserId del usuario SYSTEM
-  SELECT "UserId" INTO v_system_id
-  FROM sec."User" WHERE "UserCode" = 'SYSTEM' LIMIT 1;
+  SELECT u."UserId" INTO v_system_id
+  FROM sec."User" u WHERE u."UserCode" = 'SYSTEM' LIMIT 1;
 
   -- 0. Validar unicidad
   IF EXISTS (
-    SELECT 1 FROM cfg."Company"
-    WHERE LOWER("OwnerEmail") = LOWER(p_owner_email) AND "IsDeleted" = FALSE
+    SELECT 1 FROM cfg."Company" cc
+    WHERE LOWER(cc."OwnerEmail") = LOWER(p_owner_email) AND cc."IsDeleted" = FALSE
   ) THEN
     RETURN QUERY SELECT FALSE, 'EMAIL_ALREADY_EXISTS'::VARCHAR, 0, 0;
     RETURN;
   END IF;
 
   IF EXISTS (
-    SELECT 1 FROM cfg."Company"
-    WHERE UPPER("CompanyCode") = UPPER(p_company_code) AND "IsDeleted" = FALSE
+    SELECT 1 FROM cfg."Company" cc
+    WHERE UPPER(cc."CompanyCode") = UPPER(p_company_code) AND cc."IsDeleted" = FALSE
   ) THEN
     RETURN QUERY SELECT FALSE, 'COMPANY_CODE_ALREADY_EXISTS'::VARCHAR, 0, 0;
     RETURN;
@@ -105,10 +109,10 @@ BEGIN
   ON CONFLICT DO NOTHING;
 
   -- 6. Subdomain: usar companycode en minusculas con guiones
-  UPDATE cfg."Company"
+  UPDATE cfg."Company" c_upd
   SET "TenantSubdomain" = LOWER(REPLACE(p_company_code, '_', '-'))
-  WHERE "CompanyId" = v_company_id
-    AND "TenantSubdomain" IS NULL;
+  WHERE c_upd."CompanyId" = v_company_id
+    AND c_upd."TenantSubdomain" IS NULL;
 
   RETURN QUERY SELECT TRUE, 'TENANT_PROVISIONED'::VARCHAR, v_company_id, v_user_id;
 

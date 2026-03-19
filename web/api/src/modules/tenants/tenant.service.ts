@@ -10,8 +10,10 @@ export async function provisionTenant(
   const rows = await callSp<{
     ok: boolean;
     mensaje: string;
-    CompanyId: number;
-    UserId: number;
+    CompanyId?: number;
+    UserId?: number;
+    NewCompanyId?: number;
+    NewUserId?: number;
   }>("usp_Cfg_Tenant_Provision", {
     CompanyCode:           input.companyCode,
     LegalName:             input.legalName,
@@ -28,8 +30,8 @@ export async function provisionTenant(
   return {
     ok:        Boolean(row?.ok ?? false),
     mensaje:   String(row?.mensaje ?? "UNKNOWN_ERROR"),
-    companyId: Number(row?.CompanyId ?? 0),
-    userId:    Number(row?.UserId ?? 0),
+    companyId: Number(row?.NewCompanyId ?? row?.CompanyId ?? 0),
+    userId:    Number(row?.NewUserId ?? row?.UserId ?? 0),
   };
 }
 
