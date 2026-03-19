@@ -53,7 +53,7 @@ export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
   const open = Boolean(anchorEl);
   const handleClick = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
-  const handleLogout = async () => { handleClose(); await signOut({ redirect: false }); router.push('/authentication/login'); };
+  const handleLogout = async () => { handleClose(); await signOut({ redirect: false }); window.location.href = `${window.location.origin}/authentication/login`; };
   const getInitials = (name: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
   return (

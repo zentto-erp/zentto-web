@@ -71,7 +71,7 @@ async function authHeader(): Promise<Record<string, string>> {
 async function handleUnauthorized(res: Response) {
   if (res.status === 401) {
     try {
-      await signOut({ callbackUrl: '/authentication/login' });
+      await signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
     } catch {
       // noop
     }

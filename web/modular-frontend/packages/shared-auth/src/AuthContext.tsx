@@ -59,12 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const msRemaining = expiresAt - Date.now();
     if (msRemaining <= 0) {
-      void signOut({ callbackUrl: "/authentication/login" });
+      void signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
       return;
     }
 
     const timeout = window.setTimeout(() => {
-      void signOut({ callbackUrl: "/authentication/login" });
+      void signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
     }, msRemaining);
 
     return () => window.clearTimeout(timeout);
