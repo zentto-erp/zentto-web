@@ -258,7 +258,7 @@ export default function PosConfiguracionPage() {
         <Tooltip title="Dirección de red o IP local donde reside ejecutándose el Zentto Fiscal Agent." arrow placement="top">
           <TextField
             label="Agent URL"
-            value={draft['impresora.agentUrl'] ?? 'http://localhost:5059'}
+            value={draft['impresora.agentUrl'] ?? 'http://localhost:7654'}
             onChange={(e) => setValue('impresora.agentUrl', e.target.value)}
             fullWidth
           />

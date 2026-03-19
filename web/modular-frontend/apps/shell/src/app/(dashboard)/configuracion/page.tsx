@@ -555,7 +555,7 @@ export default function ConfiguracionPage() {
               <TextField
                 size="small"
                 label="Agent URL"
-                value={getValue('pos', 'impresora.agentUrl', 'http://localhost:5059')}
+                value={getValue('pos', 'impresora.agentUrl', 'http://localhost:7654')}
                 onChange={(e) => setValue('pos', 'impresora.agentUrl', e.target.value)}
                 fullWidth
               />

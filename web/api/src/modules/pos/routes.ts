@@ -19,8 +19,8 @@ import { authorizePosLineVoid } from "./supervision.service.js";
 
 export const posRouter = Router();
 
-const DEFAULT_LOCAL_FISCAL_AGENT = "http://localhost:5059";
-const DEFAULT_LOCAL_FISCAL_SERVICE_NAME = process.env.LOCAL_FISCAL_SERVICE_NAME?.trim() || "DatqBoxHardwareHub";
+const DEFAULT_LOCAL_FISCAL_AGENT = "http://localhost:7654";
+const DEFAULT_LOCAL_FISCAL_SERVICE_NAME = process.env.LOCAL_FISCAL_SERVICE_NAME?.trim() || "ZenttoFiscalAgent";
 
 function normalizeAgentUrl(raw?: string) {
     const value = (raw || "").trim();

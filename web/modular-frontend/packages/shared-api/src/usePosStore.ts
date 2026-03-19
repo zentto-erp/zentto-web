@@ -241,17 +241,17 @@ const DEFAULT_FISCAL_PRINTER: PrinterConfig = {
     marca: 'PNP',
     conexion: 'emulador',
     puerto: 'EMULADOR',
-    agentUrl: 'http://localhost:5059',
+    agentUrl: 'http://localhost:7654',
 };
 
 function normalizeAgentUrl(url: string | undefined): string {
     if (!url || !url.trim()) {
-        return 'http://localhost:5059';
+        return 'http://localhost:7654';
     }
 
     const trimmed = url.trim();
     if (trimmed.includes('localhost:5000') || trimmed.includes('127.0.0.1:5000')) {
-        return trimmed.replace(':5000', ':5059');
+        return trimmed.replace(':5000', ':7654');
     }
 
     return trimmed;
@@ -286,7 +286,7 @@ export const usePosStore = create<PosState>()(
             // ─── Estado Inicial ───
             fiscalPrinter: DEFAULT_FISCAL_PRINTER,
             kitchenPrinters: [
-                { nombre: 'Cocina Principal', conexion: 'emulador', destino: '', agentUrl: 'http://localhost:5059' },
+                { nombre: 'Cocina Principal', conexion: 'emulador', destino: '', agentUrl: 'http://localhost:7654' },
             ],
             printerStatus: null,
             localizacion: {

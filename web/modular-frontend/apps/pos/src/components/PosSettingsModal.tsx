@@ -275,7 +275,7 @@ export function PosSettingsModal({ open, onClose }: PosSettingsModalProps) {
                                 <Grid item xs={12}>
                                     <Tooltip title="Dirección de red o IP local donde reside ejecutándose el Zentto Fiscal Agent." arrow placement="top">
                                         <TextField fullWidth label="Agent URL"
-                                            value={String(draft['impresora.agentUrl'] ?? 'http://localhost:5059')}
+                                            value={String(draft['impresora.agentUrl'] ?? 'http://localhost:7654')}
                                             onChange={e => set('impresora.agentUrl', e.target.value)}
                                             disabled={!isAdmin} />
                                     </Tooltip>
