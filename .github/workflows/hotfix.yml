@@ -27,16 +27,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copiar docker-compose.prod.yml al servidor
+      - name: Copiar archivos de config al servidor
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml
+          source: "docker-compose.prod.yml,nginx/zentto.conf"
           target: /opt/zentto/
 
-      - name: Reiniciar ${{ inputs.service }}
+      - name: Aplicar nginx y reiniciar ${{ inputs.service }}
         uses: appleboy/ssh-action@v1.0.3
         env:
           SERVICE: ${{ inputs.service }}
@@ -48,6 +48,12 @@ jobs:
           script: |
             set -e
             cd /opt/zentto
+            # Actualizar nginx config si existe
+            if [ -f nginx/zentto.conf ]; then
+              cp nginx/zentto.conf /etc/nginx/sites-available/zentto.conf
+              nginx -t && nginx -s reload
+              echo "✓ Nginx recargado"
+            fi
             if [ "$SERVICE" = "all" ]; then
               docker compose -f docker-compose.prod.yml up -d --remove-orphans
             else
