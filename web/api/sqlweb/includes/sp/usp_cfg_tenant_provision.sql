@@ -56,8 +56,8 @@ BEGIN
     ) VALUES (@CompanyId, N'MAIN', N'Principal', 1, @SystemId, @SystemId);
     SET @BranchId = SCOPE_IDENTITY();
 
-    -- 3. sec.User admin
-    IF NOT EXISTS (SELECT 1 FROM sec.[User] WHERE UserCode = UPPER(@AdminUserCode))
+    -- 3. sec.User admin (unicidad por UserCode + CompanyId para soporte multi-tenant)
+    IF NOT EXISTS (SELECT 1 FROM sec.[User] WHERE UserCode = UPPER(@AdminUserCode) AND CompanyId = @CompanyId)
     BEGIN
       INSERT INTO sec.[User] (
         UserCode, UserName, PasswordHash, Email,
@@ -74,7 +74,7 @@ BEGIN
       );
       SET @UserId = SCOPE_IDENTITY();
     END ELSE BEGIN
-      SELECT @UserId = UserId FROM sec.[User] WHERE UserCode = UPPER(@AdminUserCode);
+      SELECT @UserId = UserId FROM sec.[User] WHERE UserCode = UPPER(@AdminUserCode) AND CompanyId = @CompanyId;
     END
 
     -- 4. UserCompanyAccess

@@ -65,7 +65,7 @@ export async function handlePaddleEvent(
         const slug = customerEmail.split("@")[0].replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 12);
         return `${slug}${randomBytes(3).toString("hex").toUpperCase()}`;
       })();
-  const adminUserCode = customerEmail.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 40);
+  const adminUserCode = "ADMIN";
   const tempPassword = randomBytes(8).toString("hex");
 
   const result = await provisionTenant({
@@ -100,7 +100,7 @@ export async function handlePaddleEvent(
 
     const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
     console.log(`[paddle] Tenant provisionado OK — companyId=${result.companyId}, email=${customerEmail}, subdomain=${chosenSubdomain || "(ninguno)"}`);
-    sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl)
+    sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl, adminUserCode)
       .catch((err) => console.error("[paddle] Error enviando welcome email:", err));
   }
 
