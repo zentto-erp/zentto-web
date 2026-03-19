@@ -88,7 +88,7 @@ const providers: Provider[] = [
           typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
 
         const userData = {
-          usuario: username.includes('@') ? username.split('@')[0] : username,
+          usuario: username.trim().toUpperCase(),
           clave: password || '',
           companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
           branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
