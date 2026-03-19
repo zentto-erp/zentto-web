@@ -23,6 +23,30 @@ import { buildNavigation } from '../lib/navigation';
 import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
 
 const AUTHENTICATION = { signIn, signOut };
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
+const ZENTTO_DOMAINS = new Set(['app.zentto.net', 'www.zentto.net', 'zentto.net']);
+
+// Valida que el subdominio actual exista en BD. Si no, redirige a zentto.net.
+function TenantGuard({ children }: { children: React.ReactNode }) {
+  const [ok, setOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const host = window.location.hostname;
+    const isSubdomain = host.endsWith('.zentto.net') && !ZENTTO_DOMAINS.has(host);
+    if (!isSubdomain) { setOk(true); return; }
+    const subdomain = host.replace('.zentto.net', '');
+    fetch(`${API_BASE}/api/tenants/resolve/${subdomain}`)
+      .then(r => {
+        if (!r.ok) { window.location.href = 'https://zentto.net'; return; }
+        setOk(true);
+      })
+      .catch(() => { window.location.href = 'https://zentto.net'; });
+  }, []);
+
+  if (ok === null) return null;
+  return <>{children}</>;
+}
 
 // Inner App (has access to session + auth)
 function AppContent({ children }: { children: React.ReactNode }) {
@@ -83,7 +107,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <AppRouterCacheProvider options={{ enableCssLayer: true }}>
                 <LocalizationProviderWrapper>
-                  <AppContent>{children}</AppContent>
+                  <TenantGuard>
+                    <AppContent>{children}</AppContent>
+                  </TenantGuard>
                 </LocalizationProviderWrapper>
               </AppRouterCacheProvider>
             </AuthProvider>

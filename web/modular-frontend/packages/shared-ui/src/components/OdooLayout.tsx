@@ -169,8 +169,7 @@ export default function OdooLayout({
         ? `${activeCompany.companyCode ?? ''}/${activeCompany.branchCode ?? ''} - ${activeCompany.companyName ?? ''}`
         : 'Sin empresa activa';
     const dbName = process.env.NEXT_PUBLIC_DB_NAME || 'ZenttoWeb';
-    const shellUrl = process.env.NEXT_PUBLIC_SHELL_URL || 'http://localhost:3000';
-    const goToShell = () => { window.location.href = shellUrl; };
+    const goToShell = () => { window.location.href = window.location.origin; };
 
     return (
         <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: 'background.default' }}>
