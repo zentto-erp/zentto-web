@@ -124,6 +124,25 @@ END;
 $$;
 
 -- ============================================================
+-- usp_sys_Subscription_GetByPaddleId
+-- Busca companyId por PaddleSubscriptionId (para invalidar cache)
+-- ============================================================
+DROP FUNCTION IF EXISTS usp_sys_Subscription_GetByPaddleId(VARCHAR) CASCADE;
+CREATE OR REPLACE FUNCTION usp_sys_Subscription_GetByPaddleId(
+  p_paddle_subscription_id VARCHAR(100)
+)
+RETURNS TABLE("CompanyId" INT)
+LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  SELECT s."CompanyId"
+  FROM sys."Subscription" s
+  WHERE s."PaddleSubscriptionId" = p_paddle_subscription_id
+  LIMIT 1;
+END;
+$$;
+
+-- ============================================================
 -- usp_sys_Subscription_GetByCompany
 -- Obtiene la suscripcion activa de una empresa
 -- ============================================================

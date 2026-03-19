@@ -196,6 +196,20 @@ export async function createApp() {
   app.use("/v1", localizeResponseDateTimes);
   app.use("/v1/auth", authRouter);
 
+  // Subscription check — después de auth, antes de rutas de negocio
+  // Excluye: /v1/auth, /v1/billing, /v1/config (necesarios para renovar suscripción)
+  {
+    const { requireSubscription } = await import("./middleware/subscription.js");
+    app.use("/v1", (req, res, next) => {
+      const path = req.path;
+      // Rutas exentas de verificación de suscripción
+      if (path.startsWith("/auth") || path.startsWith("/billing") || path.startsWith("/config") || path.startsWith("/settings")) {
+        return next();
+      }
+      return requireSubscription(req, res, next);
+    });
+  }
+
   // Documentos Unificados (reemplazan a facturas, pedidos, cotizaciones, presupuestos, notas, compras, ordenes)
   app.use("/v1/documentos-venta", documentosVentaRouter);
   app.use("/v1/documentos-compra", documentosCompraRouter);

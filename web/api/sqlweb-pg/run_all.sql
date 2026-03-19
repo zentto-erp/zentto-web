@@ -555,6 +555,8 @@
 \i includes/sp/usp_sys_billing.sql
 \echo '--- SP usp_Cfg_Tenant_ResolveSubdomain ---'
 \i includes/sp/usp_cfg_tenant_resolve.sql
+\echo '--- SP usp_sys_Subscription_CheckAccess ---'
+\i includes/sp/usp_sys_subscription_check.sql
 
 -- ====================================================================
 -- FASE 7: Permisos de aplicacion

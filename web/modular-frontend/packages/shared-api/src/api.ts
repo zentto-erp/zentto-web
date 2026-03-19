@@ -69,11 +69,26 @@ async function authHeader(): Promise<Record<string, string>> {
 }
 
 async function handleUnauthorized(res: Response) {
-  if (res.status !== 401) return;
-  try {
-    await signOut({ callbackUrl: '/authentication/login' });
-  } catch {
-    // noop
+  if (res.status === 401) {
+    try {
+      await signOut({ callbackUrl: '/authentication/login' });
+    } catch {
+      // noop
+    }
+    return;
+  }
+  // Suscripción vencida → redirigir a página de renovación
+  if (res.status === 403) {
+    try {
+      const data = await res.clone().json();
+      if (data?.error === 'subscription_required') {
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('subscription-expired')) {
+          window.location.href = '/subscription-expired';
+        }
+      }
+    } catch {
+      // noop
+    }
   }
 }
 

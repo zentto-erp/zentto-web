@@ -5,6 +5,7 @@
 import { paddleApi } from "./paddle.client.js";
 import { PLANS, type WebhookEvent } from "./billing.types.js";
 import { callSp, callSpOut } from "../../db/query.js";
+import { invalidateSubscriptionCache } from "../../middleware/subscription.js";
 
 // ── Planes ───────────────────────────────────────────────────────────────────
 
@@ -139,6 +140,7 @@ async function handleSubscriptionCreated(
       CurrentPeriodStart: currentPeriod?.["starts_at"] ?? null,
       CurrentPeriodEnd: currentPeriod?.["ends_at"] ?? null,
     });
+    if (companyId) invalidateSubscriptionCache(companyId);
   } catch (err) {
     console.error("[billing] Error guardando subscription.created:", err);
   }
@@ -171,11 +173,24 @@ async function handleSubscriptionUpdated(
       CurrentPeriodStart: currentPeriod?.["starts_at"] ?? null,
       CurrentPeriodEnd: currentPeriod?.["ends_at"] ?? null,
     });
+    // Invalidar cache de la empresa asociada
+    await invalidateByPaddleSubId(subscriptionId);
   } catch (err) {
     console.error("[billing] Error guardando subscription.updated:", err);
   }
 
   return { handled: true };
+}
+
+/** Busca companyId por PaddleSubscriptionId e invalida su cache */
+async function invalidateByPaddleSubId(paddleSubId: string) {
+  try {
+    const rows = await callSp<{ CompanyId: number }>(
+      "usp_sys_Subscription_GetByPaddleId",
+      { PaddleSubscriptionId: paddleSubId }
+    );
+    if (rows[0]?.CompanyId) invalidateSubscriptionCache(rows[0].CompanyId);
+  } catch { /* ignore */ }
 }
 
 async function handleSubscriptionCanceled(
@@ -190,6 +205,7 @@ async function handleSubscriptionCanceled(
       Status: "canceled",
       CancelledAt: canceledAt,
     });
+    await invalidateByPaddleSubId(subscriptionId);
   } catch (err) {
     console.error("[billing] Error guardando subscription.canceled:", err);
   }
