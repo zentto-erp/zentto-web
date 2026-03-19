@@ -41,6 +41,8 @@ const CheckCircleIcon = dynamic(() => import('@mui/icons-material/CheckCircle'),
 const StarIcon = dynamic(() => import('@mui/icons-material/Star'), { ssr: false });
 const UpdateIcon = dynamic(() => import('@mui/icons-material/Update'), { ssr: false });
 const PeopleIcon = dynamic(() => import('@mui/icons-material/People'), { ssr: false });
+const RocketLaunchIcon = dynamic(() => import('@mui/icons-material/RocketLaunch'), { ssr: false });
+const LockIcon = dynamic(() => import('@mui/icons-material/Lock'), { ssr: false });
 
 interface StoreApp {
     id: string;
@@ -280,16 +282,18 @@ export default function AppsStorePage() {
                                     ) : (
                                         <Button
                                             variant="contained"
-                                            color="primary"
                                             size="small"
+                                            startIcon={<LockIcon />}
+                                            onClick={() => router.push('/pricing')}
                                             sx={{
-                                                bgcolor: theme.palette.primary.main,
+                                                bgcolor: '#6C63FF',
                                                 fontWeight: 600,
                                                 textTransform: 'none',
-                                                boxShadow: 'none'
+                                                boxShadow: 'none',
+                                                '&:hover': { bgcolor: '#5b54e6' },
                                             }}
                                         >
-                                            Instalar
+                                            Suscribirse
                                         </Button>
                                     )}
                                     <Button
@@ -380,7 +384,7 @@ export default function AppsStorePage() {
                                 </Box>
                             </Box>
 
-                            {isInstalled(selectedApp.id) && (
+                            {isInstalled(selectedApp.id) ? (
                                 <Box sx={{
                                     p: 2,
                                     bgcolor: '#e8f5e9',
@@ -392,6 +396,20 @@ export default function AppsStorePage() {
                                     <CheckCircleIcon color="success" />
                                     <Typography variant="body2" color="success.dark">
                                         Esta aplicación está instalada y lista para usar.
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Box sx={{
+                                    p: 2,
+                                    bgcolor: '#f3f0ff',
+                                    borderRadius: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1
+                                }}>
+                                    <RocketLaunchIcon sx={{ color: '#6C63FF' }} />
+                                    <Typography variant="body2" sx={{ color: '#5b54e6' }}>
+                                        Suscribete a un plan para acceder a este modulo.
                                     </Typography>
                                 </Box>
                             )}
@@ -416,8 +434,16 @@ export default function AppsStorePage() {
                                     Abrir Aplicación
                                 </Button>
                             ) : (
-                                <Button variant="contained" color="primary">
-                                    Instalar Ahora
+                                <Button
+                                    variant="contained"
+                                    startIcon={<RocketLaunchIcon />}
+                                    onClick={() => {
+                                        setSelectedApp(null);
+                                        router.push('/pricing');
+                                    }}
+                                    sx={{ bgcolor: '#6C63FF', '&:hover': { bgcolor: '#5b54e6' } }}
+                                >
+                                    Ver planes y suscribirse
                                 </Button>
                             )}
                         </DialogActions>
