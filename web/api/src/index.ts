@@ -1,13 +1,18 @@
 ﻿import "dotenv/config";
+import { createServer } from "node:http";
 import cron from "node-cron";
 import { createApp } from "./app.js";
 import { warmUp } from "./modules/inventario/inventario-cache.js";
 import { getTasasBCV, triggerSyncTasas } from "./modules/config/service.js";
+import { attachFiscalRelayWs } from "./modules/pos/fiscal-relay.js";
 
 const port = Number(process.env.PORT || 4000);
 const app = await createApp();
 
-app.listen(port, () => {
+const httpServer = createServer(app);
+attachFiscalRelayWs(httpServer);
+
+httpServer.listen(port, () => {
   console.log(`[api] listening on :${port}`);
 
   // Pre-calentar caché de inventario (~64k artículos) en background

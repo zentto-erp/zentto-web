@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { spawn } from "node:child_process";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { sendFiscalCommand, isAgentConnected, listConnectedAgents } from "./fiscal-relay.js";
 import {
     listProductosPOS,
     getProductoByCodigo,
@@ -295,10 +296,34 @@ async function executeWindowsServiceAction(params: { action: "start" | "stop" | 
     }
 }
 
-async function proxyFiscalGet(res: any, path: string, query: Record<string, string | undefined>) {
+interface RelayContext { companyId: number; cashRegisterId: string; }
+
+async function proxyFiscalGet(
+    res: any,
+    path: string,
+    query: Record<string, string | undefined>,
+    relay?: RelayContext
+) {
     if (query.conexion === "emulador") {
         return res.status(200).json(emulatorResponse(path));
     }
+
+    // Relay WebSocket: si el agente está conectado, enviar via WS
+    if (relay && isAgentConnected(relay.companyId, relay.cashRegisterId)) {
+        try {
+            const result = await sendFiscalCommand(
+                relay.companyId, relay.cashRegisterId,
+                path, "GET", query, 60_000
+            );
+            if (result) return res.status(result.status).json(result.data);
+        } catch (err: any) {
+            if (err?.message === "agent_timeout") {
+                return res.status(504).json({ success: false, message: "El agente fiscal no respondió a tiempo" });
+            }
+            // Fallback al proxy HTTP si el relay falla por otro motivo
+        }
+    }
+
     try {
         const agentUrl = normalizeAgentUrl(query.agentUrl);
         const params = new URLSearchParams();
@@ -327,10 +352,33 @@ async function proxyFiscalGet(res: any, path: string, query: Record<string, stri
     }
 }
 
-async function proxyFiscalPost(res: any, path: string, body: Record<string, unknown>) {
+async function proxyFiscalPost(
+    res: any,
+    path: string,
+    body: Record<string, unknown>,
+    relay?: RelayContext
+) {
     if (body.conexion === "emulador") {
         return res.status(200).json(emulatorResponse(path));
     }
+
+    // Relay WebSocket: si el agente está conectado, enviar via WS
+    if (relay && isAgentConnected(relay.companyId, relay.cashRegisterId)) {
+        try {
+            const { agentUrl: _skip, ...payload } = body;
+            const result = await sendFiscalCommand(
+                relay.companyId, relay.cashRegisterId,
+                path, "POST", payload, 60_000
+            );
+            if (result) return res.status(result.status).json(result.data);
+        } catch (err: any) {
+            if (err?.message === "agent_timeout") {
+                return res.status(504).json({ success: false, message: "El agente fiscal no respondió a tiempo" });
+            }
+            // Fallback al proxy HTTP si el relay falla
+        }
+    }
+
     try {
         const agentUrl = normalizeAgentUrl(typeof body.agentUrl === "string" ? body.agentUrl : undefined);
         const { agentUrl: _agentUrl, ...payload } = body;
@@ -508,12 +556,13 @@ posRouter.get("/reportes/cajas", async (req, res) => {
     res.json(data);
 });
 
-// ═══ Proxy Fiscal (Agente Local) ═══
+// ═══ Proxy Fiscal (Agente Local / Relay WebSocket) ═══
 const fiscalActionSchema = z.object({
     marca: z.string().min(1),
     puerto: z.string().min(1),
     conexion: z.string().min(1),
     agentUrl: z.string().url().optional(),
+    cashRegisterId: z.string().optional(), // ID de caja para relay WebSocket
 });
 
 const fiscalServiceActionSchema = z.object({
@@ -530,10 +579,17 @@ const fiscalDocumentoNoFiscalSchema = fiscalActionSchema.extend({
     lineas: z.array(z.string()).optional(),
 });
 
+/** Extrae RelayContext de la request autenticada */
+function getRelayContext(req: any, cashRegisterId?: string): RelayContext | undefined {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.companyId) return undefined;
+    return { companyId: user.companyId, cashRegisterId: cashRegisterId || "DEFAULT" };
+}
+
 posRouter.get("/fiscal/metodos", async (req, res) => {
     return proxyFiscalGet(res, "/api/fiscal/metodos", {
         agentUrl: req.query.agentUrl as string | undefined,
-    });
+    }, getRelayContext(req, req.query.cashRegisterId as string));
 });
 
 posRouter.get("/fiscal/status", async (req, res) => {
@@ -542,6 +598,17 @@ posRouter.get("/fiscal/status", async (req, res) => {
         puerto: req.query.puerto as string | undefined,
         conexion: req.query.conexion as string | undefined,
         agentUrl: req.query.agentUrl as string | undefined,
+    }, getRelayContext(req, req.query.cashRegisterId as string));
+});
+
+// Estado del relay: informa al frontend si el agente WebSocket está conectado
+posRouter.get("/fiscal/relay/status", async (req, res) => {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.companyId) return res.status(401).json({ error: "unauthorized" });
+    const cashRegisterId = (req.query.cashRegisterId as string) || "DEFAULT";
+    return res.json({
+        connected: isAgentConnected(user.companyId, cashRegisterId),
+        agents: listConnectedAgents(user.companyId),
     });
 });
 
@@ -583,13 +650,15 @@ posRouter.post("/fiscal/agent/restart", async (req, res) => {
 posRouter.post("/fiscal/reporte/x", async (req, res) => {
     const parsed = fiscalActionSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/fiscal/reporte/x", parsed.data as Record<string, unknown>);
+    return proxyFiscalPost(res, "/api/fiscal/reporte/x", parsed.data as Record<string, unknown>,
+        getRelayContext(req, parsed.data.cashRegisterId));
 });
 
 posRouter.post("/fiscal/reporte/z", async (req, res) => {
     const parsed = fiscalActionSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/fiscal/reporte/z", parsed.data as Record<string, unknown>);
+    return proxyFiscalPost(res, "/api/fiscal/reporte/z", parsed.data as Record<string, unknown>,
+        getRelayContext(req, parsed.data.cashRegisterId));
 });
 
 posRouter.get("/fiscal/reporte/mensual", async (req, res) => {
@@ -600,7 +669,7 @@ posRouter.get("/fiscal/reporte/mensual", async (req, res) => {
         puerto: req.query.puerto as string | undefined,
         conexion: req.query.conexion as string | undefined,
         agentUrl: req.query.agentUrl as string | undefined,
-    });
+    }, getRelayContext(req, req.query.cashRegisterId as string));
 });
 
 posRouter.get("/fiscal/memoria", async (req, res) => {
@@ -609,17 +678,19 @@ posRouter.get("/fiscal/memoria", async (req, res) => {
         puerto: req.query.puerto as string | undefined,
         conexion: req.query.conexion as string | undefined,
         agentUrl: req.query.agentUrl as string | undefined,
-    });
+    }, getRelayContext(req, req.query.cashRegisterId as string));
 });
 
 posRouter.post("/fiscal/documento-no-fiscal", async (req, res) => {
     const parsed = fiscalDocumentoNoFiscalSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/fiscal/documento-no-fiscal", parsed.data as Record<string, unknown>);
+    return proxyFiscalPost(res, "/api/fiscal/documento-no-fiscal", parsed.data as Record<string, unknown>,
+        getRelayContext(req, parsed.data.cashRegisterId));
 });
 
 posRouter.post("/fiscal/print", async (req, res) => {
     const parsed = fiscalPrintSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/print", parsed.data as Record<string, unknown>);
+    return proxyFiscalPost(res, "/api/print", parsed.data as Record<string, unknown>,
+        getRelayContext(req, parsed.data.cashRegisterId));
 });
