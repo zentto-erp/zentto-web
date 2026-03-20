@@ -22,7 +22,7 @@ export default function Logo({ size = 'medium' }: LogoProps) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 4px 12px ${theme.palette.primary.main}40`,
       }}>
-        <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: s.font, letterSpacing: 1 }}>DB</Typography>
+        <img src="/logo-blanco.svg" alt="Zentto" style={{ width: s.box * 0.75, height: s.box * 0.75, objectFit: 'contain' }} />
       </Box>
       <Box textAlign="center">
         <Typography variant={s.title} component="h1"

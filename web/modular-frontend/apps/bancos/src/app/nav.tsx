@@ -17,11 +17,11 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
         nav.push({ kind: 'page', segment: 'entidades', title: 'Bancos', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'cuentas', title: 'Cuentas Bancarias', icon: <CreditCardIcon /> });
-        nav.push({ kind: 'page', segment: 'movimientos/generar', title: 'Generar Movimiento', icon: <AddCardIcon /> });
+        nav.push({ kind: 'page', segment: 'cuentas', title: 'Cuentas bancarias', icon: <CreditCardIcon /> });
+        nav.push({ kind: 'page', segment: 'movimientos/generar', title: 'Generar movimiento', icon: <AddCardIcon /> });
         nav.push({ kind: 'page', segment: 'conciliacion', title: 'Conciliaciones', icon: <CompareArrowsIcon /> });
-        nav.push({ kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva Conciliación', icon: <PlaylistAddCheckIcon /> });
-        nav.push({ kind: 'page', segment: 'caja-chica', title: 'Caja Chica', icon: <LocalAtmIcon /> });
+        nav.push({ kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva conciliación', icon: <PlaylistAddCheckIcon /> });
+        nav.push({ kind: 'page', segment: 'caja-chica', title: 'Caja chica', icon: <LocalAtmIcon /> });
     }
 
     return nav;

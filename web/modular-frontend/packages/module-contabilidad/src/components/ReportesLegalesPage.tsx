@@ -48,17 +48,17 @@ interface TabDef {
 }
 
 const VE_TABS: TabDef[] = [
-  { label: "Balance General", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1" },
-  { label: "Estado de Resultados", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 81-105" },
-  { label: "Cambios Patrimonio", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 106-110" },
-  { label: "Flujos de Efectivo", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 7" },
+  { label: "Balance general", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1" },
+  { label: "Estado de resultados", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 81-105" },
+  { label: "Cambios patrimonio", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 106-110" },
+  { label: "Flujos de efectivo", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 7" },
   { label: "REME", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 29 - Reexpresion por inflacion" },
-  { label: "Balance Comprobacion", framework: "VEN-NIF", legalRef: "Art. 35 Codigo de Comercio venezolano" },
+  { label: "Balance comprobación", framework: "VEN-NIF", legalRef: "Art. 35 Codigo de Comercio venezolano" },
 ];
 
 const ES_TABS: TabDef[] = [
-  { label: "Balance Situacion", framework: "PGC", legalRef: "PGC - Tercera parte / Real Decreto 1514/2007" },
-  { label: "Perdidas y Ganancias", framework: "PGC", legalRef: "PGC - Tercera parte, Cuenta de PyG" },
+  { label: "Balance situación", framework: "PGC", legalRef: "PGC - Tercera parte / Real Decreto 1514/2007" },
+  { label: "Pérdidas y ganancias", framework: "PGC", legalRef: "PGC - Tercera parte, Cuenta de PyG" },
   { label: "ECPN", framework: "PGC", legalRef: "PGC - Tercera parte, Estado de cambios en el patrimonio neto" },
   { label: "EFE", framework: "PGC", legalRef: "PGC - Tercera parte, Estado de flujos de efectivo / NIC 7" },
 ];
@@ -215,7 +215,7 @@ export default function ReportesLegalesPage() {
           </ToggleButtonGroup>
 
           <TextField
-            label="Fecha Desde"
+            label="Fecha desde"
             type="date"
             size="small"
             value={fechaDesde}
@@ -223,7 +223,7 @@ export default function ReportesLegalesPage() {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Fecha Hasta"
+            label="Fecha hasta"
             type="date"
             size="small"
             value={fechaHasta}
@@ -231,7 +231,7 @@ export default function ReportesLegalesPage() {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Fecha Corte"
+            label="Fecha corte"
             type="date"
             size="small"
             value={fechaCorte}

@@ -75,10 +75,10 @@ export default function LibroFiscalPage() {
       renderCell: (p) => <Chip label={p.value} size="small" variant="outlined" />,
     },
     { field: "ThirdPartyId", headerName: "RIF/NIF", width: 120 },
-    { field: "ThirdPartyName", headerName: "Razon Social", flex: 1, minWidth: 180 },
+    { field: "ThirdPartyName", headerName: "Razón social", flex: 1, minWidth: 180 },
     {
       field: "TaxableBase",
-      headerName: "Base Imponible",
+      headerName: "Base imponible",
       width: 130,
       renderCell: (p) => formatCurrency(p.value),
     },
@@ -124,7 +124,7 @@ export default function LibroFiscalPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Libro Fiscal de Compras / Ventas" />
+      <ContextActionHeader title="Libro fiscal de compras / ventas" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filtros */}
@@ -167,7 +167,7 @@ export default function LibroFiscalPage() {
             disabled={!filter.periodCode || generarMutation.isPending}
             startIcon={generarMutation.isPending ? <CircularProgress size={16} /> : <AutorenewIcon />}
           >
-            Generar Libro
+            Generar libro
           </Button>
           <Button
             variant="outlined"
@@ -201,7 +201,7 @@ export default function LibroFiscalPage() {
         {resumenRows.length > 0 && (
           <Paper sx={{ mt: 3, p: 2, border: "1px solid #E5E7EB" }}>
             <Typography variant="h6" fontWeight={600} mb={1}>
-              Resumen por Tasa Impositiva
+              Resumen por tasa impositiva
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Table size="small">

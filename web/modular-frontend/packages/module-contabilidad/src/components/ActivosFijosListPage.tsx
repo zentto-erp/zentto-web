@@ -46,10 +46,10 @@ const STATUS_OPTIONS = [
 ];
 
 const DEPRECIATION_METHODS = [
-  { value: "STRAIGHT_LINE", label: "Línea Recta" },
-  { value: "DOUBLE_DECLINING", label: "Doble Declinación" },
-  { value: "UNITS_PRODUCED", label: "Unidades Producidas" },
-  { value: "NONE", label: "Sin Depreciación" },
+  { value: "STRAIGHT_LINE", label: "Línea recta" },
+  { value: "DOUBLE_DECLINING", label: "Doble declinación" },
+  { value: "UNITS_PRODUCED", label: "Unidades producidas" },
+  { value: "NONE", label: "Sin depreciación" },
 ];
 
 const statusColor = (s: string) => {
@@ -103,10 +103,10 @@ export default function ActivosFijosListPage() {
       width: 150,
       renderCell: (p) => <Chip label={p.value} size="small" variant="outlined" />,
     },
-    { field: "AcquisitionDate", headerName: "Fecha Adq.", width: 120 },
+    { field: "AcquisitionDate", headerName: "Fecha adq.", width: 120 },
     {
       field: "AcquisitionCost",
-      headerName: "Costo Adq.",
+      headerName: "Costo adq.",
       width: 140,
       renderCell: (p) => formatCurrency(p.value),
     },
@@ -178,9 +178,9 @@ export default function ActivosFijosListPage() {
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
-        title="Activos Fijos"
+        title="Activos fijos"
         primaryAction={{
-          label: "Nuevo Activo",
+          label: "Nuevo activo",
           onClick: () => setOpenCreate(true),
         }}
       />
@@ -246,7 +246,7 @@ export default function ActivosFijosListPage() {
 
       {/* Dialog Crear Activo */}
       <Dialog open={openCreate} onClose={() => setOpenCreate(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Nuevo Activo Fijo</DialogTitle>
+        <DialogTitle>Nuevo activo fijo</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction="row" spacing={2}>
@@ -288,7 +288,7 @@ export default function ActivosFijosListPage() {
                 </Select>
               </FormControl>
               <TextField
-                label="Fecha Adquisición"
+                label="Fecha adquisición"
                 type="date"
                 fullWidth
                 size="small"
@@ -299,7 +299,7 @@ export default function ActivosFijosListPage() {
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Costo Adquisición"
+                label="Costo adquisición"
                 type="number"
                 fullWidth
                 size="small"
@@ -307,7 +307,7 @@ export default function ActivosFijosListPage() {
                 onChange={(e) => setField("acquisitionCost", Number(e.target.value))}
               />
               <TextField
-                label="Valor Residual"
+                label="Valor residual"
                 type="number"
                 fullWidth
                 size="small"
@@ -337,21 +337,21 @@ export default function ActivosFijosListPage() {
             </FormControl>
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Cuenta Activo"
+                label="Cuenta activo"
                 fullWidth
                 size="small"
                 value={form.assetAccountCode}
                 onChange={(e) => setField("assetAccountCode", e.target.value)}
               />
               <TextField
-                label="Cuenta Dep. Acum."
+                label="Cuenta dep. acum."
                 fullWidth
                 size="small"
                 value={form.deprecAccountCode}
                 onChange={(e) => setField("deprecAccountCode", e.target.value)}
               />
               <TextField
-                label="Cuenta Gasto"
+                label="Cuenta gasto"
                 fullWidth
                 size="small"
                 value={form.expenseAccountCode}
@@ -391,7 +391,7 @@ export default function ActivosFijosListPage() {
 
       {/* Dialog Dar de Baja */}
       <Dialog open={disposeId != null} onClose={() => setDisposeId(null)}>
-        <DialogTitle>Dar de Baja Activo</DialogTitle>
+        <DialogTitle>Dar de baja activo</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
             Esta acción registrará la baja del activo y no se puede deshacer.

@@ -32,10 +32,10 @@ import {
 } from "../hooks/useActivosFijos";
 
 const DEPRECIATION_METHODS = [
-  { value: "STRAIGHT_LINE", label: "Linea Recta" },
-  { value: "DOUBLE_DECLINING", label: "Doble Declinacion" },
-  { value: "UNITS_PRODUCED", label: "Unidades Producidas" },
-  { value: "NONE", label: "Sin Depreciacion" },
+  { value: "STRAIGHT_LINE", label: "Línea recta" },
+  { value: "DOUBLE_DECLINING", label: "Doble declinación" },
+  { value: "UNITS_PRODUCED", label: "Unidades producidas" },
+  { value: "NONE", label: "Sin depreciación" },
 ];
 
 const methodLabel = (m: string) =>
@@ -89,13 +89,13 @@ export default function CategoriasActivosPage() {
     { field: "CategoryName", headerName: "Nombre", flex: 1, minWidth: 200 },
     {
       field: "DefaultUsefulLifeMonths",
-      headerName: "Vida Util",
+      headerName: "Vida útil",
       width: 150,
       renderCell: (p) => formatLifespan(p.value),
     },
     {
       field: "DefaultDepreciationMethod",
-      headerName: "Metodo Dep.",
+      headerName: "Método dep.",
       width: 170,
       renderCell: (p) => <Chip label={methodLabel(p.value)} size="small" variant="outlined" />,
     },
@@ -157,7 +157,7 @@ export default function CategoriasActivosPage() {
       <ContextActionHeader
         title="Categorias de Activos Fijos"
         primaryAction={{
-          label: "Nueva Categoria",
+          label: "Nueva categoría",
           onClick: handleNew,
         }}
       />
@@ -178,7 +178,7 @@ export default function CategoriasActivosPage() {
 
       {/* Dialog Crear/Editar Categoria */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEditing ? "Editar Categoria" : "Nueva Categoria"}</DialogTitle>
+        <DialogTitle>{isEditing ? "Editar categoría" : "Nueva categoría"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction="row" spacing={2}>
@@ -200,7 +200,7 @@ export default function CategoriasActivosPage() {
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Vida Util (meses)"
+                label="Vida útil (meses)"
                 type="number"
                 fullWidth
                 size="small"
@@ -208,9 +208,9 @@ export default function CategoriasActivosPage() {
                 onChange={(e) => setField("defaultUsefulLifeMonths", Number(e.target.value))}
               />
               <FormControl size="small" fullWidth>
-                <InputLabel>Metodo Depreciacion</InputLabel>
+                <InputLabel>Método depreciación</InputLabel>
                 <Select
-                  label="Metodo Depreciacion"
+                  label="Método depreciación"
                   value={form.defaultDepreciationMethod}
                   onChange={(e) => setField("defaultDepreciationMethod", e.target.value)}
                 >
@@ -240,21 +240,21 @@ export default function CategoriasActivosPage() {
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Cuenta Activo"
+                label="Cuenta activo"
                 fullWidth
                 size="small"
                 value={form.defaultAssetAccountCode}
                 onChange={(e) => setField("defaultAssetAccountCode", e.target.value)}
               />
               <TextField
-                label="Cuenta Dep. Acum."
+                label="Cuenta dep. acum."
                 fullWidth
                 size="small"
                 value={form.defaultDeprecAccountCode}
                 onChange={(e) => setField("defaultDeprecAccountCode", e.target.value)}
               />
               <TextField
-                label="Cuenta Gasto"
+                label="Cuenta gasto"
                 fullWidth
                 size="small"
                 value={form.defaultExpenseAccountCode}

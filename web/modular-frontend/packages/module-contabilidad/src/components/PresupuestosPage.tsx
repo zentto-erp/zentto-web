@@ -121,7 +121,7 @@ function PresupuestoFormDialog({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {isEditing ? "Editar Presupuesto" : "Crear Presupuesto"}
+        {isEditing ? "Editar presupuesto" : "Crear presupuesto"}
       </DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{error}</Alert>}
@@ -134,7 +134,7 @@ function PresupuestoFormDialog({
             size="small"
           />
           <TextField
-            label="Ano Fiscal"
+            label="Año fiscal"
             type="number"
             value={form.fiscalYear}
             onChange={(e) => setForm({ ...form, fiscalYear: Number(e.target.value) })}
@@ -248,7 +248,7 @@ function PresupuestoDetailView({
     })),
     {
       field: "annualTotal",
-      headerName: "Total Anual",
+      headerName: "Total anual",
       width: 130,
       type: "number" as const,
       renderCell: (p: any) => (
@@ -269,7 +269,7 @@ function PresupuestoDetailView({
           {detail?.name || "Presupuesto"}
         </Typography>
         {detail && (
-          <Chip label={`Ano ${detail.fiscalYear}`} color="primary" variant="outlined" />
+          <Chip label={`Año ${detail.fiscalYear}`} color="primary" variant="outlined" />
         )}
         {detail?.costCenterCode && (
           <Chip label={`CC: ${detail.costCenterCode}`} variant="outlined" />
@@ -282,7 +282,7 @@ function PresupuestoDetailView({
             onClick={handleSave}
             disabled={updateMutation.isPending}
           >
-            Guardar Cambios
+            Guardar cambios
           </Button>
         )}
       </Stack>
@@ -548,10 +548,10 @@ export default function PresupuestosPage() {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "name", headerName: "Nombre", flex: 1, minWidth: 200 },
-    { field: "fiscalYear", headerName: "Ano", width: 80 },
+    { field: "fiscalYear", headerName: "Año", width: 80 },
     {
       field: "costCenterCode",
-      headerName: "Centro Costo",
+      headerName: "Centro costo",
       width: 140,
       renderCell: (p) => p.value || <Typography variant="body2" color="text.secondary">Global</Typography>,
     },
@@ -591,7 +591,7 @@ export default function PresupuestosPage() {
       sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver Detalle">
+          <Tooltip title="Ver detalle">
             <IconButton size="small" color="primary" onClick={() => setSelectedId(p.row.id)}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
@@ -636,7 +636,7 @@ export default function PresupuestosPage() {
         <Stack direction="row" spacing={2} alignItems="center">
           <TextField
             select
-            label="Ano Fiscal"
+            label="Año fiscal"
             value={fiscalYear}
             onChange={(e) => setFiscalYear(Number(e.target.value))}
             size="small"

@@ -232,7 +232,7 @@ function CentroCostoDialog({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {isEditing ? "Editar Centro de Costo" : "Crear Centro de Costo"}
+        {isEditing ? "Editar centro de costo" : "Crear centro de costo"}
       </DialogTitle>
       <DialogContent>
         {error && (
@@ -259,7 +259,7 @@ function CentroCostoDialog({
           />
           <TextField
             select
-            label="Centro Padre"
+            label="Centro padre"
             value={form.parentCode ?? ""}
             onChange={(e) =>
               setForm({ ...form, parentCode: e.target.value || null })
@@ -307,7 +307,7 @@ function PnLByCostCenterTab() {
   }, [data]);
 
   const columns: GridColDef[] = [
-    { field: "costCenterCode", headerName: "Centro Costo", width: 140 },
+    { field: "costCenterCode", headerName: "Centro costo", width: 140 },
     { field: "costCenterName", headerName: "Nombre", flex: 1, minWidth: 180 },
     {
       field: "ingresos",

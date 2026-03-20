@@ -13,7 +13,7 @@ export default function AppTitle({ lightText = false }: { lightText?: boolean })
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 2px 8px ${theme.palette.primary.main}30`,
       }}>
-        <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '0.9rem', letterSpacing: 1, lineHeight: 1 }}>DB</Typography>
+        <img src="/logo-blanco.svg" alt="Zentto" style={{ width: 28, height: 28, objectFit: 'contain' }} />
       </Box>
       <Box sx={{ overflow: 'hidden' }}>
         <Typography variant="subtitle1" component="span" display="block"

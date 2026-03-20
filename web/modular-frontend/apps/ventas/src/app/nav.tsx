@@ -23,7 +23,7 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
         nav.push({ kind: 'page', segment: 'facturas', title: 'Facturas', icon: <ReceiptIcon /> });
         nav.push({ kind: 'page', segment: 'clientes', title: 'Clientes', icon: <PeopleIcon /> });
-        nav.push({ kind: 'page', segment: 'cxc', title: 'Cuentas por Cobrar', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'page', segment: 'cxc', title: 'Cuentas por cobrar', icon: <AccountBalanceIcon /> });
 
         nav.push({ kind: 'header', title: 'Inventario' });
         nav.push({ kind: 'page', segment: 'articulos', title: 'Artículos', icon: <CategoryIcon /> });
@@ -31,12 +31,12 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
 
         nav.push({ kind: 'header', title: 'Proveedores & Pagos' });
         nav.push({ kind: 'page', segment: 'proveedores', title: 'Proveedores', icon: <LocalShippingIcon /> });
-        nav.push({ kind: 'page', segment: 'cxp', title: 'Cuentas por Pagar', icon: <PaymentIcon /> });
+        nav.push({ kind: 'page', segment: 'cxp', title: 'Cuentas por pagar', icon: <PaymentIcon /> });
 
         nav.push({ kind: 'header', title: 'Tesorería' });
         nav.push({ kind: 'page', segment: 'bancos', title: 'Bancos', icon: <AccountBalanceWalletIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas Bancarias', icon: <CreditCardIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/conciliacion', title: 'Conciliación Bancaria', icon: <SyncAltIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas bancarias', icon: <CreditCardIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/conciliacion', title: 'Conciliación bancaria', icon: <SyncAltIcon /> });
         nav.push({ kind: 'page', segment: 'abonos', title: 'Abonos', icon: <ReceiptLongIcon /> });
     }
 

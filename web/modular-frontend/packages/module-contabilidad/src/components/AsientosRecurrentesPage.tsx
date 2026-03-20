@@ -166,7 +166,7 @@ function RecurrenteFormDialog({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        {isEditing ? "Editar Asiento Recurrente" : "Crear Asiento Recurrente"}
+        {isEditing ? "Editar asiento recurrente" : "Crear asiento recurrente"}
       </DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{error}</Alert>}
@@ -206,7 +206,7 @@ function RecurrenteFormDialog({
               size="small"
             />
             <TextField
-              label="Proxima Ejecucion"
+              label="Próxima ejecución"
               type="date"
               value={form.nextExecution}
               onChange={(e) => setForm({ ...form, nextExecution: e.target.value })}
@@ -383,7 +383,7 @@ export default function AsientosRecurrentesPage() {
     { field: "concept", headerName: "Concepto", width: 200 },
     {
       field: "nextExecution",
-      headerName: "Proxima Ejecucion",
+      headerName: "Próxima ejecución",
       width: 150,
       renderCell: (p) => {
         const isOverdue = p.value && new Date(p.value) <= new Date();
@@ -529,7 +529,7 @@ export default function AsientosRecurrentesPage() {
         <DataGrid
           rows={templates}
           columns={columns}
-          getRowId={(r) => r.id}
+          getRowId={(r) => r.RecurringEntryId}
           loading={isLoading}
           autoHeight
           disableRowSelectionOnClick

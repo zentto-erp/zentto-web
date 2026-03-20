@@ -337,7 +337,7 @@ function DetailPanel({ account }: { account: CuentaNode | null }) {
         {account.children.length > 0 && (
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-              Cuentas Hijas
+              Cuentas hijas
             </Typography>
             {account.children.map((child) => (
               <Typography
@@ -390,7 +390,7 @@ function CreateCuentaDialog({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Crear Cuenta Contable</DialogTitle>
+      <DialogTitle>Crear cuenta contable</DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2, mt: 1 }}>
@@ -541,14 +541,14 @@ export default function PlanCuentasTree() {
         sx={{ mb: 2 }}
       >
         <Typography variant="h5" fontWeight={700}>
-          Plan de Cuentas - Vista Arbol
+          Plan de cuentas - vista árbol
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setCreateOpen(true)}
         >
-          Crear Cuenta
+          Crear cuenta
         </Button>
       </Stack>
 

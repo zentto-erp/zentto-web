@@ -63,7 +63,7 @@ function SummaryCards({
       isCurrency: false,
     },
     {
-      title: "Saldo Sistema",
+      title: "Saldo sistema",
       value: cabecera?.Saldo_Final_Sistema ?? 0,
       color: "#1565c0",
       isCurrency: true,
@@ -299,14 +299,14 @@ export default function ConciliacionBancariaPage() {
   return (
     <Box>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
-        Conciliacion Bancaria
+        Conciliación bancaria
       </Typography>
 
       {/* Top Section */}
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <TextField
           select
-          label="Cuenta Bancaria"
+          label="Cuenta bancaria"
           value={selectedNroCta}
           onChange={(e) => {
             setSelectedNroCta(e.target.value);
@@ -447,7 +447,7 @@ export default function ConciliacionBancariaPage() {
               }}
             >
               <Typography variant="h6" fontWeight={600}>
-                Extracto Pendiente
+                Extracto pendiente
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Tooltip title="Conciliar seleccion">
@@ -507,7 +507,7 @@ export default function ConciliacionBancariaPage() {
               }}
             >
               <Typography variant="h6" fontWeight={600}>
-                Asientos Contables
+                Asientos contables
               </Typography>
             </Box>
 
@@ -550,7 +550,7 @@ export default function ConciliacionBancariaPage() {
                   %
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Porcentaje Conciliado
+                  Porcentaje conciliado
                 </Typography>
               </Box>
             </Grid>
@@ -560,7 +560,7 @@ export default function ConciliacionBancariaPage() {
                   {formatCurrency(detalle.cabecera.Saldo_Final_Sistema ?? 0)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Saldo Final Sistema
+                  Saldo final sistema
                 </Typography>
               </Box>
             </Grid>

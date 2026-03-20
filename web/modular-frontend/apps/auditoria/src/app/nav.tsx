@@ -12,11 +12,11 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('auditoria')) {
-        nav.push({ kind: 'header', title: 'Auditoría Fiscal' });
+        nav.push({ kind: 'header', title: 'Auditoría fiscal' });
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
         nav.push({ kind: 'page', segment: 'bitacora', title: 'Bitácora', icon: <ListAltIcon /> });
-        nav.push({ kind: 'page', segment: 'fiscal', title: 'Config. Fiscal', icon: <SettingsIcon /> });
-        nav.push({ kind: 'page', segment: 'fiscal-records', title: 'Registros Fiscales', icon: <ReceiptIcon /> });
+        nav.push({ kind: 'page', segment: 'fiscal', title: 'Config. fiscal', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'fiscal-records', title: 'Registros fiscales', icon: <ReceiptIcon /> });
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <AssessmentIcon /> });
     }
 

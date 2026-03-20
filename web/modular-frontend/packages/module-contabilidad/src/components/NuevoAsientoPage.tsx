@@ -302,7 +302,7 @@ export default function NuevoAsientoPage() {
 
       {!isBalanced && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          <AlertTitle>Asiento Descuadrado</AlertTitle>
+          <AlertTitle>Asiento descuadrado</AlertTitle>
           Diferencia: {formatCurrency(diferencia)} (Debe: {formatCurrency(totalDebe)} - Haber: {formatCurrency(totalHaber)})
         </Alert>
       )}
@@ -388,7 +388,7 @@ export default function NuevoAsientoPage() {
               startIcon={<AddIcon />}
               onClick={handleAddLinea}
             >
-              Agregar Línea
+              Agregar línea
             </Button>
           </Stack>
 
@@ -410,7 +410,7 @@ export default function NuevoAsientoPage() {
           <Grid container spacing={2} justifyContent="flex-end">
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 2, bgcolor: "success.light", color: "success.contrastText" }}>
-                <Typography variant="body2">Total Debe</Typography>
+                <Typography variant="body2">Total debe</Typography>
                 <Typography variant="h5" fontWeight={700}>
                   {formatCurrency(totalDebe)}
                 </Typography>
@@ -418,7 +418,7 @@ export default function NuevoAsientoPage() {
             </Grid>
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 2, bgcolor: "info.light", color: "info.contrastText" }}>
-                <Typography variant="body2">Total Haber</Typography>
+                <Typography variant="body2">Total haber</Typography>
                 <Typography variant="h5" fontWeight={700}>
                   {formatCurrency(totalHaber)}
                 </Typography>
@@ -457,7 +457,7 @@ export default function NuevoAsientoPage() {
           disabled={createMutation.isPending || !isBalanced}
           size="large"
         >
-          {createMutation.isPending ? "Guardando..." : "Guardar Asiento"}
+          {createMutation.isPending ? "Guardando..." : "Guardar asiento"}
         </Button>
       </Stack>
     </Box>

@@ -100,7 +100,9 @@ export default function OdooLayout({
                 );
             }
 
-            const isRouteActive = item.segment === '' ? pathname === '/' : pathname.includes(`/${item.segment}`);
+            const isRouteActive = item.segment === ''
+                ? pathname === '/' || pathname === ''
+                : pathname === `/${item.segment}`;
             const hasChildren = item.children && item.children.length > 0;
             const isOpen = openMenus[idx] ?? isRouteActive;
 

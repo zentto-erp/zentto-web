@@ -98,7 +98,7 @@ export default function InflacionAjustePage() {
       width: 180,
       renderCell: (p) => (
         <Chip
-          label={p.value === "MONETARY" ? "Monetaria" : "No Monetaria"}
+          label={p.value === "MONETARY" ? "Monetaria" : "No monetaria"}
           size="small"
           color={p.value === "MONETARY" ? "info" : "warning"}
         />
@@ -127,8 +127,8 @@ export default function InflacionAjustePage() {
   const calcPreviewColumns: GridColDef[] = [
     { field: "AccountCode", headerName: "Cuenta", width: 120 },
     { field: "AccountName", headerName: "Nombre", flex: 1, minWidth: 180 },
-    { field: "HistoricalBalance", headerName: "Saldo Histórico", width: 150, renderCell: (p) => formatCurrency(p.value) },
-    { field: "AdjustedBalance", headerName: "Saldo Ajustado", width: 150, renderCell: (p) => formatCurrency(p.value) },
+    { field: "HistoricalBalance", headerName: "Saldo histórico", width: 150, renderCell: (p) => formatCurrency(p.value) },
+    { field: "AdjustedBalance", headerName: "Saldo ajustado", width: 150, renderCell: (p) => formatCurrency(p.value) },
     { field: "AdjustmentAmount", headerName: "Ajuste", width: 140, renderCell: (p) => formatCurrency(p.value) },
   ];
 
@@ -160,8 +160,8 @@ export default function InflacionAjustePage() {
     { field: "InflationAdjustmentId", headerName: "ID", width: 70 },
     { field: "PeriodCode", headerName: "Periodo", width: 120 },
     { field: "FiscalYear", headerName: "Ejercicio", width: 100 },
-    { field: "CalculatedAt", headerName: "Fecha Cálculo", width: 160 },
-    { field: "TotalAdjustment", headerName: "Ajuste Total", width: 160, renderCell: (p) => formatCurrency(p.value) },
+    { field: "CalculatedAt", headerName: "Fecha cálculo", width: 160 },
+    { field: "TotalAdjustment", headerName: "Ajuste total", width: 160, renderCell: (p) => formatCurrency(p.value) },
     {
       field: "Status",
       headerName: "Estado",
@@ -210,8 +210,8 @@ export default function InflacionAjustePage() {
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
             <Tab label="Índices INPC" />
-            <Tab label="Clasificación Monetaria" />
-            <Tab label="Calcular Ajuste" />
+            <Tab label="Clasificación monetaria" />
+            <Tab label="Calcular ajuste" />
             <Tab label="Historial" />
           </Tabs>
 
@@ -298,7 +298,7 @@ export default function InflacionAjustePage() {
                 sx={{ width: 180 }}
               />
               <TextField
-                label="Ejercicio Fiscal"
+                label="Ejercicio fiscal"
                 type="number"
                 size="small"
                 value={calcFiscalYear}
@@ -420,7 +420,7 @@ export default function InflacionAjustePage() {
 
       {/* ─── Dialog: Cambiar Clasificacion Monetaria ────────── */}
       <Dialog open={clasDialogRow != null} onClose={() => setClasDialogRow(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Clasificación Monetaria</DialogTitle>
+        <DialogTitle>Clasificación monetaria</DialogTitle>
         <DialogContent>
           {clasDialogRow && (
             <Stack spacing={2} sx={{ mt: 1 }}>
@@ -440,7 +440,7 @@ export default function InflacionAjustePage() {
                   size="small"
                   onClick={() => setClasNewValue("NON_MONETARY")}
                 >
-                  No Monetaria
+                  No monetaria
                 </Button>
               </Stack>
             </Stack>
@@ -460,7 +460,7 @@ export default function InflacionAjustePage() {
 
       {/* ─── Dialog: Anular Ajuste ──────────────────────────── */}
       <Dialog open={voidDialogId != null} onClose={() => setVoidDialogId(null)}>
-        <DialogTitle>Anular Ajuste #{voidDialogId}</DialogTitle>
+        <DialogTitle>Anular ajuste #{voidDialogId}</DialogTitle>
         <DialogContent>
           <TextField
             label="Motivo de anulación"

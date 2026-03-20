@@ -78,7 +78,7 @@ export default function RetencionesPage() {
     { field: "DocumentNumber", headerName: "N. Documento", width: 140 },
     {
       field: "TaxableBase",
-      headerName: "Base Imponible",
+      headerName: "Base imponible",
       width: 130,
       renderCell: (p) => formatCurrency(p.value),
     },
@@ -90,7 +90,7 @@ export default function RetencionesPage() {
     },
     {
       field: "WithholdingAmount",
-      headerName: "Monto Retenido",
+      headerName: "Monto retenido",
       width: 140,
       renderCell: (p) => formatCurrency(p.value),
     },
@@ -119,7 +119,7 @@ export default function RetencionesPage() {
       <ContextActionHeader
         title="Comprobantes de Retencion"
         primaryAction={{
-          label: "Generar Retencion",
+          label: "Generar retención",
           onClick: () => setOpenGen(true),
         }}
       />
@@ -182,7 +182,7 @@ export default function RetencionesPage() {
 
       {/* Dialog Generar Retencion */}
       <Dialog open={openGen} onClose={() => setOpenGen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Generar Retencion</DialogTitle>
+        <DialogTitle>Generar retención</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -194,9 +194,9 @@ export default function RetencionesPage() {
               onChange={(e) => setGenForm((f) => ({ ...f, documentId: Number(e.target.value) }))}
             />
             <FormControl size="small" fullWidth>
-              <InputLabel>Tipo Retencion</InputLabel>
+              <InputLabel>Tipo retención</InputLabel>
               <Select
-                label="Tipo Retencion"
+                label="Tipo retención"
                 value={genForm.withholdingType}
                 onChange={(e) => setGenForm((f) => ({ ...f, withholdingType: e.target.value }))}
               >

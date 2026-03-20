@@ -328,7 +328,7 @@ export default function PlanCuentasPageMejorado() {
 
   // Acciones extra para cada fila
   const extraActions = (row: CuentaContable) => [
-    <Tooltip key="mayor" title="Ver Mayor Analítico">
+    <Tooltip key="mayor" title="Ver mayor analítico">
       <IconButton
         size="small"
         color="info"
@@ -340,7 +340,7 @@ export default function PlanCuentasPageMejorado() {
         <AccountBalanceIcon fontSize="small" />
       </IconButton>
     </Tooltip>,
-    <Tooltip key="asiento" title="Crear Asiento">
+    <Tooltip key="asiento" title="Crear asiento">
       <IconButton
         size="small"
         color="success"
@@ -360,7 +360,7 @@ export default function PlanCuentasPageMejorado() {
       <ContextActionHeader
         title="Plan de Cuentas"
         primaryAction={{
-          label: "Nueva Cuenta",
+          label: "Nueva cuenta",
           onClick: () => {
             // Este evento idealmente llamaría al dispatch addRow del EditableDataGrid
             // Por simplicidad en este demo lo dejamos como placeholder
@@ -369,12 +369,12 @@ export default function PlanCuentasPageMejorado() {
         }}
         secondaryActions={[
           {
-            label: seedMutation.isPending ? "Creando..." : "Crear Datos Ejemplo",
+            label: seedMutation.isPending ? "Creando..." : "Crear datos ejemplo",
             onClick: handleSeedData,
             disabled: seedMutation.isPending
           },
           {
-            label: "Nuevo Asiento",
+            label: "Nuevo asiento",
             onClick: () => router.push("/contabilidad/asientos/new")
           }
         ]}
@@ -438,7 +438,7 @@ export default function PlanCuentasPageMejorado() {
         onDelete={handleDelete}
         loading={isLoading}
         title={`Plan de Cuentas (${filteredRows.length} registros)`}
-        addButtonText="Nueva Cuenta"
+        addButtonText="Nueva cuenta"
         getRowId={(row) => row.codCuenta}
         extraActions={extraActions}
         defaultNewRow={{ codCuenta: "", descripcion: "", tipo: "A", nivel: 3 }}

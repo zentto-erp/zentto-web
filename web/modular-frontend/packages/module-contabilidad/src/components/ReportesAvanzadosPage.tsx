@@ -158,7 +158,7 @@ function DrillDownDialog({
     },
     {
       field: "saldoAcum",
-      headerName: "Saldo Acum.",
+      headerName: "Saldo acum.",
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -417,8 +417,8 @@ export default function ReportesAvanzadosPage() {
   const taxCols: GridColDef[] = [
     { field: "taxType", headerName: "Tipo", width: 100 },
     { field: "taxName", headerName: "Impuesto", flex: 1, minWidth: 200 },
-    fmtCol("base", "Base Imponible", 150),
-    fmtCol("taxAmount", "Monto Impuesto", 150),
+    fmtCol("base", "Base imponible", 150),
+    fmtCol("taxAmount", "Monto impuesto", 150),
     fmtCol("total", "Total", 150),
   ];
 
@@ -461,12 +461,12 @@ export default function ReportesAvanzadosPage() {
           scrollButtons="auto"
           sx={{ "& .MuiTab-root": { minWidth: "auto", px: 1.5 } }}
         >
-          <Tab label="Libro Diario" />
-          <Tab label="Libro Mayor" />
-          <Tab label="Balance Comp." />
-          <Tab label="Estado Result." />
-          <Tab label="Balance General" />
-          <Tab label="Flujo Efectivo" />
+          <Tab label="Libro diario" />
+          <Tab label="Libro mayor" />
+          <Tab label="Balance comp." />
+          <Tab label="Estado result." />
+          <Tab label="Balance general" />
+          <Tab label="Flujo efectivo" />
           <Tab label="Aging CxC/CxP" />
           <Tab label="Ratios" />
           <Tab label="Fiscal" />
@@ -876,8 +876,8 @@ export default function ReportesAvanzadosPage() {
                 onChange={(_, v) => setAgingSubTab(v)}
                 sx={{ mb: 2 }}
               >
-                <Tab label="Cuentas por Cobrar" />
-                <Tab label="Cuentas por Pagar" />
+                <Tab label="Cuentas por cobrar" />
+                <Tab label="Cuentas por pagar" />
               </Tabs>
 
               {agingSubTab === 0 && (

@@ -18,10 +18,10 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'compras', title: 'Compras', icon: <ShoppingCartIcon /> });
         nav.push({ kind: 'page', segment: 'proveedores', title: 'Proveedores', icon: <LocalShippingIcon /> });
 
-        nav.push({ kind: 'header', title: 'Cuentas por Pagar' });
-        nav.push({ kind: 'page', segment: 'cxp', title: 'Estado de Cuenta', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'header', title: 'Cuentas por pagar' });
+        nav.push({ kind: 'page', segment: 'cxp', title: 'Estado de cuenta', icon: <AccountBalanceIcon /> });
         nav.push({ kind: 'page', segment: 'cuentas-por-pagar', title: 'Documentos CxP', icon: <ReceiptLongIcon /> });
-        nav.push({ kind: 'page', segment: 'pagos', title: 'Aplicar Pagos', icon: <PaymentIcon /> });
+        nav.push({ kind: 'page', segment: 'pagos', title: 'Aplicar pagos', icon: <PaymentIcon /> });
     }
 
     return nav;

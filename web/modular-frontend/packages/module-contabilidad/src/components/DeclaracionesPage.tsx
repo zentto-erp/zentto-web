@@ -181,9 +181,9 @@ export default function DeclaracionesPage() {
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
-        title="Declaraciones Tributarias"
+        title="Declaraciones tributarias"
         primaryAction={{
-          label: "Calcular Declaracion",
+          label: "Calcular declaración",
           onClick: () => setOpenCalc(true),
         }}
       />
@@ -247,13 +247,13 @@ export default function DeclaracionesPage() {
 
       {/* Dialog Calcular Declaracion */}
       <Dialog open={openCalc} onClose={() => setOpenCalc(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Calcular Declaracion</DialogTitle>
+        <DialogTitle>Calcular declaración</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormControl size="small" fullWidth>
-              <InputLabel>Tipo Declaracion</InputLabel>
+              <InputLabel>Tipo declaración</InputLabel>
               <Select
-                label="Tipo Declaracion"
+                label="Tipo declaración"
                 value={calcForm.declarationType}
                 onChange={(e) => setCalcForm((f) => ({ ...f, declarationType: e.target.value }))}
               >

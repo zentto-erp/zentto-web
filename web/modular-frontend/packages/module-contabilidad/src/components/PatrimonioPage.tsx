@@ -62,11 +62,11 @@ type MovementType = (typeof MOVEMENT_TYPES)[number];
 const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
   CAPITAL_INCREASE: "Aumento de Capital",
   CAPITAL_DECREASE: "Disminución de Capital",
-  RESERVE_LEGAL: "Reserva Legal",
-  RESERVE_STATUTORY: "Reserva Estatutaria",
-  RESERVE_VOLUNTARY: "Reserva Voluntaria",
+  RESERVE_LEGAL: "Reserva legal",
+  RESERVE_STATUTORY: "Reserva estatutaria",
+  RESERVE_VOLUNTARY: "Reserva voluntaria",
   NET_INCOME: "Resultado del Ejercicio",
-  RETAINED_EARNINGS: "Resultados Acumulados",
+  RETAINED_EARNINGS: "Resultados acumulados",
   DIVIDEND_CASH: "Dividendo en Efectivo",
   DIVIDEND_STOCK: "Dividendo en Acciones",
   INFLATION_ADJUST: "Ajuste por Inflación",
@@ -113,14 +113,14 @@ const EMPTY_FORM: EquityMovementInput = {
 // ─── Matricial Columns ──────────────────────────────────────
 
 const MATRIX_COLUMNS = [
-  "Saldo Inicial",
+  "Saldo inicial",
   "Capital",
   "Reservas",
   "Resultados",
   "Dividendos",
-  "Ajuste Inflación",
+  "Ajuste inflación",
   "Otros",
-  "Saldo Final",
+  "Saldo final",
 ];
 
 // ─── Component ──────────────────────────────────────────────
@@ -188,11 +188,11 @@ export default function PatrimonioPage() {
   // ─── DataGrid Columns ────────────────────────────────────
 
   const columns: GridColDef[] = [
-    { field: "AccountCode", headerName: "Código Cuenta", width: 130 },
-    { field: "AccountName", headerName: "Nombre Cuenta", flex: 1, minWidth: 180 },
+    { field: "AccountCode", headerName: "Código cuenta", width: 130 },
+    { field: "AccountName", headerName: "Nombre cuenta", flex: 1, minWidth: 180 },
     {
       field: "MovementType",
-      headerName: "Tipo Movimiento",
+      headerName: "Tipo movimiento",
       width: 190,
       renderCell: (p) => (
         <Chip
@@ -246,7 +246,7 @@ export default function PatrimonioPage() {
       <ContextActionHeader
         title="Estado de Cambios en el Patrimonio"
         primaryAction={{
-          label: "Nuevo Movimiento",
+          label: "Nuevo movimiento",
           onClick: openCreate,
         }}
       />
@@ -255,10 +255,10 @@ export default function PatrimonioPage() {
         {/* Fiscal Year Selector + Legal Reference */}
         <Stack direction="row" spacing={2} mb={2} alignItems="center">
           <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>Año Fiscal</InputLabel>
+            <InputLabel>Año fiscal</InputLabel>
             <Select
               value={fiscalYear}
-              label="Año Fiscal"
+              label="Año fiscal"
               onChange={(e: SelectChangeEvent<number>) => setFiscalYear(Number(e.target.value))}
             >
               {yearOptions.map((y) => (
@@ -276,7 +276,7 @@ export default function PatrimonioPage() {
         {/* Tabs */}
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
           <Tab label="Movimientos" />
-          <Tab label="Vista Matricial" />
+          <Tab label="Vista matricial" />
         </Tabs>
 
         {/* Tab: Movimientos */}
@@ -451,7 +451,7 @@ export default function PatrimonioPage() {
 
       {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingId ? "Editar Movimiento" : "Nuevo Movimiento de Patrimonio"}</DialogTitle>
+        <DialogTitle>{editingId ? "Editar movimiento" : "Nuevo movimiento de patrimonio"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -518,7 +518,7 @@ export default function PatrimonioPage() {
               updateMutation.isPending
             }
           >
-            {editingId ? "Guardar Cambios" : "Crear Movimiento"}
+            {editingId ? "Guardar cambios" : "Crear movimiento"}
           </Button>
         </DialogActions>
       </Dialog>

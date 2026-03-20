@@ -109,11 +109,11 @@ export default function ReportesContablesPage() {
 
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
         <Tabs value={tab} onChange={(_, v) => { setTab(v); setRun(false); }} variant="scrollable" scrollButtons="auto">
-          <Tab label="Libro Diario" />
-          <Tab label="Libro Mayor" />
-          <Tab label="Balance Comprobaci\u00F3n" />
-          <Tab label="Estado de Resultados" />
-          <Tab label="Balance General" />
+          <Tab label="Libro diario" />
+          <Tab label="Libro mayor" />
+          <Tab label="Balance comprobación" />
+          <Tab label="Estado de resultados" />
+          <Tab label="Balance general" />
         </Tabs>
         {run && (
           <Tooltip title="Imprimir reporte">

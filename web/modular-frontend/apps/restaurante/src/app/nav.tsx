@@ -31,7 +31,7 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): Array<
         nav.push({
             kind: 'page',
             segment: 'fiscal',
-            title: 'Módulo Fiscal',
+            title: 'Módulo fiscal',
             icon: <ReceiptLongIcon />
         });
     }
@@ -42,19 +42,19 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): Array<
         nav.push({
             kind: 'page',
             segment: 'admin/ambientes',
-            title: 'Salones y Mesas',
+            title: 'Salones y mesas',
             icon: <DashboardIcon />
         });
         nav.push({
             kind: 'page',
             segment: 'admin/productos',
-            title: 'Platos y Bebidas',
+            title: 'Platos y bebidas',
             icon: <TableRestaurantIcon />
         });
         nav.push({
             kind: 'page',
             segment: 'admin/recetas',
-            title: 'Recetas e Insumos',
+            title: 'Recetas e insumos',
             icon: <SettingsIcon />
         });
         nav.push({

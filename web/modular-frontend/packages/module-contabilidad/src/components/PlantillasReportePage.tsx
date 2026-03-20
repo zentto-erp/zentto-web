@@ -50,7 +50,7 @@ const INSERTABLE_VARIABLES = [
   { label: "RIF", value: "{{companyRIF}}" },
   { label: "Fecha", value: "{{reportDate}}" },
   { label: "Moneda", value: "{{currency}}" },
-  { label: "Tabla Balance", value: "{{table:balanceGeneral}}" },
+  { label: "Tabla balance", value: "{{table:balanceGeneral}}" },
 ];
 
 const COUNTRY_FILTERS = ["VE", "ES", "Todos"] as const;
@@ -296,7 +296,7 @@ export default function PlantillasReportePage() {
                     sx={{ width: 140 }}
                   />
                   <TextField
-                    label="Marco Legal"
+                    label="Marco legal"
                     size="small"
                     value={editMeta.LegalFramework ?? ""}
                     onChange={(e) =>
@@ -316,7 +316,7 @@ export default function PlantillasReportePage() {
                 </Stack>
                 <Stack direction="row" spacing={2} alignItems="center" mt={1.5}>
                   <TextField
-                    label="Referencia Legal"
+                    label="Referencia legal"
                     size="small"
                     value={editMeta.LegalReference ?? ""}
                     onChange={(e) =>

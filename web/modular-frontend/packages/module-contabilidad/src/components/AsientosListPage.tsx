@@ -103,9 +103,9 @@ export default function AsientosListPage() {
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
-        title="Asientos Contables"
+        title="Asientos contables"
         primaryAction={{
-          label: "Nuevo Asiento",
+          label: "Nuevo asiento",
           onClick: () => router.push("/contabilidad/asientos/new")
         }}
       />

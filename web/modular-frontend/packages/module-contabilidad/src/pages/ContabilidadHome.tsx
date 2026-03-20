@@ -39,7 +39,7 @@ const shortcuts = [
     bg: brandColors.shortcutDark,
   },
   {
-    title: "Plan de Cuentas",
+    title: "Plan de cuentas",
     description: "Cat\u00E1logo contable",
     icon: <AccountTreeIcon sx={{ fontSize: 32 }} />,
     href: "/contabilidad/cuentas",
@@ -53,7 +53,7 @@ const shortcuts = [
     bg: brandColors.shortcutSlate,
   },
   {
-    title: "Nuevo Asiento",
+    title: "Nuevo asiento",
     description: "Registrar operaci\u00F3n",
     icon: <MenuBookIcon sx={{ fontSize: 32 }} />,
     href: "/contabilidad/asientos/new",
@@ -99,7 +99,7 @@ export default function ContabilidadHome() {
       icon: <BarChartIcon />,
     },
     {
-      title: "Ctas por Pagar",
+      title: "Ctas por pagar",
       value: resumen?.cuentasPorPagar ?? 0,
       color: brandColors.statRed,
       icon: <ReceiptLongIcon />,
@@ -109,7 +109,7 @@ export default function ContabilidadHome() {
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard Contable
+        Dashboard contable
       </Typography>
 
       {error && (
@@ -200,7 +200,7 @@ export default function ContabilidadHome() {
           <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
             <Box sx={{ p: 2, borderBottom: "1px solid #eee" }}>
               <Typography variant="h6" fontWeight={600}>
-                Ultimos Asientos
+                Últimos asientos
               </Typography>
             </Box>
             {ultimosAsientos.length > 0 ? (
@@ -255,22 +255,22 @@ export default function ContabilidadHome() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ borderRadius: 2, p: 3 }}>
             <Typography variant="h6" fontWeight={600} mb={2}>
-              Resumen General
+              Resumen general
             </Typography>
             <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
-              <Typography variant="body2" color="text.secondary">Total Asientos</Typography>
+              <Typography variant="body2" color="text.secondary">Total asientos</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalAsientos ?? 0}
               </Typography>
             </Box>
             <Box sx={{ borderLeft: `4px solid ${brandColors.success}`, pl: 2, mb: 3 }}>
-              <Typography variant="body2" color="text.secondary">Cuentas Activas</Typography>
+              <Typography variant="body2" color="text.secondary">Cuentas activas</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalCuentas ?? 0}
               </Typography>
             </Box>
             <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2 }}>
-              <Typography variant="body2" color="text.secondary">Asientos Anulados</Typography>
+              <Typography variant="body2" color="text.secondary">Asientos anulados</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalAnulados ?? 0}
               </Typography>

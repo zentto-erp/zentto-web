@@ -25,8 +25,8 @@ import {
 } from "../hooks/useActivosFijos";
 
 const steps: StepDef[] = [
-  { label: "Seleccionar Periodo" },
-  { label: "Vista Previa" },
+  { label: "Seleccionar periodo" },
+  { label: "Vista previa" },
   { label: "Confirmar" },
 ];
 
@@ -101,7 +101,7 @@ export default function DepreciacionWizard() {
                 disabled={!periodo || previewMutation.isPending}
                 startIcon={previewMutation.isPending ? <CircularProgress size={16} /> : undefined}
               >
-                Vista Previa
+                Vista previa
               </Button>
             </Box>
           </Stack>
@@ -111,7 +111,7 @@ export default function DepreciacionWizard() {
         {activeStep === 1 && (
           <Box>
             <Typography variant="h6" mb={2}>
-              Vista Previa - {previewRows.length} activo(s) a depreciar
+              Vista previa - {previewRows.length} activo(s) a depreciar
             </Typography>
 
             {previewRows.length === 0 ? (
@@ -153,7 +153,7 @@ export default function DepreciacionWizard() {
                     disabled={calcularMutation.isPending}
                     startIcon={calcularMutation.isPending ? <CircularProgress size={16} /> : undefined}
                   >
-                    Generar Depreciacion
+                    Generar depreciación
                   </Button>
                 </Stack>
               </>
@@ -177,7 +177,7 @@ export default function DepreciacionWizard() {
               </Typography>
             )}
             <Button variant="contained" onClick={handleReset}>
-              Nuevo Calculo
+              Nuevo cálculo
             </Button>
           </Box>
         )}

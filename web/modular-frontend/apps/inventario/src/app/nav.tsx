@@ -20,12 +20,12 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'header', title: 'Inventario' });
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
         nav.push({ kind: 'page', segment: 'articulos', title: 'Artículos', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'ajuste', title: 'Ajuste de Inventario', icon: <TuneIcon /> });
+        nav.push({ kind: 'page', segment: 'ajuste', title: 'Ajuste de inventario', icon: <TuneIcon /> });
         nav.push({ kind: 'page', segment: 'movimientos', title: 'Movimientos', icon: <HistoryIcon /> });
         nav.push({ kind: 'page', segment: 'traslados', title: 'Traslados', icon: <SwapHorizIcon /> });
 
         nav.push({ kind: 'header', title: 'Reportes' });
-        nav.push({ kind: 'page', segment: 'reportes/libro', title: 'Libro de Inventario', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'page', segment: 'reportes/libro', title: 'Libro de inventario', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'etiquetas', title: 'Etiquetas', icon: <LocalOfferIcon /> });
 
         nav.push({ kind: 'header', title: 'Catálogos' });
