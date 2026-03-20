@@ -6,17 +6,11 @@ import { signOut } from 'next-auth/react';
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
-/** Safe getSession — returns null if auth is unavailable (e.g., sub-apps in dev) */
-let _authAvailable: boolean | null = null;
+/** Safe getSession — returns null if auth is unavailable */
 async function safeGetSession() {
-  // If we already know auth is unavailable, skip entirely
-  if (_authAvailable === false) return null;
   try {
-    const session = await _getSession();
-    _authAvailable = true;
-    return session;
+    return await _getSession();
   } catch {
-    _authAvailable = false;
     return null;
   }
 }
@@ -85,7 +79,6 @@ async function authHeader(): Promise<Record<string, string>> {
 
 async function handleUnauthorized(res: Response) {
   if (res.status === 401) {
-    if (_authAvailable === false) return; // No auth routes — skip signOut
     try {
       await signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
     } catch {
