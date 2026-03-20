@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppProvider } from '@toolpad/core/nextjs';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
@@ -99,7 +98,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" suppressHydrationWarning>
       <head>
         <title>Zentto</title>
-        <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=document.documentElement;var a='data-toolpad-color-scheme';var v=localStorage.getItem(a)||'light';d.setAttribute(a,v)}catch(e){}})()`,
+          }}
+        />
       </head>
       <body>
         <SessionProvider>
