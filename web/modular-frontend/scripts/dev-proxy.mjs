@@ -15,7 +15,7 @@ import httpProxy from "http-proxy";
 const PROXY_PORT = 3080;
 
 const routes = {
-  "/pos":         3003,
+  "/pos":         3002,
   "/ventas":      3006,
   "/restaurante": 3008,
   "/ecommerce":   3009,
@@ -69,7 +69,7 @@ server.listen(PROXY_PORT, () => {
   console.log("  ║  Zentto Dev Proxy — http://localhost:" + PROXY_PORT + "  ║");
   console.log("  ╠══════════════════════════════════════════╣");
   console.log("  ║  /              → Shell     :3000        ║");
-  console.log("  ║  /pos/*         → POS       :3003        ║");
+  console.log("  ║  /pos/*         → POS       :3002        ║");
   console.log("  ║  /ventas/*      → Ventas    :3006        ║");
   console.log("  ║  /restaurante/* → Restaur.  :3008        ║");
   console.log("  ║  /ecommerce/*   → Ecommerce :3009        ║");

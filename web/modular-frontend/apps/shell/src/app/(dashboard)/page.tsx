@@ -43,19 +43,7 @@ export default function AppSelectorPage() {
       router.push(path);
       return;
     }
-    // En desarrollo local, las sub-apps corren en puertos separados
-    const isDev = process.env.NODE_ENV === 'development';
-    if (isDev) {
-      const devPorts: Record<string, number> = {
-        '/pos': 3003, '/ventas': 3006, '/restaurante': 3008,
-        '/ecommerce': 3009, '/auditoria': 3010,
-      };
-      const match = Object.entries(devPorts).find(([prefix]) => path.startsWith(prefix));
-      if (match) {
-        window.location.assign(`http://localhost:${match[1]}${path}`);
-        return;
-      }
-    }
+    // En dev (proxy :3080) y prod (Nginx), los paths funcionan directo
     window.location.assign(path);
   };
 
