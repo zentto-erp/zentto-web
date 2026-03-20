@@ -24,6 +24,7 @@ import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@zentto/shared-auth';
 import { useRouter } from 'next/navigation';
+import { resolveAppHref } from '@/lib/app-links';
 
 // Icons
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
@@ -206,7 +207,13 @@ export default function AppsStorePage() {
     };
 
     const handleOpenApp = (app: StoreApp) => {
-        router.push(app.path);
+        const href = resolveAppHref(app.id, app.path);
+        if (href === app.path) {
+            router.push(href);
+            return;
+        }
+
+        window.location.assign(href);
     };
 
     return (

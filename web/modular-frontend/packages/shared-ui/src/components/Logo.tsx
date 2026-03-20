@@ -2,11 +2,13 @@
 import React from 'react';
 import { Typography, useTheme, Box, Stack } from '@mui/material';
 import type { TypographyProps } from '@mui/material/Typography';
+import { getSharedAssetUrl } from '../lib/asset-url';
 
 interface LogoProps { size?: 'small' | 'medium' | 'large' }
 
 export default function Logo({ size = 'medium' }: LogoProps) {
   const theme = useTheme();
+  const logoSrc = getSharedAssetUrl('/logo-blanco.svg');
   const sizes: Record<'small' | 'medium' | 'large', { box: number; font: string; title: TypographyProps['variant']; subtitle: TypographyProps['variant'] }> = {
     small: { box: 32, font: '1rem', title: 'h6', subtitle: 'caption' },
     medium: { box: 56, font: '1.5rem', title: 'h5', subtitle: 'body2' },
@@ -22,7 +24,7 @@ export default function Logo({ size = 'medium' }: LogoProps) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 4px 12px ${theme.palette.primary.main}40`,
       }}>
-        <img src="/logo-blanco.svg" alt="Zentto" style={{ width: s.box * 0.75, height: s.box * 0.75, objectFit: 'contain' }} />
+        <img src={logoSrc} alt="Zentto" style={{ width: s.box * 0.75, height: s.box * 0.75, objectFit: 'contain' }} />
       </Box>
       <Box textAlign="center">
         <Typography variant={s.title} component="h1"

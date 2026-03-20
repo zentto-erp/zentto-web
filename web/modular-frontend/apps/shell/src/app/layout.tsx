@@ -3,9 +3,9 @@
 import * as React from 'react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppProvider } from '@toolpad/core/nextjs';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import { createTheme } from '@mui/material/styles';
 import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
 import { QueryProvider } from '@zentto/shared-api';
@@ -15,7 +15,7 @@ import {
   LoadingFallback,
   ToastProvider,
   LocalizationProviderWrapper,
-  theme,
+  brandColors,
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -25,6 +25,37 @@ import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
 const AUTHENTICATION = { signIn, signOut };
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
 const ZENTTO_DOMAINS = new Set(['app.zentto.net', 'www.zentto.net', 'zentto.net']);
+const shellTheme = createTheme({
+  palette: {
+    primary: { main: brandColors.accent, light: '#ffad33', dark: '#e68a00', contrastText: brandColors.dark },
+    secondary: { main: brandColors.darkSecondary, light: '#37475a', dark: brandColors.dark, contrastText: '#fff' },
+    background: { default: brandColors.bgPage, paper: brandColors.bgCard },
+    text: { primary: brandColors.textDark, secondary: brandColors.textMuted },
+  },
+  breakpoints: {
+    values: { xs: 0, sm: 600, md: 600, lg: 1200, xl: 1536 },
+  },
+  typography: {
+    fontFamily: [
+      'Inter',
+      '-apple-system',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+    ].join(','),
+    button: {
+      textTransform: 'none',
+      fontWeight: 500,
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: '1.125rem',
+    },
+  },
+});
 
 // Valida que el subdominio actual exista en BD. Si no, redirige a zentto.net.
 function TenantGuard({ children }: { children: React.ReactNode }) {
@@ -70,7 +101,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
   return (
     <AppProvider
-      theme={theme}
+      theme={shellTheme}
       navigation={navigation}
       session={session ?? undefined}
       authentication={AUTHENTICATION}
@@ -99,7 +130,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" suppressHydrationWarning>
       <head>
         <title>Zentto</title>
-        <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
       </head>
       <body>
         <SessionProvider>

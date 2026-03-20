@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>
-                <SessionProvider basePath="/api/auth">
+                <SessionProvider basePath="/inventario/api/auth">
                     <QueryProvider>
                         <AuthProvider>
                             <AppRouterCacheProvider options={{ enableCssLayer: true }}>

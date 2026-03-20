@@ -56,7 +56,6 @@ function AppContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-    // Configured basePath allows session fetch relative to /contabilidad/api/auth
     return (
         <html lang="es" suppressHydrationWarning>
             <head>
@@ -64,8 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>
-                <SessionProvider basePath="/api/auth">
-                    {/* Note: setting basePath forces NextAuth to search on root port 3000 mapping, so token is shared. Or simply /api/auth ignores /contabilidad basepath if we do custom domain */}
+                <SessionProvider basePath="/contabilidad/api/auth">
                     <QueryProvider>
                         <AuthProvider>
                             <AppRouterCacheProvider options={{ enableCssLayer: true }}>
