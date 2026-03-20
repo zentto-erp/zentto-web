@@ -597,7 +597,7 @@ $$;
 -- =============================================================================
 
 -- usp_POS_WaitTicket_Create
-DROP FUNCTION IF EXISTS usp_pos_waitticket_create(INT, INT, VARCHAR(5), VARCHAR(20), VARCHAR(100), INT, INT, VARCHAR(50), VARCHAR(255), VARCHAR(50), VARCHAR(50), VARCHAR(500), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2)) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_create(
     p_company_id        INT,
     p_branch_id         INT,
@@ -616,11 +616,11 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticket_create(
     p_tax_amount        NUMERIC(18,2) DEFAULT 0,
     p_total_amount      NUMERIC(18,2) DEFAULT 0
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     INSERT INTO pos."WaitTicket" (
         "CompanyId", "BranchId", "CountryCode", "CashRegisterCode", "StationName",
@@ -641,9 +641,9 @@ END;
 $$;
 
 -- usp_POS_WaitTicketLine_Insert
-DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), NUMERIC(18,2), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), INT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_insert(
-    p_wait_ticket_id        INT,
+    p_wait_ticket_id        BIGINT,
     p_line_number           INT,
     p_country_code          VARCHAR(5),
     p_product_id            INT DEFAULT NULL,
@@ -710,17 +710,17 @@ END;
 $func$;
 
 -- usp_POS_WaitTicket_GetHeader
-DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader(INT, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_getheader(
     p_company_id    INT,
     p_branch_id     INT,
-    p_wait_ticket_id INT
+    p_wait_ticket_id BIGINT
 )
 RETURNS TABLE(
-    "id" INT, "cajaId" VARCHAR, "estacionNombre" VARCHAR, "clienteId" VARCHAR,
+    "id" BIGINT, "cajaId" VARCHAR, "estacionNombre" VARCHAR, "clienteId" VARCHAR,
     "clienteNombre" VARCHAR, "clienteRif" VARCHAR, "tipoPrecio" VARCHAR, "motivo" VARCHAR,
     "subtotal" NUMERIC, "impuestos" NUMERIC, "total" NUMERIC,
-    "estado" VARCHAR, "fechaCreacion" TIMESTAMPTZ
+    "estado" VARCHAR, "fechaCreacion" TIMESTAMP WITHOUT TIME ZONE
 )
 LANGUAGE plpgsql
 AS $$
@@ -736,11 +736,11 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_Recover
-DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(INT, INT, INT, INT, VARCHAR(20)) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_recover CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_company_id         INT,
     p_branch_id          INT,
-    p_wait_ticket_id     INT,
+    p_wait_ticket_id     BIGINT,
     p_recovered_by_user_id INT DEFAULT NULL,
     p_recovered_at_register VARCHAR(20) DEFAULT NULL
 )
@@ -761,12 +761,12 @@ END;
 $$;
 
 -- usp_POS_WaitTicketLine_GetItems
-DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_getitems(
-    p_wait_ticket_id INT
+    p_wait_ticket_id BIGINT
 )
 RETURNS TABLE(
-    "id" INT, "productoId" VARCHAR, "codigo" VARCHAR, "nombre" VARCHAR,
+    "id" BIGINT, "productoId" VARCHAR, "codigo" VARCHAR, "nombre" VARCHAR,
     "cantidad" NUMERIC, "precioUnitario" NUMERIC, "descuento" NUMERIC,
     "iva" NUMERIC, "subtotal" NUMERIC, "total" NUMERIC,
     "supervisorApprovalId" INT, "lineMetaJson" TEXT
@@ -790,11 +790,11 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_Void
-DROP FUNCTION IF EXISTS usp_pos_waitticket_void(INT, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_void CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_void(
     p_company_id    INT,
     p_branch_id     INT,
-    p_wait_ticket_id INT
+    p_wait_ticket_id BIGINT
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
@@ -810,7 +810,7 @@ END;
 $$;
 
 -- usp_POS_SaleTicket_Create
-DROP FUNCTION IF EXISTS usp_pos_saleticket_create(INT, INT, VARCHAR(5), VARCHAR(50), VARCHAR(20), INT, INT, VARCHAR(50), VARCHAR(255), VARCHAR(50), VARCHAR(50), VARCHAR(50), TEXT, INT, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2)) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_saleticket_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticket_create(
     p_company_id        INT,
     p_branch_id         INT,
@@ -825,17 +825,17 @@ CREATE OR REPLACE FUNCTION usp_pos_saleticket_create(
     p_price_tier        VARCHAR(50) DEFAULT 'Detal',
     p_payment_method    VARCHAR(50) DEFAULT NULL,
     p_fiscal_payload    TEXT DEFAULT NULL,
-    p_wait_ticket_id    INT DEFAULT NULL,
+    p_wait_ticket_id    BIGINT DEFAULT NULL,
     p_net_amount        NUMERIC(18,2) DEFAULT 0,
     p_discount_amount   NUMERIC(18,2) DEFAULT 0,
     p_tax_amount        NUMERIC(18,2) DEFAULT 0,
     p_total_amount      NUMERIC(18,2) DEFAULT 0
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     INSERT INTO pos."SaleTicket" (
         "CompanyId", "BranchId", "CountryCode", "InvoiceNumber", "CashRegisterCode",
@@ -856,9 +856,9 @@ END;
 $$;
 
 -- usp_POS_SaleTicketLine_Insert
-DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), NUMERIC(18,2), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), INT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticketline_insert(
-    p_sale_ticket_id        INT,
+    p_sale_ticket_id        BIGINT,
     p_line_number           INT,
     p_country_code          VARCHAR(5),
     p_product_id            INT DEFAULT NULL,
@@ -875,11 +875,11 @@ CREATE OR REPLACE FUNCTION usp_pos_saleticketline_insert(
     p_supervisor_approval_id INT DEFAULT NULL,
     p_line_meta_json        TEXT DEFAULT NULL
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     INSERT INTO pos."SaleTicketLine" (
         "SaleTicketId", "LineNumber", "CountryCode", "ProductId", "ProductCode", "ProductName",

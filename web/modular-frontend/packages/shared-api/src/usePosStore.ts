@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { apiGet, apiPost } from './api';
+import { apiGet, apiPost, apiDelete } from './api';
 
 // ═══════════════════════════════════════════════════════════════
 // TIPOS
@@ -613,35 +613,30 @@ export const usePosStore = create<PosState>()(
 
                 set({ syncing: true });
                 try {
-                    const res = await fetch(`${API_BASE}/v1/pos/espera`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            cajaId: caja.id,
-                            estacionNombre: caja.nombre,
-                            clienteNombre: cliente.nombre,
-                            clienteRif: cliente.rif,
-                            clienteId: cliente.id !== '0' ? cliente.codigo : undefined,
-                            tipoPrecio: cliente.tipoPrecio,
-                            motivo: motivo || 'Puesta en espera',
-                            items: cart.map(c => ({
-                                productoId: c.productoId,
-                                codigo: c.codigo,
-                                nombre: c.nombre,
-                                cantidad: c.cantidad,
-                                precioUnitario: c.precio,
-                                descuento: c.descuento,
-                                iva: c.iva,
-                                subtotal: c.totalBase,
-                                esAnulacion: Boolean(c.esAnulacion),
-                                anulaItemId: c.anulaItemId,
-                                motivoAnulacion: c.motivoAnulacion,
-                                supervisorUser: c.supervisorUser,
-                                supervisorApprovalId: c.supervisorApprovalId,
-                            })),
-                        }),
+                    const data = await apiPost('/v1/pos/espera', {
+                        cajaId: caja.id,
+                        estacionNombre: caja.nombre,
+                        clienteNombre: cliente.nombre,
+                        clienteRif: cliente.rif,
+                        clienteId: cliente.id !== '0' ? cliente.codigo : undefined,
+                        tipoPrecio: cliente.tipoPrecio,
+                        motivo: motivo || 'Puesta en espera',
+                        items: cart.map(c => ({
+                            productoId: c.productoId,
+                            codigo: c.codigo,
+                            nombre: c.nombre,
+                            cantidad: c.cantidad,
+                            precioUnitario: c.precio,
+                            descuento: c.descuento,
+                            iva: c.iva,
+                            subtotal: c.totalBase,
+                            esAnulacion: Boolean(c.esAnulacion),
+                            anulaItemId: c.anulaItemId,
+                            motivoAnulacion: c.motivoAnulacion,
+                            supervisorUser: c.supervisorUser,
+                            supervisorApprovalId: c.supervisorApprovalId,
+                        })),
                     });
-                    const data = await res.json();
                     if (!data.ok) {
                         set({ syncing: false });
                         return { success: false, message: data.error || 'Error al poner en espera' };
@@ -665,8 +660,7 @@ export const usePosStore = create<PosState>()(
             listarEspera: async () => {
                 set({ loadingEspera: true });
                 try {
-                    const res = await fetch(`${API_BASE}/v1/pos/espera`);
-                    const data = await res.json();
+                    const data = await apiGet('/v1/pos/espera');
                     set({ ventasEnEspera: data.rows ?? [], loadingEspera: false });
                 } catch {
                     set({ loadingEspera: false });
@@ -685,12 +679,7 @@ export const usePosStore = create<PosState>()(
 
                 set({ syncing: true });
                 try {
-                    const res = await fetch(`${API_BASE}/v1/pos/espera/${id}/recuperar`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ cajaId: caja.id }),
-                    });
-                    const data = await res.json();
+                    const data = await apiPost(`/v1/pos/espera/${id}/recuperar`, { cajaId: caja.id });
                     if (!data.ok) {
                         set({ syncing: false });
                         return { success: false, message: data.error || 'Error al recuperar.' };
@@ -763,7 +752,7 @@ export const usePosStore = create<PosState>()(
             // ═══════════════════════════════════════════════════════════════
             anularEspera: async (id) => {
                 try {
-                    await fetch(`${API_BASE}/v1/pos/espera/${id}`, { method: 'DELETE' });
+                    await apiDelete(`/v1/pos/espera/${id}`);
                     set(s => ({ ventasEnEspera: s.ventasEnEspera.filter(e => e.id !== id) }));
                     return { success: true, message: 'Venta en espera anulada.' };
                 } catch (e: unknown) {
@@ -809,37 +798,32 @@ export const usePosStore = create<PosState>()(
 
                 // 3. Persistir venta a BD
                 try {
-                    const res = await fetch(`${API_BASE}/v1/pos/ventas`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            numFactura,
-                            cajaId: caja.id,
-                            clienteNombre: cliente.nombre,
-                            clienteRif: cliente.rif,
-                            clienteId: cliente.id !== '0' ? cliente.codigo : undefined,
-                            tipoPrecio: cliente.tipoPrecio,
-                            metodoPago: metodoPago || 'Efectivo',
-                            tramaFiscal: printResult.tramas?.join('|') || '',
-                            esperaOrigenId: esperaOrigenId || undefined,
-                            items: cart.map(c => ({
-                                productoId: c.productoId,
-                                codigo: c.codigo,
-                                nombre: c.nombre,
-                                cantidad: c.cantidad,
-                                precioUnitario: c.precio,
-                                descuento: c.descuento,
-                                iva: c.iva,
-                                subtotal: c.totalBase,
-                                esAnulacion: Boolean(c.esAnulacion),
-                                anulaItemId: c.anulaItemId,
-                                motivoAnulacion: c.motivoAnulacion,
-                                supervisorUser: c.supervisorUser,
-                                supervisorApprovalId: c.supervisorApprovalId,
-                            })),
-                        }),
+                    const data = await apiPost('/v1/pos/ventas', {
+                        numFactura,
+                        cajaId: caja.id,
+                        clienteNombre: cliente.nombre,
+                        clienteRif: cliente.rif,
+                        clienteId: cliente.id !== '0' ? cliente.codigo : undefined,
+                        tipoPrecio: cliente.tipoPrecio,
+                        metodoPago: metodoPago || 'Efectivo',
+                        tramaFiscal: printResult.tramas?.join('|') || '',
+                        esperaOrigenId: esperaOrigenId || undefined,
+                        items: cart.map(c => ({
+                            productoId: c.productoId,
+                            codigo: c.codigo,
+                            nombre: c.nombre,
+                            cantidad: c.cantidad,
+                            precioUnitario: c.precio,
+                            descuento: c.descuento,
+                            iva: c.iva,
+                            subtotal: c.totalBase,
+                            esAnulacion: Boolean(c.esAnulacion),
+                            anulaItemId: c.anulaItemId,
+                            motivoAnulacion: c.motivoAnulacion,
+                            supervisorUser: c.supervisorUser,
+                            supervisorApprovalId: c.supervisorApprovalId,
+                        })),
                     });
-                    const data = await res.json();
 
                     // 4. Incrementar número de factura y limpiar
                     set(s => ({

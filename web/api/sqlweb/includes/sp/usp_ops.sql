@@ -645,7 +645,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_Create
     @DiscountAmount   DECIMAL(18,2)  = 0,
     @TaxAmount        DECIMAL(18,2)  = 0,
     @TotalAmount      DECIMAL(18,2)  = 0,
-    @Resultado        INT OUTPUT,
+    @Resultado        BIGINT OUTPUT,
     @Mensaje          NVARCHAR(500) OUTPUT
 AS
 BEGIN
@@ -674,7 +674,7 @@ GO
 --  Inserta una linea de ticket de espera.
 -- -----------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicketLine_Insert
-    @WaitTicketId        INT,
+    @WaitTicketId        BIGINT,
     @LineNumber          INT,
     @CountryCode         NVARCHAR(5),
     @ProductId           INT            = NULL,
@@ -748,7 +748,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_GetHeader
     @CompanyId    INT,
     @BranchId     INT,
-    @WaitTicketId INT
+    @WaitTicketId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -782,7 +782,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_Recover
     @CompanyId            INT,
     @BranchId             INT,
-    @WaitTicketId         INT,
+    @WaitTicketId         BIGINT,
     @RecoveredByUserId    INT          = NULL,
     @RecoveredAtRegister  NVARCHAR(20) = NULL,
     @Resultado            INT OUTPUT,
@@ -811,7 +811,7 @@ GO
 --  Obtiene las lineas de un ticket de espera.
 -- -----------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicketLine_GetItems
-    @WaitTicketId INT
+    @WaitTicketId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -842,7 +842,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_Void
     @CompanyId    INT,
     @BranchId     INT,
-    @WaitTicketId INT,
+    @WaitTicketId BIGINT,
     @Resultado    INT OUTPUT,
     @Mensaje      NVARCHAR(500) OUTPUT
 AS
@@ -880,7 +880,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_POS_SaleTicket_Create
     @PriceTier        NVARCHAR(50)   = N'Detal',
     @PaymentMethod    NVARCHAR(50)   = NULL,
     @FiscalPayload    NVARCHAR(MAX)  = NULL,
-    @WaitTicketId     INT            = NULL,
+    @WaitTicketId     BIGINT         = NULL,
     @NetAmount        DECIMAL(18,2)  = 0,
     @DiscountAmount   DECIMAL(18,2)  = 0,
     @TaxAmount        DECIMAL(18,2)  = 0,
@@ -914,7 +914,7 @@ GO
 --  Inserta una linea de ticket de venta.
 -- -----------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_POS_SaleTicketLine_Insert
-    @SaleTicketId         INT,
+    @SaleTicketId         BIGINT,
     @LineNumber           INT,
     @CountryCode          NVARCHAR(5),
     @ProductId            INT            = NULL,
@@ -930,7 +930,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_POS_SaleTicketLine_Insert
     @TotalAmount          DECIMAL(18,2),
     @SupervisorApprovalId INT            = NULL,
     @LineMetaJson         NVARCHAR(MAX)  = NULL,
-    @Resultado            INT OUTPUT,
+    @Resultado            BIGINT OUTPUT,
     @Mensaje              NVARCHAR(500) OUTPUT
 AS
 BEGIN
