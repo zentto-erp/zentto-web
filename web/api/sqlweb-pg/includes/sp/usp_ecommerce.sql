@@ -348,7 +348,7 @@ CREATE OR REPLACE FUNCTION usp_Store_Product_GetImages(
     p_code        VARCHAR(80)   DEFAULT NULL
 )
 RETURNS TABLE(
-    "id"          INT,
+    "id"          BIGINT,
     "url"         VARCHAR(500),
     "role"        VARCHAR(50),
     "isPrimary"   BOOLEAN,

@@ -1994,7 +1994,7 @@ $function$
 -- usp_store_product_getimages
 DROP FUNCTION IF EXISTS public.usp_store_product_getimages(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_store_product_getimages(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
- RETURNS TABLE(id integer, url character varying, role character varying, "isPrimary" boolean, "sortOrder" integer, "altText" character varying)
+ RETURNS TABLE(id bigint, url character varying, role character varying, "isPrimary" boolean, "sortOrder" integer, "altText" character varying)
  LANGUAGE plpgsql
 AS $function$
 BEGIN
