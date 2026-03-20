@@ -19,7 +19,7 @@ const RESERVED_SUBDOMAINS = new Set([
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || "zentto.net";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const hostname = host.split(":")[0]; // quitar puerto si lo tiene
 
