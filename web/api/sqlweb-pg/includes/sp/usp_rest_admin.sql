@@ -470,6 +470,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_producto_upsert(INT, INT, INT, VARCHAR(20), VARCHAR(200), VARCHAR(500), INT, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(5,2), BOOLEAN, INT, VARCHAR(500), BOOLEAN, BOOLEAN, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_upsert(INT, INT, INT, VARCHAR(20), VARCHAR(200), VARCHAR(500), INT, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(5,2), BOOLEAN, INT, VARCHAR(500), BOOLEAN, BOOLEAN, BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_upsert(
     p_id                   INT DEFAULT 0,
     p_company_id           INT DEFAULT NULL,
@@ -486,7 +487,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_producto_upsert(
     p_image_url            VARCHAR(500) DEFAULT NULL,
     p_is_daily_suggestion  BOOLEAN DEFAULT FALSE,
     p_is_available         BOOLEAN DEFAULT TRUE,
-    p_inventory_product_id INT DEFAULT NULL,
+    p_inventory_product_id BIGINT DEFAULT NULL,
     p_user_id              INT DEFAULT NULL
 )
 RETURNS TABLE("id" INT)
@@ -894,10 +895,11 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_compralinea_upsert(INT, INT, INT, VARCHAR(200), NUMERIC(10,3), NUMERIC(18,2), NUMERIC(5,2), NUMERIC(18,2)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compralinea_upsert(INT, INT, BIGINT, VARCHAR(200), NUMERIC(10,3), NUMERIC(18,2), NUMERIC(5,2), NUMERIC(18,2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compralinea_upsert(
     p_id                    INT DEFAULT 0,
     p_compra_id             INT DEFAULT NULL,
-    p_ingredient_product_id INT DEFAULT NULL,
+    p_ingredient_product_id BIGINT DEFAULT NULL,
     p_descripcion           VARCHAR(200) DEFAULT NULL,
     p_quantity              NUMERIC(10,3) DEFAULT NULL,
     p_unit_price            NUMERIC(18,2) DEFAULT NULL,

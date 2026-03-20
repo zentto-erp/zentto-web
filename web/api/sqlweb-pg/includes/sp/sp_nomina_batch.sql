@@ -82,7 +82,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_to_date           DATE,
     p_user_id           INTEGER,
     p_department_filter VARCHAR(100) DEFAULT NULL,
-    OUT p_batch_id      INTEGER,
+    OUT p_batch_id      BIGINT,
     OUT p_resultado     INTEGER,
     OUT p_mensaje       TEXT
 )
@@ -93,7 +93,7 @@ DECLARE
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
-    p_batch_id  := 0;
+    p_batch_id  := 0::BIGINT;
 
     -- Validaciones básicas
     IF p_from_date >= p_to_date THEN
@@ -186,7 +186,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
-    p_line_id   INTEGER,
+    p_line_id   BIGINT,
     p_quantity  NUMERIC(18,4),
     p_amount    NUMERIC(18,4),
     p_user_id   INTEGER,
@@ -197,7 +197,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_batch_id INTEGER;
+    v_batch_id BIGINT;
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
@@ -252,7 +252,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
-    p_batch_id      INTEGER,
+    p_batch_id      BIGINT,
     p_employee_code VARCHAR(24),
     p_concept_code  VARCHAR(20),
     p_concept_name  VARCHAR(120),
@@ -359,7 +359,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
-    p_line_id   INTEGER,
+    p_line_id   BIGINT,
     p_user_id   INTEGER,
     OUT p_resultado INTEGER,
     OUT p_mensaje   TEXT
@@ -368,7 +368,7 @@ RETURNS record
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_batch_id INTEGER;
+    v_batch_id BIGINT;
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
@@ -422,7 +422,7 @@ $$;
 -- 5a. Cabecera del batch con totales
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Header(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Header(
-    p_batch_id INTEGER
+    p_batch_id BIGINT
 )
 RETURNS TABLE(
     "BatchId"          INTEGER,
@@ -497,7 +497,7 @@ $$;
 -- 5b. Resumen general (sin columna departamento)
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_ByDept(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_ByDept(
-    p_batch_id INTEGER
+    p_batch_id BIGINT
 )
 RETURNS TABLE(
     "DepartmentCode" TEXT,
@@ -527,7 +527,7 @@ $$;
 -- 5c. Alertas
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Alerts(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Alerts(
-    p_batch_id INTEGER
+    p_batch_id BIGINT
 )
 RETURNS TABLE(
     "AlertType"    TEXT,
@@ -598,7 +598,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(INTEGER, VARCHAR(100), VARCHAR(100), BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
-    p_batch_id      INTEGER,
+    p_batch_id      BIGINT,
     p_search        VARCHAR(100) DEFAULT NULL,
     p_department    VARCHAR(100) DEFAULT NULL,
     p_only_modified BOOLEAN      DEFAULT FALSE,
@@ -672,7 +672,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetEmployeeLines(
-    p_batch_id      INTEGER,
+    p_batch_id      BIGINT,
     p_employee_code VARCHAR(24)
 )
 RETURNS TABLE(
@@ -730,7 +730,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
-    p_batch_id   INTEGER,
+    p_batch_id   BIGINT,
     p_approved_by INTEGER,
     p_user_id    INTEGER,
     OUT p_resultado INTEGER,
@@ -796,7 +796,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
-    p_batch_id  INTEGER,
+    p_batch_id  BIGINT,
     p_user_id   INTEGER,
     OUT p_procesados INTEGER,
     OUT p_errores    INTEGER,
@@ -993,7 +993,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
-    p_batch_id       INTEGER,
+    p_batch_id       BIGINT,
     p_concept_code   VARCHAR(20),
     p_concept_type   VARCHAR(15),
     p_amount         NUMERIC(18,4),

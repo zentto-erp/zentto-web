@@ -428,6 +428,133 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
+// Test 7b: Columnas de RETURNS TABLE de entidades también deben ser BIGINT
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
+  /**
+   * Mismos sufijos que Test 7. El matching es case-insensitive y tolerante
+   * a snake_case y camelCase en los nombres de columna del RETURNS TABLE.
+   * Ejemplos de columnas que matchean "customerid":
+   *   "CustomerId", "customer_id", "customerid"
+   */
+  const bigintEntitySuffixes: string[] = [
+    'customerid',
+    'supplierid',
+    'employeeid',
+    'productid',
+    'accountid',
+    'journalentryid',
+    'waitticketid',
+    'saleticketid',
+    'bankmovementid',
+    'bankaccountid',
+    'bankid',
+    'movementid',
+    'payrollrunid',
+    'orderticketid',
+    'receivabledocumentid',
+    'payabledocumentid',
+  ];
+
+  /**
+   * Parsea el resultado de pg_get_function_result cuando es RETURNS TABLE.
+   * Formato: TABLE("ColName" bigint, "OtherCol" integer, ...)
+   * Devuelve pares { name: string normalizado, type: string en minúsculas }.
+   * El name ya viene sin guiones bajos y en minúsculas para facilitar la
+   * comparación con bigintEntitySuffixes.
+   */
+  function parseReturnsCols(rettype: string): { name: string; type: string }[] {
+    if (!rettype.trim().toUpperCase().startsWith('TABLE')) return [];
+
+    // Extraer el interior del TABLE(...)
+    const inner = rettype.replace(/^TABLE\s*\(/i, '').replace(/\)\s*$/, '');
+
+    return inner
+      .split(',')
+      .map(col => {
+        const trimmed = col.trim();
+        if (!trimmed) return null;
+        // Soporta tanto "ColName" tipo  como  colname tipo
+        const m = trimmed.match(/^"?([^"\s]+)"?\s+(.+)$/);
+        if (!m) return null;
+        return {
+          name: m[1].replace(/_/g, '').toLowerCase(),
+          type: m[2].trim().toLowerCase(),
+        };
+      })
+      .filter((x): x is { name: string; type: string } => x !== null);
+  }
+
+  it('todas las columnas de RETURNS TABLE con sufijo de entidad deben ser bigint (no integer)', async () => {
+    const res = await pool.query<{ proname: string; rettype: string }>(
+      `SELECT p.proname,
+              pg_get_function_result(p.oid) AS rettype
+       FROM pg_proc p
+       WHERE p.proname LIKE 'usp_%'
+         AND pg_get_function_result(p.oid) ILIKE 'TABLE(%'
+       ORDER BY p.proname`
+    );
+
+    interface Mismatch {
+      func:     string;
+      column:   string;
+      actual:   string;
+      expected: string;
+    }
+
+    const mismatches: Mismatch[] = [];
+
+    for (const row of res.rows) {
+      if (!row.rettype) continue;
+
+      const cols = parseReturnsCols(row.rettype);
+
+      for (const col of cols) {
+        // Verifica si el nombre normalizado TERMINA con alguno de los sufijos BIGINT
+        const matchedSuffix = bigintEntitySuffixes.find(suffix =>
+          col.name.endsWith(suffix)
+        );
+
+        if (matchedSuffix && !col.type.includes('bigint')) {
+          mismatches.push({
+            func:     row.proname,
+            column:   col.name,
+            actual:   col.type,
+            expected: 'bigint',
+          });
+        }
+      }
+    }
+
+    if (mismatches.length > 0) {
+      console.error(
+        `\n[SP Contracts] Columnas de RETURNS TABLE que deberían ser BIGINT pero no lo son (${mismatches.length}):`
+      );
+      console.error(
+        `  ${'FUNCIÓN'.padEnd(50)} ${'COLUMNA RETORNO'.padEnd(30)} ${'TIPO ACTUAL'.padEnd(20)} TIPO ESPERADO`
+      );
+      console.error(`  ${'-'.repeat(115)}`);
+      for (const m of mismatches) {
+        console.error(
+          `  ${m.func.padEnd(50)} ${m.column.padEnd(30)} ${m.actual.padEnd(20)} ${m.expected}`
+        );
+      }
+      console.error(
+        '\nSolución: cambiar INTEGER -> BIGINT en las columnas de RETURNS TABLE de los scripts sqlweb-pg/\n'
+      );
+    }
+
+    expect(
+      mismatches.length,
+      `Hay ${mismatches.length} columna(s) de RETURNS TABLE con tipo incorrecto. ` +
+      `Se esperaba bigint. Primeros 5 afectados: ` +
+      mismatches.slice(0, 5).map(m => `${m.func}."${m.column}"(${m.actual})`).join(', ')
+    ).toBe(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
 // Test 8: Funciones de módulo críticas — opcionales (warn si no existen)
 // ────────────────────────────────────────────────────────────────────────────
 

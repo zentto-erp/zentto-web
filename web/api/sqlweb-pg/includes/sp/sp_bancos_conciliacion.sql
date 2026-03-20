@@ -688,9 +688,9 @@ $$;
 -- Usa tablas canonicas fin.BankMovement, fin.BankAccount, fin.Bank
 -- =============================================
 DROP FUNCTION IF EXISTS sp_get_movimiento_bancario_by_id(INT);
-
+DROP FUNCTION IF EXISTS sp_get_movimiento_bancario_by_id(BIGINT);
 CREATE OR REPLACE FUNCTION sp_get_movimiento_bancario_by_id(
-    p_movimiento_id INT
+    p_movimiento_id BIGINT
 )
 RETURNS TABLE (
     "id"                    BIGINT,
@@ -748,7 +748,8 @@ $$;
 
 -- Alias usado por la API (sp_GetMovimientoBancarioById -> pgCallSp -> sp_getmovimientobancariobyid)
 DROP FUNCTION IF EXISTS sp_getmovimientobancariobyid(INT);
-CREATE OR REPLACE FUNCTION sp_getmovimientobancariobyid(p_movimiento_id INTEGER)
+DROP FUNCTION IF EXISTS sp_getmovimientobancariobyid(BIGINT);
+CREATE OR REPLACE FUNCTION sp_getmovimientobancariobyid(p_movimiento_id BIGINT)
 RETURNS TABLE(
     "id" BIGINT, "BankAccountId" BIGINT, "Fecha" TIMESTAMP,
     "Tipo" VARCHAR, "MovementSign" SMALLINT, "Monto" NUMERIC,

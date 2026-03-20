@@ -602,6 +602,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/007_fix_all_type_mismatches.sql
 \echo '  [008] Fix TIMESTAMPTZ → TIMESTAMP (sin zona)'
 \i migrations/008_fix_timestamptz_to_timestamp.sql
+\echo '  [009] Fix parámetros BIGINT entidades (batch_id, product_id, movimiento_id)'
+\i migrations/009_fix_bigint_entity_params.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
