@@ -1,0 +1,1 @@
+export { GET, POST } from '@zentto/shared-auth/auth-proxy-route';

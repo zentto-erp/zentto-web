@@ -6,6 +6,7 @@ import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@zentto/shared-auth';
+import { isShellLocalPath, resolveAppHref } from '@/lib/app-links';
 
 // Icons - Importar todos los necesarios
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
@@ -37,13 +38,13 @@ export default function AppSelectorPage() {
 
   const has = (mod: string) => isAdmin || modulos.includes(mod);
 
-  const navigateToApp = (path: string) => {
-    const localPaths = ['/aplicaciones', '/configuracion', '/docs', '/soporte', '/info'];
-    if (localPaths.includes(path)) {
-      router.push(path);
+  const navigateToApp = (appId: string, path: string) => {
+    const href = resolveAppHref(appId, path);
+    if (isShellLocalPath(path)) {
+      router.push(href);
       return;
     }
-    window.location.assign(path);
+    window.location.assign(href);
   };
 
   // Todas las apps disponibles
@@ -97,7 +98,7 @@ export default function AppSelectorPage() {
           {allApps.map((app) => (
             <Grid key={app.id} size={{ xs: 4, sm: 3, md: 2 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <ButtonBase
-                onClick={() => navigateToApp(app.path)}
+                onClick={() => navigateToApp(app.id, app.path)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',

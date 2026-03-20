@@ -60,7 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
             </head>
             <body>
-                <SessionProvider basePath="/api/auth">
+                <SessionProvider basePath="/restaurante/api/auth">
                     <QueryProvider>
                         <AuthProvider>
                             <AppRouterCacheProvider options={{ enableCssLayer: true }}>

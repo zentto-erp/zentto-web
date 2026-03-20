@@ -4,6 +4,10 @@
   "private": true,
   "main": "src/index.tsx",
   "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./auth-proxy-route": "./auth-proxy-route.ts"
+  },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@mui/icons-material": "^6",
