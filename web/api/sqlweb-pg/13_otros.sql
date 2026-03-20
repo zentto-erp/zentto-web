@@ -1919,7 +1919,7 @@ $function$
 -- usp_store_product_getbycode
 DROP FUNCTION IF EXISTS public.usp_store_product_getbycode(integer, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_store_product_getbycode(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
- RETURNS TABLE(id bigint, code character varying, name character varying, "fullDescription" character varying, "shortDescription" character varying, "longDescription" character varying, category character varying, "categoryName" character varying, "brandCode" character varying, "brandName" character varying, price numeric, "compareAtPrice" numeric, "costPrice" numeric, stock numeric, "isService" boolean, "unitCode" character varying, "taxRate" numeric, "weightKg" numeric, "widthCm" numeric, "heightCm" numeric, "depthCm" numeric, "warrantyMonths" integer, "barCode" character varying, slug character varying, "avgRating" double precision, "reviewCount" integer)
+ RETURNS TABLE(id bigint, code character varying, name character varying, "fullDescription" text, "shortDescription" character varying, "longDescription" text, category character varying, "categoryName" character varying, "brandCode" character varying, "brandName" character varying, price numeric, "compareAtPrice" numeric, "costPrice" numeric, stock numeric, "isService" boolean, "unitCode" character varying, "taxRate" numeric, "weightKg" numeric, "widthCm" numeric, "heightCm" numeric, "depthCm" numeric, "warrantyMonths" integer, "barCode" character varying, slug character varying, "avgRating" double precision, "reviewCount" integer)
  LANGUAGE plpgsql
 AS $function$
 BEGIN
