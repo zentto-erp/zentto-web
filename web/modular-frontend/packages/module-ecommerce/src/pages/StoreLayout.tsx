@@ -31,13 +31,14 @@ interface Props {
 }
 
 export default function StoreLayout({ children, onNavigate }: Props) {
-  const [cartOpen, setCartOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  const cartOpen = useCartStore((s) => s.cartOpen);
+  const setCartOpen = useCartStore((s) => s.setCartOpen);
   const getItemCount = useCartStore((s) => s.getItemCount);
   const getTotal = useCartStore((s) => s.getTotal);
   const customerToken = useCartStore((s) => s.customerToken);

@@ -27,6 +27,7 @@ interface CartState {
   items: CartItem[];
   customerInfo: CustomerInfo | null;
   customerToken: string | null;
+  cartOpen: boolean;
 
   // Actions
   addItem: (item: Omit<CartItem, "subtotal" | "taxAmount" | "total">) => void;
@@ -35,6 +36,7 @@ interface CartState {
   clearCart: () => void;
   setCustomerInfo: (info: CustomerInfo | null) => void;
   setCustomerToken: (token: string | null) => void;
+  setCartOpen: (open: boolean) => void;
 
   // Computed
   getSubtotal: () => number;
@@ -56,12 +58,17 @@ export const useCartStore = create<CartState>()(
       items: [],
       customerInfo: null,
       customerToken: null,
+      cartOpen: false,
 
       addItem: (item) =>
         set((s) => {
+          // Coercionar a number — la API devuelve NUMERIC como string
+          const price = Number(item.unitPrice);
+          const taxRate = Number(item.taxRate);
           const existing = s.items.find((c) => c.productCode === item.productCode);
           if (existing) {
             return {
+              cartOpen: true,
               items: s.items.map((c) => {
                 if (c.productCode !== item.productCode) return c;
                 const quantity = c.quantity + item.quantity;
@@ -71,9 +78,11 @@ export const useCartStore = create<CartState>()(
           }
           const newItem: CartItem = {
             ...item,
-            ...calcLine(item.quantity, item.unitPrice, item.taxRate),
+            unitPrice: price,
+            taxRate,
+            ...calcLine(item.quantity, price, taxRate),
           };
-          return { items: [...s.items, newItem] };
+          return { cartOpen: true, items: [...s.items, newItem] };
         }),
 
       removeItem: (productCode) =>
@@ -94,6 +103,7 @@ export const useCartStore = create<CartState>()(
 
       setCustomerInfo: (info) => set({ customerInfo: info }),
       setCustomerToken: (token) => set({ customerToken: token }),
+      setCartOpen: (open) => set({ cartOpen: open }),
 
       // Computed
       getSubtotal: () => get().items.reduce((sum, c) => sum + c.subtotal, 0),
