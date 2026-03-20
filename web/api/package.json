@@ -8,7 +8,14 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "db:governance:report": "tsx src/tools/db-governance-report.ts",
-    "db:migrate:pg": "tsx src/tools/migrate-to-pg.ts"
+    "db:migrate:pg": "tsx src/tools/migrate-to-pg.ts",
+    "db:migrate:pg:incremental": "tsx src/tools/migrate-pg-incremental.ts",
+    "db:migrate:sqlserver": "tsx src/tools/migrate-sqlserver.ts",
+    "db:schema:extract": "tsx src/tools/schema-extract.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:schema": "vitest run tests/schema",
+    "test:smoke": "vitest run tests/api"
   },
   "dependencies": {
     "@types/multer": "^2.0.0",
@@ -50,6 +57,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "@types/ws": "^8.18.1",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.0"
   }
 }

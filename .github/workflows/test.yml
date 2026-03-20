@@ -1,0 +1,108 @@
+name: Tests API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/api/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'web/api/**'
+
+concurrency:
+  group: test-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  schema-contracts:
+    name: SP Contract Tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    # ⚠️ NO bloqueante: los tests pueden fallar sin detener el deploy
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zentto_app
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: zentto_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web/api
+        run: npm ci
+
+      - name: Bootstrap schema (run_all.sql)
+        working-directory: web/api
+        env:
+          PGPASSWORD: test_password
+        run: |
+          # Crear schema base
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -f sqlweb-pg/00_create_database.sql 2>/dev/null || true
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -f sqlweb-pg/run_all.sql
+
+      - name: Run incremental migrations
+        working-directory: web/api
+        env:
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+        run: npm run db:migrate:pg:incremental
+
+      - name: Run SP contract tests
+        working-directory: web/api
+        env:
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+        run: npm run test:schema
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: web/api/test-results/
+          if-no-files-found: ignore
+
+  smoke-tests:
+    name: API Smoke Tests
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    # Los smoke tests requieren la API corriendo — se ejecutan en staging
+    # Por ahora solo validan sintaxis y tipos
+    if: false  # Habilitar cuando se configure staging environment
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: web/api
+        run: npm ci
+      - name: Run smoke tests
+        working-directory: web/api
+        env:
+          API_BASE_URL: ${{ vars.STAGING_API_URL }}
+        run: npm run test:smoke
