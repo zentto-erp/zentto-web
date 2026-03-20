@@ -114,7 +114,10 @@ function loadOpenApiDoc() {
 export async function createApp() {
   const app = express();
   app.disable("etag");
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: false,
+  }));
   // CORS: origins locales + produccion + subdominios dinamicos de tenants
   const corsWhitelist = new Set([
     'http://localhost:3000', 'http://localhost:3100',
