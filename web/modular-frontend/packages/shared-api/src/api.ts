@@ -1,19 +1,10 @@
 'use client';
 
-import { getSession as _getSession } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
-
-/** Safe getSession — returns null if auth is unavailable */
-async function safeGetSession() {
-  try {
-    return await _getSession();
-  } catch {
-    return null;
-  }
-}
 
 export function resolveAssetUrl(url?: unknown): string | undefined {
   if (typeof url !== 'string') return undefined;
@@ -28,7 +19,7 @@ export function resolveAssetUrl(url?: unknown): string | undefined {
 
 async function getAuthToken(): Promise<string | null> {
   try {
-    const session = await safeGetSession();
+    const session = await getSession();
     // @ts-ignore
     return session?.accessToken || null;
   } catch { return null; }
@@ -36,7 +27,7 @@ async function getAuthToken(): Promise<string | null> {
 
 async function authHeader(): Promise<Record<string, string>> {
   try {
-    const session = await safeGetSession();
+    const session = await getSession();
     const headers: Record<string, string> = {};
     // @ts-ignore
     const token = session?.accessToken as string | undefined;

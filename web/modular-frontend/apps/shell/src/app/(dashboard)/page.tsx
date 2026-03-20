@@ -43,7 +43,6 @@ export default function AppSelectorPage() {
       router.push(path);
       return;
     }
-    // En dev (proxy :3080) y prod (Nginx), los paths funcionan directo
     window.location.assign(path);
   };
 

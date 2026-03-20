@@ -114,10 +114,7 @@ function loadOpenApiDoc() {
 export async function createApp() {
   const app = express();
   app.disable("etag");
-  app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginOpenerPolicy: false,
-  }));
+  app.use(helmet());
   // CORS: origins locales + produccion + subdominios dinamicos de tenants
   const corsWhitelist = new Set([
     'http://localhost:3000', 'http://localhost:3100',
@@ -135,9 +132,9 @@ export async function createApp() {
       // Permitir requests sin origin (Postman, curl, server-to-server)
       if (!origin) return callback(null, true);
       // Whitelist explicita
-      if (corsWhitelist.has(origin)) return callback(null, origin);
+      if (corsWhitelist.has(origin)) return callback(null, true);
       // Cualquier subdominio *.zentto.net (tenants dinamicos)
-      if (/^https:\/\/[a-z0-9-]+\.zentto\.net$/.test(origin)) return callback(null, origin);
+      if (/^https:\/\/[a-z0-9-]+\.zentto\.net$/.test(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} no permitido`));
     },
     credentials: true,
