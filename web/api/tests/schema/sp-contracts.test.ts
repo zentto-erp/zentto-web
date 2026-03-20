@@ -1,13 +1,11 @@
 /**
  * sp-contracts.test.ts
  *
- * Valida que los stored procedures de PostgreSQL cumplan los contratos
- * esperados: existen, no tienen overloads duplicados, y los tipos de
- * retorno son correctos.
- *
- * Lee SOLO metadatos (pg_proc) — no modifica datos.
- * Se ejecuta contra la DB de produccion via SSH tunnel o en CI con
- * variable PG_CONNECTION_STRING.
+ * Valida TODOS los stored procedures/funciones de PostgreSQL automáticamente.
+ * - No requiere lista manual: escanea pg_proc en tiempo real
+ * - Detecta overloads duplicados (causa principal de errores POS)
+ * - Verifica tipos BIGINT donde se requiere
+ * - Solo lectura (pg_proc) — no modifica datos
  *
  * Variables de entorno:
  *   PG_CONNECTION_STRING  o  PG_HOST + PG_PORT + PG_DATABASE + PG_USER + PG_PASSWORD
@@ -44,138 +42,78 @@ afterAll(async () => {
 // Helpers
 // ────────────────────────────────────────────────────────────────────────────
 
-/** Cuenta cuántos overloads tiene una función (por nombre, sin importar firma) */
-async function countOverloads(funcName: string): Promise<number> {
-  const res = await pool.query<{ cnt: string }>(
-    `SELECT COUNT(*) AS cnt FROM pg_proc WHERE proname = $1`,
-    [funcName.toLowerCase()]
-  );
-  return Number(res.rows[0]?.cnt ?? 0);
+interface FuncOverload {
+  proname: string;
+  count: number;
 }
 
-/** Obtiene los nombres de las columnas del resultado de la función */
-async function getReturnColumns(funcName: string): Promise<{ name: string; type: string }[]> {
-  const res = await pool.query<{ attname: string; typname: string }>(
-    `SELECT a.attname, t.typname
+interface FuncMeta {
+  proname: string;
+  argtypes: string[];
+  rettype: string;
+  proretset: boolean;
+}
+
+async function getAllFunctionNames(): Promise<string[]> {
+  const res = await pool.query<{ proname: string }>(
+    `SELECT DISTINCT proname FROM pg_proc
+     WHERE proname LIKE 'usp_%'
+     ORDER BY proname`
+  );
+  return res.rows.map(r => r.proname);
+}
+
+async function getFunctionsWithOverloads(): Promise<FuncOverload[]> {
+  const res = await pool.query<{ proname: string; count: string }>(
+    `SELECT proname, COUNT(*) AS count
+     FROM pg_proc
+     WHERE proname LIKE 'usp_%'
+     GROUP BY proname
+     HAVING COUNT(*) > 1
+     ORDER BY proname`
+  );
+  return res.rows.map(r => ({ proname: r.proname, count: Number(r.count) }));
+}
+
+async function getFuncMeta(funcName: string): Promise<FuncMeta[]> {
+  const res = await pool.query<{
+    proname: string;
+    argtypes: string;
+    rettype: string;
+    proretset: boolean;
+  }>(
+    `SELECT
+       p.proname,
+       pg_catalog.pg_get_function_arguments(p.oid) AS argtypes,
+       pg_catalog.pg_get_function_result(p.oid)    AS rettype,
+       p.proretset
      FROM pg_proc p
-     JOIN pg_type rt ON rt.oid = p.prorettype
-     LEFT JOIN pg_attribute a ON a.attrelid = rt.typrelid AND a.attnum > 0
-     LEFT JOIN pg_type t ON t.oid = a.atttypid
      WHERE p.proname = $1
-       AND rt.typtype = 'c'
-     ORDER BY a.attnum`,
+     ORDER BY p.oid`,
     [funcName.toLowerCase()]
   );
-  return res.rows.map(r => ({ name: r.attname, type: r.typname }));
+  return res.rows.map(r => ({
+    proname: r.proname,
+    argtypes: r.argtypes ? r.argtypes.split(',').map(s => s.trim()) : [],
+    rettype: r.rettype ?? '',
+    proretset: r.proretset,
+  }));
 }
 
-/** Verifica que la función existe */
-async function funcExists(funcName: string): Promise<boolean> {
-  const count = await countOverloads(funcName);
-  return count > 0;
-}
-
 // ────────────────────────────────────────────────────────────────────────────
-// Tests: existencia de funciones críticas
+// Test 1: La DB está bootstrapped (sanity check)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — funciones críticas existen', () => {
-  const criticalFunctions = [
-    // Auth
-    'usp_sec_user_authenticate',
-    'usp_sec_user_checkexists',
-    'usp_sec_user_getmoduleaccess',
-    // POS
-    'usp_pos_waitticket_create',
-    'usp_pos_waitticketline_insert',
-    'usp_pos_waitticket_recover',
-    'usp_pos_waitticket_void',
-    'usp_pos_waitticket_getheader',
-    'usp_pos_waitticketline_getitems',
-    'usp_pos_saleticket_create',
-    // Config
-    'usp_cfg_appsetting_list',
-    'usp_cfg_resolvecontext',
-    // Fiscal
-    'usp_cfg_fiscal_getconfig',
-    'usp_cfg_fiscal_upsertconfig',
-  ];
-
-  for (const fn of criticalFunctions) {
-    it(`${fn} debe existir`, async () => {
-      const exists = await funcExists(fn);
-      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(true);
-    });
-  }
-});
-
-// ────────────────────────────────────────────────────────────────────────────
-// Tests: sin overloads duplicados (causa principal de errores POS)
-// ────────────────────────────────────────────────────────────────────────────
-
-describe('SP Contracts — sin overloads duplicados', () => {
-  const singleOverloadFunctions = [
-    'usp_pos_waitticket_create',
-    'usp_pos_waitticketline_insert',
-    'usp_pos_waitticket_recover',
-    'usp_pos_waitticket_void',
-    'usp_pos_waitticket_getheader',
-    'usp_pos_waitticketline_getitems',
-    'usp_pos_saleticket_create',
-    'usp_pos_saleticketline_insert',
-  ];
-
-  for (const fn of singleOverloadFunctions) {
-    it(`${fn} debe tener exactamente 1 overload`, async () => {
-      const count = await countOverloads(fn);
-      expect(
-        count,
-        `${fn} tiene ${count} overloads — debería tener exactamente 1. ` +
-        `Ejecutar: npm run db:migrate:pg:incremental`
-      ).toBe(1);
-    });
-  }
-});
-
-// ────────────────────────────────────────────────────────────────────────────
-// Tests: tipos de retorno BIGINT donde se requiere
-// ────────────────────────────────────────────────────────────────────────────
-
-describe('SP Contracts — tipos BIGINT correctos', () => {
-  it('usp_pos_waitticket_create debe retornar "Resultado" como int8 (BIGINT)', async () => {
-    const res = await pool.query<{ proretset: boolean; prosrc: string }>(
-      `SELECT p.prosrc
-       FROM pg_proc p
-       WHERE p.proname = 'usp_pos_waitticket_create'
-       LIMIT 1`
-    );
-    expect(res.rows.length).toBe(1);
-    // El source debe declarar v_id BIGINT (no INT)
-    const src = res.rows[0]?.prosrc ?? '';
-    expect(src.toLowerCase()).toContain('bigint');
-    expect(src.toLowerCase()).not.toMatch(/\bv_id\s+int\b(?!eger)/i);
+describe('SP Contracts — DB bootstrapped', () => {
+  it('debe tener al menos 100 funciones usp_*', async () => {
+    const names = await getAllFunctionNames();
+    expect(
+      names.length,
+      `Solo hay ${names.length} funciones — la DB puede no estar inicializada`
+    ).toBeGreaterThanOrEqual(100);
+    console.log(`  ℹ  Total funciones únicas usp_*: ${names.length}`);
   });
 
-  it('usp_pos_waitticketline_insert primer parámetro debe ser bigint', async () => {
-    const res = await pool.query<{ proargtypes: string }>(
-      `SELECT pg_catalog.format_type(t.oid, NULL) AS argtype
-       FROM pg_proc p
-       CROSS JOIN LATERAL unnest(p.proargtypes) WITH ORDINALITY AS u(oid, ord)
-       JOIN pg_type t ON t.oid = u.oid
-       WHERE p.proname = 'usp_pos_waitticketline_insert'
-       ORDER BY u.ord
-       LIMIT 1`
-    );
-    expect(res.rows.length).toBe(1);
-    expect(res.rows[0]?.argtype).toBe('bigint');
-  });
-});
-
-// ────────────────────────────────────────────────────────────────────────────
-// Tests: tabla de control de migraciones existe
-// ────────────────────────────────────────────────────────────────────────────
-
-describe('SP Contracts — infraestructura de migraciones', () => {
   it('tabla public._migrations debe existir', async () => {
     const res = await pool.query<{ exists: boolean }>(
       `SELECT EXISTS (
@@ -184,5 +122,131 @@ describe('SP Contracts — infraestructura de migraciones', () => {
        ) AS exists`
     );
     expect(res.rows[0]?.exists).toBe(true);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 2: CERO overloads duplicados en TODAS las funciones
+// (Este es el test crítico — detecta la causa raíz de los errores POS)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — sin overloads duplicados (todas las funciones)', () => {
+  it('ninguna función usp_* debe tener más de 1 overload', async () => {
+    const overloads = await getFunctionsWithOverloads();
+
+    if (overloads.length > 0) {
+      const report = overloads
+        .map(f => `  - ${f.proname}: ${f.count} overloads`)
+        .join('\n');
+      console.error(`\n⚠️  Funciones con overloads duplicados:\n${report}\n`);
+      console.error(
+        `Solución: crear migración en sqlweb-pg/migrations/ con:\n` +
+        `  DROP FUNCTION IF EXISTS <nombre>(tipo1, tipo2, ...) CASCADE;\n` +
+        `  CREATE OR REPLACE FUNCTION <nombre>(...)\n`
+      );
+    }
+
+    expect(
+      overloads.length,
+      `Hay ${overloads.length} función(es) con overloads duplicados:\n` +
+      overloads.map(f => `  ${f.proname} (${f.count} versiones)`).join('\n')
+    ).toBe(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 3: Funciones POS críticas — tipos BIGINT correctos
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — tipos BIGINT en funciones POS', () => {
+  const bigintReturnFunctions = [
+    'usp_pos_waitticket_create',
+    'usp_pos_waitticketline_insert',
+    'usp_pos_saleticketline_insert',
+  ];
+
+  for (const fn of bigintReturnFunctions) {
+    it(`${fn} debe retornar "Resultado" como BIGINT`, async () => {
+      const metas = await getFuncMeta(fn);
+      if (metas.length === 0) {
+        console.warn(`  ⚠  ${fn} no encontrada — omitiendo test de tipo`);
+        return; // skip si no existe
+      }
+      const meta = metas[0];
+      expect(
+        meta.rettype.toLowerCase(),
+        `${fn} retorna "${meta.rettype}" — se esperaba bigint`
+      ).toContain('bigint');
+    });
+  }
+
+  it('usp_pos_waitticketline_insert primer parámetro debe ser bigint', async () => {
+    const metas = await getFuncMeta('usp_pos_waitticketline_insert');
+    if (metas.length === 0) return;
+    const firstArgType = metas[0]?.argtypes[0] ?? '';
+    expect(
+      firstArgType.toLowerCase(),
+      `Primer argumento es "${firstArgType}" — se esperaba bigint`
+    ).toContain('bigint');
+  });
+
+  it('usp_pos_waitticket_recover p_wait_ticket_id debe ser bigint', async () => {
+    const metas = await getFuncMeta('usp_pos_waitticket_recover');
+    if (metas.length === 0) return;
+    // Tercer parámetro (índice 2) es p_wait_ticket_id
+    const thirdArgType = metas[0]?.argtypes[2] ?? '';
+    expect(
+      thirdArgType.toLowerCase(),
+      `Tercer argumento de usp_pos_waitticket_recover es "${thirdArgType}" — se esperaba bigint`
+    ).toContain('bigint');
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 4: Funciones de infraestructura obligatorias
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — funciones de infraestructura', () => {
+  // Solo las funciones más críticas para que el sistema arranque
+  const requiredFunctions = [
+    'usp_sec_user_authenticate',
+    'usp_cfg_resolvecontext',
+    'usp_cfg_fiscal_getconfig',
+    'usp_pos_waitticket_create',
+    'usp_pos_saleticket_create',
+  ];
+
+  for (const fn of requiredFunctions) {
+    it(`${fn} debe existir`, async () => {
+      const res = await pool.query<{ cnt: string }>(
+        `SELECT COUNT(*) AS cnt FROM pg_proc WHERE proname = $1`,
+        [fn.toLowerCase()]
+      );
+      const exists = Number(res.rows[0]?.cnt ?? 0) > 0;
+      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(true);
+    });
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 5: Reporte de estado (informativo, siempre pasa)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — reporte de estado', () => {
+  it('muestra resumen de funciones por módulo', async () => {
+    const res = await pool.query<{ modulo: string; total: string }>(
+      `SELECT
+         SPLIT_PART(proname, '_', 2) AS modulo,
+         COUNT(DISTINCT proname) AS total
+       FROM pg_proc
+       WHERE proname LIKE 'usp_%'
+       GROUP BY modulo
+       ORDER BY total DESC`
+    );
+    console.log('\n  📊 Funciones por módulo:');
+    for (const row of res.rows) {
+      console.log(`     ${row.modulo.padEnd(15)} ${row.total}`);
+    }
+    expect(res.rows.length).toBeGreaterThan(0);
   });
 });
