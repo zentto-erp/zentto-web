@@ -597,7 +597,7 @@ $$;
 -- =============================================================================
 
 -- usp_POS_WaitTicket_Create
-DROP FUNCTION IF EXISTS usp_pos_waitticket_create CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_create(integer,integer,varchar,varchar,varchar,integer,integer,varchar,varchar,varchar,varchar,varchar,numeric,numeric,numeric,numeric) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_create(
     p_company_id        INT,
     p_branch_id         INT,
@@ -641,7 +641,8 @@ END;
 $$;
 
 -- usp_POS_WaitTicketLine_Insert
-DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert(bigint,integer,varchar,integer,varchar,varchar,numeric,numeric,numeric,varchar,numeric,numeric,numeric,numeric,integer,text) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert(integer,integer,varchar,integer,varchar,varchar,numeric,numeric,numeric,varchar,numeric,numeric,numeric,numeric,integer,text) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_insert(
     p_wait_ticket_id        BIGINT,
     p_line_number           INT,
@@ -660,7 +661,7 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticketline_insert(
     p_supervisor_approval_id INT DEFAULT NULL,
     p_line_meta_json        TEXT DEFAULT NULL
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -677,7 +678,7 @@ BEGIN
         p_supervisor_approval_id, p_line_meta_json, NOW() AT TIME ZONE 'UTC'
     );
 
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+    RETURN QUERY SELECT 1::BIGINT, 'OK'::VARCHAR(500);
 END;
 $$;
 
@@ -736,7 +737,8 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_Recover
-DROP FUNCTION IF EXISTS usp_pos_waitticket_recover CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(integer,integer,integer,integer,character varying) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(integer,integer,bigint,integer,character varying) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_company_id         INT,
     p_branch_id          INT,
@@ -744,7 +746,7 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_recovered_by_user_id INT DEFAULT NULL,
     p_recovered_at_register VARCHAR(20) DEFAULT NULL
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -756,7 +758,7 @@ BEGIN
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id AND "WaitTicketId" = p_wait_ticket_id;
 
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+    RETURN QUERY SELECT 1::BIGINT, 'OK'::VARCHAR(500);
 END;
 $$;
 
@@ -790,13 +792,14 @@ END;
 $$;
 
 -- usp_POS_WaitTicket_Void
-DROP FUNCTION IF EXISTS usp_pos_waitticket_void CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_void(integer,integer,integer) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_void(integer,integer,bigint) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_void(
     p_company_id    INT,
     p_branch_id     INT,
     p_wait_ticket_id BIGINT
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -805,12 +808,13 @@ BEGIN
     WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
       AND "WaitTicketId" = p_wait_ticket_id AND "Status" = 'WAITING';
 
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+    RETURN QUERY SELECT 1::BIGINT, 'OK'::VARCHAR(500);
 END;
 $$;
 
 -- usp_POS_SaleTicket_Create
-DROP FUNCTION IF EXISTS usp_pos_saleticket_create CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_saleticket_create(integer,integer,varchar,varchar,varchar,integer,integer,varchar,varchar,varchar,varchar,varchar,text,integer,numeric,numeric,numeric,numeric) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_saleticket_create(integer,integer,varchar,varchar,varchar,integer,integer,varchar,varchar,varchar,varchar,varchar,text,bigint,numeric,numeric,numeric,numeric) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticket_create(
     p_company_id        INT,
     p_branch_id         INT,
@@ -856,7 +860,8 @@ END;
 $$;
 
 -- usp_POS_SaleTicketLine_Insert
-DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert(bigint,integer,varchar,integer,varchar,varchar,numeric,numeric,numeric,varchar,numeric,numeric,numeric,numeric,integer,text) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert(integer,integer,varchar,integer,varchar,varchar,numeric,numeric,numeric,varchar,numeric,numeric,numeric,numeric,integer,text) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticketline_insert(
     p_sale_ticket_id        BIGINT,
     p_line_number           INT,

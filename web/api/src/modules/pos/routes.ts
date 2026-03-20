@@ -28,6 +28,26 @@ function normalizeAgentUrl(raw?: string) {
     return value.replace(/\/$/, "");
 }
 
+/** Respuesta mock cuando conexion=emulador */
+function emulatorResponse(path: string): unknown {
+    if (path.includes("/status")) {
+        return { connected: true, model: "Emulador", serial: "EMU-0001", firmware: "1.0.0", ready: true };
+    }
+    if (path.includes("/metodos")) {
+        return { metodos: ["Contado", "Credito", "TDC", "TDD", "Transferencia"] };
+    }
+    if (path.includes("/reporte")) {
+        return { ok: true, message: "Reporte emulado correctamente" };
+    }
+    if (path.includes("/memoria")) {
+        return { ok: true, data: { usada: 0, libre: 100 } };
+    }
+    if (path.includes("/print") || path.includes("/documento-no-fiscal")) {
+        return { ok: true, message: "Impresión emulada correctamente" };
+    }
+    return { ok: true, emulado: true };
+}
+
 function normalizeServiceName(raw?: string) {
     const value = String(raw ?? "").trim();
     return value || DEFAULT_LOCAL_FISCAL_SERVICE_NAME;
@@ -276,6 +296,9 @@ async function executeWindowsServiceAction(params: { action: "start" | "stop" | 
 }
 
 async function proxyFiscalGet(res: any, path: string, query: Record<string, string | undefined>) {
+    if (query.conexion === "emulador") {
+        return res.status(200).json(emulatorResponse(path));
+    }
     try {
         const agentUrl = normalizeAgentUrl(query.agentUrl);
         const params = new URLSearchParams();
@@ -305,6 +328,9 @@ async function proxyFiscalGet(res: any, path: string, query: Record<string, stri
 }
 
 async function proxyFiscalPost(res: any, path: string, body: Record<string, unknown>) {
+    if (body.conexion === "emulador") {
+        return res.status(200).json(emulatorResponse(path));
+    }
     try {
         const agentUrl = normalizeAgentUrl(typeof body.agentUrl === "string" ? body.agentUrl : undefined);
         const { agentUrl: _agentUrl, ...payload } = body;
