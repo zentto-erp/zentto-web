@@ -605,7 +605,7 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticket_create(
     p_cash_register_code VARCHAR(20),
     p_station_name      VARCHAR(100) DEFAULT NULL,
     p_created_by_user_id INT DEFAULT NULL,
-    p_customer_id       INT DEFAULT NULL,
+    p_customer_id       BIGINT DEFAULT NULL,
     p_customer_code     VARCHAR(50) DEFAULT NULL,
     p_customer_name     VARCHAR(255) DEFAULT NULL,
     p_customer_fiscal_id VARCHAR(50) DEFAULT NULL,
@@ -647,7 +647,7 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticketline_insert(
     p_wait_ticket_id        BIGINT,
     p_line_number           INT,
     p_country_code          VARCHAR(5),
-    p_product_id            INT DEFAULT NULL,
+    p_product_id            BIGINT DEFAULT NULL,
     p_product_code          VARCHAR(60) DEFAULT NULL,
     p_product_name          VARCHAR(255) DEFAULT NULL,
     p_quantity              NUMERIC(18,4) DEFAULT NULL,
@@ -822,7 +822,7 @@ CREATE OR REPLACE FUNCTION usp_pos_saleticket_create(
     p_invoice_number    VARCHAR(50),
     p_cash_register_code VARCHAR(20),
     p_sold_by_user_id   INT DEFAULT NULL,
-    p_customer_id       INT DEFAULT NULL,
+    p_customer_id       BIGINT DEFAULT NULL,
     p_customer_code     VARCHAR(50) DEFAULT NULL,
     p_customer_name     VARCHAR(255) DEFAULT NULL,
     p_customer_fiscal_id VARCHAR(50) DEFAULT NULL,
@@ -866,7 +866,7 @@ CREATE OR REPLACE FUNCTION usp_pos_saleticketline_insert(
     p_sale_ticket_id        BIGINT,
     p_line_number           INT,
     p_country_code          VARCHAR(5),
-    p_product_id            INT DEFAULT NULL,
+    p_product_id            BIGINT DEFAULT NULL,
     p_product_code          VARCHAR(60) DEFAULT NULL,
     p_product_name          VARCHAR(255) DEFAULT NULL,
     p_quantity              NUMERIC(18,4) DEFAULT NULL,
@@ -1029,7 +1029,7 @@ END; $$;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(600), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_insert(
     p_order_id INT, p_line_number INT, p_country_code VARCHAR(5),
-    p_product_id INT DEFAULT NULL, p_product_code VARCHAR(60) DEFAULT NULL,
+    p_product_id BIGINT DEFAULT NULL, p_product_code VARCHAR(60) DEFAULT NULL,
     p_product_name VARCHAR(255) DEFAULT NULL, p_quantity NUMERIC(18,4) DEFAULT NULL,
     p_unit_price NUMERIC(18,4) DEFAULT NULL, p_tax_code VARCHAR(20) DEFAULT NULL,
     p_tax_rate NUMERIC(10,6) DEFAULT NULL, p_net_amount NUMERIC(18,2) DEFAULT NULL,
@@ -1074,7 +1074,7 @@ END; $$;
 -- usp_Rest_OrderTicketLine_GetById
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbyid(p_pedido_id INT, p_item_id INT)
-RETURNS TABLE("itemId" INT,"lineNumber" INT,"countryCode" VARCHAR,"productId" INT,
+RETURNS TABLE("itemId" INT,"lineNumber" INT,"countryCode" VARCHAR,"productId" BIGINT,
     "productCode" VARCHAR,"nombre" VARCHAR,"cantidad" NUMERIC,"unitPrice" NUMERIC,
     "taxCode" VARCHAR,"taxRate" NUMERIC,"netAmount" NUMERIC,"taxAmount" NUMERIC,"totalAmount" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1291,11 +1291,11 @@ CREATE OR REPLACE FUNCTION usp_bank_movement_create(
     p_related_document_no VARCHAR(60) DEFAULT NULL, p_related_document_type VARCHAR(20) DEFAULT NULL,
     p_created_by_user_id INT DEFAULT NULL
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500), "movementId" INT, "newBalance" NUMERIC)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500), "movementId" BIGINT, "newBalance" NUMERIC)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_current_balance NUMERIC(18,2); v_current_available NUMERIC(18,2);
-    v_new_balance NUMERIC(18,2); v_new_available NUMERIC(18,2); v_movement_id INT;
+    v_new_balance NUMERIC(18,2); v_new_available NUMERIC(18,2); v_movement_id BIGINT;
 BEGIN
     SELECT "Balance","AvailableBalance" INTO v_current_balance,v_current_available
     FROM fin."BankAccount" WHERE "BankAccountId"=p_bank_account_id FOR UPDATE;

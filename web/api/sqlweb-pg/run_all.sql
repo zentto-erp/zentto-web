@@ -604,6 +604,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/008_fix_timestamptz_to_timestamp.sql
 \echo '  [009] Fix parámetros BIGINT entidades (batch_id, product_id, movimiento_id)'
 \i migrations/009_fix_bigint_entity_params.sql
+\echo '  [010] Fix parámetros BIGINT en acct, ops, rest_admin (sale_ticket, order_ticket, customer, product, supplier)'
+\i migrations/010_fix_bigint_params_acct_ops_rest.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

@@ -857,9 +857,10 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_compra_update(INT, INT, VARCHAR(20), VARCHAR(500)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_update(INT, BIGINT, VARCHAR(20), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_update(
     p_compra_id   INT,
-    p_supplier_id INT DEFAULT NULL,
+    p_supplier_id BIGINT DEFAULT NULL,
     p_status      VARCHAR(20) DEFAULT NULL,
     p_notes       VARCHAR(500) DEFAULT NULL
 )
@@ -994,8 +995,9 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_adjuststock(INT, NUMERIC(18,4)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_adjuststock(BIGINT, NUMERIC(18,4)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_adjuststock(
-    p_product_id INT,
+    p_product_id BIGINT,
     p_delta_qty  NUMERIC(18,4)
 )
 RETURNS VOID

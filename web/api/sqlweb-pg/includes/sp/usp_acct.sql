@@ -441,7 +441,7 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_acct_pos_getheader(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_pos_getheader(
-    p_sale_ticket_id INT
+    p_sale_ticket_id BIGINT
 )
 RETURNS TABLE(
     "id"          BIGINT,
@@ -478,7 +478,7 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_acct_pos_gettaxsummary(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_pos_gettaxsummary(
-    p_sale_ticket_id INT
+    p_sale_ticket_id BIGINT
 )
 RETURNS TABLE(
     "taxRate"     NUMERIC,
@@ -506,7 +506,7 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_acct_rest_getheader(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_rest_getheader(
-    p_order_ticket_id INT
+    p_order_ticket_id BIGINT
 )
 RETURNS TABLE(
     "id"          BIGINT,
@@ -536,7 +536,7 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_acct_rest_gettaxsummary(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_rest_gettaxsummary(
-    p_order_ticket_id INT
+    p_order_ticket_id BIGINT
 )
 RETURNS TABLE(
     "taxRate"     NUMERIC,
