@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashBox" (
     "CurrentBalance"  NUMERIC(18,2) NOT NULL DEFAULT 0,
     "Responsible"     VARCHAR(100),
     "Status"          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    "CreatedAt"       TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "CreatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
     "CreatedByUserId" INT
 );
 
@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashSession" (
     "ClosingAmount"   NUMERIC(18,2),
     "TotalExpenses"   NUMERIC(18,2) NOT NULL DEFAULT 0,
     "Status"          VARCHAR(20) NOT NULL DEFAULT 'OPEN',
-    "OpenedAt"        TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "ClosedAt"        TIMESTAMPTZ,
+    "OpenedAt"        TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "ClosedAt"        TIMESTAMP,
     "OpenedByUserId"  INT,
     "ClosedByUserId"  INT,
     "Notes"           VARCHAR(500)
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashExpense" (
     "Beneficiary"     VARCHAR(150),
     "ReceiptNumber"   VARCHAR(50),
     "AccountCode"     VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "CreatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
     "CreatedByUserId" INT
 );
 
@@ -76,7 +76,7 @@ RETURNS TABLE(
     "CurrentBalance"  NUMERIC(18,2),
     "Responsible"     VARCHAR(100),
     "Status"          VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ,
+    "CreatedAt"       TIMESTAMP,
     "CreatedByUserId" INT
 )
 LANGUAGE plpgsql
@@ -269,8 +269,8 @@ RETURNS TABLE(
     "ClosingAmount"    NUMERIC(18,2),
     "TotalExpenses"    NUMERIC(18,2),
     "Status"           VARCHAR(20),
-    "OpenedAt"         TIMESTAMPTZ,
-    "ClosedAt"         TIMESTAMPTZ,
+    "OpenedAt"         TIMESTAMP,
+    "ClosedAt"         TIMESTAMP,
     "OpenedByUserId"   INT,
     "ClosedByUserId"   INT,
     "Notes"            VARCHAR(500),
@@ -390,7 +390,7 @@ RETURNS TABLE(
     "Beneficiary"     VARCHAR(150),
     "ReceiptNumber"   VARCHAR(50),
     "AccountCode"     VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ,
+    "CreatedAt"       TIMESTAMP,
     "CreatedByUserId" INT
 )
 LANGUAGE plpgsql
@@ -425,7 +425,7 @@ RETURNS TABLE(
     "CurrentBalance"  NUMERIC(18,2),
     "Responsible"     VARCHAR(100),
     "Status"          VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ
+    "CreatedAt"       TIMESTAMP
 )
 LANGUAGE plpgsql
 AS $$
@@ -449,7 +449,7 @@ RETURNS TABLE(
     "OpeningAmount"    NUMERIC(18,2),
     "TotalExpenses"    NUMERIC(18,2),
     "AvailableBalance" NUMERIC(18,2),
-    "OpenedAt"         TIMESTAMPTZ,
+    "OpenedAt"         TIMESTAMP,
     "OpenedByUserId"   INT,
     "ExpenseCount"     BIGINT
 )
@@ -505,7 +505,7 @@ GRANT CREATE ON SCHEMA fin TO zentto_app;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_list(p_company_id INTEGER)
 RETURNS TABLE("Id" INTEGER,"CompanyId" INTEGER,"BranchId" INTEGER,"Name" VARCHAR,
     "AccountCode" VARCHAR,"MaxAmount" NUMERIC,"CurrentBalance" NUMERIC,
-    "Responsible" VARCHAR,"Status" VARCHAR,"CreatedAt" TIMESTAMPTZ,"CreatedByUserId" INTEGER)
+    "Responsible" VARCHAR,"Status" VARCHAR,"CreatedAt" TIMESTAMP,"CreatedByUserId" INTEGER)
 LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_list(p_company_id); END;
 $$;
@@ -539,7 +539,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
 RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmount" NUMERIC,
-    "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMPTZ,"ClosedAt" TIMESTAMPTZ,
+    "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMP,"ClosedAt" TIMESTAMP,
     "OpenedByUserId" INTEGER,"ClosedByUserId" INTEGER,"Notes" VARCHAR,
     "AvailableBalance" NUMERIC,"ExpenseCount" BIGINT)
 LANGUAGE plpgsql AS $$
@@ -561,7 +561,7 @@ CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_list(
     p_box_id INTEGER, p_session_id INTEGER DEFAULT NULL)
 RETURNS TABLE("Id" INTEGER,"SessionId" INTEGER,"BoxId" INTEGER,"Category" VARCHAR,
     "Description" VARCHAR,"Amount" NUMERIC,"Beneficiary" VARCHAR,"ReceiptNumber" VARCHAR,
-    "AccountCode" VARCHAR,"CreatedAt" TIMESTAMPTZ,"CreatedByUserId" INTEGER)
+    "AccountCode" VARCHAR,"CreatedAt" TIMESTAMP,"CreatedByUserId" INTEGER)
 LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_list(p_box_id, p_session_id); END;
 $$;
@@ -571,7 +571,7 @@ CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_summary(p_box_id INTEGER)
 RETURNS TABLE(
     "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,
     "Status" VARCHAR, "SessionId" INTEGER, "OpeningAmount" NUMERIC, "TotalExpenses" NUMERIC,
-    "AvailableBalance" NUMERIC, "OpenedAt" TIMESTAMPTZ, "ExpenseCount" BIGINT)
+    "AvailableBalance" NUMERIC, "OpenedAt" TIMESTAMP, "ExpenseCount" BIGINT)
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY

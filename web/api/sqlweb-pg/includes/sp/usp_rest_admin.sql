@@ -688,20 +688,20 @@ $$;
 -- COMPRAS
 -- ============================================================================
 
-DROP FUNCTION IF EXISTS usp_rest_admin_compra_list(INT, INT, VARCHAR(20), TIMESTAMPTZ, TIMESTAMPTZ) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_list(INT, INT, VARCHAR, TIMESTAMP, TIMESTAMP) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_list(
     p_company_id INT,
     p_branch_id  INT,
     p_status     VARCHAR(20) DEFAULT NULL,
-    p_from_date  TIMESTAMPTZ DEFAULT NULL,
-    p_to_date    TIMESTAMPTZ DEFAULT NULL
+    p_from_date  TIMESTAMP DEFAULT NULL,
+    p_to_date    TIMESTAMP DEFAULT NULL
 )
 RETURNS TABLE(
     "id"                INT,
     "numCompra"         VARCHAR,
     "proveedorId"       VARCHAR,
     "proveedorNombre"   VARCHAR,
-    "fechaCompra"       TIMESTAMPTZ,
+    "fechaCompra"       TIMESTAMP,
     "estado"            VARCHAR,
     "subtotal"          NUMERIC,
     "iva"               NUMERIC,
@@ -743,7 +743,7 @@ RETURNS TABLE(
     "numCompra"         VARCHAR,
     "proveedorId"       VARCHAR,
     "proveedorNombre"   VARCHAR,
-    "fechaCompra"       TIMESTAMPTZ,
+    "fechaCompra"       TIMESTAMP,
     "estado"            VARCHAR,
     "subtotal"          NUMERIC,
     "iva"               NUMERIC,

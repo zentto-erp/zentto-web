@@ -580,7 +580,31 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i includes/sp/usp_sys_Lead_Upsert.sql
 
 -- ====================================================================
--- FASE 8: Verificacion
+-- FASE 8: Migraciones post-despliegue
+-- Aplican correcciones incrementales sobre los SPs ya creados.
+-- Cada migración es idempotente (ON CONFLICT DO NOTHING).
+-- ====================================================================
+\echo ''
+\echo '--- Migraciones post-despliegue ---'
+\echo '  [001] POS BIGINT overload fixes'
+\i migrations/001_pos_bigint_overload_fixes.sql
+\echo '  [002] Product ecommerce columns'
+\i migrations/002_product_ecommerce_columns.sql
+\echo '  [003] cfg.AppSetting fiscal port type'
+\i migrations/003_cfg_appsetting_fiscal_port.sql
+\echo '  [004] Drop remaining overloads'
+\i migrations/004_drop_remaining_overloads.sql
+\echo '  [005] Drop prod overloads'
+\i migrations/005_drop_prod_overloads.sql
+\echo '  [006] Fix waitticketline_getitems bigint'
+\i migrations/006_fix_waitticketline_getitems_bigint.sql
+\echo '  [007] Fix all type mismatches (27 funciones)'
+\i migrations/007_fix_all_type_mismatches.sql
+\echo '  [008] Fix TIMESTAMPTZ → TIMESTAMP (sin zona)'
+\i migrations/008_fix_timestamptz_to_timestamp.sql
+
+-- ====================================================================
+-- FASE 9: Verificacion
 -- ====================================================================
 \echo ''
 \echo '╔══════════════════════════════════════════════════════╗'

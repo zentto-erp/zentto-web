@@ -1108,7 +1108,7 @@ DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getheaderforclose(p_pedido_id INT)
 RETURNS TABLE("id" INT,"empresaId" INT,"sucursalId" INT,"countryCode" VARCHAR,"mesaId" INT,
     "clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC,
-    "fechaCierre" TIMESTAMPTZ,"codUsuario" VARCHAR)
+    "fechaCierre" TIMESTAMP,"codUsuario" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT o."OrderTicketId",o."CompanyId",o."BranchId",o."CountryCode",dt."DiningTableId",
         o."CustomerName",o."CustomerFiscalId",o."Status",o."TotalAmount",o."ClosedAt",
@@ -1189,7 +1189,7 @@ CREATE OR REPLACE FUNCTION usp_inv_movement_list(
 )
 RETURNS TABLE(
     "MovementId" BIGINT, "Codigo" VARCHAR, "Product" VARCHAR, "Documento" VARCHAR,
-    "Tipo" VARCHAR, "Fecha" TIMESTAMPTZ, "Quantity" NUMERIC, "UnitCost" NUMERIC,
+    "Tipo" VARCHAR, "Fecha" TIMESTAMP, "Quantity" NUMERIC, "UnitCost" NUMERIC,
     "TotalCost" NUMERIC, "Notes" VARCHAR, "TotalCount" BIGINT
 )
 LANGUAGE plpgsql
@@ -1202,7 +1202,7 @@ BEGIN
       AND (p_tipo IS NULL OR "MovementType"=p_tipo);
 
     RETURN QUERY SELECT m."MovementId",m."ProductCode",m."ProductName",m."DocumentRef",
-        m."MovementType",m."MovementDate"::TIMESTAMPTZ,m."Quantity",m."UnitCost",m."TotalCost",m."Notes",v_total
+        m."MovementType",m."MovementDate"::TIMESTAMP,m."Quantity",m."UnitCost",m."TotalCost",m."Notes",v_total
     FROM master."InventoryMovement" m
     WHERE m."IsDeleted"=FALSE
       AND (p_search IS NULL OR m."ProductCode" LIKE p_search OR m."ProductName" LIKE p_search OR m."DocumentRef" LIKE p_search)
@@ -1216,10 +1216,10 @@ $$;
 DROP FUNCTION IF EXISTS usp_inv_movement_getbyid(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inv_movement_getbyid(p_id INT)
 RETURNS TABLE("MovementId" BIGINT,"Codigo" VARCHAR,"Product" VARCHAR,"Documento" VARCHAR,
-    "Tipo" VARCHAR,"Fecha" TIMESTAMPTZ,"Quantity" NUMERIC,"UnitCost" NUMERIC,"TotalCost" NUMERIC,"Notes" VARCHAR)
+    "Tipo" VARCHAR,"Fecha" TIMESTAMP,"Quantity" NUMERIC,"UnitCost" NUMERIC,"TotalCost" NUMERIC,"Notes" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT m."MovementId",m."ProductCode",m."ProductName",m."DocumentRef",
-        m."MovementType",m."MovementDate"::TIMESTAMPTZ,m."Quantity",m."UnitCost",m."TotalCost",m."Notes"
+        m."MovementType",m."MovementDate"::TIMESTAMP,m."Quantity",m."UnitCost",m."TotalCost",m."Notes"
     FROM master."InventoryMovement" m WHERE m."MovementId"=p_id AND m."IsDeleted"=FALSE;
 END; $$;
 
@@ -1230,7 +1230,7 @@ CREATE OR REPLACE FUNCTION usp_inv_movement_listperiodsummary(
     p_offset INT DEFAULT 0, p_limit INT DEFAULT 50
 )
 RETURNS TABLE("SummaryId" INT,"Periodo" VARCHAR,"Codigo" VARCHAR,"OpeningQty" NUMERIC,
-    "InboundQty" NUMERIC,"OutboundQty" NUMERIC,"ClosingQty" NUMERIC,"fecha" TIMESTAMPTZ,
+    "InboundQty" NUMERIC,"OutboundQty" NUMERIC,"ClosingQty" NUMERIC,"fecha" TIMESTAMP,
     "IsClosed" BOOLEAN,"TotalCount" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE v_total BIGINT;
@@ -1400,7 +1400,7 @@ END; $$;
 -- usp_Bank_Reconciliation_GetSystemMovements
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getsystemmovements(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getsystemmovements(p_id INT)
-RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMPTZ,"Tipo" VARCHAR,"Nro_Ref" VARCHAR,
+RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMP,"Tipo" VARCHAR,"Nro_Ref" VARCHAR,
     "Beneficiario" VARCHAR,"Concepto" VARCHAR,"Monto" NUMERIC,"MontoNeto" NUMERIC,
     "SaldoPosterior" NUMERIC,"Conciliado" BOOLEAN)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1415,7 +1415,7 @@ END; $$;
 -- usp_Bank_Reconciliation_GetPendingStatements
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getpendingstatements(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getpendingstatements(p_id INT)
-RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMPTZ,"Descripcion" VARCHAR,"Referencia" VARCHAR,
+RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMP,"Descripcion" VARCHAR,"Referencia" VARCHAR,
     "Tipo" VARCHAR,"Monto" NUMERIC,"Saldo" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT sl."StatementLineId",sl."StatementDate",sl."DescriptionText",sl."ReferenceNo",
@@ -1434,9 +1434,9 @@ RETURNS TABLE("id" INT) LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Bank_StatementLine_Insert
-DROP FUNCTION IF EXISTS usp_bank_statementline_insert(BIGINT, TIMESTAMPTZ, VARCHAR(255), VARCHAR(50), VARCHAR(12), NUMERIC(18,2), NUMERIC(18,2), INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_bank_statementline_insert(BIGINT, TIMESTAMP, VARCHAR(255), VARCHAR(50), VARCHAR(12), NUMERIC(18,2), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_statementline_insert(
-    p_reconciliation_id BIGINT, p_statement_date TIMESTAMPTZ,
+    p_reconciliation_id BIGINT, p_statement_date TIMESTAMP,
     p_description_text VARCHAR(255) DEFAULT NULL, p_reference_no VARCHAR(50) DEFAULT NULL,
     p_entry_type VARCHAR(12) DEFAULT NULL, p_amount NUMERIC(18,2) DEFAULT NULL,
     p_balance NUMERIC(18,2) DEFAULT NULL, p_created_by_user_id INT DEFAULT NULL
@@ -1567,7 +1567,7 @@ CREATE OR REPLACE FUNCTION usp_bank_movement_listbyaccount(
     p_offset INT DEFAULT 0, p_limit INT DEFAULT 50
 )
 RETURNS TABLE(
-    "id" BIGINT,"Nro_Cta" VARCHAR,"Fecha" TIMESTAMPTZ,"Tipo" VARCHAR,"Nro_Ref" VARCHAR,
+    "id" BIGINT,"Nro_Cta" VARCHAR,"Fecha" TIMESTAMP,"Tipo" VARCHAR,"Nro_Ref" VARCHAR,
     "Beneficiario" VARCHAR,"Monto" NUMERIC,"MontoNeto" NUMERIC,"Concepto" VARCHAR,
     "Categoria" VARCHAR,"Documento_Relacionado" VARCHAR,"Tipo_Doc_Rel" VARCHAR,
     "SaldoPosterior" NUMERIC,"Conciliado" BOOLEAN,"TotalCount" BIGINT
@@ -1581,7 +1581,7 @@ BEGIN
       AND (p_from_date IS NULL OR m."MovementDate">=p_from_date)
       AND (p_to_date IS NULL OR m."MovementDate"<=p_to_date);
 
-    RETURN QUERY SELECT m."BankMovementId",ba."AccountNumber",m."MovementDate"::TIMESTAMPTZ,m."MovementType",
+    RETURN QUERY SELECT m."BankMovementId",ba."AccountNumber",m."MovementDate"::TIMESTAMP,m."MovementType",
         m."ReferenceNo",m."Beneficiary",m."Amount",m."NetAmount",m."Concept",m."CategoryCode",
         m."RelatedDocumentNo",m."RelatedDocumentType",m."BalanceAfter",m."IsReconciled",v_total
     FROM fin."BankMovement" m INNER JOIN fin."BankAccount" ba ON ba."BankAccountId"=m."BankAccountId"

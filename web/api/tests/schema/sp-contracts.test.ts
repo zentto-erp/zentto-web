@@ -250,3 +250,265 @@ describe('SP Contracts — reporte de estado', () => {
     expect(res.rows.length).toBeGreaterThan(0);
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 6: Sin TIMESTAMP WITH TIME ZONE — obligatorio, falla si hay problemas
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — sin TIMESTAMP WITH TIME ZONE', () => {
+  it('ninguna función usp_* debe usar timestamp with time zone en argumentos o retorno', async () => {
+    const res = await pool.query<{ proname: string; args: string; ret: string }>(
+      `SELECT
+         p.proname,
+         pg_get_function_arguments(p.oid) AS args,
+         pg_get_function_result(p.oid)    AS ret
+       FROM pg_proc p
+       WHERE p.proname LIKE 'usp_%'
+         AND (
+           pg_get_function_arguments(p.oid) ILIKE '%timestamp with time zone%'
+           OR pg_get_function_result(p.oid) ILIKE '%timestamp with time zone%'
+         )
+       ORDER BY p.proname`
+    );
+
+    const list = res.rows;
+
+    if (list.length > 0) {
+      console.error(
+        '\n[SP Contracts] Funciones con TIMESTAMP WITH TIME ZONE (TIMESTAMPTZ) — se esperaba TIMESTAMP sin zona:'
+      );
+      for (const row of list) {
+        const argsHit = /timestamp with time zone/i.test(row.args ?? '') ? `ARGS: ${row.args}` : '';
+        const retHit  = /timestamp with time zone/i.test(row.ret  ?? '') ? `RET:  ${row.ret}`  : '';
+        console.error(`  - ${row.proname}`);
+        if (argsHit) console.error(`      ${argsHit}`);
+        if (retHit)  console.error(`      ${retHit}`);
+      }
+      console.error(
+        '\nSolución: reemplazar TIMESTAMPTZ / TIMESTAMP WITH TIME ZONE por TIMESTAMP en los scripts sqlweb-pg/\n'
+      );
+    }
+
+    expect(
+      list.length,
+      `Hay ${list.length} función(es) usando TIMESTAMP WITH TIME ZONE. ` +
+      `Todas las fechas deben ser TIMESTAMP (sin zona). ` +
+      `Funciones afectadas: ${list.map(r => r.proname).join(', ')}`
+    ).toBe(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 7: Parámetros de entidades principales deben ser BIGINT — obligatorio
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
+  /**
+   * Sufijos de columnas BIGINT según el DDL real del proyecto.
+   * El matching es case-insensitive y tolerante a snake_case y camelCase.
+   * Ejemplos de parámetros que matchean "customerid":
+   *   p_customer_id, p_customerid, customerid, customer_id
+   */
+  const bigintEntitySuffixes: string[] = [
+    'customerid',
+    'supplierid',
+    'employeeid',
+    'productid',
+    'accountid',
+    'journalentryid',
+    'waitticketid',
+    'saleticketid',
+    'bankmovementid',
+    'bankaccountid',
+    'bankid',
+    'movementid',
+    'payrollrunid',
+    'orderticketid',
+    'receivabledocumentid',
+    'payabledocumentid',
+  ];
+
+  /**
+   * Normaliza un nombre de parámetro PostgreSQL a minúsculas sin guiones bajos
+   * para compararlo contra los sufijos de la lista.
+   * Ejemplos:
+   *   "p_customer_id integer" -> "customerid"
+   *   "p_sale_ticket_id bigint" -> "saleticketid"
+   */
+  function normalizeParamName(raw: string): string {
+    // raw = 'p_customer_id integer' -> tomar solo el nombre (primer token)
+    const name = raw.trim().split(/\s+/)[0] ?? '';
+    return name.replace(/^p_/, '').replace(/_/g, '').toLowerCase();
+  }
+
+  /**
+   * Extrae el tipo de dato de un fragmento de argumento PostgreSQL.
+   * Ejemplos:
+   *   "p_customer_id integer"  -> "integer"
+   *   "p_sale_ticket_id bigint" -> "bigint"
+   *   "p_name character varying" -> "character varying"
+   */
+  function extractParamType(raw: string): string {
+    const tokens = raw.trim().split(/\s+/);
+    // El nombre es el primer token; el tipo es el resto
+    return tokens.slice(1).join(' ').toLowerCase();
+  }
+
+  it('todos los parámetros de entidad BIGINT deben declararse como bigint (no integer)', async () => {
+    const res = await pool.query<{ proname: string; args: string }>(
+      `SELECT p.proname,
+              pg_get_function_arguments(p.oid) AS args
+       FROM pg_proc p
+       WHERE p.proname LIKE 'usp_%'
+       ORDER BY p.proname`
+    );
+
+    interface Mismatch {
+      func:     string;
+      param:    string;
+      actual:   string;
+      expected: string;
+    }
+
+    const mismatches: Mismatch[] = [];
+
+    for (const row of res.rows) {
+      if (!row.args) continue;
+
+      // pg_get_function_arguments devuelve una lista separada por comas
+      const argFragments = row.args.split(',').map(s => s.trim());
+
+      for (const fragment of argFragments) {
+        if (!fragment) continue;
+
+        const normalized = normalizeParamName(fragment);
+        const paramType  = extractParamType(fragment);
+
+        // Verifica si el nombre normalizado TERMINA con alguno de los sufijos BIGINT
+        const matchedSuffix = bigintEntitySuffixes.find(suffix =>
+          normalized.endsWith(suffix)
+        );
+
+        if (matchedSuffix && !paramType.includes('bigint')) {
+          mismatches.push({
+            func:     row.proname,
+            param:    fragment.trim().split(/\s+/)[0] ?? fragment,
+            actual:   paramType,
+            expected: 'bigint',
+          });
+        }
+      }
+    }
+
+    if (mismatches.length > 0) {
+      console.error(
+        `\n[SP Contracts] Parámetros de entidad que deberían ser BIGINT pero no lo son (${mismatches.length}):`
+      );
+      console.error(
+        `  ${'FUNCIÓN'.padEnd(50)} ${'PARÁMETRO'.padEnd(30)} ${'TIPO ACTUAL'.padEnd(20)} TIPO ESPERADO`
+      );
+      console.error(`  ${'-'.repeat(115)}`);
+      for (const m of mismatches) {
+        console.error(
+          `  ${m.func.padEnd(50)} ${m.param.padEnd(30)} ${m.actual.padEnd(20)} ${m.expected}`
+        );
+      }
+      console.error(
+        '\nSolución: cambiar INTEGER -> BIGINT en los scripts sqlweb-pg/ para los parámetros afectados.\n'
+      );
+    }
+
+    expect(
+      mismatches.length,
+      `Hay ${mismatches.length} parámetro(s) de entidad declarados con tipo incorrecto. ` +
+      `Se esperaba bigint. Primeros 5 afectados: ` +
+      mismatches.slice(0, 5).map(m => `${m.func}.${m.param}(${m.actual})`).join(', ')
+    ).toBe(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 8: Funciones de módulo críticas — opcionales (warn si no existen)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
+  const optionalModuleFunctions: string[] = [
+    'usp_ar_receivabledocument_list',
+    'usp_ap_payabledocument_list',
+    'usp_fin_bank_list',
+    'usp_fin_bankaccount_list',
+    'usp_fin_bankmovement_list',
+    'usp_acct_account_list',
+    'usp_master_customer_list',
+    'usp_master_supplier_list',
+    'usp_master_product_list',
+    'usp_hr_payrollrun_list',
+  ];
+
+  for (const fn of optionalModuleFunctions) {
+    it(`${fn} debe existir (opcional — warn si falta)`, async () => {
+      const res = await pool.query<{ cnt: string }>(
+        `SELECT COUNT(*) AS cnt FROM pg_proc WHERE proname = $1`,
+        [fn.toLowerCase()]
+      );
+      const exists = Number(res.rows[0]?.cnt ?? 0) > 0;
+
+      if (!exists) {
+        console.warn(
+          `[SP Contracts] WARN: La función "${fn}" no existe — puede estar pendiente de implementación.`
+        );
+        // Test opcional: no falla, solo advierte
+        return;
+      }
+
+      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(true);
+    });
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 9: Reporte de inconsistencias TIMESTAMPTZ (informativo, siempre pasa)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — reporte de inconsistencias TIMESTAMPTZ (informativo)', () => {
+  it('imprime funciones con timestamp with time zone como reporte informativo', async () => {
+    const res = await pool.query<{ proname: string; args: string; ret: string }>(
+      `SELECT p.proname,
+              pg_get_function_arguments(p.oid) AS args,
+              pg_get_function_result(p.oid)    AS ret
+       FROM pg_proc p
+       WHERE p.proname LIKE 'usp_%'
+         AND (
+           pg_get_function_arguments(p.oid) ILIKE '%timestamp with time zone%'
+           OR pg_get_function_result(p.oid) ILIKE '%timestamp with time zone%'
+         )
+       ORDER BY p.proname`
+    );
+
+    if (res.rows.length === 0) {
+      console.log('\n[SP Contracts] Reporte TIMESTAMPTZ: sin inconsistencias detectadas.');
+    } else {
+      console.log(
+        `\n[SP Contracts] Reporte TIMESTAMPTZ — ${res.rows.length} función(es) con TIMESTAMP WITH TIME ZONE:`
+      );
+      console.log(
+        `  ${'FUNCIÓN'.padEnd(50)} ${'ARGS (fragmento)'.padEnd(60)} RETORNO`
+      );
+      console.log(`  ${'-'.repeat(130)}`);
+      for (const row of res.rows) {
+        // Trunca cadenas largas para legibilidad en consola
+        const argStr = (row.args ?? '').length > 58
+          ? (row.args ?? '').slice(0, 55) + '...'
+          : (row.args ?? '');
+        const retStr = (row.ret ?? '').length > 40
+          ? (row.ret ?? '').slice(0, 37) + '...'
+          : (row.ret ?? '');
+        console.log(`  ${row.proname.padEnd(50)} ${argStr.padEnd(60)} ${retStr}`);
+      }
+      console.log('');
+    }
+
+    // Siempre pasa — es solo informativo
+    expect(true).toBe(true);
+  });
+});

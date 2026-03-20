@@ -92,7 +92,7 @@ RETURNS TABLE(
     "Id" INT, "Code" VARCHAR, "Name" VARCHAR, "CountryCode" VARCHAR,
     "ProviderType" VARCHAR, "BaseUrlSandbox" VARCHAR, "BaseUrlProd" VARCHAR,
     "AuthType" VARCHAR, "DocsUrl" VARCHAR, "LogoUrl" VARCHAR,
-    "IsActive" BOOLEAN, "CreatedAt" TIMESTAMPTZ
+    "IsActive" BOOLEAN, "CreatedAt" TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -145,7 +145,7 @@ RETURNS TABLE(
     "ProviderId" INT, "ProviderCode" VARCHAR, "ProviderName" VARCHAR,
     "ProviderType" VARCHAR, "Environment" VARCHAR,
     "AutoCapture" BOOLEAN, "AllowRefunds" BOOLEAN, "MaxRefundDays" INT,
-    "IsActive" BOOLEAN, "CreatedAt" TIMESTAMPTZ, "UpdatedAt" TIMESTAMPTZ
+    "IsActive" BOOLEAN, "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -177,7 +177,7 @@ RETURNS TABLE(
     "MerchantId" VARCHAR, "TerminalId" VARCHAR, "IntegratorId" VARCHAR,
     "CertificatePath" VARCHAR, "ExtraConfig" TEXT,
     "AutoCapture" BOOLEAN, "AllowRefunds" BOOLEAN, "MaxRefundDays" INT,
-    "IsActive" BOOLEAN, "CreatedAt" TIMESTAMPTZ, "UpdatedAt" TIMESTAMPTZ
+    "IsActive" BOOLEAN, "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -451,7 +451,7 @@ RETURNS TABLE(
     "Id" INT, "EmpresaId" INT, "SucursalId" INT, "StationId" VARCHAR,
     "DeviceName" VARCHAR, "DeviceType" VARCHAR, "ConnectionType" VARCHAR,
     "ConnectionConfig" VARCHAR, "ProviderId" INT, "IsActive" BOOLEAN,
-    "LastSeenAt" TIMESTAMPTZ, "CreatedAt" TIMESTAMPTZ
+    "LastSeenAt" TIMESTAMP, "CreatedAt" TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -478,7 +478,7 @@ RETURNS TABLE(
     "Id" INT, "EmpresaId" INT, "SucursalId" INT, "StationId" VARCHAR,
     "DeviceName" VARCHAR, "DeviceType" VARCHAR, "ConnectionType" VARCHAR,
     "ConnectionConfig" VARCHAR, "ProviderId" INT, "IsActive" BOOLEAN,
-    "LastSeenAt" TIMESTAMPTZ, "CreatedAt" TIMESTAMPTZ
+    "LastSeenAt" TIMESTAMP, "CreatedAt" TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
 BEGIN
