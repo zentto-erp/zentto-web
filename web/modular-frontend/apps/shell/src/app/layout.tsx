@@ -1,5 +1,15 @@
 'use client';
 
+// Suppress React warning about <script> tags from MUI InitColorSchemeScript (inside AppProvider)
+// This is a known MUI issue with Next.js 16+ — the script is harmless but React warns about it
+const origConsoleError = typeof window !== 'undefined' ? console.error : null;
+if (origConsoleError) {
+  console.error = (...args: any[]) => {
+    if (typeof args[0] === 'string' && args[0].includes('Encountered a script tag while rendering')) return;
+    origConsoleError(...args);
+  };
+}
+
 import * as React from 'react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
