@@ -132,9 +132,9 @@ export async function createApp() {
       // Permitir requests sin origin (Postman, curl, server-to-server)
       if (!origin) return callback(null, true);
       // Whitelist explicita
-      if (corsWhitelist.has(origin)) return callback(null, true);
+      if (corsWhitelist.has(origin)) return callback(null, origin);
       // Cualquier subdominio *.zentto.net (tenants dinamicos)
-      if (/^https:\/\/[a-z0-9-]+\.zentto\.net$/.test(origin)) return callback(null, true);
+      if (/^https:\/\/[a-z0-9-]+\.zentto\.net$/.test(origin)) return callback(null, origin);
       callback(new Error(`CORS: origin ${origin} no permitido`));
     },
     credentials: true,
