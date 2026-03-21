@@ -20,13 +20,19 @@ export function resolveAppBasePath(): string {
   return APP_BASE_SEGMENTS.has(firstSegment) ? `/${firstSegment}` : '';
 }
 
+// La auth siempre la gestiona el shell en /api/auth.
+// Las sub-apps con nginx propio proxean /appname/api/auth/* al shell.
+// Las apps embebidas en el shell (compras, bancos, etc.) no tienen ruta
+// /appname/api/auth en el shell → siempre usar /api/auth directamente.
 export function resolveAuthBasePath(): string {
-  return `${resolveAppBasePath()}/api/auth`;
+  return '/api/auth';
 }
 
+// La página de login siempre está en el shell en /authentication/login.
+// Las sub-apps sin página propia de login redirigen allí.
 export function buildLoginCallbackUrl(): string {
   if (typeof window === 'undefined') return '/authentication/login';
-  return `${window.location.origin}${resolveAppBasePath()}/authentication/login`;
+  return `${window.location.origin}/authentication/login`;
 }
 
 type AppAwareSignOutOptions = {

@@ -6,51 +6,20 @@ import { signOut } from 'next-auth/react';
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
-const APP_BASE_SEGMENTS = new Set([
-  'contabilidad',
-  'pos',
-  'nomina',
-  'bancos',
-  'inventario',
-  'ventas',
-  'compras',
-  'restaurante',
-  'ecommerce',
-  'auditoria',
-]);
-
-function resolveAppBasePath(): string {
-  if (typeof window === 'undefined') return '';
-  const [firstSegment] = window.location.pathname.split('/').filter(Boolean);
-  if (!firstSegment) return '';
-  return APP_BASE_SEGMENTS.has(firstSegment) ? `/${firstSegment}` : '';
-}
-
-function resolveAuthBasePath(): string {
-  return `${resolveAppBasePath()}/api/auth`;
-}
-
-function buildLoginCallbackUrl(): string {
-  if (typeof window === 'undefined') return '/authentication/login';
-  return `${window.location.origin}${resolveAppBasePath()}/authentication/login`;
-}
-
+// La auth siempre la gestiona el shell en /api/auth.
+// No usar prefijo de app: compras/bancos van al shell (puerto 3000) vía nginx,
+// el shell no tiene /compras/api/auth. Sub-apps con nginx propio proxean al shell.
 async function fetchSessionFromCurrentApp() {
   if (typeof window === 'undefined') {
     return getSession();
   }
-
-  const authBasePath = resolveAuthBasePath();
-  const response = await fetch(`${window.location.origin}${authBasePath}/session`, {
+  // Siempre llamar al shell directamente en /api/auth/session
+  const response = await fetch(`${window.location.origin}/api/auth/session`, {
     credentials: 'include',
     headers: { Accept: 'application/json' },
     cache: 'no-store',
   });
-
-  if (!response.ok) {
-    return null;
-  }
-
+  if (!response.ok) return null;
   return response.json();
 }
 
@@ -119,7 +88,10 @@ async function authHeader(): Promise<Record<string, string>> {
 async function handleUnauthorized(res: Response) {
   if (res.status === 401) {
     try {
-      await signOut({ callbackUrl: buildLoginCallbackUrl() });
+      const loginUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/authentication/login`
+        : '/authentication/login';
+      await signOut({ callbackUrl: loginUrl });
     } catch {
       // noop
     }
