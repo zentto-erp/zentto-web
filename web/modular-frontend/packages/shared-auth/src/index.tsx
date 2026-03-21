@@ -11,3 +11,4 @@ export { AUTH_ROUTES, PUBLIC_ROUTES, isPublicRoute, getRedirectRoute } from './c
 export { useTimezone } from './useTimezone';
 export { default as AuthLogin } from './auth/AuthLogin';
 export { default as TurnstileCaptcha } from './auth/TurnstileCaptcha';
+export { appAwareSignOut, buildLoginCallbackUrl, resolveAppBasePath, resolveAuthBasePath } from './auth-client';

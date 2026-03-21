@@ -26,6 +26,9 @@ export default function FiscalConfigPage() {
   const taxRates = useFiscalTaxRates(countryCode || null);
   const saveMutation = useSaveFiscalConfig();
 
+  const countryOptions = Array.isArray(countries.data) ? countries.data : [];
+  const taxRateOptions = Array.isArray(taxRates.data) ? taxRates.data : [];
+
   const [form, setForm] = useState<Record<string, any>>({});
   const [dirty, setDirty] = useState(false);
 
@@ -79,7 +82,7 @@ export default function FiscalConfigPage() {
             onChange={(e) => setCountryCode(e.target.value)}
           >
             <MenuItem value="">Seleccionar...</MenuItem>
-            {(countries.data ?? []).map((c: any) => (
+            {countryOptions.map((c: any) => (
               <MenuItem key={c.code} value={c.code}>
                 {c.name} ({c.code})
               </MenuItem>
@@ -128,7 +131,7 @@ export default function FiscalConfigPage() {
             </Paper>
 
             {/* Tax Rates */}
-            {taxRates.data && (taxRates.data as any[]).length > 0 && (
+            {taxRateOptions.length > 0 && (
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>Tasas de Impuesto ({countryCode})</Typography>
                 <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", "& td, & th": { px: 1.5, py: 0.8, fontSize: "0.85rem", borderBottom: "1px solid", borderColor: "divider", textAlign: "left" } }}>
@@ -136,7 +139,7 @@ export default function FiscalConfigPage() {
                     <tr><th>Código</th><th>Nombre</th><th>Tasa %</th><th>Recargo %</th></tr>
                   </thead>
                   <tbody>
-                    {(taxRates.data as any[]).map((t: any) => (
+                    {taxRateOptions.map((t: any) => (
                       <tr key={t.code}>
                         <td>{t.code}</td>
                         <td>{t.name}</td>

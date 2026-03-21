@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import type { UserPermisos } from "./roles";
 import { getDefaultPermisos, hasModuleAccess, getEffectiveModules } from "./roles";
 import type { SystemModule } from "./roles";
+import { appAwareSignOut, buildLoginCallbackUrl } from "./auth-client";
 
 export type AuthContextType = {
   isAdmin: boolean;
@@ -59,12 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const msRemaining = expiresAt - Date.now();
     if (msRemaining <= 0) {
-      void signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
+      void appAwareSignOut({ callbackUrl: buildLoginCallbackUrl() });
       return;
     }
 
     const timeout = window.setTimeout(() => {
-      void signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
+      void appAwareSignOut({ callbackUrl: buildLoginCallbackUrl() });
     }, msRemaining);
 
     return () => window.clearTimeout(timeout);

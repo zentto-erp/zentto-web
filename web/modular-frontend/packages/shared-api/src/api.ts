@@ -6,6 +6,54 @@ import { signOut } from 'next-auth/react';
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
+const APP_BASE_SEGMENTS = new Set([
+  'contabilidad',
+  'pos',
+  'nomina',
+  'bancos',
+  'inventario',
+  'ventas',
+  'compras',
+  'restaurante',
+  'ecommerce',
+  'auditoria',
+]);
+
+function resolveAppBasePath(): string {
+  if (typeof window === 'undefined') return '';
+  const [firstSegment] = window.location.pathname.split('/').filter(Boolean);
+  if (!firstSegment) return '';
+  return APP_BASE_SEGMENTS.has(firstSegment) ? `/${firstSegment}` : '';
+}
+
+function resolveAuthBasePath(): string {
+  return `${resolveAppBasePath()}/api/auth`;
+}
+
+function buildLoginCallbackUrl(): string {
+  if (typeof window === 'undefined') return '/authentication/login';
+  return `${window.location.origin}${resolveAppBasePath()}/authentication/login`;
+}
+
+async function fetchSessionFromCurrentApp() {
+  if (typeof window === 'undefined') {
+    return getSession();
+  }
+
+  const authBasePath = resolveAuthBasePath();
+  const response = await fetch(`${window.location.origin}${authBasePath}/session`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
 export function resolveAssetUrl(url?: unknown): string | undefined {
   if (typeof url !== 'string') return undefined;
   const value = url.trim();
@@ -19,7 +67,7 @@ export function resolveAssetUrl(url?: unknown): string | undefined {
 
 async function getAuthToken(): Promise<string | null> {
   try {
-    const session = await getSession();
+    const session = await fetchSessionFromCurrentApp();
     // @ts-ignore
     return session?.accessToken || null;
   } catch { return null; }
@@ -27,7 +75,7 @@ async function getAuthToken(): Promise<string | null> {
 
 async function authHeader(): Promise<Record<string, string>> {
   try {
-    const session = await getSession();
+    const session = await fetchSessionFromCurrentApp();
     const headers: Record<string, string> = {};
     // @ts-ignore
     const token = session?.accessToken as string | undefined;
@@ -71,7 +119,7 @@ async function authHeader(): Promise<Record<string, string>> {
 async function handleUnauthorized(res: Response) {
   if (res.status === 401) {
     try {
-      await signOut({ callbackUrl: `${window.location.origin}/authentication/login` });
+      await signOut({ callbackUrl: buildLoginCallbackUrl() });
     } catch {
       // noop
     }

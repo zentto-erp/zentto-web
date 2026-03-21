@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@zentto/shared-api";
 
 const QUERY_KEY = "compras";
-const API_BASE = "/api/v1/documentos-compra";
+const API_BASE = "/v1/documentos-compra";
 const TIPO_OPERACION = "COMPRA";
 
 export type ComprasFilter = {
