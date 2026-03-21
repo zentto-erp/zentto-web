@@ -57,7 +57,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="es" suppressHydrationWarning>
+        <html lang="es" data-scroll-behavior="smooth" suppressHydrationWarning>
             <head>
                 <title>Bancos e Inst. - Zentto App</title>
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />

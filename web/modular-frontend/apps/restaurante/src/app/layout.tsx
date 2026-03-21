@@ -54,7 +54,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="es" data-toolpad-color-scheme="light" suppressHydrationWarning>
+        <html lang="es" data-scroll-behavior="smooth" data-toolpad-color-scheme="light" suppressHydrationWarning>
             <head>
                 <title>Restaurante - Zentto App</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />

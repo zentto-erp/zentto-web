@@ -4,10 +4,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useColorScheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
+import { getSharedAssetUrl } from '../lib/asset-url';
 
 export default function Copyright(props: { sx?: SxProps<Theme> }) {
   const { mode } = useColorScheme();
-  const logoSrc = mode === 'dark' ? '/logo-blanco.svg' : '/logo-gris.svg';
+  const logoSrc = getSharedAssetUrl(mode === 'dark' ? '/logo-blanco.svg' : '/logo-gris.svg');
 
   return (
     <Box
