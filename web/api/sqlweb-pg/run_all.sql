@@ -610,6 +610,12 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/011_fix_overloads_bigint_remaining.sql
 \echo '  [012] Fix TEXT→VARCHAR en HR/RRHH + restaurar public.* pettycash'
 \i migrations/012_fix_text_varchar_hr_pettycash.sql
+\echo '  [013] Fix TIMESTAMPTZ→TIMESTAMP en funciones public.* pettycash'
+\i migrations/013_fix_timestamptz_pettycash.sql
+\echo '  [014] Fix ambiguedad OperationType en usp_doc_salesdocument_list'
+\i migrations/014_fix_salesdocument_list_ambiguous.sql
+\echo '  [015] Fix bpchar CurrencyCode en usp_ar_application_listbycontext'
+\i migrations/015_fix_abonos_currencycode_bpchar.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
