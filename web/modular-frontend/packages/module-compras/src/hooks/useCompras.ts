@@ -18,14 +18,16 @@ export type ComprasFilter = {
 };
 
 export type CompraRow = {
-  NUM_FACT: string;
-  COD_PROVEEDOR?: string;
-  NOMBRE?: string;
-  RIF?: string;
-  FECHA?: string;
-  TOTAL?: number;
-  TIPO?: string;
-  ANULADA?: number;
+  documentId: number;
+  documentNumber: string;
+  supplierCode?: string;
+  supplierName?: string;
+  fiscalId?: string;
+  issueDate?: string;
+  totalAmount?: number;
+  documentType?: string;
+  status?: string;
+  isVoided?: boolean;
 };
 
 export type ComprasListResponse = {

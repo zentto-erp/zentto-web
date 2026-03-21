@@ -640,6 +640,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/027_fix_orderticketline_insert_overloads.sql
 \echo '  [028] ADD columnas auditoría OrderTicket.UpdatedAt + OrderTicketLine.CreatedAt/UpdatedAt'
 \i migrations/028_fix_orderticketline_insert_no_audit_cols.sql
+\echo '  [029] Fix SPs contabilidad avanzada (periodos, centros-costo, recurrentes, presupuestos)'
+\i migrations/029_fix_acct_advanced_all_sps.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

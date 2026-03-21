@@ -6,7 +6,7 @@ import { Pago, CreatePagoDTO, UpdatePagoDTO, CrudFilter, PaginatedResponse } fro
 import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "pagos";
-const API_BASE = "/api/v1/pagos";
+const API_BASE = "/v1/pagos";
 
 export function usePagosList(filter?: CrudFilter) {
   return useQuery<PaginatedResponse<Pago>>({

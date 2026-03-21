@@ -136,16 +136,16 @@ export default function ComprasTable() {
             )}
             {!isLoading &&
               (data?.rows ?? []).map((row) => (
-                <TableRow key={String(row.NUM_FACT)}>
-                  <TableCell>{row.NUM_FACT}</TableCell>
-                  <TableCell>{row.NOMBRE || row.COD_PROVEEDOR}</TableCell>
-                  <TableCell>{row.FECHA ? formatDate(row.FECHA, { timeZone }) : ""}</TableCell>
+                <TableRow key={String(row.documentNumber)}>
+                  <TableCell>{row.documentNumber}</TableCell>
+                  <TableCell>{row.supplierName || row.supplierCode}</TableCell>
+                  <TableCell>{row.issueDate ? formatDate(row.issueDate, { timeZone }) : ""}</TableCell>
                   <TableCell>
-                    <Chip size="small" label={row.TIPO || "CONTADO"} />
+                    <Chip size="small" label={row.documentType || "COMPRA"} />
                   </TableCell>
-                  <TableCell align="right">{Number(row.TOTAL || 0).toFixed(2)}</TableCell>
+                  <TableCell align="right">{Number(row.totalAmount || 0).toFixed(2)}</TableCell>
                   <TableCell align="center">
-                    <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.NUM_FACT))}`)}>
+                    <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}`)}>
                       <Visibility fontSize="small" />
                     </IconButton>
                   </TableCell>

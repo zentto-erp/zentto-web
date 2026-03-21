@@ -16,14 +16,97 @@ import type {
   CompanyPaymentConfigInput,
 } from "./types.js";
 
+// Los SPs devuelven PascalCase; el frontend espera camelCase.
+// Estos mappers convierten las filas antes de enviarlas al cliente.
+function mapPaymentMethod(r: any): PaymentMethod {
+  return {
+    id:              r.Id              ?? r.id,
+    code:            r.Code            ?? r.code,
+    name:            r.Name            ?? r.name,
+    category:        r.Category        ?? r.category,
+    countryCode:     r.CountryCode     ?? r.countryCode     ?? null,
+    iconName:        r.IconName        ?? r.iconName        ?? null,
+    requiresGateway: r.RequiresGateway ?? r.requiresGateway ?? false,
+    isActive:        r.IsActive        ?? r.isActive        ?? true,
+    sortOrder:       r.SortOrder       ?? r.sortOrder       ?? 0,
+  };
+}
+
+function mapPaymentProvider(r: any): PaymentProvider {
+  return {
+    id:             r.Id             ?? r.id,
+    code:           r.Code           ?? r.code,
+    name:           r.Name           ?? r.name,
+    countryCode:    r.CountryCode    ?? r.countryCode    ?? null,
+    providerType:   r.ProviderType   ?? r.providerType,
+    baseUrlSandbox: r.BaseUrlSandbox ?? r.baseUrlSandbox ?? null,
+    baseUrlProd:    r.BaseUrlProd    ?? r.baseUrlProd    ?? null,
+    authType:       r.AuthType       ?? r.authType       ?? null,
+    docsUrl:        r.DocsUrl        ?? r.docsUrl        ?? null,
+    logoUrl:        r.LogoUrl        ?? r.logoUrl        ?? null,
+    isActive:       r.IsActive       ?? r.isActive       ?? true,
+  };
+}
+
+function mapCompanyConfig(r: any): CompanyPaymentConfig & { providerCode: string; providerName: string; providerType: string } {
+  return {
+    id:              r.Id              ?? r.id,
+    empresaId:       r.EmpresaId       ?? r.empresaId,
+    sucursalId:      r.SucursalId      ?? r.sucursalId,
+    countryCode:     r.CountryCode     ?? r.countryCode,
+    providerId:      r.ProviderId      ?? r.providerId,
+    providerCode:    r.ProviderCode    ?? r.providerCode    ?? '',
+    providerName:    r.ProviderName    ?? r.providerName    ?? '',
+    providerType:    r.ProviderType    ?? r.providerType    ?? '',
+    environment:     r.Environment     ?? r.environment,
+    clientId:        r.ClientId        ?? r.clientId        ?? null,
+    clientSecret:    r.ClientSecret    ?? r.clientSecret    ?? null,
+    merchantId:      r.MerchantId      ?? r.merchantId      ?? null,
+    terminalId:      r.TerminalId      ?? r.terminalId      ?? null,
+    integratorId:    r.IntegratorId    ?? r.integratorId    ?? null,
+    certificatePath: r.CertificatePath ?? r.certificatePath ?? null,
+    extraConfig:     r.ExtraConfig     ?? r.extraConfig     ?? null,
+    autoCapture:     r.AutoCapture     ?? r.autoCapture     ?? false,
+    allowRefunds:    r.AllowRefunds    ?? r.allowRefunds    ?? false,
+    maxRefundDays:   r.MaxRefundDays   ?? r.maxRefundDays   ?? 30,
+    isActive:        r.IsActive        ?? r.isActive        ?? true,
+  };
+}
+
+function mapAcceptedMethod(r: any): AcceptedPaymentMethod {
+  return {
+    id:                  r.Id                  ?? r.id,
+    empresaId:           r.EmpresaId           ?? r.empresaId,
+    sucursalId:          r.SucursalId          ?? r.sucursalId,
+    paymentMethodId:     r.PaymentMethodId     ?? r.paymentMethodId,
+    providerId:          r.ProviderId          ?? r.providerId          ?? null,
+    methodCode:          r.MethodCode          ?? r.methodCode,
+    methodName:          r.MethodName          ?? r.methodName,
+    methodCategory:      r.MethodCategory      ?? r.methodCategory,
+    iconName:            r.IconName            ?? r.iconName            ?? null,
+    providerCode:        r.ProviderCode        ?? r.providerCode        ?? null,
+    providerName:        r.ProviderName        ?? r.providerName        ?? null,
+    appliesToPOS:        r.AppliesToPOS        ?? r.appliesToPOS        ?? false,
+    appliesToWeb:        r.AppliesToWeb        ?? r.appliesToWeb        ?? false,
+    appliesToRestaurant: r.AppliesToRestaurant ?? r.appliesToRestaurant ?? false,
+    minAmount:           r.MinAmount           ?? r.minAmount           ?? null,
+    maxAmount:           r.MaxAmount           ?? r.maxAmount           ?? null,
+    commissionPct:       r.CommissionPct       ?? r.commissionPct       ?? null,
+    commissionFixed:     r.CommissionFixed     ?? r.commissionFixed     ?? null,
+    sortOrder:           r.SortOrder           ?? r.sortOrder           ?? 0,
+    isActive:            r.IsActive            ?? r.isActive            ?? true,
+  };
+}
+
 // ══════════════════════════════════════════════════════════════
 // Payment Methods
 // ══════════════════════════════════════════════════════════════
 
 export async function listPaymentMethods(countryCode?: string) {
-  return callSp<PaymentMethod>("usp_Pay_Method_List", {
+  const rows = await callSp<any>("usp_Pay_Method_List", {
     CountryCode: countryCode ?? null,
   });
+  return rows.map(mapPaymentMethod);
 }
 
 export async function upsertPaymentMethod(
@@ -43,14 +126,15 @@ export async function upsertPaymentMethod(
 // ══════════════════════════════════════════════════════════════
 
 export async function listProviders(_countryCode?: string) {
-  return callSp<PaymentProvider>("usp_Pay_Provider_List");
+  const rows = await callSp<any>("usp_Pay_Provider_List");
+  return rows.map(mapPaymentProvider);
 }
 
 export async function getProviderByCode(code: string) {
-  const rows = await callSp<PaymentProvider>("usp_Pay_Provider_Get", {
+  const rows = await callSp<any>("usp_Pay_Provider_Get", {
     ProviderCode: code,
   });
-  return rows[0] || null;
+  return rows[0] ? mapPaymentProvider(rows[0]) : null;
 }
 
 export async function getProviderCapabilities(providerCode: string) {
@@ -84,13 +168,11 @@ export async function listCompanyConfigs(
   empresaId: number,
   sucursalId?: number
 ) {
-  return callSp<CompanyPaymentConfig & { ProviderCode: string; ProviderName: string }>(
-    "usp_Pay_CompanyConfig_ListByCompany",
-    {
-      CompanyId: empresaId,
-      BranchId: sucursalId ?? null,
-    }
-  );
+  const rows = await callSp<any>("usp_Pay_CompanyConfig_ListByCompany", {
+    CompanyId: empresaId,
+    BranchId: sucursalId ?? null,
+  });
+  return rows.map(mapCompanyConfig);
 }
 
 export async function upsertCompanyConfig(data: CompanyPaymentConfigInput) {
@@ -126,13 +208,14 @@ export async function listAcceptedMethods(
   sucursalId: number,
   channel?: "POS" | "WEB" | "RESTAURANT"
 ) {
-  return callSp<AcceptedPaymentMethod>("usp_Pay_AcceptedMethod_List", {
+  const rows = await callSp<any>("usp_Pay_AcceptedMethod_List", {
     CompanyId: empresaId,
     SucursalId: sucursalId,
     AppliesToPOS: channel === "POS" ? true : null,
     AppliesToWeb: channel === "WEB" ? true : null,
     AppliesToRestaurant: channel === "RESTAURANT" ? true : null,
   });
+  return rows.map(mapAcceptedMethod);
 }
 
 export async function upsertAcceptedMethod(data: {

@@ -64,7 +64,7 @@ CREATE OR REPLACE FUNCTION public.usp_acct_period_list(
 RETURNS TABLE(
     p_total_count bigint,
     "FiscalPeriodId" integer,
-    "PeriodCode" character,
+    "PeriodCode" character(6),
     "PeriodName" character varying,
     "YearCode" smallint,
     "MonthCode" smallint,
