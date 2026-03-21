@@ -24,7 +24,7 @@
 -- ── A) Pettycash: restaurar public.* eliminados por migration 011 ────────────
 -- La migration 011 eliminó los OIDs mínimos de todas las funciones con nombre
 -- duplicado, lo cual borró los public.* ya que fueron creados antes que los fin.*
-\i ../includes/sp/usp_fin_pettycash.sql
+\ir ../includes/sp/usp_fin_pettycash.sql
 
 \echo '  [012] Corrigiendo TEXT vs VARCHAR en funciones HR...'
 
