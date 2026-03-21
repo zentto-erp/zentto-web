@@ -73,6 +73,10 @@ jobs:
           envs: PG_PASSWORD,PG_USER,PG_DATABASE
           script: |
             set -e
+            # Grant CREATE on all schemas so zentto_app can run DDL migrations
+            su -c "psql -d \"$PG_DATABASE\" -c \"
+              GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO $PG_USER;
+            \"" postgres || echo "⚠ Grant schema privileges failed (may not be needed)"
             chmod +x /opt/zentto/scripts/run-pg-migrations.sh
             PGPASSWORD="$PG_PASSWORD" /opt/zentto/scripts/run-pg-migrations.sh \
               "$PG_USER" 127.0.0.1 "$PG_DATABASE" /opt/zentto/sqlweb-pg
