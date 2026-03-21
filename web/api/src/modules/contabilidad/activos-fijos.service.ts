@@ -1,4 +1,5 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { env } from "../../config/env.js";
 
 // ─── Scope helper (same pattern as service.ts) ──────────────────────
 async function getDefaultScope() {
@@ -245,6 +246,28 @@ export async function disposeAsset(assetId: number, data: DisposeInput, codUsuar
 
 export async function calculateDepreciation(periodo: string, preview: boolean, costCenterCode?: string, codUsuario?: string) {
   const scope = await getDefaultScope();
+
+  // En PostgreSQL, la funcion de preview usa CTEs en lugar de tabla temporal ON COMMIT DROP
+  // (las temp tables se destruyen al auto-commit antes de que el caller pueda leerlas)
+  if (preview && env.dbType === "postgres") {
+    const rows = await callSp<any>(
+      "dbo.usp_Acct_FixedAsset_DepreciationPreview",
+      {
+        CompanyId: scope.companyId,
+        BranchId: scope.branchId,
+        PeriodCode: periodo,
+        CostCenterCode: costCenterCode || null,
+      }
+    );
+    return {
+      ok: true,
+      rows,
+      entriesGenerated: rows.length,
+      resultado: 1,
+      mensaje: `Preview de depreciacion: ${rows.length} asientos`,
+    };
+  }
+
   const result = await callSpOut<any>(
     "dbo.usp_Acct_FixedAsset_CalculateDepreciation",
     {

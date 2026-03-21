@@ -58,27 +58,27 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."FixedAssetCategory"
-    WHERE "CompanyId"  = p_company_id
-      AND "IsDeleted"  = FALSE
+    FROM acct."FixedAssetCategory" fac
+    WHERE fac."CompanyId"  = p_company_id
+      AND fac."IsDeleted"  = FALSE
       AND (p_search IS NULL
-           OR "CategoryCode" LIKE '%' || p_search || '%'
-           OR "CategoryName" LIKE '%' || p_search || '%');
+           OR fac."CategoryCode" LIKE '%' || p_search || '%'
+           OR fac."CategoryName" LIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT v_total_count,
-           "CategoryId", "CategoryCode", "CategoryName",
-           "DefaultUsefulLifeMonths", "DefaultDepreciationMethod",
-           "DefaultResidualPercent",
-           "DefaultAssetAccountCode", "DefaultDeprecAccountCode",
-           "DefaultExpenseAccountCode", "CountryCode"
-    FROM acct."FixedAssetCategory"
-    WHERE "CompanyId"  = p_company_id
-      AND "IsDeleted"  = FALSE
+           fac."CategoryId", fac."CategoryCode", fac."CategoryName",
+           fac."DefaultUsefulLifeMonths", fac."DefaultDepreciationMethod",
+           fac."DefaultResidualPercent",
+           fac."DefaultAssetAccountCode", fac."DefaultDeprecAccountCode",
+           fac."DefaultExpenseAccountCode", fac."CountryCode"
+    FROM acct."FixedAssetCategory" fac
+    WHERE fac."CompanyId"  = p_company_id
+      AND fac."IsDeleted"  = FALSE
       AND (p_search IS NULL
-           OR "CategoryCode" LIKE '%' || p_search || '%'
-           OR "CategoryName" LIKE '%' || p_search || '%')
-    ORDER BY "CategoryCode"
+           OR fac."CategoryCode" LIKE '%' || p_search || '%'
+           OR fac."CategoryName" LIKE '%' || p_search || '%')
+    ORDER BY fac."CategoryCode"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -601,6 +601,121 @@ BEGIN
 
     p_resultado := 1;
     p_mensaje   := 'Depreciacion generada: ' || p_entries_generated::TEXT || ' asientos';
+END;
+$$;
+
+-- =============================================================================
+-- 9b. usp_Acct_FixedAsset_DepreciationPreview
+--     Preview de depreciacion sin insertar registros.
+--     Reemplaza el enfoque de tabla temporal ON COMMIT DROP (incompatible con
+--     el pool de conexiones auto-commit de pgCallSpOut).
+--     Retorna SETOF TABLE para ser llamado via callSp().
+-- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_DepreciationPreview(INTEGER, INTEGER, VARCHAR(7), VARCHAR(20)) CASCADE;
+CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_DepreciationPreview(
+    p_company_id       INTEGER,
+    p_branch_id        INTEGER,
+    p_period_code      VARCHAR(7),
+    p_cost_center_code VARCHAR(20) DEFAULT NULL
+)
+RETURNS TABLE(
+    "AssetCode"               VARCHAR(40),
+    "Description"             VARCHAR(250),
+    "DepreciationMethod"      VARCHAR(20),
+    "AcquisitionCost"         NUMERIC(18,2),
+    "ResidualValue"           NUMERIC(18,2),
+    "UsefulLifeMonths"        INTEGER,
+    "PreviousAccum"           NUMERIC(18,2),
+    "Amount"                  NUMERIC(18,2),
+    "AccumulatedDepreciation" NUMERIC(18,2),
+    "BookValue"               NUMERIC(18,2)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_period_start DATE;
+    v_period_end   DATE;
+BEGIN
+    v_period_start := CAST(p_period_code || '-01' AS DATE);
+    v_period_end   := (DATE_TRUNC('month', v_period_start) + INTERVAL '1 month - 1 day')::DATE;
+
+    RETURN QUERY
+    WITH eligible AS (
+        SELECT
+            a."AssetId",
+            a."AssetCode",
+            a."Description",
+            a."AcquisitionCost",
+            a."ResidualValue",
+            a."UsefulLifeMonths",
+            a."DepreciationMethod",
+            COALESCE((
+                SELECT SUM(d."Amount")
+                FROM acct."FixedAssetDepreciation" d
+                WHERE d."AssetId" = a."AssetId"
+            ), 0) AS previous_accum
+        FROM acct."FixedAsset" a
+        WHERE a."CompanyId"          = p_company_id
+          AND a."BranchId"           = p_branch_id
+          AND a."Status"             = 'ACTIVE'
+          AND a."IsDeleted"          = FALSE
+          AND a."DepreciationMethod" <> 'NONE'
+          AND a."AcquisitionDate"    <= v_period_end
+          AND NOT EXISTS (
+              SELECT 1 FROM acct."FixedAssetDepreciation" d2
+              WHERE d2."AssetId"    = a."AssetId"
+                AND d2."PeriodCode" = p_period_code
+          )
+          AND (p_cost_center_code IS NULL OR a."CostCenterCode" = p_cost_center_code)
+    ),
+    calc AS (
+        SELECT
+            e."AssetCode",
+            e."Description",
+            e."DepreciationMethod",
+            e."AcquisitionCost",
+            e."ResidualValue",
+            e."UsefulLifeMonths",
+            e.previous_accum,
+            CASE
+                WHEN e."DepreciationMethod" = 'STRAIGHT_LINE' AND e."UsefulLifeMonths" > 0
+                    THEN ROUND((e."AcquisitionCost" - e."ResidualValue") / e."UsefulLifeMonths", 2)
+                WHEN e."DepreciationMethod" = 'DOUBLE_DECLINING' AND e."UsefulLifeMonths" > 0
+                    THEN ROUND((2.0 / e."UsefulLifeMonths") * (e."AcquisitionCost" - e.previous_accum), 2)
+                ELSE 0
+            END AS raw_amount
+        FROM eligible e
+    ),
+    capped AS (
+        SELECT
+            c."AssetCode",
+            c."Description",
+            c."DepreciationMethod",
+            c."AcquisitionCost",
+            c."ResidualValue",
+            c."UsefulLifeMonths",
+            c.previous_accum,
+            CASE
+                WHEN c.previous_accum + c.raw_amount > c."AcquisitionCost" - c."ResidualValue"
+                    THEN c."AcquisitionCost" - c."ResidualValue" - c.previous_accum
+                ELSE c.raw_amount
+            END AS calc_amount
+        FROM calc c
+    )
+    SELECT
+        cp."AssetCode",
+        cp."Description",
+        cp."DepreciationMethod",
+        cp."AcquisitionCost",
+        cp."ResidualValue",
+        cp."UsefulLifeMonths",
+        cp.previous_accum                               AS "PreviousAccum",
+        cp.calc_amount                                  AS "Amount",
+        cp.previous_accum + cp.calc_amount              AS "AccumulatedDepreciation",
+        cp."AcquisitionCost" - (cp.previous_accum + cp.calc_amount) AS "BookValue"
+    FROM capped cp
+    WHERE cp.calc_amount > 0
+    ORDER BY cp."AssetCode";
 END;
 $$;
 

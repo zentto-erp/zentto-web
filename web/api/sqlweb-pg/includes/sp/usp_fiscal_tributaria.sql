@@ -68,7 +68,7 @@ BEGIN
           AND "CountryCode" = p_country_code;
 
         IF p_book_type = 'SALES' THEN
-            -- Fuente: dbo.DocumentosVenta
+            -- Fuente canonical: ar."SalesDocument"
             INSERT INTO fiscal."TaxBookEntry" (
                 "CompanyId", "BookType", "PeriodCode", "EntryDate",
                 "DocumentNumber", "DocumentType", "ControlNumber",
@@ -81,36 +81,38 @@ BEGIN
                 p_company_id,
                 'SALES',
                 p_period_code,
-                v."FECHA",
-                v."NUM_DOC",
-                CASE v."SERIALTIPO"
-                    WHEN 'FAC' THEN 'FACTURA'
-                    WHEN 'NC'  THEN 'NOTA_CREDITO'
-                    WHEN 'ND'  THEN 'NOTA_DEBITO'
-                    ELSE v."SERIALTIPO"
+                v."DocumentDate"::DATE,
+                v."DocumentNumber",
+                CASE v."SerialType"
+                    WHEN 'FAC'   THEN 'FACTURA'
+                    WHEN 'NC'    THEN 'NOTA_CREDITO'
+                    WHEN 'ND'    THEN 'NOTA_DEBITO'
+                    WHEN 'FACT'  THEN 'FACTURA'
+                    ELSE COALESCE(v."SerialType", 'FACTURA')
                 END,
-                v."NUM_CONTROL",
-                v."RIF",
-                v."NOMBRE",
-                COALESCE(v."MONTO_GRA", 0),
-                COALESCE(v."MONTO_EXE", 0),
-                COALESCE(v."ALICUOTA", 0),
-                COALESCE(v."IVA", 0),
+                v."ControlNumber",
+                v."FiscalId",
+                v."CustomerName",
+                COALESCE(v."TaxableAmount", 0),
+                COALESCE(v."ExemptAmount",  0),
+                COALESCE(v."TaxRate",       0),
+                COALESCE(v."TaxAmount",     0),
                 0,
                 0,
-                COALESCE(v."TOTAL", 0),
-                v."ID",
+                COALESCE(v."TotalAmount",   0),
+                v."DocumentId",
                 'AR',
                 p_country_code,
                 (NOW() AT TIME ZONE 'UTC')
-            FROM dbo."DocumentosVenta" v
-            WHERE v."FECHA" BETWEEN v_period_start AND v_period_end
-              AND v."ANULADA" = 0;
+            FROM ar."SalesDocument" v
+            WHERE v."DocumentDate"::DATE BETWEEN v_period_start AND v_period_end
+              AND v."IsVoided"  = FALSE
+              AND v."IsDeleted" = FALSE;
 
             GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
 
         ELSIF p_book_type = 'PURCHASE' THEN
-            -- Fuente: dbo.DocumentosCompra
+            -- Fuente canonical: ap."PurchaseDocument"
             INSERT INTO fiscal."TaxBookEntry" (
                 "CompanyId", "BookType", "PeriodCode", "EntryDate",
                 "DocumentNumber", "DocumentType", "ControlNumber",
@@ -123,31 +125,33 @@ BEGIN
                 p_company_id,
                 'PURCHASE',
                 p_period_code,
-                c."FECHA",
-                c."NUM_DOC",
-                CASE c."SERIALTIPO"
-                    WHEN 'FAC' THEN 'FACTURA'
-                    WHEN 'NC'  THEN 'NOTA_CREDITO'
-                    WHEN 'ND'  THEN 'NOTA_DEBITO'
-                    ELSE c."SERIALTIPO"
+                c."DocumentDate"::DATE,
+                c."DocumentNumber",
+                CASE c."SerialType"
+                    WHEN 'FAC'    THEN 'FACTURA'
+                    WHEN 'NC'     THEN 'NOTA_CREDITO'
+                    WHEN 'ND'     THEN 'NOTA_DEBITO'
+                    WHEN 'COMPRA' THEN 'FACTURA'
+                    ELSE COALESCE(c."SerialType", 'FACTURA')
                 END,
-                c."NUM_CONTROL",
-                c."RIF",
-                c."NOMBRE",
-                COALESCE(c."MONTO_GRA", 0),
-                COALESCE(c."MONTO_EXE", 0),
-                COALESCE(c."ALICUOTA", 0),
-                COALESCE(c."IVA", 0),
-                0,
-                0,
-                COALESCE(c."TOTAL", 0),
-                c."ID",
+                c."ControlNumber",
+                c."FiscalId",
+                c."SupplierName",
+                COALESCE(c."TaxableAmount",  0),
+                COALESCE(c."ExemptAmount",   0),
+                COALESCE(c."TaxRate",        0),
+                COALESCE(c."TaxAmount",      0),
+                COALESCE(c."RetentionRate",  0),
+                COALESCE(c."RetainedTax",    0),
+                COALESCE(c."TotalAmount",    0),
+                c."DocumentId",
                 'AP',
                 p_country_code,
                 (NOW() AT TIME ZONE 'UTC')
-            FROM dbo."DocumentosCompra" c
-            WHERE c."FECHA" BETWEEN v_period_start AND v_period_end
-              AND c."ANULADA" = 0;
+            FROM ap."PurchaseDocument" c
+            WHERE c."DocumentDate"::DATE BETWEEN v_period_start AND v_period_end
+              AND c."IsVoided"  = FALSE
+              AND c."IsDeleted" = FALSE;
 
             GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
         END IF;
