@@ -910,16 +910,17 @@ $$;
 -- =============================================================================
 
 -- usp_Rest_DiningTable_List
+DROP FUNCTION IF EXISTS usp_rest_diningtable_list(INT, INT, VARCHAR) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_diningtable_list(INT, INT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_diningtable_list(
     p_company_id  INT,
     p_branch_id   INT,
-    p_ambiente_id VARCHAR(50) DEFAULT NULL
+    p_ambiente_id VARCHAR DEFAULT NULL
 )
 RETURNS TABLE(
     "id" BIGINT, "numero" VARCHAR, "nombre" VARCHAR, "capacidad" INT,
     "ambienteId" VARCHAR, "ambiente" VARCHAR,
-    "posicionX" NUMERIC, "posicionY" NUMERIC, "estado" VARCHAR
+    "posicionX" INT, "posicionY" INT, "estado" VARCHAR
 )
 LANGUAGE plpgsql
 AS $$
@@ -927,11 +928,11 @@ BEGIN
     RETURN QUERY
     SELECT
         dt."DiningTableId",
-        dt."TableNumber",
+        dt."TableNumber"::VARCHAR,
         COALESCE(NULLIF(dt."TableName", ''), 'Mesa ' || dt."TableNumber")::VARCHAR,
         dt."Capacity",
-        dt."EnvironmentCode",
-        dt."EnvironmentName",
+        dt."EnvironmentCode"::VARCHAR,
+        dt."EnvironmentName"::VARCHAR,
         dt."PositionX",
         dt."PositionY",
         CASE
@@ -956,13 +957,15 @@ CREATE OR REPLACE FUNCTION usp_rest_diningtable_getbyid(
     p_company_id INT, p_branch_id INT, p_mesa_id BIGINT
 )
 RETURNS TABLE("id" BIGINT, "tableNumber" VARCHAR, "tableName" VARCHAR, "capacity" INT,
-              "ambienteId" VARCHAR, "ambiente" VARCHAR, "posicionX" NUMERIC, "posicionY" NUMERIC)
+              "ambienteId" VARCHAR, "ambiente" VARCHAR, "posicionX" INT, "posicionY" INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT dt."DiningTableId", dt."TableNumber", dt."TableName", dt."Capacity",
-           dt."EnvironmentCode", dt."EnvironmentName", dt."PositionX", dt."PositionY"
+    SELECT dt."DiningTableId", dt."TableNumber"::VARCHAR, dt."TableName"::VARCHAR,
+           dt."Capacity",
+           dt."EnvironmentCode"::VARCHAR, dt."EnvironmentName"::VARCHAR,
+           dt."PositionX", dt."PositionY"
     FROM rest."DiningTable" dt
     WHERE dt."CompanyId" = p_company_id AND dt."BranchId" = p_branch_id
       AND dt."DiningTableId" = p_mesa_id AND dt."IsActive" = TRUE
@@ -1015,7 +1018,8 @@ DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
 RETURNS TABLE("orderId" BIGINT,"companyId" INT,"branchId" INT,"countryCode" VARCHAR,"status" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ot."OrderTicketId",ot."CompanyId",ot."BranchId",ot."CountryCode",ot."Status"
+    RETURN QUERY SELECT ot."OrderTicketId",ot."CompanyId",ot."BranchId",
+        ot."CountryCode"::VARCHAR,ot."Status"::VARCHAR
     FROM rest."OrderTicket" ot WHERE ot."OrderTicketId"=p_pedido_id LIMIT 1;
 END; $$;
 
@@ -1085,8 +1089,9 @@ RETURNS TABLE("itemId" BIGINT,"lineNumber" INT,"countryCode" VARCHAR,"productId"
     "productCode" VARCHAR,"nombre" VARCHAR,"cantidad" NUMERIC,"unitPrice" NUMERIC,
     "taxCode" VARCHAR,"taxRate" NUMERIC,"netAmount" NUMERIC,"taxAmount" NUMERIC,"totalAmount" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ol."OrderTicketLineId",ol."LineNumber",ol."CountryCode",ol."ProductId",
-        ol."ProductCode",ol."ProductName",ol."Quantity",ol."UnitPrice",ol."TaxCode",ol."TaxRate",
+    RETURN QUERY SELECT ol."OrderTicketLineId",ol."LineNumber",ol."CountryCode"::VARCHAR,
+        ol."ProductId",ol."ProductCode"::VARCHAR,ol."ProductName"::VARCHAR,
+        ol."Quantity",ol."UnitPrice",ol."TaxCode"::VARCHAR,ol."TaxRate",
         ol."NetAmount",ol."TaxAmount",ol."TotalAmount"
     FROM rest."OrderTicketLine" ol
     WHERE ol."OrderTicketId"=p_pedido_id AND ol."OrderTicketLineId"=p_item_id LIMIT 1;
@@ -1106,7 +1111,7 @@ END; $$;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_infercountrycode(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_infercountrycode(p_empresa_id INT, p_sucursal_id INT)
 RETURNS TABLE("countryCode" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT cc."CountryCode" FROM fiscal."CountryConfig" cc
+    RETURN QUERY SELECT cc."CountryCode"::VARCHAR FROM fiscal."CountryConfig" cc
     WHERE cc."CompanyId"=p_empresa_id AND cc."BranchId"=p_sucursal_id AND cc."IsActive"=TRUE
     ORDER BY cc."UpdatedAt" DESC, cc."CountryConfigId" DESC LIMIT 1;
 END; $$;
@@ -1119,8 +1124,10 @@ RETURNS TABLE("id" BIGINT,"empresaId" INT,"sucursalId" INT,"countryCode" VARCHAR
     "clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC,
     "fechaCierre" TIMESTAMP,"codUsuario" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT o."OrderTicketId",o."CompanyId",o."BranchId",o."CountryCode",dt."DiningTableId",
-        o."CustomerName",o."CustomerFiscalId",o."Status",o."TotalAmount",o."ClosedAt",
+    RETURN QUERY SELECT o."OrderTicketId",o."CompanyId",o."BranchId",
+        o."CountryCode"::VARCHAR, dt."DiningTableId",
+        o."CustomerName"::VARCHAR, o."CustomerFiscalId"::VARCHAR,
+        o."Status"::VARCHAR, o."TotalAmount", o."ClosedAt",
         COALESCE(uc."UserCode",uo."UserCode")::VARCHAR
     FROM rest."OrderTicket" o
     LEFT JOIN rest."DiningTable" dt ON dt."CompanyId"=o."CompanyId" AND dt."BranchId"=o."BranchId" AND dt."TableNumber"=o."TableNumber"
@@ -1148,8 +1155,10 @@ RETURNS TABLE("itemId" BIGINT,"productoId" VARCHAR,"nombre" VARCHAR,"quantity" N
     "unitPrice" NUMERIC,"baseAmount" NUMERIC,"taxCode" VARCHAR,"taxRate" NUMERIC,
     "taxAmount" NUMERIC,"totalAmount" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ol."OrderTicketLineId",ol."ProductCode",ol."ProductName",
-        ol."Quantity",ol."UnitPrice",ol."NetAmount",ol."TaxCode",ol."TaxRate",ol."TaxAmount",ol."TotalAmount"
+    RETURN QUERY SELECT ol."OrderTicketLineId",
+        ol."ProductCode"::VARCHAR, ol."ProductName"::VARCHAR,
+        ol."Quantity",ol."UnitPrice",ol."NetAmount",
+        ol."TaxCode"::VARCHAR, ol."TaxRate",ol."TaxAmount",ol."TotalAmount"
     FROM rest."OrderTicketLine" ol WHERE ol."OrderTicketId"=p_pedido_id ORDER BY ol."LineNumber";
 END; $$;
 
@@ -1158,7 +1167,9 @@ DROP FUNCTION IF EXISTS usp_rest_orderticket_getbymesaheader(INT, INT, VARCHAR(2
 CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbymesaheader(p_company_id INT,p_branch_id INT,p_table_number VARCHAR(20))
 RETURNS TABLE("id" BIGINT,"clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ot."OrderTicketId",ot."CustomerName",ot."CustomerFiscalId",ot."Status",ot."TotalAmount"
+    RETURN QUERY SELECT ot."OrderTicketId",
+        ot."CustomerName"::VARCHAR, ot."CustomerFiscalId"::VARCHAR,
+        ot."Status"::VARCHAR, ot."TotalAmount"
     FROM rest."OrderTicket" ot WHERE ot."CompanyId"=p_company_id AND ot."BranchId"=p_branch_id
       AND ot."TableNumber"=p_table_number AND ot."Status" IN ('OPEN','SENT')
     ORDER BY ot."OrderTicketId" DESC LIMIT 1;
@@ -1172,10 +1183,11 @@ RETURNS TABLE("id" BIGINT,"productoId" VARCHAR,"nombre" VARCHAR,"cantidad" NUMER
     "precioUnitario" NUMERIC,"subtotal" NUMERIC,"iva" NUMERIC,"taxCode" VARCHAR,
     "impuesto" NUMERIC,"total" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ol."OrderTicketLineId",ol."ProductCode",ol."ProductName",ol."Quantity",
-        ol."UnitPrice",ol."NetAmount",
+    RETURN QUERY SELECT ol."OrderTicketLineId",
+        ol."ProductCode"::VARCHAR, ol."ProductName"::VARCHAR,
+        ol."Quantity", ol."UnitPrice",ol."NetAmount",
         CASE WHEN ol."TaxRate">1 THEN ol."TaxRate" ELSE ol."TaxRate"*100 END,
-        ol."TaxCode",ol."TaxAmount",ol."TotalAmount"
+        ol."TaxCode"::VARCHAR, ol."TaxAmount",ol."TotalAmount"
     FROM rest."OrderTicketLine" ol WHERE ol."OrderTicketId"=p_pedido_id ORDER BY ol."LineNumber";
 END; $$;
 

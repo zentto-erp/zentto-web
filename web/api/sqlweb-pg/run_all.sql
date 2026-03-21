@@ -634,6 +634,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/024_fix_producto_get_bigint_and_seed_mesas.sql
 \echo '  [025] Fix BIGINT en 14 funciones OrderTicket/OrderTicketLine'
 \i migrations/025_fix_orderticket_bigint.sql
+\echo '  [026] Fix posicionX/Y INT + ::VARCHAR casts CountryCode en 8 funciones restaurante'
+\i migrations/026_fix_diningtable_position_and_countrycode_casts.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
