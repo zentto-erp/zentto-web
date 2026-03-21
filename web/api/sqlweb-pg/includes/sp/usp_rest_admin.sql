@@ -321,16 +321,17 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_producto_get(INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_get(
-    p_id        INT,
+    p_id        BIGINT,
     p_branch_id INT
 )
 RETURNS TABLE(
-    "id"                   INT,
+    "id"                   BIGINT,
     "codigo"               VARCHAR,
     "nombre"               VARCHAR,
     "descripcion"          VARCHAR,
-    "categoriaId"          INT,
+    "categoriaId"          BIGINT,
     "precio"               NUMERIC,
     "costoEstimado"        NUMERIC,
     "iva"                  NUMERIC,
@@ -384,15 +385,16 @@ $$;
 
 -- Nota: los resultsets 2 y 3 del GET original se separan en funciones individuales
 DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_componentes(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_componentes(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_get_componentes(
-    p_id INT
+    p_id BIGINT
 )
 RETURNS TABLE(
-    "id"           INT,
+    "id"           BIGINT,
     "nombre"       VARCHAR,
     "obligatorio"  BOOLEAN,
     "orden"        INT,
-    "opcionId"     INT,
+    "opcionId"     BIGINT,
     "opcionNombre" VARCHAR,
     "precioExtra"  NUMERIC,
     "opcionOrden"  INT
@@ -421,13 +423,14 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_receta(INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_receta(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_get_receta(
-    p_id        INT,
+    p_id        BIGINT,
     p_branch_id INT
 )
 RETURNS TABLE(
-    "id"          INT,
-    "productoId"  INT,
+    "id"          BIGINT,
+    "productoId"  BIGINT,
     "inventarioId" VARCHAR,
     "descripcion" VARCHAR,
     "imagen"      VARCHAR,

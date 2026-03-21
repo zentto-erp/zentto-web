@@ -103,8 +103,19 @@ export async function getMetadata(force = false): Promise<TableMetadata[]> {
 }
 
 export async function getTableMetadata(schema: string, table: string) {
-  const all = await getMetadata();
-  return all.find((m) => m.schema === schema && m.table === table) ?? null;
+  let all: TableMetadata[];
+  try {
+    all = await getMetadata();
+  } catch {
+    return null;
+  }
+  const exact = all.find((m) => m.schema === schema && m.table.toLowerCase() === table.toLowerCase());
+  if (exact) return exact;
+  // "dbo" is the SQL Server default schema — in PostgreSQL, fall back to table-name-only search
+  if (schema === "dbo" || schema === "") {
+    return all.find((m) => m.table.toLowerCase() === table.toLowerCase()) ?? null;
+  }
+  return null;
 }
 
 export function quoteIdent(name: string) {

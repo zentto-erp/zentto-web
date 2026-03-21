@@ -628,6 +628,10 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/021_fix_proveedores_clean_columns.sql
 \echo '  [022] Fix BIGINT en funciones restaurante (DiningTable, MenuProduct, Purchase, etc.)'
 \i migrations/022_fix_rest_bigint_return_types.sql
+\echo '  [023] Fix ORDER BY seguro en mesas + metadata functions para CRUD admin PG'
+\i migrations/023_fix_mesas_order_and_metadata.sql
+\echo '  [024] Fix BIGINT en GET producto + seed mesas/ambientes'
+\i migrations/024_fix_producto_get_bigint_and_seed_mesas.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

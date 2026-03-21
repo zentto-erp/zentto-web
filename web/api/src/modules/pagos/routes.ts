@@ -16,6 +16,7 @@ pagosRouter.get("/", async (req, res) => {
   try {
     res.json(await listPagos(q.data));
   } catch (err) {
+    console.error("[pagos] listPagos error:", err);
     res.status(400).json({ error: errMsg(err) });
   }
 });
