@@ -633,10 +633,11 @@ $$;
 -- ============================================================================
 
 DROP FUNCTION IF EXISTS usp_rest_admin_receta_upsert(INT, INT, INT, NUMERIC(10,3), VARCHAR(20), VARCHAR(200)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_receta_upsert(INT, INT, BIGINT, NUMERIC(10,3), VARCHAR(20), VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_receta_upsert(
-    p_id                    INT DEFAULT 0,
-    p_producto_id           INT DEFAULT NULL,
-    p_ingredient_product_id INT DEFAULT NULL,
+    p_id                    INT    DEFAULT 0,
+    p_producto_id           INT    DEFAULT NULL,
+    p_ingredient_product_id BIGINT DEFAULT NULL,
     p_quantity              NUMERIC(10,3) DEFAULT NULL,
     p_unit_code             VARCHAR(20) DEFAULT NULL,
     p_notes                 VARCHAR(200) DEFAULT NULL
@@ -828,11 +829,12 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_compra_insert(INT, INT, VARCHAR(20), INT, VARCHAR(500), INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_insert(INT, INT, VARCHAR(20), BIGINT, VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_insert(
     p_company_id      INT,
     p_branch_id       INT,
     p_purchase_number VARCHAR(20),
-    p_supplier_id     INT DEFAULT NULL,
+    p_supplier_id     BIGINT DEFAULT NULL,
     p_notes           VARCHAR(500) DEFAULT NULL,
     p_user_id         INT DEFAULT NULL
 )
@@ -882,7 +884,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_compralinea_getprev(
     p_id        INT,
     p_compra_id INT
 )
-RETURNS TABLE("ingredientProductId" INT, "quantity" NUMERIC)
+RETURNS TABLE("ingredientProductId" BIGINT, "quantity" NUMERIC)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -947,7 +949,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_compralinea_delete(
     p_compra_id  INT,
     p_detalle_id INT
 )
-RETURNS TABLE("ingredientProductId" INT, "quantity" NUMERIC)
+RETURNS TABLE("ingredientProductId" BIGINT, "quantity" NUMERIC)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -1020,10 +1022,11 @@ $$;
 -- ============================================================================
 
 DROP FUNCTION IF EXISTS usp_rest_admin_syncmenuproductimage(INT, INT, INT, VARCHAR(500), INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_syncmenuproductimage(INT, INT, BIGINT, VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_syncmenuproductimage(
     p_company_id      INT,
     p_branch_id       INT,
-    p_menu_product_id INT,
+    p_menu_product_id BIGINT,
     p_storage_key     VARCHAR(500),
     p_user_id         INT DEFAULT NULL
 )

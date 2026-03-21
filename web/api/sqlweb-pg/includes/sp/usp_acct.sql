@@ -95,20 +95,21 @@ $$;
 --  Inserta una nueva cuenta contable.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_acct_account_insert(INT, VARCHAR(20), VARCHAR(200), VARCHAR(1), INT, INT, BOOLEAN) CASCADE;
+DROP FUNCTION IF EXISTS usp_acct_account_insert(INT, VARCHAR(20), VARCHAR(200), VARCHAR(1), INT, BIGINT, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_acct_account_insert(
     p_company_id        INT,
     p_account_code      VARCHAR(20),
     p_account_name      VARCHAR(200),
     p_account_type      VARCHAR(1)   DEFAULT 'A',
     p_account_level     INT          DEFAULT NULL,
-    p_parent_account_id INT          DEFAULT NULL,
+    p_parent_account_id BIGINT       DEFAULT NULL,
     p_allows_posting    BOOLEAN      DEFAULT TRUE
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_level    INT := p_account_level;
-    v_parent   INT := p_parent_account_id;
+    v_level    INT    := p_account_level;
+    v_parent   BIGINT := p_parent_account_id;
     v_parent_code VARCHAR(20);
 BEGIN
     -- Validar que no exista duplicado

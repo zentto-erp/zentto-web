@@ -389,7 +389,10 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
           normalized.endsWith(suffix)
         );
 
-        if (matchedSuffix && !paramType.includes('bigint')) {
+        // Excluir IDs externos de terceros (ej: paddle_customer_id es VARCHAR externo, no BIGINT de DB)
+        const isExternalId = normalized.startsWith('paddle');
+
+        if (matchedSuffix && !isExternalId && !paramType.includes('bigint')) {
           mismatches.push({
             func:     row.proname,
             param:    fragment.trim().split(/\s+/)[0] ?? fragment,
@@ -516,7 +519,10 @@ describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
           col.name.endsWith(suffix)
         );
 
-        if (matchedSuffix && !col.type.includes('bigint')) {
+        // Excluir IDs externos de terceros (ej: paddlecustomerid es VARCHAR externo, no BIGINT de DB)
+        const isExternalId = col.name.startsWith('paddle');
+
+        if (matchedSuffix && !isExternalId && !col.type.includes('bigint')) {
           mismatches.push({
             func:     row.proname,
             column:   col.name,

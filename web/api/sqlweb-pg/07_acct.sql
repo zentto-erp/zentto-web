@@ -1730,7 +1730,8 @@ $function$
 
 -- usp_acct_equitymovement_delete
 DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_delete(integer, integer, integer, text) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_delete(p_company_id integer, p_equity_movement_id integer, OUT p_resultado integer, OUT p_mensaje text)
+DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_delete(integer, bigint, integer, text) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_delete(p_company_id integer, p_equity_movement_id bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1803,6 +1804,7 @@ $function$
 
 -- usp_acct_equitymovement_list
 DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_list(integer, integer, smallint) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_list(integer, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_list(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
  RETURNS TABLE(p_total_count bigint, "EquityMovementId" bigint, "AccountId" bigint, "AccountCode" character varying, "AccountName" character varying, "MovementType" character varying, "MovementDate" date, "Amount" numeric, "JournalEntryId" bigint, "Description" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
@@ -1841,7 +1843,8 @@ $function$
 
 -- usp_acct_equitymovement_update
 DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_update(integer, integer, character varying, date, numeric, character varying, integer, text) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_update(p_company_id integer, p_equity_movement_id integer, p_movement_type character varying DEFAULT NULL::character varying, p_movement_date date DEFAULT NULL::date, p_amount numeric DEFAULT NULL::numeric, p_description character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_update(integer, bigint, character varying, date, numeric, character varying, integer, text) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_update(p_company_id integer, p_equity_movement_id bigint, p_movement_type character varying DEFAULT NULL::character varying, p_movement_date date DEFAULT NULL::date, p_amount numeric DEFAULT NULL::numeric, p_description character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$

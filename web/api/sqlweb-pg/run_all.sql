@@ -606,6 +606,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/009_fix_bigint_entity_params.sql
 \echo '  [010] Fix parámetros BIGINT en acct, ops, rest_admin (sale_ticket, order_ticket, customer, product, supplier)'
 \i migrations/010_fix_bigint_params_acct_ops_rest.sql
+\echo '  [011] Fix overloads duplicados y parámetros BIGINT restantes (pettycash, hr, acct, rest_admin)'
+\i migrations/011_fix_overloads_bigint_remaining.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
