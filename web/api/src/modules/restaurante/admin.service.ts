@@ -2,6 +2,7 @@
 import { callSp } from "../../db/query.js";
 import { getPool } from "../../db/mssql.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { env } from "../../config/env.js";
 
 interface DefaultScope {
   companyId: number;
@@ -228,16 +229,25 @@ export async function listProductosMenu(params: { categoriaId?: number; search?:
 export async function getProductoMenu(id: number) {
   const scope = await getDefaultScope();
 
-  const pool = await getPool();
-  const request = pool.request();
-  request.input("Id", id);
-  request.input("BranchId", scope.branchId);
-  const result = await request.execute("usp_Rest_Admin_Producto_Get");
+  let productoRows: any[];
+  let componentRows: any[];
+  let receta: any[];
 
-  const recordsets = result.recordsets as any[];
-  const productoRows = (recordsets[0] ?? []) as any[];
-  const componentRows = (recordsets[1] ?? []) as any[];
-  const receta = (recordsets[2] ?? []) as any[];
+  if (env.dbType === "postgres") {
+    productoRows = await callSp<any>("usp_Rest_Admin_Producto_Get", { Id: id, BranchId: scope.branchId });
+    componentRows = await callSp<any>("usp_Rest_Admin_Producto_Get_Componentes", { Id: id });
+    receta = await callSp<any>("usp_Rest_Admin_Producto_Get_Receta", { Id: id, BranchId: scope.branchId });
+  } else {
+    const pool = await getPool();
+    const request = pool.request();
+    request.input("Id", id);
+    request.input("BranchId", scope.branchId);
+    const result = await request.execute("usp_Rest_Admin_Producto_Get");
+    const recordsets = result.recordsets as any[];
+    productoRows = (recordsets[0] ?? []) as any[];
+    componentRows = (recordsets[1] ?? []) as any[];
+    receta = (recordsets[2] ?? []) as any[];
+  }
 
   const producto = productoRows[0] ?? null;
   if (!producto) {
@@ -425,6 +435,12 @@ export async function listCompras(params: { estado?: string; from?: string; to?:
 }
 
 export async function getCompraDetalle(compraId: number) {
+  if (env.dbType === "postgres") {
+    const headerRows = await callSp<any>("usp_Rest_Admin_Compra_GetDetalle_Header", { CompraId: compraId });
+    const detalle = await callSp<any>("usp_Rest_Admin_Compra_GetDetalle_Lines", { CompraId: compraId });
+    return { compra: headerRows[0] ?? null, detalle };
+  }
+
   const pool = await getPool();
   const request = pool.request();
   request.input("CompraId", compraId);
@@ -514,13 +530,10 @@ export async function upsertCompraDetalle(data: {
 }
 
 export async function deleteCompraDetalle(compraId: number, detalleId: number) {
-  const pool = await getPool();
-  const request = pool.request();
-  request.input("CompraId", compraId);
-  request.input("DetalleId", detalleId);
-  const result = await request.execute("usp_Rest_Admin_CompraLinea_Delete");
-
-  const prev = (result.recordset ?? []) as Array<{ ingredientProductId: number | null; quantity: number }>;
+  const prev = await callSp<{ ingredientProductId: number | null; quantity: number }>(
+    "usp_Rest_Admin_CompraLinea_Delete",
+    { CompraId: compraId, DetalleId: detalleId }
+  );
 
   const prevProductId = prev[0]?.ingredientProductId == null ? null : Number(prev[0].ingredientProductId);
   const prevQty = Number(prev[0]?.quantity ?? 0);
