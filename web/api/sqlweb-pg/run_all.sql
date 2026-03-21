@@ -608,6 +608,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/010_fix_bigint_params_acct_ops_rest.sql
 \echo '  [011] Fix overloads duplicados y parámetros BIGINT restantes (pettycash, hr, acct, rest_admin)'
 \i migrations/011_fix_overloads_bigint_remaining.sql
+\echo '  [012] Fix TEXT→VARCHAR en HR/RRHH + restaurar public.* pettycash'
+\i migrations/012_fix_text_varchar_hr_pettycash.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

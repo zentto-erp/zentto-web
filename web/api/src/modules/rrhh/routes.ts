@@ -125,10 +125,10 @@ router.get("/fideicomiso/balance/:employeeCode", async (req: Request, res: Respo
 // GET /v1/rrhh/fideicomiso/summary
 router.get("/fideicomiso/summary", async (req: Request, res: Response) => {
   try {
-    const result = await svc.getTrustSummary({
-      year: parseInt(req.query.year as string),
-      quarter: parseInt(req.query.quarter as string),
-    });
+    const year = parseInt(req.query.year as string);
+    const quarter = parseInt(req.query.quarter as string);
+    if (isNaN(year) || isNaN(quarter)) return res.status(400).json({ error: "year and quarter required" });
+    const result = await svc.getTrustSummary({ year, quarter });
     if (!result) return res.status(404).json({ error: "not_found" });
     res.json(result);
   } catch (err: any) {

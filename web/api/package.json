@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:schema": "vitest run tests/schema",
-    "test:smoke": "vitest run tests/api"
+    "test:smoke": "vitest run tests/api",
+    "test:contract": "vitest run tests/api/contract-endpoints.test.ts"
   },
   "dependencies": {
     "@types/multer": "^2.0.0",
