@@ -88,152 +88,216 @@ const revalueSchema = z.object({
 // ─── Categories ──────────────────────────────────────────────────────
 
 activosFijosRouter.get("/categorias", async (req, res) => {
-  const search = req.query.search as string | undefined;
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 50;
-  const data = await listCategories(search, page, limit);
-  return res.json(data);
+  try {
+    const search = req.query.search as string | undefined;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 50;
+    const data = await listCategories(search, page, limit);
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.get("/categorias/:code", async (req, res) => {
-  const row = await getCategory(req.params.code);
-  if (!row) return res.status(404).json({ error: "category_not_found" });
-  return res.json(row);
+  try {
+    const row = await getCategory(req.params.code);
+    if (!row) return res.status(404).json({ error: "category_not_found" });
+    return res.json(row);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.post("/categorias", async (req, res) => {
-  const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const result = await upsertCategory(parsed.data);
-  if (!result.ok) return res.status(400).json(result);
-  return res.status(201).json(result);
+  try {
+    const parsed = categorySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const result = await upsertCategory(parsed.data);
+    if (!result.ok) return res.status(400).json(result);
+    return res.status(201).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 // ─── Assets CRUD ─────────────────────────────────────────────────────
 
 activosFijosRouter.get("/", async (req, res) => {
-  const filter = {
-    categoryCode: req.query.categoryCode as string | undefined,
-    status: req.query.status as string | undefined,
-    costCenterCode: req.query.costCenterCode as string | undefined,
-    search: req.query.search as string | undefined,
-    page: Number(req.query.page) || 1,
-    limit: Number(req.query.limit) || 50,
-  };
-  const data = await listAssets(filter);
-  return res.json(data);
+  try {
+    const filter = {
+      categoryCode: req.query.categoryCode as string | undefined,
+      status: req.query.status as string | undefined,
+      costCenterCode: req.query.costCenterCode as string | undefined,
+      search: req.query.search as string | undefined,
+      page: Number(req.query.page) || 1,
+      limit: Number(req.query.limit) || 50,
+    };
+    const data = await listAssets(filter);
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.get("/reportes/libro", async (req, res) => {
-  const fechaCorte = req.query.fechaCorte as string;
-  if (!fechaCorte) return res.status(400).json({ error: "fechaCorte required" });
-  const rows = await reportAssetBook(fechaCorte, req.query.categoryCode as string);
-  return res.json({ rows });
+  try {
+    const fechaCorte = req.query.fechaCorte as string;
+    if (!fechaCorte) return res.status(400).json({ error: "fechaCorte required" });
+    const rows = await reportAssetBook(fechaCorte, req.query.categoryCode as string);
+    return res.json({ rows });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.get("/reportes/por-categoria", async (req, res) => {
-  const fechaCorte = req.query.fechaCorte as string;
-  if (!fechaCorte) return res.status(400).json({ error: "fechaCorte required" });
-  const rows = await reportByCategory(fechaCorte);
-  return res.json({ rows });
+  try {
+    const fechaCorte = req.query.fechaCorte as string;
+    if (!fechaCorte) return res.status(400).json({ error: "fechaCorte required" });
+    const rows = await reportByCategory(fechaCorte);
+    return res.json({ rows });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.get("/reportes/cuadro/:id", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const rows = await reportDepreciationSchedule(assetId);
-  return res.json({ rows });
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const rows = await reportDepreciationSchedule(assetId);
+    return res.json({ rows });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.get("/:id", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const row = await getAsset(assetId);
-  if (!row) return res.status(404).json({ error: "asset_not_found" });
-  return res.json(row);
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const row = await getAsset(assetId);
+    if (!row) return res.status(404).json({ error: "asset_not_found" });
+    return res.json(row);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.post("/", async (req, res) => {
-  const parsed = assetSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await insertAsset(parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.status(201).json(result);
+  try {
+    const parsed = assetSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await insertAsset(parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.status(201).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.put("/:id", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const parsed = assetUpdateSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await updateAsset(assetId, parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.json(result);
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const parsed = assetUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await updateAsset(assetId, parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.post("/:id/disponer", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const parsed = disposeSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await disposeAsset(assetId, parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.json(result);
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const parsed = disposeSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await disposeAsset(assetId, parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 // ─── Depreciation ────────────────────────────────────────────────────
 
 activosFijosRouter.post("/depreciacion/calcular", async (req, res) => {
-  const parsed = depreciacionSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await calculateDepreciation(parsed.data.periodo, false, parsed.data.costCenterCode, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.status(201).json(result);
+  try {
+    const parsed = depreciacionSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await calculateDepreciation(parsed.data.periodo, false, parsed.data.costCenterCode, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.status(201).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.post("/depreciacion/preview", async (req, res) => {
-  const parsed = depreciacionSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await calculateDepreciation(parsed.data.periodo, true, parsed.data.costCenterCode, user);
-  return res.json(result);
+  try {
+    const parsed = depreciacionSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await calculateDepreciation(parsed.data.periodo, true, parsed.data.costCenterCode, user);
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 activosFijosRouter.get("/:id/depreciaciones", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 50;
-  const data = await depreciationHistory(assetId, page, limit);
-  return res.json(data);
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 50;
+    const data = await depreciationHistory(assetId, page, limit);
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 // ─── Improvements ────────────────────────────────────────────────────
 
 activosFijosRouter.post("/:id/mejoras", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const parsed = improvementSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await addImprovement(assetId, parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.status(201).json(result);
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const parsed = improvementSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await addImprovement(assetId, parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.status(201).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 // ─── Revaluation ─────────────────────────────────────────────────────
 
 activosFijosRouter.post("/:id/revaluar", async (req, res) => {
-  const assetId = Number(req.params.id);
-  if (!assetId) return res.status(400).json({ error: "invalid asset id" });
-  const parsed = revalueSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  const user = (req as any).user?.username || "API";
-  const result = await revalueAsset(assetId, parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.status(201).json(result);
+  try {
+    const assetId = Number(req.params.id);
+    if (!assetId) return res.status(400).json({ error: "invalid asset id" });
+    const parsed = revalueSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const user = (req as any).user?.username || "API";
+    const result = await revalueAsset(assetId, parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.status(201).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });

@@ -19,21 +19,29 @@ const qSchema = z.object({
 });
 
 proveedoresRouter.get("/", async (req, res) => {
-  const parsed = qSchema.safeParse(req.query);
-  if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
-  res.json(await listProveedores({
-    search: parsed.data.search,
-    estado: parsed.data.estado,
-    vendedor: parsed.data.vendedor,
-    page: parsed.data.page ? parseInt(parsed.data.page) : undefined,
-    limit: parsed.data.limit ? parseInt(parsed.data.limit) : undefined,
-  }));
+  try {
+    const parsed = qSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
+    res.json(await listProveedores({
+      search: parsed.data.search,
+      estado: parsed.data.estado,
+      vendedor: parsed.data.vendedor,
+      page: parsed.data.page ? parseInt(parsed.data.page) : undefined,
+      limit: parsed.data.limit ? parseInt(parsed.data.limit) : undefined,
+    }));
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 proveedoresRouter.get("/:codigo", async (req, res) => {
-  const row = await getProveedorByCodigoSP(req.params.codigo);
-  if (!row) return res.status(404).json({ error: "not_found" });
-  res.json(row);
+  try {
+    const row = await getProveedorByCodigoSP(req.params.codigo);
+    if (!row) return res.status(404).json({ error: "not_found" });
+    res.json(row);
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || "internal_error" });
+  }
 });
 
 proveedoresRouter.post("/", async (req, res) => {
