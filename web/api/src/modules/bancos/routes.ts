@@ -208,6 +208,26 @@ const conciliacionCreateSchema = z.object({
   Fecha_Hasta: z.string().min(1),
 });
 
+// POST /v1/bancos/conciliaciones - Alias de /conciliaciones/crear
+bancosRouter.post("/conciliaciones", async (req, res) => {
+  const parsed = conciliacionCreateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await crearConciliacion(
+      parsed.data.Nro_Cta,
+      parsed.data.Fecha_Desde,
+      parsed.data.Fecha_Hasta,
+      codUsuario
+    );
+    res.status(201).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // POST /v1/bancos/conciliaciones/crear - Crear conciliacion
 bancosRouter.post("/conciliaciones/crear", async (req, res) => {
   const parsed = conciliacionCreateSchema.safeParse(req.body);

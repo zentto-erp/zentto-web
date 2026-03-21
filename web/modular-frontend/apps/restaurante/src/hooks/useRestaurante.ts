@@ -331,23 +331,16 @@ export const useRestauranteStore = create<RestauranteState>((set, get) => ({
                 disponible: r.disponible !== false,
             }));
 
-            const fallbackAmbientes = ambientes.length > 0
-                ? ambientes
-                : [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }];
-
             set((state) => ({
-                ambientes: fallbackAmbientes,
-                ambienteActivo: resolveAmbienteActivo(state.ambienteActivo, fallbackAmbientes),
+                ambientes,
+                ambienteActivo: resolveAmbienteActivo(state.ambienteActivo, ambientes),
                 productos,
                 loading: false,
             }));
         } catch (err) {
             console.error('Error cargando datos del restaurante:', err);
-            const fallbackAmbientes = [{ id: '1', nombre: 'Salón Principal', color: '#4CAF50', mesas: [] }];
             set((state) => ({
-                ambientes: fallbackAmbientes,
-                ambienteActivo: resolveAmbienteActivo(state.ambienteActivo, fallbackAmbientes),
-                productos: [],
+                ambientes: state.ambientes,
                 loading: false,
             }));
         }

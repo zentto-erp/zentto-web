@@ -632,6 +632,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/023_fix_mesas_order_and_metadata.sql
 \echo '  [024] Fix BIGINT en GET producto + seed mesas/ambientes'
 \i migrations/024_fix_producto_get_bigint_and_seed_mesas.sql
+\echo '  [025] Fix BIGINT en 14 funciones OrderTicket/OrderTicketLine'
+\i migrations/025_fix_orderticket_bigint.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

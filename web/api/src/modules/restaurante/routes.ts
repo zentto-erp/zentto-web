@@ -39,8 +39,13 @@ const abrirSchema = z.object({
 restauranteRouter.post("/pedidos/abrir", async (req, res) => {
     const parsed = abrirSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    const result = await abrirPedido(parsed.data.mesaId, parsed.data.clienteNombre, parsed.data.clienteRif, parsed.data.codUsuario);
-    res.status(result.ok ? 201 : 400).json(result);
+    try {
+        const result = await abrirPedido(parsed.data.mesaId, parsed.data.clienteNombre, parsed.data.clienteRif, parsed.data.codUsuario);
+        res.status(result.ok ? 201 : 400).json(result);
+    } catch (err: any) {
+        console.error("[restaurante] abrirPedido error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Agregar item a pedido
@@ -59,8 +64,13 @@ const itemSchema = z.object({
 restauranteRouter.post("/pedidos/item", async (req, res) => {
     const parsed = itemSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    const result = await agregarItemPedido(parsed.data);
-    res.status(result.ok ? 201 : 400).json(result);
+    try {
+        const result = await agregarItemPedido(parsed.data);
+        res.status(result.ok ? 201 : 400).json(result);
+    } catch (err: any) {
+        console.error("[restaurante] agregarItemPedido error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 const cancelarItemSchema = z.object({
@@ -101,8 +111,13 @@ restauranteRouter.post("/pedidos/:pedidoId/items/:itemId/cancelar", async (req, 
 restauranteRouter.post("/pedidos/:pedidoId/comanda", async (req, res) => {
     const pedidoId = Number(req.params.pedidoId);
     if (isNaN(pedidoId)) return res.status(400).json({ error: "pedidoId invalido" });
-    const result = await enviarComanda(pedidoId);
-    res.json(result);
+    try {
+        const result = await enviarComanda(pedidoId);
+        res.json(result);
+    } catch (err: any) {
+        console.error("[restaurante] enviarComanda error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Cerrar pedido
@@ -126,11 +141,13 @@ restauranteRouter.post("/pedidos/:pedidoId/cerrar", async (req, res) => {
     const parsed = cerrarSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
 
-    const result = await cerrarPedido({
-        pedidoId,
-        ...parsed.data,
-    });
-    res.json(result);
+    try {
+        const result = await cerrarPedido({ pedidoId, ...parsed.data });
+        res.json(result);
+    } catch (err: any) {
+        console.error("[restaurante] cerrarPedido error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 const contabilizarPedidoSchema = z.object({

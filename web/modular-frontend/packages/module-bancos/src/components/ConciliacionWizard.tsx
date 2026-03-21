@@ -215,7 +215,7 @@ export default function ConciliacionWizard() {
   const handleFinalizar = async () => {
     if (!conciliacionId) {
       showToast("Conciliación procesada (sin backend)");
-      router.push("/conciliacion");
+      router.push("/bancos/conciliacion");
       return;
     }
     try {
@@ -225,7 +225,7 @@ export default function ConciliacionWizard() {
         Observaciones: observaciones || undefined,
       });
       showToast("Conciliación cerrada exitosamente");
-      router.push("/conciliacion");
+      router.push("/bancos/conciliacion");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al cerrar la conciliación");
     }
@@ -557,7 +557,7 @@ export default function ConciliacionWizard() {
               </Stack>
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
-                <Button variant="outlined" color="error" onClick={() => router.push("/conciliacion")}>
+                <Button variant="outlined" color="error" onClick={() => router.push("/bancos/conciliacion")}>
                   Cancelar
                 </Button>
                 <Button
@@ -587,7 +587,7 @@ export default function ConciliacionWizard() {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/conciliacion")}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/bancos/conciliacion")}>
           Volver
         </Button>
         <Typography variant="h5" fontWeight={700}>
