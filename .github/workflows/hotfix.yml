@@ -40,11 +40,13 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           SERVICE: ${{ inputs.service }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NOTIFY_API_KEY: ${{ secrets.NOTIFY_API_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: SERVICE
+          envs: SERVICE,AUTH_SECRET,NOTIFY_API_KEY
           script: |
             set -e
             cd /opt/zentto
@@ -53,6 +55,17 @@ jobs:
               cp nginx/zentto.conf /etc/nginx/sites-available/zentto.conf
               nginx -t && nginx -s reload
               echo "✓ Nginx recargado"
+            fi
+            # Garantizar .env.frontend con variables críticas
+            ENV_FE="/opt/zentto/.env.frontend"
+            touch "$ENV_FE"
+            if [ -n "$AUTH_SECRET" ]; then
+              if grep -q '^AUTH_SECRET=' "$ENV_FE"; then
+                sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=$AUTH_SECRET|" "$ENV_FE"
+              else
+                echo "AUTH_SECRET=$AUTH_SECRET" >> "$ENV_FE"
+              fi
+              echo "✓ AUTH_SECRET en .env.frontend"
             fi
             if [ "$SERVICE" = "all" ]; then
               docker compose -f docker-compose.prod.yml up -d --remove-orphans
