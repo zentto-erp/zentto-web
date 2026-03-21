@@ -8,12 +8,14 @@ import {
   Button,
   Card,
   CircularProgress,
+  FormControl,
+  FormHelperText,
+  OutlinedInput,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Logo } from '@zentto/shared-ui';
@@ -42,7 +44,7 @@ export default function ForgotPasswordPage() {
   const captchaEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<ForgotForm>({
@@ -56,7 +58,7 @@ export default function ForgotPasswordPage() {
     setSuccess(null);
 
     if (captchaEnabled && !captchaToken) {
-      setError('Completa la verificacion CAPTCHA');
+      setError('Completa la verificación CAPTCHA');
       setIsSubmitting(false);
       return;
     }
@@ -78,7 +80,7 @@ export default function ForgotPasswordPage() {
 
       setSuccess(data?.message || 'Solicitud procesada');
     } catch {
-      setError('Error de red al solicitar recuperacion');
+      setError('Error de red al solicitar recuperación');
     } finally {
       setIsSubmitting(false);
     }
@@ -106,15 +108,13 @@ export default function ForgotPasswordPage() {
     >
       <Grid container spacing={0} sx={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
         <Grid size={{ xs: 12, sm: 12, lg: 5, xl: 4 }} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '520px', mx: 2 }}>
-            <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
+          <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px', mx: 2 }}>
+            <Box display="flex" alignItems="center" justifyContent="center" mb={3}>
               <Logo />
             </Box>
-            <Typography variant="h5" fontWeight={700} textAlign="center" mb={1}>
-              Recuperar contrasena
-            </Typography>
-            <Typography variant="body2" textAlign="center" color="text.secondary" mb={3}>
-              Te enviaremos un enlace para restablecer tu contrasena
+
+            <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
+              Ingresa tu usuario o correo para recuperar acceso
             </Typography>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -122,7 +122,27 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack spacing={2}>
-                <TextField label="Usuario o correo" {...register('identifier')} error={!!errors.identifier} helperText={errors.identifier?.message} />
+                <Controller
+                  name="identifier"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl error={!!errors.identifier} fullWidth>
+                      <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
+                        Usuario o correo
+                      </Typography>
+                      <OutlinedInput
+                        {...field}
+                        placeholder="Tu usuario o correo electrónico"
+                        disabled={isSubmitting}
+                        sx={{
+                          '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
+                          '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                        }}
+                      />
+                      {errors.identifier && <FormHelperText>{errors.identifier.message}</FormHelperText>}
+                    </FormControl>
+                  )}
+                />
                 <TurnstileCaptcha onTokenChange={setCaptchaToken} />
                 <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ py: 1.5 }}>
                   {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Enviar enlace'}
@@ -131,11 +151,17 @@ export default function ForgotPasswordPage() {
             </form>
 
             <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
-              <Typography variant="body2" color="text.secondary">
-                Volver a
+              <Typography variant="body2" color="textSecondary" fontWeight="500">
+                ¿Recordaste tu contraseña?
               </Typography>
-              <Typography component={Link} href="/authentication/login" variant="body2" sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                Iniciar sesion
+              <Typography
+                component={Link}
+                href="/authentication/login"
+                variant="body2"
+                fontWeight="500"
+                sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+              >
+                Iniciar sesión
               </Typography>
             </Stack>
           </Card>

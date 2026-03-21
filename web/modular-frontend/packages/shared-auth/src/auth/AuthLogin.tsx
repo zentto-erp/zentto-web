@@ -45,7 +45,7 @@ type CompanyOption = {
 
 const loginSchema = z.object({
   email: z.string().min(1, 'El usuario es requerido'),
-  password: z.string().min(1, 'La contrasena es requerida'),
+  password: z.string().min(1, 'La contraseña es requerida'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -91,7 +91,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
     const error = searchParams.get('error');
     if (error) {
       if (error === 'CredentialsSignin') {
-        setErrorMsg('Usuario o contrasena incorrectos');
+        setErrorMsg('Usuario o contraseña incorrectos');
       } else {
         setErrorMsg('Error al iniciar sesion. Intente nuevamente.');
       }
@@ -205,7 +205,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
           setEmailNotVerified(true);
           setErrorMsg('Debes verificar tu correo antes de iniciar sesion.');
         } else {
-          setErrorMsg('Usuario o contrasena incorrectos');
+          setErrorMsg('Usuario o contraseña incorrectos');
         }
         setIsSubmitting(false);
       } else if (result?.ok) {
@@ -318,35 +318,41 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                   htmlFor="password"
                   sx={{ mb: 1, color: 'text.primary' }}
                 >
-                  Contrasena
+                  Contraseña
                 </Typography>
                 <OutlinedInput
                   {...field}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Contrasena"
+                  placeholder="Contraseña"
                   autoComplete="current-password"
                   disabled={isSubmitting}
                   sx={{
                     '& .MuiOutlinedInput-input': {
                       py: 1.75,
                       px: 2,
+                      '&::-ms-reveal, &::-ms-clear': { display: 'none' },
+                      '&::-webkit-credentials-auto-fill-button, &::-webkit-clear-button, &::-webkit-textfield-decoration-container': { display: 'none' },
                     },
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderRadius: 2,
                     },
+                    'input::-ms-reveal': { display: 'none' },
                   }}
                   endAdornment={
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        disabled={isSubmitting}
-                        size="small"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
+                    field.value ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          disabled={isSubmitting}
+                          size="small"
+                          sx={{ p: 0.5 }}
+                        >
+                          {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null
                   }
                 />
                 {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
@@ -382,7 +388,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
               variant="body2"
               sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
             >
-              Olvide mi contrasena
+              Olvidé mi contraseña
             </Typography>
           </Stack>
 

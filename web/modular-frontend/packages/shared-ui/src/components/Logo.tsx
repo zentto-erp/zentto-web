@@ -19,7 +19,7 @@ export default function Logo({ size = 'medium' }: LogoProps) {
   return (
     <Stack alignItems="center" spacing={1.5}>
       <Box sx={{
-        width: s.box, height: s.box, borderRadius: 2,
+        width: s.box, height: s.box, borderRadius: '50%',
         background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 4px 12px ${theme.palette.primary.main}40`,

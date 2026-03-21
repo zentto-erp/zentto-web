@@ -49,3 +49,4 @@ export { default as CajaChicaPage } from "./components/CajaChicaPage";
 
 // Home page
 export { default as BancosHome } from "./pages/BancosHome";
+export { default as BancosDirectorio } from "./pages/BancosDirectorio";

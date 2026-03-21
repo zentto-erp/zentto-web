@@ -5,130 +5,74 @@ import {
   Box,
   Card,
   CardContent,
-  Typography,
-  IconButton,
+  Chip,
+  Paper,
   Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
-import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import LocalAtmIcon from "@mui/icons-material/LocalAtm";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import { useBancosList, useCuentasBancarias } from "../hooks/useBancosAuxiliares";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import { useRouter } from "next/navigation";
+import { useCuentasBancarias } from "../hooks/useBancosAuxiliares";
 import { useConciliaciones } from "../hooks/useConciliacionBancaria";
 import { formatCurrency } from "@zentto/shared-api";
 import { brandColors } from "@zentto/shared-ui";
 
 export default function BancosHome() {
+  const router = useRouter();
   const cuentas = useCuentasBancarias();
-  const conciliaciones = useConciliaciones({ Estado: "ABIERTA", limit: 1 });
+  const conciliaciones = useConciliaciones({ Estado: "ABIERTA", limit: 5 });
 
   const cuentasData: any[] = cuentas.data?.data ?? cuentas.data?.rows ?? [];
-  const saldoTotal = cuentasData.length > 0
-    ? formatCurrency(cuentasData.reduce((sum: number, c: any) => sum + (Number(c.Saldo) || 0), 0))
-    : "—";
-  const cuentasActivas = cuentasData.length > 0 ? String(cuentasData.length) : "—";
-  const conciliacionesPendientes = conciliaciones.data?.totalCount ?? conciliaciones.data?.total ?? "—";
+  const saldoTotal = cuentasData.reduce((sum: number, c: any) => sum + (Number(c.Saldo) || 0), 0);
+  const conciliacionesPendientes = conciliaciones.data?.totalCount ?? conciliaciones.data?.total ?? 0;
 
   const statsCards = [
     {
-      title: "Saldo Total",
-      value: saldoTotal,
-      subtitle: "Todas las Cuentas",
+      title: "Saldo total",
+      value: cuentasData.length > 0 ? formatCurrency(saldoTotal) : "—",
       loading: cuentas.isLoading,
       color: brandColors.statBlue,
-      chartType: "line" as const,
+      icon: <AccountBalanceIcon />,
     },
     {
-      title: "Cuentas Activas",
-      value: cuentasActivas,
-      subtitle: "Registradas",
+      title: "Cuentas activas",
+      value: cuentasData.length > 0 ? String(cuentasData.length) : "—",
       loading: cuentas.isLoading,
       color: brandColors.statTeal,
-      chartType: "bar" as const,
+      icon: <TrendingUpIcon />,
     },
     {
-      title: "Movimientos del Mes",
+      title: "Movimientos del mes",
       value: "—",
-      subtitle: "Este Mes",
       loading: false,
       color: brandColors.statOrange,
-      chartType: "bar" as const,
+      icon: <TrendingDownIcon />,
     },
     {
-      title: "Conciliaciones Pendientes",
+      title: "Conciliaciones pendientes",
       value: String(conciliacionesPendientes),
-      subtitle: "Abiertas",
       loading: conciliaciones.isLoading,
       color: brandColors.statRed,
-      chartType: "line" as const,
-    },
-  ];
-
-  const shortcuts = [
-    {
-      title: "Bancos",
-      description: "Gestión de Bancos",
-      icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/entidades",
-      bg: brandColors.shortcutGreen,
-    },
-    {
-      title: "Cuentas Bancarias",
-      description: "Saldos y Movimientos",
-      icon: <CreditCardIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/cuentas",
-      bg: brandColors.shortcutDark,
-    },
-    {
-      title: "Movimientos",
-      description: "Generar Movimiento",
-      icon: <SwapHorizIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/movimientos/generar",
-      bg: brandColors.shortcutTeal,
-    },
-    {
-      title: "Conciliaciones",
-      description: "Listado",
-      icon: <CompareArrowsIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/conciliacion",
-      bg: brandColors.shortcutSlate,
-    },
-    {
-      title: "Nueva Conciliación",
-      description: "Wizard Paso a Paso",
-      icon: <PlaylistAddCheckIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/conciliacion/wizard",
-      bg: brandColors.success,
-    },
-    {
-      title: "Caja Chica",
-      description: "Gastos y Sesiones",
-      icon: <LocalAtmIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/caja-chica",
-      bg: brandColors.shortcutNavy,
-    },
-    {
-      title: "Reportes",
-      description: "Informes Bancarios",
-      icon: <AssessmentIcon sx={{ fontSize: 32 }} />,
-      href: "/bancos/cuentas",
-      bg: brandColors.shortcutOrange,
+      icon: <CompareArrowsIcon />,
     },
   ];
 
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard Bancario
+        Dashboard bancario
       </Typography>
 
-      {/* CORE-UI STYLE STATS CARDS */}
+      {/* STATS CARDS */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
@@ -138,8 +82,6 @@ export default function BancosHome() {
                 bgcolor: s.color,
                 color: "white",
                 borderRadius: 2,
-                position: "relative",
-                overflow: "hidden",
                 boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
               }}
             >
@@ -147,7 +89,7 @@ export default function BancosHome() {
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <Box>
                     {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
+                      <Skeleton variant="text" width={120} height={40} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
                     ) : (
                       <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>
                         {s.value}
@@ -157,25 +99,7 @@ export default function BancosHome() {
                       {s.title}
                     </Typography>
                   </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
+                  <Box sx={{ opacity: 0.6 }}>{s.icon}</Box>
                 </Box>
               </CardContent>
             </Card>
@@ -183,60 +107,85 @@ export default function BancosHome() {
         ))}
       </Grid>
 
-      {/* CORE-UI WIDGETS (SOCIAL-LIKE SHORTCUTS) */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-              <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
-                {sc.icon}
-                <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                  <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                </svg>
-              </Box>
-              <CardContent sx={{ textAlign: "center", py: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0 }}>
-                  {sc.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, fontSize: "0.75rem", letterSpacing: 1 }}>
-                  {sc.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Large Bottom Card */}
-      <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            Resumen Financiero Bancario
-          </Typography>
-
-          <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Depósitos del Mes</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
-              </Box>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Cheques Emitidos</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
-              </Box>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
-                <Typography variant="body2" color="text.secondary">Notas de Crédito</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 12, md: 8 }} sx={{ display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#f8f9fa", borderRadius: 2, minHeight: 200 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TrendingUpIcon /> Resumen bancario se actualizará con datos reales
+      {/* BOTTOM SECTION */}
+      <Grid container spacing={3}>
+        {/* Cuentas bancarias */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
+            <Box sx={{ p: 2, borderBottom: "1px solid #eee" }}>
+              <Typography variant="h6" fontWeight={600}>
+                Cuentas bancarias
               </Typography>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+            </Box>
+            {cuentas.isLoading ? (
+              <Box p={3}><Skeleton variant="rectangular" height={120} /></Box>
+            ) : cuentasData.length > 0 ? (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Banco</TableCell>
+                    <TableCell>Cuenta</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell align="right">Saldo</TableCell>
+                    <TableCell>Estado</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {cuentasData.slice(0, 8).map((c: any, idx: number) => (
+                    <TableRow
+                      key={c.CuentaBancariaId ?? idx}
+                      hover
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => router.push("/bancos/cuentas")}
+                    >
+                      <TableCell>{c.NombreBanco ?? c.Banco ?? "—"}</TableCell>
+                      <TableCell sx={{ fontFamily: "monospace" }}>{c.NumeroCuenta ?? "—"}</TableCell>
+                      <TableCell>{c.TipoCuenta ?? "—"}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
+                        {formatCurrency(Number(c.Saldo) || 0)}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={c.Estado ?? "ACTIVA"}
+                          size="small"
+                          color={c.Estado === "INACTIVA" ? "error" : "success"}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Box p={3} textAlign="center">
+                <Typography variant="body2" color="text.secondary">
+                  No hay cuentas bancarias registradas
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Resumen */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper sx={{ borderRadius: 2, p: 3 }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>
+              Resumen general
+            </Typography>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
+              <Typography variant="body2" color="text.secondary">Depósitos del mes</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+            </Box>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
+              <Typography variant="body2" color="text.secondary">Cheques emitidos</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+            </Box>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
+              <Typography variant="body2" color="text.secondary">Notas de crédito</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

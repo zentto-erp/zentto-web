@@ -8,6 +8,7 @@ const AddCardIcon = dynamic(() => import('@mui/icons-material/AddCard'), { ssr: 
 const CompareArrowsIcon = dynamic(() => import('@mui/icons-material/CompareArrows'), { ssr: false });
 const PlaylistAddCheckIcon = dynamic(() => import('@mui/icons-material/PlaylistAddCheck'), { ssr: false });
 const LocalAtmIcon = dynamic(() => import('@mui/icons-material/LocalAtm'), { ssr: false });
+const ListIcon = dynamic(() => import('@mui/icons-material/List'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -16,6 +17,7 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
     if (has('bancos')) {
         nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'directorio', title: 'Directorio', icon: <ListIcon /> });
         nav.push({ kind: 'page', segment: 'entidades', title: 'Bancos', icon: <AccountBalanceIcon /> });
         nav.push({ kind: 'page', segment: 'cuentas', title: 'Cuentas bancarias', icon: <CreditCardIcon /> });
         nav.push({ kind: 'page', segment: 'movimientos/generar', title: 'Generar movimiento', icon: <AddCardIcon /> });

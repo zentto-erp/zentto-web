@@ -90,8 +90,8 @@ export default function AppSelectorPage() {
   return (
     <Box sx={{ minHeight: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 8 }, background: 'linear-gradient(to right bottom, #f3f4f6, #e5e7eb)' }}>
       <Box sx={{ width: '100%', maxWidth: 1200, mt: 5 }}>
-        {isAdmin && <Box sx={{ width: '100%', p: 2, mb: 4, bgcolor: '#fdf2f8', color: '#831843', borderRadius: 2, border: '1px solid #fbcfe8', textAlign: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>⚙️ Modo Administrador de Sistema activado. Tienes acceso a todas las aplicaciones.</Typography>
+        {isAdmin && <Box sx={{ width: '100%', p: 2, mb: 4, bgcolor: '#eff6ff', color: '#1e40af', borderRadius: 2, border: '1px solid #bfdbfe', textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Modo administrador activo</Typography>
         </Box>}
 
         <Grid container spacing={4} justifyContent="center">
@@ -105,21 +105,22 @@ export default function AppSelectorPage() {
                   alignItems: 'center',
                   borderRadius: 4,
                   p: 2,
-                  transition: 'all 0.2s',
-                  '&:hover': {
+                  '&:hover .app-avatar': {
                     transform: 'translateY(-5px)',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                  }
+                    boxShadow: '0 10px 20px -3px rgba(0, 0, 0, 0.2)',
+                  },
                 }}
               >
                 <Avatar
-                  variant="rounded"
+                  variant="circular"
+                  className="app-avatar"
                   sx={{
                     width: { xs: 64, sm: 80 },
                     height: { xs: 64, sm: 80 },
                     bgcolor: app.bgColor,
                     mb: 1.5,
-                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                    transition: 'all 0.2s',
                   }}
                 >
                   {app.icon}

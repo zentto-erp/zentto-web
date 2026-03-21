@@ -127,9 +127,14 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // App: Bancos
     if (has(modulos, 'bancos') && isApp('/bancos')) {
-        nav.push({ kind: 'page', segment: 'bancos', title: 'Dashboard', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas y Movimientos', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/conciliaciones', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
+        nav.push({ kind: 'page', segment: 'bancos', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/directorio', title: 'Directorio', icon: <ListIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/entidades', title: 'Bancos', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas bancarias', icon: <AccountBalanceWalletIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/movimientos/generar', title: 'Generar movimiento', icon: <SwapHorizIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/conciliacion', title: 'Conciliaciones', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/caja-chica', title: 'Caja chica', icon: <PaymentsIcon /> });
         return nav;
     }
 

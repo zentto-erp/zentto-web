@@ -10,7 +10,7 @@ export default function AppTitle({ lightText = false }: { lightText?: boolean })
   return (
     <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minHeight: { xs: '56px', sm: '64px' }, px: 0.5 }}>
       <Box sx={{
-        width: 36, height: 36, minWidth: 36, borderRadius: 1.5,
+        width: 36, height: 36, minWidth: 36, borderRadius: '50%',
         background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 2px 8px ${theme.palette.primary.main}30`,
