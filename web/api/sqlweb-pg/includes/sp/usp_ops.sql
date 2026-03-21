@@ -1033,8 +1033,13 @@ LANGUAGE plpgsql AS $$ BEGIN
 END; $$;
 
 -- usp_Rest_OrderTicketLine_Insert
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_insert(INT, INT, VARCHAR(5), INT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(600), INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_insert(BIGINT, INT, VARCHAR(5), BIGINT, VARCHAR(60), VARCHAR(255), NUMERIC(18,4), NUMERIC(18,4), VARCHAR(20), NUMERIC(10,6), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(600), INT) CASCADE;
+-- Drop ALL overloads to avoid "is not unique" ambiguity when params are NULL
+DO $$ DECLARE r RECORD; BEGIN
+    FOR r IN SELECT p.oid::regprocedure::text AS sig FROM pg_proc p
+             JOIN pg_namespace n ON p.pronamespace = n.oid
+             WHERE n.nspname = 'public' AND p.proname = 'usp_rest_orderticketline_insert'
+    LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE'; END LOOP;
+END; $$;
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_insert(
     p_order_id BIGINT, p_line_number INT, p_country_code VARCHAR(5),
     p_product_id BIGINT DEFAULT NULL, p_product_code VARCHAR(60) DEFAULT NULL,

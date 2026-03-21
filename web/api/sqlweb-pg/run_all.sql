@@ -636,6 +636,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/025_fix_orderticket_bigint.sql
 \echo '  [026] Fix posicionX/Y INT + ::VARCHAR casts CountryCode en 8 funciones restaurante'
 \i migrations/026_fix_diningtable_position_and_countrycode_casts.sql
+\echo '  [027] Fix overloads duplicados en usp_rest_orderticketline_insert'
+\i migrations/027_fix_orderticketline_insert_overloads.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
