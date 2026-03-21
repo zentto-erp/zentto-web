@@ -32,14 +32,6 @@ RETURNS TABLE(
     "LIMITE"       DOUBLE PRECISION,
     "CREDITO"      DOUBLE PRECISION,
     "NOTAS"        VARCHAR,
-    "IsActive"     BOOLEAN,
-    "IsDeleted"    BOOLEAN,
-    "CompanyId"    INT,
-    "SupplierCode" VARCHAR,
-    "SupplierName" VARCHAR,
-    "FiscalId"     VARCHAR,
-    "TotalBalance" DOUBLE PRECISION,
-    "CreditLimit"  DOUBLE PRECISION,
     "TotalCount"   INT
 )
 LANGUAGE plpgsql AS $$
@@ -86,14 +78,6 @@ BEGIN
         COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "LIMITE",
         COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "CREDITO",
         NULL::VARCHAR                                   AS "NOTAS",
-        s."IsActive",
-        s."IsDeleted",
-        s."CompanyId",
-        s."SupplierCode"::VARCHAR,
-        s."SupplierName"::VARCHAR,
-        COALESCE(s."FiscalId",'')::VARCHAR,
-        COALESCE(s."TotalBalance",0)::DOUBLE PRECISION,
-        COALESCE(s."CreditLimit",0)::DOUBLE PRECISION,
         v_total                                         AS "TotalCount"
     FROM master."Supplier" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
@@ -126,15 +110,7 @@ RETURNS TABLE(
     "COD_USUARIO"  VARCHAR,
     "LIMITE"       DOUBLE PRECISION,
     "CREDITO"      DOUBLE PRECISION,
-    "NOTAS"        VARCHAR,
-    "IsActive"     BOOLEAN,
-    "IsDeleted"    BOOLEAN,
-    "CompanyId"    INT,
-    "SupplierCode" VARCHAR,
-    "SupplierName" VARCHAR,
-    "FiscalId"     VARCHAR,
-    "TotalBalance" DOUBLE PRECISION,
-    "CreditLimit"  DOUBLE PRECISION
+    "NOTAS"        VARCHAR
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -157,15 +133,7 @@ BEGIN
         NULL::VARCHAR                                   AS "COD_USUARIO",
         COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "LIMITE",
         COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "CREDITO",
-        NULL::VARCHAR                                   AS "NOTAS",
-        s."IsActive",
-        s."IsDeleted",
-        s."CompanyId",
-        s."SupplierCode"::VARCHAR,
-        s."SupplierName"::VARCHAR,
-        COALESCE(s."FiscalId",'')::VARCHAR,
-        COALESCE(s."TotalBalance",0)::DOUBLE PRECISION,
-        COALESCE(s."CreditLimit",0)::DOUBLE PRECISION
+        NULL::VARCHAR                                   AS "NOTAS"
     FROM master."Supplier" s
     WHERE s."SupplierCode" = p_codigo
       AND COALESCE(s."IsDeleted", FALSE) = FALSE;

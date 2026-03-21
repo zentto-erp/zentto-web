@@ -620,6 +620,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/016_fix_pay_companyconfig_countrycode.sql
 \echo '  [017] Fix ambiguedad + columnas reales en usp_doc_purchasedocument_list'
 \i migrations/017_fix_purchasedocument_list_columns.sql
+\echo '  [019] Re-despliegue usp_acct_advanced y usp_acct_fixedassets'
+\i migrations/019_redeploy_acct_advanced_fixedassets.sql
+\echo '  [020] Crear usp_Cfg_Scope_GetDefault'
+\i migrations/020_add_cfg_scope_getdefault.sql
+\echo '  [021] Limpiar columnas canónicas en usp_Proveedores_List/GetByCodigo'
+\i migrations/021_fix_proveedores_clean_columns.sql
+\echo '  [022] Fix BIGINT en funciones restaurante (DiningTable, MenuProduct, Purchase, etc.)'
+\i migrations/022_fix_rest_bigint_return_types.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

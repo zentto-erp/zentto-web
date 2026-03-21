@@ -917,7 +917,7 @@ CREATE OR REPLACE FUNCTION usp_rest_diningtable_list(
     p_ambiente_id VARCHAR(50) DEFAULT NULL
 )
 RETURNS TABLE(
-    "id" INT, "numero" VARCHAR, "nombre" VARCHAR, "capacidad" INT,
+    "id" BIGINT, "numero" VARCHAR, "nombre" VARCHAR, "capacidad" INT,
     "ambienteId" VARCHAR, "ambiente" VARCHAR,
     "posicionX" NUMERIC, "posicionY" NUMERIC, "estado" VARCHAR
 )
@@ -951,10 +951,11 @@ $$;
 
 -- usp_Rest_DiningTable_GetById
 DROP FUNCTION IF EXISTS usp_rest_diningtable_getbyid(INT, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_diningtable_getbyid(INT, INT, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_diningtable_getbyid(
-    p_company_id INT, p_branch_id INT, p_mesa_id INT
+    p_company_id INT, p_branch_id INT, p_mesa_id BIGINT
 )
-RETURNS TABLE("id" INT, "tableNumber" VARCHAR, "tableName" VARCHAR, "capacity" INT,
+RETURNS TABLE("id" BIGINT, "tableNumber" VARCHAR, "tableName" VARCHAR, "capacity" INT,
               "ambienteId" VARCHAR, "ambiente" VARCHAR, "posicionX" NUMERIC, "posicionY" NUMERIC)
 LANGUAGE plpgsql
 AS $$

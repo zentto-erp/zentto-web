@@ -219,7 +219,7 @@ export async function listProductosMenu(params: { categoriaId?: number; search?:
       BranchId: scope.branchId,
       MenuCategoryId: params.categoriaId && params.categoriaId > 0 ? params.categoriaId : null,
       Search: search,
-      SoloDisponibles: (params.soloDisponibles ?? true) ? 1 : 0,
+      SoloDisponibles: Boolean(params.soloDisponibles ?? true),
     }
   );
 

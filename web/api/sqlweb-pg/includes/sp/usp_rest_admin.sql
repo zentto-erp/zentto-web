@@ -99,7 +99,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_ambiente_list(
     p_branch_id  INT
 )
 RETURNS TABLE(
-    "id"     INT,
+    "id"     BIGINT,
     "nombre" VARCHAR,
     "color"  VARCHAR,
     "orden"  INT
@@ -174,7 +174,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_categoria_list(
     p_branch_id  INT
 )
 RETURNS TABLE(
-    "id"          INT,
+    "id"          BIGINT,
     "nombre"      VARCHAR,
     "descripcion" VARCHAR,
     "color"       VARCHAR,
@@ -258,11 +258,11 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_producto_list(
     p_solo_disponibles BOOLEAN DEFAULT TRUE
 )
 RETURNS TABLE(
-    "id"                   INT,
+    "id"                   BIGINT,
     "codigo"               VARCHAR,
     "nombre"               VARCHAR,
     "descripcion"          VARCHAR,
-    "categoriaId"          INT,
+    "categoriaId"          BIGINT,
     "categoriaNombre"      VARCHAR,
     "precio"               NUMERIC,
     "costoEstimado"        NUMERIC,
@@ -699,7 +699,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_compra_list(
     p_to_date    TIMESTAMP DEFAULT NULL
 )
 RETURNS TABLE(
-    "id"                INT,
+    "id"                BIGINT,
     "numCompra"         VARCHAR,
     "proveedorId"       VARCHAR,
     "proveedorNombre"   VARCHAR,
@@ -737,11 +737,12 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_header(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_header(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_getdetalle_header(
-    p_compra_id INT
+    p_compra_id BIGINT
 )
 RETURNS TABLE(
-    "id"                INT,
+    "id"                BIGINT,
     "numCompra"         VARCHAR,
     "proveedorId"       VARCHAR,
     "proveedorNombre"   VARCHAR,
@@ -778,12 +779,13 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_lines(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_lines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_getdetalle_lines(
-    p_compra_id INT
+    p_compra_id BIGINT
 )
 RETURNS TABLE(
-    "id"           INT,
-    "compraId"     INT,
+    "id"           BIGINT,
+    "compraId"     BIGINT,
     "inventarioId" VARCHAR,
     "descripcion"  VARCHAR,
     "cantidad"     NUMERIC,
