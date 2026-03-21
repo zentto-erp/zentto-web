@@ -638,6 +638,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/026_fix_diningtable_position_and_countrycode_casts.sql
 \echo '  [027] Fix overloads duplicados en usp_rest_orderticketline_insert'
 \i migrations/027_fix_orderticketline_insert_overloads.sql
+\echo '  [028] ADD columnas auditoría OrderTicket.UpdatedAt + OrderTicketLine.CreatedAt/UpdatedAt'
+\i migrations/028_fix_orderticketline_insert_no_audit_cols.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
