@@ -170,8 +170,8 @@ END;
 $$;
 
 \echo '  [013] Registrando migración...'
-INSERT INTO sys."MigrationLog" ("MigrationId", "Description", "AppliedAt")
-VALUES ('013', 'Fix TIMESTAMPTZ→TIMESTAMP casts en 5 funciones public.* pettycash', NOW())
-ON CONFLICT ("MigrationId") DO NOTHING;
+INSERT INTO public._migrations (name, applied_at)
+VALUES ('013_fix_timestamptz_pettycash', NOW() AT TIME ZONE 'UTC')
+ON CONFLICT (name) DO NOTHING;
 
 \echo '  [013] COMPLETO — pettycash TIMESTAMPTZ corregido'
