@@ -73,10 +73,10 @@ jobs:
           envs: PG_PASSWORD,PG_USER,PG_DATABASE
           script: |
             set -e
-            # Run DDL-level changes that require superuser/table-owner (via postgres)
+            # Run DDL-level changes that require superuser (via postgres)
             echo "GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;" > /tmp/zentto_ddl.sql
             echo 'ALTER TABLE acct."JournalEntryLine" ADD COLUMN IF NOT EXISTS "CostCenterCode" VARCHAR(20) NULL;' >> /tmp/zentto_ddl.sql
-            echo 'ALTER TABLE acct."JournalEntryLine" OWNER TO zentto_app;' >> /tmp/zentto_ddl.sql
+            echo "DO \$x\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' LOOP BEGIN EXECUTE 'ALTER FUNCTION ' || r.oid::regprocedure || ' OWNER TO zentto_app'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; END LOOP; END \$x\$;" >> /tmp/zentto_ddl.sql
             su -c "psql -d $PG_DATABASE -f /tmp/zentto_ddl.sql" postgres || echo "DDL grants warning (may already be applied)"
             rm -f /tmp/zentto_ddl.sql
             chmod +x /opt/zentto/scripts/run-pg-migrations.sh
