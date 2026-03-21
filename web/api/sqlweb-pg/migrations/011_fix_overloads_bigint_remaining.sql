@@ -32,7 +32,7 @@ BEGIN
         HAVING COUNT(*) > 1
     LOOP
         EXECUTE 'DROP FUNCTION IF EXISTS ' || rec.proname ||
-                '(' || pg_get_function_arguments(rec.old_oid) || ') CASCADE';
+                '(' || pg_get_function_identity_arguments(rec.old_oid) || ') CASCADE';
         RAISE NOTICE 'Dropped old OID % for %', rec.old_oid, rec.proname;
     END LOOP;
 END;
