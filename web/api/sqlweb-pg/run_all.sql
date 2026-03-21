@@ -618,6 +618,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/015_fix_abonos_currencycode_bpchar.sql
 \echo '  [016] Fix bpchar CountryCode en usp_pay_companyconfig_listbycompany'
 \i migrations/016_fix_pay_companyconfig_countrycode.sql
+\echo '  [017] Fix ambiguedad + columnas reales en usp_doc_purchasedocument_list'
+\i migrations/017_fix_purchasedocument_list_columns.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
