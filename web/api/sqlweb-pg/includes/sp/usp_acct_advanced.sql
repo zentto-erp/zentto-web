@@ -198,29 +198,29 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."FiscalPeriod"
-    WHERE "CompanyId" = p_company_id
-      AND (p_year   IS NULL OR "YearCode" = p_year)
-      AND (p_status IS NULL OR "Status"   = p_status);
+    FROM acct."FiscalPeriod" fp
+    WHERE fp."CompanyId" = p_company_id
+      AND (p_year   IS NULL OR fp."YearCode" = p_year)
+      AND (p_status IS NULL OR fp."Status"   = p_status);
 
     RETURN QUERY
     SELECT v_total_count,
-           "FiscalPeriodId",
-           "PeriodCode",
-           "PeriodName",
-           "YearCode",
-           "MonthCode",
-           "StartDate",
-           "EndDate",
-           "Status",
-           "ClosedAt",
-           "ClosedByUserId",
-           "Notes"
-    FROM acct."FiscalPeriod"
-    WHERE "CompanyId" = p_company_id
-      AND (p_year   IS NULL OR "YearCode" = p_year)
-      AND (p_status IS NULL OR "Status"   = p_status)
-    ORDER BY "PeriodCode"
+           fp."FiscalPeriodId",
+           fp."PeriodCode",
+           fp."PeriodName",
+           fp."YearCode",
+           fp."MonthCode",
+           fp."StartDate",
+           fp."EndDate",
+           fp."Status",
+           fp."ClosedAt",
+           fp."ClosedByUserId",
+           fp."Notes"
+    FROM acct."FiscalPeriod" fp
+    WHERE fp."CompanyId" = p_company_id
+      AND (p_year   IS NULL OR fp."YearCode" = p_year)
+      AND (p_status IS NULL OR fp."Status"   = p_status)
+    ORDER BY fp."PeriodCode"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -685,28 +685,28 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."CostCenter"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
+    FROM acct."CostCenter" cc
+    WHERE cc."CompanyId" = p_company_id
+      AND cc."IsDeleted" = FALSE
       AND (p_search IS NULL
-           OR "CostCenterCode" ILIKE '%' || p_search || '%'
-           OR "CostCenterName" ILIKE '%' || p_search || '%');
+           OR cc."CostCenterCode" ILIKE '%' || p_search || '%'
+           OR cc."CostCenterName" ILIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT v_total_count,
-           "CostCenterId",
-           "CostCenterCode",
-           "CostCenterName",
-           "ParentCostCenterId",
-           "Level",
-           "IsActive"
-    FROM acct."CostCenter"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
+           cc."CostCenterId",
+           cc."CostCenterCode",
+           cc."CostCenterName",
+           cc."ParentCostCenterId",
+           cc."Level",
+           cc."IsActive"
+    FROM acct."CostCenter" cc
+    WHERE cc."CompanyId" = p_company_id
+      AND cc."IsDeleted" = FALSE
       AND (p_search IS NULL
-           OR "CostCenterCode" ILIKE '%' || p_search || '%'
-           OR "CostCenterName" ILIKE '%' || p_search || '%')
-    ORDER BY "CostCenterCode"
+           OR cc."CostCenterCode" ILIKE '%' || p_search || '%'
+           OR cc."CostCenterName" ILIKE '%' || p_search || '%')
+    ORDER BY cc."CostCenterCode"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -1019,28 +1019,28 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."Budget"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_fiscal_year IS NULL OR "FiscalYear" = p_fiscal_year)
-      AND (p_status      IS NULL OR "Status"     = p_status);
+    FROM acct."Budget" b
+    WHERE b."CompanyId" = p_company_id
+      AND b."IsDeleted" = FALSE
+      AND (p_fiscal_year IS NULL OR b."FiscalYear" = p_fiscal_year)
+      AND (p_status      IS NULL OR b."Status"     = p_status);
 
     RETURN QUERY
     SELECT v_total_count,
-           "BudgetId",
-           "BudgetName",
-           "FiscalYear",
-           "CostCenterCode",
-           "Status",
-           "Notes",
-           "CreatedAt",
-           "UpdatedAt"
-    FROM acct."Budget"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_fiscal_year IS NULL OR "FiscalYear" = p_fiscal_year)
-      AND (p_status      IS NULL OR "Status"     = p_status)
-    ORDER BY "FiscalYear" DESC, "BudgetName"
+           b."BudgetId",
+           b."BudgetName",
+           b."FiscalYear",
+           b."CostCenterCode",
+           b."Status",
+           b."Notes",
+           b."CreatedAt",
+           b."UpdatedAt"
+    FROM acct."Budget" b
+    WHERE b."CompanyId" = p_company_id
+      AND b."IsDeleted" = FALSE
+      AND (p_fiscal_year IS NULL OR b."FiscalYear" = p_fiscal_year)
+      AND (p_status      IS NULL OR b."Status"     = p_status)
+    ORDER BY b."FiscalYear" DESC, b."BudgetName"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -1382,28 +1382,28 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."RecurringEntry"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_is_active IS NULL OR "IsActive" = p_is_active);
+    FROM acct."RecurringEntry" re
+    WHERE re."CompanyId" = p_company_id
+      AND re."IsDeleted" = FALSE
+      AND (p_is_active IS NULL OR re."IsActive" = p_is_active);
 
     RETURN QUERY
     SELECT v_total_count,
-           "RecurringEntryId",
-           "TemplateName",
-           "Frequency",
-           "NextExecutionDate",
-           "LastExecutedDate",
-           "TimesExecuted",
-           "MaxExecutions",
-           "TipoAsiento",
-           "Concepto",
-           "IsActive"
-    FROM acct."RecurringEntry"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_is_active IS NULL OR "IsActive" = p_is_active)
-    ORDER BY "NextExecutionDate"
+           re."RecurringEntryId",
+           re."TemplateName",
+           re."Frequency",
+           re."NextExecutionDate",
+           re."LastExecutedDate",
+           re."TimesExecuted",
+           re."MaxExecutions",
+           re."TipoAsiento",
+           re."Concepto",
+           re."IsActive"
+    FROM acct."RecurringEntry" re
+    WHERE re."CompanyId" = p_company_id
+      AND re."IsDeleted" = FALSE
+      AND (p_is_active IS NULL OR re."IsActive" = p_is_active)
+    ORDER BY re."NextExecutionDate"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -1825,22 +1825,22 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT "RecurringEntryId",
-           "TemplateName",
-           "Frequency",
-           "NextExecutionDate",
-           "LastExecutedDate",
-           "TimesExecuted",
-           "MaxExecutions",
-           "TipoAsiento",
-           "Concepto"
-    FROM acct."RecurringEntry"
-    WHERE "CompanyId"          = p_company_id
-      AND "IsActive"           = TRUE
-      AND "IsDeleted"          = FALSE
-      AND "NextExecutionDate" <= (NOW() AT TIME ZONE 'UTC')::DATE
-      AND ("MaxExecutions" IS NULL OR "TimesExecuted" < "MaxExecutions")
-    ORDER BY "NextExecutionDate";
+    SELECT re."RecurringEntryId",
+           re."TemplateName",
+           re."Frequency",
+           re."NextExecutionDate",
+           re."LastExecutedDate",
+           re."TimesExecuted",
+           re."MaxExecutions",
+           re."TipoAsiento",
+           re."Concepto"
+    FROM acct."RecurringEntry" re
+    WHERE re."CompanyId"          = p_company_id
+      AND re."IsActive"           = TRUE
+      AND re."IsDeleted"          = FALSE
+      AND re."NextExecutionDate" <= (NOW() AT TIME ZONE 'UTC')::DATE
+      AND (re."MaxExecutions" IS NULL OR re."TimesExecuted" < re."MaxExecutions")
+    ORDER BY re."NextExecutionDate";
 END;
 $$;
 
