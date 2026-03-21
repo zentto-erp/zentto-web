@@ -15,43 +15,67 @@ export const restauranteAdminRouter = Router();
 
 // ═══ AMBIENTES ═══
 restauranteAdminRouter.get("/ambientes", async (_req, res) => {
-    res.json(await listAmbientes());
+    try {
+        res.json(await listAmbientes());
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.post("/ambientes", async (req, res) => {
-    const s = z.object({ id: z.number().optional(), nombre: z.string(), color: z.string().optional(), orden: z.number().optional() });
-    const parsed = s.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    const result = await upsertAmbiente(parsed.data);
-    res.status(201).json(result);
+    try {
+        const s = z.object({ id: z.number().optional(), nombre: z.string(), color: z.string().optional(), orden: z.number().optional() });
+        const parsed = s.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        const result = await upsertAmbiente(parsed.data);
+        res.status(201).json(result);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // ═══ CATEGORÍAS DEL MENÚ ═══
 restauranteAdminRouter.get("/categorias", async (_req, res) => {
-    res.json(await listCategoriasMenu());
+    try {
+        res.json(await listCategoriasMenu());
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.post("/categorias", async (req, res) => {
-    const s = z.object({ id: z.number().optional(), nombre: z.string(), descripcion: z.string().optional(), color: z.string().optional(), orden: z.number().optional() });
-    const parsed = s.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    res.status(201).json(await upsertCategoriaMenu(parsed.data));
+    try {
+        const s = z.object({ id: z.number().optional(), nombre: z.string(), descripcion: z.string().optional(), color: z.string().optional(), orden: z.number().optional() });
+        const parsed = s.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        res.status(201).json(await upsertCategoriaMenu(parsed.data));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // ═══ PRODUCTOS DEL MENÚ ═══
 restauranteAdminRouter.get("/productos", async (req, res) => {
-    const categoriaId = req.query.categoriaId ? Number(req.query.categoriaId) : undefined;
-    const search = req.query.search as string | undefined;
-    const soloDisponibles = req.query.soloDisponibles !== "false";
-    res.json(await listProductosMenu({ categoriaId, search, soloDisponibles }));
+    try {
+        const categoriaId = req.query.categoriaId ? Number(req.query.categoriaId) : undefined;
+        const search = req.query.search as string | undefined;
+        const soloDisponibles = req.query.soloDisponibles !== "false";
+        res.json(await listProductosMenu({ categoriaId, search, soloDisponibles }));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.get("/productos/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    const data = await getProductoMenu(id);
-    if (!data.producto) return res.status(404).json({ error: "not_found" });
-    res.json(data);
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        const data = await getProductoMenu(id);
+        if (!data.producto) return res.status(404).json({ error: "not_found" });
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 const productoSchema = z.object({
@@ -72,68 +96,104 @@ const productoSchema = z.object({
 });
 
 restauranteAdminRouter.post("/productos", async (req, res) => {
-    const parsed = productoSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    res.status(201).json(await upsertProductoMenu(parsed.data));
+    try {
+        const parsed = productoSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        res.status(201).json(await upsertProductoMenu(parsed.data));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.put("/productos/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    const parsed = productoSchema.safeParse({ ...req.body, id });
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    res.json(await upsertProductoMenu(parsed.data));
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        const parsed = productoSchema.safeParse({ ...req.body, id });
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        res.json(await upsertProductoMenu(parsed.data));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.delete("/productos/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    res.json(await deleteProductoMenu(id));
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        res.json(await deleteProductoMenu(id));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // ═══ COMPONENTES / OPCIONES ═══
 restauranteAdminRouter.post("/componentes", async (req, res) => {
-    const s = z.object({ id: z.number().optional(), productoId: z.number(), nombre: z.string(), obligatorio: z.boolean().optional(), orden: z.number().optional() });
-    const parsed = s.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    res.status(201).json(await upsertComponente(parsed.data));
+    try {
+        const s = z.object({ id: z.number().optional(), productoId: z.number(), nombre: z.string(), obligatorio: z.boolean().optional(), orden: z.number().optional() });
+        const parsed = s.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        res.status(201).json(await upsertComponente(parsed.data));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.post("/opciones", async (req, res) => {
-    const s = z.object({ id: z.number().optional(), componenteId: z.number(), nombre: z.string(), precioExtra: z.number().optional(), orden: z.number().optional() });
-    const parsed = s.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    res.status(201).json(await upsertOpcion(parsed.data));
+    try {
+        const s = z.object({ id: z.number().optional(), componenteId: z.number(), nombre: z.string(), precioExtra: z.number().optional(), orden: z.number().optional() });
+        const parsed = s.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        res.status(201).json(await upsertOpcion(parsed.data));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // ═══ RECETAS ═══
 restauranteAdminRouter.post("/recetas", async (req, res) => {
-    const s = z.object({ id: z.number().optional(), productoId: z.number(), inventarioId: z.string(), cantidad: z.number(), unidad: z.string().optional(), comentario: z.string().optional() });
-    const parsed = s.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    res.status(201).json(await upsertRecetaItem(parsed.data));
+    try {
+        const s = z.object({ id: z.number().optional(), productoId: z.number(), inventarioId: z.string(), cantidad: z.number(), unidad: z.string().optional(), comentario: z.string().optional() });
+        const parsed = s.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        res.status(201).json(await upsertRecetaItem(parsed.data));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.delete("/recetas/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    res.json(await deleteRecetaItem(id));
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        res.json(await deleteRecetaItem(id));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // ═══ COMPRAS RESTAURANTE ═══
 restauranteAdminRouter.get("/compras", async (req, res) => {
-    const estado = req.query.estado as string | undefined;
-    const from = req.query.from as string | undefined;
-    const to = req.query.to as string | undefined;
-    res.json(await listCompras({ estado, from, to }));
+    try {
+        const estado = req.query.estado as string | undefined;
+        const from = req.query.from as string | undefined;
+        const to = req.query.to as string | undefined;
+        res.json(await listCompras({ estado, from, to }));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 restauranteAdminRouter.get("/compras/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    const data = await getCompraDetalle(id);
-    if (!data.compra) return res.status(404).json({ error: "not_found" });
-    res.json(data);
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        const data = await getCompraDetalle(id);
+        if (!data.compra) return res.status(404).json({ error: "not_found" });
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 const compraSchema = z.object({
@@ -150,13 +210,13 @@ const compraSchema = z.object({
 });
 
 restauranteAdminRouter.post("/compras", async (req, res) => {
-    const parsed = compraSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     try {
+        const parsed = compraSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
         const result = await crearCompra(parsed.data);
         res.status(201).json(result);
-    } catch (err) {
-        res.status(400).json({ error: String(err) });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
     }
 });
 
@@ -167,14 +227,14 @@ const compraUpdateSchema = z.object({
 });
 
 restauranteAdminRouter.put("/compras/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    const parsed = compraUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        const parsed = compraUpdateSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
         res.json(await updateCompra(id, parsed.data));
-    } catch (err) {
-        res.status(400).json({ error: String(err) });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
     }
 });
 
@@ -188,38 +248,46 @@ const compraDetalleSchema = z.object({
 });
 
 restauranteAdminRouter.post("/compras/:id/detalle", async (req, res) => {
-    const compraId = Number(req.params.id);
-    if (isNaN(compraId)) return res.status(400).json({ error: "id inválido" });
-    const parsed = compraDetalleSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     try {
+        const compraId = Number(req.params.id);
+        if (isNaN(compraId)) return res.status(400).json({ error: "id inválido" });
+        const parsed = compraDetalleSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
         res.status(201).json(await upsertCompraDetalle({ ...parsed.data, compraId }));
-    } catch (err) {
-        res.status(400).json({ error: String(err) });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
     }
 });
 
 restauranteAdminRouter.delete("/compras/:id/detalle/:detalleId", async (req, res) => {
-    const compraId = Number(req.params.id);
-    const detalleId = Number(req.params.detalleId);
-    if (isNaN(compraId) || isNaN(detalleId)) return res.status(400).json({ error: "id inválido" });
     try {
+        const compraId = Number(req.params.id);
+        const detalleId = Number(req.params.detalleId);
+        if (isNaN(compraId) || isNaN(detalleId)) return res.status(400).json({ error: "id inválido" });
         res.json(await deleteCompraDetalle(compraId, detalleId));
-    } catch (err) {
-        res.status(400).json({ error: String(err) });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
     }
 });
 
 // ═══ PROVEEDORES (lectura — de tabla compartida) ═══
 restauranteAdminRouter.get("/proveedores", async (req, res) => {
-    const search = req.query.search as string | undefined;
-    const limit = req.query.limit ? Number(req.query.limit) : 20;
-    res.json(await searchProveedores(search, limit));
+    try {
+        const search = req.query.search as string | undefined;
+        const limit = req.query.limit ? Number(req.query.limit) : 20;
+        res.json(await searchProveedores(search, limit));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // ═══ INSUMOS RESTAURANTE (para recetas) ═══
 restauranteAdminRouter.get("/insumos", async (req, res) => {
-    const search = req.query.search as string | undefined;
-    const limit = req.query.limit ? Number(req.query.limit) : 30;
-    res.json(await searchInsumosRestaurante(search, limit));
+    try {
+        const search = req.query.search as string | undefined;
+        const limit = req.query.limit ? Number(req.query.limit) : 30;
+        res.json(await searchInsumosRestaurante(search, limit));
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });

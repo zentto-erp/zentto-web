@@ -7,17 +7,25 @@ export const restauranteRouter = Router();
 
 // Mesas
 restauranteRouter.get("/mesas", async (req, res) => {
-    const ambienteId = req.query.ambienteId as string | undefined;
-    const data = await listMesas(ambienteId);
-    res.json(data);
+    try {
+        const ambienteId = req.query.ambienteId as string | undefined;
+        const data = await listMesas(ambienteId);
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Pedido activo por mesa
 restauranteRouter.get("/mesas/:mesaId/pedido", async (req, res) => {
-    const mesaId = Number(req.params.mesaId);
-    if (isNaN(mesaId)) return res.status(400).json({ error: "mesaId invalido" });
-    const data = await getPedidoByMesa(mesaId);
-    res.json(data);
+    try {
+        const mesaId = Number(req.params.mesaId);
+        if (isNaN(mesaId)) return res.status(400).json({ error: "mesaId invalido" });
+        const data = await getPedidoByMesa(mesaId);
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Abrir pedido en mesa
