@@ -80,6 +80,11 @@ jobs:
             echo "DO \$y\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid::regprocedure::text as sig FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND (p.proname LIKE 'usp_acct_period%' OR p.proname LIKE 'usp_acct_costcenter%' OR p.proname LIKE 'usp_acct_budget%' OR p.proname LIKE 'usp_acct_recurringentry%' OR p.proname LIKE 'usp_acct_fixedasset%' OR p.proname = 'usp_acct_entry_reverse' OR p.proname LIKE 'usp_acct_report_%') LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE'; END LOOP; END \$y\$;" >> /tmp/zentto_ddl.sql
             su -c "psql -d $PG_DATABASE -f /tmp/zentto_ddl.sql" postgres || echo "DDL grants warning (may already be applied)"
             rm -f /tmp/zentto_ddl.sql
+            # Re-desplegar funciones acct en cada deploy (el DROP step las borra; migrations son idempotentes)
+            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_advanced.sql" postgres \
+              || echo "[WARN] acct_advanced redeploy con advertencias (revisar si persisten errores)"
+            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_fixedassets.sql" postgres \
+              || echo "[WARN] acct_fixedassets redeploy con advertencias"
             chmod +x /opt/zentto/scripts/run-pg-migrations.sh
             PGPASSWORD="$PG_PASSWORD" /opt/zentto/scripts/run-pg-migrations.sh \
               "$PG_USER" 127.0.0.1 "$PG_DATABASE" /opt/zentto/sqlweb-pg
