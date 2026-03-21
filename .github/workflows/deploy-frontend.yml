@@ -80,17 +80,28 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR
+          envs: GHCR_TOKEN,GITHUB_ACTOR,AUTH_SECRET
           script: |
             set -e
             cd /opt/zentto
-            if [ ! -f /opt/zentto/.env.frontend ]; then
-              echo "AUTH_SECRET=$(openssl rand -base64 32)" > /opt/zentto/.env.frontend
-              chmod 600 /opt/zentto/.env.frontend
+            # Garantizar .env.frontend con AUTH_SECRET desde GitHub Secrets
+            ENV_FE="/opt/zentto/.env.frontend"
+            if [ ! -f "$ENV_FE" ]; then
+              touch "$ENV_FE"
+              chmod 600 "$ENV_FE"
+            fi
+            if [ -n "$AUTH_SECRET" ]; then
+              if grep -q '^AUTH_SECRET=' "$ENV_FE"; then
+                sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=$AUTH_SECRET|" "$ENV_FE"
+              else
+                echo "AUTH_SECRET=$AUTH_SECRET" >> "$ENV_FE"
+              fi
+              echo "✓ AUTH_SECRET sincronizado en .env.frontend"
             fi
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull frontend
