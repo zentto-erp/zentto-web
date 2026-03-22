@@ -15,6 +15,8 @@ const runtimeEnv = {
   NODE_ENV: 'production',
   BACKEND_URL: process.env.BACKEND_URL || process.env.API_URL || 'https://api.zentto.net',
   API_URL: process.env.API_URL || process.env.BACKEND_URL || 'https://api.zentto.net',
+  AUTH_SECRET: process.env.AUTH_SECRET,
+  AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
 };
 
 // Shell-specific: hereda AUTH_SECRET, AUTH_TRUST_HOST, NEXTAUTH_URL del contenedor
