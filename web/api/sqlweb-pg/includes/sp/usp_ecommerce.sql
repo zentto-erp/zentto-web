@@ -636,21 +636,25 @@ $$;
 -- ───────────────────────────────────────────────────────
 -- 8. Crear pedido ecommerce (JSONB en lugar de XML)
 -- ───────────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS usp_Store_Order_Create(INT, INT, VARCHAR(24), VARCHAR(200), VARCHAR(150), VARCHAR(30), VARCHAR(40), VARCHAR(250), VARCHAR(500), JSONB, INT, INT, VARCHAR(30), INT, VARCHAR(500), VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS usp_Store_Order_Create(INT, INT, VARCHAR(24), VARCHAR(200), VARCHAR(150), VARCHAR(30), VARCHAR(40), VARCHAR(250), VARCHAR(500), JSONB, INT, INT, VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_Create(
-    p_company_id          INT             DEFAULT 1,
-    p_branch_id           INT             DEFAULT 1,
-    p_customer_code       VARCHAR(24)     DEFAULT NULL,
-    p_customer_name       VARCHAR(200)    DEFAULT NULL,
-    p_customer_email      VARCHAR(150)    DEFAULT NULL,
-    p_fiscal_id           VARCHAR(30)     DEFAULT NULL,
-    p_phone               VARCHAR(40)     DEFAULT NULL,
-    p_address             VARCHAR(250)    DEFAULT NULL,
-    p_notes               VARCHAR(500)    DEFAULT NULL,
-    p_items_json          JSONB           DEFAULT NULL,
-    p_address_id          INT             DEFAULT NULL,
-    p_payment_method_id   INT             DEFAULT NULL,
-    p_payment_method_type VARCHAR(30)     DEFAULT NULL
+    p_company_id            INT             DEFAULT 1,
+    p_branch_id             INT             DEFAULT 1,
+    p_customer_code         VARCHAR(24)     DEFAULT NULL,
+    p_customer_name         VARCHAR(200)    DEFAULT NULL,
+    p_customer_email        VARCHAR(150)    DEFAULT NULL,
+    p_fiscal_id             VARCHAR(30)     DEFAULT NULL,
+    p_phone                 VARCHAR(40)     DEFAULT NULL,
+    p_address               VARCHAR(250)    DEFAULT NULL,
+    p_notes                 VARCHAR(500)    DEFAULT NULL,
+    p_items_json            JSONB           DEFAULT NULL,
+    p_address_id            INT             DEFAULT NULL,
+    p_payment_method_id     INT             DEFAULT NULL,
+    p_payment_method_type   VARCHAR(30)     DEFAULT NULL,
+    p_billing_address_id    INT             DEFAULT NULL,
+    p_shipping_address_text VARCHAR(500)    DEFAULT NULL,
+    p_billing_address_text  VARCHAR(500)    DEFAULT NULL
 )
 RETURNS TABLE(
     "OrderNumber" VARCHAR(60),
@@ -694,6 +698,7 @@ BEGIN
         "Subtotal", "TaxableAmount", "ExemptAmount", "TaxAmount", "TotalAmount", "DiscountAmount",
         "IsVoided", "IsCanceled", "IsInvoiced", "IsDelivered",
         "Notes", "CurrencyCode", "ExchangeRate",
+        "ShippingAddressId", "BillingAddressId", "ShippingAddress", "BillingAddress",
         "CreatedAt", "UpdatedAt", "IsDeleted"
     ) VALUES (
         v_order_number, 'ECOM', 'PEDIDO',
@@ -701,11 +706,11 @@ BEGIN
         CURRENT_DATE, TO_CHAR(NOW(), 'HH24:MI:SS'),
         v_total_sub, v_total_sub, 0, v_total_tax, v_total_sub + v_total_tax, 0,
         FALSE, 'N', 'N', 'N',
-        COALESCE(p_notes, '') || ' | token=' || v_order_token
-            || CASE WHEN p_address_id IS NOT NULL THEN ' | addressId=' || p_address_id::TEXT ELSE '' END
-            || CASE WHEN p_payment_method_id IS NOT NULL THEN ' | paymentMethodId=' || p_payment_method_id::TEXT ELSE '' END
-            || CASE WHEN p_payment_method_type IS NOT NULL THEN ' | paymentType=' || p_payment_method_type ELSE '' END,
+        COALESCE(p_notes, '') || ' | token=' || v_order_token,
         'USD', 1.0,
+        p_address_id, COALESCE(p_billing_address_id, p_address_id),
+        COALESCE(p_shipping_address_text, p_address),
+        COALESCE(p_billing_address_text, p_shipping_address_text, p_address),
         NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC', FALSE
     );
 

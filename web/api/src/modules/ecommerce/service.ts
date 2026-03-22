@@ -406,6 +406,7 @@ export async function checkout(data: {
     email: string;
     phone?: string;
     address?: string;
+    billingAddress?: string;
     fiscalId?: string;
   };
   items: Array<{
@@ -419,6 +420,7 @@ export async function checkout(data: {
   }>;
   notes?: string;
   addressId?: number;
+  billingAddressId?: number;
   paymentMethodId?: number;
   paymentMethodType?: string;
 }) {
@@ -467,6 +469,9 @@ export async function checkout(data: {
       AddressId: data.addressId ?? null,
       PaymentMethodId: data.paymentMethodId ?? null,
       PaymentMethodType: data.paymentMethodType || null,
+      BillingAddressId: data.billingAddressId ?? null,
+      ShippingAddressText: data.customer.address || null,
+      BillingAddressText: data.customer.billingAddress || data.customer.address || null,
     },
     {
       OrderNumber: sql.NVarChar(60),
