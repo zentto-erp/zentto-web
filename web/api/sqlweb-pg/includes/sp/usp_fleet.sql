@@ -84,7 +84,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_offset INT := (p_page - 1) * p_limit;
-    v_total  INT;
+    v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM fleet."Vehicle" v
@@ -338,7 +338,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_offset INT := (p_page - 1) * p_limit;
-    v_total  INT;
+    v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM fleet."FuelLog" fl
@@ -552,7 +552,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_offset INT := (p_page - 1) * p_limit;
-    v_total  INT;
+    v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM fleet."MaintenanceOrder" mo
@@ -843,7 +843,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_offset INT := (p_page - 1) * p_limit;
-    v_total  INT;
+    v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM fleet."Trip" t
