@@ -13,11 +13,7 @@ import Grid from "@mui/material/Grid2";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import PeopleIcon from "@mui/icons-material/People";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import InventoryIcon from "@mui/icons-material/Inventory";
 import CategoryIcon from "@mui/icons-material/Category";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import PaymentIcon from "@mui/icons-material/Payment";
-import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useFacturasList } from "../hooks/useFacturas";
@@ -57,14 +53,6 @@ export default function AdminHome() {
       color: brandColors.statOrange,
       chartType: "bar" as const,
     },
-    {
-      title: "Inventario",
-      value: "—",
-      subtitle: "Artículos",
-      loading: false,
-      color: brandColors.statRed,
-      chartType: "line" as const,
-    },
   ];
 
   const shortcuts = [
@@ -95,34 +83,6 @@ export default function AdminHome() {
       icon: <CategoryIcon sx={{ fontSize: 32 }} />,
       href: "/ventas/articulos",
       bg: brandColors.shortcutNavy,
-    },
-    {
-      title: "Inventario",
-      description: "Stock y movimientos",
-      icon: <InventoryIcon sx={{ fontSize: 32 }} />,
-      href: "/ventas/inventario",
-      bg: brandColors.success,
-    },
-    {
-      title: "Proveedores",
-      description: "Gestión",
-      icon: <LocalShippingIcon sx={{ fontSize: 32 }} />,
-      href: "/ventas/proveedores",
-      bg: brandColors.shortcutTeal,
-    },
-    {
-      title: "Cuentas por Pagar",
-      description: "CxP y pagos",
-      icon: <PaymentIcon sx={{ fontSize: 32 }} />,
-      href: "/ventas/cxp",
-      bg: brandColors.danger,
-    },
-    {
-      title: "Bancos",
-      description: "Tesorería",
-      icon: <AccountBalanceWalletIcon sx={{ fontSize: 32 }} />,
-      href: "/ventas/bancos",
-      bg: brandColors.shortcutSlate,
     },
   ];
 

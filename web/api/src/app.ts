@@ -203,6 +203,10 @@ export async function createApp() {
   app.use("/v1", requireJwt);
   app.use("/v1", normalizeRequestDateTimesToUtc);
   app.use("/v1", localizeResponseDateTimes);
+
+  // Audit trail — registra automáticamente POST/PUT/PATCH/DELETE exitosos
+  const { auditTrailMiddleware } = await import("./middleware/audit-trail.js");
+  app.use("/v1", auditTrailMiddleware);
   app.use("/v1/auth", authRouter);
 
   // Subscription check — después de auth, antes de rutas de negocio

@@ -34,4 +34,17 @@ httpServer.listen(port, () => {
   }, {
     timezone: "America/Caracas"
   });
+
+  // Alertas automáticas del sistema — cada hora (minuto 15)
+  cron.schedule("15 * * * *", async () => {
+    try {
+      const { processSystemAlerts } = await import("./modules/sistema/alertas-automaticas.service.js");
+      const result = await processSystemAlerts();
+      if (result.generated > 0) {
+        console.log(`[cron] Alertas generadas: ${result.generated} (${result.checks.join(", ")})`);
+      }
+    } catch (err) {
+      console.error("[cron] Error en alertas automáticas:", err);
+    }
+  });
 });
