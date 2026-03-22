@@ -24,6 +24,11 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'movimientos', title: 'Movimientos', icon: <HistoryIcon /> });
         nav.push({ kind: 'page', segment: 'traslados', title: 'Traslados', icon: <SwapHorizIcon /> });
 
+        nav.push({ kind: 'header', title: 'Avanzado' });
+        nav.push({ kind: 'page', segment: 'seriales', title: 'Seriales', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'lotes', title: 'Lotes', icon: <CategoryIcon /> });
+        nav.push({ kind: 'page', segment: 'almacenes-wms', title: 'Almacenes WMS', icon: <WarehouseIcon /> });
+
         nav.push({ kind: 'header', title: 'Reportes' });
         nav.push({ kind: 'page', segment: 'reportes/libro', title: 'Libro de inventario', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'etiquetas', title: 'Etiquetas', icon: <LocalOfferIcon /> });

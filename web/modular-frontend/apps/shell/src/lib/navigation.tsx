@@ -157,6 +157,34 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'inventario/lineas', title: 'Líneas', icon: <ListIcon /> });
         nav.push({ kind: 'page', segment: 'inventario/unidades', title: 'Unidades', icon: <StraightenIcon /> });
         nav.push({ kind: 'page', segment: 'inventario/almacenes', title: 'Almacenes', icon: <WarehouseIcon /> });
+
+        nav.push({ kind: 'header', title: 'AVANZADO' });
+        nav.push({ kind: 'page', segment: 'inventario/seriales', title: 'Seriales', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/lotes', title: 'Lotes', icon: <CategoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/almacenes-wms', title: 'Almacenes WMS', icon: <WarehouseIcon /> });
+        return nav;
+    }
+
+    // App: Logística
+    if (isApp('/logistica')) {
+        nav.push({ kind: 'header', title: 'LOGÍSTICA' });
+        nav.push({ kind: 'page', segment: 'logistica', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'header', title: 'OPERACIONES' });
+        nav.push({ kind: 'page', segment: 'logistica/recepciones', title: 'Recepción Mercancía', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'page', segment: 'logistica/devoluciones', title: 'Devoluciones', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'logistica/albaranes', title: 'Albaranes / Guías', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'header', title: 'CONFIGURACIÓN' });
+        nav.push({ kind: 'page', segment: 'logistica/transportistas', title: 'Transportistas', icon: <LocalShippingIcon /> });
+        return nav;
+    }
+
+    // App: CRM
+    if (isApp('/crm')) {
+        nav.push({ kind: 'header', title: 'CRM' });
+        nav.push({ kind: 'page', segment: 'crm', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'crm/pipeline', title: 'Pipeline', icon: <AppsIcon /> });
+        nav.push({ kind: 'page', segment: 'crm/leads', title: 'Leads', icon: <PeopleIcon /> });
+        nav.push({ kind: 'page', segment: 'crm/actividades', title: 'Actividades', icon: <MenuBookIcon /> });
         return nav;
     }
 
