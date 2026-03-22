@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@zentto/shared-api";
+import { apiGet, apiPost, apiPut } from "@zentto/shared-api";
 
 // ─── Query Keys ──────────────────────────────────────────────
 const QK_LIBROS = "fiscal-libros";
@@ -208,5 +208,87 @@ export function useRetencionDetalle(id: number | null) {
     queryKey: [QK_RETENCIONES, "detalle", id],
     queryFn: () => apiGet(`${BASE}/retenciones/${id}`) as Promise<WithholdingVoucher>,
     enabled: !!id,
+  });
+}
+
+// ─── Withholding Concepts ───────────────────────────────────
+
+const QK_CONCEPTOS = "fiscal-conceptos";
+const QK_UT = "fiscal-ut";
+
+export interface WithholdingConcept {
+  ConceptId: number;
+  ConceptCode: string;
+  Description: string;
+  SupplierType: string;
+  ActivityCode: string;
+  RetentionType: string;
+  Rate: number;
+  SubtrahendUT: number;
+  MinBaseUT: number;
+  SeniatCode: string;
+  CountryCode: string;
+  IsActive: boolean;
+}
+
+export interface TaxUnit {
+  TaxUnitId: number;
+  CountryCode: string;
+  TaxYear: number;
+  UnitValue: number;
+  Currency: string;
+  EffectiveDate: string;
+  IsActive: boolean;
+}
+
+export interface ConceptoFilter {
+  countryCode?: string;
+  retentionType?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export function useConceptosList(filter?: ConceptoFilter) {
+  return useQuery({
+    queryKey: [QK_CONCEPTOS, filter],
+    queryFn: () => apiGet(`${BASE}/retenciones/conceptos`, filter as Record<string, any>) as Promise<{ rows: WithholdingConcept[]; total: number }>,
+  });
+}
+
+export function useConceptoUpsert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<WithholdingConcept> & { conceptCode: string; description: string }) =>
+      apiPost(`${BASE}/retenciones/conceptos`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_CONCEPTOS] }),
+  });
+}
+
+export function useTaxUnitList(countryCode?: string, taxYear?: number) {
+  return useQuery({
+    queryKey: [QK_UT, countryCode, taxYear],
+    queryFn: () => apiGet(`${BASE}/unidad-tributaria`, {
+      ...(countryCode && { countryCode }),
+      ...(taxYear && { taxYear }),
+    }) as Promise<{ rows: TaxUnit[] }>,
+  });
+}
+
+export function useTaxUnitUpsert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { countryCode: string; taxYear: number; unitValue: number; currency?: string; effectiveDate?: string }) =>
+      apiPut(`${BASE}/unidad-tributaria`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_UT] }),
+  });
+}
+
+export function useCalcularRetencion() {
+  return useMutation({
+    mutationFn: (data: { supplierCode: string; taxableBase: number; withholdingType?: string; countryCode?: string }) =>
+      apiPost(`${BASE}/retenciones/calcular`, data) as Promise<{
+        rate: number; amount: number; conceptCode: string; subtrahend: number; description: string;
+      }>,
   });
 }

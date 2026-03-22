@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import {
   Box,
   Paper,
+  Tab,
+  Tabs,
   Typography,
   Button,
   TextField,
@@ -30,6 +32,8 @@ import {
   useGenerarRetencion,
   type WithholdingFilter,
 } from "../hooks/useFiscalTributaria";
+import ConceptosRetencionPage from "./ConceptosRetencionPage";
+import UnidadTributariaPage from "./UnidadTributariaPage";
 
 const WITHHOLDING_TYPES = [
   { value: "", label: "Todos" },
@@ -51,7 +55,7 @@ interface GenForm {
   countryCode: string;
 }
 
-export default function RetencionesPage() {
+function ComprobantesTab() {
   const [filter, setFilter] = useState<WithholdingFilter>({ page: 1, limit: 25 });
   const [openGen, setOpenGen] = useState(false);
   const [genForm, setGenForm] = useState<GenForm>({
@@ -231,6 +235,24 @@ export default function RetencionesPage() {
           </Button>
         </DialogActions>
       </Dialog>
+    </Box>
+  );
+}
+
+export default function RetencionesPage() {
+  const [tab, setTab] = useState(0);
+
+  return (
+    <Box>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
+        <Tab label="Comprobantes" />
+        <Tab label="Conceptos" />
+        <Tab label="Unidad Tributaria" />
+      </Tabs>
+
+      {tab === 0 && <ComprobantesTab />}
+      {tab === 1 && <ConceptosRetencionPage />}
+      {tab === 2 && <UnidadTributariaPage />}
     </Box>
   );
 }
