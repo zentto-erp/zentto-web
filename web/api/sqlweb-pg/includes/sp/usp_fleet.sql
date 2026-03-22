@@ -249,11 +249,11 @@ RETURNS TABLE("ok" INT, "VehicleId" BIGINT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     -- p_technical_review_expiry y p_permit_expiry se ignoran (la tabla no tiene esas columnas)
 
-    IF p_vehicle_id IS NOT NULL AND EXISTS (SELECT 1 FROM fleet."Vehicle" WHERE "VehicleId" = p_vehicle_id AND "IsDeleted" IS NOT TRUE) THEN
+    IF p_vehicle_id IS NOT NULL AND EXISTS (SELECT 1 FROM fleet."Vehicle" WHERE fleet."Vehicle"."VehicleId" = p_vehicle_id AND "IsDeleted" IS NOT TRUE) THEN
         UPDATE fleet."Vehicle" SET
             "LicensePlate"           = p_vehicle_plate,
             "VinNumber"              = p_vin,
@@ -274,11 +274,11 @@ BEGIN
             "IsActive"               = p_is_active,
             "UpdatedAt"              = NOW() AT TIME ZONE 'UTC',
             "UpdatedByUserId"        = p_user_id
-        WHERE "VehicleId" = p_vehicle_id;
+        WHERE fleet."Vehicle"."VehicleId" = p_vehicle_id;
         v_id := p_vehicle_id;
     ELSE
         INSERT INTO fleet."Vehicle" (
-            "CompanyId", "LicensePlate", "VinNumber",
+            "CompanyId", "VehicleCode", "LicensePlate", "VinNumber",
             "Brand", "Model", "VehicleType", "Year", "Color",
             "FuelType", "CurrentOdometer",
             "PurchaseDate", "PurchaseCost",
@@ -286,7 +286,7 @@ BEGIN
             "DefaultDriverId", "WarehouseId", "Notes", "IsActive",
             "CreatedAt", "CreatedByUserId"
         ) VALUES (
-            p_company_id, p_vehicle_plate, p_vin,
+            p_company_id, COALESCE(p_vehicle_plate, 'VEH-' || TO_CHAR(NOW(), 'YYYYMMDDHH24MISS')), p_vehicle_plate, p_vin,
             p_brand, p_model, p_vehicle_type, p_year, p_color,
             p_fuel_type, p_current_mileage,
             p_purchase_date, p_purchase_cost,
@@ -402,7 +402,7 @@ RETURNS TABLE("ok" INT, "FuelLogId" BIGINT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     INSERT INTO fleet."FuelLog" (
         "CompanyId", "VehicleId", "FuelDate", "OdometerReading", "FuelType",
@@ -419,7 +419,7 @@ BEGIN
     SET "CurrentOdometer" = p_mileage,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC',
         "UpdatedByUserId" = p_user_id
-    WHERE "VehicleId" = p_vehicle_id AND "CurrentOdometer" < p_mileage;
+    WHERE fleet."Vehicle"."VehicleId" = p_vehicle_id AND "CurrentOdometer" < p_mileage;
 
     RETURN QUERY SELECT 1, v_id;
 END;
@@ -687,7 +687,7 @@ RETURNS TABLE("ok" INT, "MaintenanceOrderId" BIGINT, "OrderNumber" VARCHAR)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id     INT;
+    v_id BIGINT;
     v_seq    INT;
     v_number VARCHAR(20);
     v_workshop VARCHAR(200);
@@ -909,7 +909,7 @@ RETURNS TABLE("ok" INT, "TripId" BIGINT, "TripNumber" VARCHAR)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_id     INT;
+    v_id BIGINT;
     v_seq    INT;
     v_number VARCHAR(20);
 BEGIN

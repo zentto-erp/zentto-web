@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION usp_crm_pipeline_upsert(
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     -- Si se marca como default, quitar default a los demas
     IF p_is_default THEN
@@ -334,7 +334,7 @@ CREATE OR REPLACE FUNCTION usp_crm_lead_create(
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "LeadId" BIGINT, "LeadCode" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id   INT;
+    v_id BIGINT;
     v_seq  INT;
     v_code VARCHAR(30);
 BEGIN
@@ -361,7 +361,7 @@ BEGIN
     RETURN QUERY SELECT 1, 'OK'::VARCHAR, v_id, v_code;
 
 EXCEPTION WHEN OTHERS THEN
-    RETURN QUERY SELECT 0, SQLERRM::VARCHAR, 0, ''::VARCHAR;
+    RETURN QUERY SELECT 0, SQLERRM::VARCHAR, 0::BIGINT, ''::VARCHAR;
 END;
 $$;
 
@@ -582,7 +582,7 @@ CREATE OR REPLACE FUNCTION usp_crm_activity_create(
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "ActivityId" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     INSERT INTO crm."Activity" (
         "CompanyId", "LeadId", "CustomerId", "ActivityType",
@@ -599,7 +599,7 @@ BEGIN
     RETURN QUERY SELECT 1, 'OK'::VARCHAR, v_id;
 
 EXCEPTION WHEN OTHERS THEN
-    RETURN QUERY SELECT 0, SQLERRM::VARCHAR, 0;
+    RETURN QUERY SELECT 0, SQLERRM::VARCHAR, 0::BIGINT;
 END;
 $$;
 

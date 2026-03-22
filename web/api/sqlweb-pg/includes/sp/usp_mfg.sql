@@ -107,7 +107,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "BOMId" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id  INT;
+    v_id BIGINT;
     v_line RECORD;
 BEGIN
     IF EXISTS (SELECT 1 FROM mfg."BillOfMaterials" WHERE "CompanyId" = p_company_id AND "BOMCode" = p_bom_code) THEN
@@ -520,7 +520,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_workorder_create(
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "WorkOrderId" BIGINT, "WorkOrderNumber" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id   INT;
+    v_id BIGINT;
     v_seq  INT;
     v_code VARCHAR(30);
 BEGIN
@@ -712,7 +712,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_workorder_reportoutput(
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "OutputId" INT)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id         INT;
+    v_id BIGINT;
     v_product_id INT;
 BEGIN
     -- Obtener ProductId del WorkOrder

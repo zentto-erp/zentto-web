@@ -294,7 +294,7 @@ CREATE OR REPLACE FUNCTION usp_Logistics_Carrier_Upsert(
     p_company_id    INT,
     p_carrier_id    INT             DEFAULT NULL,
     p_carrier_code  VARCHAR(20)     DEFAULT NULL,
-    p_carrier_name  VARCHAR(100)    DEFAULT NULL,
+    p_carrier_name  VARCHAR(100)    DEFAULT '',
     p_fiscal_id     VARCHAR(30)     DEFAULT NULL,
     p_contact_name  VARCHAR(100)    DEFAULT NULL,
     p_phone         VARCHAR(50)     DEFAULT NULL,
@@ -306,6 +306,10 @@ CREATE OR REPLACE FUNCTION usp_Logistics_Carrier_Upsert(
 RETURNS TABLE ("ok" INT, "mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
+    IF p_carrier_code IS NULL THEN
+        p_carrier_code := 'CAR-' || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYYMMDDHH24MISS');
+    END IF;
+
     IF EXISTS (
         SELECT 1 FROM logistics."Carrier"
         WHERE "CompanyId" = p_company_id AND "CarrierCode" = p_carrier_code
@@ -374,12 +378,12 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."Driver" d
-    WHERE c."CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_carrier_id IS NULL OR "CarrierId" = p_carrier_id)
+    WHERE d."CompanyId" = p_company_id
+      AND d."IsDeleted" = FALSE
+      AND (p_carrier_id IS NULL OR d."CarrierId" = p_carrier_id)
       AND (p_search IS NULL
-           OR "DriverCode" ILIKE '%' || p_search || '%'
-           OR "DriverName" ILIKE '%' || p_search || '%');
+           OR d."DriverCode" ILIKE '%' || p_search || '%'
+           OR d."DriverName" ILIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT d."DriverId", d."CompanyId", d."CarrierId", d."DriverCode", d."DriverName",
@@ -494,12 +498,12 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReceipt" gr
-    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
-      AND "IsDeleted" = FALSE
+    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
+      AND gr."IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR gr."SupplierId" = p_supplier_id)
-      AND (p_status IS NULL OR "Status" = p_status)
-      AND (p_fecha_desde IS NULL OR "ReceiptDate"::DATE >= p_fecha_desde)
-      AND (p_fecha_hasta IS NULL OR "ReceiptDate"::DATE <= p_fecha_hasta);
+      AND (p_status IS NULL OR gr."Status" = p_status)
+      AND (p_fecha_desde IS NULL OR gr."ReceiptDate"::DATE >= p_fecha_desde)
+      AND (p_fecha_hasta IS NULL OR gr."ReceiptDate"::DATE <= p_fecha_hasta);
 
     RETURN QUERY
     SELECT gr."GoodsReceiptId", gr."CompanyId", gr."BranchId", gr."ReceiptNumber",
@@ -510,7 +514,7 @@ BEGIN
            v_total
     FROM logistics."GoodsReceipt" gr
     LEFT JOIN logistics."Carrier" c ON gr."CarrierId" = c."CarrierId"
-    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
+    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
       AND gr."IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR gr."SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR gr."Status" = p_status)
@@ -612,7 +616,7 @@ BEGIN
     SELECT COALESCE(MAX(CAST(RIGHT("ReceiptNumber", 8) AS INT)), 0) + 1
     INTO v_seq
     FROM logistics."GoodsReceipt" gr
-    WHERE c."CompanyId" = p_company_id;
+    WHERE gr."CompanyId" = p_company_id;
 
     v_receipt_number := 'REC-' || LPAD(v_seq::TEXT, 8, '0');
 
@@ -732,8 +736,8 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReturn" grt
     WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
-      AND "IsDeleted" = FALSE
-      AND (p_status IS NULL OR "Status" = p_status);
+      AND grt."IsDeleted" = FALSE
+      AND (p_status IS NULL OR grt."Status" = p_status);
 
     RETURN QUERY
     SELECT r."GoodsReturnId", r."CompanyId", r."BranchId", r."ReturnNumber",
@@ -775,7 +779,7 @@ BEGIN
     SELECT COALESCE(MAX(CAST(RIGHT("ReturnNumber", 8) AS INT)), 0) + 1
     INTO v_seq
     FROM logistics."GoodsReturn" grt
-    WHERE c."CompanyId" = p_company_id;
+    WHERE grt."CompanyId" = p_company_id;
 
     v_return_number := 'DEV-' || LPAD(v_seq::TEXT, 8, '0');
 
@@ -890,12 +894,12 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."DeliveryNote" dn
-    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
-      AND "IsDeleted" = FALSE
-      AND (p_customer_id IS NULL OR "CustomerId" = p_customer_id)
-      AND (p_status IS NULL OR "Status" = p_status)
-      AND (p_fecha_desde IS NULL OR "DeliveryDate"::DATE >= p_fecha_desde)
-      AND (p_fecha_hasta IS NULL OR "DeliveryDate"::DATE <= p_fecha_hasta);
+    WHERE dn."CompanyId" = p_company_id AND dn."BranchId" = p_branch_id
+      AND dn."IsDeleted" = FALSE
+      AND (p_customer_id IS NULL OR dn."CustomerId" = p_customer_id)
+      AND (p_status IS NULL OR dn."Status" = p_status)
+      AND (p_fecha_desde IS NULL OR dn."DeliveryDate"::DATE >= p_fecha_desde)
+      AND (p_fecha_hasta IS NULL OR dn."DeliveryDate"::DATE <= p_fecha_hasta);
 
     RETURN QUERY
     SELECT dn."DeliveryNoteId", dn."CompanyId", dn."BranchId", dn."DeliveryNumber",
@@ -1026,7 +1030,7 @@ BEGIN
     SELECT COALESCE(MAX(CAST(RIGHT("DeliveryNumber", 8) AS INT)), 0) + 1
     INTO v_seq
     FROM logistics."DeliveryNote" dn
-    WHERE c."CompanyId" = p_company_id;
+    WHERE dn."CompanyId" = p_company_id;
 
     v_delivery_number := 'NDE-' || LPAD(v_seq::TEXT, 8, '0');
 
