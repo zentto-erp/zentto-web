@@ -29,7 +29,7 @@ BEGIN
         p."IsDefault", p."IsActive", p."CreatedAt", p."UpdatedAt",
         (SELECT COUNT(*) FROM crm."PipelineStage" s WHERE s."PipelineId" = p."PipelineId" AND s."IsActive" = TRUE)
     FROM crm."Pipeline" p
-    WHERE p."CompanyId" = p_company_id
+    WHERE p."CompanyId" = p_company_id AND p."IsDeleted" = FALSE
     ORDER BY p."IsDefault" DESC, p."PipelineName";
 END;
 $$;
@@ -112,7 +112,7 @@ BEGIN
            s."StageOrder", s."Probability", s."DaysExpected", s."Color",
            s."IsClosed", s."IsWon", s."IsActive"
     FROM crm."PipelineStage" s
-    WHERE s."PipelineId" = p_pipeline_id
+    WHERE s."PipelineId" = p_pipeline_id AND s."IsDeleted" = FALSE
     ORDER BY s."StageOrder";
 END;
 $$;
@@ -210,6 +210,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM   crm."Lead" l
     WHERE  l."CompanyId" = p_company_id
+      AND  l."IsDeleted" = FALSE
       AND  (p_pipeline_id        IS NULL OR l."PipelineId"       = p_pipeline_id)
       AND  (p_stage_id           IS NULL OR l."StageId"          = p_stage_id)
       AND  (p_status             IS NULL OR l."Status"           = p_status)
@@ -233,6 +234,7 @@ BEGIN
     FROM   crm."Lead" l
     LEFT JOIN crm."PipelineStage" s ON s."StageId" = l."StageId"
     WHERE  l."CompanyId" = p_company_id
+      AND  l."IsDeleted" = FALSE
       AND  (p_pipeline_id        IS NULL OR l."PipelineId"       = p_pipeline_id)
       AND  (p_stage_id           IS NULL OR l."StageId"          = p_stage_id)
       AND  (p_status             IS NULL OR l."Status"           = p_status)
@@ -353,8 +355,8 @@ BEGIN
         p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
     ) RETURNING "LeadId" INTO v_id;
 
-    INSERT INTO crm."LeadHistory" ("LeadId", "Action", "ToStageId", "Notes", "CreatedByUserId", "CreatedAt")
-    VALUES (v_id, 'CREATED', p_stage_id, 'Lead creado', p_user_id, NOW() AT TIME ZONE 'UTC');
+    INSERT INTO crm."LeadHistory" ("LeadId", "ChangeType", "ToStageId", "Notes", "ChangedByUserId", "CreatedAt")
+    VALUES (v_id, 'STATUS', p_stage_id, 'Lead creado', p_user_id, NOW() AT TIME ZONE 'UTC');
 
     RETURN QUERY SELECT 1, 'OK'::VARCHAR, v_id, v_code;
 
@@ -434,7 +436,7 @@ BEGIN
     SET    "StageId" = p_new_stage_id, "UpdatedByUserId" = p_user_id, "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE  "LeadId" = p_lead_id;
 
-    INSERT INTO crm."LeadHistory" ("LeadId", "Action", "FromStageId", "ToStageId", "Notes", "CreatedByUserId", "CreatedAt")
+    INSERT INTO crm."LeadHistory" ("LeadId", "ChangeType", "FromStageId", "ToStageId", "Notes", "ChangedByUserId", "CreatedAt")
     VALUES (p_lead_id, 'STAGE_CHANGE', v_old_stage_id, p_new_stage_id, p_notes, p_user_id, NOW() AT TIME ZONE 'UTC');
 
     RETURN QUERY SELECT 1, 'OK'::VARCHAR;
@@ -482,12 +484,14 @@ BEGIN
            "StageId"         = COALESCE(v_closed_stage_id, "StageId"),
            "LostReason"      = p_lost_reason,
            "CustomerId"      = p_customer_id,
+           "WonAt"           = CASE WHEN p_is_won THEN NOW() AT TIME ZONE 'UTC' ELSE NULL END,
+           "LostAt"          = CASE WHEN NOT p_is_won THEN NOW() AT TIME ZONE 'UTC' ELSE NULL END,
            "UpdatedByUserId" = p_user_id,
            "UpdatedAt"       = NOW() AT TIME ZONE 'UTC'
     WHERE  "LeadId" = p_lead_id;
 
-    INSERT INTO crm."LeadHistory" ("LeadId", "Action", "FromStageId", "ToStageId", "Notes", "CreatedByUserId", "CreatedAt")
-    VALUES (p_lead_id, v_new_status, v_old_stage_id, COALESCE(v_closed_stage_id, v_old_stage_id),
+    INSERT INTO crm."LeadHistory" ("LeadId", "ChangeType", "FromStageId", "ToStageId", "Notes", "ChangedByUserId", "CreatedAt")
+    VALUES (p_lead_id, 'STATUS', v_old_stage_id, COALESCE(v_closed_stage_id, v_old_stage_id),
             COALESCE(p_lost_reason, 'Cerrado como ' || v_new_status), p_user_id, NOW() AT TIME ZONE 'UTC');
 
     RETURN QUERY SELECT 1, 'OK'::VARCHAR;
@@ -533,6 +537,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM   crm."Activity" a
     WHERE  a."CompanyId" = p_company_id
+      AND  a."IsDeleted" = FALSE
       AND  (p_lead_id      IS NULL OR a."LeadId"      = p_lead_id)
       AND  (p_customer_id  IS NULL OR a."CustomerId"   = p_customer_id)
       AND  (p_is_completed IS NULL OR a."IsCompleted"  = p_is_completed)
@@ -548,6 +553,7 @@ BEGIN
         v_total
     FROM   crm."Activity" a
     WHERE  a."CompanyId" = p_company_id
+      AND  a."IsDeleted" = FALSE
       AND  (p_lead_id      IS NULL OR a."LeadId"      = p_lead_id)
       AND  (p_customer_id  IS NULL OR a."CustomerId"   = p_customer_id)
       AND  (p_is_completed IS NULL OR a."IsCompleted"  = p_is_completed)

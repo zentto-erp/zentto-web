@@ -14,20 +14,22 @@ CREATE SCHEMA IF NOT EXISTS logistics;
 --  Tabla: logistics."Carrier"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."Carrier" (
-    "CarrierId"     INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "CompanyId"     INT NOT NULL,
-    "CarrierCode"   VARCHAR(20) NOT NULL,
-    "CarrierName"   VARCHAR(100) NOT NULL,
-    "FiscalId"      VARCHAR(30) NULL,
-    "ContactName"   VARCHAR(100) NULL,
-    "Phone"         VARCHAR(50) NULL,
-    "Email"         VARCHAR(100) NULL,
-    "AddressLine"   VARCHAR(250) NULL,
-    "IsActive"      BOOLEAN NOT NULL DEFAULT TRUE,
-    "CreatedBy"     INT NULL,
-    "CreatedAt"     TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "UpdatedBy"     INT NULL,
-    "UpdatedAt"     TIMESTAMP NULL
+    "CarrierId"        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "CompanyId"        INT NOT NULL,
+    "CarrierCode"      VARCHAR(20) NOT NULL,
+    "CarrierName"      VARCHAR(100) NOT NULL,
+    "FiscalId"         VARCHAR(30) NULL,
+    "ContactName"      VARCHAR(100) NULL,
+    "Phone"            VARCHAR(50) NULL,
+    "Email"            VARCHAR(100) NULL,
+    "AddressLine"      VARCHAR(250) NULL,
+    "IsActive"         BOOLEAN NOT NULL DEFAULT TRUE,
+    "IsDeleted"        BOOLEAN NOT NULL DEFAULT FALSE,
+    "CreatedAt"        TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"        TIMESTAMP NULL,
+    "CreatedByUserId"  INT NULL,
+    "UpdatedByUserId"  INT NULL,
+    "RowVer"           INT NOT NULL DEFAULT 1
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_Carrier_Code"
@@ -37,20 +39,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UX_Carrier_Code"
 --  Tabla: logistics."Driver"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."Driver" (
-    "DriverId"      INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "CompanyId"     INT NOT NULL,
-    "CarrierId"     INT NULL REFERENCES logistics."Carrier"("CarrierId"),
-    "DriverCode"    VARCHAR(20) NOT NULL,
-    "DriverName"    VARCHAR(100) NOT NULL,
-    "FiscalId"      VARCHAR(30) NULL,
-    "LicenseNumber" VARCHAR(30) NULL,
-    "LicenseExpiry" DATE NULL,
-    "Phone"         VARCHAR(50) NULL,
-    "IsActive"      BOOLEAN NOT NULL DEFAULT TRUE,
-    "CreatedBy"     INT NULL,
-    "CreatedAt"     TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "UpdatedBy"     INT NULL,
-    "UpdatedAt"     TIMESTAMP NULL
+    "DriverId"         INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "CompanyId"        INT NOT NULL,
+    "CarrierId"        INT NULL REFERENCES logistics."Carrier"("CarrierId"),
+    "DriverCode"       VARCHAR(20) NOT NULL,
+    "DriverName"       VARCHAR(100) NOT NULL,
+    "FiscalId"         VARCHAR(30) NULL,
+    "LicenseNumber"    VARCHAR(30) NULL,
+    "LicenseExpiry"    DATE NULL,
+    "Phone"            VARCHAR(50) NULL,
+    "IsActive"         BOOLEAN NOT NULL DEFAULT TRUE,
+    "IsDeleted"        BOOLEAN NOT NULL DEFAULT FALSE,
+    "CreatedAt"        TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"        TIMESTAMP NULL,
+    "CreatedByUserId"  INT NULL,
+    "UpdatedByUserId"  INT NULL,
+    "RowVer"           INT NOT NULL DEFAULT 1
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_Driver_Code"
@@ -68,15 +72,18 @@ CREATE TABLE IF NOT EXISTS logistics."GoodsReceipt" (
     "SupplierId"            INT NULL,
     "WarehouseId"           INT NOT NULL,
     "ReceiptDate"           TIMESTAMP NOT NULL,
+    "Status"                VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    "Notes"                 VARCHAR(500) NULL,
     "CarrierId"             INT NULL REFERENCES logistics."Carrier"("CarrierId"),
     "DriverName"            VARCHAR(100) NULL,
     "VehiclePlate"          VARCHAR(20) NULL,
-    "Notes"                 VARCHAR(500) NULL,
-    "Status"                VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
-    "CreatedBy"             INT NULL,
+    "ReceivedByUserId"      INT NULL,
+    "IsDeleted"             BOOLEAN NOT NULL DEFAULT FALSE,
     "CreatedAt"             TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "ApprovedBy"            INT NULL,
-    "ApprovedAt"            TIMESTAMP NULL
+    "UpdatedAt"             TIMESTAMP NULL,
+    "CreatedByUserId"       INT NULL,
+    "UpdatedByUserId"       INT NULL,
+    "RowVer"                INT NOT NULL DEFAULT 1
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_Receipt_Number"
@@ -89,15 +96,29 @@ CREATE INDEX IF NOT EXISTS "IX_Receipt_Date"
 --  Tabla: logistics."GoodsReceiptLine"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."GoodsReceiptLine" (
-    "LineId"            INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "GoodsReceiptLineId" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "GoodsReceiptId"    INT NOT NULL REFERENCES logistics."GoodsReceipt"("GoodsReceiptId"),
+    "LineNumber"        INT NOT NULL DEFAULT 0,
     "ProductId"         INT NOT NULL,
-    "ExpectedQty"       DECIMAL(18,4) NOT NULL DEFAULT 0,
-    "ReceivedQty"       DECIMAL(18,4) NOT NULL DEFAULT 0,
+    "ProductCode"       VARCHAR(30) NULL,
+    "Description"       VARCHAR(250) NULL,
+    "OrderedQuantity"   DECIMAL(18,4) NOT NULL DEFAULT 0,
+    "ReceivedQuantity"  DECIMAL(18,4) NOT NULL DEFAULT 0,
+    "RejectedQuantity"  DECIMAL(18,4) NOT NULL DEFAULT 0,
     "UnitCost"          DECIMAL(18,4) NULL,
+    "TotalCost"         DECIMAL(18,4) NULL,
     "LotNumber"         VARCHAR(50) NULL,
+    "ExpiryDate"        DATE NULL,
+    "WarehouseId"       INT NULL,
     "BinId"             INT NULL,
-    "Notes"             VARCHAR(250) NULL
+    "InspectionStatus"  VARCHAR(20) NULL,
+    "Notes"             VARCHAR(250) NULL,
+    "IsDeleted"         BOOLEAN NOT NULL DEFAULT FALSE,
+    "CreatedAt"         TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"         TIMESTAMP NULL,
+    "CreatedByUserId"   INT NULL,
+    "UpdatedByUserId"   INT NULL,
+    "RowVer"            INT NOT NULL DEFAULT 1
 );
 
 -- ============================================================================
@@ -123,10 +144,13 @@ CREATE TABLE IF NOT EXISTS logistics."GoodsReturn" (
     "ReturnDate"        TIMESTAMP NOT NULL,
     "Reason"            VARCHAR(250) NULL,
     "Status"            VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
-    "CreatedBy"         INT NULL,
+    "Notes"             VARCHAR(500) NULL,
+    "IsDeleted"         BOOLEAN NOT NULL DEFAULT FALSE,
     "CreatedAt"         TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "ApprovedBy"        INT NULL,
-    "ApprovedAt"        TIMESTAMP NULL
+    "UpdatedAt"         TIMESTAMP NULL,
+    "CreatedByUserId"   INT NULL,
+    "UpdatedByUserId"   INT NULL,
+    "RowVer"            INT NOT NULL DEFAULT 1
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_Return_Number"
@@ -158,21 +182,24 @@ CREATE TABLE IF NOT EXISTS logistics."DeliveryNote" (
     "CustomerId"            INT NULL,
     "WarehouseId"           INT NOT NULL,
     "DeliveryDate"          TIMESTAMP NOT NULL,
+    "Status"                VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
     "CarrierId"             INT NULL REFERENCES logistics."Carrier"("CarrierId"),
     "DriverId"              INT NULL REFERENCES logistics."Driver"("DriverId"),
     "VehiclePlate"          VARCHAR(20) NULL,
     "ShipToAddress"         VARCHAR(500) NULL,
     "ShipToContact"         VARCHAR(100) NULL,
     "EstimatedDelivery"     TIMESTAMP NULL,
-    "Status"                VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    "ActualDelivery"        TIMESTAMP NULL,
     "DeliveredToName"       VARCHAR(100) NULL,
     "DeliverySignature"     TEXT NULL,
-    "CreatedBy"             INT NULL,
+    "Notes"                 VARCHAR(500) NULL,
+    "DispatchedByUserId"    INT NULL,
+    "IsDeleted"             BOOLEAN NOT NULL DEFAULT FALSE,
     "CreatedAt"             TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "DispatchedBy"          INT NULL,
-    "DispatchedAt"          TIMESTAMP NULL,
-    "DeliveredBy"           INT NULL,
-    "DeliveredAt"           TIMESTAMP NULL
+    "UpdatedAt"             TIMESTAMP NULL,
+    "CreatedByUserId"       INT NULL,
+    "UpdatedByUserId"       INT NULL,
+    "RowVer"                INT NOT NULL DEFAULT 1
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_Delivery_Number"
@@ -288,9 +315,9 @@ BEGIN
 
     IF p_carrier_id IS NULL THEN
         INSERT INTO logistics."Carrier" ("CompanyId", "CarrierCode", "CarrierName", "FiscalId",
-            "ContactName", "Phone", "Email", "AddressLine", "IsActive", "CreatedBy", "CreatedAt")
+            "ContactName", "Phone", "Email", "AddressLine", "IsActive", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt")
         VALUES (p_company_id, p_carrier_code, p_carrier_name, p_fiscal_id,
-            p_contact_name, p_phone, p_email, p_address_line, p_is_active, p_user_id, NOW() AT TIME ZONE 'UTC');
+            p_contact_name, p_phone, p_email, p_address_line, p_is_active, p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
 
         RETURN QUERY SELECT 1, 'Transportista creado'::VARCHAR;
     ELSE
@@ -303,8 +330,8 @@ BEGIN
             "Email"       = p_email,
             "AddressLine" = p_address_line,
             "IsActive"    = p_is_active,
-            "UpdatedBy"   = p_user_id,
-            "UpdatedAt"   = NOW() AT TIME ZONE 'UTC'
+            "UpdatedByUserId" = p_user_id,
+            "UpdatedAt"       = NOW() AT TIME ZONE 'UTC'
         WHERE "CarrierId" = p_carrier_id AND "CompanyId" = p_company_id;
 
         RETURN QUERY SELECT 1, 'Transportista actualizado'::VARCHAR;
@@ -399,9 +426,9 @@ BEGIN
 
     IF p_driver_id IS NULL THEN
         INSERT INTO logistics."Driver" ("CompanyId", "CarrierId", "DriverCode", "DriverName",
-            "FiscalId", "LicenseNumber", "LicenseExpiry", "Phone", "IsActive", "CreatedBy", "CreatedAt")
+            "FiscalId", "LicenseNumber", "LicenseExpiry", "Phone", "IsActive", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt")
         VALUES (p_company_id, p_carrier_id, p_driver_code, p_driver_name,
-            p_fiscal_id, p_license_number, p_license_expiry, p_phone, p_is_active, p_user_id, NOW() AT TIME ZONE 'UTC');
+            p_fiscal_id, p_license_number, p_license_expiry, p_phone, p_is_active, p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
 
         RETURN QUERY SELECT 1, 'Conductor creado'::VARCHAR;
     ELSE
@@ -414,8 +441,8 @@ BEGIN
             "LicenseExpiry"  = p_license_expiry,
             "Phone"          = p_phone,
             "IsActive"       = p_is_active,
-            "UpdatedBy"      = p_user_id,
-            "UpdatedAt"      = NOW() AT TIME ZONE 'UTC'
+            "UpdatedByUserId" = p_user_id,
+            "UpdatedAt"       = NOW() AT TIME ZONE 'UTC'
         WHERE "DriverId" = p_driver_id AND "CompanyId" = p_company_id;
 
         RETURN QUERY SELECT 1, 'Conductor actualizado'::VARCHAR;
@@ -452,7 +479,7 @@ RETURNS TABLE (
     "Notes"                 VARCHAR,
     "Status"                VARCHAR,
     "CreatedAt"             TIMESTAMP,
-    "ApprovedAt"            TIMESTAMP,
+    "UpdatedAt"             TIMESTAMP,
     "CarrierName"           VARCHAR,
     "TotalCount"            BIGINT
 ) LANGUAGE plpgsql AS $$
@@ -471,7 +498,7 @@ BEGIN
     SELECT gr."GoodsReceiptId", gr."CompanyId", gr."BranchId", gr."ReceiptNumber",
            gr."PurchaseDocumentNumber", gr."SupplierId", gr."WarehouseId",
            gr."ReceiptDate", gr."CarrierId", gr."DriverName", gr."VehiclePlate",
-           gr."Notes", gr."Status", gr."CreatedAt", gr."ApprovedAt",
+           gr."Notes", gr."Status", gr."CreatedAt", gr."UpdatedAt",
            c."CarrierName",
            v_total
     FROM logistics."GoodsReceipt" gr
@@ -509,7 +536,7 @@ RETURNS TABLE (
     "Notes"                 VARCHAR,
     "Status"                VARCHAR,
     "CreatedAt"             TIMESTAMP,
-    "ApprovedAt"            TIMESTAMP,
+    "UpdatedAt"             TIMESTAMP,
     "CarrierName"           VARCHAR,
     "Lines"                 JSONB
 ) LANGUAGE plpgsql AS $$
@@ -518,19 +545,27 @@ BEGIN
     SELECT gr."GoodsReceiptId", gr."CompanyId", gr."BranchId", gr."ReceiptNumber",
            gr."PurchaseDocumentNumber", gr."SupplierId", gr."WarehouseId",
            gr."ReceiptDate", gr."CarrierId", gr."DriverName", gr."VehiclePlate",
-           gr."Notes", gr."Status", gr."CreatedAt", gr."ApprovedAt",
+           gr."Notes", gr."Status", gr."CreatedAt", gr."UpdatedAt",
            c."CarrierName",
            COALESCE((
                SELECT jsonb_agg(jsonb_build_object(
-                   'LineId', l."LineId",
+                   'GoodsReceiptLineId', l."GoodsReceiptLineId",
+                   'LineNumber', l."LineNumber",
                    'ProductId', l."ProductId",
-                   'ExpectedQty', l."ExpectedQty",
-                   'ReceivedQty', l."ReceivedQty",
+                   'ProductCode', l."ProductCode",
+                   'Description', l."Description",
+                   'OrderedQuantity', l."OrderedQuantity",
+                   'ReceivedQuantity', l."ReceivedQuantity",
+                   'RejectedQuantity', l."RejectedQuantity",
                    'UnitCost', l."UnitCost",
+                   'TotalCost', l."TotalCost",
                    'LotNumber', l."LotNumber",
+                   'ExpiryDate', l."ExpiryDate",
+                   'WarehouseId', l."WarehouseId",
                    'BinId', l."BinId",
+                   'InspectionStatus', l."InspectionStatus",
                    'Notes', l."Notes"
-               ) ORDER BY l."LineId")
+               ) ORDER BY l."LineNumber")
                FROM logistics."GoodsReceiptLine" l
                WHERE l."GoodsReceiptId" = gr."GoodsReceiptId"
            ), '[]'::JSONB)
@@ -576,25 +611,37 @@ BEGIN
     INSERT INTO logistics."GoodsReceipt" ("CompanyId", "BranchId", "ReceiptNumber",
         "PurchaseDocumentNumber", "SupplierId", "WarehouseId", "ReceiptDate",
         "CarrierId", "DriverName", "VehiclePlate", "Notes",
-        "Status", "CreatedBy", "CreatedAt")
+        "Status", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt")
     VALUES (p_company_id, p_branch_id, v_receipt_number,
         p_purchase_document_number, p_supplier_id, p_warehouse_id, p_receipt_date,
         p_carrier_id, p_driver_name, p_vehicle_plate, p_notes,
-        'DRAFT', p_user_id, NOW() AT TIME ZONE 'UTC')
+        'DRAFT', p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC')
     RETURNING "GoodsReceiptId" INTO v_new_id;
 
     FOR v_line IN SELECT * FROM jsonb_array_elements(p_lines_json::JSONB)
     LOOP
-        INSERT INTO logistics."GoodsReceiptLine" ("GoodsReceiptId", "ProductId",
-            "ExpectedQty", "ReceivedQty", "UnitCost", "LotNumber", "BinId", "Notes")
+        INSERT INTO logistics."GoodsReceiptLine" ("GoodsReceiptId", "LineNumber", "ProductId",
+            "ProductCode", "Description", "OrderedQuantity", "ReceivedQuantity", "RejectedQuantity",
+            "UnitCost", "TotalCost", "LotNumber", "ExpiryDate", "WarehouseId", "BinId",
+            "InspectionStatus", "Notes", "CreatedByUserId", "CreatedAt")
         VALUES (v_new_id,
+            COALESCE((v_line->>'LineNumber')::INT, 0),
             (v_line->>'ProductId')::INT,
-            COALESCE((v_line->>'ExpectedQty')::DECIMAL, 0),
-            COALESCE((v_line->>'ReceivedQty')::DECIMAL, 0),
+            v_line->>'ProductCode',
+            v_line->>'Description',
+            COALESCE((v_line->>'OrderedQuantity')::DECIMAL, 0),
+            COALESCE((v_line->>'ReceivedQuantity')::DECIMAL, 0),
+            COALESCE((v_line->>'RejectedQuantity')::DECIMAL, 0),
             (v_line->>'UnitCost')::DECIMAL,
+            (v_line->>'TotalCost')::DECIMAL,
             v_line->>'LotNumber',
+            (v_line->>'ExpiryDate')::DATE,
+            (v_line->>'WarehouseId')::INT,
             (v_line->>'BinId')::INT,
-            v_line->>'Notes');
+            v_line->>'InspectionStatus',
+            v_line->>'Notes',
+            p_user_id,
+            NOW() AT TIME ZONE 'UTC');
     END LOOP;
 
     RETURN QUERY SELECT 1, 'Recepcion creada'::VARCHAR, v_new_id, v_receipt_number;
@@ -628,17 +675,17 @@ BEGIN
     END IF;
 
     UPDATE logistics."GoodsReceipt"
-    SET "Status" = 'COMPLETE', "ApprovedBy" = p_user_id, "ApprovedAt" = NOW() AT TIME ZONE 'UTC'
+    SET "Status" = 'COMPLETE', "UpdatedByUserId" = p_user_id, "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "GoodsReceiptId" = p_goods_receipt_id;
 
     INSERT INTO inv."StockMovement" ("CompanyId", "BranchId", "ProductId", "ToWarehouseId", "ToBinId",
         "MovementType", "Quantity", "UnitCost", "SourceDocumentType", "SourceDocumentNumber",
-        "CreatedBy", "CreatedAt")
+        "CreatedByUserId", "CreatedAt")
     SELECT v_company_id, v_branch_id, l."ProductId", v_warehouse_id, l."BinId",
-           'PURCHASE_IN', l."ReceivedQty", l."UnitCost", 'GOODS_RECEIPT',
+           'PURCHASE_IN', l."ReceivedQuantity", l."UnitCost", 'GOODS_RECEIPT',
            v_receipt_number, p_user_id, NOW() AT TIME ZONE 'UTC'
     FROM logistics."GoodsReceiptLine" l
-    WHERE l."GoodsReceiptId" = p_goods_receipt_id AND l."ReceivedQty" > 0;
+    WHERE l."GoodsReceiptId" = p_goods_receipt_id AND l."ReceivedQuantity" > 0;
 
     RETURN QUERY SELECT 1, 'Recepcion aprobada y movimientos de inventario generados'::VARCHAR;
 END;
@@ -666,8 +713,9 @@ RETURNS TABLE (
     "ReturnDate"        TIMESTAMP,
     "Reason"            VARCHAR,
     "Status"            VARCHAR,
+    "Notes"             VARCHAR,
     "CreatedAt"         TIMESTAMP,
-    "ApprovedAt"        TIMESTAMP,
+    "UpdatedAt"         TIMESTAMP,
     "TotalCount"        BIGINT
 ) LANGUAGE plpgsql AS $$
 DECLARE
@@ -681,7 +729,7 @@ BEGIN
     RETURN QUERY
     SELECT r."GoodsReturnId", r."CompanyId", r."BranchId", r."ReturnNumber",
            r."GoodsReceiptId", r."SupplierId", r."WarehouseId", r."ReturnDate",
-           r."Reason", r."Status", r."CreatedAt", r."ApprovedAt",
+           r."Reason", r."Status", r."Notes", r."CreatedAt", r."UpdatedAt",
            v_total
     FROM logistics."GoodsReturn" r
     WHERE r."CompanyId" = p_company_id AND r."BranchId" = p_branch_id
@@ -723,10 +771,10 @@ BEGIN
 
     INSERT INTO logistics."GoodsReturn" ("CompanyId", "BranchId", "ReturnNumber",
         "GoodsReceiptId", "SupplierId", "WarehouseId", "ReturnDate", "Reason",
-        "Status", "CreatedBy", "CreatedAt")
+        "Status", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt")
     VALUES (p_company_id, p_branch_id, v_return_number,
         p_goods_receipt_id, p_supplier_id, p_warehouse_id, p_return_date, p_reason,
-        'DRAFT', p_user_id, NOW() AT TIME ZONE 'UTC')
+        'DRAFT', p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC')
     RETURNING "GoodsReturnId" INTO v_new_id;
 
     FOR v_line IN SELECT * FROM jsonb_array_elements(p_lines_json::JSONB)
@@ -773,12 +821,12 @@ BEGIN
     END IF;
 
     UPDATE logistics."GoodsReturn"
-    SET "Status" = 'COMPLETE', "ApprovedBy" = p_user_id, "ApprovedAt" = NOW() AT TIME ZONE 'UTC'
+    SET "Status" = 'COMPLETE', "UpdatedByUserId" = p_user_id, "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "GoodsReturnId" = p_goods_return_id;
 
     INSERT INTO inv."StockMovement" ("CompanyId", "BranchId", "ProductId", "FromWarehouseId",
         "MovementType", "Quantity", "UnitCost", "SourceDocumentType", "SourceDocumentNumber",
-        "CreatedBy", "CreatedAt")
+        "CreatedByUserId", "CreatedAt")
     SELECT v_company_id, v_branch_id, l."ProductId", v_warehouse_id,
            'RETURN_OUT', l."Quantity", l."UnitCost", 'GOODS_RETURN',
            v_return_number, p_user_id, NOW() AT TIME ZONE 'UTC'
@@ -818,11 +866,11 @@ RETURNS TABLE (
     "ShipToAddress"         VARCHAR,
     "ShipToContact"         VARCHAR,
     "EstimatedDelivery"     TIMESTAMP,
+    "ActualDelivery"        TIMESTAMP,
     "Status"                VARCHAR,
     "DeliveredToName"       VARCHAR,
     "CreatedAt"             TIMESTAMP,
-    "DispatchedAt"          TIMESTAMP,
-    "DeliveredAt"           TIMESTAMP,
+    "UpdatedAt"             TIMESTAMP,
     "CarrierName"           VARCHAR,
     "DriverName"            VARCHAR,
     "TotalCount"            BIGINT
@@ -843,8 +891,8 @@ BEGIN
            dn."SalesDocumentNumber", dn."CustomerId", dn."WarehouseId",
            dn."DeliveryDate", dn."CarrierId", dn."DriverId", dn."VehiclePlate",
            dn."ShipToAddress", dn."ShipToContact", dn."EstimatedDelivery",
-           dn."Status", dn."DeliveredToName", dn."CreatedAt",
-           dn."DispatchedAt", dn."DeliveredAt",
+           dn."ActualDelivery",
+           dn."Status", dn."DeliveredToName", dn."CreatedAt", dn."UpdatedAt",
            c."CarrierName", d."DriverName",
            v_total
     FROM logistics."DeliveryNote" dn
@@ -882,12 +930,13 @@ RETURNS TABLE (
     "ShipToAddress"         VARCHAR,
     "ShipToContact"         VARCHAR,
     "EstimatedDelivery"     TIMESTAMP,
+    "ActualDelivery"        TIMESTAMP,
     "Status"                VARCHAR,
     "DeliveredToName"       VARCHAR,
     "DeliverySignature"     TEXT,
+    "Notes"                 VARCHAR,
     "CreatedAt"             TIMESTAMP,
-    "DispatchedAt"          TIMESTAMP,
-    "DeliveredAt"           TIMESTAMP,
+    "UpdatedAt"             TIMESTAMP,
     "CarrierName"           VARCHAR,
     "DriverName"            VARCHAR,
     "Lines"                 JSONB,
@@ -899,8 +948,10 @@ BEGIN
            dn."SalesDocumentNumber", dn."CustomerId", dn."WarehouseId",
            dn."DeliveryDate", dn."CarrierId", dn."DriverId", dn."VehiclePlate",
            dn."ShipToAddress", dn."ShipToContact", dn."EstimatedDelivery",
+           dn."ActualDelivery",
            dn."Status", dn."DeliveredToName", dn."DeliverySignature",
-           dn."CreatedAt", dn."DispatchedAt", dn."DeliveredAt",
+           dn."Notes",
+           dn."CreatedAt", dn."UpdatedAt",
            c."CarrierName", d."DriverName",
            COALESCE((
                SELECT jsonb_agg(jsonb_build_object(
@@ -971,12 +1022,12 @@ BEGIN
         "SalesDocumentNumber", "CustomerId", "WarehouseId", "DeliveryDate",
         "CarrierId", "DriverId", "VehiclePlate",
         "ShipToAddress", "ShipToContact", "EstimatedDelivery",
-        "Status", "CreatedBy", "CreatedAt")
+        "Status", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt")
     VALUES (p_company_id, p_branch_id, v_delivery_number,
         p_sales_document_number, p_customer_id, p_warehouse_id, p_delivery_date,
         p_carrier_id, p_driver_id, p_vehicle_plate,
         p_ship_to_address, p_ship_to_contact, p_estimated_delivery,
-        'DRAFT', p_user_id, NOW() AT TIME ZONE 'UTC')
+        'DRAFT', p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC')
     RETURNING "DeliveryNoteId" INTO v_new_id;
 
     FOR v_line IN SELECT * FROM jsonb_array_elements(p_lines_json::JSONB)
@@ -1023,12 +1074,12 @@ BEGIN
     END IF;
 
     UPDATE logistics."DeliveryNote"
-    SET "Status" = 'DISPATCHED', "DispatchedBy" = p_user_id, "DispatchedAt" = NOW() AT TIME ZONE 'UTC'
+    SET "Status" = 'DISPATCHED', "DispatchedByUserId" = p_user_id, "UpdatedByUserId" = p_user_id, "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DeliveryNoteId" = p_delivery_note_id;
 
     INSERT INTO inv."StockMovement" ("CompanyId", "BranchId", "ProductId", "FromWarehouseId", "FromBinId",
         "MovementType", "Quantity", "UnitCost", "SourceDocumentType", "SourceDocumentNumber",
-        "CreatedBy", "CreatedAt")
+        "CreatedByUserId", "CreatedAt")
     SELECT v_company_id, v_branch_id, l."ProductId", v_warehouse_id, l."BinId",
            'SALE_OUT', l."Quantity", l."UnitCost", 'DELIVERY_NOTE',
            v_delivery_number, p_user_id, NOW() AT TIME ZONE 'UTC'
@@ -1064,8 +1115,9 @@ BEGIN
     SET "Status" = 'DELIVERED',
         "DeliveredToName" = p_delivered_to_name,
         "DeliverySignature" = p_delivery_signature,
-        "DeliveredBy" = p_user_id,
-        "DeliveredAt" = NOW() AT TIME ZONE 'UTC'
+        "ActualDelivery" = NOW() AT TIME ZONE 'UTC',
+        "UpdatedByUserId" = p_user_id,
+        "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DeliveryNoteId" = p_delivery_note_id;
 
     RETURN QUERY SELECT 1, 'Entrega confirmada'::VARCHAR;
