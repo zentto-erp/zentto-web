@@ -26,7 +26,9 @@ services:
     container_name: zentto-frontend
     restart: unless-stopped
     ports:
-      - "3000-3010:3000-3010"
+      - "3000-3014:3000-3014"
+    volumes:
+      - /opt/zentto/docker/pm2.config.cjs:/app/pm2.config.cjs:ro
     env_file:
       - /opt/zentto/.env.frontend
     environment:
