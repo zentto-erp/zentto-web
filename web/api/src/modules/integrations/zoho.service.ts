@@ -1,4 +1,4 @@
-import { ZOHO_CONFIG } from './zoho.config';
+import { ZOHO_CONFIG } from './zoho.config.js';
 
 interface ZohoTokens {
   access_token: string;
@@ -184,7 +184,7 @@ export async function uploadToWorkDrive(
   if (!token) throw new Error('Zoho not connected');
 
   const formData = new FormData();
-  formData.append('content', new Blob([fileContent]), fileName);
+  formData.append('content', new Blob([fileContent as BlobPart]), fileName);
   formData.append('parent_id', folderId);
   formData.append('override-name-exist', 'true');
 

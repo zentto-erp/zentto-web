@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import * as zohoService from './zoho.service';
+import * as zohoService from './zoho.service.js';
 
 const router = Router();
 
