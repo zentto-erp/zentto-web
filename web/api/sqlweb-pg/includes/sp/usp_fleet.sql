@@ -293,7 +293,7 @@ BEGIN
             p_insurance_policy, p_insurance_expiry,
             p_assigned_driver_id, p_assigned_branch_id, p_notes, p_is_active,
             NOW() AT TIME ZONE 'UTC', p_user_id
-        ) RETURNING "VehicleId" INTO v_id;
+        ) RETURNING fleet."Vehicle"."VehicleId" INTO v_id;
     END IF;
 
     RETURN QUERY SELECT 1, v_id;
@@ -360,7 +360,7 @@ BEGIN
         fl."Quantity",
         fl."UnitPrice",
         fl."TotalCost",
-        fl."CurrencyCode"::VARCHAR,
+        fl."CurrencyCode",
         fl."IsFullTank",
         fl."StationName"::VARCHAR,
         fl."DriverId",

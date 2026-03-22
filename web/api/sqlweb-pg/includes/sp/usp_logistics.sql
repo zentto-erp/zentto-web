@@ -308,7 +308,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
     IF EXISTS (
         SELECT 1 FROM logistics."Carrier"
-        WHERE c."CompanyId" = p_company_id AND "CarrierCode" = p_carrier_code
+        WHERE "CompanyId" = p_company_id AND "CarrierCode" = p_carrier_code
           AND "IsDeleted" = FALSE
           AND (p_carrier_id IS NULL OR "CarrierId" <> p_carrier_id)
     ) THEN
@@ -422,7 +422,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
     IF EXISTS (
         SELECT 1 FROM logistics."Driver" d
-        WHERE c."CompanyId" = p_company_id AND "DriverCode" = p_driver_code
+        WHERE "CompanyId" = p_company_id AND "DriverCode" = p_driver_code
           AND "IsDeleted" = FALSE
           AND (p_driver_id IS NULL OR "DriverId" <> p_driver_id)
     ) THEN
@@ -494,7 +494,7 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReceipt" gr
-    WHERE c."CompanyId" = p_company_id AND "BranchId" = p_branch_id
+    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR "SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR "Status" = p_status)
@@ -731,7 +731,7 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReturn" grt
-    WHERE c."CompanyId" = p_company_id AND "BranchId" = p_branch_id
+    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_status IS NULL OR "Status" = p_status);
 
@@ -890,7 +890,7 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."DeliveryNote" dn
-    WHERE c."CompanyId" = p_company_id AND "BranchId" = p_branch_id
+    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_customer_id IS NULL OR "CustomerId" = p_customer_id)
       AND (p_status IS NULL OR "Status" = p_status)
