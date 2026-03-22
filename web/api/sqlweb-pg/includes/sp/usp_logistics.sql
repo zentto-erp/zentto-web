@@ -261,13 +261,13 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM logistics."Carrier"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
+    FROM logistics."Carrier" c
+    WHERE c."CompanyId" = p_company_id
+      AND c."IsDeleted" = FALSE
       AND (p_search IS NULL
-           OR "CarrierCode" ILIKE '%' || p_search || '%'
-           OR "CarrierName" ILIKE '%' || p_search || '%'
-           OR "FiscalId" ILIKE '%' || p_search || '%');
+           OR c."CarrierCode" ILIKE '%' || p_search || '%'
+           OR c."CarrierName" ILIKE '%' || p_search || '%'
+           OR c."FiscalId" ILIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT c."CarrierId", c."CompanyId", c."CarrierCode", c."CarrierName", c."FiscalId",
@@ -308,7 +308,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
     IF EXISTS (
         SELECT 1 FROM logistics."Carrier"
-        WHERE "CompanyId" = p_company_id AND "CarrierCode" = p_carrier_code
+        WHERE c."CompanyId" = p_company_id AND "CarrierCode" = p_carrier_code
           AND "IsDeleted" = FALSE
           AND (p_carrier_id IS NULL OR "CarrierId" <> p_carrier_id)
     ) THEN
@@ -373,8 +373,8 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM logistics."Driver"
-    WHERE "CompanyId" = p_company_id
+    FROM logistics."Driver" d
+    WHERE c."CompanyId" = p_company_id
       AND "IsDeleted" = FALSE
       AND (p_carrier_id IS NULL OR "CarrierId" = p_carrier_id)
       AND (p_search IS NULL
@@ -421,8 +421,8 @@ RETURNS TABLE ("ok" INT, "mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM logistics."Driver"
-        WHERE "CompanyId" = p_company_id AND "DriverCode" = p_driver_code
+        SELECT 1 FROM logistics."Driver" d
+        WHERE c."CompanyId" = p_company_id AND "DriverCode" = p_driver_code
           AND "IsDeleted" = FALSE
           AND (p_driver_id IS NULL OR "DriverId" <> p_driver_id)
     ) THEN
@@ -493,8 +493,8 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM logistics."GoodsReceipt"
-    WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+    FROM logistics."GoodsReceipt" gr
+    WHERE c."CompanyId" = p_company_id AND "BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR "SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR "Status" = p_status)
@@ -611,8 +611,8 @@ DECLARE
 BEGIN
     SELECT COALESCE(MAX(CAST(RIGHT("ReceiptNumber", 8) AS INT)), 0) + 1
     INTO v_seq
-    FROM logistics."GoodsReceipt"
-    WHERE "CompanyId" = p_company_id;
+    FROM logistics."GoodsReceipt" gr
+    WHERE c."CompanyId" = p_company_id;
 
     v_receipt_number := 'REC-' || LPAD(v_seq::TEXT, 8, '0');
 
@@ -674,7 +674,7 @@ DECLARE
 BEGIN
     SELECT "CompanyId", "BranchId", "WarehouseId", "ReceiptNumber"
     INTO v_company_id, v_branch_id, v_warehouse_id, v_receipt_number
-    FROM logistics."GoodsReceipt"
+    FROM logistics."GoodsReceipt" gr
     WHERE "GoodsReceiptId" = p_goods_receipt_id AND "Status" = 'DRAFT';
 
     IF v_company_id IS NULL THEN
@@ -730,8 +730,8 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM logistics."GoodsReturn"
-    WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+    FROM logistics."GoodsReturn" grt
+    WHERE c."CompanyId" = p_company_id AND "BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_status IS NULL OR "Status" = p_status);
 
@@ -774,8 +774,8 @@ DECLARE
 BEGIN
     SELECT COALESCE(MAX(CAST(RIGHT("ReturnNumber", 8) AS INT)), 0) + 1
     INTO v_seq
-    FROM logistics."GoodsReturn"
-    WHERE "CompanyId" = p_company_id;
+    FROM logistics."GoodsReturn" grt
+    WHERE c."CompanyId" = p_company_id;
 
     v_return_number := 'DEV-' || LPAD(v_seq::TEXT, 8, '0');
 
@@ -822,7 +822,7 @@ DECLARE
 BEGIN
     SELECT "CompanyId", "BranchId", "WarehouseId", "ReturnNumber"
     INTO v_company_id, v_branch_id, v_warehouse_id, v_return_number
-    FROM logistics."GoodsReturn"
+    FROM logistics."GoodsReturn" grt
     WHERE "GoodsReturnId" = p_goods_return_id AND "Status" = 'DRAFT';
 
     IF v_company_id IS NULL THEN
@@ -889,8 +889,8 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM logistics."DeliveryNote"
-    WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+    FROM logistics."DeliveryNote" dn
+    WHERE c."CompanyId" = p_company_id AND "BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_customer_id IS NULL OR "CustomerId" = p_customer_id)
       AND (p_status IS NULL OR "Status" = p_status)
@@ -1025,8 +1025,8 @@ DECLARE
 BEGIN
     SELECT COALESCE(MAX(CAST(RIGHT("DeliveryNumber", 8) AS INT)), 0) + 1
     INTO v_seq
-    FROM logistics."DeliveryNote"
-    WHERE "CompanyId" = p_company_id;
+    FROM logistics."DeliveryNote" dn
+    WHERE c."CompanyId" = p_company_id;
 
     v_delivery_number := 'NDE-' || LPAD(v_seq::TEXT, 8, '0');
 
@@ -1077,7 +1077,7 @@ DECLARE
 BEGIN
     SELECT "CompanyId", "BranchId", "WarehouseId", "DeliveryNumber"
     INTO v_company_id, v_branch_id, v_warehouse_id, v_delivery_number
-    FROM logistics."DeliveryNote"
+    FROM logistics."DeliveryNote" dn
     WHERE "DeliveryNoteId" = p_delivery_note_id AND "Status" = 'DRAFT';
 
     IF v_company_id IS NULL THEN
@@ -1116,7 +1116,7 @@ RETURNS TABLE ("ok" INT, "mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM logistics."DeliveryNote"
+        SELECT 1 FROM logistics."DeliveryNote" dn
         WHERE "DeliveryNoteId" = p_delivery_note_id AND "Status" = 'DISPATCHED'
     ) THEN
         RETURN QUERY SELECT 0, 'Nota de entrega no encontrada o no esta despachada'::VARCHAR;
