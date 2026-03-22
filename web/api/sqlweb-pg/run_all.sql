@@ -166,6 +166,9 @@
 \echo '--- Funciones Restaurante Admin ---'
 \i includes/sp/usp_rest_admin.sql
 
+\echo '--- Funciones Restaurante Recetas ---'
+\i includes/sp/usp_rest_recipe.sql
+
 \echo '--- Funciones Auditoria ---'
 \i includes/sp/usp_audit.sql
 

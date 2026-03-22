@@ -2,10 +2,13 @@ import { callSp, callSpOut, sql } from "../../db/query.js";
 import { signJwt, verifyJwt, type JwtPayload } from "../../auth/jwt.js";
 import { sendAuthMail } from "../usuarios/auth-mailer.service.js";
 import { welcomeStoreTemplate } from "../usuarios/email-templates/base.js";
+import { getActiveScope } from "../_shared/scope.js";
 import bcrypt from "bcryptjs";
 
-const DEFAULT_COMPANY = 1;
-const DEFAULT_BRANCH = 1;
+function scope() {
+  const s = getActiveScope();
+  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+}
 
 // Base URL de la API para resolver rutas relativas de imágenes (ej: /media-files/...)
 const API_SELF_URL = (process.env.API_SELF_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/+$/, "");
@@ -86,8 +89,8 @@ export async function listProducts(params: {
   const { rows, output } = await callSpOut<StoreProduct>(
     "usp_Store_Product_List",
     {
-      CompanyId: DEFAULT_COMPANY,
-      BranchId: DEFAULT_BRANCH,
+      CompanyId: scope().companyId,
+      BranchId: scope().branchId,
       Search: params.search?.trim() || null,
       Category: params.category || null,
       Brand: params.brand || null,
@@ -120,8 +123,8 @@ export async function getProductByCode(code: string) {
   const rows = await callSp<any>(
     "usp_Store_Product_GetByCode",
     {
-      CompanyId: DEFAULT_COMPANY,
-      BranchId: DEFAULT_BRANCH,
+      CompanyId: scope().companyId,
+      BranchId: scope().branchId,
       Code: code,
     }
   );
@@ -132,14 +135,14 @@ export async function getProductByCode(code: string) {
 }
 
 export async function getProductByCodeFull(code: string) {
-  const params = { CompanyId: DEFAULT_COMPANY, BranchId: DEFAULT_BRANCH, Code: code };
+  const params = { CompanyId: scope().companyId, BranchId: scope().branchId, Code: code };
 
   // Lanzar todas las consultas en paralelo
   const [productRows, images, highlightRows, specRows] = await Promise.all([
     callSp<any>("usp_Store_Product_GetByCode", params),
     callSp<any>("usp_Store_Product_GetImages", params),
-    callSp<any>("usp_Store_Product_GetHighlights", { CompanyId: DEFAULT_COMPANY, Code: code }),
-    callSp<any>("usp_Store_Product_GetSpecs", { CompanyId: DEFAULT_COMPANY, Code: code }),
+    callSp<any>("usp_Store_Product_GetHighlights", { CompanyId: scope().companyId, Code: code }),
+    callSp<any>("usp_Store_Product_GetSpecs", { CompanyId: scope().companyId, Code: code }),
   ]);
 
   const product = productRows[0] ?? null;
@@ -172,13 +175,13 @@ export async function getProductByCodeFull(code: string) {
 
 export async function listCategories() {
   return callSp<StoreCategory>("usp_Store_Category_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
   });
 }
 
 export async function listBrands() {
   return callSp<StoreBrand>("usp_Store_Brand_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
   });
 }
 
@@ -197,7 +200,7 @@ export async function registerCustomer(data: {
   const { output } = await callSpOut(
     "usp_Store_Customer_Register",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       Email: data.email.toLowerCase().trim(),
       Name: data.name.trim(),
       PasswordHash: hash,
@@ -244,8 +247,8 @@ export async function loginCustomer(email: string, password: string) {
     name: user.displayName,
     isAdmin: false,
     modulos: ["ecommerce"],
-    companyId: DEFAULT_COMPANY,
-    branchId: DEFAULT_BRANCH,
+    companyId: scope().companyId,
+    branchId: scope().branchId,
   } as JwtPayload);
 
   return {
@@ -308,8 +311,8 @@ export async function googleAuthCustomer(idToken: string) {
       name: user.displayName,
       isAdmin: false,
       modulos: ["ecommerce"],
-      companyId: DEFAULT_COMPANY,
-      branchId: DEFAULT_BRANCH,
+      companyId: scope().companyId,
+      branchId: scope().branchId,
     } as JwtPayload);
 
     return {
@@ -334,7 +337,7 @@ export async function googleAuthCustomer(idToken: string) {
   const { output } = await callSpOut(
     "usp_Store_Customer_Register",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       Email: email,
       Name: name,
       PasswordHash: hash,
@@ -365,8 +368,8 @@ export async function googleAuthCustomer(idToken: string) {
     name: newUser.displayName,
     isAdmin: false,
     modulos: ["ecommerce"],
-    companyId: DEFAULT_COMPANY,
-    branchId: DEFAULT_BRANCH,
+    companyId: scope().companyId,
+    branchId: scope().branchId,
   } as JwtPayload);
 
   return {
@@ -423,7 +426,7 @@ export async function checkout(data: {
   const { output: custOut } = await callSpOut(
     "usp_Store_Customer_FindOrCreate",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       Email: data.customer.email.toLowerCase().trim(),
       Name: data.customer.name.trim(),
       Phone: data.customer.phone || null,
@@ -451,8 +454,8 @@ export async function checkout(data: {
   const { output: orderOut } = await callSpOut(
     "usp_Store_Order_Create",
     {
-      CompanyId: DEFAULT_COMPANY,
-      BranchId: DEFAULT_BRANCH,
+      CompanyId: scope().companyId,
+      BranchId: scope().branchId,
       CustomerCode: customerCode,
       CustomerName: data.customer.name.trim(),
       CustomerEmail: data.customer.email.toLowerCase().trim(),
@@ -490,7 +493,7 @@ export async function checkout(data: {
 
 export async function getOrderByToken(token: string) {
   const headers = await callSp<any>("usp_Store_Order_GetByToken", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
     Token: token,
   });
   const header = headers[0] ?? null;
@@ -508,7 +511,7 @@ export async function getMyOrders(customerCode: string, page = 1, limit = 20) {
   const { rows, output } = await callSpOut<any>(
     "usp_Store_Order_List",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       CustomerCode: customerCode,
       Page: Math.max(page, 1),
       Limit: Math.min(Math.max(limit, 1), 100),
@@ -527,7 +530,7 @@ export async function getMyOrders(customerCode: string, page = 1, limit = 20) {
 // ─── Reseñas ────────────────────────────────────────────
 
 export async function getProductReviews(productCode: string, page = 1, limit = 20) {
-  const params = { CompanyId: DEFAULT_COMPANY, ProductCode: productCode };
+  const params = { CompanyId: scope().companyId, ProductCode: productCode };
   const safePage = Math.max(page, 1);
   const safeLimit = Math.min(Math.max(limit, 1), 50);
 
@@ -551,7 +554,7 @@ export async function createReview(data: {
   const { output } = await callSpOut(
     "usp_Store_Review_Create",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       ProductCode: data.productCode,
       Rating: data.rating,
       Title: data.title || null,
@@ -576,7 +579,7 @@ export async function createReview(data: {
 
 export async function listAddresses(customerCode: string) {
   return callSp<any>("usp_Store_Address_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
     CustomerCode: customerCode,
   });
 }
@@ -598,7 +601,7 @@ export async function upsertAddress(customerCode: string, data: {
     "usp_Store_Address_Upsert",
     {
       AddressId: data.addressId ?? null,
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       CustomerCode: customerCode,
       Label: data.label,
       RecipientName: data.recipientName,
@@ -634,7 +637,7 @@ export async function deleteAddress(customerCode: string, addressId: number) {
 
 export async function listPaymentMethods(customerCode: string) {
   return callSp<any>("usp_Store_PaymentMethod_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
     CustomerCode: customerCode,
   });
 }
@@ -658,7 +661,7 @@ export async function upsertPaymentMethod(customerCode: string, data: {
     "usp_Store_PaymentMethod_Upsert",
     {
       PaymentMethodId: data.paymentMethodId ?? null,
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       CustomerCode: customerCode,
       MethodType: data.methodType,
       Label: data.label,
@@ -694,7 +697,7 @@ export async function deletePaymentMethod(customerCode: string, paymentMethodId:
 
 export async function getOrderByNumber(orderNumber: string) {
   const [headers, lines] = await Promise.all([
-    callSp<any>("usp_Store_Order_GetByNumber", { CompanyId: DEFAULT_COMPANY, OrderNumber: orderNumber }),
+    callSp<any>("usp_Store_Order_GetByNumber", { CompanyId: scope().companyId, OrderNumber: orderNumber }),
     callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: orderNumber }),
   ]);
 

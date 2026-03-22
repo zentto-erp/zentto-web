@@ -596,6 +596,7 @@ export async function cerrarPedido(params: {
   fiscalPrinterSerial?: string;
   fiscalControlNumber?: string;
   zReportNumber?: number;
+  warehouseId?: number;
 }) {
   try {
     const pedidoActual = await getPedidoHeaderForClose(params.pedidoId);
@@ -616,6 +617,43 @@ export async function cerrarPedido(params: {
         { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
       );
     }
+
+    // Best-effort: consume recipe ingredients from warehouse
+    try {
+      const warehouseId = params.warehouseId ?? null;
+      if (warehouseId && !alreadyClosed) {
+        // Get order lines to know what was sold
+        const orderLines = await callSp("usp_Rest_OrderTicketLine_GetByPedido", {
+          PedidoId: params.pedidoId,
+        });
+
+        for (const line of (orderLines ?? []) as Record<string, unknown>[]) {
+          // For each menu item, consume its recipe ingredients
+          const recipes = await callSp("usp_Rest_Recipe_GetIngredients", {
+            ProductCode: line.productoId ?? line.ProductCode ?? line.productCode,
+          });
+
+          for (const ingredient of (recipes ?? []) as Record<string, unknown>[]) {
+            const qty = Number(ingredient.Cantidad ?? ingredient.cantidad ?? 0) * Number(line.cantidad ?? line.Quantity ?? line.quantity ?? 1);
+            if (qty > 0) {
+              await callSp("usp_Inv_Movement_Create", {
+                CompanyId: Number(params.empresaId ?? pedidoActual.empresaId ?? 1),
+                BranchId: Number(params.sucursalId ?? pedidoActual.sucursalId ?? 1),
+                ProductId: null,
+                FromWarehouseId: warehouseId,
+                MovementType: "SALE_OUT",
+                Quantity: qty,
+                UnitCost: 0,
+                SourceDocumentType: "RESTAURANTE",
+                SourceDocumentNumber: String(params.pedidoId),
+                Notes: "Consumo ingredientes restaurante",
+                UserId: 1,
+              });
+            }
+          }
+        }
+      }
+    } catch { /* never blocks restaurant operation */ }
 
     const sourceTotal = Number(pedidoActual.total ?? 0);
     const fiscalBreakdown = await buildRestaurantFiscalBreakdown(params.pedidoId, sourceTotal);

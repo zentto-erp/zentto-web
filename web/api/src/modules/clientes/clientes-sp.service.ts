@@ -3,6 +3,12 @@
  * Usa SPs: usp_Clientes_List, GetByCodigo, Insert, Update, Delete
  */
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
+
+function scope() {
+  const s = getActiveScope();
+  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+}
 
 export interface ClienteRow {
   CODIGO?: string;
@@ -70,6 +76,7 @@ export async function listClientesSP(params: ListClientesParams = {}): Promise<L
   const { rows, output } = await callSpOut<ClienteRow>(
     "usp_Clientes_List",
     {
+      CompanyId: scope().companyId,
       Search: params.search || null,
       Estado: params.estado || null,
       Vendedor: params.vendedor || null,
@@ -91,7 +98,7 @@ export async function listClientesSP(params: ListClientesParams = {}): Promise<L
 export async function getClienteByCodigoSP(codigo: string): Promise<ClienteRow | null> {
   const rows = await callSp<ClienteRow>(
     "usp_Clientes_GetByCodigo",
-    { Codigo: codigo }
+    { CompanyId: scope().companyId, Codigo: codigo }
   );
   return rows[0] || null;
 }
@@ -100,7 +107,7 @@ export async function getClienteByCodigoSP(codigo: string): Promise<ClienteRow |
 export async function insertClienteSP(row: ClienteRow): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Clientes_Insert",
-    { RowXml: rowToXml(row) },
+    { CompanyId: scope().companyId, RowXml: rowToXml(row) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -114,7 +121,7 @@ export async function insertClienteSP(row: ClienteRow): Promise<SpResult> {
 export async function updateClienteSP(codigo: string, row: Partial<ClienteRow>): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Clientes_Update",
-    { Codigo: codigo, RowXml: rowToXml(row) },
+    { CompanyId: scope().companyId, Codigo: codigo, RowXml: rowToXml(row) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -128,7 +135,7 @@ export async function updateClienteSP(codigo: string, row: Partial<ClienteRow>):
 export async function deleteClienteSP(codigo: string): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Clientes_Delete",
-    { Codigo: codigo },
+    { CompanyId: scope().companyId, Codigo: codigo },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 

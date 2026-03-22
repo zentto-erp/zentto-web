@@ -39,12 +39,13 @@ export function parseStorageKeyFromUrl(url: string) {
 
 export async function getMediaScope(): Promise<MediaScope> {
   const activeScope = getActiveScope();
-  if (scopeCache && activeScope) {
+  if (activeScope) {
     return {
       companyId: activeScope.companyId,
       branchId: activeScope.branchId,
     };
   }
+
   if (scopeCache) return scopeCache;
 
   const rows = await callSp<{ companyId: number; branchId: number }>(
@@ -57,12 +58,6 @@ export async function getMediaScope(): Promise<MediaScope> {
     branchId: Number(row?.branchId ?? 1),
   };
 
-  if (activeScope) {
-    return {
-      companyId: activeScope.companyId,
-      branchId: activeScope.branchId,
-    };
-  }
   return scopeCache;
 }
 

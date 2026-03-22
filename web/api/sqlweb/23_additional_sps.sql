@@ -51,6 +51,7 @@ GO
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_pos_restaurante.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_pos_ventas_espera.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_restaurante_admin.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_rest_recipe.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_restaurante_compra_xml.sql
 
 -- Notificaciones

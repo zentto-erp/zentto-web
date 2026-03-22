@@ -3,6 +3,12 @@
  * Usa SPs: usp_Proveedores_List, GetByCodigo, Insert, Update, Delete
  */
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
+
+function scope() {
+  const s = getActiveScope();
+  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+}
 
 export interface ProveedorRow {
   CODIGO?: string;
@@ -72,6 +78,7 @@ export async function listProveedoresSP(params: ListProveedoresParams = {}): Pro
   const { rows, output } = await callSpOut<ProveedorRow>(
     "usp_Proveedores_List",
     {
+      CompanyId: scope().companyId,
       Search: params.search || null,
       Estado: params.estado || null,
       Vendedor: params.vendedor || null,
@@ -93,7 +100,7 @@ export async function listProveedoresSP(params: ListProveedoresParams = {}): Pro
 export async function getProveedorByCodigoSP(codigo: string): Promise<ProveedorRow | null> {
   const rows = await callSp<ProveedorRow>(
     "usp_Proveedores_GetByCodigo",
-    { Codigo: codigo }
+    { CompanyId: scope().companyId, Codigo: codigo }
   );
   return rows[0] || null;
 }
@@ -102,7 +109,7 @@ export async function getProveedorByCodigoSP(codigo: string): Promise<ProveedorR
 export async function insertProveedorSP(row: ProveedorRow): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Proveedores_Insert",
-    { RowXml: rowToXml(row) },
+    { CompanyId: scope().companyId, RowXml: rowToXml(row) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -116,7 +123,7 @@ export async function insertProveedorSP(row: ProveedorRow): Promise<SpResult> {
 export async function updateProveedorSP(codigo: string, row: Partial<ProveedorRow>): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Proveedores_Update",
-    { Codigo: codigo, RowXml: rowToXml(row) },
+    { CompanyId: scope().companyId, Codigo: codigo, RowXml: rowToXml(row) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -130,7 +137,7 @@ export async function updateProveedorSP(codigo: string, row: Partial<ProveedorRo
 export async function deleteProveedorSP(codigo: string): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Proveedores_Delete",
-    { Codigo: codigo },
+    { CompanyId: scope().companyId, Codigo: codigo },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
