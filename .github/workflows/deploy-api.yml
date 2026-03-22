@@ -7,6 +7,7 @@ on:
       - 'web/api/**'
       - 'docker/Dockerfile.api'
       - 'docker-compose.prod.yml'
+      - 'scripts/deploy-db.sh'
   workflow_dispatch:
 
 concurrency:
@@ -85,6 +86,28 @@ jobs:
               || echo "[WARN] acct_advanced redeploy con advertencias (revisar si persisten errores)"
             su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_fixedassets.sql" postgres \
               || echo "[WARN] acct_fixedassets redeploy con advertencias"
+
+            # ── Schemas nuevos (idempotentes) ──
+            for f in 09_inventory_advanced.sql 10_logistics.sql 11_crm.sql 12_manufacturing.sql 13_fleet.sql 18_fiscal_retenciones_schema.sql; do
+              [ -f "/opt/zentto/sqlweb-pg/$f" ] && su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/$f" postgres || true
+            done
+
+            # ── ALTERs (idempotentes) ──
+            for f in alter_bank_movement_journal.sql alter_salesdocument_addresses.sql; do
+              [ -f "/opt/zentto/sqlweb-pg/includes/sp/$f" ] && su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/$f" postgres || true
+            done
+
+            # ── SPs de módulos nuevos ──
+            for f in usp_inv.sql usp_logistics.sql usp_crm.sql usp_crm_callcenter.sql usp_fleet.sql usp_mfg.sql usp_mfg_integracion.sql usp_rbac.sql usp_fiscal_retenciones.sql; do
+              [ -f "/opt/zentto/sqlweb-pg/includes/sp/$f" ] && su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/$f" postgres || true
+            done
+
+            # ── Ownership y grants → zentto_app ──
+            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE s TEXT; BEGIN FOR s IN SELECT schema_name FROM information_schema.schemata WHERE schema_name IN ('crm','logistics','inv','mfg','fleet','fiscal','hr','cfg') LOOP EXECUTE 'ALTER SCHEMA ' || quote_ident(s) || ' OWNER TO zentto_app'; EXECUTE 'GRANT USAGE ON SCHEMA ' || quote_ident(s) || ' TO zentto_app'; EXECUTE 'GRANT ALL ON ALL TABLES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app'; EXECUTE 'GRANT ALL ON ALL SEQUENCES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app'; END LOOP; END \\\$\\\$;\"" postgres || true
+            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('crm','logistics','inv','mfg','fleet','fiscal','hr','cfg') LOOP EXECUTE 'ALTER TABLE ' || quote_ident(r.schemaname) || '.' || quote_ident(r.tablename) || ' OWNER TO zentto_app'; END LOOP; END \\\$\\\$;\"" postgres || true
+            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid::regprocedure as func FROM pg_proc p WHERE p.proname LIKE 'usp_crm_%' OR p.proname LIKE 'usp_fleet_%' OR p.proname LIKE 'usp_logistics_%' OR p.proname LIKE 'usp_mfg_%' OR p.proname LIKE 'usp_inv_%' OR p.proname LIKE 'usp_sec_%' OR p.proname LIKE 'usp_fiscal_%' OR p.proname LIKE 'usp_cfg_taxunit%' OR p.proname LIKE 'usp_bank_%' LOOP EXECUTE 'ALTER FUNCTION ' || r.func || ' OWNER TO zentto_app'; END LOOP; END \\\$\\\$;\"" postgres || true
+            echo "✓ Schemas + SPs + ownership actualizados"
+
             chmod +x /opt/zentto/scripts/run-pg-migrations.sh
             PGPASSWORD="$PG_PASSWORD" /opt/zentto/scripts/run-pg-migrations.sh \
               "$PG_USER" 127.0.0.1 "$PG_DATABASE" /opt/zentto/sqlweb-pg
