@@ -254,3 +254,24 @@ logisticaRouter.post("/notas-entrega/:id/entregar", async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+// ─── Aliases: /albaranes → /notas-entrega (frontend usa /albaranes) ───
+logisticaRouter.get("/albaranes", (req, res, next) => { req.url = "/notas-entrega" + (req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""); next(); });
+logisticaRouter.get("/albaranes/:id", (req, res, next) => { req.url = `/notas-entrega/${req.params.id}`; next(); });
+logisticaRouter.post("/albaranes", (req, res, next) => { req.url = "/notas-entrega"; next(); });
+logisticaRouter.post("/albaranes/:id/despachar", (req, res, next) => { req.url = `/notas-entrega/${req.params.id}/despachar`; next(); });
+logisticaRouter.post("/albaranes/:id/entregar", (req, res, next) => { req.url = `/notas-entrega/${req.params.id}/entregar`; next(); });
+
+// ─── Dashboard ───
+logisticaRouter.get("/dashboard", async (_req, res) => {
+  try {
+    res.json({
+      recepcionesPendientes: 0,
+      devolucionesEnProceso: 0,
+      albaranesEnTransito: 0,
+      transportistasActivos: 0,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
