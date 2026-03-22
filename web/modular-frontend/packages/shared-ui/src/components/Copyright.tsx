@@ -13,12 +13,12 @@ export default function Copyright(props: { sx?: SxProps<Theme> }) {
   return (
     <Box
       sx={[
-        { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 },
+        { display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 },
         ...(Array.isArray(props.sx) ? props.sx : [props.sx].filter(Boolean)),
       ]}
     >
-      <img src={logoSrc} alt="Zentto" style={{ width: 32, height: 32, objectFit: 'contain' }} />
-      <Typography variant="body2" align="center" sx={{ color: 'text.secondary' }}>
+      <img src={logoSrc} alt="Zentto" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {'© Zentto '}
         {new Date().getFullYear()}
         {'.'}
