@@ -19,6 +19,9 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/.npmrc ./
 
+# Contrato OpenAPI para Swagger UI
+COPY web/contracts/openapi.yaml ./contracts/openapi.yaml
+
 # Reinstalar solo dependencias de producción
 RUN npm ci --omit=dev
 

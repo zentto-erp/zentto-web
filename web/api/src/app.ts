@@ -81,7 +81,8 @@ function resolveOpenApiPath() {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [
     path.resolve(here, "..", "..", "contracts", "openapi.yaml"),
-    path.resolve(process.cwd(), "..", "contracts", "openapi.yaml")
+    path.resolve(process.cwd(), "..", "contracts", "openapi.yaml"),
+    path.resolve(process.cwd(), "contracts", "openapi.yaml"),
   ];
 
   for (const candidate of candidates) {
