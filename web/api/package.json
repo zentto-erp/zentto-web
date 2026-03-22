@@ -30,6 +30,7 @@
     "helmet": "^7.1.0",
     "iconv-lite": "^0.6.3",
     "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
     "morgan": "^1.10.0",
     "mssql": "^10.0.2",
     "multer": "^2.1.0",

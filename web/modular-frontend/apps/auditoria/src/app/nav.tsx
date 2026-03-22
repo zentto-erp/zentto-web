@@ -10,6 +10,7 @@ const PeopleIcon = dynamic(() => import('@mui/icons-material/PeopleOutlined'), {
 const NotificationsIcon = dynamic(() => import('@mui/icons-material/NotificationsActive'), { ssr: false });
 const HistoryIcon = dynamic(() => import('@mui/icons-material/History'), { ssr: false });
 const SecurityIcon = dynamic(() => import('@mui/icons-material/Security'), { ssr: false });
+const AnalyticsIcon = dynamic(() => import('@mui/icons-material/BarChart'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -53,6 +54,7 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         });
 
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <AssessmentIcon /> });
+        nav.push({ kind: 'page', segment: 'analytics', title: 'Estadísticas', icon: <AnalyticsIcon /> });
     }
 
     return nav;

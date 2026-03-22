@@ -129,6 +129,49 @@ export async function verifyOTP(
   return notifyPost("/api/otp/verify", { channel, destination, code });
 }
 
+// ─── Mobile Push (Expo Push API) ──────────────────────────────
+
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+
+/**
+ * Envía push notification a dispositivos móviles via Expo Push API.
+ * Los tokens se obtienen de sys.PushDevice por userId.
+ * Best-effort: nunca bloquea.
+ */
+export async function notifyMobilePush(
+  pushTokens: string[],
+  title: string,
+  body: string,
+  data?: Record<string, any>
+): Promise<NotifyResult> {
+  if (!pushTokens.length) return { ok: false, error: "No push tokens" };
+  try {
+    const messages = pushTokens.map((token) => ({
+      to: token,
+      sound: "default" as const,
+      title,
+      body,
+      data: data || {},
+    }));
+
+    const res = await fetch(EXPO_PUSH_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(messages),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    const result = await res.json().catch(() => ({}));
+    return { ok: res.ok, messageId: result?.data?.[0]?.id };
+  } catch (err) {
+    console.error("[notify] Expo push error:", err);
+    return { ok: false, error: String(err) };
+  }
+}
+
 // ─── Contactos (sincronizar con Notify) ───────────────────────
 
 export async function syncContact(contact: {
@@ -176,6 +219,8 @@ interface BusinessNotification {
   subject: string;
   data: Record<string, string>;
   channels?: ("email" | "push" | "whatsapp")[];
+  /** Push tokens de dispositivos móviles (Expo Push) para canal "push" */
+  mobilePushTokens?: string[];
 }
 
 /**
@@ -200,7 +245,15 @@ export async function emitBusinessNotification(
           variables: data,
         });
       }
-      // Push y WhatsApp se pueden agregar cuando estén configurados
+      if (channel === "push" && notification.mobilePushTokens?.length) {
+        await notifyMobilePush(
+          notification.mobilePushTokens,
+          subject,
+          Object.values(data).join(" · "),
+          { event, ...data },
+        );
+      }
+      // WhatsApp se puede agregar cuando esté configurado
     } catch {
       // Best-effort: nunca bloquear
     }

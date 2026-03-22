@@ -72,11 +72,15 @@ import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
 import devicesRouter from "./modules/devices/routes.js";
+import zohoRouter from "./modules/integrations/zoho.routes.js";
+import { supportRouter } from "./modules/integrations/support.routes.js";
+import { analyticsRouter } from "./modules/integrations/analytics.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
   normalizeRequestDateTimesToUtc,
 } from "./middleware/datetime.js";
+import { observabilityMiddleware } from "./middleware/observability.js";
 
 function resolveOpenApiPath() {
   const here = path.dirname(fileURLToPath(import.meta.url));
@@ -173,6 +177,7 @@ export async function createApp() {
 
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan("dev"));
+  app.use(observabilityMiddleware);
 
   app.get("/", (_req, res) => {
     res.json({ name: "Zentto ERP API", env: env.nodeEnv, version: "v2" });
@@ -327,6 +332,9 @@ export async function createApp() {
   app.use("/v1/crm", crmRouter);
   app.use("/v1/manufactura", manufacturaRouter);
   app.use("/v1/devices", devicesRouter);
+  app.use("/v1/integrations/zoho", zohoRouter);
+  app.use("/v1/support", supportRouter);
+  app.use("/v1/analytics", analyticsRouter);
 
   // Billing SaaS (Paddle)
   app.use("/v1/billing", billingRouter);
