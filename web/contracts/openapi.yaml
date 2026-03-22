@@ -1,33 +1,40 @@
 openapi: 3.0.3
 info:
-  title: DatqBox API
-  version: 1.8.0
+  title: Zentto ERP API
+  version: 2.0.0
   description: |
-    API REST de DatqBox ERP - Sistema de Gestión Empresarial
+    API REST de Zentto ERP - Sistema de Gestion Empresarial
 
-    **Módulos disponibles:**
-    - Auth (Autenticación JWT, RBAC, Cambio/Reset de contraseña)
-    - Clientes, Proveedores, Vendedores, Empleados
-    - Inventario, Artículos, Categorías, Marcas, Líneas
-    - Documentos de Venta (FACT, PED, COT, etc.)
-    - Documentos de Compra (ORDEN, COMPRA)
-    - CxC / CxP (Cuentas por Cobrar/Pagar)
-    - Abonos, Pagos, Cuentas por Pagar
-    - **Bancos** (Conciliación bancaria, Caja Chica)
-    - **Nómina** (Conceptos legales, LOT, procesamiento, Vacaciones, Liquidaciones, Batch)
-    - **Contabilidad** (Plan de cuentas, asientos, reportes)
-    - **RRHH** (Utilidades, Fideicomiso, Caja de Ahorro, Obligaciones, Salud Ocupacional, Capacitación, Comités)
-    - **Config/Países** (Tasas BCV, Países multi-moneda)
-    - **Payments** (Métodos de pago, Proveedores, Procesamiento de pagos, Transacciones)
-    - **Auditoría** (Logs de auditoría, Dashboard, Registros fiscales)
-    - **Settings** (Configuración por módulo)
-    - **Media** (Gestión de imágenes y archivos)
-    - **Supervisión** (Credenciales biométricas de supervisores)
-    - Retenciones, Movimientos de Inventario
-    - Meta, CRUD, Addons
+    **Modulos principales:**
+    - Auth (JWT, RBAC, Permisos granulares)
+    - Ventas (Facturas, Pedidos, Cotizaciones, Notas credito/debito)
+    - Compras (Ordenes, Recepcion de mercancia, Devoluciones)
+    - CxC / CxP (Cuentas por Cobrar/Pagar, Cobros, Pagos)
+    - Inventario Avanzado (Seriales, Lotes, Bins, FIFO/LIFO, Valoracion)
+    - Logistica (Transportistas, Notas de entrega, Guias de despacho)
+    - Bancos (Conciliacion bancaria, Caja Chica, Movimientos)
+    - Contabilidad (Asientos, Plan de cuentas, Activos fijos, Fiscal)
+    - Nomina (Procesamiento, Vacaciones, Liquidaciones, Batch)
+    - RRHH (Utilidades, Fideicomiso, Caja de Ahorro, Salud Ocupacional)
+    - CRM (Pipeline, Leads, Actividades, Call Center, Campanas)
+    - Manufactura (BOM, Ordenes de produccion, Centros de trabajo)
+    - Flota (Vehiculos, Combustible, Mantenimiento, Viajes)
+    - POS (Facturacion tactil, Impresora fiscal, Cierre de caja)
+    - Restaurante (Mesas, Cocina, Recetas)
+    - E-Commerce (Tienda online, Carrito, Checkout)
+    - Auditoria (Trail automatico, Alertas, Reportes)
+    - Permisos (RBAC granular, Aprobaciones, Restricciones de precio)
+    - Payments (Pasarelas de pago, Transacciones)
+    - Config, Settings, Media, Supervision, Fiscal
+  contact:
+    name: Zentto ERP
+    url: https://zentto.net
+    email: info@zentto.net
 servers:
-  - url: http://localhost:3000
-    description: Servidor de desarrollo local
+  - url: https://api.zentto.net
+    description: Produccion
+  - url: http://localhost:4000
+    description: Desarrollo local
   - url: http://localhost:4000
     description: Puerto alternativo (legacy)
 security:

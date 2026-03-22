@@ -173,15 +173,35 @@ export async function createApp() {
   app.use(morgan("dev"));
 
   app.get("/", (_req, res) => {
-    res.json({ name: "DatqBox API", env: env.nodeEnv, version: "v1" });
+    res.json({ name: "Zentto ERP API", env: env.nodeEnv, version: "v2" });
   });
 
-  app.get("/openapi.json", (_req, res) => {
+  // Basic auth para proteger documentación API
+  const docsAuth = (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Basic ")) {
+      res.setHeader("WWW-Authenticate", 'Basic realm="Zentto API Docs"');
+      return res.status(401).send("Autenticación requerida");
+    }
+    const decoded = Buffer.from(authHeader.slice(6), "base64").toString();
+    const [user, pass] = decoded.split(":");
+    const docsUser = process.env.DOCS_USER || "zentto";
+    const docsPass = process.env.DOCS_PASS || "docs2026";
+    if (user !== docsUser || pass !== docsPass) {
+      res.setHeader("WWW-Authenticate", 'Basic realm="Zentto API Docs"');
+      return res.status(401).send("Credenciales inválidas");
+    }
+    next();
+  };
+
+  app.get("/openapi.json", docsAuth, (_req, res) => {
     res.json(loadOpenApiDoc());
   });
-  app.use("/docs", swaggerUi.serve, (req: Request, res: Response, next: NextFunction) => {
+  app.use("/docs", docsAuth, swaggerUi.serve, (req: Request, res: Response, next: NextFunction) => {
     const handler = swaggerUi.setup(loadOpenApiDoc(), {
       explorer: true,
+      customSiteTitle: "Zentto ERP API",
+      customCss: ".swagger-ui .topbar { background-color: #1a1a2e; }",
       swaggerOptions: { persistAuthorization: true }
     });
     return handler(req, res, next);
