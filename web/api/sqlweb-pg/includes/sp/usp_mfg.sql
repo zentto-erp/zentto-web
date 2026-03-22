@@ -6,6 +6,7 @@
 
 -- =============================================================================
 --  usp_Mfg_BOM_List
+--  Service envía: CompanyId, Status, Search, Page, Limit
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_list(
@@ -57,6 +58,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Get
+--  Service envía: BOMId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_get(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_get(
@@ -89,16 +91,18 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Create
+--  Service envía: CompanyId, ProductId, BOMCode, BOMName, ExpectedQuantity, LinesJson, UserId
+--  Nota: p_expected_quantity se inserta como "OutputQuantity" en la tabla
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_create(INT, INT, VARCHAR, VARCHAR, NUMERIC, TEXT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
-    p_company_id        INT,
-    p_product_id        INT,
-    p_bom_code          VARCHAR(30),
-    p_bom_name          VARCHAR(200),
-    p_output_quantity   NUMERIC(18,4) DEFAULT 1,
-    p_lines_json        TEXT DEFAULT NULL,
-    p_user_id           INT DEFAULT NULL
+    p_company_id          INT,
+    p_product_id          INT,
+    p_bom_code            VARCHAR(30),
+    p_bom_name            VARCHAR(200),
+    p_expected_quantity   NUMERIC(18,4) DEFAULT 1,
+    p_lines_json          TEXT DEFAULT NULL,
+    p_user_id             INT DEFAULT NULL
 )
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "BOMId" INT)
 LANGUAGE plpgsql AS $$
@@ -117,7 +121,7 @@ BEGIN
         "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt"
     ) VALUES (
         p_company_id, p_product_id, p_bom_code, p_bom_name,
-        p_output_quantity, 'DRAFT',
+        p_expected_quantity, 'DRAFT',
         p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
     ) RETURNING "BOMId" INTO v_id;
 
@@ -147,6 +151,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Activate
+--  Service envía: BOMId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_activate(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_activate(
@@ -169,6 +174,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Obsolete
+--  Service envía: BOMId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_obsolete(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_obsolete(
@@ -191,6 +197,9 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkCenter_List
+--  Service envía: CompanyId, Search, Page, Limit
+--  Tabla tiene: WorkCenterId, CompanyId, WorkCenterCode, WorkCenterName,
+--               WarehouseId, CostPerHour, Capacity, CapacityUom, IsActive
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workcenter_list(INT, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workcenter_list(
@@ -201,8 +210,10 @@ CREATE OR REPLACE FUNCTION usp_mfg_workcenter_list(
 )
 RETURNS TABLE(
     "WorkCenterId"   INT,
+    "CompanyId"      INT,
     "WorkCenterCode" VARCHAR,
     "WorkCenterName" VARCHAR,
+    "WarehouseId"    INT,
     "CostPerHour"    NUMERIC,
     "Capacity"       INT,
     "CapacityUom"    VARCHAR,
@@ -223,8 +234,10 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        w."WorkCenterId", w."WorkCenterCode", w."WorkCenterName",
-        w."CostPerHour", w."Capacity", w."CapacityUom", w."IsActive",
+        w."WorkCenterId", w."CompanyId",
+        w."WorkCenterCode", w."WorkCenterName",
+        w."WarehouseId", w."CostPerHour",
+        w."Capacity", w."CapacityUom", w."IsActive",
         w."CreatedAt", w."UpdatedAt",
         v_total
     FROM   mfg."WorkCenter" w
@@ -238,8 +251,11 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkCenter_Upsert
+--  Service envía: CompanyId, WorkCenterId, WorkCenterCode, WorkCenterName,
+--                 CostPerHour, Capacity, IsActive, UserId
+--  Nota: CapacityUom y WarehouseId NO vienen del service, usan defaults
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_mfg_workcenter_upsert(INT, INT, VARCHAR, VARCHAR, NUMERIC, INT, VARCHAR, BOOLEAN, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_mfg_workcenter_upsert(INT, INT, VARCHAR, VARCHAR, NUMERIC, INT, BOOLEAN, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workcenter_upsert(
     p_company_id       INT,
     p_work_center_id   INT DEFAULT NULL,
@@ -247,7 +263,6 @@ CREATE OR REPLACE FUNCTION usp_mfg_workcenter_upsert(
     p_work_center_name VARCHAR(120) DEFAULT NULL,
     p_cost_per_hour    NUMERIC(18,2) DEFAULT 0,
     p_capacity         INT DEFAULT 1,
-    p_capacity_uom     VARCHAR(20) DEFAULT 'UNITS',
     p_is_active        BOOLEAN DEFAULT TRUE,
     p_user_id          INT DEFAULT NULL
 )
@@ -261,14 +276,13 @@ BEGIN
         END IF;
 
         INSERT INTO mfg."WorkCenter" ("CompanyId", "WorkCenterCode", "WorkCenterName", "CostPerHour", "Capacity", "CapacityUom", "IsActive", "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt")
-        VALUES (p_company_id, p_work_center_code, p_work_center_name, p_cost_per_hour, p_capacity, p_capacity_uom, p_is_active, p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
+        VALUES (p_company_id, p_work_center_code, p_work_center_name, p_cost_per_hour, p_capacity, 'UNITS', p_is_active, p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
     ELSE
         UPDATE mfg."WorkCenter"
         SET    "WorkCenterCode"  = p_work_center_code,
                "WorkCenterName"  = p_work_center_name,
                "CostPerHour"     = p_cost_per_hour,
                "Capacity"        = p_capacity,
-               "CapacityUom"     = p_capacity_uom,
                "IsActive"        = p_is_active,
                "UpdatedByUserId" = p_user_id,
                "UpdatedAt"       = NOW() AT TIME ZONE 'UTC'
@@ -284,6 +298,9 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_Routing_List
+--  Service envía: BOMId
+--  Tabla Routing: RoutingId, BOMId, OperationNumber, OperationName,
+--                 WorkCenterId, SetupTimeMinutes, RunTimeMinutes, Notes
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_routing_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_routing_list(
@@ -317,32 +334,38 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_Routing_Upsert
+--  Service envía: BOMId, RoutingId, OperationNumber, WorkCenterId,
+--                 OperationName, SetupTime, RunTime, Description, UserId
+--  Mapeo: p_setup_time → "SetupTimeMinutes", p_run_time → "RunTimeMinutes",
+--         p_description → "Notes"
+--  Nota: Tabla Routing NO tiene CreatedByUserId/UpdatedByUserId, solo timestamps
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_mfg_routing_upsert(INT, INT, INT, INT, VARCHAR, NUMERIC, NUMERIC, VARCHAR) CASCADE;
+DROP FUNCTION IF EXISTS usp_mfg_routing_upsert(INT, INT, INT, INT, VARCHAR, NUMERIC, NUMERIC, VARCHAR, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_routing_upsert(
     p_bom_id             INT,
     p_routing_id         INT DEFAULT NULL,
     p_operation_number   INT DEFAULT 0,
     p_work_center_id     INT DEFAULT NULL,
     p_operation_name     VARCHAR(200) DEFAULT NULL,
-    p_setup_time_minutes NUMERIC(10,2) DEFAULT 0,
-    p_run_time_minutes   NUMERIC(10,2) DEFAULT 0,
-    p_notes              VARCHAR(500) DEFAULT NULL
+    p_setup_time         NUMERIC(10,2) DEFAULT 0,
+    p_run_time           NUMERIC(10,2) DEFAULT 0,
+    p_description        VARCHAR(500) DEFAULT NULL,
+    p_user_id            INT DEFAULT NULL
 )
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
     IF p_routing_id IS NULL THEN
         INSERT INTO mfg."Routing" ("BOMId", "OperationNumber", "WorkCenterId", "OperationName", "SetupTimeMinutes", "RunTimeMinutes", "Notes", "CreatedAt", "UpdatedAt")
-        VALUES (p_bom_id, p_operation_number, p_work_center_id, p_operation_name, p_setup_time_minutes, p_run_time_minutes, p_notes, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
+        VALUES (p_bom_id, p_operation_number, p_work_center_id, p_operation_name, p_setup_time, p_run_time, p_description, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
     ELSE
         UPDATE mfg."Routing"
         SET    "OperationNumber"  = p_operation_number,
                "WorkCenterId"     = p_work_center_id,
                "OperationName"    = p_operation_name,
-               "SetupTimeMinutes" = p_setup_time_minutes,
-               "RunTimeMinutes"   = p_run_time_minutes,
-               "Notes"            = p_notes,
+               "SetupTimeMinutes" = p_setup_time,
+               "RunTimeMinutes"   = p_run_time,
+               "Notes"            = p_description,
                "UpdatedAt"        = NOW() AT TIME ZONE 'UTC'
         WHERE  "RoutingId" = p_routing_id AND "BOMId" = p_bom_id;
     END IF;
@@ -356,6 +379,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_List
+--  Service envía: CompanyId, Status, FechaDesde, FechaHasta, Page, Limit
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_list(INT, VARCHAR, TIMESTAMP, TIMESTAMP, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_list(
@@ -422,6 +446,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Get
+--  Service envía: WorkOrderId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_get(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_get(
@@ -471,21 +496,26 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Create
+--  Service envía: CompanyId, BranchId, BOMId, ProductId, PlannedQuantity,
+--                 PlannedStart, PlannedEnd, Priority, WarehouseId, Notes,
+--                 AssignedToUserId, UserId
+--  Mapeo: p_planned_start → "PlannedStartDate", p_planned_end → "PlannedEndDate"
+--  Nota: AssignedToUserId se acepta pero se ignora (tabla no tiene esa columna)
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_mfg_workorder_create(INT, INT, INT, INT, NUMERIC, VARCHAR, TIMESTAMP, TIMESTAMP, VARCHAR, INT, TEXT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_mfg_workorder_create(INT, INT, INT, INT, NUMERIC, TIMESTAMP, TIMESTAMP, VARCHAR, INT, TEXT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_create(
-    p_company_id         INT,
-    p_branch_id          INT,
-    p_bom_id             INT,
-    p_product_id         INT,
-    p_planned_quantity   NUMERIC(18,4),
-    p_unit_of_measure    VARCHAR(20) DEFAULT 'UND',
-    p_planned_start_date TIMESTAMP DEFAULT NULL,
-    p_planned_end_date   TIMESTAMP DEFAULT NULL,
-    p_priority           VARCHAR(20) DEFAULT 'MEDIUM',
-    p_warehouse_id       INT DEFAULT NULL,
-    p_notes              TEXT DEFAULT NULL,
-    p_user_id            INT DEFAULT NULL
+    p_company_id           INT,
+    p_branch_id            INT,
+    p_bom_id               INT,
+    p_product_id           INT,
+    p_planned_quantity     NUMERIC(18,4),
+    p_planned_start        TIMESTAMP DEFAULT NULL,
+    p_planned_end          TIMESTAMP DEFAULT NULL,
+    p_priority             VARCHAR(20) DEFAULT 'MEDIUM',
+    p_warehouse_id         INT DEFAULT NULL,
+    p_notes                TEXT DEFAULT NULL,
+    p_assigned_to_user_id  INT DEFAULT NULL,
+    p_user_id              INT DEFAULT NULL
 )
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "WorkOrderId" INT, "WorkOrderNumber" VARCHAR)
 LANGUAGE plpgsql AS $$
@@ -494,6 +524,7 @@ DECLARE
     v_seq  INT;
     v_code VARCHAR(30);
 BEGIN
+    -- p_assigned_to_user_id se ignora: la tabla no tiene esa columna
     SELECT COALESCE(MAX("WorkOrderId"), 0) + 1 INTO v_seq FROM mfg."WorkOrder" WHERE "CompanyId" = p_company_id;
     v_code := 'WO-' || LPAD(v_seq::TEXT, 6, '0');
 
@@ -507,8 +538,8 @@ BEGIN
     ) VALUES (
         p_company_id, p_branch_id, v_code,
         p_bom_id, p_product_id, p_planned_quantity, 0, 0,
-        p_unit_of_measure, 'PLANNED', p_priority,
-        p_planned_start_date, p_planned_end_date,
+        'UND', 'PLANNED', p_priority,
+        p_planned_start, p_planned_end,
         p_warehouse_id, p_notes,
         p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
     ) RETURNING "WorkOrderId" INTO v_id;
@@ -522,6 +553,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Start
+--  Service envía: WorkOrderId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_start(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_start(
@@ -553,100 +585,8 @@ END;
 $$;
 
 -- =============================================================================
---  usp_Mfg_WorkOrder_ConsumeMaterial
--- =============================================================================
-DROP FUNCTION IF EXISTS usp_mfg_workorder_consumematerial(INT, INT, INT, NUMERIC, NUMERIC, VARCHAR, INT, INT, NUMERIC, VARCHAR, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_mfg_workorder_consumematerial(
-    p_work_order_id    INT,
-    p_line_number      INT DEFAULT 1,
-    p_product_id       INT DEFAULT NULL,
-    p_planned_quantity NUMERIC(18,4) DEFAULT 0,
-    p_consumed_quantity NUMERIC(18,4) DEFAULT 0,
-    p_unit_of_measure  VARCHAR(20) DEFAULT 'UND',
-    p_lot_id           INT DEFAULT NULL,
-    p_bin_id           INT DEFAULT NULL,
-    p_unit_cost        NUMERIC(18,4) DEFAULT 0,
-    p_notes            VARCHAR(500) DEFAULT NULL,
-    p_user_id          INT DEFAULT NULL
-)
-RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
-LANGUAGE plpgsql AS $$
-BEGIN
-    INSERT INTO mfg."WorkOrderMaterial" (
-        "WorkOrderId", "LineNumber", "ProductId",
-        "PlannedQuantity", "ConsumedQuantity", "UnitOfMeasure",
-        "LotId", "BinId", "UnitCost", "Notes",
-        "CreatedAt", "UpdatedAt"
-    ) VALUES (
-        p_work_order_id, p_line_number, p_product_id,
-        p_planned_quantity, p_consumed_quantity, p_unit_of_measure,
-        p_lot_id, p_bin_id, p_unit_cost, p_notes,
-        NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
-    );
-
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR;
-
-EXCEPTION WHEN OTHERS THEN
-    RETURN QUERY SELECT 0, SQLERRM::VARCHAR;
-END;
-$$;
-
--- =============================================================================
---  usp_Mfg_WorkOrder_ReportOutput
--- =============================================================================
-DROP FUNCTION IF EXISTS usp_mfg_workorder_reportoutput(INT, INT, NUMERIC, VARCHAR, VARCHAR, INT, INT, NUMERIC, BOOLEAN, VARCHAR, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_mfg_workorder_reportoutput(
-    p_work_order_id  INT,
-    p_product_id     INT,
-    p_quantity       NUMERIC(18,4),
-    p_unit_of_measure VARCHAR(20) DEFAULT 'UND',
-    p_lot_number     VARCHAR(50) DEFAULT NULL,
-    p_warehouse_id   INT DEFAULT NULL,
-    p_bin_id         INT DEFAULT NULL,
-    p_unit_cost      NUMERIC(18,4) DEFAULT 0,
-    p_is_scrap       BOOLEAN DEFAULT FALSE,
-    p_notes          VARCHAR(500) DEFAULT NULL,
-    p_user_id        INT DEFAULT NULL
-)
-RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "WorkOrderOutputId" INT)
-LANGUAGE plpgsql AS $$
-DECLARE
-    v_id INT;
-BEGIN
-    INSERT INTO mfg."WorkOrderOutput" (
-        "WorkOrderId", "ProductId", "Quantity", "UnitOfMeasure",
-        "LotNumber", "WarehouseId", "BinId", "UnitCost",
-        "IsScrap", "Notes", "ProducedAt", "CreatedByUserId", "CreatedAt"
-    ) VALUES (
-        p_work_order_id, p_product_id, p_quantity, p_unit_of_measure,
-        p_lot_number, p_warehouse_id, p_bin_id, p_unit_cost,
-        p_is_scrap, p_notes, NOW() AT TIME ZONE 'UTC', p_user_id, NOW() AT TIME ZONE 'UTC'
-    ) RETURNING "WorkOrderOutputId" INTO v_id;
-
-    -- Actualizar cantidad producida o scrap en la orden
-    IF p_is_scrap THEN
-        UPDATE mfg."WorkOrder"
-        SET    "ScrapQuantity"    = COALESCE("ScrapQuantity", 0) + p_quantity,
-               "UpdatedByUserId"  = p_user_id,
-               "UpdatedAt"        = NOW() AT TIME ZONE 'UTC'
-        WHERE  "WorkOrderId" = p_work_order_id;
-    ELSE
-        UPDATE mfg."WorkOrder"
-        SET    "ProducedQuantity" = COALESCE("ProducedQuantity", 0) + p_quantity,
-               "UpdatedByUserId"  = p_user_id,
-               "UpdatedAt"        = NOW() AT TIME ZONE 'UTC'
-        WHERE  "WorkOrderId" = p_work_order_id;
-    END IF;
-
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR, v_id;
-
-EXCEPTION WHEN OTHERS THEN
-    RETURN QUERY SELECT 0, SQLERRM::VARCHAR, 0;
-END;
-$$;
-
--- =============================================================================
 --  usp_Mfg_WorkOrder_Complete
+--  Service envía: WorkOrderId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_complete(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_complete(
@@ -679,6 +619,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Cancel
+--  Service envía: WorkOrderId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_cancel(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_cancel(
@@ -705,5 +646,100 @@ BEGIN
 
 EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT 0, SQLERRM::VARCHAR;
+END;
+$$;
+
+-- =============================================================================
+--  usp_Mfg_WorkOrder_ConsumeMaterial
+--  Service envía: WorkOrderId, ProductId, Quantity, LotNumber, WarehouseId, UserId
+--  Mapeo: p_quantity → "ConsumedQuantity", p_lot_number → ignorado (tabla usa "LotId")
+--  Nota: Tabla tiene LotId (INT), no LotNumber. Se ignora p_lot_number por ahora.
+-- =============================================================================
+DROP FUNCTION IF EXISTS usp_mfg_workorder_consumematerial(INT, INT, NUMERIC, VARCHAR, INT, INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_mfg_workorder_consumematerial(
+    p_work_order_id  INT,
+    p_product_id     INT DEFAULT NULL,
+    p_quantity       NUMERIC(18,4) DEFAULT 0,
+    p_lot_number     VARCHAR(50) DEFAULT NULL,
+    p_warehouse_id   INT DEFAULT NULL,
+    p_user_id        INT DEFAULT NULL
+)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_next_line INT;
+BEGIN
+    -- Calcular siguiente LineNumber
+    SELECT COALESCE(MAX("LineNumber"), 0) + 1 INTO v_next_line
+    FROM   mfg."WorkOrderMaterial"
+    WHERE  "WorkOrderId" = p_work_order_id;
+
+    INSERT INTO mfg."WorkOrderMaterial" (
+        "WorkOrderId", "LineNumber", "ProductId",
+        "PlannedQuantity", "ConsumedQuantity", "UnitOfMeasure",
+        "LotId", "BinId", "UnitCost", "Notes",
+        "CreatedAt", "UpdatedAt"
+    ) VALUES (
+        p_work_order_id, v_next_line, p_product_id,
+        p_quantity, p_quantity, 'UND',
+        NULL, NULL, 0, NULL,
+        NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
+    );
+
+    RETURN QUERY SELECT 1, 'OK'::VARCHAR;
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT 0, SQLERRM::VARCHAR;
+END;
+$$;
+
+-- =============================================================================
+--  usp_Mfg_WorkOrder_ReportOutput
+--  Service envía: WorkOrderId, Quantity, LotNumber, WarehouseId, BinId, UserId
+--  Tabla WorkOrderOutput: ProductId, Quantity, LotNumber, WarehouseId, BinId,
+--                         UnitCost, IsScrap
+--  Nota: ProductId se obtiene del WorkOrder
+-- =============================================================================
+DROP FUNCTION IF EXISTS usp_mfg_workorder_reportoutput(INT, NUMERIC, VARCHAR, INT, INT, INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_mfg_workorder_reportoutput(
+    p_work_order_id  INT,
+    p_quantity       NUMERIC(18,4),
+    p_lot_number     VARCHAR(50) DEFAULT NULL,
+    p_warehouse_id   INT DEFAULT NULL,
+    p_bin_id         INT DEFAULT NULL,
+    p_user_id        INT DEFAULT NULL
+)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "OutputId" INT)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_id         INT;
+    v_product_id INT;
+BEGIN
+    -- Obtener ProductId del WorkOrder
+    SELECT wo."ProductId" INTO v_product_id
+    FROM   mfg."WorkOrder" wo
+    WHERE  wo."WorkOrderId" = p_work_order_id;
+
+    INSERT INTO mfg."WorkOrderOutput" (
+        "WorkOrderId", "ProductId", "Quantity", "UnitOfMeasure",
+        "LotNumber", "WarehouseId", "BinId", "UnitCost",
+        "IsScrap", "Notes", "ProducedAt", "CreatedByUserId", "CreatedAt"
+    ) VALUES (
+        p_work_order_id, v_product_id, p_quantity, 'UND',
+        p_lot_number, p_warehouse_id, p_bin_id, 0,
+        FALSE, NULL, NOW() AT TIME ZONE 'UTC', p_user_id, NOW() AT TIME ZONE 'UTC'
+    ) RETURNING "WorkOrderOutputId" INTO v_id;
+
+    -- Actualizar cantidad producida en la orden
+    UPDATE mfg."WorkOrder"
+    SET    "ProducedQuantity" = COALESCE("ProducedQuantity", 0) + p_quantity,
+           "UpdatedByUserId"  = p_user_id,
+           "UpdatedAt"        = NOW() AT TIME ZONE 'UTC'
+    WHERE  "WorkOrderId" = p_work_order_id;
+
+    RETURN QUERY SELECT 1, 'OK'::VARCHAR, v_id;
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT 0, SQLERRM::VARCHAR, 0;
 END;
 $$;

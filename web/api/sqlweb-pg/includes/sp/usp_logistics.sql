@@ -263,6 +263,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."Carrier"
     WHERE "CompanyId" = p_company_id
+      AND "IsDeleted" = FALSE
       AND (p_search IS NULL
            OR "CarrierCode" ILIKE '%' || p_search || '%'
            OR "CarrierName" ILIKE '%' || p_search || '%'
@@ -275,6 +276,7 @@ BEGIN
            v_total
     FROM logistics."Carrier" c
     WHERE c."CompanyId" = p_company_id
+      AND c."IsDeleted" = FALSE
       AND (p_search IS NULL
            OR c."CarrierCode" ILIKE '%' || p_search || '%'
            OR c."CarrierName" ILIKE '%' || p_search || '%'
@@ -307,6 +309,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM logistics."Carrier"
         WHERE "CompanyId" = p_company_id AND "CarrierCode" = p_carrier_code
+          AND "IsDeleted" = FALSE
           AND (p_carrier_id IS NULL OR "CarrierId" <> p_carrier_id)
     ) THEN
         RETURN QUERY SELECT 0, 'El codigo de transportista ya existe'::VARCHAR;
@@ -372,6 +375,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."Driver"
     WHERE "CompanyId" = p_company_id
+      AND "IsDeleted" = FALSE
       AND (p_carrier_id IS NULL OR "CarrierId" = p_carrier_id)
       AND (p_search IS NULL
            OR "DriverCode" ILIKE '%' || p_search || '%'
@@ -386,6 +390,7 @@ BEGIN
     FROM logistics."Driver" d
     LEFT JOIN logistics."Carrier" c ON d."CarrierId" = c."CarrierId"
     WHERE d."CompanyId" = p_company_id
+      AND d."IsDeleted" = FALSE
       AND (p_carrier_id IS NULL OR d."CarrierId" = p_carrier_id)
       AND (p_search IS NULL
            OR d."DriverCode" ILIKE '%' || p_search || '%'
@@ -418,6 +423,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM logistics."Driver"
         WHERE "CompanyId" = p_company_id AND "DriverCode" = p_driver_code
+          AND "IsDeleted" = FALSE
           AND (p_driver_id IS NULL OR "DriverId" <> p_driver_id)
     ) THEN
         RETURN QUERY SELECT 0, 'El codigo de conductor ya existe'::VARCHAR;
@@ -489,6 +495,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReceipt"
     WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+      AND "IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR "SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR "Status" = p_status)
       AND (p_fecha_desde IS NULL OR "ReceiptDate"::DATE >= p_fecha_desde)
@@ -504,6 +511,7 @@ BEGIN
     FROM logistics."GoodsReceipt" gr
     LEFT JOIN logistics."Carrier" c ON gr."CarrierId" = c."CarrierId"
     WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
+      AND gr."IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR gr."SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR gr."Status" = p_status)
       AND (p_fecha_desde IS NULL OR gr."ReceiptDate"::DATE >= p_fecha_desde)
@@ -571,7 +579,7 @@ BEGIN
            ), '[]'::JSONB)
     FROM logistics."GoodsReceipt" gr
     LEFT JOIN logistics."Carrier" c ON gr."CarrierId" = c."CarrierId"
-    WHERE gr."GoodsReceiptId" = p_goods_receipt_id;
+    WHERE gr."GoodsReceiptId" = p_goods_receipt_id AND gr."IsDeleted" = FALSE;
 END;
 $$;
 
@@ -724,6 +732,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReturn"
     WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+      AND "IsDeleted" = FALSE
       AND (p_status IS NULL OR "Status" = p_status);
 
     RETURN QUERY
@@ -733,6 +742,7 @@ BEGIN
            v_total
     FROM logistics."GoodsReturn" r
     WHERE r."CompanyId" = p_company_id AND r."BranchId" = p_branch_id
+      AND r."IsDeleted" = FALSE
       AND (p_status IS NULL OR r."Status" = p_status)
     ORDER BY r."ReturnDate" DESC
     OFFSET (p_page - 1) * p_limit LIMIT p_limit;
@@ -881,6 +891,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."DeliveryNote"
     WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+      AND "IsDeleted" = FALSE
       AND (p_customer_id IS NULL OR "CustomerId" = p_customer_id)
       AND (p_status IS NULL OR "Status" = p_status)
       AND (p_fecha_desde IS NULL OR "DeliveryDate"::DATE >= p_fecha_desde)
@@ -899,6 +910,7 @@ BEGIN
     LEFT JOIN logistics."Carrier" c ON dn."CarrierId" = c."CarrierId"
     LEFT JOIN logistics."Driver" d ON dn."DriverId" = d."DriverId"
     WHERE dn."CompanyId" = p_company_id AND dn."BranchId" = p_branch_id
+      AND dn."IsDeleted" = FALSE
       AND (p_customer_id IS NULL OR dn."CustomerId" = p_customer_id)
       AND (p_status IS NULL OR dn."Status" = p_status)
       AND (p_fecha_desde IS NULL OR dn."DeliveryDate"::DATE >= p_fecha_desde)
@@ -979,7 +991,7 @@ BEGIN
     FROM logistics."DeliveryNote" dn
     LEFT JOIN logistics."Carrier" c ON dn."CarrierId" = c."CarrierId"
     LEFT JOIN logistics."Driver" d ON dn."DriverId" = d."DriverId"
-    WHERE dn."DeliveryNoteId" = p_delivery_note_id;
+    WHERE dn."DeliveryNoteId" = p_delivery_note_id AND dn."IsDeleted" = FALSE;
 END;
 $$;
 
