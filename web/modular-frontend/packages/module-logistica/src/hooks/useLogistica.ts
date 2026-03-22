@@ -193,7 +193,7 @@ export function useDeliveryNotesList(filter?: DeliveryFilter) {
       if (filter?.customerId) params.append("customerId", filter.customerId.toString());
       if (filter?.page) params.append("page", filter.page.toString());
       if (filter?.limit) params.append("limit", filter.limit.toString());
-      return apiGet(`${BASE}/albaranes?${params.toString()}`);
+      return apiGet(`${BASE}/notas-entrega?${params.toString()}`);
     },
   });
 }
@@ -201,7 +201,7 @@ export function useDeliveryNotesList(filter?: DeliveryFilter) {
 export function useDeliveryNoteDetail(id?: number) {
   return useQuery({
     queryKey: [QK_DELIVERY, "detail", id],
-    queryFn: () => apiGet(`${BASE}/albaranes/${id}`),
+    queryFn: () => apiGet(`${BASE}/notas-entrega/${id}`),
     enabled: !!id,
   });
 }
@@ -209,7 +209,7 @@ export function useDeliveryNoteDetail(id?: number) {
 export function useCreateDeliveryNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: Record<string, unknown>) => apiPost(`${BASE}/albaranes`, d),
+    mutationFn: (d: Record<string, unknown>) => apiPost(`${BASE}/notas-entrega`, d),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_DELIVERY] }),
   });
 }
@@ -217,7 +217,7 @@ export function useCreateDeliveryNote() {
 export function useDispatchDeliveryNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => apiPost(`${BASE}/albaranes/${id}/despachar`, {}),
+    mutationFn: (id: number) => apiPost(`${BASE}/notas-entrega/${id}/despachar`, {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_DELIVERY] }),
   });
 }
@@ -226,7 +226,7 @@ export function useDeliverDeliveryNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { id: number; deliveredToName: string }) =>
-      apiPost(`${BASE}/albaranes/${data.id}/entregar`, data),
+      apiPost(`${BASE}/notas-entrega/${data.id}/entregar`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_DELIVERY] }),
   });
 }

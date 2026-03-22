@@ -255,12 +255,12 @@ logisticaRouter.post("/notas-entrega/:id/entregar", async (req, res) => {
   }
 });
 
-// ─── Aliases: /albaranes → /notas-entrega (frontend usa /albaranes) ───
-logisticaRouter.get("/albaranes", (req, res, next) => { req.url = "/notas-entrega" + (req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""); next(); });
-logisticaRouter.get("/albaranes/:id", (req, res, next) => { req.url = `/notas-entrega/${req.params.id}`; next(); });
-logisticaRouter.post("/albaranes", (req, res, next) => { req.url = "/notas-entrega"; next(); });
-logisticaRouter.post("/albaranes/:id/despachar", (req, res, next) => { req.url = `/notas-entrega/${req.params.id}/despachar`; next(); });
-logisticaRouter.post("/albaranes/:id/entregar", (req, res, next) => { req.url = `/notas-entrega/${req.params.id}/entregar`; next(); });
+// ─── Aliases: /albaranes → /notas-entrega ───
+logisticaRouter.get("/albaranes", (req, res) => { const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""; res.redirect(307, `/api/v1/logistica/notas-entrega${qs}`); });
+logisticaRouter.get("/albaranes/:id", (req, res) => { res.redirect(307, `/api/v1/logistica/notas-entrega/${req.params.id}`); });
+logisticaRouter.post("/albaranes", (req, res) => { res.redirect(307, `/api/v1/logistica/notas-entrega`); });
+logisticaRouter.post("/albaranes/:id/despachar", (req, res) => { res.redirect(307, `/api/v1/logistica/notas-entrega/${req.params.id}/despachar`); });
+logisticaRouter.post("/albaranes/:id/entregar", (req, res) => { res.redirect(307, `/api/v1/logistica/notas-entrega/${req.params.id}/entregar`); });
 
 // ─── Dashboard ───
 logisticaRouter.get("/dashboard", async (_req, res) => {

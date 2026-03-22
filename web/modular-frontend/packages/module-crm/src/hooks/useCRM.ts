@@ -95,7 +95,7 @@ export function usePipelinesList() {
 export function usePipelineStages(pipelineId?: number) {
   return useQuery({
     queryKey: [QK_PIPELINES, "stages", pipelineId],
-    queryFn: () => apiGet(`${BASE}/pipelines/${pipelineId}/etapas`),
+    queryFn: () => apiGet(`${BASE}/pipelines/${pipelineId}/stages`),
     enabled: !!pipelineId,
   });
 }
@@ -111,7 +111,7 @@ export function useCreatePipeline() {
 export function useCreateStage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: any) => apiPost(`${BASE}/pipelines/${d.pipelineId}/etapas`, d),
+    mutationFn: (d: any) => apiPost(`${BASE}/pipelines/${d.pipelineId}/stages`, d),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_PIPELINES] }),
   });
 }
