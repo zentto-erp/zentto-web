@@ -82,10 +82,14 @@ jobs:
             su -c "psql -d $PG_DATABASE -f /tmp/zentto_ddl.sql" postgres || echo "DDL grants warning (may already be applied)"
             rm -f /tmp/zentto_ddl.sql
             # Re-desplegar funciones acct en cada deploy (el DROP step las borra; migrations son idempotentes)
+            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct.sql" postgres \
+              || echo "[WARN] acct redeploy con advertencias (revisar si persisten errores)"
             su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_advanced.sql" postgres \
-              || echo "[WARN] acct_advanced redeploy con advertencias (revisar si persisten errores)"
+              || echo "[WARN] acct_advanced redeploy con advertencias"
             su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_fixedassets.sql" postgres \
               || echo "[WARN] acct_fixedassets redeploy con advertencias"
+            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_templates.sql" postgres \
+              || echo "[WARN] acct_templates redeploy con advertencias"
 
             # ── Schemas nuevos (idempotentes) ──
             for f in 09_inventory_advanced.sql 10_logistics.sql 11_crm.sql 12_manufacturing.sql 13_fleet.sql 18_fiscal_retenciones_schema.sql; do
