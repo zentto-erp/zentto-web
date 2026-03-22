@@ -8,6 +8,7 @@ const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBala
 const InventoryIcon = dynamic(() => import('@mui/icons-material/Inventory'), { ssr: false });
 const CategoryIcon = dynamic(() => import('@mui/icons-material/Category'), { ssr: false });
 const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'), { ssr: false });
+const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -20,6 +21,7 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'clientes', title: 'Clientes', icon: <PeopleIcon /> });
         nav.push({ kind: 'page', segment: 'cxc', title: 'Cuentas por cobrar', icon: <AccountBalanceIcon /> });
         nav.push({ kind: 'page', segment: 'abonos', title: 'Abonos', icon: <ReceiptLongIcon /> });
+        nav.push({ kind: 'page', segment: 'pedidos-ecommerce', title: 'Pedidos Ecommerce', icon: <ShoppingCartIcon /> });
 
         nav.push({ kind: 'header', title: 'Consulta' });
         nav.push({ kind: 'page', segment: 'articulos', title: 'Artículos', icon: <CategoryIcon /> });

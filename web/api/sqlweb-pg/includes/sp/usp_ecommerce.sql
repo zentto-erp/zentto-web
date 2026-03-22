@@ -748,6 +748,37 @@ BEGIN
     ) d
     WHERE d.pc = pr."ProductCode" AND pr."CompanyId" = p_company_id;
 
+    -- Registrar movimiento en inventario avanzado (inv.StockMovement)
+    -- Solo si la tabla existe (compatibilidad con instalaciones sin inv.*)
+    BEGIN
+        INSERT INTO inv."StockMovement" (
+            "CompanyId", "BranchId", "ProductId",
+            "MovementType", "Quantity", "UnitCost", "TotalCost",
+            "SourceDocumentType", "SourceDocumentNumber",
+            "Notes", "MovementDate", "CreatedAt"
+        )
+        SELECT
+            p_company_id,
+            p_branch_id,
+            pr."ProductId",
+            'SALE_OUT',
+            (item->>'qty')::NUMERIC(18,4),
+            COALESCE(pr."CostPrice", pr."SalesPrice", 0),
+            (item->>'qty')::NUMERIC(18,4) * COALESCE(pr."CostPrice", pr."SalesPrice", 0),
+            'ECOM_PEDIDO',
+            v_order_number,
+            'Pedido ecommerce',
+            NOW() AT TIME ZONE 'UTC',
+            NOW() AT TIME ZONE 'UTC'
+        FROM jsonb_array_elements(p_items_json) AS item
+        INNER JOIN master."Product" pr
+            ON pr."ProductCode" = (item->>'pc')
+            AND pr."CompanyId" = p_company_id;
+    EXCEPTION WHEN undefined_table THEN
+        -- inv.StockMovement no existe en esta instalación, ignorar
+        NULL;
+    END;
+
     RETURN QUERY SELECT v_order_number, v_order_token, 1, 'Pedido creado exitosamente'::VARCHAR(500);
 
 EXCEPTION WHEN OTHERS THEN
