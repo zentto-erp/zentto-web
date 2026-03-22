@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Box, TextField, Button, Typography, Alert, CircularProgress, Paper, Divider } from "@mui/material";
+import { Box, TextField, Button, Typography, Alert, CircularProgress, Paper, Divider, FormControlLabel, Checkbox, MenuItem } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import LockIcon from "@mui/icons-material/Lock";
 import ShieldIcon from "@mui/icons-material/Shield";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 import { useCartStore } from "../store/useCartStore";
 import { useCheckout } from "../hooks/useStoreOrders";
 import OrderSummary from "./OrderSummary";
@@ -42,6 +43,14 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
   const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<CustomerPaymentMethod | null>(null);
 
+  // Billing address
+  const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [billingAddressId, setBillingAddressId] = useState<number | null>(null);
+  const [billingAddress, setBillingAddress] = useState<CustomerAddress | null>(null);
+
+  // Structured address for guests
+  const [guestAddress, setGuestAddress] = useState({ addressLine: "", city: "", state: "", zipCode: "", country: "VE" });
+
   const checkoutMutation = useCheckout();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,10 +66,17 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
       return;
     }
 
-    // Build address string from saved address or text field
-    const finalAddress = isLoggedIn && selectedAddress
+    // Build shipping address
+    const shippingAddr = isLoggedIn && selectedAddress
       ? [selectedAddress.AddressLine, selectedAddress.City, selectedAddress.State].filter(Boolean).join(", ")
-      : address.trim();
+      : [guestAddress.addressLine, guestAddress.city, guestAddress.state].filter(Boolean).join(", ") || address.trim();
+
+    // Build billing address
+    const billingAddr = sameAsBilling
+      ? shippingAddr
+      : isLoggedIn && billingAddress
+        ? [billingAddress.AddressLine, billingAddress.City, billingAddress.State].filter(Boolean).join(", ")
+        : shippingAddr;
 
     try {
       const result = await checkoutMutation.mutateAsync({
@@ -68,7 +84,8 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
           name: name.trim(),
           email: email.trim().toLowerCase(),
           phone: phone.trim() || undefined,
-          address: finalAddress || undefined,
+          address: shippingAddr || undefined,
+          billingAddress: billingAddr || undefined,
           fiscalId: fiscalId.trim() || undefined,
         },
         items: items.map((item) => ({
@@ -82,6 +99,7 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
         })),
         notes: notes.trim() || undefined,
         addressId: selectedAddressId ?? undefined,
+        billingAddressId: sameAsBilling ? selectedAddressId ?? undefined : billingAddressId ?? undefined,
         paymentMethodId: selectedPaymentId ?? undefined,
         paymentMethodType: selectedPayment?.MethodType ?? undefined,
       });
@@ -132,7 +150,8 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
 
             {/* 2. Dirección de envío */}
             <Divider />
-            <Box sx={{ bgcolor: "#f0f2f2", px: 3, py: 1.5 }}>
+            <Box sx={{ bgcolor: "#f0f2f2", px: 3, py: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+              <LocalShippingIcon sx={{ fontSize: 18, color: "#555" }} />
               <Typography variant="subtitle1" fontWeight="bold" sx={{ color: "#0f1111" }}>
                 2. Direccion de envio
               </Typography>
@@ -147,12 +166,57 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
                   }}
                 />
               ) : (
-                <TextField
-                  label="Direccion completa"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  fullWidth multiline rows={2} size="small"
-                />
+                <Grid container spacing={2}>
+                  <Grid size={12}>
+                    <TextField label="Direccion" value={guestAddress.addressLine} onChange={(e) => setGuestAddress({ ...guestAddress, addressLine: e.target.value })} fullWidth size="small" required />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField label="Ciudad" value={guestAddress.city} onChange={(e) => setGuestAddress({ ...guestAddress, city: e.target.value })} fullWidth size="small" />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField select label="Pais" value={guestAddress.country} onChange={(e) => setGuestAddress({ ...guestAddress, country: e.target.value, state: "" })} fullWidth size="small">
+                      <MenuItem value="VE">Venezuela</MenuItem>
+                      <MenuItem value="ES">Espana</MenuItem>
+                      <MenuItem value="CO">Colombia</MenuItem>
+                      <MenuItem value="MX">Mexico</MenuItem>
+                      <MenuItem value="US">Estados Unidos</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField label="Estado / Provincia" value={guestAddress.state} onChange={(e) => setGuestAddress({ ...guestAddress, state: e.target.value })} fullWidth size="small" />
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+
+            {/* 2b. Dirección de facturación */}
+            <Divider />
+            <Box sx={{ bgcolor: "#f0f2f2", px: 3, py: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+              <ReceiptIcon sx={{ fontSize: 18, color: "#555" }} />
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ color: "#0f1111" }}>
+                Direccion de facturacion
+              </Typography>
+            </Box>
+            <Box sx={{ px: 3, py: 2 }}>
+              <FormControlLabel
+                control={<Checkbox checked={sameAsBilling} onChange={(e) => setSameAsBilling(e.target.checked)} size="small" />}
+                label={<Typography variant="body2">Misma que la direccion de envio</Typography>}
+              />
+              {!sameAsBilling && isLoggedIn && (
+                <Box sx={{ mt: 2 }}>
+                  <AddressSelector
+                    selectedId={billingAddressId}
+                    onSelect={(id, addr) => {
+                      setBillingAddressId(id);
+                      setBillingAddress(addr);
+                    }}
+                  />
+                </Box>
+              )}
+              {!sameAsBilling && !isLoggedIn && (
+                <Box sx={{ mt: 2 }}>
+                  <TextField label="Direccion de facturacion" value={address} onChange={(e) => setAddress(e.target.value)} fullWidth size="small" placeholder="Si es diferente a la de envio" />
+                </Box>
               )}
             </Box>
 
