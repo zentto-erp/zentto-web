@@ -28,6 +28,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Avatar from '@mui/material/Avatar';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import NotificationsMenu from './NotificationsMenu';
+import HelpButton from './HelpButton';
 import TasksMenu from './TasksMenu';
 import MessagesMenu from './MessagesMenu';
 import AppTitle from './AppTitle';
@@ -319,6 +320,7 @@ export default function OdooLayout({
                                     <Brightness4Icon />
                                 </IconButton>
                             </Tooltip>
+                            <HelpButton />
                             <NotificationsMenu />
                             <TasksMenu />
                             <MessagesMenu />

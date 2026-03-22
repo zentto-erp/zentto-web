@@ -34,3 +34,8 @@ export { default as AcceptedMethodsManager } from './components/AcceptedMethodsM
 
 // MUI X re-exports (single source to avoid duplicated contexts across apps)
 export { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
+// Help
+export { default as HelpButton } from './components/HelpButton';
+export { HELP_MAP, getHelpForPath } from './lib/help-map';
+export type { HelpEntry } from './lib/help-map';
