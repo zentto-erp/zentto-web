@@ -71,6 +71,7 @@ import { manufacturaRouter } from "./modules/manufactura/routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
+import devicesRouter from "./modules/devices/routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -325,6 +326,7 @@ export async function createApp() {
   app.use("/v1/logistica", logisticaRouter);
   app.use("/v1/crm", crmRouter);
   app.use("/v1/manufactura", manufacturaRouter);
+  app.use("/v1/devices", devicesRouter);
 
   // Billing SaaS (Paddle)
   app.use("/v1/billing", billingRouter);
@@ -389,6 +391,7 @@ export async function createApp() {
   app.use("/api/v1/logistica", logisticaRouter);
   app.use("/api/v1/crm", crmRouter);
   app.use("/api/v1/manufactura", manufacturaRouter);
+  app.use("/api/v1/flota", flotaRouter);
 
   await loadAddons(app);
 
