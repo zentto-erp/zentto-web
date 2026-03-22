@@ -10,6 +10,7 @@ import {
   normalizeTipoOperacionVenta
 } from "./service.js";
 import { emitVentaAccountingEntry, voidVentaAccountingEntry } from "./ventas-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 export const documentosVentaRouter = Router();
 
@@ -118,6 +119,20 @@ documentosVentaRouter.post("/emitir-tx", async (req, res) => {
         );
       } catch {
         // Never block the sales operation
+      }
+    }
+
+    // Notify: enviar notificación de factura (best-effort)
+    if (data.ok && tipoOperacion === "FACT") {
+      const doc = parsed.data.documento;
+      const email = String(doc.EMAIL ?? doc.CORREO ?? "").trim();
+      if (email) {
+        emitBusinessNotification({
+          event: "INVOICE_CREATED",
+          to: email,
+          subject: `Factura ${data.numFact} emitida`,
+          data: { Factura: data.numFact ?? "", Cliente: String(doc.NOMBRE ?? ""), Total: String(doc.TOTAL ?? "0") },
+        }).catch(() => {});
       }
     }
 

@@ -8,6 +8,7 @@ import {
   type AplicarCobroInput,
 } from "./cxc.service.js";
 import { emitCobroAccountingEntry } from "./cxc-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 const router = Router();
 
@@ -65,6 +66,14 @@ router.post("/aplicar-cobro-tx", async (req, res, next) => {
     } catch {
       // Never block the CxC operation
     }
+
+    // Notify: cobro recibido (best-effort)
+    emitBusinessNotification({
+      event: "PAYMENT_RECEIVED",
+      to: input.codCliente,
+      subject: `Cobro ${result.numRecibo} recibido`,
+      data: { Recibo: result.numRecibo ?? "", Cliente: input.codCliente, Monto: String(input.montoTotal) },
+    }).catch(() => {});
 
     return res.json({
       success: true,

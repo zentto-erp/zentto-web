@@ -8,6 +8,7 @@ import {
   type AplicarPagoInput,
 } from "./cxp.service.js";
 import { emitPagoAccountingEntry } from "./cxp-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 const router = Router();
 
@@ -67,6 +68,14 @@ router.post("/aplicar-pago-tx", async (req, res, next) => {
     } catch {
       // Never block the CxP operation
     }
+
+    // Notify: pago enviado a proveedor (best-effort)
+    emitBusinessNotification({
+      event: "PAYMENT_SENT",
+      to: input.codProveedor,
+      subject: `Pago ${result.numPago} procesado`,
+      data: { Pago: result.numPago ?? "", Proveedor: input.codProveedor, Monto: String(input.montoTotal) },
+    }).catch(() => {});
 
     return res.json({
       success: true,
