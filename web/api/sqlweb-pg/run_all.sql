@@ -452,6 +452,12 @@
 \echo '--- Seed Demo Finanzas y Contabilidad ---'
 \i includes/sp/seed_demo_finanzas_contabilidad.sql
 
+\echo '--- Funciones Flota ---'
+\i includes/sp/usp_fleet.sql
+
+\echo '--- Funciones RBAC (Permisos Granulares) ---'
+\i includes/sp/usp_rbac.sql
+
 \echo '--- Seed Usuarios Demo (admin, gerente, cajero / pass: Admin123!) ---'
 \i includes/sp/seed_demo_users.sql
 
@@ -660,6 +666,16 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i migrations/028_fix_orderticketline_insert_no_audit_cols.sql
 \echo '  [029] Fix SPs contabilidad avanzada (periodos, centros-costo, recurrentes, presupuestos)'
 \i migrations/029_fix_acct_advanced_all_sps.sql
+
+-- ====================================================================
+-- FASE 8: Inventario Avanzado + Logistica
+-- ====================================================================
+\echo ''
+\echo '--- Inventario Avanzado (inv.*) ---'
+\i includes/sp/usp_inv.sql
+
+\echo '--- Logistica (logistics.*) ---'
+\i includes/sp/usp_logistics.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

@@ -99,6 +99,26 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fiscal_tributaria.sql
 
 -- ====================================================================
+-- Flota: Control de Vehiculos, Combustible, Mantenimiento, Viajes
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fleet.sql
+
+-- ====================================================================
+-- RBAC: Permisos Granulares, Restricciones de Precio, Aprobaciones
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_rbac.sql
+
+-- ====================================================================
+-- Inventario Avanzado: Almacenes, Zonas, Lotes, Seriales, Movimientos
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_inv.sql
+
+-- ====================================================================
+-- Logistica: Transportistas, Recepciones, Devoluciones, Notas de Entrega
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_logistics.sql
+
+-- ====================================================================
 -- Seeds Demo: Datos completos para demos y pruebas
 -- ====================================================================
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_contabilidad_demo.sql

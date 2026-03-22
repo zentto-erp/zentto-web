@@ -62,6 +62,12 @@ import { supervisionRouter } from "./modules/supervision/routes.js";
 import { storeRouter } from "./modules/ecommerce/routes.js";
 import { landingRouter } from "./modules/landing/routes.js";
 import rrhhRouter from "./modules/rrhh/routes.js";
+import { flotaRouter } from "./modules/flota/routes.js";
+import { permisosRouter } from "./modules/permisos/routes.js";
+import { inventarioAvanzadoRouter } from "./modules/inventario-avanzado/routes.js";
+import { logisticaRouter } from "./modules/logistica/routes.js";
+import { crmRouter } from "./modules/crm/routes.js";
+import { manufacturaRouter } from "./modules/manufactura/routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
@@ -292,6 +298,12 @@ export async function createApp() {
   app.use("/v1/supervision", supervisionRouter);
   app.use("/v1/fiscal", fiscalRouter);
   app.use("/v1/sistema", sistemaRouter); // Added this line
+  app.use("/v1/flota", flotaRouter);
+  app.use("/v1/permisos", permisosRouter);
+  app.use("/v1/inventario-avanzado", inventarioAvanzadoRouter);
+  app.use("/v1/logistica", logisticaRouter);
+  app.use("/v1/crm", crmRouter);
+  app.use("/v1/manufactura", manufacturaRouter);
 
   // Billing SaaS (Paddle)
   app.use("/v1/billing", billingRouter);
@@ -352,6 +364,10 @@ export async function createApp() {
   app.use("/api/v1/supervision", supervisionRouter);
   app.use("/api/v1/fiscal", fiscalRouter);
   app.use("/api/v1/sistema", sistemaRouter); // Added this line
+  app.use("/api/v1/inventario-avanzado", inventarioAvanzadoRouter);
+  app.use("/api/v1/logistica", logisticaRouter);
+  app.use("/api/v1/crm", crmRouter);
+  app.use("/api/v1/manufactura", manufacturaRouter);
 
   await loadAddons(app);
 
