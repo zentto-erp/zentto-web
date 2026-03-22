@@ -494,9 +494,9 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReceipt" gr
-    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
+    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
-      AND (p_supplier_id IS NULL OR "SupplierId" = p_supplier_id)
+      AND (p_supplier_id IS NULL OR gr."SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR "Status" = p_status)
       AND (p_fecha_desde IS NULL OR "ReceiptDate"::DATE >= p_fecha_desde)
       AND (p_fecha_hasta IS NULL OR "ReceiptDate"::DATE <= p_fecha_hasta);
@@ -510,7 +510,7 @@ BEGIN
            v_total
     FROM logistics."GoodsReceipt" gr
     LEFT JOIN logistics."Carrier" c ON gr."CarrierId" = c."CarrierId"
-    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
+    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
       AND gr."IsDeleted" = FALSE
       AND (p_supplier_id IS NULL OR gr."SupplierId" = p_supplier_id)
       AND (p_status IS NULL OR gr."Status" = p_status)
@@ -731,7 +731,7 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."GoodsReturn" grt
-    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
+    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_status IS NULL OR "Status" = p_status);
 
@@ -890,7 +890,7 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_total
     FROM logistics."DeliveryNote" dn
-    WHERE gr."CompanyId" = p_company_id AND gr."BranchId" = p_branch_id
+    WHERE grt."CompanyId" = p_company_id AND grt."BranchId" = p_branch_id
       AND "IsDeleted" = FALSE
       AND (p_customer_id IS NULL OR "CustomerId" = p_customer_id)
       AND (p_status IS NULL OR "Status" = p_status)
