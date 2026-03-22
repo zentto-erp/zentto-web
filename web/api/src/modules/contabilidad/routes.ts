@@ -103,167 +103,178 @@ const balanceGeneralSchema = z.object({
 });
 
 contabilidadRouter.get("/asientos", async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-
-  const data = await listAsientos({
-    fechaDesde: parsed.data.fechaDesde,
-    fechaHasta: parsed.data.fechaHasta,
-    tipoAsiento: parsed.data.tipoAsiento,
-    estado: parsed.data.estado,
-    origenModulo: parsed.data.origenModulo,
-    origenDocumento: parsed.data.origenDocumento,
-    page: parsed.data.page ? Number(parsed.data.page) : 1,
-    limit: parsed.data.limit ? Number(parsed.data.limit) : 50
-  });
-  return res.json(data);
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    }
+    const data = await listAsientos({
+      fechaDesde: parsed.data.fechaDesde,
+      fechaHasta: parsed.data.fechaHasta,
+      tipoAsiento: parsed.data.tipoAsiento,
+      estado: parsed.data.estado,
+      origenModulo: parsed.data.origenModulo,
+      origenDocumento: parsed.data.origenDocumento,
+      page: parsed.data.page ? Number(parsed.data.page) : 1,
+      limit: parsed.data.limit ? Number(parsed.data.limit) : 50
+    });
+    return res.json(data);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/asientos/:id", async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id) || id <= 0) {
-    return res.status(400).json({ error: "invalid_id" });
-  }
-
-  const data = await getAsiento(id);
-  if (!data.cabecera) return res.status(404).json({ error: "not_found" });
-  return res.json(data);
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: "invalid_id" });
+    }
+    const data = await getAsiento(id);
+    if (!data.cabecera) return res.status(404).json({ error: "not_found" });
+    return res.json(data);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.post("/asientos", async (req, res) => {
-  const parsed = crearAsientoSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-
-  const user = (req as any).user?.username || "API";
-  const result = await crearAsiento(parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  if (result.ok) {
-    emitBusinessNotification({
-      event: "INVOICE_CREATED",
-      to: "contabilidad@empresa.com",
-      subject: `Asiento contable ${result.numeroAsiento ?? ""} creado`,
-      data: { Asiento: String(result.numeroAsiento ?? ""), Concepto: String(req.body.concepto ?? ""), Debe: String(req.body.totalDebe ?? "0"), Haber: String(req.body.totalHaber ?? "0") },
-    }).catch(() => {});
-  }
-  return res.status(201).json(result);
+  try {
+    const parsed = crearAsientoSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
+    const user = (req as any).user?.username || "API";
+    const result = await crearAsiento(parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    if (result.ok) {
+      emitBusinessNotification({
+        event: "INVOICE_CREATED",
+        to: "contabilidad@empresa.com",
+        subject: `Asiento contable ${result.numeroAsiento ?? ""} creado`,
+        data: { Asiento: String(result.numeroAsiento ?? ""), Concepto: String(req.body.concepto ?? ""), Debe: String(req.body.totalDebe ?? "0"), Haber: String(req.body.totalHaber ?? "0") },
+      }).catch(() => {});
+    }
+    return res.status(201).json(result);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.post("/asientos/:id/anular", async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id) || id <= 0) {
-    return res.status(400).json({ error: "invalid_id" });
-  }
-  const parsed = anularSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-  const user = (req as any).user?.username || "API";
-  const result = await anularAsiento(id, parsed.data.motivo, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.json(result);
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: "invalid_id" });
+    }
+    const parsed = anularSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
+    const user = (req as any).user?.username || "API";
+    const result = await anularAsiento(id, parsed.data.motivo, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.json(result);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.post("/ajustes", async (req, res) => {
-  const parsed = ajusteSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-  const user = (req as any).user?.username || "API";
-  const result = await crearAjuste(parsed.data, user);
-  if (!result.ok) return res.status(400).json(result);
-  return res.status(201).json(result);
+  try {
+    const parsed = ajusteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
+    const user = (req as any).user?.username || "API";
+    const result = await crearAjuste(parsed.data, user);
+    if (!result.ok) return res.status(400).json(result);
+    return res.status(201).json(result);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.post("/depreciaciones/generar", async (req, res) => {
-  const parsed = depreciacionSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-  const user = (req as any).user?.username || "API";
-  const result = await generarDepreciacion(parsed.data.periodo, parsed.data.centroCosto, user);
-  if (!result.ok) return res.status(400).json(result);
-  if (result.ok) {
-    emitBusinessNotification({
-      event: "PAYROLL_PROCESSED",
-      to: "contabilidad@empresa.com",
-      subject: `Depreciación ${req.body.periodCode ?? ""} generada`,
-      data: { Periodo: String(req.body.periodCode ?? ""), Asientos: String(result.entriesGenerated ?? "0") },
-    }).catch(() => {});
-  }
-  return res.status(201).json(result);
+  try {
+    const parsed = depreciacionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
+    const user = (req as any).user?.username || "API";
+    const result = await generarDepreciacion(parsed.data.periodo, parsed.data.centroCosto, user);
+    if (!result.ok) return res.status(400).json(result);
+    if (result.ok) {
+      emitBusinessNotification({
+        event: "PAYROLL_PROCESSED",
+        to: "contabilidad@empresa.com",
+        subject: `Depreciación ${req.body.periodCode ?? ""} generada`,
+        data: { Periodo: String(req.body.periodCode ?? ""), Asientos: String(result.entriesGenerated ?? "0") },
+      }).catch(() => {});
+    }
+    return res.status(201).json(result);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/reportes/libro-mayor", async (req, res) => {
-  const parsed = rangoSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const rows = await libroMayor(parsed.data.fechaDesde, parsed.data.fechaHasta);
-  return res.json({ rows });
+  try {
+    const parsed = rangoSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const rows = await libroMayor(parsed.data.fechaDesde, parsed.data.fechaHasta);
+    return res.json({ rows });
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/reportes/mayor-analitico", async (req, res) => {
-  const parsed = mayorAnaliticoSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const rows = await mayorAnalitico(parsed.data.codCuenta, parsed.data.fechaDesde, parsed.data.fechaHasta);
-  return res.json({ rows });
+  try {
+    const parsed = mayorAnaliticoSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const rows = await mayorAnalitico(parsed.data.codCuenta, parsed.data.fechaDesde, parsed.data.fechaHasta);
+    return res.json({ rows });
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/reportes/balance-comprobacion", async (req, res) => {
-  const parsed = rangoSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const rows = await balanceComprobacion(parsed.data.fechaDesde, parsed.data.fechaHasta);
-  return res.json({ rows });
+  try {
+    const parsed = rangoSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const rows = await balanceComprobacion(parsed.data.fechaDesde, parsed.data.fechaHasta);
+    return res.json({ rows });
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/reportes/estado-resultados", async (req, res) => {
-  const parsed = rangoSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const data = await estadoResultados(parsed.data.fechaDesde, parsed.data.fechaHasta);
-  return res.json(data);
+  try {
+    const parsed = rangoSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const data = await estadoResultados(parsed.data.fechaDesde, parsed.data.fechaHasta);
+    return res.json(data);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/reportes/balance-general", async (req, res) => {
-  const parsed = balanceGeneralSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const data = await balanceGeneral(parsed.data.fechaCorte);
-  return res.json(data);
+  try {
+    const parsed = balanceGeneralSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const data = await balanceGeneral(parsed.data.fechaCorte);
+    return res.json(data);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/reportes/libro-diario", async (req, res) => {
-  const parsed = rangoSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const rows = await libroDiario(parsed.data.fechaDesde, parsed.data.fechaHasta);
-  return res.json({ rows });
+  try {
+    const parsed = rangoSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const rows = await libroDiario(parsed.data.fechaDesde, parsed.data.fechaHasta);
+    return res.json({ rows });
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.get("/dashboard/resumen", async (req, res) => {
-  const parsed = rangoSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
-  }
-  const data = await dashboardResumen(parsed.data.fechaDesde, parsed.data.fechaHasta);
-  return res.json(data);
+  try {
+    const parsed = rangoSchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    const data = await dashboardResumen(parsed.data.fechaDesde, parsed.data.fechaHasta);
+    return res.json(data);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 contabilidadRouter.post("/setup/seed-plan-cuentas", async (req, res) => {
-  const user = (req as any).user?.username || "API";
-  const data = await seedPlanCuentas(user);
-  return res.status(201).json(data);
+  try {
+    const user = (req as any).user?.username || "API";
+    const data = await seedPlanCuentas(user);
+    return res.status(201).json(data);
+  } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
 
 
