@@ -215,7 +215,7 @@ RETURNS TABLE(
     "WorkCenterName" VARCHAR,
     "WarehouseId" BIGINT,
     "CostPerHour"    NUMERIC,
-    "Capacity"       INT,
+    "Capacity" NUMERIC,
     "CapacityUom"    VARCHAR,
     "IsActive"       BOOLEAN,
     "CreatedAt"      TIMESTAMP,
