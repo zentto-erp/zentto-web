@@ -15,6 +15,8 @@ import {
   exportTaxBook,
   exportDeclaration,
 } from "./fiscal-tributaria.service.js";
+import { callSp, callSpOut } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export const fiscalTributariaRouter = Router();
 
@@ -170,4 +172,111 @@ fiscalTributariaRouter.get("/retenciones/:id", async (req, res) => {
   const row = await getWithholding(id);
   if (!row) return res.status(404).json({ error: "withholding_not_found" });
   return res.json(row);
+});
+
+// ============================================
+// CONCEPTOS DE RETENCIÓN
+// ============================================
+
+fiscalTributariaRouter.get("/retenciones/conceptos", async (req, res) => {
+  try {
+    const scope = getActiveScope();
+    const q = req.query;
+    const rows = await callSp<any>("usp_Fiscal_WithholdingConcept_List", {
+      CompanyId: scope?.companyId ?? 1,
+      CountryCode: q.countryCode || null,
+      RetentionType: q.retentionType || null,
+      Search: q.search || null,
+      Page: Number(q.page ?? 1),
+      Limit: Number(q.limit ?? 50),
+    });
+    const total = Number(rows[0]?.p_total ?? rows.length);
+    res.json({ rows, total });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+fiscalTributariaRouter.post("/retenciones/conceptos", async (req, res) => {
+  try {
+    const scope = getActiveScope();
+    const b = req.body;
+    const { output } = await callSpOut("usp_Fiscal_WithholdingConcept_Upsert", {
+      CompanyId: scope?.companyId ?? 1,
+      CountryCode: b.countryCode || "VE",
+      ConceptCode: b.conceptCode,
+      Description: b.description,
+      SupplierType: b.supplierType || "AMBOS",
+      ActivityCode: b.activityCode || null,
+      RetentionType: b.retentionType || "ISLR",
+      Rate: Number(b.rate ?? 0),
+      SubtrahendUT: Number(b.subtrahendUT ?? 0),
+      MinBaseUT: Number(b.minBaseUT ?? 0),
+      SeniatCode: b.seniatCode || null,
+    }, { Resultado: "Int", Mensaje: "NVarChar" });
+    res.json({ ok: Number(output.Resultado) === 1, mensaje: output.Mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ============================================
+// UNIDAD TRIBUTARIA
+// ============================================
+
+fiscalTributariaRouter.get("/unidad-tributaria", async (req, res) => {
+  try {
+    const q = req.query;
+    const rows = await callSp("usp_Cfg_TaxUnit_List", {
+      CountryCode: q.countryCode || null,
+      TaxYear: q.taxYear ? Number(q.taxYear) : null,
+    });
+    res.json({ rows });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+fiscalTributariaRouter.put("/unidad-tributaria", async (req, res) => {
+  try {
+    const b = req.body;
+    const { output } = await callSpOut("usp_Cfg_TaxUnit_Upsert", {
+      CountryCode: b.countryCode || "VE",
+      TaxYear: Number(b.taxYear),
+      UnitValue: Number(b.unitValue),
+      Currency: b.currency || "VES",
+      EffectiveDate: b.effectiveDate || null,
+    }, { Resultado: "Int", Mensaje: "NVarChar" });
+    res.json({ ok: Number(output.Resultado) === 1, mensaje: output.Mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ============================================
+// PREVIEW CÁLCULO DE RETENCIÓN
+// ============================================
+
+fiscalTributariaRouter.post("/retenciones/calcular", async (req, res) => {
+  try {
+    const scope = getActiveScope();
+    const b = req.body;
+    const rows = await callSp<any>("usp_Fiscal_Withholding_Calculate", {
+      CompanyId: scope?.companyId ?? 1,
+      SupplierCode: b.supplierCode,
+      TaxableBase: Number(b.taxableBase ?? 0),
+      WithholdingType: b.withholdingType || "ISLR",
+      CountryCode: b.countryCode || "VE",
+    });
+    const result = rows[0] ?? {};
+    res.json({
+      rate: Number(result.Rate ?? 0),
+      amount: Number(result.Amount ?? 0),
+      conceptCode: result.ConceptCode ?? "",
+      subtrahend: Number(result.Subtrahend ?? 0),
+      description: result.Description ?? "",
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
 });

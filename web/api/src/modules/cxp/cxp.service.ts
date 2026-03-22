@@ -24,12 +24,18 @@ export interface AplicarPagoInput {
   observaciones?: string;
   documentos: DocumentoAplicar[];
   formasPago: FormaPago[];
+  applyRetention?: boolean;
+  retentionType?: string;
+  countryCode?: string;
 }
 
 export interface AplicarPagoResult {
   success: boolean;
   numPago?: string;
   message: string;
+  retentionAmount?: number;
+  retentionRate?: number;
+  voucherId?: number;
 }
 
 export interface ListDocumentosCxPInput {
@@ -63,6 +69,9 @@ export async function aplicarPago(input: AplicarPagoInput): Promise<AplicarPagoR
     NumPago: string;
     Resultado: number;
     Mensaje: string;
+    RetentionAmount?: number;
+    RetentionRate?: number;
+    VoucherId?: number;
   }>(
     "usp_cxp_aplicar_pago",
     {
@@ -74,6 +83,9 @@ export async function aplicarPago(input: AplicarPagoInput): Promise<AplicarPagoR
       Observaciones: input.observaciones || "",
       DocumentosXml: arrayToXml(input.documentos ?? []),
       FormasPagoXml: input.formasPago?.length ? arrayToXml(input.formasPago) : null,
+      ApplyRetention: input.applyRetention ?? false,
+      RetentionType: input.retentionType ?? "ISLR",
+      CountryCode: input.countryCode ?? "VE",
     }
   );
 
@@ -83,7 +95,14 @@ export async function aplicarPago(input: AplicarPagoInput): Promise<AplicarPagoR
   const numPago = String(result?.NumPago ?? "");
 
   if (resultado > 0) {
-    return { success: true, numPago, message: mensaje };
+    return {
+      success: true,
+      numPago,
+      message: mensaje,
+      retentionAmount: Number(result?.RetentionAmount ?? 0),
+      retentionRate: Number(result?.RetentionRate ?? 0),
+      voucherId: Number(result?.VoucherId ?? 0),
+    };
   }
   return { success: false, message: mensaje };
 }

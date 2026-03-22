@@ -6,6 +6,9 @@
 -- ============================================================
 
 DROP FUNCTION IF EXISTS usp_cxp_aplicar_pago(
+    VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB, BOOLEAN, VARCHAR, VARCHAR
+);
+DROP FUNCTION IF EXISTS usp_cxp_aplicar_pago(
     VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB
 );
 
@@ -17,28 +20,43 @@ CREATE OR REPLACE FUNCTION usp_cxp_aplicar_pago(
     p_cod_usuario      VARCHAR(40),
     p_observaciones    VARCHAR(500) DEFAULT '',
     p_documentos_json  JSONB DEFAULT NULL,
-    p_formas_pago_json JSONB DEFAULT NULL
+    p_formas_pago_json JSONB DEFAULT NULL,
+    p_apply_retention  BOOLEAN DEFAULT FALSE,
+    p_retention_type   VARCHAR(20) DEFAULT 'ISLR',
+    p_country_code     VARCHAR(2) DEFAULT 'VE'
 )
 RETURNS TABLE (
-    "NumPago"    VARCHAR(50),
-    "Resultado"  INT,
-    "Mensaje"    VARCHAR(500)
+    "NumPago"          VARCHAR(50),
+    "Resultado"        INT,
+    "Mensaje"          VARCHAR(500),
+    "RetentionAmount"  NUMERIC(18,2),
+    "RetentionRate"    NUMERIC(8,4),
+    "VoucherId"        BIGINT
 )
 LANGUAGE plpgsql
 AS $fn$
 DECLARE
-    v_resultado     INT := 0;
-    v_mensaje       VARCHAR(500) := '';
-    v_num_pago      VARCHAR(50) := '';
-    v_fecha_date    DATE;
-    v_supplier_id   BIGINT;
-    v_payable_id    BIGINT;
-    v_pending       NUMERIC(18,2);
-    v_total         NUMERIC(18,2);
-    v_apply         NUMERIC(18,2);
-    v_applied_total NUMERIC(18,2) := 0;
-    v_doc           RECORD;
-    v_dup_ref       VARCHAR(150);
+    v_resultado        INT := 0;
+    v_mensaje          VARCHAR(500) := '';
+    v_num_pago         VARCHAR(50) := '';
+    v_fecha_date       DATE;
+    v_supplier_id      BIGINT;
+    v_company_id       INT := 1;
+    v_payable_id       BIGINT;
+    v_pending          NUMERIC(18,2);
+    v_total            NUMERIC(18,2);
+    v_apply            NUMERIC(18,2);
+    v_applied_total    NUMERIC(18,2) := 0;
+    v_doc              RECORD;
+    v_dup_ref          VARCHAR(150);
+    -- Retention variables
+    v_ret_rate         NUMERIC(8,4) := 0;
+    v_ret_amount       NUMERIC(18,2) := 0;
+    v_ret_total        NUMERIC(18,2) := 0;
+    v_ret_concept      VARCHAR(20) := '';
+    v_ret_subtrahend   NUMERIC(18,2) := 0;
+    v_voucher_id       BIGINT := 0;
+    v_ret_calc         RECORD;
 BEGIN
     -- -------------------------------------------------------
     -- Validar fecha
@@ -56,8 +74,8 @@ BEGIN
     -- -------------------------------------------------------
     -- Buscar proveedor
     -- -------------------------------------------------------
-    SELECT s."SupplierId"
-      INTO v_supplier_id
+    SELECT s."SupplierId", s."CompanyId"
+      INTO v_supplier_id, v_company_id
       FROM master."Supplier" s
      WHERE s."SupplierCode" = p_cod_proveedor
        AND s."IsDeleted" = FALSE
@@ -149,17 +167,41 @@ BEGIN
         IF v_payable_id IS NOT NULL AND v_pending > 0 AND v_doc.monto_aplicar > 0 THEN
             v_apply := LEAST(v_doc.monto_aplicar, v_pending);
 
+            -- Calcular retención si está habilitado
+            v_ret_rate := 0;
+            v_ret_amount := 0;
+            IF p_apply_retention THEN
+                SELECT r."Rate", r."Amount", r."ConceptCode", r."Subtrahend"
+                INTO v_ret_rate, v_ret_amount, v_ret_concept, v_ret_subtrahend
+                FROM usp_Fiscal_Withholding_Calculate(
+                    v_company_id, p_cod_proveedor, v_apply, p_retention_type, p_country_code
+                ) r;
+
+                -- Acumular total retenido
+                IF v_ret_amount > 0 THEN
+                    v_ret_total := v_ret_total + v_ret_amount;
+                END IF;
+            END IF;
+
             INSERT INTO ap."PayableApplication" (
                 "PayableDocumentId",
                 "ApplyDate",
                 "AppliedAmount",
-                "PaymentReference"
+                "PaymentReference",
+                "RetentionType",
+                "RetentionRate",
+                "RetentionAmount",
+                "NetAmount"
             )
             VALUES (
                 v_payable_id,
                 v_fecha_date,
                 v_apply,
-                p_request_id || ':' || v_num_pago
+                p_request_id || ':' || v_num_pago,
+                CASE WHEN v_ret_amount > 0 THEN p_retention_type ELSE NULL END,
+                CASE WHEN v_ret_amount > 0 THEN v_ret_rate ELSE NULL END,
+                COALESCE(v_ret_amount, 0),
+                v_apply - COALESCE(v_ret_amount, 0)
             );
 
             UPDATE ap."PayableDocument"
@@ -198,6 +240,33 @@ BEGIN
     END IF;
 
     -- -------------------------------------------------------
+    -- Generar comprobante de retención si hubo retención
+    -- -------------------------------------------------------
+    IF v_ret_total > 0 THEN
+        BEGIN
+            SELECT wg.p_voucher_id INTO v_voucher_id
+            FROM usp_Fiscal_Withholding_Generate(
+                v_company_id,
+                NULL, -- document_id (no aplica en pago directo)
+                p_retention_type,
+                p_country_code,
+                p_cod_usuario
+            ) wg
+            WHERE wg.p_resultado = 1;
+        EXCEPTION WHEN OTHERS THEN
+            v_voucher_id := 0; -- best-effort
+        END;
+
+        -- Actualizar WithholdingVoucherId en las aplicaciones generadas
+        IF v_voucher_id > 0 THEN
+            UPDATE ap."PayableApplication"
+            SET "WithholdingVoucherId" = v_voucher_id
+            WHERE "PaymentReference" = p_request_id || ':' || v_num_pago
+              AND "RetentionAmount" > 0;
+        END IF;
+    END IF;
+
+    -- -------------------------------------------------------
     -- Actualizar saldo total del proveedor
     -- -------------------------------------------------------
     UPDATE master."Supplier"
@@ -215,11 +284,17 @@ BEGIN
     -- -------------------------------------------------------
     v_resultado := 1;
     v_mensaje := 'Pago aplicado exitosamente. Pago: ' || v_num_pago;
+    IF v_ret_total > 0 THEN
+        v_mensaje := v_mensaje || ' | Retención: ' || v_ret_total::TEXT;
+    END IF;
 
     RETURN QUERY SELECT
         v_num_pago::VARCHAR(50),
         v_resultado,
-        v_mensaje::VARCHAR(500);
+        v_mensaje::VARCHAR(500),
+        v_ret_total,
+        v_ret_rate,
+        v_voucher_id;
 
 EXCEPTION WHEN OTHERS THEN
     v_resultado := -99;
@@ -228,6 +303,9 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT
         ''::VARCHAR(50),
         v_resultado,
-        v_mensaje::VARCHAR(500);
+        v_mensaje::VARCHAR(500),
+        0::NUMERIC(18,2),
+        0::NUMERIC(8,4),
+        0::BIGINT;
 END;
 $fn$;

@@ -59,6 +59,8 @@ router.post("/aplicar-pago-tx", async (req, res, next) => {
           fecha: input.fecha,
           montoTotal: input.montoTotal,
           formasPago: input.formasPago,
+          retentionAmount: result.retentionAmount,
+          retentionType: input.retentionType,
         },
         input.codUsuario
       );
@@ -72,6 +74,9 @@ router.post("/aplicar-pago-tx", async (req, res, next) => {
       message: result.message,
       requestId: input.requestId,
       contabilidad,
+      retencion: result.retentionAmount && result.retentionAmount > 0
+        ? { amount: result.retentionAmount, rate: result.retentionRate, voucherId: result.voucherId }
+        : null,
     });
   } catch (err) {
     return next(err);

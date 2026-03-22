@@ -9,6 +9,8 @@ export interface PagoAccountingInput {
   montoTotal: number;
   observaciones?: string;
   formasPago: Array<{ formaPago: string; monto: number }>;
+  retentionAmount?: number;
+  retentionType?: string;
 }
 
 export interface PagoAccountingResult {
@@ -111,6 +113,22 @@ export async function emitPagoAccountingEntry(
         debe: 0,
         haber: fpMonto,
       });
+    }
+
+    // Agregar línea HABER de retenciones por pagar (si aplica)
+    const retAmount = round2(Math.abs(input.retentionAmount ?? 0));
+    if (retAmount > 0) {
+      const retAccount = await pickFirstExistingAccount(["2.1.05", "2.1.10", "2.1.03"]);
+      if (retAccount) {
+        detalle.push({
+          codCuenta: retAccount,
+          descripcion: `Retención ${input.retentionType ?? "ISLR"} - ${input.codProveedor}`,
+          centroCosto: "CXP",
+          documento: input.numPago,
+          debe: 0,
+          haber: retAmount,
+        });
+      }
     }
 
     // Verificar que hay al menos una linea HABER
