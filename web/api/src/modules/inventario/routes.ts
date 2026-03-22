@@ -13,6 +13,7 @@ import {
   getLibroInventarioSP,
 } from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
+import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
 
 export const inventarioRouter = Router();
 
@@ -141,7 +142,24 @@ inventarioRouter.post("/movimientos", async (req, res) => {
     });
     invalidateAndReload().catch(() => {});
     if (result.success) {
-      res.status(201).json({ ok: true, message: result.message });
+      // Best-effort: generate accounting entry
+      let contabilidad: { ok: boolean; asientoId?: number | null } = { ok: false };
+      try {
+        const qty = Math.abs(Number(b.quantity || b.cantidad || 0));
+        const cost = Number(b.unitCost || 0);
+        if (qty > 0 && cost > 0) {
+          contabilidad = await emitInventarioMovementEntry({
+            productCode: b.productCode || b.codigoArticulo || "",
+            movementType: b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"),
+            quantity: qty,
+            unitCost: cost,
+            totalCost: qty * cost,
+            documentRef: b.documentRef || b.motivo,
+            notes: b.notes || b.observaciones,
+          });
+        }
+      } catch { /* never block inventory operation */ }
+      res.status(201).json({ ok: true, message: result.message, contabilidad });
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }

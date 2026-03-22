@@ -2226,5 +2226,86 @@ BEGIN
 END;
 GO
 
+-- =============================================================================
+-- usp_Bank_Movement_LinkJournalEntry
+-- Vincula un movimiento bancario con un asiento contable autogenerado.
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Movement_LinkJournalEntry
+    @MovementId      BIGINT,
+    @JournalEntryId  BIGINT,
+    @Resultado       INT           OUTPUT,
+    @Mensaje         NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = N'';
+
+    IF NOT EXISTS (SELECT 1 FROM fin.BankMovement WHERE BankMovementId = @MovementId)
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = N'Movimiento no encontrado';
+        RETURN;
+    END;
+
+    UPDATE fin.BankMovement
+    SET JournalEntryId = @JournalEntryId
+    WHERE BankMovementId = @MovementId;
+
+    SET @Resultado = 1;
+    SET @Mensaje   = N'OK';
+END;
+GO
+
+-- =============================================================================
+-- usp_Bank_Reconciliation_GetLinkedEntries
+-- Obtiene asientos contables vinculados a una conciliación bancaria.
+-- Busca por: BankMovement.JournalEntryId + acct.DocumentLink(BANCOS/CONCILIACION).
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Reconciliation_GetLinkedEntries
+    @ReconciliationId BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT DISTINCT
+        je.JournalEntryId,
+        je.EntryNumber,
+        je.EntryDate,
+        je.Concept,
+        je.TotalDebit,
+        je.TotalCredit,
+        je.[Status],
+        je.SourceModule,
+        je.SourceDocumentNo
+    FROM fin.BankMovement m
+    INNER JOIN acct.JournalEntry je ON je.JournalEntryId = m.JournalEntryId
+    WHERE m.ReconciliationId = @ReconciliationId
+      AND m.JournalEntryId IS NOT NULL
+      AND je.IsDeleted = 0
+
+    UNION
+
+    SELECT
+        je2.JournalEntryId,
+        je2.EntryNumber,
+        je2.EntryDate,
+        je2.Concept,
+        je2.TotalDebit,
+        je2.TotalCredit,
+        je2.[Status],
+        je2.SourceModule,
+        je2.SourceDocumentNo
+    FROM acct.DocumentLink dl
+    INNER JOIN acct.JournalEntry je2 ON je2.JournalEntryId = dl.JournalEntryId
+    WHERE dl.ModuleCode       = N'BANCOS'
+      AND dl.DocumentType     = N'CONCILIACION'
+      AND dl.NativeDocumentId = @ReconciliationId
+      AND je2.IsDeleted = 0
+
+    ORDER BY EntryDate DESC, JournalEntryId DESC;
+END;
+GO
+
 PRINT '>>> usp_ops.sql ejecutado correctamente <<<';
 GO

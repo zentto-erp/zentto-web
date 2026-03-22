@@ -111,3 +111,11 @@ export function useCerrarConciliacion() {
   });
 }
 
+export function useAsientosVinculados(conciliacionId?: number) {
+  return useQuery<any>({
+    queryKey: [QUERY_KEY, "asientos-vinculados", conciliacionId],
+    queryFn: () => apiGet(`${API_BASE}/conciliaciones/${conciliacionId}/asientos`),
+    enabled: !!conciliacionId,
+  });
+}
+

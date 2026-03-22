@@ -142,6 +142,9 @@
 \echo '--- Funciones Miscelaneas ---'
 \i includes/sp/usp_misc.sql
 
+\echo '--- ALTER: BankMovement.JournalEntryId ---'
+\i includes/sp/alter_bank_movement_journal.sql
+
 \echo '--- Funciones Operaciones ---'
 \i includes/sp/usp_ops.sql
 

@@ -1,5 +1,10 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
+import {
+  emitBankMovementAccountingEntry,
+  linkMovementToEntry,
+  emitConciliacionClosingEntry,
+} from "./bancos-contabilidad.service.js";
 
 export interface ConciliacionRow {
   ID?: number;
@@ -447,6 +452,23 @@ export async function generarAjusteBancario(
   }
 
   await conciliarMovimientos(payload.Conciliacion_ID, result.movimientoId, undefined, codUsuario);
+
+  // Best-effort: generar asiento contable y vincular
+  try {
+    const acctResult = await emitBankMovementAccountingEntry({
+      movimientoId: result.movimientoId,
+      nroCta: accountNo,
+      tipo,
+      monto: Math.abs(Number(payload.Monto ?? 0)),
+      beneficiario: "AJUSTE CONCILIACION",
+      concepto: payload.Descripcion ?? "Ajuste bancario",
+      nroRef: `AJ-${payload.Conciliacion_ID}-${Date.now()}`,
+    }, codUsuario);
+    if (acctResult.ok && acctResult.asientoId) {
+      await linkMovementToEntry(result.movimientoId, acctResult.asientoId);
+    }
+  } catch { /* best-effort: never block bank operation */ }
+
   return { ok: true, mensaje: "Ajuste generado" };
 }
 
@@ -474,11 +496,26 @@ export async function cerrarConciliacion(
     if (resultado === 0) return { ok: false };
 
     const row = rows[0];
-    return {
-      ok: true,
-      diferencia: Number(row?.diferencia ?? 0),
-      estado: String(row?.estado ?? "CLOSED"),
-    };
+    const diferencia = Number(row?.diferencia ?? 0);
+    const estado = String(row?.estado ?? "CLOSED");
+
+    // Best-effort: generar asiento de cierre si hay diferencia
+    try {
+      const saldoSistema = Number(row?.diferencia ?? 0) + Number(Saldo_Final_Banco ?? 0);
+      // Obtener nroCta para el asiento
+      const acctRows = await callSp<{ accountNo: string }>(
+        "usp_Bank_Reconciliation_GetAccountNoById",
+        { Id: Conciliacion_ID }
+      );
+      const nroCta = String(acctRows[0]?.accountNo ?? "").trim();
+      if (nroCta) {
+        await emitConciliacionClosingEntry(
+          Conciliacion_ID, saldoSistema, Number(Saldo_Final_Banco ?? 0), nroCta, codUsuario
+        );
+      }
+    } catch { /* best-effort */ }
+
+    return { ok: true, diferencia, estado };
   } catch {
     return { ok: false };
   }

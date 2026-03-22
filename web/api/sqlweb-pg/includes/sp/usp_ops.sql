@@ -1622,5 +1622,90 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END; $$;
 
+-- =============================================================================
+-- usp_Bank_Movement_LinkJournalEntry
+-- Vincula un movimiento bancario con un asiento contable autogenerado.
+-- =============================================================================
+DROP FUNCTION IF EXISTS usp_bank_movement_linkjournalentry(BIGINT, BIGINT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_bank_movement_linkjournalentry(
+    p_movement_id      BIGINT,
+    p_journal_entry_id BIGINT
+)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE fin."BankMovement"
+    SET "JournalEntryId" = p_journal_entry_id
+    WHERE "BankMovementId" = p_movement_id;
+
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT 0, 'Movimiento no encontrado'::VARCHAR;
+        RETURN;
+    END IF;
+
+    RETURN QUERY SELECT 1, 'OK'::VARCHAR;
+END; $$;
+
+-- =============================================================================
+-- usp_Bank_Reconciliation_GetLinkedEntries
+-- Obtiene asientos contables vinculados a una conciliación bancaria.
+-- Busca por: BankMovement.JournalEntryId + acct.DocumentLink(BANCOS/CONCILIACION).
+-- =============================================================================
+DROP FUNCTION IF EXISTS usp_bank_reconciliation_getlinkedentries(BIGINT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getlinkedentries(
+    p_reconciliation_id BIGINT
+)
+RETURNS TABLE(
+    "JournalEntryId"  BIGINT,
+    "EntryNumber"     VARCHAR(40),
+    "EntryDate"       DATE,
+    "Concept"         VARCHAR(400),
+    "TotalDebit"      NUMERIC(18,2),
+    "TotalCredit"     NUMERIC(18,2),
+    "Status"          VARCHAR(20),
+    "SourceModule"    VARCHAR(40),
+    "SourceDocumentNo" VARCHAR(120)
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT
+        je."JournalEntryId",
+        je."EntryNumber",
+        je."EntryDate",
+        je."Concept",
+        je."TotalDebit",
+        je."TotalCredit",
+        je."Status",
+        je."SourceModule",
+        je."SourceDocumentNo"
+    FROM fin."BankMovement" m
+    INNER JOIN acct."JournalEntry" je ON je."JournalEntryId" = m."JournalEntryId"
+    WHERE m."ReconciliationId" = p_reconciliation_id
+      AND m."JournalEntryId" IS NOT NULL
+      AND je."IsDeleted" = FALSE
+
+    UNION
+
+    SELECT
+        je2."JournalEntryId",
+        je2."EntryNumber",
+        je2."EntryDate",
+        je2."Concept",
+        je2."TotalDebit",
+        je2."TotalCredit",
+        je2."Status",
+        je2."SourceModule",
+        je2."SourceDocumentNo"
+    FROM acct."DocumentLink" dl
+    INNER JOIN acct."JournalEntry" je2 ON je2."JournalEntryId" = dl."JournalEntryId"
+    WHERE dl."ModuleCode"       = 'BANCOS'
+      AND dl."DocumentType"     = 'CONCILIACION'
+      AND dl."NativeDocumentId" = p_reconciliation_id
+      AND je2."IsDeleted" = FALSE
+
+    ORDER BY "EntryDate" DESC, "JournalEntryId" DESC;
+END; $$;
+
 -- Verificacion
 DO $$ BEGIN RAISE NOTICE '>>> usp_ops.sql ejecutado correctamente <<<'; END $$;

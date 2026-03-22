@@ -38,7 +38,9 @@ import {
   useCuentasBank,
   useGenerarAjuste,
   useImportarExtracto,
+  useAsientosVinculados,
 } from "../../hooks/useConciliacionBancaria";
+import { useAuth } from "@zentto/shared-auth";
 
 type ConciliacionRow = Record<string, any>;
 
@@ -53,6 +55,8 @@ export default function ConciliacionBancariaPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
+  const { hasModule } = useAuth();
+  const showAsientos = hasModule("contabilidad");
 
   // Filtros
   const [nroCta, setNroCta] = useState("");
@@ -87,6 +91,8 @@ export default function ConciliacionBancariaPage() {
   }), [nroCta, estado, page, limit]);
   const { data: listData, isLoading } = useConciliaciones(filter);
   const { data: detalleData, refetch: refetchDetalle } = useConciliacionDetalle(selectedId ?? undefined);
+  const { data: asientosVinculadosData } = useAsientosVinculados(showAsientos ? (selectedId ?? undefined) : undefined);
+  const asientosVinculados: any[] = asientosVinculadosData?.rows ?? [];
 
   // Mutations
   const importar = useImportarExtracto();
@@ -327,6 +333,29 @@ export default function ConciliacionBancariaPage() {
               </Box>
             </Grid>
           </Grid>
+
+          {/* Asientos vinculados — solo si el usuario tiene módulo contabilidad */}
+          {showAsientos && asientosVinculados.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>Asientos Contables Vinculados</Typography>
+              <Box sx={{ height: 200 }}>
+                <DataGrid
+                  rows={asientosVinculados}
+                  columns={[
+                    { field: "EntryDate", headerName: "Fecha", width: 110, valueGetter: (v: any) => typeof v === "string" ? v.slice(0, 10) : v },
+                    { field: "EntryNumber", headerName: "N Asiento", width: 120 },
+                    { field: "Concept", headerName: "Concepto", flex: 1, minWidth: 150 },
+                    { field: "TotalDebit", headerName: "Debe", width: 120, align: "right", headerAlign: "right", renderCell: (p) => formatCurrency(Number(p.value ?? 0)) },
+                    { field: "TotalCredit", headerName: "Haber", width: 120, align: "right", headerAlign: "right", renderCell: (p) => formatCurrency(Number(p.value ?? 0)) },
+                  ]}
+                  density="compact"
+                  hideFooter
+                  disableRowSelectionOnClick
+                  getRowId={(r) => r.JournalEntryId ?? Math.random()}
+                />
+              </Box>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button

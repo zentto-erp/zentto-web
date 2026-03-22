@@ -20,7 +20,7 @@ import {
   getMovimientosCuenta,
   getMovimientoById,
 } from "./conciliacion.service.js";
-import { emitBankMovementAccountingEntry } from "./bancos-contabilidad.service.js";
+import { emitBankMovementAccountingEntry, linkMovementToEntry, getLinkedEntries } from "./bancos-contabilidad.service.js";
 import {
   listCajaChicaBoxes,
   createCajaChicaBox,
@@ -185,6 +185,10 @@ bancosRouter.post("/movimientos/generar", async (req, res) => {
             concepto: parsed.data.Concepto,
             nroRef: parsed.data.Nro_Ref,
           }, codUsuario);
+          // Link movement to journal entry
+          if (contabilidad.ok && contabilidad.asientoId && result.movimientoId) {
+            await linkMovementToEntry(result.movimientoId, contabilidad.asientoId);
+          }
         }
       } catch {
         // Never block the bank operation
@@ -387,6 +391,18 @@ bancosRouter.post("/conciliaciones/cerrar", async (req, res) => {
       codUsuario
     );
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/bancos/conciliaciones/:id/asientos - Asientos vinculados a conciliacion
+bancosRouter.get("/conciliaciones/:id/asientos", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "invalid_id" });
+  try {
+    const rows = await getLinkedEntries(id);
+    res.json({ rows });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

@@ -24,6 +24,7 @@ export {
   useConciliarMovimiento,
   useGenerarAjuste,
   useCerrarConciliacion,
+  useAsientosVinculados,
 } from "./hooks/useConciliacionBancaria";
 export type { ConciliacionFilter } from "./hooks/useConciliacionBancaria";
 
@@ -46,6 +47,13 @@ export { default as ConciliacionWizard } from "./components/ConciliacionWizard";
 export { default as MovimientoBancarioWizard } from "./components/MovimientoBancarioWizard";
 export { default as VoucherView } from "./components/VoucherView";
 export { default as CajaChicaPage } from "./components/CajaChicaPage";
+
+// Shared conciliation components
+export { default as CuentaBancariaSelector } from "./components/conciliacion/CuentaBancariaSelector";
+export { default as MovimientosSistemaGrid } from "./components/conciliacion/MovimientosSistemaGrid";
+export { default as ExtractoPendienteGrid } from "./components/conciliacion/ExtractoPendienteGrid";
+export { default as ConciliacionSummaryCards } from "./components/conciliacion/ConciliacionSummaryCards";
+export { default as ConciliacionResumen } from "./components/conciliacion/ConciliacionResumen";
 
 // Home page
 export { default as BancosHome } from "./pages/BancosHome";
