@@ -14,7 +14,7 @@ export function observabilityMiddleware(req: Request, res: Response, next: NextF
       path: req.originalUrl || req.path,
       statusCode: res.statusCode,
       durationMs,
-      userId: user?.userId,
+      userId: user?.sub ? Number(user.sub) || user.sub : undefined,
       companyId: user?.companyId,
       ip: req.ip || req.headers['x-forwarded-for'] as string,
       userAgent: req.headers['user-agent'],
