@@ -188,6 +188,27 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         return nav;
     }
 
+    // App: Manufactura
+    if (isApp('/manufactura')) {
+        nav.push({ kind: 'header', title: 'MANUFACTURA' });
+        nav.push({ kind: 'page', segment: 'manufactura', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'manufactura/bom', title: 'Lista de Materiales (BOM)', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'manufactura/centros-trabajo', title: 'Centros de Trabajo', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'manufactura/ordenes', title: 'Ordenes de Produccion', icon: <LocalShippingIcon /> });
+        return nav;
+    }
+
+    // App: Flota
+    if (isApp('/flota')) {
+        nav.push({ kind: 'header', title: 'FLOTA' });
+        nav.push({ kind: 'page', segment: 'flota', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/vehiculos', title: 'Vehiculos', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/combustible', title: 'Combustible', icon: <PaymentIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/mantenimiento', title: 'Mantenimiento', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/viajes', title: 'Viajes', icon: <LocalShippingIcon /> });
+        return nav;
+    }
+
     // App: Ventas y CxC
     const hasVentas = has(modulos, 'facturas') || has(modulos, 'abonos') || has(modulos, 'cxc') || has(modulos, 'clientes');
     if (hasVentas && isApp('/ventas')) {
