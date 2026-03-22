@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { emitBusinessNotification } from "../_shared/notify.js";
 import { advancedRouter } from "./routes-advanced.js";
 import { legalRouter } from "./routes-legal.js";
 import { activosFijosRouter } from "./activos-fijos.routes.js";
@@ -140,6 +141,14 @@ contabilidadRouter.post("/asientos", async (req, res) => {
   const user = (req as any).user?.username || "API";
   const result = await crearAsiento(parsed.data, user);
   if (!result.ok) return res.status(400).json(result);
+  if (result.ok) {
+    emitBusinessNotification({
+      event: "INVOICE_CREATED",
+      to: "contabilidad@empresa.com",
+      subject: `Asiento contable ${result.numeroAsiento ?? ""} creado`,
+      data: { Asiento: String(result.numeroAsiento ?? ""), Concepto: String(req.body.concepto ?? ""), Debe: String(req.body.totalDebe ?? "0"), Haber: String(req.body.totalHaber ?? "0") },
+    }).catch(() => {});
+  }
   return res.status(201).json(result);
 });
 
@@ -177,6 +186,14 @@ contabilidadRouter.post("/depreciaciones/generar", async (req, res) => {
   const user = (req as any).user?.username || "API";
   const result = await generarDepreciacion(parsed.data.periodo, parsed.data.centroCosto, user);
   if (!result.ok) return res.status(400).json(result);
+  if (result.ok) {
+    emitBusinessNotification({
+      event: "PAYROLL_PROCESSED",
+      to: "contabilidad@empresa.com",
+      subject: `Depreciación ${req.body.periodCode ?? ""} generada`,
+      data: { Periodo: String(req.body.periodCode ?? ""), Asientos: String(result.entriesGenerated ?? "0") },
+    }).catch(() => {});
+  }
   return res.status(201).json(result);
 });
 

@@ -21,6 +21,7 @@ import {
   getMovimientoById,
 } from "./conciliacion.service.js";
 import { emitBankMovementAccountingEntry, linkMovementToEntry, getLinkedEntries } from "./bancos-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 import {
   listCajaChicaBoxes,
   createCajaChicaBox,
@@ -193,6 +194,13 @@ bancosRouter.post("/movimientos/generar", async (req, res) => {
       } catch {
         // Never block the bank operation
       }
+      // Notify: movimiento bancario (best-effort)
+      emitBusinessNotification({
+        event: "BANK_MOVEMENT_RECORDED",
+        to: String(parsed.data.Beneficiario ?? ""),
+        subject: `Movimiento bancario ${parsed.data.Tipo} registrado`,
+        data: { Tipo: parsed.data.Tipo, Cuenta: parsed.data.Nro_Cta, Monto: String(parsed.data.Monto), Beneficiario: String(parsed.data.Beneficiario ?? ""), Referencia: String(parsed.data.Nro_Ref ?? "") },
+      }).catch(() => {});
       return res.status(201).json({ ...result, contabilidad });
     } else {
       return res.status(400).json(result);

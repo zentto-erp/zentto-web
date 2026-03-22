@@ -11,6 +11,7 @@ import {
   normalizeTipoOperacionCompra
 } from "./service.js";
 import { emitCompraAccountingEntry, voidCompraAccountingEntry } from "./compras-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 export const documentosCompraRouter = Router();
 
@@ -131,6 +132,20 @@ documentosCompraRouter.post("/emitir-tx", async (req, res) => {
         );
       } catch {
         // Never block the purchase operation
+      }
+    }
+
+    // Notify: compra emitida (best-effort)
+    if (data.ok && tipoOperacion === "COMPRA") {
+      const doc = parsed.data.documento;
+      const email = String(doc.EMAIL ?? doc.CORREO ?? "").trim();
+      if (email) {
+        emitBusinessNotification({
+          event: "PURCHASE_ORDER_CREATED",
+          to: email,
+          subject: `Orden de compra ${data.numFact} registrada`,
+          data: { Documento: data.numFact ?? "", Proveedor: String(doc.NOMBRE ?? ""), Total: String(doc.TOTAL ?? "0") },
+        }).catch(() => {});
       }
     }
 

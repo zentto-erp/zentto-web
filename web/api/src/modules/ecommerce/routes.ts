@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { emitBusinessNotification, syncContact } from "../_shared/notify.js";
 import {
   listProducts,
   getProductByCodeFull,
@@ -106,6 +107,21 @@ storeRouter.post("/auth/register", async (req, res) => {
 
     const result = await registerCustomer(parsed.data);
     if (!result.ok) return res.status(409).json(result);
+
+    // Notify: welcome email + sync contact (best-effort)
+    if (result.ok || (result as any).success) {
+      const email = String(req.body.email ?? "").trim();
+      if (email) {
+        syncContact({ email, name: req.body.name, tags: ["ecommerce"] }).catch(() => {});
+        emitBusinessNotification({
+          event: "CUSTOMER_REGISTERED",
+          to: email,
+          subject: "Bienvenido a Zentto Store",
+          data: { Nombre: req.body.name ?? "", Email: email },
+        }).catch(() => {});
+      }
+    }
+
     res.status(201).json(result);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
@@ -215,6 +231,20 @@ storeRouter.post("/checkout", async (req, res) => {
 
     const result = await checkout(parsed.data);
     if (!result.ok) return res.status(400).json(result);
+
+    // Notify: orden creada (best-effort)
+    if (result.ok || (result as any).orderId) {
+      const email = String(req.body.email ?? req.body.customerEmail ?? "").trim();
+      if (email) {
+        emitBusinessNotification({
+          event: "ORDER_CREATED",
+          to: email,
+          subject: `Orden #${(result as any).orderId ?? result.orderNumber ?? ""} confirmada`,
+          data: { Orden: String((result as any).orderId ?? result.orderNumber ?? ""), Total: String(req.body.total ?? "0") },
+        }).catch(() => {});
+      }
+    }
+
     res.status(201).json(result);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });

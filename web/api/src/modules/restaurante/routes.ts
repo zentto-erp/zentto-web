@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { listMesas, abrirPedido, agregarItemPedido, enviarComanda, cerrarPedido, getPedidoByMesa, contabilizarPedidoExistente, cancelarItemPedido } from "./service.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 export const restauranteRouter = Router();
 
@@ -143,6 +144,20 @@ restauranteRouter.post("/pedidos/:pedidoId/cerrar", async (req, res) => {
 
     try {
         const result = await cerrarPedido({ pedidoId, ...parsed.data });
+
+        // Notify: pedido cerrado (best-effort, solo si hay email)
+        if (result.ok) {
+          const email = String(req.body.emailCliente ?? "").trim();
+          if (email) {
+            emitBusinessNotification({
+              event: "RESTAURANT_ORDER_CLOSED",
+              to: email,
+              subject: `Cuenta cerrada - Mesa ${req.body.mesa ?? req.params.pedidoId}`,
+              data: { Pedido: String(req.params.pedidoId), Total: String((result as any).total ?? (result as any).montoTotal ?? "0") },
+            }).catch(() => {});
+          }
+        }
+
         res.json(result);
     } catch (err: any) {
         console.error("[restaurante] cerrarPedido error:", err);

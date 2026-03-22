@@ -14,6 +14,7 @@ import {
 } from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 export const inventarioRouter = Router();
 
@@ -159,6 +160,13 @@ inventarioRouter.post("/movimientos", async (req, res) => {
           });
         }
       } catch { /* never block inventory operation */ }
+      // Notify: movimiento de inventario (best-effort)
+      emitBusinessNotification({
+        event: "LOW_STOCK_ALERT",
+        to: "almacen@empresa.com",
+        subject: `Movimiento inventario: ${b.movementType || "ENTRADA"} - ${b.productCode || b.codigoArticulo || ""}`,
+        data: { Producto: String(b.productCode || b.codigoArticulo || ""), Tipo: String(b.movementType || "ENTRADA"), Cantidad: String(b.quantity || b.cantidad || 0) },
+      }).catch(() => {});
       res.status(201).json({ ok: true, message: result.message, contabilidad });
     } else {
       res.status(400).json({ ok: false, message: result.message });

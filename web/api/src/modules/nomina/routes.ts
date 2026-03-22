@@ -7,6 +7,7 @@ import * as nominaService from "./service.js";
 import { conceptoLegalRouter } from "./conceptolegal.routes.js";
 import documentosRouter from "./documentos.routes.js";
 import { emitNominaAccountingEntry } from "./nomina-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 export const nominaRouter = Router();
 
@@ -133,6 +134,16 @@ nominaRouter.post("/procesar-empleado", async (req, res) => {
       } catch { /* never blocks */ }
     }
 
+    // Notify (best-effort, never blocks)
+    if (result.success) {
+      emitBusinessNotification({
+        event: "PAYROLL_EMPLOYEE_PROCESSED",
+        to: String(req.body.cedula ?? ""),
+        subject: `Nómina procesada - ${req.body.nomina ?? ""}`,
+        data: { Empleado: String(req.body.cedula ?? ""), Nomina: String(req.body.nomina ?? ""), Periodo: `${req.body.fechaInicio ?? ""} - ${req.body.fechaHasta ?? ""}` },
+      }).catch(() => {});
+    }
+
     res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -152,6 +163,17 @@ nominaRouter.post("/procesar", async (req, res) => {
       ...parsed.data,
       codUsuario,
     });
+
+    // Notify (best-effort, never blocks)
+    if (result.procesados > 0) {
+      emitBusinessNotification({
+        event: "PAYROLL_PROCESSED",
+        to: "rrhh@empresa.com",
+        subject: `Nómina ${req.body.nomina ?? ""} procesada`,
+        data: { Nomina: String(req.body.nomina ?? ""), Empleados: String(result.procesados), Periodo: `${req.body.fechaInicio ?? ""} - ${req.body.fechaHasta ?? ""}` },
+      }).catch(() => {});
+    }
+
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -233,6 +255,16 @@ nominaRouter.post("/vacaciones/procesar", async (req, res) => {
       } catch { /* never blocks */ }
     }
 
+    // Notify (best-effort, never blocks)
+    if (result.success) {
+      emitBusinessNotification({
+        event: "PAYROLL_EMPLOYEE_PROCESSED",
+        to: String(req.body.cedula ?? ""),
+        subject: "Vacaciones liquidadas",
+        data: { Empleado: String(req.body.cedula ?? ""), Dias: String(req.body.diasHabiles ?? "") },
+      }).catch(() => {});
+    }
+
     res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -303,6 +335,17 @@ nominaRouter.put("/vacaciones/solicitudes/:id/aprobar", async (req, res) => {
   try {
     const approvedBy = (req as any).user?.username || "API";
     const result = await nominaService.approveVacationRequest(req.params.id, approvedBy);
+
+    // Notify (best-effort, never blocks)
+    if (result.success) {
+      emitBusinessNotification({
+        event: "VACATION_APPROVED",
+        to: String((result as any).cedula ?? (result as any).employeeCode ?? req.body.cedula ?? ""),
+        subject: "Solicitud de vacaciones aprobada",
+        data: { Solicitud: String(req.params.id), Estado: "APROBADA" },
+      }).catch(() => {});
+    }
+
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -318,6 +361,17 @@ nominaRouter.put("/vacaciones/solicitudes/:id/rechazar", async (req, res) => {
   try {
     const approvedBy = (req as any).user?.username || "API";
     const result = await nominaService.rejectVacationRequest(req.params.id, approvedBy, parsed.data.reason);
+
+    // Notify (best-effort, never blocks)
+    if (result.success) {
+      emitBusinessNotification({
+        event: "VACATION_REJECTED",
+        to: String((result as any).cedula ?? req.body.cedula ?? ""),
+        subject: "Solicitud de vacaciones rechazada",
+        data: { Solicitud: String(req.params.id), Estado: "RECHAZADA", Motivo: String(parsed.data.reason ?? "") },
+      }).catch(() => {});
+    }
+
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -433,6 +487,16 @@ nominaRouter.post("/liquidacion/calcular", async (req, res) => {
           codUsuario
         );
       } catch { /* never blocks */ }
+    }
+
+    // Notify (best-effort, never blocks)
+    if (result.success) {
+      emitBusinessNotification({
+        event: "LIQUIDATION_CALCULATED",
+        to: String(req.body.cedula ?? ""),
+        subject: "Liquidación calculada",
+        data: { Empleado: String(req.body.cedula ?? ""), Total: String((result as any).totalLiquidacion ?? (result as any).total ?? "0") },
+      }).catch(() => {});
     }
 
     res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
@@ -652,6 +716,16 @@ nominaRouter.post("/batch/:id/process", async (req, res) => {
           );
         }
       } catch { /* never blocks */ }
+    }
+
+    // Notify (best-effort, never blocks)
+    if (result.success) {
+      emitBusinessNotification({
+        event: "BATCH_PAYROLL_PROCESSED",
+        to: "rrhh@empresa.com",
+        subject: `Lote de nómina #${req.params.id} procesado`,
+        data: { Lote: String(req.params.id), Estado: "PROCESADO" },
+      }).catch(() => {});
     }
 
     res.json({ ...result, contabilidad });
