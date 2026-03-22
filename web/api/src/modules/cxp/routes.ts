@@ -7,6 +7,7 @@ import {
   getSaldoProveedor,
   type AplicarPagoInput,
 } from "./cxp.service.js";
+import { emitPagoAccountingEntry } from "./cxp-contabilidad.service.js";
 
 const router = Router();
 
@@ -48,11 +49,29 @@ router.post("/aplicar-pago-tx", async (req, res, next) => {
       });
     }
 
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    try {
+      contabilidad = await emitPagoAccountingEntry(
+        {
+          numPago: result.numPago!,
+          codProveedor: input.codProveedor,
+          fecha: input.fecha,
+          montoTotal: input.montoTotal,
+          formasPago: input.formasPago,
+        },
+        input.codUsuario
+      );
+    } catch {
+      // Never block the CxP operation
+    }
+
     return res.json({
       success: true,
       numPago: result.numPago,
       message: result.message,
       requestId: input.requestId,
+      contabilidad,
     });
   } catch (err) {
     return next(err);

@@ -46,6 +46,10 @@ Todos comparten los mismos secrets de GitHub:
 - `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`
 - `GITHUB_TOKEN` (automatico)
 
+Secrets adicionales por plataforma/integracion:
+- `AUTH_SECRET` — frontend/shell de zentto-web
+- `NOTIFY_API_KEY` — integracion de zentto-web con zentto-notify para webhook de correo
+
 ## Como agregar una nueva app
 
 Ver la guia completa en `zentto-infra/docs/onboarding-new-app.md`.

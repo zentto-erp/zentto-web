@@ -7,6 +7,7 @@ import {
   getSaldoCliente,
   type AplicarCobroInput,
 } from "./cxc.service.js";
+import { emitCobroAccountingEntry } from "./cxc-contabilidad.service.js";
 
 const router = Router();
 
@@ -48,11 +49,29 @@ router.post("/aplicar-cobro-tx", async (req, res, next) => {
       });
     }
 
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    try {
+      contabilidad = await emitCobroAccountingEntry(
+        {
+          numRecibo: result.numRecibo!,
+          codCliente: input.codCliente,
+          fecha: input.fecha,
+          montoTotal: input.montoTotal,
+          formasPago: input.formasPago,
+        },
+        input.codUsuario
+      );
+    } catch {
+      // Never block the CxC operation
+    }
+
     return res.json({
       success: true,
       numRecibo: result.numRecibo,
       message: result.message,
       requestId: input.requestId,
+      contabilidad,
     });
   } catch (err) {
     return next(err);

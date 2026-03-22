@@ -10,6 +10,7 @@ import {
   listDocumentosCompra,
   normalizeTipoOperacionCompra
 } from "./service.js";
+import { emitCompraAccountingEntry, voidCompraAccountingEntry } from "./compras-contabilidad.service.js";
 
 export const documentosCompraRouter = Router();
 
@@ -100,7 +101,40 @@ documentosCompraRouter.post("/emitir-tx", async (req, res) => {
   try {
     const tipoOperacion = normalizeTipoOperacionCompra(parsed.data.tipoOperacion);
     const data = await emitirDocumentoCompraTx({ ...parsed.data, tipoOperacion });
-    res.status(201).json(data);
+
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (data.ok && tipoOperacion === "COMPRA") {
+      try {
+        const doc = parsed.data.documento;
+        const codProveedor = String(doc.COD_PROVEEDOR ?? doc.CODIGO ?? doc.SupplierCode ?? "").trim();
+        const fecha = String(doc.FECHA ?? doc.DocumentDate ?? new Date().toISOString().slice(0, 10));
+        const subtotal = Number(doc.SUBTOTAL ?? doc.MONTO_GRA ?? doc.SubTotal ?? 0);
+        const ivaAmount = Number(doc.IVA ?? doc.TaxAmount ?? 0);
+        const total = Number(doc.TOTAL ?? doc.TotalAmount ?? 0);
+        const isPaid = String(doc.CANCELADA ?? doc.IsPaid ?? "N").toUpperCase() === "S";
+
+        contabilidad = await emitCompraAccountingEntry(
+          {
+            numDoc: data.numFact,
+            tipoOperacion,
+            codProveedor,
+            fecha,
+            subtotal,
+            iva: ivaAmount,
+            total,
+            moneda: String(doc.MONEDA ?? doc.CurrencyCode ?? "VES"),
+            tasaCambio: Number(doc.TASA_CAMBIO ?? doc.ExchangeRate ?? 1),
+            isPaid,
+          },
+          String(doc.COD_USUARIO ?? doc.UserCode ?? "API")
+        );
+      } catch {
+        // Never block the purchase operation
+      }
+    }
+
+    res.status(201).json({ ...data, contabilidad });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -112,7 +146,22 @@ documentosCompraRouter.post("/anular-tx", async (req, res) => {
   try {
     const tipoOperacion = normalizeTipoOperacionCompra(parsed.data.tipoOperacion);
     const data = await anularDocumentoCompraTx({ ...parsed.data, tipoOperacion });
-    res.json(data);
+
+    // Void linked accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (data.ok) {
+      try {
+        contabilidad = await voidCompraAccountingEntry(
+          tipoOperacion,
+          parsed.data.numFact,
+          parsed.data.motivo
+        );
+      } catch {
+        // Never block the void operation
+      }
+    }
+
+    res.json({ ...data, contabilidad });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -123,7 +172,36 @@ documentosCompraRouter.post("/cerrar-orden-con-compra-tx", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
   try {
     const data = await cerrarOrdenConCompraDocumentoTx(parsed.data);
-    res.status(201).json(data);
+
+    // Generate accounting entry for the new purchase (best effort)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (data.ok && data.compraResult?.numFact) {
+      try {
+        const compra = parsed.data.compra ?? {};
+        const codProveedor = String(compra.COD_PROVEEDOR ?? compra.SupplierCode ?? "").trim();
+        const total = Number(compra.TOTAL ?? compra.TotalAmount ?? 0);
+
+        if (total > 0) {
+          contabilidad = await emitCompraAccountingEntry(
+            {
+              numDoc: data.compraResult.numFact,
+              tipoOperacion: "COMPRA",
+              codProveedor,
+              fecha: String(compra.FECHA ?? compra.DocumentDate ?? new Date().toISOString().slice(0, 10)),
+              subtotal: Number(compra.SUBTOTAL ?? compra.SubTotal ?? total),
+              iva: Number(compra.IVA ?? compra.TaxAmount ?? 0),
+              total,
+              isPaid: false,
+            },
+            String(compra.COD_USUARIO ?? compra.UserCode ?? "API")
+          );
+        }
+      } catch {
+        // Never block
+      }
+    }
+
+    res.status(201).json({ ...data, contabilidad });
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

@@ -612,6 +612,8 @@ export async function procesarVacaciones(payload: {
   return {
     success: true,
     message: `Vacaciones procesadas por ${days} dias`,
+    total,
+    dias: days,
   };
 }
 
@@ -713,6 +715,10 @@ export async function calcularLiquidacion(payload: {
   return {
     success: true,
     message: "Liquidacion calculada",
+    total,
+    prestaciones,
+    vacPendientes,
+    bonoSalida,
   };
 }
 

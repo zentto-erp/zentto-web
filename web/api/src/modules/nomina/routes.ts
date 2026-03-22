@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as nominaService from "./service.js";
 import { conceptoLegalRouter } from "./conceptolegal.routes.js";
 import documentosRouter from "./documentos.routes.js";
+import { emitNominaAccountingEntry } from "./nomina-contabilidad.service.js";
 
 export const nominaRouter = Router();
 
@@ -112,7 +113,27 @@ nominaRouter.post("/procesar-empleado", async (req, res) => {
       ...parsed.data,
       codUsuario,
     });
-    res.status(result.success ? 200 : 400).json(result);
+
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitNominaAccountingEntry(
+          {
+            tipo: "NOMINA",
+            referencia: `NOM-${parsed.data.nomina}-${parsed.data.cedula}`,
+            cedula: parsed.data.cedula,
+            fecha: parsed.data.fechaHasta,
+            totalAsignaciones: result.asignaciones ?? 0,
+            totalDeducciones: result.deducciones ?? 0,
+            totalNeto: result.neto ?? 0,
+          },
+          codUsuario
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -192,7 +213,27 @@ nominaRouter.post("/vacaciones/procesar", async (req, res) => {
       ...parsed.data,
       codUsuario,
     });
-    res.status(result.success ? 200 : 400).json(result);
+
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitNominaAccountingEntry(
+          {
+            tipo: "VACACIONES",
+            referencia: `VAC-${parsed.data.vacacionId}`,
+            cedula: parsed.data.cedula,
+            fecha: parsed.data.fechaHasta,
+            totalAsignaciones: (result as any).total ?? 0,
+            totalDeducciones: 0,
+            totalNeto: (result as any).total ?? 0,
+          },
+          codUsuario
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -298,7 +339,27 @@ nominaRouter.post("/vacaciones/solicitudes/:id/procesar-pago", async (req, res) 
   try {
     const codUsuario = (req as any).user?.username || "API";
     const result = await nominaService.processVacationRequestPayment(req.params.id, codUsuario);
-    res.json(result);
+
+    // Generate accounting entry (best effort)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitNominaAccountingEntry(
+          {
+            tipo: "VACACIONES",
+            referencia: `VAC-REQ-${req.params.id}`,
+            cedula: "",
+            fecha: new Date().toISOString().slice(0, 10),
+            totalAsignaciones: 0,
+            totalDeducciones: 0,
+            totalNeto: 0,
+          },
+          codUsuario
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -354,7 +415,27 @@ nominaRouter.post("/liquidacion/calcular", async (req, res) => {
       ...parsed.data,
       codUsuario,
     });
-    res.status(result.success ? 200 : 400).json(result);
+
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitNominaAccountingEntry(
+          {
+            tipo: "LIQUIDACION",
+            referencia: `LIQ-${parsed.data.liquidacionId}`,
+            cedula: parsed.data.cedula,
+            fecha: parsed.data.fechaRetiro,
+            totalAsignaciones: (result as any).total ?? 0,
+            totalDeducciones: 0,
+            totalNeto: (result as any).total ?? 0,
+          },
+          codUsuario
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -546,8 +627,34 @@ nominaRouter.post("/batch/:id/approve", async (req, res) => {
 nominaRouter.post("/batch/:id/process", async (req, res) => {
   try {
     const codUsuario = (req as any).user?.username || "API";
-    const result = await nominaService.processBatch(Number(req.params.id), codUsuario);
-    res.json(result);
+    const batchId = Number(req.params.id);
+    const result = await nominaService.processBatch(batchId, codUsuario);
+
+    // Generate accounting entry for the batch (best effort)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success && result.procesados > 0) {
+      try {
+        // Get batch summary for totals
+        const summary = await nominaService.getDraftSummary(batchId);
+        if (summary) {
+          contabilidad = await emitNominaAccountingEntry(
+            {
+              tipo: "NOMINA",
+              referencia: `BATCH-${batchId}`,
+              cedula: `LOTE-${batchId}`,
+              nombreEmpleado: `Lote nómina ${result.procesados} empleados`,
+              fecha: new Date().toISOString().slice(0, 10),
+              totalAsignaciones: Number((summary as any).totalAsignaciones ?? 0),
+              totalDeducciones: Number((summary as any).totalDeducciones ?? 0),
+              totalNeto: Number((summary as any).totalNeto ?? 0),
+            },
+            codUsuario
+          );
+        }
+      } catch { /* never blocks */ }
+    }
+
+    res.json({ ...result, contabilidad });
   } catch (err: any) { res.status(500).json({ error: String(err) }); }
 });
 
