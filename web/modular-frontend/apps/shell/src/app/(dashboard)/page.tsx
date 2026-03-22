@@ -21,6 +21,9 @@ const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShippin
 const RestaurantIcon = dynamic(() => import('@mui/icons-material/Restaurant'), { ssr: false });
 const LanguageIcon = dynamic(() => import('@mui/icons-material/Language'), { ssr: false });
 const ContentPasteSearchIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearch'), { ssr: false });
+const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
+const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
+const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -80,6 +83,12 @@ export default function AppSelectorPage() {
   if (has('auditoria')) {
     allApps.push({ id: 'auditoria', name: 'Auditoría', icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
   }
+
+  // Nuevos módulos
+  allApps.push({ id: 'logistica', name: 'Logística', icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/logistica', bgColor: '#1ABC9C' });
+  allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/crm', bgColor: '#E74C3C' });
+  allApps.push({ id: 'manufactura', name: 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
+  allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
 
   // Siempre agregar App Store y Settings al final
   allApps.push({ id: 'apps', name: 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });

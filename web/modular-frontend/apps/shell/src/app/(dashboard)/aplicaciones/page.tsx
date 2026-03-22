@@ -44,6 +44,9 @@ const UpdateIcon = dynamic(() => import('@mui/icons-material/Update'), { ssr: fa
 const PeopleIcon = dynamic(() => import('@mui/icons-material/People'), { ssr: false });
 const RocketLaunchIcon = dynamic(() => import('@mui/icons-material/RocketLaunch'), { ssr: false });
 const LockIcon = dynamic(() => import('@mui/icons-material/Lock'), { ssr: false });
+const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
+const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
+const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
 
 interface StoreApp {
     id: string;
@@ -188,6 +191,58 @@ const CATALOG: StoreApp[] = [
         path: '/auditoria',
         features: ['Libros legales', 'Declaraciones', 'Reportes fiscales', 'Auditorías', 'Compliance'],
         version: '1.3.2',
+        author: 'Zentto'
+    },
+    {
+        id: 'logistica',
+        name: 'Logística',
+        description: 'Recepción de mercancía, devoluciones, albaranes y transportistas.',
+        fullDescription: 'Gestione toda la cadena logística de su empresa. Reciba mercancía con inspección de calidad, procese devoluciones a proveedores, genere albaranes de entrega con firma digital y administre su flota de transportistas.',
+        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#1ABC9C',
+        category: 'Operaciones',
+        path: '/logistica',
+        features: ['Recepción mercancía', 'Inspección de calidad', 'Devoluciones', 'Albaranes / Guías despacho', 'Transportistas', 'Firma digital de entrega'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'crm',
+        name: 'CRM',
+        description: 'Pipeline de ventas, leads, actividades y seguimiento comercial.',
+        fullDescription: 'Impulse su fuerza de ventas con un CRM completo. Visualice su pipeline en tablero Kanban, gestione leads con probabilidad de cierre, registre actividades (llamadas, emails, reuniones) y analice su tasa de conversión.',
+        icon: <GroupsIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#E74C3C',
+        category: 'Ventas',
+        path: '/crm',
+        features: ['Pipeline Kanban', 'Leads con probabilidad', 'Actividades y tareas', 'Historial de cambios', 'Funnel de conversión', 'Multi-pipeline'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'manufactura',
+        name: 'Manufactura',
+        description: 'Listas de materiales (BOM), centros de trabajo y órdenes de producción.',
+        fullDescription: 'Controle su proceso productivo de principio a fin. Defina listas de materiales con componentes y costos, configure centros de trabajo con capacidad, y gestione órdenes de producción con seguimiento de estado en tiempo real.',
+        icon: <PrecisionManufacturingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#8E44AD',
+        category: 'Operaciones',
+        path: '/manufactura',
+        features: ['Listas de materiales (BOM)', 'Centros de trabajo', 'Órdenes de producción', 'Control de costos', 'Seguimiento en tiempo real', 'Integración contable'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'flota',
+        name: 'Control de Flota',
+        description: 'Vehículos, combustible, mantenimiento preventivo y registro de viajes.',
+        fullDescription: 'Administre todos los vehículos de su empresa. Registre cargas de combustible con costos, programe mantenimiento preventivo y correctivo, lleve control de viajes con origen/destino y analice costos operativos por vehículo.',
+        icon: <DirectionsCarIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#2C3E50',
+        category: 'Operaciones',
+        path: '/flota',
+        features: ['Registro de vehículos', 'Control de combustible', 'Mantenimiento preventivo', 'Registro de viajes', 'Costos por vehículo', 'Alertas de servicio'],
+        version: '1.0.0',
         author: 'Zentto'
     },
 ];
