@@ -8,6 +8,7 @@ on:
       - 'docker/Dockerfile.frontend'
       - 'docker/pm2.config.cjs'
       - 'docker-compose.prod.yml'
+      - 'nginx/zentto.conf'
   workflow_dispatch:
 
 concurrency:
@@ -73,7 +74,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml
+          source: docker-compose.prod.yml,nginx/zentto.conf,docker/pm2.config.cjs
           target: /opt/zentto/
 
       - uses: appleboy/ssh-action@v1.0.3
@@ -107,4 +108,10 @@ jobs:
             docker compose -f docker-compose.prod.yml pull frontend
             docker compose -f docker-compose.prod.yml up -d --no-deps frontend
             docker image prune -f
+            # Actualizar Nginx config si cambió
+            if [ -f /opt/zentto/nginx/zentto.conf ]; then
+              cp /opt/zentto/nginx/zentto.conf /etc/nginx/sites-available/zentto.conf 2>/dev/null || true
+              nginx -t && systemctl reload nginx 2>/dev/null || true
+              echo "✓ Nginx config actualizada"
+            fi
             echo "✓ Frontend desplegado: $(date -u)"
