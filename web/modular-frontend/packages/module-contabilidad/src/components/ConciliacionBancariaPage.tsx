@@ -157,7 +157,7 @@ export default function ConciliacionBancariaPage() {
   const crearMutation = useCrearConciliacion();
 
   const conciliaciones: any[] = conciliacionesData?.rows ?? conciliacionesData?.data ?? [];
-  const cuentas: any[] = cuentasData?.data ?? cuentasData ?? [];
+  const cuentas: any[] = cuentasData?.rows ?? cuentasData?.data ?? [];
   const detalle = detalleData?.data ?? detalleData ?? null;
   const movimientosSistema: any[] = detalle?.movimientosSistema ?? [];
   const extractoPendiente: any[] = detalle?.extractoPendiente ?? [];
