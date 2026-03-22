@@ -134,51 +134,61 @@ router.get('/activity', async (req: Request, res: Response, next: NextFunction) 
     const range = (req.query.range as string) || '7d';
     const gte = `now-${range}`;
 
-    const result = await esQuery('zentto-api-logs-*', {
-      size: 0,
-      query: {
-        bool: {
-          must: [
-            { term: { companyId } },
-            { range: { '@timestamp': { gte } } },
-          ],
-        },
+    const baseQuery = {
+      bool: {
+        must: [
+          { term: { companyId } },
+          { range: { '@timestamp': { gte } } },
+        ],
       },
-      aggs: {
-        by_user: {
-          terms: { field: 'userId', size: 50 },
-          aggs: {
-            last_seen: { max: { field: '@timestamp' } },
-            request_count: { value_count: { field: 'method' } },
-            modules: { terms: { field: 'path', size: 5 } },
-          },
-        },
-        by_module: {
-          terms: { field: 'path', size: 20 },
-        },
-        activity_heatmap: {
-          date_histogram: { field: '@timestamp', fixed_interval: '1h' },
-          aggs: {
-            users: { cardinality: { field: 'userId' } },
-          },
-        },
-      },
-    });
+    };
 
-    const aggs = result.aggregations || {};
+    // Query 1: by_module + heatmap (always works — path/@timestamp are keyword/date)
+    const [mainResult, userResult] = await Promise.allSettled([
+      esQuery('zentto-api-logs-*', {
+        size: 0,
+        query: baseQuery,
+        aggs: {
+          by_module: { terms: { field: 'path', size: 20 } },
+          activity_heatmap: {
+            date_histogram: { field: '@timestamp', fixed_interval: '1h' },
+            aggs: { users: { cardinality: { field: 'userId' } } },
+          },
+        },
+      }),
+      // Query 2: by_user — puede fallar si userId tiene tipos conflictivos en índices viejos
+      esQuery('zentto-api-logs-*', {
+        size: 0,
+        query: baseQuery,
+        aggs: {
+          by_user: {
+            terms: { field: 'userId', size: 50 },
+            aggs: {
+              last_seen: { max: { field: '@timestamp' } },
+              request_count: { value_count: { field: 'method' } },
+              modules: { terms: { field: 'path', size: 5 } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const mainAggs = mainResult.status === 'fulfilled' ? (mainResult.value.aggregations || {}) : {};
+    const userAggs = userResult.status === 'fulfilled' ? (userResult.value.aggregations || {}) : {};
+
     res.json({
       ok: true,
-      users: (aggs.by_user?.buckets || []).map((b: any) => ({
+      users: (userAggs.by_user?.buckets || []).map((b: any) => ({
         userId: b.key,
         requestCount: b.request_count?.value || b.doc_count,
         lastSeen: b.last_seen?.value_as_string,
         topModules: (b.modules?.buckets || []).map((m: any) => m.key),
       })),
-      moduleUsage: (aggs.by_module?.buckets || []).map((b: any) => ({
+      moduleUsage: (mainAggs.by_module?.buckets || []).map((b: any) => ({
         path: b.key,
         count: b.doc_count,
       })),
-      heatmap: (aggs.activity_heatmap?.buckets || []).map((b: any) => ({
+      heatmap: (mainAggs.activity_heatmap?.buckets || []).map((b: any) => ({
         hour: b.key_as_string,
         requests: b.doc_count,
         users: b.users?.value || 0,
