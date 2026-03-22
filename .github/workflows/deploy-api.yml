@@ -161,6 +161,16 @@ jobs:
               echo "✓ iptables rule persisted in ufw/after.rules"
             fi
 
+            # ── Firewall: Docker (172.18.x) → Kafka (9092) + Elasticsearch (9200) ──
+            if ! ufw status | grep -q '172.18.0.0/16.*9092'; then
+              ufw allow from 172.18.0.0/16 to any port 9092 comment 'Docker zentto-net to Kafka'
+              echo "✓ UFW rule added: Docker→Kafka"
+            fi
+            if ! ufw status | grep -q '172.18.0.0/16.*9200'; then
+              ufw allow from 172.18.0.0/16 to any port 9200 comment 'Docker zentto-net to Elasticsearch'
+              echo "✓ UFW rule added: Docker→ES"
+            fi
+
             # ── pg_hba.conf: allow Docker network ──
             PG_HBA=$(find /etc/postgresql -name pg_hba.conf 2>/dev/null | head -1)
             if [ -n "$PG_HBA" ] && ! grep -q '172.18.0.0/16' "$PG_HBA"; then
