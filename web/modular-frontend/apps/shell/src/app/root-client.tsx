@@ -19,8 +19,8 @@ import {
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
-import { buildNavigation } from './lib/navigation';
-import { HardwareAgentBanner } from './components/HardwareAgentBanner';
+import { buildNavigation } from '../lib/navigation';
+import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
 
 const AUTHENTICATION = { signIn, signOut };
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
