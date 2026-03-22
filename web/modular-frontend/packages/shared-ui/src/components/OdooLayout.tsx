@@ -23,6 +23,8 @@ import AppsIcon from '@mui/icons-material/Apps';
 import MenuIcon from '@mui/icons-material/Menu';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import Tooltip from '@mui/material/Tooltip';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Avatar from '@mui/material/Avatar';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import NotificationsMenu from './NotificationsMenu';
@@ -62,6 +64,7 @@ export default function OdooLayout({
 
     const [openMenus, setOpenMenus] = React.useState<{ [key: string]: boolean }>({});
     const [isSidebarOpen, setSidebarOpen] = React.useState(false);
+    const [companyMenuAnchor, setCompanyMenuAnchor] = React.useState<HTMLElement | null>(null);
 
     React.useEffect(() => {
         if (hideSidebar) return;
@@ -262,9 +265,52 @@ export default function OdooLayout({
                             )}
 
                             <Box sx={{ ml: 2, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-                                <Chip size="small" label={`Empresa: ${companyLabel}`} sx={{ bgcolor: brandColors.accent, color: brandColors.dark, fontWeight: 600, fontSize: '0.75rem' }} />
+                                <Chip
+                                    size="small"
+                                    label={`Empresa: ${companyLabel}`}
+                                    onClick={(e) => {
+                                        const accesses = (session as any)?.companyAccesses as any[] ?? [];
+                                        if (accesses.length > 1) {
+                                            setCompanyMenuAnchor(e.currentTarget);
+                                        }
+                                    }}
+                                    sx={{
+                                        bgcolor: brandColors.accent, color: brandColors.dark, fontWeight: 600, fontSize: '0.75rem',
+                                        cursor: ((session as any)?.companyAccesses?.length ?? 0) > 1 ? 'pointer' : 'default',
+                                    }}
+                                />
                                 <Chip size="small" label={`BD: ${dbName}`} sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)', fontWeight: 500, fontSize: '0.75rem' }} />
                             </Box>
+
+                            {/* Selector de Empresa/Sucursal */}
+                            <Menu
+                                anchorEl={companyMenuAnchor}
+                                open={Boolean(companyMenuAnchor)}
+                                onClose={() => setCompanyMenuAnchor(null)}
+                                slotProps={{ paper: { sx: { minWidth: 280 } } }}
+                            >
+                                {((session as any)?.companyAccesses as any[] ?? []).map((access: any, idx: number) => (
+                                    <MenuItem
+                                        key={idx}
+                                        selected={access.companyId === activeCompany?.companyCode && access.branchCode === activeCompany?.branchCode}
+                                        onClick={() => {
+                                            setCompanyMenuAnchor(null);
+                                            // Recargar con nueva empresa activa
+                                            const params = new URLSearchParams({ companyId: String(access.companyId), branchId: String(access.branchId) });
+                                            window.location.href = `/api/auth/switch-company?${params.toString()}`;
+                                        }}
+                                    >
+                                        <Box>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {access.companyCode}/{access.branchCode} — {access.companyName}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {access.branchName} · {access.countryCode}
+                                            </Typography>
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Menu>
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
