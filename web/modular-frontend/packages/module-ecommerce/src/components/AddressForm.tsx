@@ -1,9 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress } from "@mui/material";
+import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress, MenuItem } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { AddressFormData } from "../hooks/useStoreAccount";
+
+const COUNTRIES = [
+  { code: "VE", name: "Venezuela" },
+  { code: "ES", name: "España" },
+  { code: "CO", name: "Colombia" },
+  { code: "MX", name: "México" },
+  { code: "US", name: "Estados Unidos" },
+];
+
+const STATES: Record<string, string[]> = {
+  VE: ["Distrito Capital", "Miranda", "Zulia", "Carabobo", "Aragua", "Lara", "Bolívar", "Anzoátegui", "Táchira", "Mérida"],
+  ES: ["Madrid", "Barcelona", "Valencia", "Sevilla", "Málaga", "Bilbao"],
+  CO: ["Bogotá D.C.", "Antioquia", "Valle del Cauca", "Atlántico", "Santander"],
+  MX: ["CDMX", "Jalisco", "Nuevo León", "Estado de México", "Puebla"],
+  US: ["California", "Texas", "Florida", "New York", "Illinois"],
+};
 
 interface Props {
   initial?: Partial<AddressFormData>;
@@ -20,7 +36,7 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
   const [city, setCity] = useState(initial?.city ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [zipCode, setZipCode] = useState(initial?.zipCode ?? "");
-  const [country, setCountry] = useState(initial?.country ?? "Venezuela");
+  const [country, setCountry] = useState(initial?.country ?? "VE");
   const [instructions, setInstructions] = useState(initial?.instructions ?? "");
   const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
 
@@ -59,13 +75,39 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
           <TextField label="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} fullWidth size="small" />
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField label="Estado" value={state} onChange={(e) => setState(e.target.value)} fullWidth size="small" />
+          <TextField
+            select
+            label="Estado"
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            fullWidth
+            size="small"
+            disabled={!STATES[country]}
+          >
+            {(STATES[country] ?? []).map((s) => (
+              <MenuItem key={s} value={s}>{s}</MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid size={{ xs: 6, sm: 2 }}>
           <TextField label="Cod. postal" value={zipCode} onChange={(e) => setZipCode(e.target.value)} fullWidth size="small" />
         </Grid>
         <Grid size={{ xs: 6, sm: 2 }}>
-          <TextField label="Pais" value={country} onChange={(e) => setCountry(e.target.value)} fullWidth size="small" />
+          <TextField
+            select
+            label="Pais"
+            value={country}
+            onChange={(e) => {
+              setCountry(e.target.value);
+              setState("");
+            }}
+            fullWidth
+            size="small"
+          >
+            {COUNTRIES.map((c) => (
+              <MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid size={{ xs: 12 }}>
           <TextField label="Instrucciones de entrega" placeholder="Ej: Porton azul, 2do piso" value={instructions} onChange={(e) => setInstructions(e.target.value)} fullWidth size="small" />

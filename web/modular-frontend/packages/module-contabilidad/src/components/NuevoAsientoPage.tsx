@@ -38,6 +38,7 @@ import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useRouter } from "next/navigation";
 import { useCreateAsiento, usePlanCuentas } from "../hooks/useContabilidad";
+import { useCentrosCostoList } from "../hooks/useContabilidadAdvanced";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export default function NuevoAsientoPage() {
   const { timeZone } = useTimezone();
   const createMutation = useCreateAsiento();
   const { data: cuentasData } = usePlanCuentas();
+  const { data: centrosCostoData } = useCentrosCostoList();
 
   // Form state
   const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
@@ -82,6 +84,13 @@ export default function NuevoAsientoPage() {
       }))
       .sort((a: any, b: any) => a.codCuenta.localeCompare(b.codCuenta));
   }, [cuentasData]);
+
+  // Centros de costo para singleSelect
+  const centrosCosto = useMemo(() => {
+    return (centrosCostoData?.data ?? centrosCostoData?.rows ?? []).map(
+      (c: any) => c.CostCenterCode ?? c.costCenterCode ?? c.codigo ?? c.code ?? ""
+    );
+  }, [centrosCostoData]);
 
   // Totales
   const { totalDebe, totalHaber, diferencia } = useMemo(() => {
@@ -218,8 +227,10 @@ export default function NuevoAsientoPage() {
     {
       field: "centroCosto",
       headerName: "C. Costo",
-      width: 100,
+      width: 120,
       editable: true,
+      type: "singleSelect",
+      valueOptions: centrosCosto,
     },
     {
       field: "documento",

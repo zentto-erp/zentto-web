@@ -22,11 +22,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
 } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
 import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
+import { useQuery } from "@tanstack/react-query";
 import { useFacturaById, useCreateFactura, useUpdateFactura } from "../../../hooks/useFacturas";
 import { Factura, CreateFacturaDTO, UpdateFacturaDTO } from "@zentto/shared-api/types";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, apiGet } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 
 interface FacturaFormProps {
@@ -41,6 +44,20 @@ interface DetalleFactura {
   descuento: number;
 }
 
+const FORMAS_PAGO = [
+  { value: "EFECTIVO", label: "Efectivo" },
+  { value: "TRANSFERENCIA", label: "Transferencia" },
+  { value: "TARJETA", label: "Tarjeta" },
+  { value: "CHEQUE", label: "Cheque" },
+  { value: "PAGO_MOVIL", label: "Pago Móvil" },
+];
+
+const MONEDAS = [
+  { value: "VES", label: "VES - Bolívar" },
+  { value: "USD", label: "USD - Dólar" },
+  { value: "EUR", label: "EUR - Euro" },
+];
+
 export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
   const router = useRouter();
   const { timeZone } = useTimezone();
@@ -53,6 +70,8 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
     fecha: toDateOnly(new Date(), timeZone),
     referencia: "",
     observaciones: "",
+    formaPago: "EFECTIVO",
+    moneda: "VES",
   });
   const [detalles, setDetalles] = useState<DetalleFactura[]>([]);
   const [currentDetalle, setCurrentDetalle] = useState<DetalleFactura>({
@@ -68,6 +87,26 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [detalleDialogOpen, setDetalleDialogOpen] = useState(false);
 
+  // Autocomplete: Cliente search
+  const [clienteInput, setClienteInput] = useState("");
+  const [clienteSelected, setClienteSelected] = useState<any | null>(null);
+  const { data: clientesData, isLoading: isLoadingClientes } = useQuery({
+    queryKey: ["clientes-search", clienteInput],
+    queryFn: () => apiGet("/api/v1/clientes", { search: clienteInput, limit: 10 }),
+    enabled: clienteInput.length >= 2,
+  });
+  const clienteOptions: any[] = clientesData?.rows ?? clientesData?.data ?? [];
+
+  // Autocomplete: Artículo search
+  const [articuloInput, setArticuloInput] = useState("");
+  const [articuloSelected, setArticuloSelected] = useState<any | null>(null);
+  const { data: articulosData, isLoading: isLoadingArticulos } = useQuery({
+    queryKey: ["articulos-search", articuloInput],
+    queryFn: () => apiGet("/api/v1/inventario", { search: articuloInput, limit: 10 }),
+    enabled: articuloInput.length >= 2,
+  });
+  const articuloOptions: any[] = articulosData?.rows ?? articulosData?.data ?? [];
+
   // Queries
   const { data: factura, isLoading: isLoadingFactura } = useFacturaById(numeroFactura || "");
   const { mutate: createFactura, isPending: isCreating } = useCreateFactura();
@@ -82,7 +121,11 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
         fecha: factura.fecha,
         referencia: factura.referencia,
         observaciones: factura.observaciones,
+        formaPago: (factura as any).formaPago ?? "EFECTIVO",
+        moneda: (factura as any).moneda ?? "VES",
       });
+      // Pre-populate the Autocomplete display for edit mode
+      setClienteSelected({ codigo: factura.codigoCliente, nombre: factura.nombreCliente });
       // setDetalles(factura.detalles || []);
     }
   }, [factura, isEdit]);
@@ -135,6 +178,8 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
       precioUnitario: 0,
       descuento: 0,
     });
+    setArticuloSelected(null);
+    setArticuloInput("");
     setDetalleDialogOpen(false);
   };
 
@@ -232,16 +277,55 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
         {/* Encabezado */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6}>
-            <TextField
-              label="Código Cliente"
-              placeholder="Ej: CLI001"
-              value={formData.codigoCliente}
-              onChange={(e) => setFormData({ ...formData, codigoCliente: e.target.value })}
-              fullWidth
+            <Autocomplete
+              options={clienteOptions}
+              getOptionLabel={(opt: any) =>
+                `${opt.CODIGO ?? opt.codigo ?? ""} — ${opt.NOMBRE ?? opt.nombre ?? ""}`
+              }
+              value={clienteSelected}
+              loading={isLoadingClientes}
+              onInputChange={(_, val) => setClienteInput(val)}
+              onChange={(_, selected) => {
+                setClienteSelected(selected);
+                if (selected) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    codigoCliente: selected.CODIGO ?? selected.codigo ?? "",
+                    nombreCliente: selected.NOMBRE ?? selected.nombre ?? "",
+                  }));
+                } else {
+                  setFormData((prev) => ({
+                    ...prev,
+                    codigoCliente: "",
+                    nombreCliente: "",
+                  }));
+                }
+              }}
+              isOptionEqualToValue={(opt: any, val: any) =>
+                (opt.CODIGO ?? opt.codigo) === (val.CODIGO ?? val.codigo)
+              }
+              noOptionsText={clienteInput.length < 2 ? "Escriba al menos 2 caracteres" : "Sin resultados"}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Cliente"
+                  size="small"
+                  required
+                  error={!!errors.codigoCliente}
+                  helperText={errors.codigoCliente}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {isLoadingClientes ? <CircularProgress color="inherit" size={18} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
               size="small"
-              required
-              error={!!errors.codigoCliente}
-              helperText={errors.codigoCliente}
+              fullWidth
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -251,6 +335,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               onChange={(e) => setFormData({ ...formData, nombreCliente: e.target.value })}
               fullWidth
               size="small"
+              InputProps={{ readOnly: true }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -272,6 +357,38 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               fullWidth
               size="small"
             />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              label="Forma de Pago"
+              value={formData.formaPago}
+              onChange={(e) => setFormData({ ...formData, formaPago: e.target.value })}
+              fullWidth
+              size="small"
+            >
+              {FORMAS_PAGO.map((fp) => (
+                <MenuItem key={fp.value} value={fp.value}>
+                  {fp.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              label="Moneda"
+              value={formData.moneda}
+              onChange={(e) => setFormData({ ...formData, moneda: e.target.value })}
+              fullWidth
+              size="small"
+            >
+              {MONEDAS.map((m) => (
+                <MenuItem key={m.value} value={m.value}>
+                  {m.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12}>
             <TextField
@@ -338,9 +455,9 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
 
         {/* Totales */}
         {detalles.length > 0 && (
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: "#f5f5f5", 
+          <Box sx={{
+            p: 2,
+            backgroundColor: "#f5f5f5",
             borderRadius: 1,
             mb: 3,
             textAlign: "right"
@@ -360,9 +477,9 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                   <Typography>IVA (16%):</Typography>
                   <Typography>{formatCurrency(totales.iva)}</Typography>
                 </Box>
-                <Box sx={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
+                <Box sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
                   fontWeight: 600,
                   fontSize: "1.1em",
                   pt: 1,
@@ -400,24 +517,66 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
       <Dialog open={detalleDialogOpen} onClose={() => setDetalleDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Agregar Artículo</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Grid container spacing={2}>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={12}>
-              <TextField
-                label="Código Artículo"
-                value={currentDetalle.codigoArticulo}
-                onChange={(e) => setCurrentDetalle({ ...currentDetalle, codigoArticulo: e.target.value })}
-                fullWidth
+              <Autocomplete
+                options={articuloOptions}
+                getOptionLabel={(opt: any) =>
+                  `${opt.CODIGO ?? opt.codigo ?? ""} — ${opt.NOMBRE ?? opt.nombre ?? opt.DESCRIPCION ?? opt.descripcion ?? ""}`
+                }
+                value={articuloSelected}
+                loading={isLoadingArticulos}
+                onInputChange={(_, val) => setArticuloInput(val)}
+                onChange={(_, selected) => {
+                  setArticuloSelected(selected);
+                  if (selected) {
+                    setCurrentDetalle((prev) => ({
+                      ...prev,
+                      codigoArticulo: selected.CODIGO ?? selected.codigo ?? "",
+                      nombreArticulo: selected.NOMBRE ?? selected.nombre ?? selected.DESCRIPCION ?? selected.descripcion ?? "",
+                      precioUnitario: selected.PRECIO ?? selected.precio ?? selected.PRECIO_VENTA ?? selected.precioVenta ?? 0,
+                    }));
+                  } else {
+                    setCurrentDetalle((prev) => ({
+                      ...prev,
+                      codigoArticulo: "",
+                      nombreArticulo: "",
+                      precioUnitario: 0,
+                    }));
+                  }
+                }}
+                isOptionEqualToValue={(opt: any, val: any) =>
+                  (opt.CODIGO ?? opt.codigo) === (val.CODIGO ?? val.codigo)
+                }
+                noOptionsText={articuloInput.length < 2 ? "Escriba al menos 2 caracteres" : "Sin resultados"}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Buscar Artículo"
+                    size="small"
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {isLoadingArticulos ? <CircularProgress color="inherit" size={18} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
                 size="small"
-                required
+                fullWidth
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 label="Nombre Artículo"
                 value={currentDetalle.nombreArticulo}
-                onChange={(e) => setCurrentDetalle({ ...currentDetalle, nombreArticulo: e.target.value })}
                 fullWidth
                 size="small"
+                InputProps={{ readOnly: true }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>

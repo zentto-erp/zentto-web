@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress, MenuItem } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "@zentto/shared-api";
 import type { PaymentMethodFormData } from "../hooks/useStoreAccount";
 
 const METHOD_TYPES = [
@@ -27,6 +29,11 @@ interface Props {
 }
 
 export default function PaymentMethodForm({ initial, onSave, onCancel, saving }: Props) {
+  const { data: bancosData } = useQuery({
+    queryKey: ["bancos-ecommerce"],
+    queryFn: () => apiGet("/api/v1/bancos"),
+  });
+  const bancos: any[] = (bancosData as any)?.rows ?? (bancosData as any)?.data ?? [];
   const [methodType, setMethodType] = useState(initial?.methodType ?? "");
   const [label, setLabel] = useState(initial?.label ?? "");
   const [bankName, setBankName] = useState(initial?.bankName ?? "");
@@ -99,7 +106,11 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
         {methodType === "PAGO_MOVIL" && (
           <>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} fullWidth size="small" required />
+              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} fullWidth size="small" required>
+                {bancos.map((b: any) => (
+                  <MenuItem key={b.BankName ?? b.bankName} value={b.BankName ?? b.bankName}>{b.BankName ?? b.bankName}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField label="Telefono" placeholder="0414-1234567" value={accountPhone} onChange={(e) => setAccountPhone(e.target.value)} fullWidth size="small" required />
@@ -114,7 +125,11 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
         {methodType === "TRANSFERENCIA" && (
           <>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} fullWidth size="small" required />
+              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} fullWidth size="small" required>
+                {bancos.map((b: any) => (
+                  <MenuItem key={b.BankName ?? b.bankName} value={b.BankName ?? b.bankName}>{b.BankName ?? b.bankName}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField label="Nro. de cuenta" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} fullWidth size="small" required />

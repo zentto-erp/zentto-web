@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Checkbox,
   CircularProgress,
   Grid,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -19,8 +21,9 @@ import {
   Typography
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import { toDateOnly } from "@zentto/shared-api";
+import { apiGet, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
+import { useQuery } from "@tanstack/react-query";
 import {
   CxcAplicarCobroPayload,
   CxcDocumentoPendiente,
@@ -35,11 +38,25 @@ type FormaPagoLine = { formaPago: string; monto: number; banco?: string; numCheq
 export default function CobroTxForm() {
   const { timeZone } = useTimezone();
   const [codCliente, setCodCliente] = useState("");
+  const [clienteInput, setClienteInput] = useState("");
   const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [codUsuario, setCodUsuario] = useState("SUP");
   const [observaciones, setObservaciones] = useState("");
   const [formasPago, setFormasPago] = useState<FormaPagoLine[]>([{ formaPago: "EFECTIVO", monto: 0 }]);
   const [rows, setRows] = useState<SelDoc[]>([]);
+
+  const { data: clientesData } = useQuery({
+    queryKey: ["clientes-search-cxc", clienteInput],
+    queryFn: () => apiGet("/api/v1/clientes", { search: clienteInput, limit: 10 }),
+    enabled: clienteInput.length >= 2,
+  });
+  const clientesOptions: { codCliente: string; nombre: string }[] = (clientesData as any)?.rows ?? (clientesData as any)?.data ?? [];
+
+  const { data: bancosData } = useQuery({
+    queryKey: ["bancos-list"],
+    queryFn: () => apiGet("/api/v1/bancos"),
+  });
+  const bancos: any[] = (bancosData as any)?.rows ?? (bancosData as any)?.data ?? [];
 
   const docsQuery = useCxcDocumentosPendientes(codCliente.trim());
   const saldoQuery = useCxcSaldo(codCliente.trim());
@@ -123,12 +140,27 @@ export default function CobroTxForm() {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
+            <Autocomplete
+              freeSolo
               size="small"
-              label="Cod Cliente"
-              value={codCliente}
-              onChange={(e) => setCodCliente(e.target.value)}
+              options={clientesOptions}
+              getOptionLabel={(opt) =>
+                typeof opt === "string" ? opt : `${opt.codCliente} - ${opt.nombre}`
+              }
+              inputValue={clienteInput}
+              onInputChange={(_e, val) => {
+                setClienteInput(val);
+                setCodCliente(val);
+              }}
+              onChange={(_e, val) => {
+                if (val && typeof val !== "string") {
+                  setCodCliente(val.codCliente);
+                  setClienteInput(`${val.codCliente} - ${val.nombre}`);
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} fullWidth label="Cod Cliente" />
+              )}
             />
           </Grid>
           <Grid item xs={12} sm={2}>
@@ -203,11 +235,18 @@ export default function CobroTxForm() {
               <TableRow key={idx}>
                 <TableCell>
                   <TextField
+                    select
                     size="small"
                     value={fp.formaPago}
-                    onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value.toUpperCase() })}
+                    onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value })}
                     sx={{ minWidth: 140 }}
-                  />
+                  >
+                    <MenuItem value="EFECTIVO">Efectivo</MenuItem>
+                    <MenuItem value="TRANSFERENCIA">Transferencia</MenuItem>
+                    <MenuItem value="TARJETA">Tarjeta</MenuItem>
+                    <MenuItem value="CHEQUE">Cheque</MenuItem>
+                    <MenuItem value="PAGO_MOVIL">Pago Movil</MenuItem>
+                  </TextField>
                 </TableCell>
                 <TableCell align="right">
                   <TextField
@@ -220,7 +259,19 @@ export default function CobroTxForm() {
                   />
                 </TableCell>
                 <TableCell>
-                  <TextField size="small" value={fp.banco || ""} onChange={(e) => updateFormaPago(idx, { banco: e.target.value })} />
+                  <TextField
+                    select
+                    size="small"
+                    value={fp.banco || ""}
+                    onChange={(e) => updateFormaPago(idx, { banco: e.target.value })}
+                  >
+                    <MenuItem value="">Sin banco</MenuItem>
+                    {bancos.map((b: any) => (
+                      <MenuItem key={b.BankName ?? b.nombre} value={b.BankName ?? b.nombre}>
+                        {b.BankName ?? b.nombre}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </TableCell>
                 <TableCell>
                   <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />

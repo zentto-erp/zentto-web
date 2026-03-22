@@ -20,6 +20,7 @@ import {
   FormControl,
   Tooltip,
   CircularProgress,
+  Autocomplete,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
@@ -30,6 +31,7 @@ import {
   useUpsertCategoria,
   type FixedAssetCategory,
 } from "../hooks/useActivosFijos";
+import { usePlanCuentas } from "../hooks/useContabilidad";
 
 const DEPRECIATION_METHODS = [
   { value: "STRAIGHT_LINE", label: "Línea recta" },
@@ -81,6 +83,11 @@ export default function CategoriasActivosPage() {
 
   const { data, isLoading } = useCategoriasList();
   const upsertMutation = useUpsertCategoria();
+  const { data: cuentasData } = usePlanCuentas();
+  const cuentas = (cuentasData?.data ?? cuentasData?.rows ?? []).map((c: any) => ({
+    code: c.codCuenta ?? c.Cod_Cuenta ?? c.AccountCode ?? "",
+    name: c.descripcion ?? c.Desc_Cta ?? c.AccountName ?? "",
+  }));
 
   const rows = data?.rows ?? [];
 
@@ -239,26 +246,35 @@ export default function CategoriasActivosPage() {
               />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField
-                label="Cuenta activo"
-                fullWidth
+              <Autocomplete
+                options={cuentas}
+                getOptionLabel={(opt: any) => opt.code ? `${opt.code} — ${opt.name}` : ""}
+                value={cuentas.find((c: any) => c.code === form.defaultAssetAccountCode) ?? null}
+                onChange={(_, sel) => setField("defaultAssetAccountCode", sel?.code ?? "")}
+                renderInput={(params) => <TextField {...params} label="Cuenta activo" size="small" />}
                 size="small"
-                value={form.defaultAssetAccountCode}
-                onChange={(e) => setField("defaultAssetAccountCode", e.target.value)}
+                fullWidth
+                isOptionEqualToValue={(opt, val) => opt.code === val.code}
               />
-              <TextField
-                label="Cuenta dep. acum."
-                fullWidth
+              <Autocomplete
+                options={cuentas}
+                getOptionLabel={(opt: any) => opt.code ? `${opt.code} — ${opt.name}` : ""}
+                value={cuentas.find((c: any) => c.code === form.defaultDeprecAccountCode) ?? null}
+                onChange={(_, sel) => setField("defaultDeprecAccountCode", sel?.code ?? "")}
+                renderInput={(params) => <TextField {...params} label="Cuenta dep. acum." size="small" />}
                 size="small"
-                value={form.defaultDeprecAccountCode}
-                onChange={(e) => setField("defaultDeprecAccountCode", e.target.value)}
+                fullWidth
+                isOptionEqualToValue={(opt, val) => opt.code === val.code}
               />
-              <TextField
-                label="Cuenta gasto"
-                fullWidth
+              <Autocomplete
+                options={cuentas}
+                getOptionLabel={(opt: any) => opt.code ? `${opt.code} — ${opt.name}` : ""}
+                value={cuentas.find((c: any) => c.code === form.defaultExpenseAccountCode) ?? null}
+                onChange={(_, sel) => setField("defaultExpenseAccountCode", sel?.code ?? "")}
+                renderInput={(params) => <TextField {...params} label="Cuenta gasto" size="small" />}
                 size="small"
-                value={form.defaultExpenseAccountCode}
-                onChange={(e) => setField("defaultExpenseAccountCode", e.target.value)}
+                fullWidth
+                isOptionEqualToValue={(opt, val) => opt.code === val.code}
               />
             </Stack>
           </Stack>
