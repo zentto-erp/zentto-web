@@ -76,13 +76,13 @@ router.get('/dashboard', async (req: Request, res: Response, next: NextFunction)
           filter: { range: { statusCode: { gte: 500 } } },
         },
         events_by_type: {
-          terms: { field: 'event.keyword', size: 20 },
+          terms: { field: 'event', size: 20 },
         },
         requests_over_time: {
           date_histogram: { field: '@timestamp', fixed_interval: range === '1h' ? '5m' : range === '24h' ? '1h' : '1d' },
         },
         top_endpoints: {
-          terms: { field: 'path.keyword', size: 10 },
+          terms: { field: 'path', size: 10 },
         },
         status_codes: {
           terms: { field: 'statusCode', size: 10 },
@@ -149,12 +149,12 @@ router.get('/activity', async (req: Request, res: Response, next: NextFunction) 
           terms: { field: 'userId', size: 50 },
           aggs: {
             last_seen: { max: { field: '@timestamp' } },
-            request_count: { value_count: { field: 'method.keyword' } },
-            modules: { terms: { field: 'path.keyword', size: 5 } },
+            request_count: { value_count: { field: 'method' } },
+            modules: { terms: { field: 'path', size: 5 } },
           },
         },
         by_module: {
-          terms: { field: 'path.keyword', size: 20 },
+          terms: { field: 'path', size: 20 },
         },
         activity_heatmap: {
           date_histogram: { field: '@timestamp', fixed_interval: '1h' },
@@ -229,7 +229,7 @@ router.get('/business', async (req: Request, res: Response, next: NextFunction) 
           filter: { term: { event: 'crm.lead.created' } },
         },
         all_events: {
-          terms: { field: 'event.keyword', size: 30 },
+          terms: { field: 'event', size: 30 },
           aggs: {
             trend: { date_histogram: { field: '@timestamp', fixed_interval: '1d' } },
           },
@@ -295,7 +295,7 @@ router.get('/performance', async (req: Request, res: Response, next: NextFunctio
           },
         },
         slowest_endpoints: {
-          terms: { field: 'path.keyword', size: 10, order: { avg_duration: 'desc' } },
+          terms: { field: 'path', size: 10, order: { avg_duration: 'desc' } },
           aggs: {
             avg_duration: { avg: { field: 'durationMs' } },
             max_duration: { max: { field: 'durationMs' } },
@@ -305,7 +305,7 @@ router.get('/performance', async (req: Request, res: Response, next: NextFunctio
         errors_by_path: {
           filter: { range: { statusCode: { gte: 400 } } },
           aggs: {
-            paths: { terms: { field: 'path.keyword', size: 10 } },
+            paths: { terms: { field: 'path', size: 10 } },
           },
         },
       },
@@ -354,9 +354,9 @@ router.get('/audit', async (req: Request, res: Response, next: NextFunction) => 
       { term: { companyId } },
       { range: { '@timestamp': { gte } } },
     ];
-    if (action) must.push({ term: { 'action.keyword': action } });
+    if (action) must.push({ term: { 'action': action } });
     if (userId) must.push({ term: { userId: Number(userId) } });
-    if (mod) must.push({ term: { 'module.keyword': mod } });
+    if (mod) must.push({ term: { 'module': mod } });
 
     const from = (Number(page) - 1) * Number(limit);
 
@@ -366,9 +366,9 @@ router.get('/audit', async (req: Request, res: Response, next: NextFunction) => 
       sort: [{ '@timestamp': 'desc' }],
       query: { bool: { must } },
       aggs: {
-        actions: { terms: { field: 'action.keyword', size: 20 } },
+        actions: { terms: { field: 'action', size: 20 } },
         by_user: { terms: { field: 'userId', size: 20 } },
-        by_module: { terms: { field: 'module.keyword', size: 20 } },
+        by_module: { terms: { field: 'module', size: 20 } },
       },
     });
 
