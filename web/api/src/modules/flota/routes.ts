@@ -6,6 +6,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import * as svc from "./service.js";
+import { emitFuelAccountingEntry, emitMaintenanceAccountingEntry } from "./fleet-contabilidad.service.js";
 
 export const flotaRouter = Router();
 
@@ -123,7 +124,20 @@ flotaRouter.post("/combustible", async (req: Request, res: Response) => {
   }
   try {
     const result = await svc.createFuelLog({ ...parsed.data, userId: getUserId(req) });
-    res.status(result.success ? 201 : 400).json(result);
+    if (!result.success) return res.status(400).json(result);
+
+    // Best-effort: contabilidad (nunca bloquea la operacion principal)
+    let contabilidad: { ok: boolean } = { ok: false };
+    try {
+      const codUsuario = String(getUserId(req));
+      contabilidad = await emitFuelAccountingEntry({
+        vehiclePlate: "", // plate not available in this flow
+        totalCost: parsed.data.totalCost,
+        fecha: parsed.data.logDate,
+      }, codUsuario);
+    } catch { /* never blocks */ }
+
+    res.status(201).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -245,7 +259,22 @@ flotaRouter.post("/mantenimientos/:id/completar", async (req: Request, res: Resp
       ...parsed.data,
       userId: getUserId(req),
     });
-    res.status(result.success ? 200 : 400).json(result);
+    if (!result.success) return res.status(400).json(result);
+
+    // Best-effort: contabilidad (nunca bloquea la operacion principal)
+    let contabilidad: { ok: boolean } = { ok: false };
+    try {
+      const codUsuario = String(getUserId(req));
+      contabilidad = await emitMaintenanceAccountingEntry({
+        orderNumber: `MNT-${req.params.id}`,
+        vehiclePlate: "",
+        actualCost: parsed.data.actualCost,
+        fecha: parsed.data.completedDate,
+        isPaid: false,
+      }, codUsuario);
+    } catch { /* never blocks */ }
+
+    res.status(200).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

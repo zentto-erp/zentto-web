@@ -5,6 +5,7 @@
  */
 import { Router, Request, Response } from "express";
 import * as svc from "./service.js";
+import { emitWorkOrderAccountingEntry } from "./mfg-contabilidad.service.js";
 
 export const manufacturaRouter = Router();
 
@@ -211,7 +212,25 @@ manufacturaRouter.post("/ordenes/:id/reportar-salida", async (req: Request, res:
 manufacturaRouter.post("/ordenes/:id/completar", async (req: Request, res: Response) => {
   try {
     const result = await svc.completeWorkOrder(Number(req.params.id), userId(req));
-    res.status(result.success ? 200 : 400).json(result);
+    if (!result.success) return res.status(400).json(result);
+
+    // Best-effort: contabilidad (nunca bloquea la operacion principal)
+    let contabilidad: { ok: boolean } = { ok: false };
+    try {
+      const codUsuario = String(userId(req));
+      const body = req.body ?? {};
+      contabilidad = await emitWorkOrderAccountingEntry({
+        workOrderNumber: String(result.WorkOrderNumber ?? `WO-${req.params.id}`),
+        productCode: String(body.productCode ?? ""),
+        completedQuantity: Number(body.completedQuantity ?? 0),
+        materialCost: Number(body.materialCost ?? 0),
+        laborCost: Number(body.laborCost ?? 0),
+        totalCost: Number(body.totalCost ?? 0),
+        fecha: new Date().toISOString().slice(0, 10),
+      }, codUsuario);
+    } catch { /* never blocks */ }
+
+    res.status(200).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

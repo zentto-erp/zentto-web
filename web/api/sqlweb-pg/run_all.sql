@@ -452,10 +452,46 @@
 \echo '--- Seed Demo Finanzas y Contabilidad ---'
 \i includes/sp/seed_demo_finanzas_contabilidad.sql
 
+\echo '--- Seed Demo Inventario Avanzado ---'
+\i includes/sp/seed_demo_inventario_avanzado.sql
+
+\echo '--- Seed Demo Logistica ---'
+\i includes/sp/seed_demo_logistica.sql
+
+\echo '--- Seed Demo CRM ---'
+\i includes/sp/seed_demo_crm.sql
+
+\echo '--- Seed Demo Manufactura ---'
+\i includes/sp/seed_demo_manufactura.sql
+
+\echo '--- Seed Demo Flota ---'
+\i includes/sp/seed_demo_flota.sql
+
+\echo '--- Seed Demo RBAC ---'
+\i includes/sp/seed_demo_rbac.sql
+
 \echo '--- Funciones Flota ---'
 \i includes/sp/usp_fleet.sql
 
 \echo '--- Funciones RBAC (Permisos Granulares) ---'
+\i includes/sp/usp_rbac.sql
+
+\echo '--- Funciones Inventario Avanzado ---'
+\i includes/sp/usp_inv.sql
+
+\echo '--- Funciones Logistica ---'
+\i includes/sp/usp_logistics.sql
+
+\echo '--- Funciones CRM ---'
+\i includes/sp/usp_crm.sql
+
+\echo '--- Funciones Manufactura ---'
+\i includes/sp/usp_mfg.sql
+
+\echo '--- Funciones Flota ---'
+\i includes/sp/usp_fleet.sql
+
+\echo '--- Funciones RBAC Permisos ---'
 \i includes/sp/usp_rbac.sql
 
 \echo '--- Seed Usuarios Demo (admin, gerente, cajero / pass: Admin123!) ---'

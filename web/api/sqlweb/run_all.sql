@@ -61,6 +61,16 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\11_crm.sql
 
 -- ====================================================================
+-- Nuevos Modulos: Inventario Avanzado, Logistica, CRM, Manufactura, Flota, RBAC
+-- ====================================================================
+:r includes/sp/usp_inv.sql
+:r includes/sp/usp_logistics.sql
+:r includes/sp/usp_crm.sql
+:r includes/sp/usp_mfg.sql
+:r includes/sp/usp_fleet.sql
+:r includes/sp/usp_rbac.sql
+
+-- ====================================================================
 -- RRHH: Beneficios, Obligaciones Legales, Salud Ocupacional
 -- ====================================================================
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_cfg_country.sql
@@ -125,3 +135,11 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_clientes_documentos.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_finanzas_contabilidad.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_ecommerce_pos.sql
+
+-- Seeds nuevos modulos
+:r includes/sp/seed_demo_inventario_avanzado.sql
+:r includes/sp/seed_demo_logistica.sql
+:r includes/sp/seed_demo_crm.sql
+:r includes/sp/seed_demo_manufactura.sql
+:r includes/sp/seed_demo_flota.sql
+:r includes/sp/seed_demo_rbac.sql

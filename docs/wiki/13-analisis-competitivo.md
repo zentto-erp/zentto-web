@@ -9,25 +9,25 @@
 | Presupuestos/Cotizaciones | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Pedidos de venta | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Notas crédito/débito | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Albaranes / Notas de entrega** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Guías de despacho** | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ |
+| **Albaranes / Notas de entrega** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Guías de despacho** | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
 | Abonos/anticipos | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Comisiones vendedores | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
 | **COMPRAS** | | | | | | |
 | Órdenes de compra | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Recepción de mercancía | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Devoluciones a proveedor | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Recepción de mercancía | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Devoluciones a proveedor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **INVENTARIO** | | | | | | |
 | Multi-almacén | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Traslados entre almacenes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Ajustes de inventario | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Cierre mensual | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| **Seriales por unidad** | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Lotes / Batch tracking** | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Fechas de vencimiento** | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| **FIFO/LIFO/Promedio** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Ubicaciones (bins)** | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| **Picking/Packing** | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **Seriales por unidad** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Lotes / Batch tracking** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Fechas de vencimiento** | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **FIFO/LIFO/Promedio** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Ubicaciones (bins)** | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **Picking/Packing** | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Etiquetas/códigos de barra | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **CONTABILIDAD** | | | | | | |
 | Asientos diario | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -209,15 +209,49 @@ Actualmente: OC → Compra directa. No hay paso intermedio de recepción ni veri
 
 ---
 
-## ROADMAP SUGERIDO
+## ROADMAP — ESTADO ACTUAL (actualizado 2026-03-22)
 
-| Fase | Trimestre | Módulos | Impacto |
-|------|-----------|---------|---------|
-| 1 | Q2 2026 | Seriales + Lotes + Albaranes + FIFO | Alto — desbloquea retail, electrónica, farma |
-| 2 | Q2 2026 | Recepción mercancía + Devoluciones | Alto — completa ciclo de compras |
-| 3 | Q3 2026 | Guías despacho + Transportistas | Medio — logística de distribución |
-| 4 | Q3 2026 | RBAC (permisos granulares) | Alto — requerido por empresas medianas |
-| 5 | Q3 2026 | CRM pipeline | Medio — departamento comercial |
-| 6 | Q4 2026 | Control de flota | Medio — empresas con vehículos |
-| 7 | Q4 2026 | BOM / Manufactura básica | Alto — desbloquea vertical industrial |
-| 8 | 2027 | WMS avanzado (bins, picking) | Alto — desbloquea distribución mayorista |
+| # | Módulo | DDL | SPs | API | Seeds | Frontend | Estado |
+|---|--------|-----|-----|-----|-------|----------|--------|
+| 1 | Seriales + Lotes + Bins + FIFO | ✅ | ✅ 17 SPs | ✅ 18 endpoints | ✅ | Pendiente | **Backend listo** |
+| 2 | Recepción mercancía + Devoluciones | ✅ | ✅ 15 SPs | ✅ 15 endpoints | ✅ | Pendiente | **Backend listo** |
+| 3 | Guías despacho + Transportistas | ✅ | ✅ (en logistics) | ✅ (en logistica) | ✅ | Pendiente | **Backend listo** |
+| 4 | RBAC (permisos granulares) | ✅ | ✅ 14 SPs | ✅ 14 endpoints | ✅ 120 permisos | Pendiente | **Backend listo** |
+| 5 | CRM pipeline | ✅ | ✅ 15 SPs | ✅ 15 endpoints | ✅ | Pendiente | **Backend listo** |
+| 6 | Control de flota | ✅ | ✅ 16 SPs | ✅ 17 endpoints | ✅ | Pendiente | **Backend listo** |
+| 7 | BOM / Manufactura | ✅ | ✅ 17 SPs | ✅ 14 endpoints | ✅ | Pendiente | **Backend listo** |
+| 8 | WMS avanzado (bins, picking) | ✅ | ✅ (en inv) | ✅ (en inv-avanzado) | ✅ | Pendiente | **Backend listo** |
+
+### Totales implementados
+
+| Capa | Cantidad |
+|------|----------|
+| Esquemas DB nuevos | 6 (inv, logistics, crm, mfg, fleet, sec ext) |
+| Tablas nuevas | 45 |
+| Stored Procedures | ~94 (ambos motores) |
+| Endpoints API | ~93 |
+| Archivos seed | 12 (6 SQL Server + 6 PostgreSQL) |
+| Paridad dual-DB | ✅ SQL Server + PostgreSQL |
+
+### Pendiente: Frontend (apps micro-frontend)
+
+Cada módulo necesita su app o integración en app existente:
+- `/inventario` — agregar secciones: seriales, lotes, ubicaciones, valoración
+- `/compras` — agregar: recepción de mercancía, devoluciones
+- `/ventas` — agregar: notas de entrega
+- Nueva app `/crm` — pipeline, leads, actividades
+- Nueva app `/manufactura` — BOM, órdenes producción
+- Nueva app `/flota` — vehículos, mantenimiento, viajes
+- `/shell` (admin) — gestión de permisos RBAC
+
+### Cosas que se podrían escapar (revisión pendiente)
+
+1. **Integración serial↔POS**: Cuando POS vende un artículo con serial, debería seleccionar serial y actualizar estado
+2. **Integración lote↔fecha vencimiento en POS**: Alertar si se vende producto vencido
+3. **Integración recepción↔inventario**: Al aprobar recepción, actualizar stock real (StockMovement PURCHASE_IN)
+4. **Integración nota entrega↔factura**: Al despachar, vincular con la factura original
+5. **Integración manufactura↔inventario**: Al completar orden, consumir materiales y producir terminado
+6. **Integración flota↔activos fijos**: Vincular vehículo con su activo fijo para depreciación
+7. **RBAC middleware**: Verificar permisos en cada endpoint (actualmente solo admin/no-admin)
+8. **Reportes PDF**: Hoja de salida de almacén, guía de despacho, orden de producción
+9. **Contabilidad implícita**: Los nuevos módulos (manufactura, flota) también deberían generar asientos automáticos

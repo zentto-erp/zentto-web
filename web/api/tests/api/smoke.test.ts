@@ -79,6 +79,33 @@ describe('API Smoke — rutas protegidas requieren auth', () => {
     '/api/master/products',
     '/api/master/customers',
     '/api/cfg/settings',
+    // Inventario Avanzado
+    '/v1/inventario-avanzado/almacenes',
+    '/v1/inventario-avanzado/lotes',
+    '/v1/inventario-avanzado/seriales',
+    '/v1/inventario-avanzado/movimientos',
+    // Logística
+    '/v1/logistica/transportistas',
+    '/v1/logistica/conductores',
+    '/v1/logistica/recepciones',
+    '/v1/logistica/notas-entrega',
+    // CRM
+    '/v1/crm/pipelines',
+    '/v1/crm/leads',
+    '/v1/crm/actividades',
+    '/v1/crm/dashboard',
+    // Manufactura
+    '/v1/manufactura/bom',
+    '/v1/manufactura/centros-trabajo',
+    '/v1/manufactura/ordenes',
+    // Flota
+    '/v1/flota/vehiculos',
+    '/v1/flota/combustible',
+    '/v1/flota/mantenimientos',
+    '/v1/flota/viajes',
+    '/v1/flota/dashboard',
+    // Permisos
+    '/v1/permisos/permisos',
   ];
 
   for (const route of protectedRoutes) {
