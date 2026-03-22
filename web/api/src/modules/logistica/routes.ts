@@ -21,6 +21,10 @@ import {
   dispatchDeliveryNote,
   deliverDeliveryNote,
 } from "./service.js";
+import {
+  processGoodsReceiptStock,
+  processDeliveryNoteStock,
+} from "../inventario-avanzado/inv-integracion.service.js";
 
 export const logisticaRouter = Router();
 
@@ -112,11 +116,27 @@ logisticaRouter.post("/recepciones", async (req, res) => {
 
 logisticaRouter.post("/recepciones/:id/aprobar", async (req, res) => {
   try {
+    const codUsuario = req.body.userId || (req as any).user?.username || "API";
     const result = await approveGoodsReceipt(
       parseInt(req.params.id),
-      req.body.userId
+      codUsuario
     );
-    return res.status(result.ok ? 200 : 400).json(result);
+
+    // Integration: create stock movements for received goods (best-effort)
+    let stockResult: { ok: boolean; movementsCreated?: number } = { ok: false };
+    if (result.ok) {
+      try {
+        const scope = (req as any).user;
+        stockResult = await processGoodsReceiptStock({
+          companyId: scope?.companyId ?? 1,
+          branchId: scope?.branchId ?? 1,
+          goodsReceiptId: parseInt(req.params.id),
+          codUsuario,
+        });
+      } catch { /* never blocks */ }
+    }
+
+    return res.status(result.ok ? 200 : 400).json({ ...result, stock: stockResult });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -197,11 +217,27 @@ logisticaRouter.post("/notas-entrega", async (req, res) => {
 
 logisticaRouter.post("/notas-entrega/:id/despachar", async (req, res) => {
   try {
+    const codUsuario = req.body.userId || (req as any).user?.username || "API";
     const result = await dispatchDeliveryNote(
       parseInt(req.params.id),
-      req.body.userId
+      codUsuario
     );
-    return res.status(result.ok ? 200 : 400).json(result);
+
+    // Integration: create stock movements for dispatched goods (best-effort)
+    let stockResult: { ok: boolean; movementsCreated?: number } = { ok: false };
+    if (result.ok) {
+      try {
+        const scope = (req as any).user;
+        stockResult = await processDeliveryNoteStock({
+          companyId: scope?.companyId ?? 1,
+          branchId: scope?.branchId ?? 1,
+          deliveryNoteId: parseInt(req.params.id),
+          codUsuario,
+        });
+      } catch { /* never blocks */ }
+    }
+
+    return res.status(result.ok ? 200 : 400).json({ ...result, stock: stockResult });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

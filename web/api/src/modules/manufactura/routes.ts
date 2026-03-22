@@ -230,7 +230,20 @@ manufacturaRouter.post("/ordenes/:id/completar", async (req: Request, res: Respo
       }, codUsuario);
     } catch { /* never blocks */ }
 
-    res.status(200).json({ ...result, contabilidad });
+    // Best-effort: stock movements (consume materials + produce finished goods)
+    let stock: { ok: boolean; materialsConsumed?: number; outputCreated?: boolean } = { ok: false };
+    try {
+      const { processWorkOrderStock } = await import("./mfg-integracion.service.js");
+      const scope = (req as any).user;
+      stock = await processWorkOrderStock({
+        companyId: scope?.companyId ?? 1,
+        branchId: scope?.branchId ?? 1,
+        workOrderId: Number(req.params.id),
+        userId: userId(req),
+      });
+    } catch { /* never blocks */ }
+
+    res.status(200).json({ ...result, contabilidad, stock });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
