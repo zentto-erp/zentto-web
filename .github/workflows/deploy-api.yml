@@ -207,8 +207,17 @@ jobs:
                 echo 'STORE_URL=https://app.zentto.net' >> "$ENV_API"
                 echo "✓ STORE_URL added"
               fi
-              # Observabilidad: Kafka + Elasticsearch
-              if ! grep -q '^KAFKA_ENABLED=' "$ENV_API"; then
+              # Observabilidad: Kafka + Elasticsearch (forzar valores correctos)
+              if grep -q '^KAFKA_ENABLED=' "$ENV_API"; then
+                sed -i "s|^KAFKA_ENABLED=.*|KAFKA_ENABLED=true|" "$ENV_API"
+                sed -i "s|^KAFKA_BROKERS=.*|KAFKA_BROKERS=172.18.0.1:9092|" "$ENV_API"
+                if grep -q '^ELASTICSEARCH_HOST=' "$ENV_API"; then
+                  sed -i "s|^ELASTICSEARCH_HOST=.*|ELASTICSEARCH_HOST=http://172.18.0.1:9200|" "$ENV_API"
+                else
+                  echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
+                fi
+                echo "✓ Observabilidad Kafka+ES actualizada en .env.api"
+              else
                 echo '' >> "$ENV_API"
                 echo '# Observabilidad (Kafka + Elasticsearch via Docker gateway)' >> "$ENV_API"
                 echo 'KAFKA_ENABLED=true' >> "$ENV_API"
