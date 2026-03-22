@@ -1,0 +1,39 @@
+name: Certbot — Expand SSL cert
+
+on:
+  workflow_dispatch:
+
+jobs:
+  certbot:
+    name: Expand Let's Encrypt cert
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "==> Expandiendo certificado SSL..."
+            certbot certonly \
+              --nginx \
+              --non-interactive \
+              --agree-tos \
+              --expand \
+              -d zentto.net \
+              -d www.zentto.net \
+              -d api.zentto.net \
+              -d app.zentto.net \
+              -d notify.zentto.net \
+              -d notify-dash.zentto.net \
+              -d vault.zentto.net \
+              -d kibana.zentto.net \
+              -d kafka.zentto.net \
+              -d docs.zentto.net
+
+            echo "==> Recargando nginx..."
+            nginx -t && systemctl reload nginx
+
+            echo "==> Certificado actualizado: $(date -u)"
+            certbot certificates | grep -A3 "zentto.net"
