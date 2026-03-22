@@ -139,6 +139,9 @@
 \echo '--- Funciones Fiscal Tributaria ---'
 \i includes/sp/usp_fiscal_tributaria.sql
 
+\echo '--- Funciones Retenciones Fiscales ---'
+\i includes/sp/usp_fiscal_retenciones.sql
+
 \echo '--- Funciones Miscelaneas ---'
 \i includes/sp/usp_misc.sql
 
@@ -373,6 +376,9 @@
 
 \echo '--- Fiscal Tributaria Tables ---'
 \i includes/sp/create_fiscal_tributaria.sql
+
+\echo '--- Retenciones Fiscales Schema ---'
+\i 18_fiscal_retenciones_schema.sql
 
 \echo '--- Tablas Legales Contabilidad ---'
 \i includes/sp/acct_legal_tables.sql

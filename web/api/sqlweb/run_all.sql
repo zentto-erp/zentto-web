@@ -55,6 +55,7 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_bancos.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fin_pettycash.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ecommerce.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\29_fiscal_retenciones_schema.sql
 
 -- ====================================================================
 -- RRHH: Beneficios, Obligaciones Legales, Salud Ocupacional
