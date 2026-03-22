@@ -57,6 +57,15 @@
 \echo '[12/17] Payment & Ecommerce tables...'
 \i 12_payment_ecommerce.sql
 
+\echo '--- Inventory Advanced (Serials, Lots, WMS) ---'
+\i 09_inventory_advanced.sql
+
+\echo '--- Logistics (Receipts, Returns, Delivery Notes) ---'
+\i 10_logistics.sql
+
+\echo '--- CRM Pipeline ---'
+\i 11_crm.sql
+
 -- ====================================================================
 -- FASE 3: Triggers y Fulltext
 -- ====================================================================

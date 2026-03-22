@@ -56,6 +56,9 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fin_pettycash.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ecommerce.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\29_fiscal_retenciones_schema.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\09_inventory_advanced.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\10_logistics.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\11_crm.sql
 
 -- ====================================================================
 -- RRHH: Beneficios, Obligaciones Legales, Salud Ocupacional
