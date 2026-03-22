@@ -61,7 +61,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_vehicle_list(
     p_limit        INT DEFAULT 50
 )
 RETURNS TABLE(
-    "VehicleId"              INT,
+    "VehicleId" BIGINT,
     "LicensePlate"           VARCHAR,
     "VinNumber"              VARCHAR,
     "Brand"                  VARCHAR,
@@ -73,12 +73,12 @@ RETURNS TABLE(
     "CurrentOdometer"        NUMERIC,
     "OdometerUnit"           VARCHAR,
     "IsActive"               BOOLEAN,
-    "DefaultDriverId"        INT,
-    "WarehouseId"            INT,
+    "DefaultDriverId" BIGINT,
+    "WarehouseId" BIGINT,
     "InsuranceExpiry"        TIMESTAMP,
     "Status"                 VARCHAR,
     "CreatedAt"              TIMESTAMP,
-    "TotalCount"             INT
+    "TotalCount" BIGINT
 )
 LANGUAGE plpgsql
 AS $$
@@ -148,7 +148,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_vehicle_get(
     p_vehicle_id INT
 )
 RETURNS TABLE(
-    "VehicleId"              INT,
+    "VehicleId" BIGINT,
     "CompanyId"              INT,
     "VehicleCode"            VARCHAR,
     "LicensePlate"           VARCHAR,
@@ -167,8 +167,8 @@ RETURNS TABLE(
     "PurchaseCost"           NUMERIC,
     "InsurancePolicy"        VARCHAR,
     "InsuranceExpiry"        TIMESTAMP,
-    "DefaultDriverId"        INT,
-    "WarehouseId"            INT,
+    "DefaultDriverId" BIGINT,
+    "WarehouseId" BIGINT,
     "Status"                 VARCHAR,
     "Notes"                  VARCHAR,
     "IsActive"               BOOLEAN,
@@ -245,7 +245,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_vehicle_upsert(
     p_is_active               BOOLEAN DEFAULT TRUE,
     p_user_id                 INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "VehicleId" INT)
+RETURNS TABLE("ok" INT, "VehicleId" BIGINT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -317,8 +317,8 @@ CREATE OR REPLACE FUNCTION usp_fleet_fuellog_list(
     p_limit       INT DEFAULT 50
 )
 RETURNS TABLE(
-    "FuelLogId"       INT,
-    "VehicleId"       INT,
+    "FuelLogId" BIGINT,
+    "VehicleId" BIGINT,
     "LicensePlate"    VARCHAR,
     "FuelDate"        TIMESTAMP,
     "OdometerReading" NUMERIC,
@@ -329,10 +329,10 @@ RETURNS TABLE(
     "CurrencyCode"    VARCHAR,
     "IsFullTank"      BOOLEAN,
     "StationName"     VARCHAR,
-    "DriverId"        INT,
+    "DriverId" BIGINT,
     "Notes"           VARCHAR,
     "CreatedAt"       TIMESTAMP,
-    "TotalCount"      INT
+    "TotalCount" BIGINT
 )
 LANGUAGE plpgsql
 AS $$
@@ -398,7 +398,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_fuellog_create(
     p_notes           VARCHAR(500) DEFAULT NULL,
     p_user_id         INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "FuelLogId" INT)
+RETURNS TABLE("ok" INT, "FuelLogId" BIGINT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -436,7 +436,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_maintenancetype_list(
     p_company_id INT
 )
 RETURNS TABLE(
-    "MaintenanceTypeId"   INT,
+    "MaintenanceTypeId" BIGINT,
     "TypeCode"            VARCHAR,
     "TypeName"            VARCHAR,
     "Category"            VARCHAR,
@@ -531,9 +531,9 @@ CREATE OR REPLACE FUNCTION usp_fleet_maintenanceorder_list(
     p_limit       INT DEFAULT 50
 )
 RETURNS TABLE(
-    "MaintenanceOrderId"   INT,
+    "MaintenanceOrderId" BIGINT,
     "OrderNumber"          VARCHAR,
-    "VehicleId"            INT,
+    "VehicleId" BIGINT,
     "LicensePlate"         VARCHAR,
     "MaintenanceTypeName"  VARCHAR,
     "OdometerAtService"    NUMERIC,
@@ -546,7 +546,7 @@ RETURNS TABLE(
     "Priority"             VARCHAR,
     "Notes"                VARCHAR,
     "CreatedAt"            TIMESTAMP,
-    "TotalCount"           INT
+    "TotalCount" BIGINT
 )
 LANGUAGE plpgsql
 AS $$
@@ -599,14 +599,14 @@ CREATE OR REPLACE FUNCTION usp_fleet_maintenanceorder_get(
     p_maintenance_order_id INT
 )
 RETURNS TABLE(
-    "MaintenanceOrderId"   INT,
+    "MaintenanceOrderId" BIGINT,
     "OrderNumber"          VARCHAR,
     "OrderDate"            TIMESTAMP,
-    "VehicleId"            INT,
+    "VehicleId" BIGINT,
     "LicensePlate"         VARCHAR,
     "Brand"                VARCHAR,
     "Model"                VARCHAR,
-    "MaintenanceTypeId"    INT,
+    "MaintenanceTypeId" BIGINT,
     "MaintenanceTypeName"  VARCHAR,
     "Category"             VARCHAR,
     "OdometerAtService"    NUMERIC,
@@ -683,7 +683,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_maintenanceorder_create(
     p_lines_json          VARCHAR DEFAULT NULL,
     p_user_id             INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "MaintenanceOrderId" INT, "OrderNumber" VARCHAR)
+RETURNS TABLE("ok" INT, "MaintenanceOrderId" BIGINT, "OrderNumber" VARCHAR)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -820,12 +820,12 @@ CREATE OR REPLACE FUNCTION usp_fleet_trip_list(
     p_limit       INT DEFAULT 50
 )
 RETURNS TABLE(
-    "TripId"          INT,
+    "TripId" BIGINT,
     "TripNumber"      VARCHAR,
     "TripDate"        TIMESTAMP,
-    "VehicleId"       INT,
+    "VehicleId" BIGINT,
     "LicensePlate"    VARCHAR,
-    "DriverId"        INT,
+    "DriverId" BIGINT,
     "Origin"          VARCHAR,
     "Destination"     VARCHAR,
     "DistanceKm"      NUMERIC,
@@ -833,11 +833,11 @@ RETURNS TABLE(
     "ArrivedAt"       TIMESTAMP,
     "OdometerStart"   NUMERIC,
     "OdometerEnd"     NUMERIC,
-    "DeliveryNoteId"  INT,
+    "DeliveryNoteId" BIGINT,
     "Status"          VARCHAR,
     "Notes"           VARCHAR,
     "CreatedAt"       TIMESTAMP,
-    "TotalCount"      INT
+    "TotalCount" BIGINT
 )
 LANGUAGE plpgsql
 AS $$
@@ -905,7 +905,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_trip_create(
     p_notes            VARCHAR(500) DEFAULT NULL,
     p_user_id          INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "TripId" INT, "TripNumber" VARCHAR)
+RETURNS TABLE("ok" INT, "TripId" BIGINT, "TripNumber" VARCHAR)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -1002,8 +1002,8 @@ CREATE OR REPLACE FUNCTION usp_fleet_vehicledocument_list(
     p_vehicle_id INT
 )
 RETURNS TABLE(
-    "VehicleDocumentId" INT,
-    "VehicleId"         INT,
+    "VehicleDocumentId" BIGINT,
+    "VehicleId" BIGINT,
     "DocumentType"      VARCHAR,
     "DocumentNumber"    VARCHAR,
     "Description"       VARCHAR,

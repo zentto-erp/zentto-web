@@ -14,7 +14,7 @@ CREATE SCHEMA IF NOT EXISTS logistics;
 --  Tabla: logistics."Carrier"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."Carrier" (
-    "CarrierId"        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "CarrierId" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"        INT NOT NULL,
     "CarrierCode"      VARCHAR(20) NOT NULL,
     "CarrierName"      VARCHAR(100) NOT NULL,
@@ -39,9 +39,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UX_Carrier_Code"
 --  Tabla: logistics."Driver"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."Driver" (
-    "DriverId"         INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "DriverId" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"        INT NOT NULL,
-    "CarrierId"        INT NULL REFERENCES logistics."Carrier"("CarrierId"),
+    "CarrierId" BIGINT NULL REFERENCES logistics."Carrier"("CarrierId"),
     "DriverCode"       VARCHAR(20) NOT NULL,
     "DriverName"       VARCHAR(100) NOT NULL,
     "FiscalId"         VARCHAR(30) NULL,
@@ -64,17 +64,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UX_Driver_Code"
 --  Tabla: logistics."GoodsReceipt"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."GoodsReceipt" (
-    "GoodsReceiptId"        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "GoodsReceiptId" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"             INT NOT NULL,
     "BranchId"              INT NOT NULL,
     "ReceiptNumber"         VARCHAR(20) NOT NULL,
     "PurchaseDocumentNumber" VARCHAR(30) NULL,
-    "SupplierId"            INT NULL,
-    "WarehouseId"           INT NOT NULL,
+    "SupplierId" BIGINT NULL,
+    "WarehouseId" BIGINT NOT NULL,
     "ReceiptDate"           TIMESTAMP NOT NULL,
     "Status"                VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
     "Notes"                 VARCHAR(500) NULL,
-    "CarrierId"             INT NULL REFERENCES logistics."Carrier"("CarrierId"),
+    "CarrierId" BIGINT NULL REFERENCES logistics."Carrier"("CarrierId"),
     "DriverName"            VARCHAR(100) NULL,
     "VehiclePlate"          VARCHAR(20) NULL,
     "ReceivedByUserId"      INT NULL,
@@ -97,9 +97,9 @@ CREATE INDEX IF NOT EXISTS "IX_Receipt_Date"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."GoodsReceiptLine" (
     "GoodsReceiptLineId" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "GoodsReceiptId"    INT NOT NULL REFERENCES logistics."GoodsReceipt"("GoodsReceiptId"),
+    "GoodsReceiptId" BIGINT NOT NULL REFERENCES logistics."GoodsReceipt"("GoodsReceiptId"),
     "LineNumber"        INT NOT NULL DEFAULT 0,
-    "ProductId"         INT NOT NULL,
+    "ProductId" BIGINT NOT NULL,
     "ProductCode"       VARCHAR(30) NULL,
     "Description"       VARCHAR(250) NULL,
     "OrderedQuantity"   DECIMAL(18,4) NOT NULL DEFAULT 0,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS logistics."GoodsReceiptLine" (
     "TotalCost"         DECIMAL(18,4) NULL,
     "LotNumber"         VARCHAR(50) NULL,
     "ExpiryDate"        DATE NULL,
-    "WarehouseId"       INT NULL,
+    "WarehouseId" BIGINT NULL,
     "BinId"             INT NULL,
     "InspectionStatus"  VARCHAR(20) NULL,
     "Notes"             VARCHAR(250) NULL,
@@ -134,13 +134,13 @@ CREATE TABLE IF NOT EXISTS logistics."GoodsReceiptSerial" (
 --  Tabla: logistics."GoodsReturn"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."GoodsReturn" (
-    "GoodsReturnId"     INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "GoodsReturnId" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"         INT NOT NULL,
     "BranchId"          INT NOT NULL,
     "ReturnNumber"      VARCHAR(20) NOT NULL,
-    "GoodsReceiptId"    INT NULL REFERENCES logistics."GoodsReceipt"("GoodsReceiptId"),
-    "SupplierId"        INT NULL,
-    "WarehouseId"       INT NOT NULL,
+    "GoodsReceiptId" BIGINT NULL REFERENCES logistics."GoodsReceipt"("GoodsReceiptId"),
+    "SupplierId" BIGINT NULL,
+    "WarehouseId" BIGINT NOT NULL,
     "ReturnDate"        TIMESTAMP NOT NULL,
     "Reason"            VARCHAR(250) NULL,
     "Status"            VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
@@ -161,8 +161,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UX_Return_Number"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."GoodsReturnLine" (
     "LineId"            INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "GoodsReturnId"     INT NOT NULL REFERENCES logistics."GoodsReturn"("GoodsReturnId"),
-    "ProductId"         INT NOT NULL,
+    "GoodsReturnId" BIGINT NOT NULL REFERENCES logistics."GoodsReturn"("GoodsReturnId"),
+    "ProductId" BIGINT NOT NULL,
     "Quantity"          DECIMAL(18,4) NOT NULL DEFAULT 0,
     "UnitCost"          DECIMAL(18,4) NULL,
     "LotNumber"         VARCHAR(50) NULL,
@@ -174,17 +174,17 @@ CREATE TABLE IF NOT EXISTS logistics."GoodsReturnLine" (
 --  Tabla: logistics."DeliveryNote"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."DeliveryNote" (
-    "DeliveryNoteId"        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "DeliveryNoteId" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"             INT NOT NULL,
     "BranchId"              INT NOT NULL,
     "DeliveryNumber"        VARCHAR(20) NOT NULL,
     "SalesDocumentNumber"   VARCHAR(30) NULL,
-    "CustomerId"            INT NULL,
-    "WarehouseId"           INT NOT NULL,
+    "CustomerId" BIGINT NULL,
+    "WarehouseId" BIGINT NOT NULL,
     "DeliveryDate"          TIMESTAMP NOT NULL,
     "Status"                VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
-    "CarrierId"             INT NULL REFERENCES logistics."Carrier"("CarrierId"),
-    "DriverId"              INT NULL REFERENCES logistics."Driver"("DriverId"),
+    "CarrierId" BIGINT NULL REFERENCES logistics."Carrier"("CarrierId"),
+    "DriverId" BIGINT NULL REFERENCES logistics."Driver"("DriverId"),
     "VehiclePlate"          VARCHAR(20) NULL,
     "ShipToAddress"         VARCHAR(500) NULL,
     "ShipToContact"         VARCHAR(100) NULL,
@@ -213,8 +213,8 @@ CREATE INDEX IF NOT EXISTS "IX_Delivery_Date"
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics."DeliveryNoteLine" (
     "LineId"            INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "DeliveryNoteId"    INT NOT NULL REFERENCES logistics."DeliveryNote"("DeliveryNoteId"),
-    "ProductId"         INT NOT NULL,
+    "DeliveryNoteId" BIGINT NOT NULL REFERENCES logistics."DeliveryNote"("DeliveryNoteId"),
+    "ProductId" BIGINT NOT NULL,
     "Quantity"          DECIMAL(18,4) NOT NULL DEFAULT 0,
     "UnitCost"          DECIMAL(18,4) NULL,
     "LotNumber"         VARCHAR(50) NULL,
@@ -243,7 +243,7 @@ CREATE OR REPLACE FUNCTION usp_Logistics_Carrier_List(
     p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE (
-    "CarrierId"     INT,
+    "CarrierId" BIGINT,
     "CompanyId"     INT,
     "CarrierCode"   VARCHAR,
     "CarrierName"   VARCHAR,
@@ -354,9 +354,9 @@ CREATE OR REPLACE FUNCTION usp_Logistics_Driver_List(
     p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE (
-    "DriverId"      INT,
+    "DriverId" BIGINT,
     "CompanyId"     INT,
-    "CarrierId"     INT,
+    "CarrierId" BIGINT,
     "DriverCode"    VARCHAR,
     "DriverName"    VARCHAR,
     "FiscalId"      VARCHAR,
@@ -471,15 +471,15 @@ CREATE OR REPLACE FUNCTION usp_Logistics_GoodsReceipt_List(
     p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE (
-    "GoodsReceiptId"        INT,
+    "GoodsReceiptId" BIGINT,
     "CompanyId"             INT,
     "BranchId"              INT,
     "ReceiptNumber"         VARCHAR,
     "PurchaseDocumentNumber" VARCHAR,
-    "SupplierId"            INT,
-    "WarehouseId"           INT,
+    "SupplierId" BIGINT,
+    "WarehouseId" BIGINT,
     "ReceiptDate"           TIMESTAMP,
-    "CarrierId"             INT,
+    "CarrierId" BIGINT,
     "DriverName"            VARCHAR,
     "VehiclePlate"          VARCHAR,
     "Notes"                 VARCHAR,
@@ -530,15 +530,15 @@ CREATE OR REPLACE FUNCTION usp_Logistics_GoodsReceipt_Get(
     p_goods_receipt_id INT
 )
 RETURNS TABLE (
-    "GoodsReceiptId"        INT,
+    "GoodsReceiptId" BIGINT,
     "CompanyId"             INT,
     "BranchId"              INT,
     "ReceiptNumber"         VARCHAR,
     "PurchaseDocumentNumber" VARCHAR,
-    "SupplierId"            INT,
-    "WarehouseId"           INT,
+    "SupplierId" BIGINT,
+    "WarehouseId" BIGINT,
     "ReceiptDate"           TIMESTAMP,
-    "CarrierId"             INT,
+    "CarrierId" BIGINT,
     "DriverName"            VARCHAR,
     "VehiclePlate"          VARCHAR,
     "Notes"                 VARCHAR,
@@ -601,7 +601,7 @@ CREATE OR REPLACE FUNCTION usp_Logistics_GoodsReceipt_Create(
     p_lines_json              TEXT            DEFAULT '[]',
     p_user_id                 INT             DEFAULT NULL
 )
-RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "GoodsReceiptId" INT, "ReceiptNumber" VARCHAR)
+RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "GoodsReceiptId" BIGINT, "ReceiptNumber" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_receipt_number VARCHAR(20);
@@ -711,13 +711,13 @@ CREATE OR REPLACE FUNCTION usp_Logistics_GoodsReturn_List(
     p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE (
-    "GoodsReturnId"     INT,
+    "GoodsReturnId" BIGINT,
     "CompanyId"         INT,
     "BranchId"          INT,
     "ReturnNumber"      VARCHAR,
-    "GoodsReceiptId"    INT,
-    "SupplierId"        INT,
-    "WarehouseId"       INT,
+    "GoodsReceiptId" BIGINT,
+    "SupplierId" BIGINT,
+    "WarehouseId" BIGINT,
     "ReturnDate"        TIMESTAMP,
     "Reason"            VARCHAR,
     "Status"            VARCHAR,
@@ -862,16 +862,16 @@ CREATE OR REPLACE FUNCTION usp_Logistics_DeliveryNote_List(
     p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE (
-    "DeliveryNoteId"        INT,
+    "DeliveryNoteId" BIGINT,
     "CompanyId"             INT,
     "BranchId"              INT,
     "DeliveryNumber"        VARCHAR,
     "SalesDocumentNumber"   VARCHAR,
-    "CustomerId"            INT,
-    "WarehouseId"           INT,
+    "CustomerId" BIGINT,
+    "WarehouseId" BIGINT,
     "DeliveryDate"          TIMESTAMP,
-    "CarrierId"             INT,
-    "DriverId"              INT,
+    "CarrierId" BIGINT,
+    "DriverId" BIGINT,
     "VehiclePlate"          VARCHAR,
     "ShipToAddress"         VARCHAR,
     "ShipToContact"         VARCHAR,
@@ -928,16 +928,16 @@ CREATE OR REPLACE FUNCTION usp_Logistics_DeliveryNote_Get(
     p_delivery_note_id INT
 )
 RETURNS TABLE (
-    "DeliveryNoteId"        INT,
+    "DeliveryNoteId" BIGINT,
     "CompanyId"             INT,
     "BranchId"              INT,
     "DeliveryNumber"        VARCHAR,
     "SalesDocumentNumber"   VARCHAR,
-    "CustomerId"            INT,
-    "WarehouseId"           INT,
+    "CustomerId" BIGINT,
+    "WarehouseId" BIGINT,
     "DeliveryDate"          TIMESTAMP,
-    "CarrierId"             INT,
-    "DriverId"              INT,
+    "CarrierId" BIGINT,
+    "DriverId" BIGINT,
     "VehiclePlate"          VARCHAR,
     "ShipToAddress"         VARCHAR,
     "ShipToContact"         VARCHAR,
@@ -1015,7 +1015,7 @@ CREATE OR REPLACE FUNCTION usp_Logistics_DeliveryNote_Create(
     p_lines_json            TEXT            DEFAULT '[]',
     p_user_id               INT             DEFAULT NULL
 )
-RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "DeliveryNoteId" INT, "DeliveryNumber" VARCHAR)
+RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "DeliveryNoteId" BIGINT, "DeliveryNumber" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_delivery_number VARCHAR(20);

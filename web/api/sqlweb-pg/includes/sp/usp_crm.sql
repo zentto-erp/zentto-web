@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION usp_crm_pipeline_list(
     p_company_id INT
 )
 RETURNS TABLE(
-    "PipelineId"   INT,
+    "PipelineId" BIGINT,
     "PipelineCode" VARCHAR,
     "PipelineName" VARCHAR,
     "IsDefault"    BOOLEAN,
@@ -93,8 +93,8 @@ CREATE OR REPLACE FUNCTION usp_crm_pipeline_getstages(
     p_pipeline_id INT
 )
 RETURNS TABLE(
-    "StageId"      INT,
-    "PipelineId"   INT,
+    "StageId" BIGINT,
+    "PipelineId" BIGINT,
     "StageCode"    VARCHAR,
     "StageName"    VARCHAR,
     "StageOrder"   INT,
@@ -181,10 +181,10 @@ CREATE OR REPLACE FUNCTION usp_crm_lead_list(
     p_limit              INT DEFAULT 50
 )
 RETURNS TABLE(
-    "LeadId"           INT,
+    "LeadId" BIGINT,
     "LeadCode"         VARCHAR,
-    "PipelineId"       INT,
-    "StageId"          INT,
+    "PipelineId" BIGINT,
+    "StageId" BIGINT,
     "StageName"        VARCHAR,
     "StageColor"       VARCHAR,
     "ContactName"      VARCHAR,
@@ -258,13 +258,13 @@ CREATE OR REPLACE FUNCTION usp_crm_lead_get(
     p_lead_id INT
 )
 RETURNS TABLE(
-    "LeadId"           INT,
+    "LeadId" BIGINT,
     "LeadCode"         VARCHAR,
     "CompanyId"        INT,
     "BranchId"         INT,
-    "PipelineId"       INT,
+    "PipelineId" BIGINT,
     "PipelineName"     VARCHAR,
-    "StageId"          INT,
+    "StageId" BIGINT,
     "StageName"        VARCHAR,
     "StageColor"       VARCHAR,
     "ContactName"      VARCHAR,
@@ -281,7 +281,7 @@ RETURNS TABLE(
     "Tags"             VARCHAR,
     "Priority"         VARCHAR,
     "LostReason"       VARCHAR,
-    "CustomerId"       INT,
+    "CustomerId" BIGINT,
     "CreatedAt"        TIMESTAMP,
     "UpdatedAt"        TIMESTAMP,
     "_section"         VARCHAR
@@ -331,7 +331,7 @@ CREATE OR REPLACE FUNCTION usp_crm_lead_create(
     p_priority           VARCHAR(20)  DEFAULT 'MEDIUM',
     p_user_id            INT          DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "LeadId" INT, "LeadCode" VARCHAR)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "LeadId" BIGINT, "LeadCode" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id   INT;
@@ -515,9 +515,9 @@ CREATE OR REPLACE FUNCTION usp_crm_activity_list(
     p_limit        INT DEFAULT 50
 )
 RETURNS TABLE(
-    "ActivityId"       INT,
-    "LeadId"           INT,
-    "CustomerId"       INT,
+    "ActivityId" BIGINT,
+    "LeadId" BIGINT,
+    "CustomerId" BIGINT,
     "ActivityType"     VARCHAR,
     "Subject"          VARCHAR,
     "Description"      TEXT,
@@ -579,7 +579,7 @@ CREATE OR REPLACE FUNCTION usp_crm_activity_create(
     p_priority           VARCHAR(20) DEFAULT 'MEDIUM',
     p_user_id            INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "ActivityId" INT)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "ActivityId" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id INT;
@@ -668,7 +668,7 @@ CREATE OR REPLACE FUNCTION usp_crm_dashboard(
     p_pipeline_id INT DEFAULT NULL
 )
 RETURNS TABLE(
-    "StageId"        INT,
+    "StageId" BIGINT,
     "StageName"      VARCHAR,
     "StageOrder"     INT,
     "Color"          VARCHAR,

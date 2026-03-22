@@ -17,10 +17,10 @@ CREATE OR REPLACE FUNCTION usp_mfg_bom_list(
     p_limit      INT DEFAULT 50
 )
 RETURNS TABLE(
-    "BOMId"          INT,
+    "BOMId" BIGINT,
     "BOMCode"        VARCHAR,
     "BOMName"        VARCHAR,
-    "ProductId"      INT,
+    "ProductId" BIGINT,
     "OutputQuantity" NUMERIC,
     "Status"         VARCHAR,
     "CreatedAt"      TIMESTAMP,
@@ -65,11 +65,11 @@ CREATE OR REPLACE FUNCTION usp_mfg_bom_get(
     p_bom_id INT
 )
 RETURNS TABLE(
-    "BOMId"          INT,
+    "BOMId" BIGINT,
     "BOMCode"        VARCHAR,
     "BOMName"        VARCHAR,
     "CompanyId"      INT,
-    "ProductId"      INT,
+    "ProductId" BIGINT,
     "OutputQuantity" NUMERIC,
     "Status"         VARCHAR,
     "CreatedAt"      TIMESTAMP,
@@ -104,7 +104,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
     p_lines_json          TEXT DEFAULT NULL,
     p_user_id             INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "BOMId" INT)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "BOMId" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id  INT;
@@ -209,11 +209,11 @@ CREATE OR REPLACE FUNCTION usp_mfg_workcenter_list(
     p_limit      INT DEFAULT 50
 )
 RETURNS TABLE(
-    "WorkCenterId"   INT,
+    "WorkCenterId" BIGINT,
     "CompanyId"      INT,
     "WorkCenterCode" VARCHAR,
     "WorkCenterName" VARCHAR,
-    "WarehouseId"    INT,
+    "WarehouseId" BIGINT,
     "CostPerHour"    NUMERIC,
     "Capacity"       INT,
     "CapacityUom"    VARCHAR,
@@ -307,10 +307,10 @@ CREATE OR REPLACE FUNCTION usp_mfg_routing_list(
     p_bom_id INT
 )
 RETURNS TABLE(
-    "RoutingId"        INT,
-    "BOMId"            INT,
+    "RoutingId" BIGINT,
+    "BOMId" BIGINT,
     "OperationNumber"  INT,
-    "WorkCenterId"     INT,
+    "WorkCenterId" BIGINT,
     "WorkCenterName"   VARCHAR,
     "OperationName"    VARCHAR,
     "SetupTimeMinutes" NUMERIC,
@@ -391,10 +391,10 @@ CREATE OR REPLACE FUNCTION usp_mfg_workorder_list(
     p_limit        INT DEFAULT 50
 )
 RETURNS TABLE(
-    "WorkOrderId"      INT,
+    "WorkOrderId" BIGINT,
     "WorkOrderNumber"  VARCHAR,
-    "BOMId"            INT,
-    "ProductId"        INT,
+    "BOMId" BIGINT,
+    "ProductId" BIGINT,
     "PlannedQuantity"  NUMERIC,
     "ProducedQuantity" NUMERIC,
     "ScrapQuantity"    NUMERIC,
@@ -405,7 +405,7 @@ RETURNS TABLE(
     "PlannedEndDate"   TIMESTAMP,
     "ActualStartDate"  TIMESTAMP,
     "ActualEndDate"    TIMESTAMP,
-    "WarehouseId"      INT,
+    "WarehouseId" BIGINT,
     "Notes"            TEXT,
     "CreatedAt"        TIMESTAMP,
     "UpdatedAt"        TIMESTAMP,
@@ -453,12 +453,12 @@ CREATE OR REPLACE FUNCTION usp_mfg_workorder_get(
     p_work_order_id INT
 )
 RETURNS TABLE(
-    "WorkOrderId"      INT,
+    "WorkOrderId" BIGINT,
     "WorkOrderNumber"  VARCHAR,
     "CompanyId"        INT,
     "BranchId"         INT,
-    "BOMId"            INT,
-    "ProductId"        INT,
+    "BOMId" BIGINT,
+    "ProductId" BIGINT,
     "PlannedQuantity"  NUMERIC,
     "ProducedQuantity" NUMERIC,
     "ScrapQuantity"    NUMERIC,
@@ -469,7 +469,7 @@ RETURNS TABLE(
     "PlannedEndDate"   TIMESTAMP,
     "ActualStartDate"  TIMESTAMP,
     "ActualEndDate"    TIMESTAMP,
-    "WarehouseId"      INT,
+    "WarehouseId" BIGINT,
     "Notes"            TEXT,
     "CreatedAt"        TIMESTAMP,
     "UpdatedAt"        TIMESTAMP,
@@ -517,7 +517,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_workorder_create(
     p_assigned_to_user_id  INT DEFAULT NULL,
     p_user_id              INT DEFAULT NULL
 )
-RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "WorkOrderId" INT, "WorkOrderNumber" VARCHAR)
+RETURNS TABLE("ok" INT, "mensaje" VARCHAR, "WorkOrderId" BIGINT, "WorkOrderNumber" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id   INT;
