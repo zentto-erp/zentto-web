@@ -1,4 +1,4 @@
-import { callSp } from "../../db/query.js";
+import { callSp, query } from "../../db/query.js";
 import {
   hashPassword,
   verifyPassword,
@@ -72,7 +72,7 @@ export async function getModulosAcceso(codUsuario: string): Promise<ModuloAcceso
 }
 
 async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
-  const rows = await callSp<{
+  const rows = await query<{
     companyId: number;
     companyCode: string;
     companyName: string;
@@ -82,7 +82,7 @@ async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
     countryCode: string;
     timeZone: string;
     isDefault: boolean;
-  }>("usp_Sec_User_ListCompanyAccesses_Default");
+  }>("SELECT * FROM usp_sec_user_listcompanyaccesses_default()");
 
   return rows.map((row) => ({
     companyId: Number(row.companyId),
