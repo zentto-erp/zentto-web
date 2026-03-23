@@ -44,6 +44,10 @@ export type { ZenttoDataGridProps, ZenttoColDef, PivotConfig, AggregationType } 
 export { ZenttoDataGrid as ResponsiveDataGrid } from './components/ZenttoDataGrid';
 export type { ZenttoDataGridProps as ResponsiveDataGridProps } from './components/ZenttoDataGrid/types';
 
+// Form layout — Grid wrapper para formularios consistentes
+export { FormGrid, FormField } from './components/FormGrid';
+export type { FormGridProps, FormFieldProps } from './components/FormGrid';
+
 // Help
 export { default as HelpButton } from './components/HelpButton';
 export { HELP_MAP, getHelpForPath } from './lib/help-map';

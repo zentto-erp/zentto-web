@@ -180,7 +180,7 @@ const theme = createTheme({
     // Label no-shrink reposicionado a translateY(13px) para centrar en el nuevo padding
     // Fondo blanco explícito en OutlinedInput para que DatePickers no hereden el gris de la página
     MuiFormControl: {
-      defaultProps: { size: 'small' },
+      defaultProps: { size: 'small', fullWidth: true },
     },
     MuiInputLabel: {
       defaultProps: { size: 'small' },
@@ -203,6 +203,7 @@ const theme = createTheme({
       defaultProps: {
         variant: 'outlined',
         size: 'small',
+        fullWidth: true,
       },
       styleOverrides: {
         root: {
@@ -231,6 +232,22 @@ const theme = createTheme({
         input: {
           // Padding más alto: ~46px total (12+22+12) vs ~40px default (8.5+23+8.5)
           padding: '12px 14px',
+        },
+      },
+    },
+    // DatePicker — misma altura y estilo que TextField
+    MuiPickersTextField: {
+      defaultProps: { size: 'small', fullWidth: true },
+    },
+    // Autocomplete — misma altura que TextField (padding ajustado para el input interno)
+    MuiAutocomplete: {
+      defaultProps: { size: 'small', fullWidth: true },
+      styleOverrides: {
+        inputRoot: {
+          padding: '3px 14px !important',
+          '& .MuiOutlinedInput-input': {
+            padding: '9px 0 !important',
+          },
         },
       },
     },
