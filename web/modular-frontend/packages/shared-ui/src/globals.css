@@ -26,7 +26,7 @@ html, body {
   }
 }
 
-/* ScrollBar personalizado */
+/* ScrollBar personalizado — light */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -45,6 +45,19 @@ html, body {
   background: #6B7280;
 }
 
+/* ScrollBar — dark */
+[data-toolpad-color-scheme="dark"] ::-webkit-scrollbar-track {
+  background: #1a2332;
+}
+
+[data-toolpad-color-scheme="dark"] ::-webkit-scrollbar-thumb {
+  background: #37475a;
+}
+
+[data-toolpad-color-scheme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #485769;
+}
+
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;
@@ -54,6 +67,11 @@ html {
 .non-editable-cell {
   background-color: #f5f5f5 !important;
   color: #757575 !important;
+}
+
+[data-toolpad-color-scheme="dark"] .non-editable-cell {
+  background-color: #1a2332 !important;
+  color: #9CA3AF !important;
 }
 
 /* Otros */

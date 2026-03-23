@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import AppBar from '@mui/material/AppBar';
+
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -211,7 +211,7 @@ export default function OdooLayout({
                             width: drawerPaperWidth,
                             boxSizing: 'border-box',
                             borderRight: 'none',
-                            bgcolor: brandColors.dark, /* Zentto Brand Dark */
+                            backgroundColor: brandColors.dark, /* Zentto Brand Dark */
                             color: '#fff',
                             boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.3)' : 'none',
                             transition: 'width 0.2s',
@@ -243,7 +243,7 @@ export default function OdooLayout({
             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: `calc(100% - ${actualSidebarWidth}px)`, transition: 'width 0.2s' }}>
 
                 {/* Top Header */}
-                <AppBar position="static" elevation={0} sx={{ bgcolor: brandColors.dark, color: '#fff', borderBottom: 'none' }}>
+                <Box component="header" sx={{ backgroundColor: brandColors.dark, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                     <Toolbar variant="dense" sx={{ minHeight: 64, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -340,7 +340,7 @@ export default function OdooLayout({
                             <SidebarFooterAccount mini={false} />
                         </Box>
                     </Toolbar>
-                </AppBar>
+                </Box>
 
                 {/* Page Content */}
                 <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'auto', bgcolor: 'background.default', p: { xs: 2, md: 3 } }}>

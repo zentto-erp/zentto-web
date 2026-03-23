@@ -6,12 +6,11 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { appAwareSignOut, buildLoginCallbackUrl, useAuth } from '@zentto/shared-auth';
 import { apiGet } from '@zentto/shared-api';
 import { useRouter } from 'next/navigation';
-import type { SidebarFooterProps } from '@toolpad/core/DashboardLayout';
 import PerfilDrawer from './PerfilDrawer';
 
 export function ToolbarAccountOverride() { return null; }
 
-export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
+export default function SidebarFooterAccount({ mini }: { mini: boolean }) {
   const { userName, userId, isAdmin } = useAuth();
   const router = useRouter();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);

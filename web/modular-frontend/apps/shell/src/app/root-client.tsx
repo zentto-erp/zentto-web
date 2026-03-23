@@ -1,55 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import { Suspense, useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { AppProvider } from '@toolpad/core/nextjs';
+import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { createTheme } from '@mui/material/styles';
-import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
+import { ThemeProvider } from '@mui/material/styles';
+import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
 import { QueryProvider } from '@zentto/shared-api';
 import {
-  AppBarWrapper,
-  AppTitle,
   LoadingFallback,
   ToastProvider,
   LocalizationProviderWrapper,
-  brandColors,
+  theme as sharedTheme,
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
-import { buildNavigation } from '../lib/navigation';
 import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
 
-const AUTHENTICATION = { signIn, signOut };
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
 const ZENTTO_DOMAINS = new Set(['app.zentto.net', 'www.zentto.net', 'zentto.net']);
-const shellTheme = createTheme({
-  palette: {
-    primary: { main: brandColors.accent, light: '#ffad33', dark: '#e68a00', contrastText: brandColors.dark },
-    secondary: { main: brandColors.darkSecondary, light: '#37475a', dark: brandColors.dark, contrastText: '#fff' },
-    background: { default: brandColors.bgPage, paper: brandColors.bgCard },
-    text: { primary: brandColors.textDark, secondary: brandColors.textMuted },
-  },
-  breakpoints: {
-    values: { xs: 0, sm: 600, md: 600, lg: 1200, xl: 1536 },
-  },
-  typography: {
-    fontFamily: [
-      'Inter',
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-    ].join(','),
-    button: { textTransform: 'none', fontWeight: 500 },
-    h6: { fontWeight: 600, fontSize: '1.125rem' },
-  },
-});
 
 function TenantGuard({ children }: { children: React.ReactNode }) {
   const [ok, setOk] = useState<boolean | null>(null);
@@ -73,10 +42,8 @@ function TenantGuard({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
-  const { isLoading, isAdmin, modulos } = useAuth();
+  const { isLoading, modulos } = useAuth();
   const [showContent, setShowContent] = useState(false);
-  const pathname = usePathname() || '/';
 
   useEffect(() => {
     if (!isLoading) {
@@ -85,29 +52,19 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading]);
 
-  const navigation = useMemo(() => buildNavigation(isAdmin, modulos, pathname), [isAdmin, modulos, pathname]);
-
   if (isLoading) return <LoadingFallback />;
 
   return (
-    <AppProvider
-      theme={shellTheme}
-      navigation={navigation}
-      session={session ?? undefined}
-      authentication={AUTHENTICATION}
-      branding={{ logo: <AppTitle />, title: '' }}
-    >
+    <>
       <HardwareAgentBanner modulos={modulos} />
-      <AppBarWrapper>
-        {!showContent ? (
-          <LoadingFallback />
-        ) : (
-          <ToastProvider>
-            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-          </ToastProvider>
-        )}
-      </AppBarWrapper>
-    </AppProvider>
+      {!showContent ? (
+        <LoadingFallback />
+      ) : (
+        <ToastProvider>
+          <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+        </ToastProvider>
+      )}
+    </>
   );
 }
 
@@ -117,11 +74,13 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
       <QueryProvider>
         <AuthProvider>
           <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-            <LocalizationProviderWrapper>
-              <TenantGuard>
-                <AppContent>{children}</AppContent>
-              </TenantGuard>
-            </LocalizationProviderWrapper>
+            <ThemeProvider theme={sharedTheme} defaultMode="system">
+              <LocalizationProviderWrapper>
+                <TenantGuard>
+                  <AppContent>{children}</AppContent>
+                </TenantGuard>
+              </LocalizationProviderWrapper>
+            </ThemeProvider>
           </AppRouterCacheProvider>
         </AuthProvider>
       </QueryProvider>

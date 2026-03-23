@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, ButtonBase, useTheme, Avatar, useMediaQuery } from '@mui/material';
+import { Box, Typography, ButtonBase, Avatar, useMediaQuery } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -12,15 +12,16 @@ import { isShellLocalPath, resolveAppHref } from '@/lib/app-links';
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
 const BadgeIcon = dynamic(() => import('@mui/icons-material/Badge'), { ssr: false });
 const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalance'), { ssr: false });
-const StorefrontIcon = dynamic(() => import('@mui/icons-material/Storefront'), { ssr: false });
+const WarehouseIcon = dynamic(() => import('@mui/icons-material/Warehouse'), { ssr: false });
 const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
 const AppsIcon = dynamic(() => import('@mui/icons-material/Apps'), { ssr: false });
 const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
 const PointOfSaleIcon = dynamic(() => import('@mui/icons-material/PointOfSale'), { ssr: false });
+const ShoppingBagIcon = dynamic(() => import('@mui/icons-material/ShoppingBag'), { ssr: false });
 const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShipping'), { ssr: false });
 const RestaurantIcon = dynamic(() => import('@mui/icons-material/Restaurant'), { ssr: false });
-const LanguageIcon = dynamic(() => import('@mui/icons-material/Language'), { ssr: false });
-const ContentPasteSearchIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearch'), { ssr: false });
+const PublicIcon = dynamic(() => import('@mui/icons-material/Public'), { ssr: false });
+const VerifiedUserIcon = dynamic(() => import('@mui/icons-material/VerifiedUser'), { ssr: false });
 const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
 const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
 const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
@@ -31,13 +32,11 @@ interface AppShortcut {
   icon: React.ReactNode;
   path: string;
   bgColor: string;
-  requiredModule?: string;
 }
 
 export default function AppSelectorPage() {
   const router = useRouter();
-  const theme = useTheme();
-  const { userName, modulos, isAdmin } = useAuth();
+  const { modulos, isAdmin } = useAuth();
   const isSmall = useMediaQuery('(max-width:700px)');
 
   const has = (mod: string) => isAdmin || modulos.includes(mod);
@@ -64,13 +63,13 @@ export default function AppSelectorPage() {
     allApps.push({ id: 'bancos', name: 'Bancos', icon: <AccountBalanceIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/bancos', bgColor: '#E67E22' });
   }
   if (has('inventario') || has('articulos')) {
-    allApps.push({ id: 'inventario', name: isSmall ? 'Inv.' : 'Inventario', icon: <StorefrontIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/inventario', bgColor: '#27AE60' });
+    allApps.push({ id: 'inventario', name: isSmall ? 'Inv.' : 'Inventario', icon: <WarehouseIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/inventario', bgColor: '#27AE60' });
   }
   if (has('ventas') || has('facturas')) {
     allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ventas', bgColor: '#3498DB' });
   }
   if (has('compras') || has('cxp')) {
-    allApps.push({ id: 'compras', name: 'Compras', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
+    allApps.push({ id: 'compras', name: 'Compras', icon: <ShoppingBagIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
   }
   if (has('pos')) {
     allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/pos/facturacion', bgColor: '#9B59B6' });
@@ -79,10 +78,10 @@ export default function AppSelectorPage() {
     allApps.push({ id: 'restaurante', name: isSmall ? 'Rest.' : 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });
   }
   if (has('ecommerce')) {
-    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <LanguageIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
+    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <PublicIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
   }
   if (has('auditoria')) {
-    allApps.push({ id: 'auditoria', name: isSmall ? 'Audit.' : 'Auditoría', icon: <ContentPasteSearchIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
+    allApps.push({ id: 'auditoria', name: isSmall ? 'Audit.' : 'Auditoría', icon: <VerifiedUserIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
   }
 
   // Nuevos módulos
@@ -98,9 +97,9 @@ export default function AppSelectorPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 8 }, background: 'linear-gradient(to right bottom, #f3f4f6, #e5e7eb)' }}>
+    <Box sx={{ minHeight: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 8 }, bgcolor: 'background.default' }}>
       <Box sx={{ width: '100%', maxWidth: 1200, mt: 5 }}>
-        {isAdmin && <Box sx={{ width: '100%', p: 2, mb: 4, bgcolor: '#eff6ff', color: '#1e40af', borderRadius: 2, border: '1px solid #bfdbfe', textAlign: 'center' }}>
+        {isAdmin && <Box sx={(t) => ({ width: '100%', p: 2, mb: 4, borderRadius: 2, textAlign: 'center', ...(t.palette.mode === 'dark' ? { bgcolor: '#1e293b', color: '#93c5fd', border: '1px solid #1e40af' } : { bgcolor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }) })}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Modo administrador activo</Typography>
         </Box>}
 
@@ -139,7 +138,7 @@ export default function AppSelectorPage() {
                 >
                   {app.icon}
                 </Avatar>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', textAlign: 'center' }}>
                   {app.name}
                 </Typography>
               </ButtonBase>

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import RootClient from './root-client';
 
 export const metadata: Metadata = {
@@ -49,6 +50,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
+      </head>
       <body>
         <RootClient>{children}</RootClient>
       </body>
