@@ -50,9 +50,9 @@ import {
 const baseGridSx = {
   border: 'none',
   borderRadius: 0,
-  // Header elegante
+  // Header elegante — usa background.default para adaptarse a dark mode
   '& .MuiDataGrid-columnHeaders': {
-    bgcolor: 'grey.50',
+    bgcolor: 'background.default',
     borderBottom: '2px solid',
     borderColor: 'divider',
     fontSize: '0.78rem',
@@ -99,9 +99,9 @@ const baseGridSx = {
       bgcolor: 'background.paper !important',
     },
   },
-  // Fila de TOTALES → bold + fondo
+  // Fila de TOTALES → bold + fondo adaptado a dark mode
   '& .zentto-row-totals': {
-    bgcolor: (theme: any) => alpha(theme.palette.grey[200], 0.8),
+    bgcolor: 'action.selected',
     fontWeight: 700,
     borderTop: '2px solid',
     borderColor: 'divider',
