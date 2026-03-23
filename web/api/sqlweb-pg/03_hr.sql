@@ -2314,18 +2314,18 @@ $function$
 -- usp_hr_documenttemplate_get
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_get(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(p_company_id integer, p_template_code character varying)
- RETURNS TABLE("TemplateId" integer, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character, "PayrollCode" character varying, "ContentMD" character varying, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
+ RETURNS TABLE("TemplateId" bigint, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character varying, "PayrollCode" character varying, "ContentMD" text, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
 BEGIN
     RETURN QUERY
     SELECT
         t."TemplateId",
-        t."TemplateCode",
-        t."TemplateName",
-        t."TemplateType",
-        t."CountryCode",
-        t."PayrollCode",
+        t."TemplateCode"::VARCHAR,
+        t."TemplateName"::VARCHAR,
+        t."TemplateType"::VARCHAR,
+        t."CountryCode"::VARCHAR,
+        t."PayrollCode"::VARCHAR,
         t."ContentMD",
         t."IsDefault",
         t."IsSystem",
@@ -2341,19 +2341,20 @@ $function$
 
 -- usp_hr_documenttemplate_list
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(integer, character, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_template_type character varying DEFAULT NULL::character varying)
- RETURNS TABLE("TemplateId" integer, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character, "PayrollCode" character varying, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "UpdatedAt" timestamp without time zone)
+DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(integer, character varying, character varying) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(p_company_id integer, p_country_code character varying DEFAULT NULL, p_template_type character varying DEFAULT NULL)
+ RETURNS TABLE("TemplateId" bigint, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character varying, "PayrollCode" character varying, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
 BEGIN
     RETURN QUERY
     SELECT
         t."TemplateId",
-        t."TemplateCode",
-        t."TemplateName",
-        t."TemplateType",
-        t."CountryCode",
-        t."PayrollCode",
+        t."TemplateCode"::VARCHAR,
+        t."TemplateName"::VARCHAR,
+        t."TemplateType"::VARCHAR,
+        t."CountryCode"::VARCHAR,
+        t."PayrollCode"::VARCHAR,
         t."IsDefault",
         t."IsSystem",
         t."IsActive",
@@ -2370,7 +2371,8 @@ $function$
 
 -- usp_hr_documenttemplate_save
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(integer, character varying, character varying, character varying, character, text, character varying, boolean, integer, text) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(p_company_id integer, p_template_code character varying, p_template_name character varying, p_template_type character varying, p_country_code character, p_content_md text, p_payroll_code character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje text)
+DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(integer, character varying, character varying, character varying, character varying, text, character varying, boolean, integer, text) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(p_company_id integer, p_template_code character varying, p_template_name character varying, p_template_type character varying, p_country_code character varying, p_content_md text, p_payroll_code character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
