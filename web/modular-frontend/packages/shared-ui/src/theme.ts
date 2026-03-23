@@ -235,6 +235,9 @@ const theme = createTheme({
         },
         input: {
           padding: '10px 14px',
+          '&.MuiInputBase-inputSizeSmall': {
+            padding: '10px 14px',
+          },
         },
       },
     },
