@@ -67,12 +67,19 @@ export default function OdooLayout({
     const miniSidebarWidth = 72;
 
     const [openMenus, setOpenMenus] = React.useState<{ [key: string]: boolean }>({});
-    const [isSidebarOpen, setSidebarOpen] = React.useState(false);
+    const [isSidebarOpen, setSidebarOpen] = React.useState(!isMobile && !hideSidebar);
     const [companyMenuAnchor, setCompanyMenuAnchor] = React.useState<HTMLElement | null>(null);
 
     React.useEffect(() => {
-        if (hideSidebar) return;
-        setSidebarOpen(!isMobile);
+        if (hideSidebar) {
+            setSidebarOpen(false);
+            return;
+        }
+        if (!isMobile) {
+            setSidebarOpen(true);
+        } else {
+            setSidebarOpen(false);
+        }
     }, [isMobile, hideSidebar]);
 
     // Auto close sidebar on mobile when navigating
@@ -94,7 +101,7 @@ export default function OdooLayout({
         const renderLevel = (rawItem: Record<string, unknown>, idx: string, level = 0) => {
             const item = rawItem as any;
             if (item.kind === 'header') {
-                if (!isSidebarOpen) return <Box key={`header-${idx}`} sx={{ height: 16 }} />;
+                if (!isDrawerExpanded) return <Box key={`header-${idx}`} sx={{ height: 16 }} />;
                 return (
                     <Typography key={`header-${idx}`} variant="caption" sx={{ px: 3, pt: 2, pb: 1, display: 'block', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                         {item.title as React.ReactNode}
@@ -121,12 +128,12 @@ export default function OdooLayout({
                             onClick={() => hasChildren ? handleToggleMenu(idx) : handleNavigate(item.segment)}
                             sx={{
                                 minHeight: 48,
-                                px: isSidebarOpen ? (2 + level) : 0,
-                                m: isSidebarOpen ? '4px 12px' : '4px auto',
-                                mx: isSidebarOpen ? '12px' : 'auto',
-                                width: isSidebarOpen ? 'auto' : 48,
+                                px: isDrawerExpanded ? (2 + level) : 0,
+                                m: isDrawerExpanded ? '4px 12px' : '4px auto',
+                                mx: isDrawerExpanded ? '12px' : 'auto',
+                                width: isDrawerExpanded ? 'auto' : 48,
                                 borderRadius: 1.5,
-                                justifyContent: isSidebarOpen ? 'flex-start' : 'center',
+                                justifyContent: isDrawerExpanded ? 'flex-start' : 'center',
                                 color: isRouteActive ? '#fff' : 'rgba(255,255,255,0.7)',
                                 bgcolor: isRouteActive && !hasChildren ? 'rgba(255,153,0,0.15)' : 'transparent',
                                 boxShadow: isRouteActive && !hasChildren ? `inset 4px 0 0 0 ${brandColors.accent}` : 'none',
@@ -136,21 +143,21 @@ export default function OdooLayout({
                                 }
                             }}
                         >
-                            <Tooltip title={!isSidebarOpen ? item.title : ""} placement="right" disableHoverListener={isSidebarOpen}>
-                                <ListItemIcon sx={{ minWidth: isSidebarOpen ? 36 : 'auto', color: isRouteActive ? '#fff' : 'rgba(255,255,255,0.7)', justifyContent: 'center' }}>
+                            <Tooltip title={!isDrawerExpanded ? item.title : ""} placement="right" disableHoverListener={isDrawerExpanded}>
+                                <ListItemIcon sx={{ minWidth: isDrawerExpanded ? 36 : 'auto', color: isRouteActive ? '#fff' : 'rgba(255,255,255,0.7)', justifyContent: 'center' }}>
                                     {item.icon || <AppsIcon fontSize="small" />}
                                 </ListItemIcon>
                             </Tooltip>
-                            {isSidebarOpen && (
+                            {isDrawerExpanded && (
                                 <ListItemText
                                     primary={item.title}
                                     primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: isRouteActive ? 600 : 400, whiteSpace: 'nowrap' }}
                                 />
                             )}
-                            {(isSidebarOpen && hasChildren) ? (isOpen ? <ExpandLessIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.5)' }} /> : <ExpandMoreIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.5)' }} />) : null}
+                            {(isDrawerExpanded && hasChildren) ? (isOpen ? <ExpandLessIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.5)' }} /> : <ExpandMoreIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.5)' }} />) : null}
                         </ListItemButton>
                     </ListItem>
-                    {(hasChildren && isSidebarOpen) && (
+                    {(hasChildren && isDrawerExpanded) && (
                         <Collapse in={isOpen} timeout="auto" unmountOnExit>
                             <List component="div" disablePadding>
                                 {(item.children as Array<Record<string, unknown>>).map((sub, subIdx: number) => renderLevel(sub, `${idx}-${subIdx}`, level + 1))}
@@ -168,6 +175,7 @@ export default function OdooLayout({
         );
     };
 
+    const isDrawerExpanded = isSidebarOpen;
     const actualSidebarWidth = hideSidebar ? 0 : (isMobile ? 0 : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
     const drawerPaperWidth = hideSidebar ? 0 : (isMobile ? fullSidebarWidth : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
     // @ts-ignore extended session fields from NextAuth callbacks in shell auth.ts
@@ -191,7 +199,9 @@ export default function OdooLayout({
                     open={isSidebarOpen}
                     onClose={() => setSidebarOpen(false)}
                     ModalProps={{
-                        keepMounted: true, // Better open performance on mobile.
+                        keepMounted: true,
+                        ...(isMobile && !isSidebarOpen && { style: { pointerEvents: 'none' } }),
+                        BackdropProps: { style: { pointerEvents: isSidebarOpen ? 'auto' : 'none' } },
                     }}
                     sx={{
                         width: drawerPaperWidth,
@@ -203,19 +213,19 @@ export default function OdooLayout({
                             borderRight: 'none',
                             bgcolor: brandColors.dark, /* Zentto Brand Dark */
                             color: '#fff',
-                            boxShadow: 'none',
+                            boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.3)' : 'none',
                             transition: 'width 0.2s',
                             overflowX: 'hidden'
                         },
                     }}
                 >
-                    <Box sx={{ h: 64, display: 'flex', alignItems: 'center', justifyContent: isSidebarOpen ? 'flex-start' : 'center', px: isSidebarOpen ? 2 : 0, borderBottom: '1px solid rgba(255,255,255,0.08)', minHeight: 64 }}>
-                        <Tooltip title={isSidebarOpen ? "Contraer menú" : "Expandir menú"}>
-                            <IconButton onClick={() => setSidebarOpen(!isSidebarOpen)} size="small" sx={{ mr: isSidebarOpen ? 1 : 0, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                                {isSidebarOpen ? <MenuOpenIcon /> : <MenuIcon />}
+                    <Box sx={{ h: 64, display: 'flex', alignItems: 'center', justifyContent: isDrawerExpanded ? 'flex-start' : 'center', px: isDrawerExpanded ? 2 : 0, borderBottom: '1px solid rgba(255,255,255,0.08)', minHeight: 64 }}>
+                        <Tooltip title={isDrawerExpanded ? "Contraer menú" : "Expandir menú"}>
+                            <IconButton onClick={() => setSidebarOpen(!isSidebarOpen)} size="small" sx={{ mr: isDrawerExpanded ? 1 : 0, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                                {isDrawerExpanded ? <MenuOpenIcon /> : <MenuIcon />}
                             </IconButton>
                         </Tooltip>
-                        {isSidebarOpen && (
+                        {isDrawerExpanded && (
                             <Tooltip title="Ir al Inicio">
                                 <Box onClick={goToShell} sx={{ cursor: 'pointer', ml: 1 }}>
                                     <AppTitle lightText={true} />

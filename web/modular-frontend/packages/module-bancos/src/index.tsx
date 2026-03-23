@@ -57,4 +57,3 @@ export { default as ConciliacionResumen } from "./components/conciliacion/Concil
 
 // Home page
 export { default as BancosHome } from "./pages/BancosHome";
-export { default as BancosDirectorio } from "./pages/BancosDirectorio";

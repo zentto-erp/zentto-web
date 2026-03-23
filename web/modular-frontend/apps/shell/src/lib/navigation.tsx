@@ -129,7 +129,6 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     if (has(modulos, 'bancos') && isApp('/bancos')) {
         nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
         nav.push({ kind: 'page', segment: 'bancos', title: 'Dashboard', icon: <DashboardIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/directorio', title: 'Directorio', icon: <ListIcon /> });
         nav.push({ kind: 'page', segment: 'bancos/entidades', title: 'Bancos', icon: <AccountBalanceIcon /> });
         nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas bancarias', icon: <AccountBalanceWalletIcon /> });
         nav.push({ kind: 'page', segment: 'bancos/movimientos/generar', title: 'Generar movimiento', icon: <SwapHorizIcon /> });

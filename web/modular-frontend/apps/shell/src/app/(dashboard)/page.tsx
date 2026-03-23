@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, ButtonBase, useTheme, Avatar } from '@mui/material';
+import { Box, Typography, ButtonBase, useTheme, Avatar, useMediaQuery } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -38,6 +38,7 @@ export default function AppSelectorPage() {
   const router = useRouter();
   const theme = useTheme();
   const { userName, modulos, isAdmin } = useAuth();
+  const isSmall = useMediaQuery('(max-width:700px)');
 
   const has = (mod: string) => isAdmin || modulos.includes(mod);
 
@@ -54,46 +55,46 @@ export default function AppSelectorPage() {
   const allApps: AppShortcut[] = [];
 
   if (has('contabilidad')) {
-    allApps.push({ id: 'contabilidad', name: 'Contabilidad', icon: <AccountBalanceWalletIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/contabilidad', bgColor: '#875A7B' });
+    allApps.push({ id: 'contabilidad', name: isSmall ? 'Cont.' : 'Contabilidad', icon: <AccountBalanceWalletIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/contabilidad', bgColor: '#875A7B' });
   }
   if (has('nomina')) {
-    allApps.push({ id: 'nomina', name: 'Nómina', icon: <BadgeIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/nomina', bgColor: '#00A09D' });
+    allApps.push({ id: 'nomina', name: 'Nómina', icon: <BadgeIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/nomina', bgColor: '#00A09D' });
   }
   if (has('bancos')) {
-    allApps.push({ id: 'bancos', name: 'Bancos e Inst.', icon: <AccountBalanceIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/bancos', bgColor: '#E67E22' });
+    allApps.push({ id: 'bancos', name: 'Bancos', icon: <AccountBalanceIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/bancos', bgColor: '#E67E22' });
   }
   if (has('inventario') || has('articulos')) {
-    allApps.push({ id: 'inventario', name: 'Inventario', icon: <StorefrontIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/inventario', bgColor: '#27AE60' });
+    allApps.push({ id: 'inventario', name: isSmall ? 'Inv.' : 'Inventario', icon: <StorefrontIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/inventario', bgColor: '#27AE60' });
   }
   if (has('ventas') || has('facturas')) {
-    allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/ventas', bgColor: '#3498DB' });
+    allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ventas', bgColor: '#3498DB' });
   }
   if (has('compras') || has('cxp')) {
-    allApps.push({ id: 'compras', name: 'Compras', icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
+    allApps.push({ id: 'compras', name: 'Compras', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
   }
   if (has('pos')) {
-    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/pos/facturacion', bgColor: '#9B59B6' });
+    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/pos/facturacion', bgColor: '#9B59B6' });
   }
   if (has('restaurante')) {
-    allApps.push({ id: 'restaurante', name: 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });
+    allApps.push({ id: 'restaurante', name: isSmall ? 'Rest.' : 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });
   }
   if (has('ecommerce')) {
-    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <LanguageIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
+    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <LanguageIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
   }
   if (has('auditoria')) {
-    allApps.push({ id: 'auditoria', name: 'Auditoría', icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
+    allApps.push({ id: 'auditoria', name: isSmall ? 'Audit.' : 'Auditoría', icon: <ContentPasteSearchIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
   }
 
   // Nuevos módulos
-  allApps.push({ id: 'logistica', name: 'Logística', icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/logistica', bgColor: '#1ABC9C' });
-  allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/crm', bgColor: '#E74C3C' });
-  allApps.push({ id: 'manufactura', name: 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
-  allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
+  allApps.push({ id: 'logistica', name: isSmall ? 'Logíst.' : 'Logística', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/logistica', bgColor: '#1ABC9C' });
+  allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/crm', bgColor: '#E74C3C' });
+  allApps.push({ id: 'manufactura', name: isSmall ? 'Manuf.' : 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
+  allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
 
   // Siempre agregar App Store y Settings al final
-  allApps.push({ id: 'apps', name: 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });
+  allApps.push({ id: 'apps', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });
   if (isAdmin) {
-    allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 40, color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
+    allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
   }
 
   return (
@@ -105,7 +106,7 @@ export default function AppSelectorPage() {
 
         <Grid container spacing={4} justifyContent="center">
           {allApps.map((app) => (
-            <Grid key={app.id} size={{ xs: 4, sm: 3, md: 2 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Grid key={app.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <ButtonBase
                 onClick={() => navigateToApp(app.id, app.path)}
                 sx={{
@@ -124,8 +125,12 @@ export default function AppSelectorPage() {
                   variant="circular"
                   className="app-avatar"
                   sx={{
-                    width: { xs: 64, sm: 80 },
-                    height: { xs: 64, sm: 80 },
+                    width: 80,
+                    height: 80,
+                    fontSize: 40,
+                    '@media (max-width: 1200px)': { width: 68, height: 68, fontSize: 34 },
+                    '@media (max-width: 900px)': { width: 56, height: 56, fontSize: 28 },
+                    '@media (max-width: 700px)': { width: 32, height: 32, fontSize: 16 },
                     bgcolor: app.bgColor,
                     mb: 1.5,
                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
