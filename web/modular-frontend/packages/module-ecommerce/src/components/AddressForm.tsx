@@ -3,23 +3,8 @@
 import { useState } from "react";
 import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress, MenuItem } from "@mui/material";
 import { FormGrid, FormField } from "@zentto/shared-ui";
+import { useCountries, useStates } from "@zentto/shared-api";
 import type { AddressFormData } from "../hooks/useStoreAccount";
-
-const COUNTRIES = [
-  { code: "VE", name: "Venezuela" },
-  { code: "ES", name: "España" },
-  { code: "CO", name: "Colombia" },
-  { code: "MX", name: "México" },
-  { code: "US", name: "Estados Unidos" },
-];
-
-const STATES: Record<string, string[]> = {
-  VE: ["Distrito Capital", "Miranda", "Zulia", "Carabobo", "Aragua", "Lara", "Bolívar", "Anzoátegui", "Táchira", "Mérida"],
-  ES: ["Madrid", "Barcelona", "Valencia", "Sevilla", "Málaga", "Bilbao"],
-  CO: ["Bogotá D.C.", "Antioquia", "Valle del Cauca", "Atlántico", "Santander"],
-  MX: ["CDMX", "Jalisco", "Nuevo León", "Estado de México", "Puebla"],
-  US: ["California", "Texas", "Florida", "New York", "Illinois"],
-};
 
 interface Props {
   initial?: Partial<AddressFormData>;
@@ -29,6 +14,10 @@ interface Props {
 }
 
 export default function AddressForm({ initial, onSave, onCancel, saving }: Props) {
+  const [country, setCountry] = useState(initial?.country ?? "VE");
+  const { data: countries = [] } = useCountries();
+  const { data: states = [] } = useStates(country);
+
   const [label, setLabel] = useState(initial?.label ?? "");
   const [recipientName, setRecipientName] = useState(initial?.recipientName ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
@@ -36,7 +25,6 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
   const [city, setCity] = useState(initial?.city ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [zipCode, setZipCode] = useState(initial?.zipCode ?? "");
-  const [country, setCountry] = useState(initial?.country ?? "VE");
   const [instructions, setInstructions] = useState(initial?.instructions ?? "");
   const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
 
@@ -81,10 +69,10 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
             value={state}
             onChange={(e) => setState(e.target.value)}
             size="small"
-            disabled={!STATES[country]}
+            disabled={states.length === 0}
           >
-            {(STATES[country] ?? []).map((s) => (
-              <MenuItem key={s} value={s}>{s}</MenuItem>
+            {states.map((s) => (
+              <MenuItem key={s.StateCode} value={s.StateName}>{s.StateName}</MenuItem>
             ))}
           </TextField>
         </FormField>
@@ -102,8 +90,8 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
             }}
             size="small"
           >
-            {COUNTRIES.map((c) => (
-              <MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>
+            {countries.map((c) => (
+              <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
             ))}
           </TextField>
         </FormField>

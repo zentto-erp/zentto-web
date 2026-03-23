@@ -16,7 +16,7 @@ import DataObjectIcon from "@mui/icons-material/DataObject";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import Editor from "@monaco-editor/react";
 import { useDocumentTemplate, useSaveDocumentTemplate } from "../hooks/useNomina";
-import { apiGet } from "@zentto/shared-api";
+import { apiGet, useCountries } from "@zentto/shared-api";
 
 // Lazy-import marked para evitar problemas de SSR
 let markedInstance: any = null;
@@ -41,7 +41,6 @@ const VARIABLES_REF = [
 ];
 
 const TEMPLATE_TYPES = ['RECIBO_PAGO', 'RECIBO_VAC', 'UTILIDADES', 'LIQUIDACION', 'NOMINA_ES', 'FINIQUITO_ES', 'CUSTOM'];
-const COUNTRIES = ['VE', 'ES', 'MX', 'CO', 'ALL'];
 
 // CSS para la vista previa del documento (apariencia profesional)
 const PREVIEW_CSS = `
@@ -89,6 +88,8 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
   const { data: cloneSource } = useDocumentTemplate(isClone ? sourceCode! : '');
 
   const saveMutation = useSaveDocumentTemplate();
+  const { data: countriesData = [] } = useCountries();
+  const countryOptions = [...countriesData.map(c => c.CountryCode), 'ALL'];
 
   const [form, setForm] = useState({
     templateCode: '',
@@ -261,7 +262,7 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
           <FormControl size="small" sx={{ minWidth: 90 }}>
             <InputLabel>País</InputLabel>
             <Select value={form.countryCode} label="País" onChange={e => setForm(f => ({ ...f, countryCode: e.target.value }))}>
-              {COUNTRIES.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+              {countryOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </Select>
           </FormControl>
           {isNew && (

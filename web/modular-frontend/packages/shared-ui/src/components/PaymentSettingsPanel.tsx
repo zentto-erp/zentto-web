@@ -18,6 +18,7 @@ import {
   usePaymentProviders, usePaymentPlugins,
   useCompanyPaymentConfigs, useSaveCompanyPaymentConfig, useDeleteCompanyPaymentConfig,
   usePaymentMethods, useAcceptedPaymentMethods, useSaveAcceptedPaymentMethod, useRemoveAcceptedPaymentMethod,
+  useCountries,
 } from '@zentto/shared-api';
 import type { PaymentProvider, CompanyPaymentConfig, ConfigField } from '@zentto/shared-api';
 
@@ -40,6 +41,12 @@ export default function PaymentSettingsPanel({
   methodsOnly = false,
 }: PaymentSettingsPanelProps) {
   const [tab, setTab] = React.useState(0);
+  const { data: countries = [] } = useCountries();
+
+  const countryLabel = (code: string) => {
+    const c = countries.find(x => x.CountryCode === code);
+    return c ? c.CountryName : code === 'GLOBAL' ? '🌐 Global / Internacional' : code;
+  };
 
   // Data queries
   const { data: providers = [], isLoading: loadingProviders } = usePaymentProviders(countryCode);
@@ -145,7 +152,7 @@ export default function PaymentSettingsPanel({
           {Object.entries(grouped).map(([group, provs]) => (
             <Box key={group} sx={{ mb: 4 }}>
               <Typography variant="overline" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                {group === 'VE' ? '🇻🇪 Venezuela' : group === 'ES' ? '🇪🇸 España' : '🌐 Global / Internacional'}
+                {countryLabel(group)}
               </Typography>
               {provs.map((p, index) => (
                 <ProviderConfigCard

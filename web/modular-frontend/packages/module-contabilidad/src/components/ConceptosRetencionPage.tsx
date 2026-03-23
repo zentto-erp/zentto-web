@@ -8,30 +8,8 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
+import { useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
-
-const COUNTRIES = [
-  { code: "", label: "Todos" },
-  { code: "VE", label: "Venezuela" },
-  { code: "ES", label: "Espana" },
-  { code: "CO", label: "Colombia" },
-  { code: "MX", label: "Mexico" },
-];
-
-const RET_TYPES = [
-  { code: "", label: "Todos" },
-  { code: "ISLR", label: "ISLR" },
-  { code: "IVA", label: "IVA" },
-  { code: "IRPF", label: "IRPF" },
-  { code: "ISR", label: "ISR" },
-  { code: "RETEFUENTE", label: "Ret. Fuente" },
-];
-
-const SUPPLIER_TYPES = [
-  { code: "NATURAL", label: "Persona Natural" },
-  { code: "JURIDICA", label: "Persona Juridica" },
-  { code: "AMBOS", label: "Ambos" },
-];
 
 const columns: GridColDef[] = [
   { field: "ConceptCode", headerName: "Codigo", width: 140 },
@@ -47,6 +25,9 @@ const columns: GridColDef[] = [
 ];
 
 export default function ConceptosRetencionPage() {
+  const { data: countries = [] } = useCountries();
+  const { data: retTypes = [] } = useLookup('RETENTION_TYPE');
+  const { data: supplierTypes = [] } = useLookup('SUPPLIER_TYPE');
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
@@ -91,11 +72,13 @@ export default function ConceptosRetencionPage() {
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField select label="Pais" size="small" value={filter.countryCode ?? ""} sx={{ minWidth: 140 }}
           onChange={(e) => setFilter({ ...filter, countryCode: e.target.value || undefined })}>
-          {COUNTRIES.map((c) => <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>)}
+          <MenuItem value="">Todos</MenuItem>
+          {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
         </TextField>
         <TextField select label="Tipo" size="small" value={filter.retentionType ?? ""} sx={{ minWidth: 130 }}
           onChange={(e) => setFilter({ ...filter, retentionType: e.target.value || undefined })}>
-          {RET_TYPES.map((t) => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
+          <MenuItem value="">Todos</MenuItem>
+          {retTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
         </TextField>
         <TextField label="Buscar" size="small" value={filter.search ?? ""}
           onChange={(e) => setFilter({ ...filter, search: e.target.value || undefined })} />
@@ -125,7 +108,7 @@ export default function ConceptosRetencionPage() {
                 disabled={!!form.conceptCode && rows.some((r: any) => r.ConceptCode === form.conceptCode)} />
               <TextField select label="Pais" size="small" value={form.countryCode} sx={{ minWidth: 120 }}
                 onChange={(e) => setForm({ ...form, countryCode: e.target.value })}>
-                {COUNTRIES.filter((c) => c.code).map((c) => <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>)}
+                {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
               </TextField>
             </Stack>
             <TextField label="Descripcion" fullWidth size="small" value={form.description}
@@ -133,7 +116,7 @@ export default function ConceptosRetencionPage() {
             <Stack direction="row" spacing={2}>
               <TextField select label="Tipo Persona" size="small" fullWidth value={form.supplierType}
                 onChange={(e) => setForm({ ...form, supplierType: e.target.value })}>
-                {SUPPLIER_TYPES.map((t) => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
+                {supplierTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
               </TextField>
               <TextField label="Actividad" size="small" fullWidth value={form.activityCode}
                 onChange={(e) => setForm({ ...form, activityCode: e.target.value })} />
@@ -141,7 +124,7 @@ export default function ConceptosRetencionPage() {
             <Stack direction="row" spacing={2}>
               <TextField select label="Tipo Retencion" size="small" fullWidth value={form.retentionType}
                 onChange={(e) => setForm({ ...form, retentionType: e.target.value })}>
-                {RET_TYPES.filter((t) => t.code).map((t) => <MenuItem key={t.code} value={t.code}>{t.label}</MenuItem>)}
+                {retTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
               </TextField>
               <TextField label="% Retencion" type="number" size="small" fullWidth value={form.rate}
                 onChange={(e) => setForm({ ...form, rate: Number(e.target.value) })} />

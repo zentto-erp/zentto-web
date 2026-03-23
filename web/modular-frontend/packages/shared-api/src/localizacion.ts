@@ -66,6 +66,46 @@ export function useSaveCountry() {
   });
 }
 
+// ─── States (cfg.State) ─────────────────────────────────────────────────────
+
+export interface StateRecord {
+  StateId: number;
+  CountryCode: string;
+  StateCode: string;
+  StateName: string;
+  SortOrder: number;
+}
+
+/** Fetch states/provinces for a given country code. */
+export function useStates(countryCode: string | undefined) {
+  return useQuery<StateRecord[]>({
+    queryKey: ['config', 'states', countryCode],
+    queryFn: () => apiGet(`/v1/config/states/${countryCode}`),
+    enabled: !!countryCode,
+    staleTime: 10 * 60 * 1000, // 10 min — reference data
+  });
+}
+
+// ─── Lookups (cfg.Lookup) ───────────────────────────────────────────────────
+
+export interface LookupRecord {
+  LookupId: number;
+  Code: string;
+  Label: string;
+  LabelEn: string | null;
+  SortOrder: number;
+  Extra: string | null;
+}
+
+/** Fetch lookup values by type code (e.g. 'PAYROLL_FREQUENCY'). */
+export function useLookup(typeCode: string) {
+  return useQuery<LookupRecord[]>({
+    queryKey: ['config', 'lookups', typeCode],
+    queryFn: () => apiGet(`/v1/config/lookups/${typeCode}`),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**

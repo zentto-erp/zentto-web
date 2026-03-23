@@ -27,7 +27,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import SendIcon from "@mui/icons-material/Send";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useCountries } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useDeclaracionesList,
@@ -69,6 +69,7 @@ interface CalcForm {
 }
 
 export default function DeclaracionesPage() {
+  const { data: countries = [] } = useCountries();
   const router = useRouter();
   const [filter, setFilter] = useState<DeclarationFilter>({ page: 1, limit: 25 });
   const [openCalc, setOpenCalc] = useState(false);
@@ -279,11 +280,9 @@ export default function DeclaracionesPage() {
                 value={calcForm.countryCode}
                 onChange={(e) => setCalcForm((f) => ({ ...f, countryCode: e.target.value }))}
               >
-                <MenuItem value="VE">Venezuela</MenuItem>
-                <MenuItem value="ES">Espana</MenuItem>
-                <MenuItem value="CO">Colombia</MenuItem>
-                <MenuItem value="MX">Mexico</MenuItem>
-                <MenuItem value="US">Estados Unidos</MenuItem>
+                {countries.map((c) => (
+                  <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Stack>

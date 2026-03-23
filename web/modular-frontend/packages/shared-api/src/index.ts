@@ -32,8 +32,10 @@ export {
   useCountries,
   useSaveCountry,
   getCountryDefaults,
+  useStates,
+  useLookup,
 } from './localizacion';
-export type { CountryPreset, BcvRates, CountryRecord } from './localizacion';
+export type { CountryPreset, BcvRates, CountryRecord, StateRecord, LookupRecord } from './localizacion';
 
 // Settings hydration
 export { useHydrateLocalizacion } from './useHydrateLocalizacion';

@@ -106,6 +106,9 @@
 \echo '--- Funciones Configuracion Paises ---'
 \i includes/sp/sp_cfg_country.sql
 
+\echo '--- Configuracion Estados y Lookups ---'
+\i includes/sp/sp_cfg_state_lookup.sql
+
 \echo '--- Funciones Seguridad ---'
 \i includes/sp/usp_sec.sql
 

@@ -20,7 +20,7 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import dynamic from "next/dynamic";
 const DocumentViewerModal = dynamic(() => import("./DocumentViewerModal"), { ssr: false });
 import { brandColors, FormGrid, FormField } from "@zentto/shared-ui";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useLookup } from "@zentto/shared-api";
 import {
   useGenerateDraft,
   useBatchSummary,
@@ -56,6 +56,7 @@ export default function NominaBatchWizard({ onBack }: Props) {
     soloActivos: true,
   });
 
+  const { data: frequencies = [] } = useLookup('PAYROLL_FREQUENCY');
   const generateDraft = useGenerateDraft();
   const summary = useBatchSummary(batchId);
   const batchGrid = useBatchGrid(docEmployee === "__batch__" ? batchId : null);
@@ -176,10 +177,7 @@ export default function NominaBatchWizard({ onBack }: Props) {
                     label="Tipo de Nómina"
                     onChange={(e) => setConfig((c) => ({ ...c, nomina: e.target.value }))}
                   >
-                    <MenuItem value="SEMANAL">Semanal</MenuItem>
-                    <MenuItem value="QUINCENAL">Quincenal</MenuItem>
-                    <MenuItem value="MENSUAL">Mensual</MenuItem>
-                    <MenuItem value="ESPECIAL">Especial</MenuItem>
+                    {frequencies.map(f => <MenuItem key={f.Code} value={f.Code}>{f.Label}</MenuItem>)}
                   </Select>
                 </FormControl>
               </FormField>

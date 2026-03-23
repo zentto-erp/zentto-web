@@ -81,3 +81,37 @@ configRouter.post("/countries", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// /v1/config/states/:countryCode
+configRouter.get("/states/:countryCode", async (req, res) => {
+    try {
+        const rows = await callSp("usp_CFG_State_ListByCountry", {
+            CountryCode: req.params.countryCode.toUpperCase(),
+        });
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// /v1/config/states (all active states)
+configRouter.get("/states", async (_req, res) => {
+    try {
+        const rows = await callSp("usp_CFG_State_List", {});
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// /v1/config/lookups/:typeCode
+configRouter.get("/lookups/:typeCode", async (req, res) => {
+    try {
+        const rows = await callSp("usp_CFG_Lookup_ListByType", {
+            TypeCode: req.params.typeCode.toUpperCase(),
+        });
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});

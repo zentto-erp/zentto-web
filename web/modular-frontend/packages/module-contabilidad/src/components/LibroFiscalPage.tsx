@@ -24,7 +24,7 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useCountries } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useGenerarLibroFiscal,
@@ -38,12 +38,8 @@ const BOOK_TYPES = [
   { value: "SALES", label: "Ventas" },
 ];
 
-const COUNTRY_CODES = [
-  { value: "VE", label: "Venezuela" },
-  { value: "ES", label: "Espana" },
-];
-
 export default function LibroFiscalPage() {
+  const { data: countries = [] } = useCountries();
   const [filter, setFilter] = useState<TaxBookFilter>({
     bookType: "PURCHASE",
     periodCode: "",
@@ -156,8 +152,8 @@ export default function LibroFiscalPage() {
               value={filter.countryCode}
               onChange={(e) => setFilter((f) => ({ ...f, countryCode: e.target.value }))}
             >
-              {COUNTRY_CODES.map((c) => (
-                <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+              {countries.map((c) => (
+                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
               ))}
             </Select>
           </FormControl>

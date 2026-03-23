@@ -30,7 +30,7 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
 import { useAuth } from '@zentto/shared-auth';
-import { apiPut, useAllSettings } from '@zentto/shared-api';
+import { apiPut, useAllSettings, useCountries } from '@zentto/shared-api';
 import {
   PaymentSettingsPanel,
   SettingsInputGroup,
@@ -53,6 +53,7 @@ export default function ConfiguracionPage() {
   const countryCode = company?.countryCode ?? 'VE';
 
   const { data, isLoading, error, refetch } = useAllSettings(companyId);
+  const { data: countries = [] } = useCountries();
 
   const [original, setOriginal] = useState<LocalSettings>({});
   const [draft, setDraft] = useState<LocalSettings>({});
@@ -201,10 +202,11 @@ export default function ConfiguracionPage() {
                 value={getValue('general', 'pais', countryCode)}
                 onChange={(e) => setValue('general', 'pais', e.target.value)}
               >
-                <MenuItem value="VE">Venezuela (SENIAT)</MenuItem>
-                <MenuItem value="ES">España (AEAT)</MenuItem>
-                <MenuItem value="CO">Colombia (DIAN)</MenuItem>
-                <MenuItem value="MX">México (SAT)</MenuItem>
+                {countries.map(c => (
+                  <MenuItem key={c.CountryCode} value={c.CountryCode}>
+                    {c.CountryName}{c.TaxAuthorityCode ? ` (${c.TaxAuthorityCode})` : ''}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>

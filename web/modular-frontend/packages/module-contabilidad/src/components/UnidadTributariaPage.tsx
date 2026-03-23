@@ -8,14 +8,8 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
+import { useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
-
-const COUNTRIES = [
-  { code: "VE", label: "Venezuela", currency: "VES" },
-  { code: "ES", label: "Espana", currency: "EUR" },
-  { code: "CO", label: "Colombia", currency: "COP" },
-  { code: "MX", label: "Mexico", currency: "MXN" },
-];
 
 const columns: GridColDef[] = [
   { field: "CountryCode", headerName: "Pais", width: 80 },
@@ -26,6 +20,7 @@ const columns: GridColDef[] = [
 ];
 
 export default function UnidadTributariaPage() {
+  const { data: countries = [] } = useCountries();
   const [filterCountry, setFilterCountry] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ countryCode: "VE", taxYear: new Date().getFullYear(), unitValue: 0, currency: "VES", effectiveDate: "" });
@@ -55,7 +50,7 @@ export default function UnidadTributariaPage() {
         <TextField select label="Pais" size="small" value={filterCountry} sx={{ minWidth: 150 }}
           onChange={(e) => setFilterCountry(e.target.value)}>
           <MenuItem value="">Todos</MenuItem>
-          {COUNTRIES.map((c) => <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>)}
+          {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
         </TextField>
       </Stack>
 
@@ -87,10 +82,10 @@ export default function UnidadTributariaPage() {
             <Stack direction="row" spacing={2}>
               <TextField select label="Pais" size="small" fullWidth value={form.countryCode}
                 onChange={(e) => {
-                  const country = COUNTRIES.find((c) => c.code === e.target.value);
-                  setForm({ ...form, countryCode: e.target.value, currency: country?.currency ?? "VES" });
+                  const country = countries.find((c) => c.CountryCode === e.target.value);
+                  setForm({ ...form, countryCode: e.target.value, currency: country?.CurrencyCode ?? "VES" });
                 }}>
-                {COUNTRIES.map((c) => <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>)}
+                {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
               </TextField>
               <TextField label="Ano" type="number" size="small" fullWidth value={form.taxYear}
                 onChange={(e) => setForm({ ...form, taxYear: Number(e.target.value) })} />

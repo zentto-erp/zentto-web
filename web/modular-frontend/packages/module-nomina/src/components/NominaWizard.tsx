@@ -45,7 +45,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useLookup } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
@@ -95,6 +95,7 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
+  const { data: payrollTypes = [] } = useLookup('PAYROLL_TYPE');
   const hasInitialCedula = !!initialCedula;
   const [activeStep, setActiveStep] = useState(hasInitialCedula ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
@@ -201,16 +202,8 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
       });
       setConceptos(mapped);
     } else {
-      // Conceptos por defecto (bases legales LOTTT Venezuela)
-      const totalAsig = sueldo + 100 + 50; // sueldo + bono + transporte
-      setConceptos([
-        { id: "1", codigo: "SUELDO", descripcion: "Sueldo Base", tipo: "ASIGNACION", valor: sueldo, editable: false },
-        { id: "2", codigo: "BONO", descripcion: "Bono de Alimentación", tipo: "ASIGNACION", valor: 100, editable: true },
-        { id: "3", codigo: "TRANS", descripcion: "Bono de Transporte", tipo: "ASIGNACION", valor: 50, editable: true },
-        { id: "4", codigo: "SSO", descripcion: "Seguro Social (SSO)", tipo: "DEDUCCION", formula: "SUELDO * 0.04", valor: sueldo * 0.04, editable: false },
-        { id: "5", codigo: "RPE", descripcion: "Régimen Prestacional Empleo", tipo: "DEDUCCION", formula: "SUELDO * 0.005", valor: sueldo * 0.005, editable: false },
-        { id: "6", codigo: "FAOV", descripcion: "FAOV (Ley Vivienda y Hábitat)", tipo: "DEDUCCION", formula: "TOTAL_ASIGNACIONES * 0.01", valor: totalAsig * 0.01, editable: false },
-      ]);
+      // TODO: fetch from API usp_HR_PayrollConcept_List when no concepts are configured for this payroll
+      setConceptos([]);
     }
   };
 
@@ -399,11 +392,9 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
                         label="Tipo de Cálculo"
                         onChange={(e) => setTipoCalculo(e.target.value)}
                       >
-                        <MenuItem value="MENSUAL">Mensual</MenuItem>
-                        <MenuItem value="QUINCENAL">Quincenal</MenuItem>
-                        <MenuItem value="SEMANAL">Semanal</MenuItem>
-                        <MenuItem value="VACACIONES">Vacaciones</MenuItem>
-                        <MenuItem value="LIQUIDACION">Liquidación</MenuItem>
+                        {payrollTypes.map(pt => (
+                          <MenuItem key={pt.Code} value={pt.Code}>{pt.Label}</MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
                   </FormField>

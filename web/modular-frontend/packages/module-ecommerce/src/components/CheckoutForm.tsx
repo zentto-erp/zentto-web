@@ -8,6 +8,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import ShieldIcon from "@mui/icons-material/Shield";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ReceiptIcon from "@mui/icons-material/Receipt";
+import { useCountries } from "@zentto/shared-api";
 import { useCartStore } from "../store/useCartStore";
 import { useCheckout } from "../hooks/useStoreOrders";
 import OrderSummary from "./OrderSummary";
@@ -52,6 +53,7 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
   // Structured address for guests
   const [guestAddress, setGuestAddress] = useState({ addressLine: "", city: "", state: "", zipCode: "", country: "VE" });
 
+  const { data: countries = [] } = useCountries();
   const checkoutMutation = useCheckout();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,11 +178,9 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
                   </FormField>
                   <FormField xs={12} sm={4}>
                     <TextField select label="Pais" value={guestAddress.country} onChange={(e) => setGuestAddress({ ...guestAddress, country: e.target.value, state: "" })} size="small">
-                      <MenuItem value="VE">Venezuela</MenuItem>
-                      <MenuItem value="ES">Espana</MenuItem>
-                      <MenuItem value="CO">Colombia</MenuItem>
-                      <MenuItem value="MX">Mexico</MenuItem>
-                      <MenuItem value="US">Estados Unidos</MenuItem>
+                      {countries.map((c) => (
+                        <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+                      ))}
                     </TextField>
                   </FormField>
                   <FormField xs={12} sm={4}>

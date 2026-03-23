@@ -74,6 +74,7 @@
 -- RRHH: Beneficios, Obligaciones Legales, Salud Ocupacional
 -- ====================================================================
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_cfg_country.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_cfg_state_lookup.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_beneficios.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_obligaciones_legales.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_salud_ocupacional.sql

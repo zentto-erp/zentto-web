@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useCountries, useLookup } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useRetencionesList,
@@ -35,20 +35,6 @@ import {
 import ConceptosRetencionPage from "./ConceptosRetencionPage";
 import UnidadTributariaPage from "./UnidadTributariaPage";
 
-const WITHHOLDING_TYPES = [
-  { value: "", label: "Todos" },
-  { value: "IVA", label: "IVA" },
-  { value: "ISLR", label: "ISLR" },
-  { value: "IRPF", label: "IRPF" },
-];
-
-const COUNTRY_CODES = [
-  { value: "", label: "Todos" },
-  { value: "VE", label: "Venezuela" },
-  { value: "ES", label: "Espana" },
-  { value: "CO", label: "Colombia" },
-];
-
 interface GenForm {
   documentId: number;
   withholdingType: string;
@@ -56,6 +42,8 @@ interface GenForm {
 }
 
 function ComprobantesTab() {
+  const { data: countries = [] } = useCountries();
+  const { data: withholdingTypes = [] } = useLookup('RETENTION_TYPE');
   const [filter, setFilter] = useState<WithholdingFilter>({ page: 1, limit: 25 });
   const [openGen, setOpenGen] = useState(false);
   const [genForm, setGenForm] = useState<GenForm>({
@@ -138,8 +126,9 @@ function ComprobantesTab() {
               value={filter.withholdingType || ""}
               onChange={(e) => setFilter((f) => ({ ...f, withholdingType: e.target.value || undefined, page: 1 }))}
             >
-              {WITHHOLDING_TYPES.map((t) => (
-                <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+              <MenuItem value="">Todos</MenuItem>
+              {withholdingTypes.map((t) => (
+                <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -157,8 +146,9 @@ function ComprobantesTab() {
               value={filter.countryCode || ""}
               onChange={(e) => setFilter((f) => ({ ...f, countryCode: e.target.value || undefined, page: 1 }))}
             >
-              {COUNTRY_CODES.map((c) => (
-                <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+              <MenuItem value="">Todos</MenuItem>
+              {countries.map((c) => (
+                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -206,8 +196,8 @@ function ComprobantesTab() {
                 value={genForm.withholdingType}
                 onChange={(e) => setGenForm((f) => ({ ...f, withholdingType: e.target.value }))}
               >
-                {WITHHOLDING_TYPES.filter((t) => t.value).map((t) => (
-                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                {withholdingTypes.map((t) => (
+                  <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -218,9 +208,9 @@ function ComprobantesTab() {
                 value={genForm.countryCode}
                 onChange={(e) => setGenForm((f) => ({ ...f, countryCode: e.target.value }))}
               >
-                <MenuItem value="VE">Venezuela</MenuItem>
-                <MenuItem value="ES">Espana</MenuItem>
-                <MenuItem value="CO">Colombia</MenuItem>
+                {countries.map((c) => (
+                  <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Stack>

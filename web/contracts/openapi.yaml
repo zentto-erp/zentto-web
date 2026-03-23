@@ -392,6 +392,43 @@ components:
           nullable: true
         IsActive:
           type: boolean
+    State:
+      type: object
+      description: Estado/provincia de un país
+      properties:
+        StateId:
+          type: integer
+        CountryCode:
+          type: string
+          example: VE
+        StateCode:
+          type: string
+          example: VE-DC
+        StateName:
+          type: string
+          example: Distrito Capital
+        SortOrder:
+          type: integer
+    Lookup:
+      type: object
+      description: Valor de catálogo de referencia
+      properties:
+        LookupId:
+          type: integer
+        Code:
+          type: string
+          example: SEMANAL
+        Label:
+          type: string
+          example: Semanal
+        LabelEn:
+          type: string
+          nullable: true
+        SortOrder:
+          type: integer
+        Extra:
+          type: string
+          nullable: true
     MediaAsset:
       type: object
       description: Archivo multimedia almacenado
@@ -5654,6 +5691,74 @@ paths:
                 $ref: "#/components/schemas/Country"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/states/{countryCode}:
+    get:
+      tags:
+        - Config
+      summary: Lista estados/provincias de un país
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: countryCode
+          required: true
+          schema:
+            type: string
+            example: "VE"
+      responses:
+        "200":
+          description: Lista de estados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/State"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/states:
+    get:
+      tags:
+        - Config
+      summary: Lista todos los estados/provincias activos
+      x-db-agnostic: true
+      responses:
+        "200":
+          description: Lista completa de estados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/State"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config/lookups/{typeCode}:
+    get:
+      tags:
+        - Config
+      summary: Lista valores de lookup por tipo
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: typeCode
+          required: true
+          schema:
+            type: string
+            example: "PAYROLL_FREQUENCY"
+      responses:
+        "200":
+          description: Lista de valores de lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lookup"
         "401":
           $ref: "#/components/responses/Unauthorized"
 

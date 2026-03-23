@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { useLookup } from "@zentto/shared-api";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -50,6 +51,7 @@ export default function ConceptosPage() {
   const { data, isLoading } = useConceptosList(filter);
   const saveMutation = useSaveConcepto();
   const deleteMutation = useDeleteConcepto();
+  const { data: frequencies = [] } = useLookup('PAYROLL_FREQUENCY');
 
   const rows = data?.data ?? data?.rows ?? [];
 
@@ -290,11 +292,9 @@ export default function ConceptosPage() {
                         onChange={(e) => setForm((f) => ({ ...f, uso: e.target.value || undefined }))}
                       >
                         <MenuItem value="">General</MenuItem>
-                        <MenuItem value="MENSUAL">Mensual</MenuItem>
-                        <MenuItem value="QUINCENAL">Quincenal</MenuItem>
-                        <MenuItem value="SEMANAL">Semanal</MenuItem>
-                        <MenuItem value="VACACIONES">Vacaciones</MenuItem>
-                        <MenuItem value="LIQUIDACION">Liquidación</MenuItem>
+                        {frequencies.map(f => (
+                          <MenuItem key={f.Code} value={f.Code}>{f.Label}</MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
                   </Stack>
