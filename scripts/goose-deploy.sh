@@ -18,6 +18,10 @@ if ! command -v goose &>/dev/null; then
   chmod +x /usr/local/bin/goose
 fi
 
+# Extensiones requeridas (necesita superuser)
+echo "→ Asegurando extensiones PostgreSQL..."
+su -c "psql -d ${PG_DATABASE} -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS btree_gin;'" postgres || true
+
 # Grants de schemas
 echo "→ Aplicando grants de schemas..."
 su -c "psql -d ${PG_DATABASE} -c 'GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;'" postgres || true
@@ -26,32 +30,34 @@ echo "╔═══════════════════════�
 echo "║  Zentto — goose migrate up (PostgreSQL)  ║"
 echo "╚══════════════════════════════════════════╝"
 
-# Detectar si es primera vez con goose (BD existente pre-goose)
-HAS_GOOSE=$(su -c "psql -d ${PG_DATABASE} -tAc \"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='goose_db_version');\"" postgres)
+# Detectar si la BD ya existía antes de goose
+# Si goose_db_version no existe, dejamos que goose la cree con 'up-to 0'
+# y luego marcamos el baseline (1) como aplicado para no re-ejecutar 117K líneas
+HAS_GOOSE=$(su -c "psql -d ${PG_DATABASE} -tAc \"SELECT count(*) FROM information_schema.tables WHERE table_name='goose_db_version';\"" postgres || echo "0")
 
-if [ "$HAS_GOOSE" != "t" ]; then
-  echo "→ Primera vez con goose: marcando baseline como aplicado..."
-  # Crear tabla goose y marcar migración 1 (baseline) como aplicada
-  su -c "psql -d ${PG_DATABASE} -c \"
-    CREATE TABLE IF NOT EXISTS public.goose_db_version (
-      id SERIAL PRIMARY KEY,
-      version_id BIGINT NOT NULL,
-      is_applied BOOLEAN NOT NULL,
-      tstamp TIMESTAMP DEFAULT now()
-    );
-    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (0, true);
-    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (1, true);
-  \"" postgres
+if [ "$HAS_GOOSE" = "0" ]; then
+  echo "→ Primera vez con goose en esta BD (existente pre-goose)"
+  echo "→ Inicializando tabla goose_db_version y marcando baseline..."
+
+  # Dejar que goose cree su tabla con el formato correcto
+  su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' version" postgres 2>/dev/null || true
+
+  # Marcar baseline (migración 00001) como ya aplicada
+  su -c "psql -d ${PG_DATABASE} -c \"INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (1, true) ON CONFLICT DO NOTHING;\"" postgres
+
   echo "✓ Baseline marcado como aplicado (BD ya tiene todo)"
 fi
 
-# Ejecutar migraciones pendientes
+# Ejecutar migraciones pendientes (solo las que vengan después de baseline)
 echo "→ Ejecutando goose up..."
-su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' up" postgres
+su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' up" postgres 2>&1 || {
+  echo "ERROR: goose up falló — ver errores arriba"
+  echo "→ Continuando con ownership..."
+}
 
 echo ""
 echo "→ Estado de migraciones:"
-su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' status" postgres
+su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' status" postgres 2>&1 || true
 
 # Ownership de todo → zentto_app
 echo "→ Transfiriendo ownership a zentto_app..."
