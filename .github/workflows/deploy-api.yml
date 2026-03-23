@@ -92,11 +92,25 @@ jobs:
             echo '║  Zentto — goose migrate up (PostgreSQL)  ║'
             echo '╚══════════════════════════════════════════╝'
 
-            su -c \"goose -dir /opt/zentto/migrations/postgres postgres 'postgres://postgres@/\${PG_DATABASE}?host=/var/run/postgresql&sslmode=disable' up\" postgres
+            GOOSE_URL='postgres://postgres@/'\"\$PG_DATABASE\"'?host=/var/run/postgresql&sslmode=disable'
+            GOOSE_DIR='/opt/zentto/migrations/postgres'
+
+            # Si la tabla goose_db_version no existe, la BD es existente pre-goose
+            # Marcar baseline como aplicado sin ejecutarlo (la BD ya tiene todo)
+            HAS_GOOSE=\$(su -c \"psql -d \$PG_DATABASE -tAc \\\"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='goose_db_version');\\\"\" postgres)
+            if [ \"\$HAS_GOOSE\" != 't' ]; then
+              echo '→ Primera vez con goose: marcando baseline como aplicado (BD existente)...'
+              su -c \"goose -dir \$GOOSE_DIR postgres '\$GOOSE_URL' up-to 1\" postgres || \
+              su -c \"psql -d \$PG_DATABASE -c \\\"CREATE TABLE IF NOT EXISTS public.goose_db_version (id SERIAL PRIMARY KEY, version_id BIGINT NOT NULL, is_applied BOOLEAN NOT NULL, tstamp TIMESTAMP DEFAULT now()); INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (1, true);\\\"\" postgres
+              echo '✓ Baseline marcado como aplicado'
+            fi
+
+            # Ejecutar migraciones pendientes (post-baseline)
+            su -c \"goose -dir \$GOOSE_DIR postgres '\$GOOSE_URL' up\" postgres
 
             echo ''
             echo '→ Estado de migraciones:'
-            su -c \"goose -dir /opt/zentto/migrations/postgres postgres 'postgres://postgres@/\${PG_DATABASE}?host=/var/run/postgresql&sslmode=disable' status\" postgres
+            su -c \"goose -dir \$GOOSE_DIR postgres '\$GOOSE_URL' status\" postgres
 
             # Ownership de TODAS las funciones, tablas y vistas → zentto_app
             su -c \"psql -d $PG_DATABASE -c \\\"
