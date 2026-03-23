@@ -55,100 +55,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install goose
-        run: |
-          wget -qO /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
-          chmod +x /usr/local/bin/goose
-          goose --version
+      - name: Copy migrations and script to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "web/api/migrations/postgres,scripts/goose-deploy.sh"
+          target: /opt/zentto/_deploy_tmp/
+          strip_components: 0
 
       - name: Run goose migrations
+        uses: appleboy/ssh-action@v1.0.3
         env:
-          PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
-          PG_USER: ${{ secrets.PG_USER }}
           PG_DATABASE: ${{ secrets.PG_DATABASE }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-        run: |
-          # Copiar migraciones al servidor
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ssh_key && chmod 600 /tmp/ssh_key
-          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${SSH_USER}@${SSH_HOST} "mkdir -p /opt/zentto/migrations/postgres"
-          scp -o StrictHostKeyChecking=no -i /tmp/ssh_key -r web/api/migrations/postgres/* ${SSH_USER}@${SSH_HOST}:/opt/zentto/migrations/postgres/
-
-          # Ejecutar goose en el servidor
-          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${SSH_USER}@${SSH_HOST} "
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: PG_DATABASE
+          script: |
             set -e
-
-            # Instalar goose si no existe
-            if ! command -v goose &>/dev/null; then
-              wget -qO /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
-              chmod +x /usr/local/bin/goose
-            fi
-
-            # Grants de schemas (superuser)
-            su -c \"psql -d $PG_DATABASE -c \\\"GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;\\\"\" postgres || true
-
-            # Ejecutar goose como superuser (postgres) para evitar problemas de ownership
-            echo '╔══════════════════════════════════════════╗'
-            echo '║  Zentto — goose migrate up (PostgreSQL)  ║'
-            echo '╚══════════════════════════════════════════╝'
-
-            GOOSE_URL='postgres://postgres@/'\"\$PG_DATABASE\"'?host=/var/run/postgresql&sslmode=disable'
-            GOOSE_DIR='/opt/zentto/migrations/postgres'
-
-            # Si la tabla goose_db_version no existe, la BD es existente pre-goose
-            # Marcar baseline como aplicado sin ejecutarlo (la BD ya tiene todo)
-            HAS_GOOSE=\$(su -c \"psql -d \$PG_DATABASE -tAc \\\"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='goose_db_version');\\\"\" postgres)
-            if [ \"\$HAS_GOOSE\" != 't' ]; then
-              echo '→ Primera vez con goose: marcando baseline como aplicado (BD existente)...'
-              su -c \"goose -dir \$GOOSE_DIR postgres '\$GOOSE_URL' up-to 1\" postgres || \
-              su -c \"psql -d \$PG_DATABASE -c \\\"CREATE TABLE IF NOT EXISTS public.goose_db_version (id SERIAL PRIMARY KEY, version_id BIGINT NOT NULL, is_applied BOOLEAN NOT NULL, tstamp TIMESTAMP DEFAULT now()); INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (1, true);\\\"\" postgres
-              echo '✓ Baseline marcado como aplicado'
-            fi
-
-            # Ejecutar migraciones pendientes (post-baseline)
-            su -c \"goose -dir \$GOOSE_DIR postgres '\$GOOSE_URL' up\" postgres
-
-            echo ''
-            echo '→ Estado de migraciones:'
-            su -c \"goose -dir \$GOOSE_DIR postgres '\$GOOSE_URL' status\" postgres
-
-            # Ownership de TODAS las funciones, tablas y vistas → zentto_app
-            su -c \"psql -d $PG_DATABASE -c \\\"
-              DO \\\\\\\$\\\\\\\$
-              DECLARE r RECORD; s TEXT;
-              BEGIN
-                -- Schemas ownership
-                FOR s IN SELECT schema_name FROM information_schema.schemata
-                  WHERE schema_name NOT IN ('pg_catalog','information_schema','pg_toast')
-                LOOP
-                  EXECUTE 'GRANT USAGE ON SCHEMA ' || quote_ident(s) || ' TO zentto_app';
-                  EXECUTE 'GRANT ALL ON ALL TABLES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app';
-                  EXECUTE 'GRANT ALL ON ALL SEQUENCES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app';
-                END LOOP;
-                -- Functions ownership
-                FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
-                  WHERE n.nspname = 'public'
-                LOOP
-                  BEGIN
-                    EXECUTE 'ALTER FUNCTION ' || r.oid::regprocedure || ' OWNER TO zentto_app';
-                  EXCEPTION WHEN OTHERS THEN NULL;
-                  END;
-                END LOOP;
-                -- Views ownership
-                FOR r IN SELECT schemaname, viewname FROM pg_views
-                  WHERE schemaname NOT IN ('pg_catalog','information_schema')
-                LOOP
-                  BEGIN
-                    EXECUTE 'ALTER VIEW ' || quote_ident(r.schemaname) || '.' || quote_ident(r.viewname) || ' OWNER TO zentto_app';
-                  EXCEPTION WHEN OTHERS THEN NULL;
-                  END;
-                END LOOP;
-              END \\\\\\\$\\\\\\\$;
-            \\\"\" postgres || true
-
-            echo '✓ Migraciones goose + ownership completados: $(date -u)'
-          "
-          rm -f /tmp/ssh_key
+            mkdir -p /opt/zentto/migrations/postgres
+            cp -f /opt/zentto/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto/migrations/postgres/
+            cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto/goose-deploy.sh
+            chmod +x /opt/zentto/goose-deploy.sh
+            rm -rf /opt/zentto/_deploy_tmp
+            PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy.sh
 
   deploy:
     name: Deploy API to server
