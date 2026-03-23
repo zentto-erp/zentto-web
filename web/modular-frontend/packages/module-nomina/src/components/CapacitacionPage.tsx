@@ -166,14 +166,14 @@ export default function CapacitacionPage() {
         <FormField xs={12} sm={6}>
           <TextField
             label="Buscar"
-            size="small"
+           
             fullWidth
             value={filter.search || ""}
             onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
           />
         </FormField>
         <FormField xs={12} sm={6}>
-          <FormControl size="small" fullWidth>
+          <FormControl fullWidth>
             <InputLabel>Tipo</InputLabel>
             <Select
               value={filter.type || ""}

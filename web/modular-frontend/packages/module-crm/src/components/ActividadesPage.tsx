@@ -159,7 +159,7 @@ export default function ActividadesPage() {
       <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
         <FormGrid spacing={2}>
           <FormField xs={12} sm={6}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>
               <Select
                 value={filter.type ?? ""}
@@ -176,7 +176,7 @@ export default function ActividadesPage() {
             </FormControl>
           </FormField>
           <FormField xs={12} sm={6}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select
                 value={filter.isCompleted === undefined ? "" : filter.isCompleted ? "true" : "false"}

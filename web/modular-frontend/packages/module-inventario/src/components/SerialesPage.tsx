@@ -172,7 +172,6 @@ export default function SerialesPage() {
               placeholder="Buscar serial, producto..."
               onChange={(e) => debouncedSearch(e.target.value)}
               fullWidth
-              size="small"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -183,7 +182,7 @@ export default function SerialesPage() {
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select value={filterStatus} label="Estado" onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
                 <MenuItem value="">Todos</MenuItem>
@@ -203,7 +202,6 @@ export default function SerialesPage() {
               value={filterWarehouseId}
               onChange={(e) => { setFilterWarehouseId(e.target.value); setPage(0); }}
               fullWidth
-              size="small"
             />
           </Grid>
         </Grid>
@@ -352,7 +350,7 @@ export default function SerialesPage() {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
             Serial: <strong>{statusSerial}</strong>
           </Typography>
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth>
             <InputLabel>Nuevo Estado</InputLabel>
             <Select value={newStatus} label="Nuevo Estado" onChange={(e) => setNewStatus(e.target.value)}>
               <MenuItem value="AVAILABLE">Disponible</MenuItem>
@@ -393,7 +391,6 @@ export default function SerialesPage() {
                 value={formData.serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
                 fullWidth
-                size="small"
                 required
               />
             </Grid>
@@ -404,7 +401,6 @@ export default function SerialesPage() {
                 value={formData.productId}
                 onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
                 fullWidth
-                size="small"
                 required
               />
             </Grid>
@@ -414,7 +410,6 @@ export default function SerialesPage() {
                 value={formData.lotNumber}
                 onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
                 fullWidth
-                size="small"
               />
             </Grid>
             <Grid size={6}>
@@ -424,7 +419,6 @@ export default function SerialesPage() {
                 value={formData.warehouseId}
                 onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
                 fullWidth
-                size="small"
               />
             </Grid>
             <Grid size={12}>
@@ -433,7 +427,6 @@ export default function SerialesPage() {
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 fullWidth
-                size="small"
                 multiline
                 rows={2}
               />

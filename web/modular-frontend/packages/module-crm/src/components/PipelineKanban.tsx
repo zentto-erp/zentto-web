@@ -164,7 +164,7 @@ export default function PipelineKanban() {
         </Typography>
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           {pipelines.length > 1 && (
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+            <FormControl sx={{ minWidth: 180 }}>
               <InputLabel>Pipeline</InputLabel>
               <Select
                 value={activePipelineId ?? ""}
@@ -192,7 +192,7 @@ export default function PipelineKanban() {
       {showFilters && (
         <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
           <Stack direction="row" spacing={2}>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
+            <FormControl sx={{ minWidth: 140 }}>
               <InputLabel>Prioridad</InputLabel>
               <Select value={filterPriority} label="Prioridad" onChange={(e) => setFilterPriority(e.target.value)}>
                 <MenuItem value="">Todas</MenuItem>
@@ -201,7 +201,7 @@ export default function PipelineKanban() {
                 <MenuItem value="LOW">Baja</MenuItem>
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
+            <FormControl sx={{ minWidth: 140 }}>
               <InputLabel>Estado</InputLabel>
               <Select value={filterStatus} label="Estado" onChange={(e) => setFilterStatus(e.target.value)}>
                 <MenuItem value="">Todos</MenuItem>

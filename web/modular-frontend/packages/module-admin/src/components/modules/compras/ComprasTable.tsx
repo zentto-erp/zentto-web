@@ -79,7 +79,7 @@ export default function ComprasTable() {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr 1fr" } }}>
           <TextField
-            size="small"
+           
             label="Buscar"
             placeholder="Numero, proveedor, rif"
             value={search}

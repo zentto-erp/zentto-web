@@ -185,7 +185,6 @@ export default function ConciliacionBancariaPage() {
             label="Conciliacion"
             value={selectedConciliacionId ?? ""}
             onChange={(e) => setSelectedConciliacionId(Number(e.target.value) || null)}
-            size="small"
             sx={{ minWidth: 250 }}
           >
             {conciliaciones.map((c: any) => (

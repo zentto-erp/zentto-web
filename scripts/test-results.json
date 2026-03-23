@@ -116,6 +116,11 @@
       "status": 200
     },
     {
+      "path": "/v1/nomina/conceptos-legales",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
       "path": "/v1/nomina/convenciones",
       "tag": "Nomina",
       "status": 200
@@ -311,12 +316,22 @@
       "status": 200
     },
     {
+      "path": "/v1/bancos/caja-chica",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
       "path": "/v1/nomina/batch",
       "tag": "Nomina",
       "status": 200
     },
     {
       "path": "/v1/nomina/batch/{id}/grid",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/batch/{id}/employee/{code}",
       "tag": "Nomina",
       "status": 200
     },
@@ -381,6 +396,11 @@
       "status": 200
     },
     {
+      "path": "/v1/auditoria/fiscal-records",
+      "tag": "Auditoria",
+      "status": 200
+    },
+    {
       "path": "/v1/settings",
       "tag": "Settings",
       "status": 200
@@ -393,6 +413,11 @@
     {
       "path": "/v1/settings/{module}",
       "tag": "Settings",
+      "status": 200
+    },
+    {
+      "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}/detalle",
+      "tag": "DocumentosVenta",
       "status": 200
     },
     {
@@ -456,6 +481,11 @@
       "status": 200
     },
     {
+      "path": "/v1/rrhh/obligaciones/employee/{employeeId}",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
       "path": "/v1/rrhh/obligaciones/filings",
       "tag": "RRHH",
       "status": 200
@@ -467,6 +497,11 @@
     },
     {
       "path": "/v1/rrhh/salud-ocupacional",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/salud-ocupacional/{id}",
       "tag": "RRHH",
       "status": 200
     },
@@ -825,22 +860,10 @@
       "error": "{'error': 'not_found'}"
     },
     {
-      "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
-      "tag": "Bancos",
-      "status": 400,
-      "error": "{'error': 'invalid_boxId'}"
-    },
-    {
-      "path": "/v1/bancos/caja-chica/{boxId}/gastos",
-      "tag": "Bancos",
-      "status": 400,
-      "error": "{'error': 'invalid_boxId'}"
-    },
-    {
-      "path": "/v1/bancos/caja-chica/{boxId}/resumen",
-      "tag": "Bancos",
-      "status": 400,
-      "error": "{'error': 'invalid_boxId'}"
+      "path": "/v1/nomina/batch/{id}/summary",
+      "tag": "Nomina",
+      "status": 404,
+      "error": "{'error': 'batch_not_found'}"
     },
     {
       "path": "/v1/nomina/vacaciones/solicitudes/{id}",
@@ -891,12 +914,6 @@
       "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaDesde': ['Required'], "
     },
     {
-      "path": "/v1/media/entities/{entityType}/{entityId}/images",
-      "tag": "Media",
-      "status": 400,
-      "error": "{'error': 'invalid_params', 'issues': {'formErrors': [], 'fieldErrors': {'entityType': ['entityType "
-    },
-    {
       "path": "/v1/documentos-venta",
       "tag": "DocumentosVenta",
       "status": 400,
@@ -905,14 +922,8 @@
     {
       "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}",
       "tag": "DocumentosVenta",
-      "status": 400,
-      "error": "{'error': 'Error: tipo_operacion_invalido'}"
-    },
-    {
-      "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}/detalle",
-      "tag": "DocumentosVenta",
-      "status": 400,
-      "error": "{'error': 'Error: tipo_operacion_invalido'}"
+      "status": 404,
+      "error": "{'error': 'not_found'}"
     },
     {
       "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}",
@@ -965,44 +976,20 @@
   ],
   "fail_5xx": [
     {
-      "path": "/v1/nomina/conceptos-legales",
-      "tag": "Nomina",
-      "status": 500,
-      "error": "{'error': 'error: function usp_hr_legalconcept_list(p_company_id => unknown, p_convention_code => unknown, p_calculation_type => unknown, p_concept_ty"
-    },
-    {
-      "path": "/v1/bancos/caja-chica",
+      "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
       "tag": "Bancos",
       "status": 500,
       "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
-      "path": "/v1/nomina/batch/{id}/summary",
-      "tag": "Nomina",
-      "status": 500,
-      "error": "{'error': 'error: column pb.TotalGross does not exist'}"
-    },
-    {
-      "path": "/v1/nomina/batch/{id}/employee/{code}",
-      "tag": "Nomina",
+      "path": "/v1/bancos/caja-chica/{boxId}/gastos",
+      "tag": "Bancos",
       "status": 500,
       "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
-      "path": "/v1/auditoria/fiscal-records",
-      "tag": "Auditoria",
-      "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
-    },
-    {
-      "path": "/v1/rrhh/obligaciones/employee/{employeeId}",
-      "tag": "RRHH",
-      "status": 500,
-      "error": "{'error': 'error: invalid input syntax for type bigint: \"NaN\"'}"
-    },
-    {
-      "path": "/v1/rrhh/salud-ocupacional/{id}",
-      "tag": "RRHH",
+      "path": "/v1/bancos/caja-chica/{boxId}/resumen",
+      "tag": "Bancos",
       "status": 500,
       "error": "{'error': 'error: structure of query does not match function result type'}"
     },
@@ -1010,7 +997,7 @@
       "path": "/v1/rrhh/comites/{committeeId}/meetings",
       "tag": "RRHH",
       "status": 500,
-      "error": "{'error': 'error: invalid input syntax for type integer: \"NaN\"'}"
+      "error": "{'error': 'error: column reference \"SafetyCommitteeId\" is ambiguous'}"
     },
     {
       "path": "/v1/devices/my",
@@ -1059,6 +1046,12 @@
     {
       "path": "/v1/empresa",
       "tag": "Empresa",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/media/entities/{entityType}/{entityId}/images",
+      "tag": "Media",
       "status": 0,
       "error": "The read operation timed out"
     }

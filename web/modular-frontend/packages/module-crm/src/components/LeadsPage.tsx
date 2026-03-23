@@ -182,7 +182,7 @@ export default function LeadsPage() {
       <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
           <TextField
-            size="small"
+           
             label="Buscar"
             placeholder="Nombre, empresa, email..."
             value={searchText}
@@ -190,7 +190,7 @@ export default function LeadsPage() {
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             sx={{ minWidth: 240 }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl sx={{ minWidth: 140 }}>
             <InputLabel>Pipeline</InputLabel>
             <Select
               value={filter.pipelineId ?? ""}
@@ -203,7 +203,7 @@ export default function LeadsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+          <FormControl sx={{ minWidth: 120 }}>
             <InputLabel>Estado</InputLabel>
             <Select
               value={filter.status ?? ""}
@@ -216,7 +216,7 @@ export default function LeadsPage() {
               <MenuItem value="LOST">Perdido</MenuItem>
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+          <FormControl sx={{ minWidth: 120 }}>
             <InputLabel>Prioridad</InputLabel>
             <Select
               value={filter.priority ?? ""}

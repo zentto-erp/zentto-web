@@ -8,12 +8,17 @@
 -- 1. usp_HR_LegalConcept_List
 --    Lista conceptos legales con filtros opcionales.
 -- =============================================================================
--- Drop ALL possible overloads to avoid ambiguity
-DO $$ BEGIN
-  EXECUTE 'DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR(30), VARCHAR(30), VARCHAR(15), INT) CASCADE';
-  EXECUTE 'DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR, VARCHAR, VARCHAR, INT) CASCADE';
-  EXECUTE 'DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INTEGER, CHARACTER VARYING, CHARACTER VARYING, CHARACTER VARYING, INTEGER) CASCADE';
-EXCEPTION WHEN OTHERS THEN NULL;
+-- Nuclear drop: query pg_proc to find ALL overloads and drop them
+DO $$
+DECLARE _oid OID;
+BEGIN
+  FOR _oid IN
+    SELECT p.oid FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'usp_hr_legalconcept_list'
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+  END LOOP;
 END $$;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id       INT,

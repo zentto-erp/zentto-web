@@ -34,7 +34,7 @@ export default function PlanCuentasPage() {
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
           placeholder="Buscar cuenta..."
-          size="small"
+         
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           InputProps={{

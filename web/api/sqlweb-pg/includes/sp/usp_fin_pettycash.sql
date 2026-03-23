@@ -283,9 +283,11 @@ BEGIN
     RETURN QUERY
     SELECT
         s."Id", s."BoxId", s."OpeningAmount", s."ClosingAmount",
-        s."TotalExpenses", s."Status", s."OpenedAt", s."ClosedAt",
+        s."TotalExpenses", s."Status",
+        s."OpenedAt"::TIMESTAMP,
+        s."ClosedAt"::TIMESTAMP,
         s."OpenedByUserId", s."ClosedByUserId", s."Notes",
-        (s."OpeningAmount" - s."TotalExpenses"),
+        (s."OpeningAmount" - s."TotalExpenses")::NUMERIC(18,2),
         (SELECT COUNT(1) FROM fin."PettyCashExpense" e WHERE e."SessionId" = s."Id")
     FROM fin."PettyCashSession" s
     WHERE s."BoxId" = p_box_id
@@ -400,7 +402,7 @@ BEGIN
     SELECT
         e."Id", e."SessionId", e."BoxId", e."Category", e."Description",
         e."Amount", e."Beneficiary", e."ReceiptNumber", e."AccountCode",
-        e."CreatedAt", e."CreatedByUserId"
+        e."CreatedAt"::TIMESTAMP, e."CreatedByUserId"
     FROM fin."PettyCashExpense" e
     WHERE e."BoxId" = p_box_id
       AND (p_session_id IS NULL OR e."SessionId" = p_session_id)
@@ -586,10 +588,10 @@ RETURNS TABLE(
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
-    SELECT b."Id", b."Name", b."MaxAmount", b."CurrentBalance", b."Status",
+    SELECT b."Id", b."Name"::VARCHAR, b."MaxAmount", b."CurrentBalance", b."Status"::VARCHAR,
         s."Id", s."OpeningAmount", s."TotalExpenses",
-        (s."OpeningAmount" - s."TotalExpenses"),
-        s."OpenedAt",
+        COALESCE(s."OpeningAmount" - s."TotalExpenses", 0::NUMERIC),
+        s."OpenedAt"::TIMESTAMP,
         (SELECT COUNT(1) FROM fin."PettyCashExpense" e WHERE e."SessionId" = s."Id")
     FROM fin."PettyCashBox" b
     LEFT JOIN fin."PettyCashSession" s ON s."BoxId" = b."Id" AND s."Status" = 'OPEN'

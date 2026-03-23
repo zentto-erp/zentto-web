@@ -169,23 +169,23 @@ export default function CombustiblePage() {
         <DialogTitle>Registrar Carga de Combustible</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" fullWidth required />
+            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
             <DatePicker label="Fecha" value={logDate ? dayjs(logDate) : null} onChange={(v) => setLogDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Kilometraje" type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} size="small" fullWidth required />
-            <TextField label="Tipo Combustible" value={fuelType} onChange={(e) => setFuelType(e.target.value)} size="small" fullWidth required />
+            <TextField label="Kilometraje" type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} fullWidth required />
+            <TextField label="Tipo Combustible" value={fuelType} onChange={(e) => setFuelType(e.target.value)} fullWidth required />
             <FormGrid spacing={2}>
               <FormField xs={12} sm={4}>
-                <TextField label="Litros" type="number" value={liters} onChange={(e) => setLiters(e.target.value)} size="small" fullWidth required />
+                <TextField label="Litros" type="number" value={liters} onChange={(e) => setLiters(e.target.value)} fullWidth required />
               </FormField>
               <FormField xs={12} sm={4}>
-                <TextField label="Precio/Litro" type="number" value={pricePerLiter} onChange={(e) => setPricePerLiter(e.target.value)} size="small" fullWidth required />
+                <TextField label="Precio/Litro" type="number" value={pricePerLiter} onChange={(e) => setPricePerLiter(e.target.value)} fullWidth required />
               </FormField>
               <FormField xs={12} sm={4}>
-                <TextField label="Costo Total" type="number" value={totalCost} onChange={(e) => setTotalCost(e.target.value)} size="small" fullWidth required />
+                <TextField label="Costo Total" type="number" value={totalCost} onChange={(e) => setTotalCost(e.target.value)} fullWidth required />
               </FormField>
             </FormGrid>
-            <TextField label="Estacion" value={stationName} onChange={(e) => setStationName(e.target.value)} size="small" fullWidth />
-            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} size="small" fullWidth multiline rows={2} />
+            <TextField label="Estacion" value={stationName} onChange={(e) => setStationName(e.target.value)} fullWidth />
+            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
           </Stack>
         </DialogContent>
         <DialogActions>

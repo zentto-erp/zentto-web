@@ -224,7 +224,6 @@ export default function BOMPage() {
             setSearch(e.target.value);
             setPaginationModel((p) => ({ ...p, page: 0 }));
           }}
-          size="small"
           sx={{ flex: 1 }}
         />
         <TextField
@@ -232,7 +231,7 @@ export default function BOMPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -269,21 +268,18 @@ export default function BOMPage() {
               label="Codigo BOM"
               value={bomCode}
               onChange={(e) => setBomCode(e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="Nombre BOM"
               value={bomName}
               onChange={(e) => setBomName(e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="Producto Terminado (ID)"
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -291,7 +287,6 @@ export default function BOMPage() {
               label="Cantidad Esperada"
               value={expectedQuantity}
               onChange={(e) => setExpectedQuantity(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -305,7 +300,6 @@ export default function BOMPage() {
                   label="Producto (ID)"
                   value={line.productId}
                   onChange={(e) => handleLineChange(idx, "productId", e.target.value)}
-                  size="small"
                   type="number"
                   sx={{ width: 120 }}
                 />
@@ -313,7 +307,6 @@ export default function BOMPage() {
                   label="Nombre"
                   value={line.productName}
                   onChange={(e) => handleLineChange(idx, "productName", e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
                 <TextField
@@ -321,14 +314,12 @@ export default function BOMPage() {
                   type="number"
                   value={line.quantity}
                   onChange={(e) => handleLineChange(idx, "quantity", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 100 }}
                 />
                 <TextField
                   label="Unidad"
                   value={line.unitOfMeasure}
                   onChange={(e) => handleLineChange(idx, "unitOfMeasure", e.target.value)}
-                  size="small"
                   sx={{ width: 100 }}
                 />
                 <TextField
@@ -336,7 +327,6 @@ export default function BOMPage() {
                   type="number"
                   value={line.unitCost}
                   onChange={(e) => handleLineChange(idx, "unitCost", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <Tooltip title="Eliminar componente">

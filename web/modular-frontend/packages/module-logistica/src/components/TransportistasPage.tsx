@@ -160,7 +160,6 @@ export default function TransportistasPage() {
           setSearch(e.target.value);
           setPaginationModel((p) => ({ ...p, page: 0 }));
         }}
-        size="small"
         fullWidth
         sx={{ mb: 2 }}
       />
@@ -192,7 +191,6 @@ export default function TransportistasPage() {
               label="Codigo"
               value={formData.carrierCode}
               onChange={(e) => handleChange("carrierCode", e.target.value)}
-              size="small"
               fullWidth
               disabled={isEditing}
             />
@@ -200,28 +198,24 @@ export default function TransportistasPage() {
               label="Nombre"
               value={formData.carrierName}
               onChange={(e) => handleChange("carrierName", e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="RIF / NIF"
               value={formData.fiscalId}
               onChange={(e) => handleChange("fiscalId", e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="Contacto"
               value={formData.contactName}
               onChange={(e) => handleChange("contactName", e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="Telefono"
               value={formData.phone}
               onChange={(e) => handleChange("phone", e.target.value)}
-              size="small"
               fullWidth
             />
           </Stack>

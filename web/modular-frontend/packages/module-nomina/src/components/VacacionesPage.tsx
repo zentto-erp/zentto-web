@@ -104,7 +104,7 @@ export default function VacacionesPage() {
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
           label="Buscar por Cédula"
-          size="small"
+         
           value={cedula}
           onChange={(e) => setCedula(e.target.value)}
         />

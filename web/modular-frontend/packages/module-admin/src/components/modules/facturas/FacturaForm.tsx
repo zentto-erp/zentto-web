@@ -312,7 +312,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 <TextField
                   {...params}
                   label="Cliente"
-                  size="small"
+                 
                   required
                   error={!!errors.codigoCliente}
                   helperText={errors.codigoCliente}
@@ -335,7 +335,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               label="Nombre Cliente"
               value={formData.nombreCliente}
               onChange={(e) => setFormData({ ...formData, nombreCliente: e.target.value })}
-              size="small"
               InputProps={{ readOnly: true }}
             />
           </FormField>
@@ -352,7 +351,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               label="Referencia"
               value={formData.referencia}
               onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-              size="small"
             />
           </FormField>
           <FormField xs={12} sm={6}>
@@ -361,7 +359,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               label="Forma de Pago"
               value={formData.formaPago}
               onChange={(e) => setFormData({ ...formData, formaPago: e.target.value })}
-              size="small"
             >
               {FORMAS_PAGO.map((fp) => (
                 <MenuItem key={fp.value} value={fp.value}>
@@ -376,7 +373,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               label="Moneda"
               value={formData.moneda}
               onChange={(e) => setFormData({ ...formData, moneda: e.target.value })}
-              size="small"
             >
               {MONEDAS.map((m) => (
                 <MenuItem key={m.value} value={m.value}>
@@ -392,7 +388,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
               multiline
               rows={2}
-              size="small"
             />
           </FormField>
         </FormGrid>
@@ -549,7 +544,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                   <TextField
                     {...params}
                     label="Buscar Artículo"
-                    size="small"
+                   
                     required
                     InputProps={{
                       ...params.InputProps,
@@ -569,7 +564,7 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
               <TextField
                 label="Nombre Artículo"
                 value={currentDetalle.nombreArticulo}
-                size="small"
+               
                 InputProps={{ readOnly: true }}
               />
             </FormField>
@@ -580,7 +575,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 inputProps={{ min: 1 }}
                 value={currentDetalle.cantidad}
                 onChange={(e) => setCurrentDetalle({ ...currentDetalle, cantidad: parseInt(e.target.value, 10) })}
-                size="small"
               />
             </FormField>
             <FormField xs={12} sm={6}>
@@ -590,7 +584,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 inputProps={{ min: 0, step: "0.01" }}
                 value={currentDetalle.precioUnitario}
                 onChange={(e) => setCurrentDetalle({ ...currentDetalle, precioUnitario: parseFloat(e.target.value) })}
-                size="small"
               />
             </FormField>
             <FormField xs={12}>
@@ -600,7 +593,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 inputProps={{ min: 0, step: "0.01" }}
                 value={currentDetalle.descuento}
                 onChange={(e) => setCurrentDetalle({ ...currentDetalle, descuento: parseFloat(e.target.value) })}
-                size="small"
               />
             </FormField>
           </FormGrid>

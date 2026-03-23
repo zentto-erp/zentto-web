@@ -48,7 +48,7 @@ export default function UnidadTributariaPage() {
       </Stack>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField select label="Pais" size="small" value={filterCountry} sx={{ minWidth: 150 }}
+        <TextField select label="Pais" value={filterCountry} sx={{ minWidth: 150 }}
           onChange={(e) => setFilterCountry(e.target.value)}>
           <MenuItem value="">Todos</MenuItem>
           {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
@@ -81,7 +81,7 @@ export default function UnidadTributariaPage() {
         <DialogContent>
           <FormGrid spacing={2} sx={{ mt: 1 }}>
             <FormField xs={12} sm={6}>
-              <TextField select label="Pais" size="small" fullWidth value={form.countryCode}
+              <TextField select label="Pais" fullWidth value={form.countryCode}
                 onChange={(e) => {
                   const country = countries.find((c) => c.CountryCode === e.target.value);
                   setForm({ ...form, countryCode: e.target.value, currency: country?.CurrencyCode ?? "VES" });
@@ -90,15 +90,15 @@ export default function UnidadTributariaPage() {
               </TextField>
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField label="Ano" type="number" size="small" fullWidth value={form.taxYear}
+              <TextField label="Ano" type="number" fullWidth value={form.taxYear}
                 onChange={(e) => setForm({ ...form, taxYear: Number(e.target.value) })} />
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField label="Valor UT" type="number" size="small" fullWidth value={form.unitValue}
+              <TextField label="Valor UT" type="number" fullWidth value={form.unitValue}
                 onChange={(e) => setForm({ ...form, unitValue: Number(e.target.value) })} />
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField label="Moneda" size="small" fullWidth value={form.currency} disabled />
+              <TextField label="Moneda" fullWidth value={form.currency} disabled />
             </FormField>
             <FormField xs={12}>
               <DatePicker

@@ -93,30 +93,30 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
           <TextField
             select label="Tipo de metodo" value={methodType}
             onChange={(e) => handleTypeChange(e.target.value)}
-            size="small" required
+            required
           >
             {METHOD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
           </TextField>
         </FormField>
         <FormField xs={12} sm={6}>
-          <TextField label="Etiqueta" placeholder='Ej: Mi Banesco' value={label} onChange={(e) => setLabel(e.target.value)} size="small" required />
+          <TextField label="Etiqueta" placeholder='Ej: Mi Banesco' value={label} onChange={(e) => setLabel(e.target.value)} required />
         </FormField>
 
         {/* Pago Movil */}
         {methodType === "PAGO_MOVIL" && (
           <>
             <FormField xs={12} sm={4}>
-              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} size="small" required>
+              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} required>
                 {bancos.map((b: any) => (
                   <MenuItem key={b.BankName ?? b.bankName} value={b.BankName ?? b.bankName}>{b.BankName ?? b.bankName}</MenuItem>
                 ))}
               </TextField>
             </FormField>
             <FormField xs={12} sm={4}>
-              <TextField label="Telefono" placeholder="0414-1234567" value={accountPhone} onChange={(e) => setAccountPhone(e.target.value)} size="small" required />
+              <TextField label="Telefono" placeholder="0414-1234567" value={accountPhone} onChange={(e) => setAccountPhone(e.target.value)} required />
             </FormField>
             <FormField xs={12} sm={4}>
-              <TextField label="CI / RIF del titular" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} size="small" required />
+              <TextField label="CI / RIF del titular" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} required />
             </FormField>
           </>
         )}
@@ -125,20 +125,20 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
         {methodType === "TRANSFERENCIA" && (
           <>
             <FormField xs={12} sm={4}>
-              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} size="small" required>
+              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} required>
                 {bancos.map((b: any) => (
                   <MenuItem key={b.BankName ?? b.bankName} value={b.BankName ?? b.bankName}>{b.BankName ?? b.bankName}</MenuItem>
                 ))}
               </TextField>
             </FormField>
             <FormField xs={12} sm={4}>
-              <TextField label="Nro. de cuenta" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} size="small" required />
+              <TextField label="Nro. de cuenta" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} required />
             </FormField>
             <FormField xs={12} sm={4}>
-              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} size="small" />
+              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} />
             </FormField>
             <FormField xs={12} sm={4}>
-              <TextField label="CI / RIF" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} size="small" />
+              <TextField label="CI / RIF" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} />
             </FormField>
           </>
         )}
@@ -147,10 +147,10 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
         {methodType === "ZELLE" && (
           <>
             <FormField xs={12} sm={6}>
-              <TextField label="Email de Zelle" type="email" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} size="small" required />
+              <TextField label="Email de Zelle" type="email" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} required />
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField label="Nombre del titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} size="small" />
+              <TextField label="Nombre del titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} />
             </FormField>
           </>
         )}
@@ -159,18 +159,18 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
         {methodType === "TARJETA" && (
           <>
             <FormField xs={12} sm={3}>
-              <TextField select label="Tipo" value={cardType} onChange={(e) => setCardType(e.target.value)} size="small" required>
+              <TextField select label="Tipo" value={cardType} onChange={(e) => setCardType(e.target.value)} required>
                 {CARD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
               </TextField>
             </FormField>
             <FormField xs={12} sm={3}>
-              <TextField label="Ultimos 4 digitos" value={cardLast4} onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))} size="small" required inputProps={{ maxLength: 4 }} />
+              <TextField label="Ultimos 4 digitos" value={cardLast4} onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))} required inputProps={{ maxLength: 4 }} />
             </FormField>
             <FormField xs={12} sm={3}>
-              <TextField label="Vencimiento" placeholder="MM/YYYY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} size="small" required />
+              <TextField label="Vencimiento" placeholder="MM/YYYY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} required />
             </FormField>
             <FormField xs={12} sm={3}>
-              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} size="small" />
+              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} />
             </FormField>
           </>
         )}

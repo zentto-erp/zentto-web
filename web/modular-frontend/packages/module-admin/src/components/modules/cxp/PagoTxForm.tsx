@@ -143,7 +143,7 @@ export default function PagoTxForm() {
           <FormField xs={12} sm={3}>
             <Autocomplete
               freeSolo
-              size="small"
+             
               options={proveedoresOptions}
               getOptionLabel={(opt) =>
                 typeof opt === "string" ? opt : `${opt.codProveedor} - ${opt.nombre}`
@@ -174,7 +174,7 @@ export default function PagoTxForm() {
           </FormField>
           <FormField xs={12} sm={2}>
             <TextField
-              size="small"
+             
               label="Cod Usuario"
               value={codUsuario}
               onChange={(e) => setCodUsuario(e.target.value)}
@@ -182,7 +182,7 @@ export default function PagoTxForm() {
           </FormField>
           <FormField xs={12}>
             <TextField
-              size="small"
+             
               label="Observaciones"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
@@ -232,7 +232,7 @@ export default function PagoTxForm() {
                 <TableCell>
                   <TextField
                     select
-                    size="small"
+                   
                     value={fp.formaPago}
                     onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value })}
                     sx={{ minWidth: 140 }}
@@ -246,7 +246,7 @@ export default function PagoTxForm() {
                 </TableCell>
                 <TableCell align="right">
                   <TextField
-                    size="small"
+                   
                     type="number"
                     value={fp.monto}
                     onChange={(e) => updateFormaPago(idx, { monto: Number(e.target.value) || 0 })}
@@ -257,7 +257,7 @@ export default function PagoTxForm() {
                 <TableCell>
                   <TextField
                     select
-                    size="small"
+                   
                     value={fp.banco || ""}
                     onChange={(e) => updateFormaPago(idx, { banco: e.target.value })}
                   >
@@ -270,7 +270,7 @@ export default function PagoTxForm() {
                   </TextField>
                 </TableCell>
                 <TableCell>
-                  <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
+                  <TextField value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
                 </TableCell>
                 <TableCell>
                   <DatePicker
@@ -340,7 +340,7 @@ export default function PagoTxForm() {
                 <TableCell align="right">{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField
-                    size="small"
+                   
                     type="number"
                     value={r.montoAplicar}
                     onChange={(e) => changeMonto(i, Number(e.target.value))}

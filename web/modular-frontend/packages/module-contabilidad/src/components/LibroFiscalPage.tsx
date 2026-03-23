@@ -125,7 +125,7 @@ export default function LibroFiscalPage() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filtros */}
         <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" alignItems="center">
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl sx={{ minWidth: 140 }}>
             <InputLabel>Tipo</InputLabel>
             <Select
               label="Tipo"
@@ -139,13 +139,13 @@ export default function LibroFiscalPage() {
           </FormControl>
           <TextField
             label="Periodo (YYYY-MM)"
-            size="small"
+           
             placeholder="2026-03"
             value={filter.periodCode}
             onChange={(e) => setFilter((f) => ({ ...f, periodCode: e.target.value }))}
             sx={{ minWidth: 160 }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl sx={{ minWidth: 140 }}>
             <InputLabel>Pais</InputLabel>
             <Select
               label="Pais"

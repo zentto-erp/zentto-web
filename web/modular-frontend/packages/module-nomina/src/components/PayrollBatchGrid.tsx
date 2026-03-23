@@ -210,7 +210,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       {/* Toolbar */}
       <Paper sx={{ p: 2, mb: 2, borderRadius: 2, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
         <TextField
-          size="small"
+         
           placeholder="Buscar por nombre o cédula..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -304,18 +304,18 @@ export default function PayrollBatchGrid({ batchId }: Props) {
             <TextField
               label="Código del Concepto"
               fullWidth
-              size="small"
+             
               value={bulkData.conceptCode}
               onChange={(e) => setBulkData((d) => ({ ...d, conceptCode: e.target.value }))}
             />
             <TextField
               label="Nombre del Concepto"
               fullWidth
-              size="small"
+             
               value={bulkData.conceptName}
               onChange={(e) => setBulkData((d) => ({ ...d, conceptName: e.target.value }))}
             />
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>
               <Select
                 value={bulkData.conceptType}
@@ -331,7 +331,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
               label="Monto"
               type="number"
               fullWidth
-              size="small"
+             
               value={bulkData.amount}
               onChange={(e) => setBulkData((d) => ({ ...d, amount: Number(e.target.value) }))}
             />

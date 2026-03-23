@@ -145,7 +145,6 @@ export default function AjusteInventarioForm() {
               placeholder="Buscar por código o nombre..."
               onChange={(e) => debouncedSearch(e.target.value)}
               fullWidth
-              size="small"
               sx={{ mb: 2 }}
               InputProps={{
                 startAdornment: (
@@ -255,7 +254,7 @@ export default function AjusteInventarioForm() {
 
             <FormGrid spacing={2}>
               <FormField xs={12}>
-                <FormControl size="small">
+                <FormControl>
                   <InputLabel>Tipo de Movimiento</InputLabel>
                   <Select value={tipo} label="Tipo de Movimiento" onChange={(e) => setTipo(e.target.value)}>
                     <MenuItem value="ENTRADA">Entrada (Suma)</MenuItem>
@@ -272,7 +271,6 @@ export default function AjusteInventarioForm() {
                   inputProps={{ min: 1 }}
                   value={cantidad}
                   onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 0)}
-                  size="small"
                   required
                   error={!!errors.cantidad}
                   helperText={errors.cantidad}
@@ -280,7 +278,7 @@ export default function AjusteInventarioForm() {
               </FormField>
 
               <FormField xs={12}>
-                <FormControl size="small" error={!!errors.motivo}>
+                <FormControl error={!!errors.motivo}>
                   <InputLabel>Motivo</InputLabel>
                   <Select value={motivo} label="Motivo" onChange={(e) => setMotivo(e.target.value)}>
                     <MenuItem value="">— Seleccionar —</MenuItem>
@@ -307,7 +305,6 @@ export default function AjusteInventarioForm() {
                   onChange={(e) => setObservaciones(e.target.value)}
                   multiline
                   rows={3}
-                  size="small"
                 />
               </FormField>
             </FormGrid>

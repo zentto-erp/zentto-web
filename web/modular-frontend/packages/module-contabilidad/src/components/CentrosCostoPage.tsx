@@ -252,7 +252,6 @@ function CentroCostoDialog({
             value={form.code}
             onChange={(e) => setForm({ ...form, code: e.target.value })}
             disabled={isEditing}
-            size="small"
             fullWidth
             placeholder="Ej: CC-001"
           />
@@ -260,7 +259,6 @@ function CentroCostoDialog({
             label="Nombre"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            size="small"
             fullWidth
           />
           <TextField
@@ -270,7 +268,6 @@ function CentroCostoDialog({
             onChange={(e) =>
               setForm({ ...form, parentCode: e.target.value || null })
             }
-            size="small"
             fullWidth
           >
             <MenuItem value="">Sin padre (raiz)</MenuItem>
@@ -512,7 +509,6 @@ export default function CentrosCostoPage() {
             placeholder="Buscar por codigo o nombre..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            size="small"
             sx={{ mb: 2, maxWidth: 400 }}
             fullWidth
             InputProps={{

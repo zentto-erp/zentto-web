@@ -213,11 +213,11 @@ export default function EmpleadosPage() {
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
           label="Buscar"
-          size="small"
+         
           value={filter.search || ""}
           onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
         />
-        <FormControl size="small" sx={{ minWidth: 130 }}>
+        <FormControl sx={{ minWidth: 130 }}>
           <InputLabel>Status</InputLabel>
           <Select
             value={filter.status || ""}
@@ -229,7 +229,7 @@ export default function EmpleadosPage() {
             <MenuItem value="INACTIVO">Inactivo</MenuItem>
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 130 }}>
+        <FormControl sx={{ minWidth: 130 }}>
           <InputLabel>Grupo</InputLabel>
           <Select
             value={filter.grupo || ""}

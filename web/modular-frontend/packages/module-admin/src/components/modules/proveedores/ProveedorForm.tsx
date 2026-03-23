@@ -175,7 +175,7 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
                 label="Código"
                 value={formData.codigo || ""}
                 disabled
-                size="small"
+               
               />
             </FormField>
           )}
@@ -187,7 +187,6 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
               placeholder="Ej: Empresa XYZ"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              size="small"
               required
               error={!!errors.nombre}
               helperText={errors.nombre}
@@ -201,7 +200,6 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
               placeholder="Ej: J12345678"
               value={formData.rif}
               onChange={(e) => setFormData({ ...formData, rif: e.target.value.toUpperCase() })}
-              size="small"
               required
               error={!!errors.rif}
               helperText={errors.rif}
@@ -217,7 +215,6 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
               onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
               multiline
               rows={3}
-              size="small"
               required
               error={!!errors.direccion}
               helperText={errors.direccion}
@@ -231,7 +228,6 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
               placeholder="+58 212 1234567"
               value={formData.telefono}
               onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-              size="small"
               type="tel"
             />
           </FormField>
@@ -243,7 +239,6 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
               placeholder="proveedor@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              size="small"
               type="email"
               error={!!errors.email}
               helperText={errors.email}
@@ -253,7 +248,7 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
           {/* Estado */}
           {isEdit && (
             <FormField xs={12} sm={6}>
-              <FormControl size="small">
+              <FormControl>
                 <InputLabel>Estado</InputLabel>
                 <Select
                   value={estado}

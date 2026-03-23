@@ -164,7 +164,6 @@ export default function MovimientosTable() {
               placeholder="Buscar artículos..."
               onChange={(e) => debouncedArtSearch(e.target.value)}
               fullWidth
-              size="small"
               sx={{ mb: 2 }}
               InputProps={{
                 startAdornment: (
@@ -221,14 +220,13 @@ export default function MovimientosTable() {
                   placeholder="Buscar por referencia, notas..."
                   onChange={(e) => debouncedSearch(e.target.value)}
                   fullWidth
-                  size="small"
                   InputProps={{
                     startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
                   }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 2 }}>
-                <FormControl fullWidth size="small">
+                <FormControl fullWidth>
                   <InputLabel>Tipo</InputLabel>
                   <Select value={movementType} label="Tipo" onChange={(e) => { setMovementType(e.target.value); setPage(0); }}>
                     <MenuItem value="">Todos</MenuItem>

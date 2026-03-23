@@ -279,7 +279,7 @@ export default function PlantillasReportePage() {
                 <Stack direction="row" spacing={2} alignItems="flex-start" flexWrap="wrap">
                   <TextField
                     label="Nombre del Reporte"
-                    size="small"
+                   
                     value={editMeta.ReportName ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, ReportName: e.target.value }))
@@ -288,7 +288,7 @@ export default function PlantillasReportePage() {
                   />
                   <TextField
                     label="Codigo"
-                    size="small"
+                   
                     value={editMeta.ReportCode ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, ReportCode: e.target.value }))
@@ -297,7 +297,7 @@ export default function PlantillasReportePage() {
                   />
                   <TextField
                     label="Marco legal"
-                    size="small"
+                   
                     value={editMeta.LegalFramework ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, LegalFramework: e.target.value }))
@@ -306,7 +306,7 @@ export default function PlantillasReportePage() {
                   />
                   <TextField
                     label="Pais"
-                    size="small"
+                   
                     value={editMeta.CountryCode ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, CountryCode: e.target.value }))
@@ -317,7 +317,7 @@ export default function PlantillasReportePage() {
                 <Stack direction="row" spacing={2} alignItems="center" mt={1.5}>
                   <TextField
                     label="Referencia legal"
-                    size="small"
+                   
                     value={editMeta.LegalReference ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, LegalReference: e.target.value }))

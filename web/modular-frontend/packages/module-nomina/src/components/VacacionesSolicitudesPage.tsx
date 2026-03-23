@@ -180,11 +180,11 @@ export default function VacacionesSolicitudesPage() {
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
           label="Cédula Empleado"
-          size="small"
+         
           value={filter.employeeCode || ""}
           onChange={(e) => setFilter((f) => ({ ...f, employeeCode: e.target.value || undefined }))}
         />
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>Estado</InputLabel>
           <Select
             value={filter.status || ""}

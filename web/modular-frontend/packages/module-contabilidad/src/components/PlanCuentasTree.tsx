@@ -407,21 +407,18 @@ function CreateCuentaDialog({
             onChange={(e) => setForm({ ...form, codCuenta: e.target.value })}
             placeholder="Ej: 1.1.01.001"
             fullWidth
-            size="small"
           />
           <TextField
             label="Descripcion"
             value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
             fullWidth
-            size="small"
           />
           <TextField
             label="Naturaleza"
             select
             value={form.tipo}
             onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-            size="small"
           >
             <MenuItem value="D">Deudora</MenuItem>
             <MenuItem value="A">Acreedora</MenuItem>
@@ -431,7 +428,6 @@ function CreateCuentaDialog({
             type="number"
             value={form.nivel}
             onChange={(e) => setForm({ ...form, nivel: Number(e.target.value) })}
-            size="small"
             inputProps={{ min: 1, max: 6 }}
           />
         </Stack>
@@ -561,7 +557,6 @@ export default function PlanCuentasTree() {
           placeholder="Buscar por codigo o nombre..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          size="small"
           sx={{ flex: 1, maxWidth: 400 }}
           InputProps={{
             startAdornment: (

@@ -194,7 +194,7 @@ export default function CategoriasActivosPage() {
               <TextField
                 label="Codigo"
                 fullWidth
-                size="small"
+               
                 value={form.categoryCode}
                 onChange={(e) => setField("categoryCode", e.target.value)}
                 disabled={isEditing}
@@ -202,7 +202,7 @@ export default function CategoriasActivosPage() {
               <TextField
                 label="Nombre"
                 fullWidth
-                size="small"
+               
                 value={form.categoryName}
                 onChange={(e) => setField("categoryName", e.target.value)}
               />
@@ -212,11 +212,11 @@ export default function CategoriasActivosPage() {
                 label="Vida útil (meses)"
                 type="number"
                 fullWidth
-                size="small"
+               
                 value={form.defaultUsefulLifeMonths}
                 onChange={(e) => setField("defaultUsefulLifeMonths", Number(e.target.value))}
               />
-              <FormControl size="small" fullWidth>
+              <FormControl fullWidth>
                 <InputLabel>Método depreciación</InputLabel>
                 <Select
                   label="Método depreciación"
@@ -234,14 +234,14 @@ export default function CategoriasActivosPage() {
                 label="% Residual"
                 type="number"
                 fullWidth
-                size="small"
+               
                 value={form.defaultResidualPercent}
                 onChange={(e) => setField("defaultResidualPercent", Number(e.target.value))}
               />
               <TextField
                 label="Pais"
                 fullWidth
-                size="small"
+               
                 value={form.countryCode}
                 onChange={(e) => setField("countryCode", e.target.value)}
                 placeholder="VE, ES, CO..."
@@ -253,8 +253,7 @@ export default function CategoriasActivosPage() {
                 getOptionLabel={(opt: any) => opt.code ? `${opt.code} — ${opt.name}` : ""}
                 value={cuentas.find((c: any) => c.code === form.defaultAssetAccountCode) ?? null}
                 onChange={(_, sel) => setField("defaultAssetAccountCode", sel?.code ?? "")}
-                renderInput={(params) => <TextField {...params} label="Cuenta activo" size="small" />}
-                size="small"
+                renderInput={(params) => <TextField {...params} label="Cuenta activo" />}
                 fullWidth
                 isOptionEqualToValue={(opt, val) => opt.code === val.code}
               />
@@ -263,8 +262,7 @@ export default function CategoriasActivosPage() {
                 getOptionLabel={(opt: any) => opt.code ? `${opt.code} — ${opt.name}` : ""}
                 value={cuentas.find((c: any) => c.code === form.defaultDeprecAccountCode) ?? null}
                 onChange={(_, sel) => setField("defaultDeprecAccountCode", sel?.code ?? "")}
-                renderInput={(params) => <TextField {...params} label="Cuenta dep. acum." size="small" />}
-                size="small"
+                renderInput={(params) => <TextField {...params} label="Cuenta dep. acum." />}
                 fullWidth
                 isOptionEqualToValue={(opt, val) => opt.code === val.code}
               />
@@ -273,8 +271,7 @@ export default function CategoriasActivosPage() {
                 getOptionLabel={(opt: any) => opt.code ? `${opt.code} — ${opt.name}` : ""}
                 value={cuentas.find((c: any) => c.code === form.defaultExpenseAccountCode) ?? null}
                 onChange={(_, sel) => setField("defaultExpenseAccountCode", sel?.code ?? "")}
-                renderInput={(params) => <TextField {...params} label="Cuenta gasto" size="small" />}
-                size="small"
+                renderInput={(params) => <TextField {...params} label="Cuenta gasto" />}
                 fullWidth
                 isOptionEqualToValue={(opt, val) => opt.code === val.code}
               />

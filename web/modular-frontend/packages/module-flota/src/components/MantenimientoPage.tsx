@@ -235,7 +235,7 @@ export default function MantenimientoPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -269,12 +269,12 @@ export default function MantenimientoPage() {
         <DialogTitle>Nueva Orden de Mantenimiento</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" fullWidth required />
-            <TextField label="Tipo Mantenimiento (ID)" type="number" value={maintenanceTypeId} onChange={(e) => setMaintenanceTypeId(e.target.value)} size="small" fullWidth required />
-            <TextField label="Kilometraje al Servicio" type="number" value={mileageAtService} onChange={(e) => setMileageAtService(e.target.value)} size="small" fullWidth required />
+            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
+            <TextField label="Tipo Mantenimiento (ID)" type="number" value={maintenanceTypeId} onChange={(e) => setMaintenanceTypeId(e.target.value)} fullWidth required />
+            <TextField label="Kilometraje al Servicio" type="number" value={mileageAtService} onChange={(e) => setMileageAtService(e.target.value)} fullWidth required />
             <DatePicker label="Fecha Programada" value={scheduledDate ? dayjs(scheduledDate) : null} onChange={(v) => setScheduledDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Costo Estimado" type="number" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} size="small" fullWidth required />
-            <TextField label="Descripcion" value={description} onChange={(e) => setDescription(e.target.value)} size="small" fullWidth required multiline rows={3} />
+            <TextField label="Costo Estimado" type="number" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} fullWidth required />
+            <TextField label="Descripcion" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth required multiline rows={3} />
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -297,7 +297,7 @@ export default function MantenimientoPage() {
             <Typography variant="body2" color="text.secondary">
               Orden: {String(selectedRow?.OrderNumber ?? "")}
             </Typography>
-            <TextField label="Costo Real" type="number" value={actualCost} onChange={(e) => setActualCost(e.target.value)} size="small" fullWidth required />
+            <TextField label="Costo Real" type="number" value={actualCost} onChange={(e) => setActualCost(e.target.value)} fullWidth required />
             <DatePicker label="Fecha Completado" value={completedDate ? dayjs(completedDate) : null} onChange={(v) => setCompletedDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
           </Stack>
         </DialogContent>

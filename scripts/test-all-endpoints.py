@@ -69,6 +69,9 @@ for ep in get_endpoints:
     test_path = test_path.replace("{vehicleId}", "1").replace("{orderId}", "1")
     test_path = test_path.replace("{warehouseId}", "1").replace("{pipelineId}", "1")
     test_path = test_path.replace("{assetId}", "1").replace("{taxYear}", "2026")
+    test_path = test_path.replace("{employeeId}", "1").replace("{committeeId}", "1")
+    test_path = test_path.replace("{boxId}", "1").replace("{entityType}", "product").replace("{entityId}", "1")
+    test_path = test_path.replace("{tipoOperacion}", "FACTURA").replace("{module}", "general")
     test_path = test_path.replace("{period}", "2026-01").replace("{accountCode}", "1.1")
 
     status, resp = api("GET", test_path, token=token)

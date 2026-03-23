@@ -86,7 +86,7 @@ export default function DepreciacionWizard() {
             <Typography variant="h6">Seleccione el periodo a depreciar</Typography>
             <TextField
               label="Periodo (YYYY-MM)"
-              size="small"
+             
               placeholder="2026-03"
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
@@ -94,7 +94,7 @@ export default function DepreciacionWizard() {
             />
             <TextField
               label="Centro de Costo (opcional)"
-              size="small"
+             
               value={costCenterCode}
               onChange={(e) => setCostCenterCode(e.target.value)}
             />

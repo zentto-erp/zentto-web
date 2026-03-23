@@ -295,7 +295,7 @@ export default function AlbaranesPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -338,7 +338,6 @@ export default function AlbaranesPage() {
               label="Cliente (ID)"
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -346,14 +345,12 @@ export default function AlbaranesPage() {
               label="N. Documento de Venta"
               value={salesDocumentNumber}
               onChange={(e) => setSalesDocumentNumber(e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="Transportista (ID)"
               value={carrierId}
               onChange={(e) => setCarrierId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -367,7 +364,6 @@ export default function AlbaranesPage() {
                   label="Codigo Producto"
                   value={line.productCode}
                   onChange={(e) => handleLineChange(idx, "productCode", e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
                 <TextField
@@ -375,7 +371,6 @@ export default function AlbaranesPage() {
                   type="number"
                   value={line.orderedQty}
                   onChange={(e) => handleLineChange(idx, "orderedQty", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <TextField
@@ -383,7 +378,6 @@ export default function AlbaranesPage() {
                   type="number"
                   value={line.pickedQty}
                   onChange={(e) => handleLineChange(idx, "pickedQty", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <TextField
@@ -391,7 +385,6 @@ export default function AlbaranesPage() {
                   type="number"
                   value={line.packedQty}
                   onChange={(e) => handleLineChange(idx, "packedQty", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <Tooltip title="Eliminar linea">
@@ -466,7 +459,6 @@ export default function AlbaranesPage() {
               label="Recibido por"
               value={deliveredToName}
               onChange={(e) => setDeliveredToName(e.target.value)}
-              size="small"
               fullWidth
               placeholder="Nombre de quien recibe"
             />

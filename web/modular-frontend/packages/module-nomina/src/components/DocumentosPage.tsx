@@ -79,14 +79,14 @@ export default function DocumentosPage({ onEditTemplate }: { onEditTemplate?: (c
         <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
           Plantillas de Documentos Legales
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>País</InputLabel>
           <Select value={filterCountry} label="País" onChange={e => setFilterCountry(e.target.value)}>
             <MenuItem value="">Todos</MenuItem>
             {COUNTRIES.map(c => <MenuItem key={c.code} value={c.code}>{c.flag} {c.label}</MenuItem>)}
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+        <FormControl sx={{ minWidth: 180 }}>
           <InputLabel>Tipo</InputLabel>
           <Select value={filterType} label="Tipo" onChange={e => setFilterType(e.target.value)}>
             <MenuItem value="">Todos</MenuItem>

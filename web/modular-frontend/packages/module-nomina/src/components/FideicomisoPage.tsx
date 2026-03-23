@@ -108,11 +108,11 @@ export default function FideicomisoPage() {
         <TextField
           label="Año"
           type="number"
-          size="small"
+         
           value={filter.year || ""}
           onChange={(e) => setFilter((f) => ({ ...f, year: Number(e.target.value) || undefined }))}
         />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+        <FormControl sx={{ minWidth: 140 }}>
           <InputLabel>Trimestre</InputLabel>
           <Select
             value={filter.quarter || ""}

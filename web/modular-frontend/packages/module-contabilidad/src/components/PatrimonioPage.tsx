@@ -260,7 +260,7 @@ export default function PatrimonioPage() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Fiscal Year Selector + Legal Reference */}
         <Stack direction="row" spacing={2} mb={2} alignItems="center">
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl sx={{ minWidth: 160 }}>
             <InputLabel>Año fiscal</InputLabel>
             <Select
               value={fiscalYear}
@@ -465,11 +465,11 @@ export default function PatrimonioPage() {
             <TextField
               label="Código de Cuenta"
               fullWidth
-              size="small"
+             
               value={form.accountCode}
               onChange={(e) => setForm((f) => ({ ...f, accountCode: e.target.value }))}
             />
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth>
               <InputLabel>Tipo de Movimiento</InputLabel>
               <Select
                 value={form.movementType}
@@ -495,14 +495,14 @@ export default function PatrimonioPage() {
               label="Monto"
               type="number"
               fullWidth
-              size="small"
+             
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
             />
             <TextField
               label="Descripción"
               fullWidth
-              size="small"
+             
               multiline
               rows={2}
               value={form.description}

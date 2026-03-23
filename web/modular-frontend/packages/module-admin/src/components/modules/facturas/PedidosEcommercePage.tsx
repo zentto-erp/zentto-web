@@ -190,7 +190,7 @@ export default function PedidosEcommercePage() {
         defaultValue=""
         onChange={handleSearchChange}
         fullWidth
-        size="small"
+       
         sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (
@@ -311,7 +311,6 @@ export default function PedidosEcommercePage() {
                 onChange={(e) => setNumFacturaInput(e.target.value)}
                 required
                 fullWidth
-                size="small"
                 helperText="Numero generado por la impresora fiscal"
                 autoFocus
               />
@@ -326,7 +325,7 @@ export default function PedidosEcommercePage() {
                 </Box>
                 {formasPago.map((fp, index) => (
                   <Stack key={index} direction="row" spacing={1} sx={{ mb: 1 }} alignItems="center">
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <FormControl sx={{ minWidth: 160 }}>
                       <InputLabel>Tipo</InputLabel>
                       <Select
                         value={fp.tipo}
@@ -343,7 +342,7 @@ export default function PedidosEcommercePage() {
                     <TextField
                       label="Monto"
                       type="number"
-                      size="small"
+                     
                       value={fp.monto}
                       onChange={(e) => handleFormaPagoChange(index, "monto", Number(e.target.value))}
                       sx={{ flex: 1 }}

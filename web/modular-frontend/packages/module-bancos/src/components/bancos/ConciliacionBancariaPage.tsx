@@ -244,7 +244,7 @@ export default function ConciliacionBancariaPage() {
 
       {/* Filtros */}
       <Stack direction="row" spacing={2}>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+        <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Cuenta</InputLabel>
           <Select value={nroCta} label="Cuenta" onChange={(e) => setNroCta(e.target.value)}>
             <MenuItem value="">Todas</MenuItem>
@@ -255,7 +255,7 @@ export default function ConciliacionBancariaPage() {
             ))}
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl sx={{ minWidth: 160 }}>
           <InputLabel>Estado</InputLabel>
           <Select value={estado} label="Estado" onChange={(e) => setEstado(e.target.value)}>
             <MenuItem value="">Todos</MenuItem>

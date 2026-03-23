@@ -151,7 +151,6 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
               label="Número de Factura"
               value={formData.numeroFactura}
               onChange={(e) => setFormData({ ...formData, numeroFactura: e.target.value })}
-              size="small"
               required
               error={!!errors.numeroFactura}
               helperText={errors.numeroFactura}
@@ -163,7 +162,6 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
               label="Nombre Cliente"
               value={formData.nombreCliente}
               onChange={(e) => setFormData({ ...formData, nombreCliente: e.target.value })}
-              size="small"
             />
           </FormField>
 
@@ -174,7 +172,6 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.monto}
               onChange={(e) => setFormData({ ...formData, monto: parseFloat(e.target.value) })}
-              size="small"
               required
               error={!!errors.monto}
               helperText={errors.monto}
@@ -196,7 +193,6 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
               placeholder="Cheque, referencia de banco, etc."
               value={formData.referencia}
               onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-              size="small"
             />
           </FormField>
 
@@ -207,7 +203,6 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
               multiline
               rows={3}
-              size="small"
             />
           </FormField>
         </FormGrid>

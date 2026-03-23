@@ -190,7 +190,7 @@ export default function DocumentViewerModal({
       </DialogTitle>
 
       <Box sx={{ px: 3, pb: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <FormControl size="small" sx={{ minWidth: 280 }}>
+        <FormControl sx={{ minWidth: 280 }}>
           <InputLabel>Plantilla</InputLabel>
           <Select
             value={selectedCode}

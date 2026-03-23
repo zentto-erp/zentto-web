@@ -244,7 +244,7 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
           <DescriptionIcon color="primary" />
           <Stack sx={{ flex: 1 }} spacing={0}>
             <TextField
-              size="small"
+             
               placeholder="Nombre de la plantilla"
               value={form.templateName}
               onChange={e => setForm(f => ({ ...f, templateName: e.target.value }))}
@@ -255,13 +255,13 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
           </Stack>
 
           {/* Campos de metadatos */}
-          <FormControl size="small" sx={{ minWidth: 130 }}>
+          <FormControl sx={{ minWidth: 130 }}>
             <InputLabel>Tipo</InputLabel>
             <Select value={form.templateType} label="Tipo" onChange={e => setForm(f => ({ ...f, templateType: e.target.value }))}>
               {TEMPLATE_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 90 }}>
+          <FormControl sx={{ minWidth: 90 }}>
             <InputLabel>País</InputLabel>
             <Select value={form.countryCode} label="País" onChange={e => setForm(f => ({ ...f, countryCode: e.target.value }))}>
               {countryOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
@@ -269,7 +269,7 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
           </FormControl>
           {isNew && (
             <TextField
-              size="small"
+             
               label="Código"
               placeholder="MI_PLANTILLA"
               value={form.templateCode}
@@ -359,7 +359,7 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
               {realVars ? '✓ Datos reales activos' : 'Preview con datos reales'}
             </Typography>
             <TextField
-              size="small"
+             
               label="Lote #"
               value={realBatchId}
               onChange={e => setRealBatchId(e.target.value)}
@@ -367,7 +367,7 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
               disabled={!!realVars}
             />
             <TextField
-              size="small"
+             
               label="Cédula empleado"
               value={realEmpCode}
               onChange={e => setRealEmpCode(e.target.value)}

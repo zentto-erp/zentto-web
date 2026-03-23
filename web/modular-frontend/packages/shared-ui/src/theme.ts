@@ -176,33 +176,28 @@ const theme = createTheme({
         },
       },
     },
-    // Inputs: size small global — MUI defaults (8.5px padding, translate 9px) son los correctos
-    // Solo forzamos fondo blanco explícito para que no hereden el gris de la página
+    // Inputs: size medium global — label flotante (centrado cuando vacío, sube al enfocar/llenar)
     MuiFormControl: {
-      defaultProps: { size: 'small', fullWidth: true },
+      defaultProps: { size: 'medium', fullWidth: true },
     },
     MuiInputLabel: {
-      defaultProps: { size: 'small', shrink: true },
+      defaultProps: { size: 'medium' },
       styleOverrides: {
         outlined: {
-          '&.MuiInputLabel-sizeSmall': {
-            transform: 'translate(14px, -9px) scale(0.75)',
+          // Cuando el label NO está shrunk → centrado verticalmente dentro del campo
+          '&:not(.MuiInputLabel-shrink)': {
+            transform: 'translate(14px, 12px) scale(1)',
           },
         },
       },
     },
     MuiSelect: {
-      defaultProps: { size: 'small' },
-      styleOverrides: {
-        select: {
-          padding: '12px 14px',
-        },
-      },
+      defaultProps: { size: 'medium' },
     },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
-        size: 'small',
+        size: 'medium',
         fullWidth: true,
       },
       styleOverrides: {
@@ -224,44 +219,27 @@ const theme = createTheme({
       },
     },
     MuiOutlinedInput: {
-      defaultProps: { notched: true },
       styleOverrides: {
         root: {
           borderRadius: 6,
           backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
           fontSize: '0.875rem',
-          '& .MuiOutlinedInput-notchedOutline legend': {
-            paddingRight: '6px',
-          },
         },
         input: {
-          padding: '12px 14px',
           fontSize: '0.875rem',
           '&::placeholder': {
             fontSize: '0.875rem',
             opacity: 0.6,
-          },
-          '&.MuiInputBase-inputSizeSmall': {
-            padding: '12px 14px',
-            fontSize: '0.875rem',
           },
         },
       },
     },
     // DatePicker — misma altura y estilo que TextField
     MuiPickersTextField: {
-      defaultProps: { size: 'small', fullWidth: true },
+      defaultProps: { size: 'medium', fullWidth: true },
     },
     MuiAutocomplete: {
-      defaultProps: { size: 'small', fullWidth: true },
-      styleOverrides: {
-        inputRoot: {
-          padding: '0 14px !important',
-          '& .MuiOutlinedInput-input': {
-            padding: '12px 0 !important',
-          },
-        },
-      },
+      defaultProps: { size: 'medium', fullWidth: true },
     },
     MuiCheckbox: {
       defaultProps: { color: 'primary' },

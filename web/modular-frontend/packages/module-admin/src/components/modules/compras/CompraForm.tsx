@@ -307,7 +307,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       <Paper sx={{ p: 2, mb: 2 }}>
         <FormGrid spacing={2}>
           <FormField xs={12} md={3}>
-            <TextField size="small" label="NUM_FACT" value={numFact} onChange={(e) => setNumFact(e.target.value)} />
+            <TextField label="NUM_FACT" value={numFact} onChange={(e) => setNumFact(e.target.value)} />
           </FormField>
           <FormField xs={12} md={3}>
             <DatePicker
@@ -318,10 +318,10 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
             />
           </FormField>
           <FormField xs={12} md={2}>
-            <TextField size="small" label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value.toUpperCase())} />
+            <TextField label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value.toUpperCase())} />
           </FormField>
           <FormField xs={12} md={2}>
-            <TextField size="small" label="Cod Usuario" value={codUsuario} onChange={(e) => setCodUsuario(e.target.value)} />
+            <TextField label="Cod Usuario" value={codUsuario} onChange={(e) => setCodUsuario(e.target.value)} />
           </FormField>
           <FormField xs={12} md={2}>
             <Button fullWidth variant="contained" onClick={guardarCompraTx} disabled={emitirTx.isPending}>
@@ -357,7 +357,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 <TextField
                   {...params}
                   label="Proveedor"
-                  size="small"
+                 
                   placeholder="Buscar por codigo o nombre..."
                   InputProps={{
                     ...params.InputProps,
@@ -373,10 +373,10 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
             />
           </FormField>
           <FormField xs={12} md={4}>
-            <TextField size="small" label="RIF" value={rifProveedor} InputProps={{ readOnly: true }} />
+            <TextField label="RIF" value={rifProveedor} InputProps={{ readOnly: true }} />
           </FormField>
           <FormField xs={12}>
-            <TextField size="small" label="Concepto" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
+            <TextField label="Concepto" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
           </FormField>
         </FormGrid>
       </Paper>
@@ -417,7 +417,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 <TextField
                   {...params}
                   label="Articulo"
-                  size="small"
+                 
                   placeholder="Buscar por codigo o descripcion..."
                   InputProps={{
                     ...params.InputProps,
@@ -433,11 +433,11 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
             />
           </FormField>
           <FormField xs={6} md={2}>
-            <TextField size="small" label="Referencia" value={linea.REFERENCIA || ""} InputProps={{ readOnly: true }} />
+            <TextField label="Referencia" value={linea.REFERENCIA || ""} InputProps={{ readOnly: true }} />
           </FormField>
           <FormField xs={6} md={1}>
             <TextField
-              size="small"
+             
               label="Cant"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
@@ -447,7 +447,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
           </FormField>
           <FormField xs={6} md={2}>
             <TextField
-              size="small"
+             
               label="P. Costo"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
@@ -457,7 +457,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
           </FormField>
           <FormField xs={6} md={1}>
             <TextField
-              size="small"
+             
               label="IVA %"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
@@ -527,17 +527,17 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
         <DialogContent>
           <FormGrid spacing={1} sx={{ mt: 0.5 }}>
             <FormField xs={12} sm={4}>
-              <TextField size="small" label="Codigo" value={newArt.CODIGO} onChange={(e) => setNewArt((p) => ({ ...p, CODIGO: e.target.value }))} />
+              <TextField label="Codigo" value={newArt.CODIGO} onChange={(e) => setNewArt((p) => ({ ...p, CODIGO: e.target.value }))} />
             </FormField>
             <FormField xs={12} sm={8}>
-              <TextField size="small" label="Descripcion" value={newArt.DESCRIPCION} onChange={(e) => setNewArt((p) => ({ ...p, DESCRIPCION: e.target.value }))} />
+              <TextField label="Descripcion" value={newArt.DESCRIPCION} onChange={(e) => setNewArt((p) => ({ ...p, DESCRIPCION: e.target.value }))} />
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField size="small" label="Referencia" value={newArt.Referencia} onChange={(e) => setNewArt((p) => ({ ...p, Referencia: e.target.value }))} />
+              <TextField label="Referencia" value={newArt.Referencia} onChange={(e) => setNewArt((p) => ({ ...p, Referencia: e.target.value }))} />
             </FormField>
             <FormField xs={12} sm={3}>
               <TextField
-                size="small"
+               
                 label="P. Costo"
                 type="number"
                 value={newArt.PRECIO_COMPRA}
@@ -546,7 +546,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
             </FormField>
             <FormField xs={12} sm={3}>
               <TextField
-                size="small"
+               
                 label="P. Venta"
                 type="number"
                 value={newArt.PRECIO_VENTA}

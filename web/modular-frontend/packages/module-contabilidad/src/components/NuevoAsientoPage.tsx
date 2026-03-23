@@ -250,7 +250,6 @@ export default function NuevoAsientoPage() {
           type="number"
           value={params.value || ""}
           onChange={(e) => params.api.setEditCellValue({ id: params.id, field: params.field, value: Number(e.target.value) })}
-          size="small"
           inputProps={{ step: 0.01, min: 0 }}
         />
       ),
@@ -267,7 +266,6 @@ export default function NuevoAsientoPage() {
           type="number"
           value={params.value || ""}
           onChange={(e) => params.api.setEditCellValue({ id: params.id, field: params.field, value: Number(e.target.value) })}
-          size="small"
           inputProps={{ step: 0.01, min: 0 }}
         />
       ),

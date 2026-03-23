@@ -6,7 +6,7 @@ import {
   Stack,
   Button,
   FormControl,
-  OutlinedInput,
+  TextField,
   FormHelperText,
   InputAdornment,
   IconButton,
@@ -256,74 +256,56 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             name="email"
             control={control}
             render={({ field }) => (
-              <FormControl error={!!errors.email} fullWidth>
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  component="label"
-                  htmlFor="email"
-                  sx={{ mb: 1, color: 'text.primary' }}
-                >
-                  Usuario
-                </Typography>
-                <OutlinedInput
-                  {...field}
-                  id="email"
-                  placeholder="Ingresa tu usuario"
-                  autoComplete="username"
-                  disabled={isSubmitting}
-              
-                />
-                {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
-              </FormControl>
+              <TextField
+                {...field}
+                id="email"
+                label="Usuario"
+                placeholder="Ingresa tu usuario"
+                autoComplete="username"
+                disabled={isSubmitting}
+                fullWidth
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
             )}
           />
 
           {(loadingCompanies || companyOptions.length > 0) && (
-            <FormControl fullWidth>
-              <Typography variant="body2" fontWeight={600} sx={{ mb: 1, color: 'text.primary' }}>
-                Empresa / Sucursal
-              </Typography>
-              <Select
-                value={selectedScope}
-                onChange={(e) => setSelectedScope(String(e.target.value))}
-                disabled={isSubmitting || loadingCompanies || companyOptions.length === 0}
-              >
-                {companyOptions.map((opt) => (
-                  <MenuItem key={`${opt.companyId}:${opt.branchId}`} value={`${opt.companyId}:${opt.branchId}`}>
-                    {`${opt.companyCode} - ${opt.companyName} / ${opt.branchCode} - ${opt.branchName}`}
-                  </MenuItem>
-                ))}
-              </Select>
-              {loadingCompanies && <FormHelperText>Cargando empresas...</FormHelperText>}
-            </FormControl>
+            <TextField
+              select
+              label="Empresa / Sucursal"
+              value={selectedScope}
+              onChange={(e) => setSelectedScope(String(e.target.value))}
+              disabled={isSubmitting || loadingCompanies || companyOptions.length === 0}
+              fullWidth
+              helperText={loadingCompanies ? 'Cargando empresas...' : undefined}
+            >
+              {companyOptions.map((opt) => (
+                <MenuItem key={`${opt.companyId}:${opt.branchId}`} value={`${opt.companyId}:${opt.branchId}`}>
+                  {`${opt.companyCode} - ${opt.companyName} / ${opt.branchCode} - ${opt.branchName}`}
+                </MenuItem>
+              ))}
+            </TextField>
           )}
 
           <Controller
             name="password"
             control={control}
             render={({ field }) => (
-              <FormControl error={!!errors.password} fullWidth>
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  component="label"
-                  htmlFor="password"
-                  sx={{ mb: 1, color: 'text.primary' }}
-                >
-                  Contraseña
-                </Typography>
-                <OutlinedInput
-                  {...field}
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Contraseña"
-                  autoComplete="current-password"
-                  disabled={isSubmitting}
-                 
-                 
-                  endAdornment={
-                    field.value ? (
+              <TextField
+                {...field}
+                id="password"
+                label="Contraseña"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Contraseña"
+                autoComplete="current-password"
+                disabled={isSubmitting}
+                fullWidth
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                slotProps={{
+                  input: {
+                    endAdornment: field.value ? (
                       <InputAdornment position="end">
                         <Tooltip title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
                           <span>
@@ -339,11 +321,10 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                           </span>
                         </Tooltip>
                       </InputAdornment>
-                    ) : null
-                  }
-                />
-                {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
-              </FormControl>
+                    ) : null,
+                  },
+                }}
+              />
             )}
           />
 

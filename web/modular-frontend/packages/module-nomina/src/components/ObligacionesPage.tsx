@@ -180,14 +180,14 @@ export default function ObligacionesPage() {
           <FormField xs={12} sm={4}>
             <TextField
               label="Buscar"
-              size="small"
+             
               fullWidth
               value={oblFilter.search || ""}
               onChange={(e) => setOblFilter((f) => ({ ...f, search: e.target.value }))}
             />
           </FormField>
           <FormField xs={12} sm={4}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>País</InputLabel>
               <Select
                 value={oblFilter.countryCode || ""}
@@ -202,7 +202,7 @@ export default function ObligacionesPage() {
             </FormControl>
           </FormField>
           <FormField xs={12} sm={4}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Frecuencia</InputLabel>
               <Select
                 value={oblFilter.frequency || ""}
@@ -238,14 +238,14 @@ export default function ObligacionesPage() {
           <FormField xs={12} sm={6}>
             <TextField
               label="Buscar"
-              size="small"
+             
               fullWidth
               value={filFilter.search || ""}
               onChange={(e) => setFilFilter((f) => ({ ...f, search: e.target.value }))}
             />
           </FormField>
           <FormField xs={12} sm={6}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select
                 value={filFilter.status || ""}

@@ -148,14 +148,14 @@ export default function OrdenesMedicasPage() {
         <FormField xs={12} sm={4}>
           <TextField
             label="Buscar"
-            size="small"
+           
             fullWidth
             value={filter.search || ""}
             onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
           />
         </FormField>
         <FormField xs={12} sm={4}>
-          <FormControl size="small" fullWidth>
+          <FormControl fullWidth>
             <InputLabel>Tipo</InputLabel>
             <Select
               value={filter.type || ""}
@@ -171,7 +171,7 @@ export default function OrdenesMedicasPage() {
           </FormControl>
         </FormField>
         <FormField xs={12} sm={4}>
-          <FormControl size="small" fullWidth>
+          <FormControl fullWidth>
             <InputLabel>Estado</InputLabel>
             <Select
               value={filter.status || ""}

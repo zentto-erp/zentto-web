@@ -150,7 +150,7 @@ export default function BancosPage() {
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
           label="Buscar"
-          size="small"
+         
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);

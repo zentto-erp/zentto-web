@@ -159,7 +159,6 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
               placeholder="Cliente o Proveedor"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              size="small"
               required
               error={!!errors.nombre}
               helperText={errors.nombre}
@@ -167,7 +166,7 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
           </FormField>
 
           <FormField xs={12} sm={6}>
-            <FormControl size="small">
+            <FormControl>
               <InputLabel>Tipo</InputLabel>
               <Select
                 value={formData.tipo}
@@ -187,7 +186,6 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.monto}
               onChange={(e) => setFormData({ ...formData, monto: parseFloat(e.target.value) })}
-              size="small"
               required
               error={!!errors.monto}
               helperText={errors.monto}
@@ -204,7 +202,7 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
           </FormField>
 
           <FormField xs={12} sm={6}>
-            <FormControl size="small">
+            <FormControl>
               <InputLabel>Método de Pago</InputLabel>
               <Select
                 value={formData.metodoPago}
@@ -226,7 +224,6 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
               placeholder="Número de cheque o ref. transf."
               value={formData.referencia}
               onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-              size="small"
             />
           </FormField>
 
@@ -237,7 +234,6 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
               multiline
               rows={3}
-              size="small"
             />
           </FormField>
         </FormGrid>

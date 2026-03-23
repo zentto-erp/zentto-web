@@ -189,7 +189,7 @@ export default function DevolucionesPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -229,7 +229,6 @@ export default function DevolucionesPage() {
               label="Proveedor (ID)"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -237,7 +236,6 @@ export default function DevolucionesPage() {
               label="Motivo General"
               value={returnReason}
               onChange={(e) => setReturnReason(e.target.value)}
-              size="small"
               fullWidth
               multiline
               rows={2}
@@ -252,7 +250,6 @@ export default function DevolucionesPage() {
                   label="Codigo Producto"
                   value={line.productCode}
                   onChange={(e) => handleLineChange(idx, "productCode", e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
                 <TextField
@@ -260,28 +257,24 @@ export default function DevolucionesPage() {
                   type="number"
                   value={line.quantity}
                   onChange={(e) => handleLineChange(idx, "quantity", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 100 }}
                 />
                 <TextField
                   label="Lote"
                   value={line.lotNumber}
                   onChange={(e) => handleLineChange(idx, "lotNumber", e.target.value)}
-                  size="small"
                   sx={{ width: 100 }}
                 />
                 <TextField
                   label="Serial"
                   value={line.serialNumber}
                   onChange={(e) => handleLineChange(idx, "serialNumber", e.target.value)}
-                  size="small"
                   sx={{ width: 120 }}
                 />
                 <TextField
                   label="Motivo"
                   value={line.reason}
                   onChange={(e) => handleLineChange(idx, "reason", e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
                 <Tooltip title="Eliminar linea">

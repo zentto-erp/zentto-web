@@ -164,7 +164,7 @@ export default function TrasladoForm() {
                 <TextField
                   {...params}
                   label="Articulo"
-                  size="small"
+                 
                   placeholder="Buscar por codigo o nombre..."
                   error={!!errors.articulo}
                   helperText={errors.articulo}
@@ -190,7 +190,7 @@ export default function TrasladoForm() {
 
           {/* Almacen Origen */}
           <FormField xs={12} sm={6}>
-            <FormControl size="small" error={!!errors.warehouseFrom}>
+            <FormControl error={!!errors.warehouseFrom}>
               <InputLabel>Almacen Origen</InputLabel>
               <Select value={warehouseFrom} label="Almacen Origen" onChange={(e) => setWarehouseFrom(e.target.value)}>
                 <MenuItem value="">— Seleccionar —</MenuItem>
@@ -204,7 +204,7 @@ export default function TrasladoForm() {
 
           {/* Almacen Destino */}
           <FormField xs={12} sm={6}>
-            <FormControl size="small" error={!!errors.warehouseTo}>
+            <FormControl error={!!errors.warehouseTo}>
               <InputLabel>Almacen Destino</InputLabel>
               <Select value={warehouseTo} label="Almacen Destino" onChange={(e) => setWarehouseTo(e.target.value)}>
                 <MenuItem value="">— Seleccionar —</MenuItem>
@@ -224,7 +224,6 @@ export default function TrasladoForm() {
               inputProps={{ min: 1 }}
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 0)}
-              size="small"
               required
               error={!!errors.quantity}
               helperText={errors.quantity}
@@ -239,7 +238,6 @@ export default function TrasladoForm() {
               onChange={(e) => setNotes(e.target.value)}
               multiline
               rows={2}
-              size="small"
             />
           </FormField>
         </FormGrid>

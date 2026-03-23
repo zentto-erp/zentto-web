@@ -217,7 +217,7 @@ export default function RecepcionMercanciaPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -255,7 +255,6 @@ export default function RecepcionMercanciaPage() {
               label="Proveedor (ID)"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -263,7 +262,6 @@ export default function RecepcionMercanciaPage() {
               label="Almacen (ID)"
               value={warehouseId}
               onChange={(e) => setWarehouseId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -271,7 +269,6 @@ export default function RecepcionMercanciaPage() {
               label="N. Orden de Compra"
               value={purchaseOrderNumber}
               onChange={(e) => setPurchaseOrderNumber(e.target.value)}
-              size="small"
               fullWidth
             />
 
@@ -284,7 +281,6 @@ export default function RecepcionMercanciaPage() {
                   label="Codigo Producto"
                   value={line.productCode}
                   onChange={(e) => handleLineChange(idx, "productCode", e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
                 <TextField
@@ -292,7 +288,6 @@ export default function RecepcionMercanciaPage() {
                   type="number"
                   value={line.orderedQty}
                   onChange={(e) => handleLineChange(idx, "orderedQty", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <TextField
@@ -300,7 +295,6 @@ export default function RecepcionMercanciaPage() {
                   type="number"
                   value={line.receivedQty}
                   onChange={(e) => handleLineChange(idx, "receivedQty", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <TextField
@@ -308,14 +302,12 @@ export default function RecepcionMercanciaPage() {
                   type="number"
                   value={line.unitCost}
                   onChange={(e) => handleLineChange(idx, "unitCost", Number(e.target.value))}
-                  size="small"
                   sx={{ width: 110 }}
                 />
                 <TextField
                   label="Lote"
                   value={line.lotNumber}
                   onChange={(e) => handleLineChange(idx, "lotNumber", e.target.value)}
-                  size="small"
                   sx={{ width: 100 }}
                 />
                 <DatePicker

@@ -169,7 +169,7 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
                 label="Código"
                 value={formData.codigo || ""}
                 disabled
-                size="small"
+               
               />
             </FormField>
           )}
@@ -181,7 +181,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
               placeholder="Ej: Laptop Dell"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              size="small"
               required
               error={!!errors.nombre}
               helperText={errors.nombre}
@@ -197,7 +196,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               multiline
               rows={3}
-              size="small"
             />
           </FormField>
 
@@ -208,7 +206,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
               placeholder="Ej: Electrónica, Ropa, etc."
               value={formData.categoria}
               onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-              size="small"
               required
               error={!!errors.categoria}
               helperText={errors.categoria}
@@ -223,7 +220,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.precio}
               onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) })}
-              size="small"
               required
               error={!!errors.precio}
               helperText={errors.precio}
@@ -238,7 +234,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
               inputProps={{ min: 0 }}
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value, 10) })}
-              size="small"
               error={!!errors.stock}
               helperText={errors.stock}
             />
@@ -247,7 +242,7 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
           {/* Estado */}
           {isEdit && (
             <FormField xs={12} sm={6}>
-              <FormControl size="small">
+              <FormControl>
                 <InputLabel>Estado</InputLabel>
                 <Select
                   value={estado}

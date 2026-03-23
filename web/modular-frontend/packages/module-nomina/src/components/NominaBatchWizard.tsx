@@ -171,7 +171,7 @@ export default function NominaBatchWizard({ onBack }: Props) {
             </Typography>
             <FormGrid spacing={3}>
               <FormField xs={12} md={4}>
-                <FormControl size="small">
+                <FormControl>
                   <InputLabel>Tipo de Nómina</InputLabel>
                   <Select
                     value={config.nomina}
@@ -201,7 +201,7 @@ export default function NominaBatchWizard({ onBack }: Props) {
               <FormField xs={12} md={4}>
                 <TextField
                   label="Departamento (opcional)"
-                  size="small"
+                 
                   value={config.departamento}
                   onChange={(e) => setConfig((c) => ({ ...c, departamento: e.target.value }))}
                   helperText="Dejar vacío para incluir todos"

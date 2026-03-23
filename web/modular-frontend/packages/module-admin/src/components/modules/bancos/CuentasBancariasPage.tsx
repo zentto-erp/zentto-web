@@ -89,7 +89,7 @@ export default function CuentasBancariasPage() {
             <Typography variant="subtitle1" sx={{ mb: 1 }}>Filtro Movimientos</Typography>
             <Grid container spacing={1}>
               <Grid item xs={12} md={4}>
-                <TextField fullWidth size="small" label="Cuenta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
+                <TextField fullWidth label="Cuenta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
               </Grid>
               <Grid item xs={12} md={3}>
                 <DatePicker label="Desde" value={desde ? dayjs(desde) : null} onChange={(v) => setDesde(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
@@ -98,7 +98,7 @@ export default function CuentasBancariasPage() {
                 <DatePicker label="Hasta" value={hasta ? dayjs(hasta) : null} onChange={(v) => setHasta(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
               </Grid>
               <Grid item xs={12} md={2}>
-                <TextField fullWidth size="small" type="number" label="Pagina" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />
+                <TextField fullWidth type="number" label="Pagina" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />
               </Grid>
             </Grid>
           </Paper>

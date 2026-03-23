@@ -588,7 +588,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                         {/* DROPDOWN rendering */}
                         {group.displayType === "DROPDOWN" && (
                           <Select
-                            size="small"
+                           
                             value={selectedOptions.get(groupCode) || ""}
                             onChange={(e) => handleOptionClick(groupCode, e.target.value as string)}
                             sx={{ mt: 0.5, minWidth: 150, bgcolor: "#f0f2f2", borderRadius: "8px" }}
@@ -770,7 +770,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="caption" sx={{ mb: 0.5, display: "block" }}>Cantidad:</Typography>
                   <Select
-                    size="small"
+                   
                     value={qty}
                     onChange={(e) => setQty(Number(e.target.value))}
                     fullWidth

@@ -125,11 +125,10 @@ export default function LotesPage() {
               value={filterProductId}
               onChange={(e) => { setFilterProductId(e.target.value); setPage(0); }}
               fullWidth
-              size="small"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select value={filterStatus} label="Estado" onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
                 <MenuItem value="">Todos</MenuItem>
@@ -217,7 +216,6 @@ export default function LotesPage() {
                 value={formData.lotNumber}
                 onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
                 fullWidth
-                size="small"
                 required
               />
             </Grid>
@@ -228,7 +226,6 @@ export default function LotesPage() {
                 value={formData.productId}
                 onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
                 fullWidth
-                size="small"
                 required
               />
             </Grid>
@@ -255,7 +252,6 @@ export default function LotesPage() {
                 value={formData.initialQuantity}
                 onChange={(e) => setFormData({ ...formData, initialQuantity: e.target.value })}
                 fullWidth
-                size="small"
                 inputProps={{ min: 0 }}
               />
             </Grid>
@@ -266,7 +262,6 @@ export default function LotesPage() {
                 value={formData.unitCost}
                 onChange={(e) => setFormData({ ...formData, unitCost: e.target.value })}
                 fullWidth
-                size="small"
                 inputProps={{ min: 0, step: "0.01" }}
               />
             </Grid>
@@ -276,7 +271,6 @@ export default function LotesPage() {
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 fullWidth
-                size="small"
                 multiline
                 rows={2}
               />

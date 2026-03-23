@@ -48,19 +48,19 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
     <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, border: "1px dashed #ccc", borderRadius: 2, bgcolor: "#fafafa" }}>
       <FormGrid spacing={2}>
         <FormField xs={12} sm={4}>
-          <TextField label="Etiqueta" placeholder='Ej: Casa, Oficina' value={label} onChange={(e) => setLabel(e.target.value)} size="small" required />
+          <TextField label="Etiqueta" placeholder='Ej: Casa, Oficina' value={label} onChange={(e) => setLabel(e.target.value)} required />
         </FormField>
         <FormField xs={12} sm={4}>
-          <TextField label="Nombre del receptor" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} size="small" required />
+          <TextField label="Nombre del receptor" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required />
         </FormField>
         <FormField xs={12} sm={4}>
-          <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} size="small" />
+          <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </FormField>
         <FormField xs={12}>
-          <TextField label="Direccion completa" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} size="small" multiline rows={2} required />
+          <TextField label="Direccion completa" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} multiline rows={2} required />
         </FormField>
         <FormField xs={12} sm={4}>
-          <TextField label="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} size="small" />
+          <TextField label="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} />
         </FormField>
         <FormField xs={12} sm={4}>
           <TextField
@@ -68,7 +68,6 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
             label="Estado"
             value={state}
             onChange={(e) => setState(e.target.value)}
-            size="small"
             disabled={states.length === 0}
           >
             {states.map((s) => (
@@ -77,7 +76,7 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
           </TextField>
         </FormField>
         <FormField xs={6} sm={2}>
-          <TextField label="Cod. postal" value={zipCode} onChange={(e) => setZipCode(e.target.value)} size="small" />
+          <TextField label="Cod. postal" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
         </FormField>
         <FormField xs={6} sm={2}>
           <TextField
@@ -88,7 +87,6 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
               setCountry(e.target.value);
               setState("");
             }}
-            size="small"
           >
             {countries.map((c) => (
               <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
@@ -96,7 +94,7 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
           </TextField>
         </FormField>
         <FormField xs={12}>
-          <TextField label="Instrucciones de entrega" placeholder="Ej: Porton azul, 2do piso" value={instructions} onChange={(e) => setInstructions(e.target.value)} size="small" />
+          <TextField label="Instrucciones de entrega" placeholder="Ej: Porton azul, 2do piso" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
         </FormField>
         <FormField xs={12}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

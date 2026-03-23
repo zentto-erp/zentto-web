@@ -137,11 +137,11 @@ export default function ConceptosPage() {
       <Stack direction="row" spacing={2} mb={2}>
         <TextField
           label="Buscar"
-          size="small"
+         
           value={filter.search || ""}
           onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
         />
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>Tipo</InputLabel>
           <Select
             value={filter.tipo || ""}

@@ -237,7 +237,7 @@ export default function ViajesPage() {
             label="Estado"
             value={filter.status ?? ""}
             onChange={handleStatusFilter}
-            size="small"
+           
             fullWidth
           >
             <MenuItem value="">Todos</MenuItem>
@@ -287,18 +287,18 @@ export default function ViajesPage() {
         <DialogTitle>Nuevo Viaje</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" fullWidth required />
+            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
             <FormGrid spacing={2}>
               <FormField xs={12} sm={6}>
-                <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} size="small" fullWidth required />
+                <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} fullWidth required />
               </FormField>
               <FormField xs={12} sm={6}>
-                <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} size="small" fullWidth required />
+                <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} fullWidth required />
               </FormField>
             </FormGrid>
             <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartureDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} size="small" fullWidth required />
-            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} size="small" fullWidth multiline rows={2} />
+            <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} fullWidth required />
+            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -321,9 +321,9 @@ export default function ViajesPage() {
             <Typography variant="body2" color="text.secondary">
               Viaje: {String(selectedRow?.TripNumber ?? "")} — {String(selectedRow?.Origin ?? "")} a {String(selectedRow?.Destination ?? "")}
             </Typography>
-            <TextField label="Kilometraje Final" type="number" value={endMileage} onChange={(e) => setEndMileage(e.target.value)} size="small" fullWidth required />
+            <TextField label="Kilometraje Final" type="number" value={endMileage} onChange={(e) => setEndMileage(e.target.value)} fullWidth required />
             <DatePicker label="Fecha Llegada" value={arrivalDate ? dayjs(arrivalDate) : null} onChange={(v) => setArrivalDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Combustible Usado (L)" type="number" value={fuelUsed} onChange={(e) => setFuelUsed(e.target.value)} size="small" fullWidth />
+            <TextField label="Combustible Usado (L)" type="number" value={fuelUsed} onChange={(e) => setFuelUsed(e.target.value)} fullWidth />
           </Stack>
         </DialogContent>
         <DialogActions>

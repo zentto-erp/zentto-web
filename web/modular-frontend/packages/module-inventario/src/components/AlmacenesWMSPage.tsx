@@ -352,7 +352,6 @@ export default function AlmacenesWMSPage() {
                 value={formData.warehouseCode}
                 onChange={(e) => setFormData({ ...formData, warehouseCode: e.target.value })}
                 fullWidth
-                size="small"
                 required
               />
             </Grid>
@@ -362,7 +361,6 @@ export default function AlmacenesWMSPage() {
                 value={formData.warehouseName}
                 onChange={(e) => setFormData({ ...formData, warehouseName: e.target.value })}
                 fullWidth
-                size="small"
                 required
               />
             </Grid>
@@ -372,7 +370,6 @@ export default function AlmacenesWMSPage() {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 fullWidth
-                size="small"
               />
             </Grid>
             <Grid size={12}>
@@ -381,7 +378,6 @@ export default function AlmacenesWMSPage() {
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 fullWidth
-                size="small"
                 multiline
                 rows={2}
               />

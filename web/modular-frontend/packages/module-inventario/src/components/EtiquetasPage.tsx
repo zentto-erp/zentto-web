@@ -98,7 +98,6 @@ export default function EtiquetasPage() {
                 placeholder="Buscar por codigo o nombre..."
                 onChange={(e) => debouncedSearch(e.target.value)}
                 fullWidth
-                size="small"
                 sx={{ mb: 2 }}
                 InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
               />
@@ -189,7 +188,6 @@ export default function EtiquetasPage() {
                             type="number"
                             value={s.cantidad}
                             onChange={(e) => updateCantidad(s.codigo, parseInt(e.target.value, 10))}
-                            size="small"
                             inputProps={{ min: 1, style: { width: 50, textAlign: "center" } }}
                           />
                         </TableCell>

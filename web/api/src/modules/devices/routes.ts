@@ -62,12 +62,17 @@ router.post('/unregister', requireJwt, async (req: Request, res: Response) => {
  */
 router.get('/my', requireJwt, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.sub;
+    const rawUserId = (req as any).user?.sub;
+    const userId = rawUserId ? Number(rawUserId) : null;
     const scope = (req as any).scope;
+
+    if (userId === null || !Number.isFinite(userId)) {
+      return res.status(400).json({ error: 'Could not resolve user ID from token' });
+    }
 
     const rows = await callSp('usp_Sys_Device_ListByUser', {
       CompanyId: scope?.companyId || 1,
-      UserId: userId ? Number(userId) : 0,
+      UserId: userId,
     });
 
     return res.json(rows);

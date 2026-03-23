@@ -158,7 +158,6 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
               placeholder="Ej: PROV001"
               value={formData.codigoProveedor}
               onChange={(e) => setFormData({ ...formData, codigoProveedor: e.target.value })}
-              size="small"
               required
               error={!!errors.codigoProveedor}
               helperText={errors.codigoProveedor}
@@ -170,7 +169,6 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
               label="Nombre Proveedor"
               value={formData.nombreProveedor}
               onChange={(e) => setFormData({ ...formData, nombreProveedor: e.target.value })}
-              size="small"
             />
           </FormField>
 
@@ -180,7 +178,6 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
               placeholder="Factura, PO, etc."
               value={formData.numeroReferencia}
               onChange={(e) => setFormData({ ...formData, numeroReferencia: e.target.value })}
-              size="small"
             />
           </FormField>
 
@@ -191,7 +188,6 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.montoTotal}
               onChange={(e) => setFormData({ ...formData, montoTotal: parseFloat(e.target.value) })}
-              size="small"
               required
               error={!!errors.montoTotal}
               helperText={errors.montoTotal}
@@ -223,7 +219,6 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               multiline
               rows={3}
-              size="small"
             />
           </FormField>
         </FormGrid>

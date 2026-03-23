@@ -157,7 +157,7 @@ export default function CajaAhorroPage() {
         <Stack direction="row" spacing={2} mb={2}>
           <TextField
             label="Buscar"
-            size="small"
+           
             value={savingsFilter.search || ""}
             onChange={(e) => setSavingsFilter((f) => ({ ...f, search: e.target.value }))}
           />
@@ -180,7 +180,7 @@ export default function CajaAhorroPage() {
         <Stack direction="row" spacing={2} mb={2}>
           <TextField
             label="Buscar"
-            size="small"
+           
             value={loanFilter.search || ""}
             onChange={(e) => setLoanFilter((f) => ({ ...f, search: e.target.value }))}
           />

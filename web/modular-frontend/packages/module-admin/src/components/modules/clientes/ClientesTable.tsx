@@ -147,7 +147,6 @@ export default function ClientesTable() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             fullWidth
-            size="small"
             variant="outlined"
           />
         </Stack>

@@ -137,16 +137,16 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
               {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
               <FormGrid spacing={2}>
                 <FormField xs={12} sm={6}>
-                  <TextField label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required size="small" />
+                  <TextField label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required />
                 </FormField>
                 <FormField xs={12} sm={6}>
-                  <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required size="small" />
+                  <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </FormField>
                 <FormField xs={12} sm={6}>
-                  <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} size="small" />
+                  <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </FormField>
                 <FormField xs={12} sm={6}>
-                  <TextField label="RIF / Cedula" value={fiscalId} onChange={(e) => setFiscalId(e.target.value)} size="small" />
+                  <TextField label="RIF / Cedula" value={fiscalId} onChange={(e) => setFiscalId(e.target.value)} />
                 </FormField>
               </FormGrid>
             </Box>
@@ -171,20 +171,20 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
               ) : (
                 <FormGrid spacing={2}>
                   <FormField xs={12}>
-                    <TextField label="Direccion" value={guestAddress.addressLine} onChange={(e) => setGuestAddress({ ...guestAddress, addressLine: e.target.value })} size="small" required />
+                    <TextField label="Direccion" value={guestAddress.addressLine} onChange={(e) => setGuestAddress({ ...guestAddress, addressLine: e.target.value })} required />
                   </FormField>
                   <FormField xs={12} sm={4}>
-                    <TextField label="Ciudad" value={guestAddress.city} onChange={(e) => setGuestAddress({ ...guestAddress, city: e.target.value })} size="small" />
+                    <TextField label="Ciudad" value={guestAddress.city} onChange={(e) => setGuestAddress({ ...guestAddress, city: e.target.value })} />
                   </FormField>
                   <FormField xs={12} sm={4}>
-                    <TextField select label="Pais" value={guestAddress.country} onChange={(e) => setGuestAddress({ ...guestAddress, country: e.target.value, state: "" })} size="small">
+                    <TextField select label="Pais" value={guestAddress.country} onChange={(e) => setGuestAddress({ ...guestAddress, country: e.target.value, state: "" })}>
                       {countries.map((c) => (
                         <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
                       ))}
                     </TextField>
                   </FormField>
                   <FormField xs={12} sm={4}>
-                    <TextField label="Estado / Provincia" value={guestAddress.state} onChange={(e) => setGuestAddress({ ...guestAddress, state: e.target.value })} size="small" />
+                    <TextField label="Estado / Provincia" value={guestAddress.state} onChange={(e) => setGuestAddress({ ...guestAddress, state: e.target.value })} />
                   </FormField>
                 </FormGrid>
               )}
@@ -216,7 +216,7 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
               )}
               {!sameAsBilling && !isLoggedIn && (
                 <Box sx={{ mt: 2 }}>
-                  <TextField label="Direccion de facturacion" value={address} onChange={(e) => setAddress(e.target.value)} fullWidth size="small" placeholder="Si es diferente a la de envio" />
+                  <TextField label="Direccion de facturacion" value={address} onChange={(e) => setAddress(e.target.value)} fullWidth placeholder="Si es diferente a la de envio" />
                 </Box>
               )}
             </Box>
@@ -253,7 +253,7 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
               </Typography>
             </Box>
             <Box sx={{ p: 3 }}>
-              <TextField label="Instrucciones especiales (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} size="small" placeholder="Ej: Entregar en horario de oficina" />
+              <TextField label="Instrucciones especiales (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} placeholder="Ej: Entregar en horario de oficina" />
             </Box>
           </Paper>
         </Grid>

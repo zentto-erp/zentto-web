@@ -221,7 +221,7 @@ export default function InflacionAjustePage() {
               <TextField
                 label="Año"
                 type="number"
-                size="small"
+               
                 value={indiceYear}
                 onChange={(e) => setIndiceYear(Number(e.target.value))}
                 sx={{ width: 120 }}
@@ -249,7 +249,7 @@ export default function InflacionAjustePage() {
             <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 2 }}>
               <TextField
                 label="Buscar cuenta"
-                size="small"
+               
                 value={clasSearch}
                 onChange={(e) => setClasSearch(e.target.value)}
                 sx={{ minWidth: 240 }}
@@ -294,7 +294,7 @@ export default function InflacionAjustePage() {
             <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 2 }}>
               <TextField
                 label="Periodo (YYYYMM)"
-                size="small"
+               
                 value={calcPeriod}
                 onChange={(e) => setCalcPeriod(e.target.value)}
                 placeholder="202601"
@@ -303,7 +303,7 @@ export default function InflacionAjustePage() {
               <TextField
                 label="Ejercicio fiscal"
                 type="number"
-                size="small"
+               
                 value={calcFiscalYear}
                 onChange={(e) => setCalcFiscalYear(Number(e.target.value))}
                 sx={{ width: 150 }}
@@ -389,7 +389,7 @@ export default function InflacionAjustePage() {
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Periodo (YYYYMM)"
-              size="small"
+             
               fullWidth
               value={newIndice.periodCode}
               onChange={(e) => setNewIndice((v) => ({ ...v, periodCode: e.target.value }))}
@@ -398,14 +398,14 @@ export default function InflacionAjustePage() {
             <TextField
               label="Valor del Índice"
               type="number"
-              size="small"
+             
               fullWidth
               value={newIndice.indexValue}
               onChange={(e) => setNewIndice((v) => ({ ...v, indexValue: e.target.value }))}
             />
             <TextField
               label="Fuente / Referencia"
-              size="small"
+             
               fullWidth
               value={newIndice.sourceReference}
               onChange={(e) => setNewIndice((v) => ({ ...v, sourceReference: e.target.value }))}

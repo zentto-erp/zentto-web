@@ -192,7 +192,7 @@ export default function DeclaracionesPage() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filtros */}
         <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl sx={{ minWidth: 160 }}>
             <InputLabel>Tipo</InputLabel>
             <Select
               label="Tipo"
@@ -207,12 +207,12 @@ export default function DeclaracionesPage() {
           <TextField
             label="Ano"
             type="number"
-            size="small"
+           
             value={filter.year || ""}
             onChange={(e) => setFilter((f) => ({ ...f, year: Number(e.target.value) || undefined, page: 1 }))}
             sx={{ minWidth: 100 }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl sx={{ minWidth: 140 }}>
             <InputLabel>Estado</InputLabel>
             <Select
               label="Estado"
@@ -253,7 +253,7 @@ export default function DeclaracionesPage() {
         <DialogTitle>Calcular declaración</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Tipo declaración</InputLabel>
               <Select
                 label="Tipo declaración"
@@ -267,13 +267,13 @@ export default function DeclaracionesPage() {
             </FormControl>
             <TextField
               label="Periodo (YYYY-MM)"
-              size="small"
+             
               fullWidth
               placeholder="2026-03"
               value={calcForm.periodCode}
               onChange={(e) => setCalcForm((f) => ({ ...f, periodCode: e.target.value }))}
             />
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Pais</InputLabel>
               <Select
                 label="Pais"

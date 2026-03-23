@@ -133,7 +133,6 @@ function PresupuestoFormDialog({
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             fullWidth
-            size="small"
           />
           <TextField
             label="Año fiscal"
@@ -141,14 +140,12 @@ function PresupuestoFormDialog({
             value={form.fiscalYear}
             onChange={(e) => setForm({ ...form, fiscalYear: Number(e.target.value) })}
             fullWidth
-            size="small"
           />
           <TextField
             label="Centro de Costo (opcional)"
             value={form.costCenterCode}
             onChange={(e) => setForm({ ...form, costCenterCode: e.target.value })}
             fullWidth
-            size="small"
             placeholder="Dejar vacio para presupuesto global"
           />
         </Stack>
@@ -648,7 +645,6 @@ export default function PresupuestosPage() {
             label="Año fiscal"
             value={fiscalYear}
             onChange={(e) => setFiscalYear(Number(e.target.value))}
-            size="small"
             sx={{ minWidth: 120 }}
           >
             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (

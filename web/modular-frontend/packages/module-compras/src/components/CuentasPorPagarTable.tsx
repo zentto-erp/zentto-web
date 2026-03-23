@@ -118,7 +118,7 @@ export default function CuentasPorPagarTable() {
         defaultValue=""
         onChange={handleSearchChange}
         fullWidth
-        size="small"
+       
         sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (

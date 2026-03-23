@@ -192,14 +192,14 @@ export default function ActivosFijosListPage() {
           <FormField xs={12} sm={4}>
             <TextField
               label="Buscar"
-              size="small"
+             
               fullWidth
               value={filter.search || ""}
               onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value, page: 1 }))}
             />
           </FormField>
           <FormField xs={12} sm={4}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Categoría</InputLabel>
               <Select
                 label="Categoría"
@@ -216,7 +216,7 @@ export default function ActivosFijosListPage() {
             </FormControl>
           </FormField>
           <FormField xs={12} sm={4}>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select
                 label="Estado"
@@ -262,7 +262,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Código"
                 fullWidth
-                size="small"
+               
                 value={form.assetCode}
                 onChange={(e) => setField("assetCode", e.target.value)}
               />
@@ -271,7 +271,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Número de Serie"
                 fullWidth
-                size="small"
+               
                 value={form.serialNumber || ""}
                 onChange={(e) => setField("serialNumber", e.target.value)}
               />
@@ -280,13 +280,13 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Descripción"
                 fullWidth
-                size="small"
+               
                 value={form.description}
                 onChange={(e) => setField("description", e.target.value)}
               />
             </FormField>
             <FormField xs={12} sm={6}>
-              <FormControl size="small" fullWidth>
+              <FormControl fullWidth>
                 <InputLabel>Categoría</InputLabel>
                 <Select
                   label="Categoría"
@@ -314,7 +314,7 @@ export default function ActivosFijosListPage() {
                 label="Costo adquisición"
                 type="number"
                 fullWidth
-                size="small"
+               
                 value={form.acquisitionCost}
                 onChange={(e) => setField("acquisitionCost", Number(e.target.value))}
               />
@@ -324,7 +324,7 @@ export default function ActivosFijosListPage() {
                 label="Valor residual"
                 type="number"
                 fullWidth
-                size="small"
+               
                 value={form.residualValue || 0}
                 onChange={(e) => setField("residualValue", Number(e.target.value))}
               />
@@ -334,13 +334,13 @@ export default function ActivosFijosListPage() {
                 label="Vida Útil (meses)"
                 type="number"
                 fullWidth
-                size="small"
+               
                 value={form.usefulLifeMonths}
                 onChange={(e) => setField("usefulLifeMonths", Number(e.target.value))}
               />
             </FormField>
             <FormField xs={12}>
-              <FormControl size="small" fullWidth>
+              <FormControl fullWidth>
                 <InputLabel>Método de Depreciación</InputLabel>
                 <Select
                   label="Método de Depreciación"
@@ -357,7 +357,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Cuenta activo"
                 fullWidth
-                size="small"
+               
                 value={form.assetAccountCode}
                 onChange={(e) => setField("assetAccountCode", e.target.value)}
               />
@@ -366,7 +366,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Cuenta dep. acum."
                 fullWidth
-                size="small"
+               
                 value={form.deprecAccountCode}
                 onChange={(e) => setField("deprecAccountCode", e.target.value)}
               />
@@ -375,7 +375,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Cuenta gasto"
                 fullWidth
-                size="small"
+               
                 value={form.expenseAccountCode}
                 onChange={(e) => setField("expenseAccountCode", e.target.value)}
               />
@@ -384,7 +384,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Centro de Costo"
                 fullWidth
-                size="small"
+               
                 value={form.costCenterCode || ""}
                 onChange={(e) => setField("costCenterCode", e.target.value)}
               />
@@ -393,7 +393,7 @@ export default function ActivosFijosListPage() {
               <TextField
                 label="Ubicación"
                 fullWidth
-                size="small"
+               
                 value={form.location || ""}
                 onChange={(e) => setField("location", e.target.value)}
               />

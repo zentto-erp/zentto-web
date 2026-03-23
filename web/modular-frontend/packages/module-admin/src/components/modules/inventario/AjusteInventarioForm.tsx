@@ -116,7 +116,6 @@ export default function AjusteInventarioForm() {
               placeholder="Ej: ART001"
               value={formData.codigoArticulo}
               onChange={(e) => setFormData({ ...formData, codigoArticulo: e.target.value })}
-              size="small"
               required
               error={!!errors.codigoArticulo}
               helperText={errors.codigoArticulo}
@@ -125,7 +124,7 @@ export default function AjusteInventarioForm() {
 
           {/* Tipo Movimiento */}
           <FormField xs={12} sm={6}>
-            <FormControl size="small">
+            <FormControl>
               <InputLabel>Tipo de Movimiento</InputLabel>
               <Select
                 value={formData.tipo}
@@ -146,7 +145,6 @@ export default function AjusteInventarioForm() {
               inputProps={{ min: 1 }}
               value={formData.cantidad}
               onChange={(e) => setFormData({ ...formData, cantidad: parseInt(e.target.value, 10) })}
-              size="small"
               required
               error={!!errors.cantidad}
               helperText={errors.cantidad}
@@ -155,7 +153,7 @@ export default function AjusteInventarioForm() {
 
           {/* Motivo */}
           <FormField xs={12} sm={6}>
-            <FormControl size="small">
+            <FormControl>
               <InputLabel>Motivo</InputLabel>
               <Select
                 value={formData.motivo}
@@ -182,7 +180,6 @@ export default function AjusteInventarioForm() {
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
               multiline
               rows={3}
-              size="small"
             />
           </FormField>
         </FormGrid>

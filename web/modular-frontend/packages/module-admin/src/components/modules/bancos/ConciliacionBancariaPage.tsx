@@ -189,7 +189,7 @@ export default function ConciliacionBancariaPage() {
         <Typography variant="subtitle1" sx={{ mb: 1 }}>Crear Conciliacion</Typography>
         <Grid container spacing={1}>
           <Grid item xs={12} md={4}>
-            <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Cuenta" value={newCta} onChange={(e) => setNewCta(e.target.value)}>
+            <TextField select SelectProps={{ native: true }} fullWidth label="Cuenta" value={newCta} onChange={(e) => setNewCta(e.target.value)}>
               <option value="">Seleccione</option>
               {((cuentasData?.rows ?? []) as CuentaRow[]).map((c) => (
                 <option key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>{String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}</option>
@@ -212,13 +212,13 @@ export default function ConciliacionBancariaPage() {
         <Typography variant="subtitle1" sx={{ mb: 1 }}>Filtros</Typography>
         <Grid container spacing={1}>
           <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="Nro Cta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
+            <TextField fullWidth label="Nro Cta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
           </Grid>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="Estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
+            <TextField fullWidth label="Estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
           </Grid>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="Pagina" type="number" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />
+            <TextField fullWidth label="Pagina" type="number" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />
           </Grid>
         </Grid>
       </Paper>
@@ -273,10 +273,10 @@ export default function ConciliacionBancariaPage() {
 
           <Grid container spacing={1} sx={{ mb: 2 }}>
             <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="MovimientoSistema_ID" value={movSistemaId} onChange={(e) => setMovSistemaId(e.target.value)} />
+              <TextField fullWidth label="MovimientoSistema_ID" value={movSistemaId} onChange={(e) => setMovSistemaId(e.target.value)} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="Extracto_ID (opcional)" value={extractoId} onChange={(e) => setExtractoId(e.target.value)} />
+              <TextField fullWidth label="Extracto_ID (opcional)" value={extractoId} onChange={(e) => setExtractoId(e.target.value)} />
             </Grid>
             <Grid item xs={12} md={4}>
               <Button fullWidth variant="contained" onClick={handleConciliar} disabled={conciliar.isPending}>Conciliar</Button>
@@ -285,16 +285,16 @@ export default function ConciliacionBancariaPage() {
 
           <Grid container spacing={1} sx={{ mb: 2 }}>
             <Grid item xs={12} md={3}>
-              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as "NOTA_CREDITO" | "NOTA_DEBITO")}>
+              <TextField select SelectProps={{ native: true }} fullWidth label="Tipo Ajuste" value={ajusteTipo} onChange={(e) => setAjusteTipo(e.target.value as "NOTA_CREDITO" | "NOTA_DEBITO")}>
                 <option value="NOTA_CREDITO">NOTA_CREDITO</option>
                 <option value="NOTA_DEBITO">NOTA_DEBITO</option>
               </TextField>
             </Grid>
             <Grid item xs={12} md={3}>
-              <TextField fullWidth size="small" label="Monto" type="number" value={ajusteMonto} onChange={(e) => setAjusteMonto(e.target.value)} />
+              <TextField fullWidth label="Monto" type="number" value={ajusteMonto} onChange={(e) => setAjusteMonto(e.target.value)} />
             </Grid>
             <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="Descripcion" value={ajusteDesc} onChange={(e) => setAjusteDesc(e.target.value)} />
+              <TextField fullWidth label="Descripcion" value={ajusteDesc} onChange={(e) => setAjusteDesc(e.target.value)} />
             </Grid>
             <Grid item xs={12} md={2}>
               <Button fullWidth variant="contained" onClick={handleAjuste} disabled={ajustar.isPending}>Ajustar</Button>
@@ -303,10 +303,10 @@ export default function ConciliacionBancariaPage() {
 
           <Grid container spacing={1} sx={{ mb: 2 }}>
             <Grid item xs={12} md={4}>
-              <TextField fullWidth size="small" label="Saldo Final Banco" type="number" value={saldoFinalBanco} onChange={(e) => setSaldoFinalBanco(e.target.value)} />
+              <TextField fullWidth label="Saldo Final Banco" type="number" value={saldoFinalBanco} onChange={(e) => setSaldoFinalBanco(e.target.value)} />
             </Grid>
             <Grid item xs={12} md={6}>
-              <TextField fullWidth size="small" label="Observaciones" value={obsCierre} onChange={(e) => setObsCierre(e.target.value)} />
+              <TextField fullWidth label="Observaciones" value={obsCierre} onChange={(e) => setObsCierre(e.target.value)} />
             </Grid>
             <Grid item xs={12} md={2}>
               <Button fullWidth variant="contained" color="warning" onClick={handleCerrar} disabled={cerrar.isPending}>Cerrar</Button>

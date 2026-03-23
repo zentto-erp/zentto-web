@@ -95,7 +95,7 @@ export default function CxpMasterPage() {
           </Typography>
           <TextField
             placeholder="Buscar proveedor..."
-            size="small"
+           
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} /> }}
@@ -465,7 +465,7 @@ function AplicarPagosTab({
           </Grid>
           <Grid item xs={12} sm={5}>
             <TextField
-              fullWidth size="small" label="Observaciones" value={observaciones}
+              fullWidth label="Observaciones" value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
             />
           </Grid>
@@ -526,7 +526,7 @@ function AplicarPagosTab({
                 <TableCell align="right" sx={{ fontSize: "0.82rem" }}>{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField
-                    size="small" type="number" value={r.montoAplicar}
+                    type="number" value={r.montoAplicar}
                     onChange={(e) => changeMonto(i, Number(e.target.value))}
                     inputProps={{ min: 0, step: "0.01" }}
                     sx={{ width: 130 }}
@@ -567,22 +567,22 @@ function AplicarPagosTab({
             <TableRow key={idx}>
               <TableCell>
                 <TextField
-                  size="small" value={fp.formaPago} sx={{ minWidth: 130 }}
+                  value={fp.formaPago} sx={{ minWidth: 130 }}
                   onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value.toUpperCase() })}
                 />
               </TableCell>
               <TableCell align="right">
                 <TextField
-                  size="small" type="number" value={fp.monto} sx={{ width: 130 }}
+                  type="number" value={fp.monto} sx={{ width: 130 }}
                   onChange={(e) => updateFormaPago(idx, { monto: Number(e.target.value) || 0 })}
                   inputProps={{ min: 0, step: "0.01" }}
                 />
               </TableCell>
               <TableCell>
-                <TextField size="small" value={fp.banco || ""} onChange={(e) => updateFormaPago(idx, { banco: e.target.value })} />
+                <TextField value={fp.banco || ""} onChange={(e) => updateFormaPago(idx, { banco: e.target.value })} />
               </TableCell>
               <TableCell>
-                <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
+                <TextField value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
               </TableCell>
               <TableCell>
                 <DatePicker

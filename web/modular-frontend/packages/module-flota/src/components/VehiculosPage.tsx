@@ -270,7 +270,7 @@ export default function VehiculosPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -282,7 +282,7 @@ export default function VehiculosPage() {
           label="Buscar"
           value={filter.search ?? ""}
           onChange={handleSearchFilter}
-          size="small"
+         
           placeholder="Placa, marca, modelo..."
           sx={{ minWidth: 220 }}
         />
@@ -313,14 +313,14 @@ export default function VehiculosPage() {
         <DialogTitle>{editMode ? "Editar Vehiculo" : "Nuevo Vehiculo"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Placa" value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} size="small" fullWidth required />
+            <TextField label="Placa" value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} fullWidth required />
             <Stack direction="row" spacing={2}>
-              <TextField label="Marca" value={brand} onChange={(e) => setBrand(e.target.value)} size="small" fullWidth required />
-              <TextField label="Modelo" value={model} onChange={(e) => setModel(e.target.value)} size="small" fullWidth required />
+              <TextField label="Marca" value={brand} onChange={(e) => setBrand(e.target.value)} fullWidth required />
+              <TextField label="Modelo" value={model} onChange={(e) => setModel(e.target.value)} fullWidth required />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField label="Ano" type="number" value={year} onChange={(e) => setYear(e.target.value)} size="small" fullWidth required />
-              <TextField label="Color" value={color} onChange={(e) => setColor(e.target.value)} size="small" fullWidth />
+              <TextField label="Ano" type="number" value={year} onChange={(e) => setYear(e.target.value)} fullWidth required />
+              <TextField label="Color" value={color} onChange={(e) => setColor(e.target.value)} fullWidth />
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField
@@ -328,7 +328,6 @@ export default function VehiculosPage() {
                 label="Tipo Vehiculo"
                 value={vehicleType}
                 onChange={(e) => setVehicleType(e.target.value)}
-                size="small"
                 fullWidth
                 required
               >
@@ -345,7 +344,6 @@ export default function VehiculosPage() {
                 label="Tipo Combustible"
                 value={fuelType}
                 onChange={(e) => setFuelType(e.target.value)}
-                size="small"
                 fullWidth
                 required
               >
@@ -356,9 +354,9 @@ export default function VehiculosPage() {
                 <MenuItem value="GAS">Gas</MenuItem>
               </TextField>
             </Stack>
-            <TextField label="Kilometraje Actual" type="number" value={currentMileage} onChange={(e) => setCurrentMileage(e.target.value)} size="small" fullWidth required />
-            <TextField label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} size="small" fullWidth />
-            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} size="small" fullWidth multiline rows={2} />
+            <TextField label="Kilometraje Actual" type="number" value={currentMileage} onChange={(e) => setCurrentMileage(e.target.value)} fullWidth required />
+            <TextField label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} fullWidth />
+            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
           </Stack>
         </DialogContent>
         <DialogActions>

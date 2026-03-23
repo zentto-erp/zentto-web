@@ -194,14 +194,14 @@ export default function SaludOcupacionalPage() {
         <FormField xs={12} sm={3}>
           <TextField
             label="Buscar"
-            size="small"
+           
             fullWidth
             value={filter.search || ""}
             onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
           />
         </FormField>
         <FormField xs={12} sm={3}>
-          <FormControl size="small" fullWidth>
+          <FormControl fullWidth>
             <InputLabel>Tipo</InputLabel>
             <Select
               value={filter.type || ""}
@@ -216,7 +216,7 @@ export default function SaludOcupacionalPage() {
           </FormControl>
         </FormField>
         <FormField xs={12} sm={3}>
-          <FormControl size="small" fullWidth>
+          <FormControl fullWidth>
             <InputLabel>Estado</InputLabel>
             <Select
               value={filter.status || ""}
@@ -232,7 +232,7 @@ export default function SaludOcupacionalPage() {
           </FormControl>
         </FormField>
         <FormField xs={12} sm={3}>
-          <FormControl size="small" fullWidth>
+          <FormControl fullWidth>
             <InputLabel>Severidad</InputLabel>
             <Select
               value={filter.severity || ""}

@@ -436,7 +436,9 @@ router.post("/obligaciones/enroll", async (req: Request, res: Response) => {
 // GET /v1/rrhh/obligaciones/employee/:employeeId
 router.get("/obligaciones/employee/:employeeId", async (req: Request, res: Response) => {
   try {
-    const result = await svc.getEmployeeObligations(Number(req.params.employeeId));
+    const employeeId = Number(req.params.employeeId);
+    if (!Number.isFinite(employeeId)) return res.status(400).json({ error: "employeeId must be a valid number" });
+    const result = await svc.getEmployeeObligations(employeeId);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -861,7 +863,9 @@ router.post("/comites/:committeeId/meetings", async (req: Request, res: Response
 // GET /v1/rrhh/comites/:committeeId/meetings
 router.get("/comites/:committeeId/meetings", async (req: Request, res: Response) => {
   try {
-    const result = await svc.getCommitteeMeetings(Number(req.params.committeeId));
+    const committeeId = Number(req.params.committeeId);
+    if (!Number.isFinite(committeeId)) return res.status(400).json({ error: "committeeId must be a valid number" });
+    const result = await svc.getCommitteeMeetings(committeeId);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });

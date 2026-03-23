@@ -88,7 +88,7 @@ export default function ProveedoresTable() {
           value={searchTerm}
           onChange={handleSearch}
           fullWidth
-          size="small"
+         
           variant="outlined"
         />
       </Paper>

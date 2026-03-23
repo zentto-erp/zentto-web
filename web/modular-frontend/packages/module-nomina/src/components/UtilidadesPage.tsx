@@ -124,7 +124,7 @@ export default function UtilidadesPage() {
         <TextField
           label="Año Fiscal"
           type="number"
-          size="small"
+         
           value={filter.fiscalYear || ""}
           onChange={(e) => setFilter((f) => ({ ...f, fiscalYear: Number(e.target.value) || undefined }))}
         />

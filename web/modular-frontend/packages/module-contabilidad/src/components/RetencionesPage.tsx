@@ -119,7 +119,7 @@ function ComprobantesTab() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filtros */}
         <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl sx={{ minWidth: 140 }}>
             <InputLabel>Tipo</InputLabel>
             <Select
               label="Tipo"
@@ -134,12 +134,12 @@ function ComprobantesTab() {
           </FormControl>
           <TextField
             label="Periodo (YYYY-MM)"
-            size="small"
+           
             value={filter.periodCode || ""}
             onChange={(e) => setFilter((f) => ({ ...f, periodCode: e.target.value || undefined, page: 1 }))}
             sx={{ minWidth: 160 }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl sx={{ minWidth: 140 }}>
             <InputLabel>Pais</InputLabel>
             <Select
               label="Pais"
@@ -184,12 +184,12 @@ function ComprobantesTab() {
             <TextField
               label="ID Documento"
               type="number"
-              size="small"
+             
               fullWidth
               value={genForm.documentId || ""}
               onChange={(e) => setGenForm((f) => ({ ...f, documentId: Number(e.target.value) }))}
             />
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Tipo retención</InputLabel>
               <Select
                 label="Tipo retención"
@@ -201,7 +201,7 @@ function ComprobantesTab() {
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small" fullWidth>
+            <FormControl fullWidth>
               <InputLabel>Pais</InputLabel>
               <Select
                 label="Pais"

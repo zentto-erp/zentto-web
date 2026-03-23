@@ -1391,23 +1391,23 @@ BEGIN
 
     -- Verificar que el comité pertenece a la empresa
     IF p_company_id IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM hr."SafetyCommittee"
-        WHERE "SafetyCommitteeId" = p_committee_id AND "CompanyId" = p_company_id
+        SELECT 1 FROM hr."SafetyCommittee" c2
+        WHERE c2."SafetyCommitteeId" = p_committee_id AND c2."CompanyId" = p_company_id
     ) THEN
         RETURN;
     END IF;
 
     RETURN QUERY
     SELECT
-        COUNT(*) OVER()         AS p_total_count,
+        COUNT(*) OVER()::BIGINT,
         m."MeetingId",
         m."SafetyCommitteeId",
         m."MeetingDate",
-        m."MinutesUrl",
+        m."MinutesUrl"::VARCHAR(500),
         m."TopicsSummary",
         m."ActionItems",
-        m."CreatedAt",
-        sc."CommitteeName"
+        m."CreatedAt"::TIMESTAMP,
+        sc."CommitteeName"::VARCHAR(200)
     FROM hr."SafetyCommitteeMeeting" m
     INNER JOIN hr."SafetyCommittee" sc ON sc."SafetyCommitteeId" = m."SafetyCommitteeId"
     WHERE m."SafetyCommitteeId" = p_committee_id

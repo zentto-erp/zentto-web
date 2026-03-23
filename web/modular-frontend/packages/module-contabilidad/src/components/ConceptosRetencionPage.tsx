@@ -70,17 +70,17 @@ export default function ConceptosRetencionPage() {
       </Stack>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField select label="Pais" size="small" value={filter.countryCode ?? ""} sx={{ minWidth: 140 }}
+        <TextField select label="Pais" value={filter.countryCode ?? ""} sx={{ minWidth: 140 }}
           onChange={(e) => setFilter({ ...filter, countryCode: e.target.value || undefined })}>
           <MenuItem value="">Todos</MenuItem>
           {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
         </TextField>
-        <TextField select label="Tipo" size="small" value={filter.retentionType ?? ""} sx={{ minWidth: 130 }}
+        <TextField select label="Tipo" value={filter.retentionType ?? ""} sx={{ minWidth: 130 }}
           onChange={(e) => setFilter({ ...filter, retentionType: e.target.value || undefined })}>
           <MenuItem value="">Todos</MenuItem>
           {retTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
         </TextField>
-        <TextField label="Buscar" size="small" value={filter.search ?? ""}
+        <TextField label="Buscar" value={filter.search ?? ""}
           onChange={(e) => setFilter({ ...filter, search: e.target.value || undefined })} />
       </Stack>
 
@@ -103,38 +103,38 @@ export default function ConceptosRetencionPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction="row" spacing={2}>
-              <TextField label="Codigo" fullWidth size="small" value={form.conceptCode}
+              <TextField label="Codigo" fullWidth value={form.conceptCode}
                 onChange={(e) => setForm({ ...form, conceptCode: e.target.value })}
                 disabled={!!form.conceptCode && rows.some((r: any) => r.ConceptCode === form.conceptCode)} />
-              <TextField select label="Pais" size="small" value={form.countryCode} sx={{ minWidth: 120 }}
+              <TextField select label="Pais" value={form.countryCode} sx={{ minWidth: 120 }}
                 onChange={(e) => setForm({ ...form, countryCode: e.target.value })}>
                 {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
               </TextField>
             </Stack>
-            <TextField label="Descripcion" fullWidth size="small" value={form.description}
+            <TextField label="Descripcion" fullWidth value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <Stack direction="row" spacing={2}>
-              <TextField select label="Tipo Persona" size="small" fullWidth value={form.supplierType}
+              <TextField select label="Tipo Persona" fullWidth value={form.supplierType}
                 onChange={(e) => setForm({ ...form, supplierType: e.target.value })}>
                 {supplierTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
               </TextField>
-              <TextField label="Actividad" size="small" fullWidth value={form.activityCode}
+              <TextField label="Actividad" fullWidth value={form.activityCode}
                 onChange={(e) => setForm({ ...form, activityCode: e.target.value })} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField select label="Tipo Retencion" size="small" fullWidth value={form.retentionType}
+              <TextField select label="Tipo Retencion" fullWidth value={form.retentionType}
                 onChange={(e) => setForm({ ...form, retentionType: e.target.value })}>
                 {retTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
               </TextField>
-              <TextField label="% Retencion" type="number" size="small" fullWidth value={form.rate}
+              <TextField label="% Retencion" type="number" fullWidth value={form.rate}
                 onChange={(e) => setForm({ ...form, rate: Number(e.target.value) })} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField label="Sustraendo (UT)" type="number" size="small" fullWidth value={form.subtrahendUT}
+              <TextField label="Sustraendo (UT)" type="number" fullWidth value={form.subtrahendUT}
                 onChange={(e) => setForm({ ...form, subtrahendUT: Number(e.target.value) })} />
-              <TextField label="Base Minima (UT)" type="number" size="small" fullWidth value={form.minBaseUT}
+              <TextField label="Base Minima (UT)" type="number" fullWidth value={form.minBaseUT}
                 onChange={(e) => setForm({ ...form, minBaseUT: Number(e.target.value) })} />
-              <TextField label="Cod SENIAT" size="small" fullWidth value={form.seniatCode}
+              <TextField label="Cod SENIAT" fullWidth value={form.seniatCode}
                 onChange={(e) => setForm({ ...form, seniatCode: e.target.value })} />
             </Stack>
           </Stack>

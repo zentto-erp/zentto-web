@@ -1,4 +1,4 @@
-// components/InventarioTable.tsx
+// components/modules/inventario/InventarioTable.tsx
 "use client";
 
 import { useState, useCallback } from "react";
@@ -23,7 +23,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
-import { useInventarioList } from "../hooks/useInventario";
+import { useInventarioList } from "../../../hooks/useInventario";
 import { formatCurrency } from "@zentto/shared-api";
 import { debounce } from "lodash";
 
@@ -50,19 +50,6 @@ export default function InventarioTable() {
     []
   );
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
-
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
   const getStockColor = (stock: number, minimo: number): "error" | "warning" | "success" => {
     if (minimo > 0 && stock < minimo) return "error";
     if (minimo > 0 && stock < minimo * 1.5) return "warning";
@@ -77,7 +64,7 @@ export default function InventarioTable() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => router.push("/ajuste")}
+          onClick={() => router.push("/inventario/ajuste")}
         >
           Ajuste de Inventario
         </Button>
@@ -87,9 +74,8 @@ export default function InventarioTable() {
       <TextField
         placeholder="Buscar por codigo, nombre, categoria..."
         defaultValue=""
-        onChange={handleSearchChange}
+        onChange={(e) => debouncedSearch(e.target.value)}
         fullWidth
-       
         sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (
@@ -160,7 +146,7 @@ export default function InventarioTable() {
                       <Tooltip title="Ver detalle">
                         <IconButton
                           size="small"
-                          onClick={() => router.push(`/articulos/${codigo}`)}
+                          onClick={() => router.push(`/inventario/${codigo}`)}
                         >
                           <ViewIcon fontSize="small" />
                         </IconButton>
@@ -182,8 +168,8 @@ export default function InventarioTable() {
           count={total}
           rowsPerPage={rowsPerPage}
           page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
+          onPageChange={(_, p) => setPage(p)}
+          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
           labelRowsPerPage="Filas por pagina:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         />

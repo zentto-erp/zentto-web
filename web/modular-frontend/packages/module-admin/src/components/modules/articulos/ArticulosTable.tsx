@@ -69,7 +69,6 @@ function FilterSelect({
       label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      size="small"
       sx={{ minWidth: 140, flex: 1 }}
     >
       <MenuItem value="">
@@ -393,7 +392,7 @@ export default function ArticulosTable() {
           placeholder="Buscar por código, descripción, marca, referencia..."
           value={searchText}
           onChange={handleSearchChange}
-          size="small"
+         
           sx={{ flex: 1, maxWidth: 500 }}
           InputProps={{
             startAdornment: (
@@ -509,7 +508,6 @@ export default function ArticulosTable() {
               label="Estado"
               value={filterEstado}
               onChange={(e) => onFilterChange(setFilterEstado)(e.target.value)}
-              size="small"
               sx={{ minWidth: 140, flex: 1 }}
             >
               <MenuItem value="todos">Todos</MenuItem>
@@ -583,7 +581,6 @@ export default function ArticulosTable() {
                   type="number"
                   value={stockMin}
                   onChange={(e) => onFilterChange(setStockMin)(e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
                 <Typography variant="body2" color="text.secondary">—</Typography>
@@ -592,7 +589,6 @@ export default function ArticulosTable() {
                   type="number"
                   value={stockMax}
                   onChange={(e) => onFilterChange(setStockMax)(e.target.value)}
-                  size="small"
                   sx={{ flex: 1 }}
                 />
               </Stack>
@@ -603,7 +599,7 @@ export default function ArticulosTable() {
                 placeholder="Ej: ACEI*MOTOR, ???-001, *FILTRO*"
                 value={wildcardText}
                 onChange={handleWildcardChange}
-                size="small"
+               
                 sx={{ maxWidth: 400 }}
                 helperText="Usa * para cualquier texto, ? para un solo carácter"
                 InputProps={{

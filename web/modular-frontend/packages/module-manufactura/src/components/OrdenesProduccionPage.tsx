@@ -271,7 +271,7 @@ export default function OrdenesProduccionPage() {
           label="Estado"
           value={filter.status ?? ""}
           onChange={handleStatusFilter}
-          size="small"
+         
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -311,7 +311,6 @@ export default function OrdenesProduccionPage() {
               label="BOM (ID)"
               value={bomId}
               onChange={(e) => setBomId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -319,7 +318,6 @@ export default function OrdenesProduccionPage() {
               label="Producto (ID)"
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -327,7 +325,6 @@ export default function OrdenesProduccionPage() {
               label="Cantidad Planificada"
               value={plannedQuantity}
               onChange={(e) => setPlannedQuantity(e.target.value)}
-              size="small"
               type="number"
               fullWidth
             />
@@ -348,7 +345,6 @@ export default function OrdenesProduccionPage() {
               label="Prioridad"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              size="small"
               fullWidth
             >
               <MenuItem value="LOW">Baja</MenuItem>
@@ -359,7 +355,6 @@ export default function OrdenesProduccionPage() {
               label="Notas"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              size="small"
               fullWidth
               multiline
               rows={2}

@@ -169,7 +169,6 @@ export default function CentrosTrabajoPage() {
           setSearch(e.target.value);
           setPaginationModel((p) => ({ ...p, page: 0 }));
         }}
-        size="small"
         fullWidth
         sx={{ mb: 2 }}
       />
@@ -201,7 +200,6 @@ export default function CentrosTrabajoPage() {
               label="Codigo"
               value={formData.workCenterCode}
               onChange={(e) => handleChange("workCenterCode", e.target.value)}
-              size="small"
               fullWidth
               disabled={isEditing}
             />
@@ -209,14 +207,12 @@ export default function CentrosTrabajoPage() {
               label="Nombre"
               value={formData.workCenterName}
               onChange={(e) => handleChange("workCenterName", e.target.value)}
-              size="small"
               fullWidth
             />
             <TextField
               label="Costo por Hora"
               value={formData.costPerHour}
               onChange={(e) => handleChange("costPerHour", Number(e.target.value))}
-              size="small"
               type="number"
               fullWidth
             />
@@ -224,7 +220,6 @@ export default function CentrosTrabajoPage() {
               label="Capacidad"
               value={formData.capacity}
               onChange={(e) => handleChange("capacity", Number(e.target.value))}
-              size="small"
               type="number"
               fullWidth
             />

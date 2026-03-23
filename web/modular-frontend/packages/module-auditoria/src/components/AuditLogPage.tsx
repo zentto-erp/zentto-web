@@ -117,7 +117,7 @@ export default function AuditLogPage() {
           <FormField xs={12} sm={4} md={2}>
             <TextField
               label="Módulo"
-              size="small"
+             
               fullWidth
               value={filter.moduleName || ""}
               onChange={(e) => updateFilter("moduleName", e.target.value)}
@@ -126,7 +126,7 @@ export default function AuditLogPage() {
           <FormField xs={12} sm={4} md={2}>
             <TextField
               label="Usuario"
-              size="small"
+             
               fullWidth
               value={filter.userName || ""}
               onChange={(e) => updateFilter("userName", e.target.value)}
@@ -136,7 +136,7 @@ export default function AuditLogPage() {
             <TextField
               label="Acción"
               select
-              size="small"
+             
               fullWidth
               value={filter.actionType || ""}
               onChange={(e) => updateFilter("actionType", e.target.value)}
@@ -150,7 +150,7 @@ export default function AuditLogPage() {
           <FormField xs={12} sm={4} md={2}>
             <TextField
               label="Buscar"
-              size="small"
+             
               fullWidth
               value={filter.search || ""}
               onChange={(e) => updateFilter("search", e.target.value)}

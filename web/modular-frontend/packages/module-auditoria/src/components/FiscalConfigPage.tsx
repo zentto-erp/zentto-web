@@ -76,7 +76,7 @@ export default function FiscalConfigPage() {
           <TextField
             select
             label="País"
-            size="small"
+           
             sx={{ minWidth: 250 }}
             value={countryCode}
             onChange={(e) => setCountryCode(e.target.value)}
@@ -100,28 +100,28 @@ export default function FiscalConfigPage() {
               <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                 <TextField
                   label="Moneda"
-                  size="small"
+                 
                   value={form.currency ?? ""}
                   onChange={(e) => update("currency", e.target.value)}
                   sx={{ width: 120 }}
                 />
                 <TextField
                   label="Régimen Fiscal"
-                  size="small"
+                 
                   value={form.taxRegime ?? ""}
                   onChange={(e) => update("taxRegime", e.target.value)}
                   sx={{ width: 200 }}
                 />
                 <TextField
                   label="Código Impuesto por Defecto"
-                  size="small"
+                 
                   value={form.defaultTaxCode ?? ""}
                   onChange={(e) => update("defaultTaxCode", e.target.value)}
                   sx={{ width: 200 }}
                 />
                 <TextField
                   label="Tasa Impuesto (%)"
-                  size="small"
+                 
                   type="number"
                   value={form.defaultTaxRate ?? ""}
                   onChange={(e) => update("defaultTaxRate", Number(e.target.value))}
@@ -165,19 +165,19 @@ export default function FiscalConfigPage() {
                     <Stack direction="row" spacing={2}>
                       <TextField
                         label="Marca"
-                        size="small"
+                       
                         value={form.printerBrand ?? ""}
                         onChange={(e) => update("printerBrand", e.target.value)}
                       />
                       <TextField
                         label="Puerto"
-                        size="small"
+                       
                         value={form.printerPort ?? ""}
                         onChange={(e) => update("printerPort", e.target.value)}
                       />
                       <TextField
                         label="RIF Emisor"
-                        size="small"
+                       
                         value={form.senderRIF ?? ""}
                         onChange={(e) => update("senderRIF", e.target.value)}
                       />
@@ -202,7 +202,7 @@ export default function FiscalConfigPage() {
                         <TextField
                           label="Modo"
                           select
-                          size="small"
+                         
                           sx={{ width: 150 }}
                           value={form.verifactuMode ?? "manual"}
                           onChange={(e) => update("verifactuMode", e.target.value)}
@@ -212,13 +212,13 @@ export default function FiscalConfigPage() {
                         </TextField>
                         <TextField
                           label="NIF Emisor"
-                          size="small"
+                         
                           value={form.senderNIF ?? ""}
                           onChange={(e) => update("senderNIF", e.target.value)}
                         />
                         <TextField
                           label="Endpoint AEAT"
-                          size="small"
+                         
                           sx={{ flex: 1 }}
                           value={form.aeatEndpoint ?? ""}
                           onChange={(e) => update("aeatEndpoint", e.target.value)}
@@ -227,14 +227,14 @@ export default function FiscalConfigPage() {
                       <Stack direction="row" spacing={2}>
                         <TextField
                           label="Ruta Certificado"
-                          size="small"
+                         
                           sx={{ flex: 1 }}
                           value={form.certificatePath ?? ""}
                           onChange={(e) => update("certificatePath", e.target.value)}
                         />
                         <TextField
                           label="Password Certificado"
-                          size="small"
+                         
                           type="password"
                           value={form.certificatePassword ?? ""}
                           onChange={(e) => update("certificatePassword", e.target.value)}
@@ -250,9 +250,9 @@ export default function FiscalConfigPage() {
             <Paper variant="outlined" sx={{ p: 3 }}>
               <Typography variant="subtitle1" fontWeight={600} mb={2}>Información del Software</Typography>
               <Stack direction="row" spacing={2}>
-                <TextField label="ID Software" size="small" value={form.softwareId ?? ""} onChange={(e) => update("softwareId", e.target.value)} />
-                <TextField label="Nombre Software" size="small" value={form.softwareName ?? ""} onChange={(e) => update("softwareName", e.target.value)} />
-                <TextField label="Versión" size="small" value={form.softwareVersion ?? ""} onChange={(e) => update("softwareVersion", e.target.value)} />
+                <TextField label="ID Software" value={form.softwareId ?? ""} onChange={(e) => update("softwareId", e.target.value)} />
+                <TextField label="Nombre Software" value={form.softwareName ?? ""} onChange={(e) => update("softwareName", e.target.value)} />
+                <TextField label="Versión" value={form.softwareVersion ?? ""} onChange={(e) => update("softwareVersion", e.target.value)} />
               </Stack>
             </Paper>
           </Stack>

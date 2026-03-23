@@ -181,14 +181,12 @@ function RecurrenteFormDialog({
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               fullWidth
-              size="small"
             />
             <TextField
               select
               label="Frecuencia"
               value={form.frequency}
               onChange={(e) => setForm({ ...form, frequency: e.target.value })}
-              size="small"
               sx={{ minWidth: 160 }}
             >
               {FREQUENCY_OPTIONS.map((opt) => (
@@ -205,7 +203,6 @@ function RecurrenteFormDialog({
               value={form.concept}
               onChange={(e) => setForm({ ...form, concept: e.target.value })}
               fullWidth
-              size="small"
             />
             <DatePicker
               label="Próxima ejecución"
@@ -238,14 +235,12 @@ function RecurrenteFormDialog({
                 label="Cuenta"
                 value={line.accountCode}
                 onChange={(e) => handleLineChange(idx, "accountCode", e.target.value)}
-                size="small"
                 sx={{ width: 140 }}
               />
               <TextField
                 label="Descripcion"
                 value={line.description || ""}
                 onChange={(e) => handleLineChange(idx, "description", e.target.value)}
-                size="small"
                 sx={{ flex: 1 }}
               />
               <TextField
@@ -253,7 +248,6 @@ function RecurrenteFormDialog({
                 type="number"
                 value={line.debit || ""}
                 onChange={(e) => handleLineChange(idx, "debit", Number(e.target.value) || 0)}
-                size="small"
                 sx={{ width: 120 }}
               />
               <TextField
@@ -261,7 +255,6 @@ function RecurrenteFormDialog({
                 type="number"
                 value={line.credit || ""}
                 onChange={(e) => handleLineChange(idx, "credit", Number(e.target.value) || 0)}
-                size="small"
                 sx={{ width: 120 }}
               />
               <Tooltip title="Eliminar linea">
