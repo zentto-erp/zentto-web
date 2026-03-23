@@ -24,8 +24,10 @@ import {
   Skeleton,
   Divider,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import PivotTableChartIcon from "@mui/icons-material/PivotTableChart";
+import TableChartIcon from "@mui/icons-material/TableChart";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -307,83 +309,118 @@ function PnLByCostCenterTab() {
     return items.map((r: any, i: number) => ({ ...r, _id: i }));
   }, [data]);
 
-  const columns: GridColDef[] = [
-    { field: "costCenterCode", headerName: "Centro costo", width: 140 },
+  const columns: ZenttoColDef[] = [
+    { field: "costCenterCode", headerName: "Centro", width: 130 },
     { field: "costCenterName", headerName: "Nombre", flex: 1, minWidth: 180 },
-    {
-      field: "ingresos",
-      headerName: "Ingresos",
-      width: 140,
-      type: "number",
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-    {
-      field: "gastos",
-      headerName: "Gastos",
-      width: 140,
-      type: "number",
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-    {
-      field: "resultado",
-      headerName: "Resultado",
-      width: 140,
-      type: "number",
-      renderCell: (p) => (
-        <Typography
-          variant="body2"
-          fontWeight={600}
-          sx={{ color: (p.value ?? 0) >= 0 ? "success.main" : "error.main" }}
-        >
-          {formatCurrency(p.value ?? 0)}
-        </Typography>
-      ),
-    },
+    { field: "ingresos",  headerName: "Ingresos",  width: 150, type: "number", currency: "VES", aggregation: "sum" },
+    { field: "gastos",    headerName: "Gastos",    width: 150, type: "number", currency: "VES", aggregation: "sum" },
+    { field: "resultado", headerName: "Resultado", width: 150, type: "number", currency: "VES", aggregation: "sum" },
   ];
+
+  const filters = (
+    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+      <TextField label="Desde" type="date" size="small" InputLabelProps={{ shrink: true }}
+        value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
+      <TextField label="Hasta" type="date" size="small" InputLabelProps={{ shrink: true }}
+        value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+      <Button variant="contained" onClick={() => setRun(true)}>Generar</Button>
+    </Stack>
+  );
+
+  if (!run) return <>{filters}<Alert severity="info">Seleccione fechas y presione &quot;Generar&quot;</Alert></>;
+  if (isLoading) return <>{filters}<Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box></>;
+  if (error) return <>{filters}<Alert severity="error">Error al generar reporte</Alert></>;
 
   return (
     <Box>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <TextField
-          label="Desde"
-          type="date"
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          value={fechaDesde}
-          onChange={(e) => setFechaDesde(e.target.value)}
-        />
-        <TextField
-          label="Hasta"
-          type="date"
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          value={fechaHasta}
-          onChange={(e) => setFechaHasta(e.target.value)}
-        />
-        <Button variant="contained" onClick={() => setRun(true)}>
-          Generar
-        </Button>
-      </Stack>
+      {filters}
+      <ZenttoDataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(r) => r._id}
+        autoHeight
+        disableRowSelectionOnClick
+        showTotals
+        totalsLabel="Total"
+        showExportExcel
+        showExportCsv
+        exportFilename="pnl-centros-costo"
+        toolbarTitle="P&L por Centro de Costo"
+        mobileVisibleFields={["costCenterName", "resultado"]}
+        smExtraFields={["ingresos", "gastos"]}
+      />
+    </Box>
+  );
+}
 
-      {!run ? (
-        <Alert severity="info">Seleccione fechas y presione &quot;Generar&quot;</Alert>
-      ) : isLoading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Alert severity="error">Error al generar reporte</Alert>
-      ) : (
-        <ZenttoDataGrid
-          rows={rows}
-          columns={columns}
-          getRowId={(r) => r._id}
-          autoHeight
-          disableRowSelectionOnClick
-          mobileVisibleFields={['costCenterName', 'resultado']}
-          smExtraFields={['ingresos', 'gastos']}
-        />
-      )}
+// ─── Pivot Tab ────────────────────────────────────────────────
+
+function PivotTab() {
+  const { timeZone } = useTimezone();
+  const today = toDateOnly(new Date(), timeZone);
+  const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
+
+  const [fechaDesde, setFechaDesde] = useState(firstDay);
+  const [fechaHasta, setFechaHasta] = useState(today);
+  const [run, setRun] = useState(false);
+
+  const { data, isLoading, error } = usePnLByCostCenter(fechaDesde, fechaHasta, run);
+
+  // Transformar P&L a formato largo para el pivot:
+  // cada fila es (centro, metrica, monto) → pivot por metrica
+  const pivotRows = useMemo(() => {
+    const items: any[] = data?.data ?? data?.rows ?? [];
+    const result: any[] = [];
+    items.forEach((r, i) => {
+      result.push({ _id: `${i}_ing`, centro: r.costCenterCode, nombre: r.costCenterName, metrica: "Ingresos",  monto: r.ingresos ?? 0 });
+      result.push({ _id: `${i}_gas`, centro: r.costCenterCode, nombre: r.costCenterName, metrica: "Gastos",    monto: r.gastos ?? 0 });
+      result.push({ _id: `${i}_res`, centro: r.costCenterCode, nombre: r.costCenterName, metrica: "Resultado", monto: r.resultado ?? 0 });
+    });
+    return result;
+  }, [data]);
+
+  const pivotColumns: ZenttoColDef[] = [
+    { field: "nombre", headerName: "Centro de Costo", flex: 1, minWidth: 180 },
+    { field: "metrica", headerName: "Métrica", width: 120 },
+    { field: "monto", headerName: "Monto", width: 160, type: "number", currency: "VES", aggregation: "sum" },
+  ];
+
+  const filters = (
+    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+      <TextField label="Desde" type="date" size="small" InputLabelProps={{ shrink: true }}
+        value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
+      <TextField label="Hasta" type="date" size="small" InputLabelProps={{ shrink: true }}
+        value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+      <Button variant="contained" onClick={() => setRun(true)}>Generar</Button>
+    </Stack>
+  );
+
+  if (!run) return <>{filters}<Alert severity="info">Seleccione fechas y presione &quot;Generar&quot;</Alert></>;
+  if (isLoading) return <>{filters}<Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box></>;
+  if (error) return <>{filters}<Alert severity="error">Error al generar reporte</Alert></>;
+
+  return (
+    <Box>
+      {filters}
+      <ZenttoDataGrid
+        rows={pivotRows}
+        columns={pivotColumns}
+        getRowId={(r) => r._id}
+        autoHeight
+        disableRowSelectionOnClick
+        pivotConfig={{
+          rowField: "nombre",
+          columnField: "metrica",
+          valueField: "monto",
+          aggregation: "sum",
+          rowFieldHeader: "Centro de Costo",
+          valueFormatter: (v) => formatCurrency(v),
+        }}
+        showExportExcel
+        showExportCsv
+        exportFilename="pivot-centros-costo"
+        toolbarTitle="Pivot P&L por Centro"
+      />
     </Box>
   );
 }
@@ -455,8 +492,9 @@ export default function CentrosCostoPage() {
 
       <Paper sx={{ mb: 2 }}>
         <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
-          <Tab label="Gestion" icon={<AccountTreeIcon />} iconPosition="start" />
-          <Tab label="P&L por Centro" />
+          <Tab label="Gestión" icon={<AccountTreeIcon />} iconPosition="start" />
+          <Tab label="P&L por Centro" icon={<TableChartIcon />} iconPosition="start" />
+          <Tab label="Pivot" icon={<PivotTableChartIcon />} iconPosition="start" />
         </Tabs>
       </Paper>
 
@@ -537,6 +575,7 @@ export default function CentrosCostoPage() {
       )}
 
       {tabValue === 1 && <PnLByCostCenterTab />}
+      {tabValue === 2 && <PivotTab />}
 
       {/* Create/Edit Dialog */}
       <CentroCostoDialog
