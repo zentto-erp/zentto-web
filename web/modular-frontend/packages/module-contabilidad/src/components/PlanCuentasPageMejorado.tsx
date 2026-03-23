@@ -38,7 +38,7 @@ import {
   useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
-import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker, ZenttoDataGrid } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -101,42 +101,30 @@ function MayorAnaliticoDialog({
           />
         </Stack>
 
-        {isLoading ? (
-          <Typography>Cargando...</Typography>
-        ) : data?.rows?.length > 0 ? (
-          <Box sx={{ maxHeight: 400, overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f5f5f5" }}>
-                  <th style={{ padding: 8, textAlign: "left" }}>Fecha</th>
-                  <th style={{ padding: 8, textAlign: "left" }}>Concepto</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Debe</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Haber</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.rows.map((row: any, i: number) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: 8 }}>{row.fecha}</td>
-                    <td style={{ padding: 8 }}>{row.concepto}</td>
-                    <td style={{ padding: 8, textAlign: "right" }}>
-                      {row.debe > 0 ? row.debe.toFixed(2) : ""}
-                    </td>
-                    <td style={{ padding: 8, textAlign: "right" }}>
-                      {row.haber > 0 ? row.haber.toFixed(2) : ""}
-                    </td>
-                    <td style={{ padding: 8, textAlign: "right", fontWeight: 600 }}>
-                      {row.saldo?.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Box>
-        ) : (
-          <Alert severity="info">No hay movimientos para esta cuenta en el período seleccionado</Alert>
-        )}
+        <ZenttoDataGrid
+          rows={(data?.rows ?? []).map((row: any, i: number) => ({ id: i, ...row }))}
+          columns={[
+            { field: 'fecha', headerName: 'Fecha', width: 110 },
+            { field: 'concepto', headerName: 'Concepto', flex: 1 },
+            {
+              field: 'debe', headerName: 'Debe', width: 110, type: 'number',
+              valueFormatter: (v: any) => v > 0 ? Number(v).toFixed(2) : '',
+            },
+            {
+              field: 'haber', headerName: 'Haber', width: 110, type: 'number',
+              valueFormatter: (v: any) => v > 0 ? Number(v).toFixed(2) : '',
+            },
+            {
+              field: 'saldo', headerName: 'Saldo', width: 120, type: 'number',
+              valueFormatter: (v: any) => v != null ? Number(v).toFixed(2) : '',
+              cellClassName: 'font-semibold',
+            },
+          ]}
+          loading={isLoading}
+          autoHeight
+          hideFooter={(data?.rows?.length ?? 0) <= 100}
+          noRowsMessage="No hay movimientos para esta cuenta en el período seleccionado"
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cerrar</Button>
