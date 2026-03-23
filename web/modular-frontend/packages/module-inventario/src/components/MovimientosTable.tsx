@@ -5,15 +5,7 @@ import { useState, useCallback } from "react";
 import {
   Box,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   Paper,
-  CircularProgress,
   Chip,
   InputAdornment,
   Typography,
@@ -23,12 +15,14 @@ import {
   MenuItem,
   IconButton,
   Alert,
+  Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
-import { DatePicker } from "@zentto/shared-ui";
+import { DatePicker, ZenttoDataGrid } from "@zentto/shared-ui";
+import type { ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -50,7 +44,7 @@ export default function MovimientosTable() {
   // Article browser
   const [artSearch, setArtSearch] = useState("");
   const [selectedProductCode, setSelectedProductCode] = useState("");
-  const { data: inventario, isLoading: artLoading } = useInventarioList({ search: artSearch, limit: 20 });
+  const { data: inventario, isLoading: artLoading } = useInventarioList({ search: artSearch, limit: 100 });
   const artRows = (inventario?.rows ?? []) as Record<string, unknown>[];
 
   const debouncedArtSearch = useCallback(
@@ -77,7 +71,7 @@ export default function MovimientosTable() {
     []
   );
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string): "success" | "error" | "info" | "warning" | "default" => {
     switch (type) {
       case "ENTRADA": return "success";
       case "SALIDA": return "error";
@@ -87,15 +81,70 @@ export default function MovimientosTable() {
     }
   };
 
-  const selectArticle = (codigo: string) => {
-    setSelectedProductCode(codigo);
-    setPage(0);
-  };
+  // ─── Columnas: Panel izquierdo (Artículos) ──────────────────────────
+  const artColumns: ZenttoColDef[] = [
+    { field: "codigo", headerName: "Código", width: 110 },
+    { field: "descripcion", headerName: "Artículo", flex: 1 },
+    {
+      field: "stock", headerName: "Stock", width: 80, type: "number",
+      renderCell: (p) => (
+        <Chip
+          label={p.value as number}
+          size="small"
+          color={(p.value as number) > 0 ? "success" : "error"}
+          variant="outlined"
+        />
+      ),
+    },
+  ];
 
-  const clearArticleFilter = () => {
-    setSelectedProductCode("");
-    setPage(0);
-  };
+  const artGridRows = artRows.map((item, i) => ({
+    id: i,
+    codigo: String(item.CODIGO ?? item.ProductCode ?? ""),
+    descripcion: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? ""),
+    stock: Number(item.EXISTENCIA ?? item.Stock ?? 0),
+  }));
+
+  // ─── Columnas: Movimientos ───────────────────────────────────────────
+  const movColumns: ZenttoColDef[] = [
+    { field: "fecha", headerName: "Fecha", width: 100 },
+    { field: "codigo", headerName: "Código", width: 110 },
+    { field: "articulo", headerName: "Artículo", flex: 1, minWidth: 140 },
+    {
+      field: "tipo", headerName: "Tipo", width: 100,
+      renderCell: (p) => (
+        <Chip label={p.value as string} size="small" color={getTypeColor(p.value as string)} variant="outlined" />
+      ),
+    },
+    { field: "cantidad", headerName: "Cantidad", width: 90, type: "number", aggregation: "sum" },
+    { field: "costoUnit", headerName: "Costo Unit.", width: 120, type: "number", currency: "VES", aggregation: "avg" },
+    { field: "total", headerName: "Total", width: 120, type: "number", currency: "VES", aggregation: "sum" },
+    { field: "almacen", headerName: "Almacén", width: 130 },
+    { field: "referencia", headerName: "Referencia", width: 130 },
+    { field: "notas", headerName: "Notas", flex: 1, minWidth: 150 },
+  ];
+
+  const movGridRows = rows.map((m, i) => {
+    const whFrom = String(m.WarehouseFrom ?? "");
+    const whTo = String(m.WarehouseTo ?? "");
+    return {
+      id: i,
+      fecha: String(m.MovementDate ?? "").slice(0, 10),
+      codigo: String(m.ProductCode ?? ""),
+      articulo: String(m.ProductName ?? ""),
+      tipo: String(m.MovementType ?? ""),
+      cantidad: Number(m.Quantity ?? 0),
+      costoUnit: Number(m.UnitCost ?? 0),
+      total: Number(m.TotalCost ?? 0),
+      almacen: whFrom && whTo ? `${whFrom} → ${whTo}` : whFrom || whTo || "",
+      referencia: String(m.DocumentRef ?? ""),
+      notas: String(m.Notes ?? ""),
+      // Extra para master-detail
+      _lote: String(m.BatchNumber ?? ""),
+      _usuario: String(m.CreatedBy ?? ""),
+      _fechaCreacion: String(m.CreatedAt ?? "").slice(0, 19).replace("T", " "),
+    };
+  });
 
   return (
     <Box sx={{ p: 2 }}>
@@ -104,7 +153,7 @@ export default function MovimientosTable() {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Left: Article browser */}
+        {/* ── Panel izquierdo: Artículos ── */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
@@ -124,72 +173,35 @@ export default function MovimientosTable() {
                 ),
               }}
             />
-
-            {artLoading && (
-              <Box sx={{ textAlign: "center", py: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            )}
-
-            {!artLoading && artRows.length > 0 && (
-              <TableContainer sx={{ maxHeight: 500 }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Artículo</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Stock</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {artRows.map((item, i) => {
-                      const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
-                      const isActive = selectedProductCode === codigo;
-                      return (
-                        <TableRow
-                          key={i}
-                          hover
-                          selected={isActive}
-                          onClick={() => selectArticle(codigo)}
-                          sx={{ cursor: "pointer" }}
-                        >
-                          <TableCell sx={{ fontWeight: 500 }}>{codigo}</TableCell>
-                          <TableCell sx={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {String(item.DescripcionCompleta ?? item.DESCRIPCION ?? "")}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Chip
-                              label={Number(item.EXISTENCIA ?? item.Stock ?? 0)}
-                              size="small"
-                              color={Number(item.EXISTENCIA ?? item.Stock ?? 0) > 0 ? "success" : "error"}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            {!artLoading && !artSearch && artRows.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
-                Escriba para buscar artículos...
-              </Typography>
-            )}
+            <ZenttoDataGrid
+              gridId="inventario-articulos-browser"
+              rows={artGridRows}
+              columns={artColumns}
+              loading={artLoading}
+              hideToolbar
+              autoHeight
+              hideFooter
+              onRowClick={(p) => {
+                setSelectedProductCode(String(p.row.codigo));
+                setPage(0);
+              }}
+              getRowClassName={(p) =>
+                String(p.row.codigo) === selectedProductCode ? "Mui-selected" : ""
+              }
+              sx={{ cursor: "pointer" }}
+              noRowsMessage="Escriba para buscar artículos..."
+            />
           </Paper>
         </Grid>
 
-        {/* Right: Movements */}
+        {/* ── Panel derecho: Movimientos ── */}
         <Grid size={{ xs: 12, md: 8 }}>
-          {/* Active article filter chip */}
           {selectedProductCode && (
             <Alert
               severity="info"
               sx={{ mb: 2 }}
               action={
-                <IconButton size="small" onClick={clearArticleFilter}>
+                <IconButton size="small" onClick={() => { setSelectedProductCode(""); setPage(0); }}>
                   <ClearIcon fontSize="small" />
                 </IconButton>
               }
@@ -212,7 +224,7 @@ export default function MovimientosTable() {
                   }}
                 />
               </Grid>
-              <Grid size={{ xs: 6, sm: 2 }}>
+              <Grid size={{ xs: 12, sm: 2 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Tipo</InputLabel>
                   <Select value={movementType} label="Tipo" onChange={(e) => { setMovementType(e.target.value); setPage(0); }}>
@@ -224,99 +236,83 @@ export default function MovimientosTable() {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <DatePicker
                   label="Desde"
                   value={fechaDesde ? dayjs(fechaDesde) : null}
-                  onChange={(v) => { setFechaDesde(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
-                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                  onChange={(v) => { setFechaDesde(v ? v.format("YYYY-MM-DD") : ""); setPage(0); }}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
               </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <DatePicker
                   label="Hasta"
                   value={fechaHasta ? dayjs(fechaHasta) : null}
-                  onChange={(v) => { setFechaHasta(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
-                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                  onChange={(v) => { setFechaHasta(v ? v.format("YYYY-MM-DD") : ""); setPage(0); }}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
               </Grid>
             </Grid>
           </Paper>
 
-          {/* Tabla de movimientos */}
-          <TableContainer component={Paper}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Artículo</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Cantidad</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Costo Unit.</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Total</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Almacén</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Referencia</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Notas</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
-                      <CircularProgress size={40} />
-                    </TableCell>
-                  </TableRow>
-                ) : rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                      No hay movimientos en el rango seleccionado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((m, i) => {
-                    const type = String(m.MovementType ?? "");
-                    const whFrom = String(m.WarehouseFrom ?? "");
-                    const whTo = String(m.WarehouseTo ?? "");
-                    const warehouse = whFrom && whTo ? `${whFrom} → ${whTo}` : whFrom || whTo || "";
-
-                    return (
-                      <TableRow key={i} hover>
-                        <TableCell>{String(m.MovementDate ?? "").slice(0, 10)}</TableCell>
-                        <TableCell sx={{ fontWeight: 500 }}>{String(m.ProductCode ?? "")}</TableCell>
-                        <TableCell>{String(m.ProductName ?? "")}</TableCell>
-                        <TableCell>
-                          <Chip label={type} size="small" color={getTypeColor(type) as "success" | "error" | "info" | "warning" | "default"} variant="outlined" />
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 500 }}>{Number(m.Quantity ?? 0)}</TableCell>
-                        <TableCell align="right">{formatCurrency(Number(m.UnitCost ?? 0))}</TableCell>
-                        <TableCell align="right">{formatCurrency(Number(m.TotalCost ?? 0))}</TableCell>
-                        <TableCell>{warehouse}</TableCell>
-                        <TableCell>{String(m.DocumentRef ?? "")}</TableCell>
-                        <TableCell sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {String(m.Notes ?? "")}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {total > 0 && (
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 50, 100]}
-              component="div"
-              count={total}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={(_, p) => setPage(p)}
-              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              labelRowsPerPage="Filas por página:"
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-            />
-          )}
+          {/* Tabla de movimientos con master-detail y pivot */}
+          <ZenttoDataGrid
+            gridId="inventario-movimientos"
+            rows={movGridRows}
+            columns={movColumns}
+            loading={isLoading}
+            exportFilename="movimientos-inventario"
+            showTotals
+            defaultCurrency="VES"
+            // Paginación server-side
+            paginationMode="server"
+            rowCount={total}
+            paginationModel={{ page, pageSize: rowsPerPage }}
+            onPaginationModelChange={(m) => { setPage(m.page); setRowsPerPage(m.pageSize); }}
+            pageSizeOptions={[10, 25, 50, 100]}
+            // Master-detail: expande fila para ver lote, usuario, fecha creación
+            getDetailContent={(row) => (
+              <Box sx={{ px: 3, py: 2, bgcolor: "background.default" }}>
+                <Stack direction="row" spacing={4}>
+                  {row._lote && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Lote / Serie</Typography>
+                      <Typography variant="body2" fontWeight={600}>{String(row._lote)}</Typography>
+                    </Box>
+                  )}
+                  {row._usuario && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Registrado por</Typography>
+                      <Typography variant="body2" fontWeight={600}>{String(row._usuario)}</Typography>
+                    </Box>
+                  )}
+                  {row._fechaCreacion && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Fecha registro</Typography>
+                      <Typography variant="body2" fontWeight={600}>{String(row._fechaCreacion)}</Typography>
+                    </Box>
+                  )}
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Almacén</Typography>
+                    <Typography variant="body2" fontWeight={600}>{String(row.almacen || "—")}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Notas</Typography>
+                    <Typography variant="body2">{String(row.notas || "—")}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            )}
+            // Pivot: cantidad y total por tipo de movimiento por artículo
+            pivotConfig={{
+              rowField: "codigo",
+              columnField: "tipo",
+              valueField: "total",
+              aggregation: "sum",
+              rowFieldHeader: "Artículo",
+              valueFormatter: (v) => formatCurrency(v),
+            }}
+          />
         </Grid>
       </Grid>
     </Box>
