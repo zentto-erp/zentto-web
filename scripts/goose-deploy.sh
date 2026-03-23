@@ -34,6 +34,13 @@ if [ -f "$HOTFIX_SQL" ]; then
   echo "✓ Hotfix SQL ejecutado"
 fi
 
+# Debug: verificar funciones sec
+DEBUG_SQL="/opt/zentto/debug-sec-function.sql"
+if [ -f "$DEBUG_SQL" ]; then
+  echo "→ Debug sec functions..."
+  su -c "psql -d ${PG_DATABASE} -f ${DEBUG_SQL}" postgres 2>&1 || true
+fi
+
 echo "╔══════════════════════════════════════════╗"
 echo "║  Zentto — goose migrate up (PostgreSQL)  ║"
 echo "╚══════════════════════════════════════════╝"
