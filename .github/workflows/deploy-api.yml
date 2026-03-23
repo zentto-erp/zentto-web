@@ -8,6 +8,8 @@ on:
       - 'docker/Dockerfile.api'
       - 'docker-compose.prod.yml'
       - 'scripts/deploy-db.sh'
+      - 'scripts/goose-entrypoint.sh'
+      - 'scripts/migrate.sh'
   workflow_dispatch:
 
 concurrency:
@@ -45,7 +47,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   migrate-pg:
-    name: Run PostgreSQL migrations
+    name: Run PostgreSQL migrations (goose)
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -53,75 +55,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "web/api/sqlweb-pg,web/api/scripts"
-          target: /opt/zentto/
-          strip_components: 2
+      - name: Install goose
+        run: |
+          wget -qO /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
+          chmod +x /usr/local/bin/goose
+          goose --version
 
-      - uses: appleboy/ssh-action@v1.0.3
+      - name: Run goose migrations
         env:
           PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
           PG_USER: ${{ secrets.PG_USER }}
           PG_DATABASE: ${{ secrets.PG_DATABASE }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: PG_PASSWORD,PG_USER,PG_DATABASE
-          script: |
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          # Copiar migraciones al servidor
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ssh_key && chmod 600 /tmp/ssh_key
+          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${SSH_USER}@${SSH_HOST} "mkdir -p /opt/zentto/migrations/postgres"
+          scp -o StrictHostKeyChecking=no -i /tmp/ssh_key -r web/api/migrations/postgres/* ${SSH_USER}@${SSH_HOST}:/opt/zentto/migrations/postgres/
+
+          # Ejecutar goose en el servidor
+          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${SSH_USER}@${SSH_HOST} "
             set -e
-            # Run DDL-level changes that require superuser (via postgres)
-            echo "GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;" > /tmp/zentto_ddl.sql
-            echo 'ALTER TABLE acct."JournalEntryLine" ADD COLUMN IF NOT EXISTS "CostCenterCode" VARCHAR(20) NULL;' >> /tmp/zentto_ddl.sql
-            su -c "psql -d $PG_DATABASE -f /tmp/zentto_ddl.sql" postgres || echo "DDL grants warning (may already be applied)"
-            rm -f /tmp/zentto_ddl.sql
-            # Re-desplegar funciones acct en cada deploy (el DROP step las borra; migrations son idempotentes)
-            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct.sql" postgres \
-              || echo "[WARN] acct redeploy con advertencias (revisar si persisten errores)"
-            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_advanced.sql" postgres \
-              || echo "[WARN] acct_advanced redeploy con advertencias"
-            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_fixedassets.sql" postgres \
-              || echo "[WARN] acct_fixedassets redeploy con advertencias"
-            su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/usp_acct_templates.sql" postgres \
-              || echo "[WARN] acct_templates redeploy con advertencias"
 
-            # ── Schemas nuevos (idempotentes) ──
-            for f in 09_inventory_advanced.sql 10_logistics.sql 11_crm.sql 12_manufacturing.sql 13_fleet.sql 18_fiscal_retenciones_schema.sql; do
-              [ -f "/opt/zentto/sqlweb-pg/$f" ] && su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/$f" postgres || true
-            done
+            # Grants de schemas (requiere superuser)
+            su -c \"psql -d $PG_DATABASE -c \\\"GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;\\\"\" postgres || true
 
-            # ── ALTERs (idempotentes) ──
-            for f in alter_bank_movement_journal.sql alter_salesdocument_addresses.sql; do
-              [ -f "/opt/zentto/sqlweb-pg/includes/sp/$f" ] && su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/$f" postgres || true
-            done
+            # Instalar goose si no existe
+            if ! command -v goose &>/dev/null; then
+              wget -qO /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
+              chmod +x /usr/local/bin/goose
+            fi
 
-            # ── SPs de módulos nuevos ──
-            for f in usp_inv.sql usp_logistics.sql usp_crm.sql usp_crm_callcenter.sql usp_fleet.sql usp_mfg.sql usp_mfg_integracion.sql usp_rbac.sql usp_fiscal_retenciones.sql; do
-              [ -f "/opt/zentto/sqlweb-pg/includes/sp/$f" ] && su -c "psql -d $PG_DATABASE -f /opt/zentto/sqlweb-pg/includes/sp/$f" postgres || true
-            done
+            # Ejecutar migraciones
+            echo '╔══════════════════════════════════════════╗'
+            echo '║  Zentto — goose migrate up (PostgreSQL)  ║'
+            echo '╚══════════════════════════════════════════╝'
 
-            # ── Ownership y grants → zentto_app ──
-            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE s TEXT; BEGIN FOR s IN SELECT schema_name FROM information_schema.schemata WHERE schema_name IN ('crm','logistics','inv','mfg','fleet','fiscal','hr','cfg') LOOP EXECUTE 'ALTER SCHEMA ' || quote_ident(s) || ' OWNER TO zentto_app'; EXECUTE 'GRANT USAGE ON SCHEMA ' || quote_ident(s) || ' TO zentto_app'; EXECUTE 'GRANT ALL ON ALL TABLES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app'; EXECUTE 'GRANT ALL ON ALL SEQUENCES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app'; END LOOP; END \\\$\\\$;\"" postgres || true
-            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('crm','logistics','inv','mfg','fleet','fiscal','hr','cfg') LOOP EXECUTE 'ALTER TABLE ' || quote_ident(r.schemaname) || '.' || quote_ident(r.tablename) || ' OWNER TO zentto_app'; END LOOP; END \\\$\\\$;\"" postgres || true
-            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid::regprocedure as func FROM pg_proc p WHERE p.proname LIKE 'usp_crm_%' OR p.proname LIKE 'usp_fleet_%' OR p.proname LIKE 'usp_logistics_%' OR p.proname LIKE 'usp_mfg_%' OR p.proname LIKE 'usp_inv_%' OR p.proname LIKE 'usp_sec_%' OR p.proname LIKE 'usp_fiscal_%' OR p.proname LIKE 'usp_cfg_taxunit%' OR p.proname LIKE 'usp_bank_%' LOOP EXECUTE 'ALTER FUNCTION ' || r.func || ' OWNER TO zentto_app'; END LOOP; END \\\$\\\$;\"" postgres || true
-            # ── Ownership todas las funciones public → zentto_app (corre DESPUÉS de todos los SPs) ──
-            su -c "psql -d $PG_DATABASE -c \"DO \\\$\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' LOOP BEGIN EXECUTE 'ALTER FUNCTION ' || r.oid::regprocedure || ' OWNER TO zentto_app'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; END LOOP; END \\\$\\\$;\"" postgres || true
-            echo "✓ Schemas + SPs + ownership actualizados"
+            DATABASE_URL=\"postgres://${PG_USER}:${PG_PASSWORD}@127.0.0.1:5432/${PG_DATABASE}?sslmode=disable\"
+            goose -dir /opt/zentto/migrations/postgres postgres \"\$DATABASE_URL\" up
 
-            # ── Ejecutar run_all.sql COMPLETO (CREATE OR REPLACE — idempotente, no borra datos) ──
-            cd /opt/zentto/sqlweb-pg
-            PGPASSWORD="$PG_PASSWORD" psql -U "$PG_USER" -h 127.0.0.1 -d "$PG_DATABASE" -f run_all.sql \
-              2>&1 | grep -c "ERROR" | xargs -I{} echo "run_all.sql completado ({} warnings/errors ignorados)"
-            echo "✓ run_all.sql ejecutado — todos los SPs recreados: $(date -u)"
+            echo ''
+            echo '→ Estado de migraciones:'
+            goose -dir /opt/zentto/migrations/postgres postgres \"\$DATABASE_URL\" status
 
-            chmod +x /opt/zentto/scripts/run-pg-migrations.sh
-            PGPASSWORD="$PG_PASSWORD" /opt/zentto/scripts/run-pg-migrations.sh \
-              "$PG_USER" 127.0.0.1 "$PG_DATABASE" /opt/zentto/sqlweb-pg
-            echo "✓ Migraciones PG ejecutadas: $(date -u)"
+            # Ownership de funciones → zentto_app (post-migracion)
+            su -c \"psql -d $PG_DATABASE -c \\\"DO \\\\\\\$\\\\\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' LOOP BEGIN EXECUTE 'ALTER FUNCTION ' || r.oid::regprocedure || ' OWNER TO zentto_app'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; END LOOP; END \\\\\\\$\\\\\\\$;\\\"\" postgres || true
+
+            echo '✓ Migraciones goose completadas: $(date -u)'
+          "
+          rm -f /tmp/ssh_key
 
   deploy:
     name: Deploy API to server
