@@ -187,8 +187,8 @@ const theme = createTheme({
       styleOverrides: {
         outlined: {
           '&.MuiInputLabel-sizeSmall': {
-            // Centrar label en inputs más altos (padding 12px)
-            transform: 'translate(14px, 13px) scale(1)',
+            // Centrar label con padding 10px vertical
+            transform: 'translate(14px, 10px) scale(1)',
             '&.MuiInputLabel-shrink': {
               transform: 'translate(14px, -9px) scale(0.75)',
             },
@@ -198,6 +198,12 @@ const theme = createTheme({
     },
     MuiSelect: {
       defaultProps: { size: 'small' },
+      styleOverrides: {
+        select: {
+          // Mismo alto que TextField con padding 10px
+          padding: '10px 14px',
+        },
+      },
     },
     MuiTextField: {
       defaultProps: {
@@ -227,11 +233,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
-          backgroundColor: 'var(--mui-palette-background-paper)',
+          backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
         },
         input: {
-          // Padding más alto: ~46px total (12+22+12) vs ~40px default (8.5+23+8.5)
-          padding: '12px 14px',
+          // Padding uniforme: alineado con label transform(10px)
+          padding: '10px 14px',
         },
       },
     },
@@ -246,7 +252,7 @@ const theme = createTheme({
         inputRoot: {
           padding: '3px 14px !important',
           '& .MuiOutlinedInput-input': {
-            padding: '9px 0 !important',
+            padding: '7px 0 !important',
           },
         },
       },
