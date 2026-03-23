@@ -35,6 +35,15 @@ export { default as AcceptedMethodsManager } from './components/AcceptedMethodsM
 // MUI X re-exports (single source to avoid duplicated contexts across apps)
 export { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
+// ─── ZenttoDataGrid — componente unificado que reemplaza DataGrid en todo el proyecto ───
+// Incluye: responsive, master-detail, pivot, aggregation, column pinning, export
+export { ZenttoDataGrid } from './components/ZenttoDataGrid';
+export type { ZenttoDataGridProps, ZenttoColDef, PivotConfig, AggregationType } from './components/ZenttoDataGrid/types';
+
+// ResponsiveDataGrid → alias de ZenttoDataGrid para compatibilidad
+export { ZenttoDataGrid as ResponsiveDataGrid } from './components/ZenttoDataGrid';
+export type { ZenttoDataGridProps as ResponsiveDataGridProps } from './components/ZenttoDataGrid/types';
+
 // Help
 export { default as HelpButton } from './components/HelpButton';
 export { HELP_MAP, getHelpForPath } from './lib/help-map';

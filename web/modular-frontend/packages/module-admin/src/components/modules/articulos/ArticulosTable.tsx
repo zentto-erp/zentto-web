@@ -28,13 +28,13 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  DataGrid,
   GridColDef,
   GridPaginationModel,
   GridSortModel,
   GridRenderCellParams,
   GridActionsCellItem,
 } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -653,7 +653,7 @@ export default function ArticulosTable() {
       </Stack>
 
       {/* ===== DATA GRID ===== */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         rowCount={totalRows}
@@ -668,6 +668,7 @@ export default function ArticulosTable() {
         disableRowSelectionOnClick
         disableColumnFilter
         getRowId={(row) => row.codigo}
+        mobileVisibleFields={["codigo", "descripcionCompleta"]}
         sx={{
           flex: 1,
           minHeight: 0,

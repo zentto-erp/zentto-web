@@ -13,7 +13,6 @@ import {
   GridRowsProp,
   GridRowModesModel,
   GridRowModes,
-  DataGrid,
   GridColDef,
   GridEventListener,
   GridRowId,
@@ -23,6 +22,7 @@ import {
   GridActionsCellItem,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { Button } from "@mui/material";
 
 // Función para generar IDs únicos (reemplaza @mui/x-data-grid-generator)
@@ -322,7 +322,7 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
         },
       }}
     >
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows as any}
         columns={columnsWithActions}
         editMode="row"
@@ -357,6 +357,7 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick={!onRowClick}
         filterMode="client"
+        hideToolbar
       />
     </Box>
   );

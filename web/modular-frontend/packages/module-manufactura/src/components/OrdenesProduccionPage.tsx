@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -28,6 +29,48 @@ import {
   useCancelWorkOrder,
   type WorkOrderFilter,
 } from "../hooks/useManufactura";
+
+function OrdenDetailPanel({ row }: { row: Record<string, unknown> }) {
+  const priorityColor: Record<string, 'error' | 'warning' | 'success'> = {
+    HIGH: 'error', MEDIUM: 'warning', LOW: 'success',
+  };
+
+  const fields = [
+    { label: 'Producto', value: row.ProductName },
+    { label: 'BOM', value: row.BOMCode },
+    { label: 'Cantidad planificada', value: row.PlannedQuantity != null ? `${row.PlannedQuantity} uds` : null },
+    { label: 'Inicio planificado', value: row.PlannedStart ? String(row.PlannedStart).slice(0, 10) : null },
+    { label: 'Fin planificado', value: row.PlannedEnd ? String(row.PlannedEnd).slice(0, 10) : null },
+  ].filter(f => f.value != null && f.value !== '');
+
+  return (
+    <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+      {fields.map(f => (
+        <Box key={f.label} sx={{ minWidth: 130 }}>
+          <Typography variant="caption" color="text.secondary"
+            sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+            {f.label}
+          </Typography>
+          <Typography variant="body2" fontWeight={500} sx={{ mt: 0.25 }}>
+            {String(f.value)}
+          </Typography>
+        </Box>
+      ))}
+      <Box>
+        <Typography variant="caption" color="text.secondary"
+          sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+          Prioridad
+        </Typography>
+        <Chip
+          size="small"
+          label={String(row.Priority ?? '')}
+          color={priorityColor[String(row.Priority ?? '')] ?? 'default'}
+          sx={{ mt: 0.25 }}
+        />
+      </Box>
+    </Box>
+  );
+}
 
 const statusColors: Record<string, "default" | "info" | "success" | "error" | "warning"> = {
   DRAFT: "default",
@@ -235,7 +278,7 @@ export default function OrdenesProduccionPage() {
       </Stack>
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.WorkOrderId ?? row.Id ?? row.WorkOrderNumber ?? Math.random()}
@@ -248,6 +291,10 @@ export default function OrdenesProduccionPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['WorkOrderNumber', 'Status']}
+        smExtraFields={['ProductName', 'PlannedStart']}
+        getDetailContent={(row: any) => <OrdenDetailPanel row={row} />}
+        detailPanelHeight={110}
       />
 
       {/* Dialog: Crear Orden */}

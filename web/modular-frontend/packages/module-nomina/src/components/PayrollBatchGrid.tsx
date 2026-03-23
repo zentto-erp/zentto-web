@@ -15,13 +15,59 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useBatchGrid,
   useBatchBulkUpdate,
   type BatchGridFilter,
 } from "../hooks/useNominaBatch";
 import PayrollEmployeePanel from "./PayrollEmployeePanel";
+
+function PayrollDetailPanel({ row }: { row: Record<string, unknown> }) {
+  const formatCurr = (v: unknown) =>
+    new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v ?? 0));
+
+  const items = [
+    { label: 'Sueldo base', value: formatCurr(row.sueldoBase), color: 'text.primary' },
+    { label: 'Asignaciones', value: `+ ${formatCurr(row.totalAsignaciones)}`, color: 'success.main' },
+    { label: 'Deducciones', value: `− ${formatCurr(row.totalDeducciones)}`, color: 'error.main' },
+    { label: 'Neto a pagar', value: formatCurr(row.totalNeto), color: 'primary.main', bold: true },
+  ];
+
+  return (
+    <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+      {items.map(item => (
+        <Box key={item.label}>
+          <Typography variant="caption" color="text.secondary"
+            sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+            {item.label}
+          </Typography>
+          <Typography variant="body1" fontWeight={item.bold ? 700 : 500} color={item.color} sx={{ mt: 0.25, fontFamily: 'monospace' }}>
+            {item.value}
+          </Typography>
+        </Box>
+      ))}
+      <Box>
+        <Typography variant="caption" color="text.secondary"
+          sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+          Depto.
+        </Typography>
+        <Typography variant="body2" fontWeight={500} sx={{ mt: 0.25 }}>
+          {String(row.department ?? '—')}
+        </Typography>
+      </Box>
+      {row.lineCount && (
+        <Box>
+          <Typography variant="caption" color="text.secondary"
+            sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+            Conceptos
+          </Typography>
+          <Chip size="small" label={`${row.lineCount} conceptos`} color="primary" variant="outlined" sx={{ mt: 0.25 }} />
+        </Box>
+      )}
+    </Box>
+  );
+}
 
 interface Props {
   batchId: number;
@@ -215,7 +261,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
 
       {/* Grid */}
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, borderRadius: 2, overflow: "hidden" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={grid.isLoading}
@@ -227,6 +273,10 @@ export default function PayrollBatchGrid({ batchId }: Props) {
           disableRowSelectionOnClick
           getRowId={(r) => r.employeeCode || r.employeeId || Math.random()}
           onRowClick={(p) => setSelectedEmployee(p.row.employeeCode)}
+          mobileVisibleFields={['employeeCode', 'employeeName']}
+          smExtraFields={['totalNeto', 'department']}
+          getDetailContent={(row: any) => <PayrollDetailPanel row={row} />}
+          detailPanelHeight={110}
           sx={{
             "& .MuiDataGrid-row": {
               cursor: "pointer",

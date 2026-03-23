@@ -15,7 +15,8 @@ import {
   Chip,
   CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -125,13 +126,15 @@ export default function UtilidadesPage() {
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.id ?? r.fiscalYear}
+          mobileVisibleFields={['fiscalYear', 'totalAmount']}
+          smExtraFields={['status', 'totalEmployees']}
         />
       </Paper>
 
@@ -183,13 +186,17 @@ export default function UtilidadesPage() {
                   <strong>Empleados:</strong> {summary.data?.totalEmployees ?? summaryRows.length}
                 </Typography>
               </Stack>
-              <DataGrid
+              <ZenttoDataGrid
                 rows={summaryRows.map((r: Record<string, unknown>, i: number) => ({ ...r, _id: i }))}
                 columns={summaryColumns}
                 autoHeight
                 getRowId={(r) => r._id}
                 disableRowSelectionOnClick
                 pageSizeOptions={[25, 50]}
+                hideToolbar
+                mobileDetailDrawer={false}
+                density="compact"
+                mobileVisibleFields={['employeeName', 'amount']}
               />
             </Box>
           )}

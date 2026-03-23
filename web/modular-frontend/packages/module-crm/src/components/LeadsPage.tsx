@@ -21,7 +21,7 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useLeadsList,
   usePipelinesList,
@@ -237,7 +237,7 @@ export default function LeadsPage() {
 
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           getRowId={(r) => r.LeadId}
@@ -251,6 +251,8 @@ export default function LeadsPage() {
           autoHeight
           disableRowSelectionOnClick
           sx={{ border: "none" }}
+          mobileVisibleFields={['ContactName', 'Status']}
+          smExtraFields={['CompanyName', 'StageName']}
         />
       </Paper>
 

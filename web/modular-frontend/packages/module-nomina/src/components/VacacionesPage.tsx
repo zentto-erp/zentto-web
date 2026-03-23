@@ -15,6 +15,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import IconButton from "@mui/material/IconButton";
@@ -107,13 +108,15 @@ export default function VacacionesPage() {
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r._id}
+          mobileVisibleFields={['cedula', 'nombreEmpleado']}
+          smExtraFields={['inicio', 'total']}
         />
       </Paper>
 

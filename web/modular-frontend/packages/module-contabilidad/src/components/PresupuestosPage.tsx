@@ -24,7 +24,8 @@ import {
   Skeleton,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -307,7 +308,7 @@ function PresupuestoDetailView({
               </Typography>
             </Box>
           ) : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={editLines.map((l, i) => ({ ...l, _id: i }))}
               columns={lineColumns}
               getRowId={(r) => r._id}
@@ -325,6 +326,9 @@ function PresupuestoDetailView({
               sx={{
                 "& .monospace-cell": { fontFamily: "monospace" },
               }}
+              hideToolbar
+              mobileDetailDrawer={false}
+              mobileVisibleFields={['accountCode', 'accountName']}
             />
           )}
         </Paper>
@@ -499,13 +503,15 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
 
           {/* Data Table */}
           <Paper sx={{ borderRadius: 2 }}>
-            <DataGrid
+            <ZenttoDataGrid
               rows={rows}
               columns={columns}
               getRowId={(r) => r._id}
               autoHeight
               disableRowSelectionOnClick
               sx={{ "& .monospace-cell": { fontFamily: "monospace" } }}
+              mobileVisibleFields={['accountCode', 'variance']}
+              smExtraFields={['accountName', 'variancePercent']}
             />
           </Paper>
         </>
@@ -668,7 +674,7 @@ export default function PresupuestosPage() {
       )}
 
       <Paper sx={{ borderRadius: 2 }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={presupuestos}
           columns={columns}
           getRowId={(r) => r.BudgetId ?? r.id ?? r._id}
@@ -680,6 +686,8 @@ export default function PresupuestosPage() {
           }}
           pageSizeOptions={[10, 25]}
           sx={{ border: 0 }}
+          mobileVisibleFields={['name', 'fiscalYear']}
+          smExtraFields={['status', 'total']}
         />
       </Paper>
 

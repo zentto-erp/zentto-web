@@ -11,8 +11,9 @@ import {
   Alert,
   InputAdornment,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
 import SearchIcon from "@mui/icons-material/Search";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { usePlanCuentas } from "../hooks/useContabilidad";
 
 export default function PlanCuentasPage() {
@@ -55,12 +56,14 @@ export default function PlanCuentasPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             pageSizeOptions={[25, 50, 100]}
             disableRowSelectionOnClick
             getRowId={(r) => r.codCuenta ?? r.cod_cuenta ?? r.COD_CUENTA ?? Math.random()}
+            mobileVisibleFields={['codCuenta', 'descripcion']}
+            smExtraFields={['tipo']}
           />
         )}
       </Paper>

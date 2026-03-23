@@ -28,7 +28,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useActivosFijosList,
   useCategoriasList,
@@ -226,7 +226,7 @@ export default function ActivosFijosListPage() {
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -240,6 +240,8 @@ export default function ActivosFijosListPage() {
             disableRowSelectionOnClick
             getRowId={(row) => row.AssetId}
             sx={{ border: "none" }}
+            mobileVisibleFields={['Description', 'Status']}
+            smExtraFields={['AcquisitionCost', 'CategoryName']}
           />
         </Paper>
       </Box>

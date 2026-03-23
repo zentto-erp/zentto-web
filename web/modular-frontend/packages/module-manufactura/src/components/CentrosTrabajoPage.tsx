@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import {
@@ -174,7 +175,7 @@ export default function CentrosTrabajoPage() {
       />
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.WorkCenterId ?? row.Id ?? row.WorkCenterCode ?? Math.random()}
@@ -187,6 +188,8 @@ export default function CentrosTrabajoPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['WorkCenterName', 'IsActive']}
+        smExtraFields={['CostPerHour', 'Capacity']}
       />
 
       {/* Dialog: Crear/Editar */}

@@ -24,6 +24,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -526,7 +527,7 @@ export default function AsientosRecurrentesPage() {
 
       {/* Grid */}
       <Paper sx={{ borderRadius: 2 }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={templates}
           columns={columns}
           getRowId={(r) => r.RecurringEntryId}
@@ -538,6 +539,8 @@ export default function AsientosRecurrentesPage() {
           }}
           pageSizeOptions={[10, 25]}
           sx={{ border: 0 }}
+          mobileVisibleFields={['name', 'nextExecution']}
+          smExtraFields={['frequency', 'active']}
         />
       </Paper>
 

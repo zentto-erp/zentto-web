@@ -22,7 +22,8 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -437,7 +438,7 @@ export default function ConciliacionWizard() {
                     Movimientos del Extracto Bancario
                   </Typography>
                   <Box sx={{ height: 350, bgcolor: "grey.50", borderRadius: 1 }}>
-                    <DataGrid
+                    <ZenttoDataGrid
                       rows={movimientosExtracto}
                       columns={[
                         { field: "fecha", headerName: "Fecha", width: 110 },
@@ -451,6 +452,9 @@ export default function ConciliacionWizard() {
                       ]}
                       hideFooter
                       density="compact"
+                      hideToolbar
+                      mobileDetailDrawer={false}
+                      mobileVisibleFields={["fecha", "descripcion"]}
                     />
                   </Box>
                 </Grid>
@@ -465,11 +469,14 @@ export default function ConciliacionWizard() {
                         <CircularProgress size={32} />
                       </Stack>
                     ) : (
-                      <DataGrid
+                      <ZenttoDataGrid
                         rows={noConciliados}
                         columns={colsSistema}
                         hideFooter
                         density="compact"
+                        hideToolbar
+                        mobileDetailDrawer={false}
+                        mobileVisibleFields={["Fecha", "Concepto"]}
                       />
                     )}
                   </Box>

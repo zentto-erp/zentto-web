@@ -26,7 +26,7 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useRetencionesList,
   useGenerarRetencion,
@@ -166,7 +166,7 @@ function ComprobantesTab() {
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -180,6 +180,8 @@ function ComprobantesTab() {
             disableRowSelectionOnClick
             getRowId={(row) => row.VoucherId}
             sx={{ border: "none" }}
+            mobileVisibleFields={['VoucherDate', 'ThirdPartyName']}
+            smExtraFields={['WithholdingType', 'WithholdingAmount']}
           />
         </Paper>
       </Box>

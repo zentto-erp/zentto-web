@@ -26,7 +26,8 @@ import {
   LinearProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -192,7 +193,7 @@ function DrillDownDialog({
         ) : rows.length === 0 ? (
           <Alert severity="info">No hay movimientos para esta cuenta en el periodo</Alert>
         ) : (
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             getRowId={(r) => r._id}
@@ -202,6 +203,10 @@ function DrillDownDialog({
               pagination: { paginationModel: { pageSize: 15 } },
             }}
             pageSizeOptions={[15, 50]}
+            hideToolbar
+            mobileDetailDrawer={false}
+            density="compact"
+            mobileVisibleFields={['fecha', 'concepto']}
           />
         )}
       </DialogContent>
@@ -547,12 +552,14 @@ export default function ReportesAvanzadosPage() {
         {/* Tab 0: Libro Diario */}
         <TabPanel value={tab} index={0}>
           {!run ? renderNotRun() : libroDiario.isLoading ? renderLoading() : libroDiario.error ? renderError(libroDiario.error) : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={(libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroDiarioCols}
               getRowId={(r) => r._id}
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
+              mobileVisibleFields={['fecha', 'concepto']}
+              smExtraFields={['codCuenta', 'debe']}
             />
           )}
         </TabPanel>
@@ -560,12 +567,14 @@ export default function ReportesAvanzadosPage() {
         {/* Tab 1: Libro Mayor */}
         <TabPanel value={tab} index={1}>
           {!run ? renderNotRun() : libroMayor.isLoading ? renderLoading() : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={(libroMayor.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroMayorCols}
               getRowId={(r) => r._id}
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
+              mobileVisibleFields={['codCuenta', 'saldo']}
+              smExtraFields={['descripcion', 'debe']}
             />
           )}
         </TabPanel>
@@ -573,12 +582,14 @@ export default function ReportesAvanzadosPage() {
         {/* Tab 2: Balance de Comprobacion */}
         <TabPanel value={tab} index={2}>
           {!run ? renderNotRun() : balance.isLoading ? renderLoading() : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={(balance.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={balanceCols}
               getRowId={(r) => r._id}
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
+              mobileVisibleFields={['codCuenta', 'saldo']}
+              smExtraFields={['descripcion', 'totalDebe']}
             />
           )}
         </TabPanel>
@@ -882,7 +893,7 @@ export default function ReportesAvanzadosPage() {
 
               {agingSubTab === 0 && (
                 agingCxC.isLoading ? renderLoading() : agingCxC.error ? renderError(agingCxC.error) : (
-                  <DataGrid
+                  <ZenttoDataGrid
                     rows={((agingCxC.data?.data ?? agingCxC.data?.rows ?? []) as AgingBucket[]).map(
                       (r, i) => ({ ...r, _id: i })
                     )}
@@ -890,13 +901,15 @@ export default function ReportesAvanzadosPage() {
                     getRowId={(r) => r._id}
                     autoHeight
                     disableRowSelectionOnClick
+                    mobileVisibleFields={['entity', 'entityName']}
+                    smExtraFields={['current', 'bucket30']}
                   />
                 )
               )}
 
               {agingSubTab === 1 && (
                 agingCxP.isLoading ? renderLoading() : agingCxP.error ? renderError(agingCxP.error) : (
-                  <DataGrid
+                  <ZenttoDataGrid
                     rows={((agingCxP.data?.data ?? agingCxP.data?.rows ?? []) as AgingBucket[]).map(
                       (r, i) => ({ ...r, _id: i })
                     )}
@@ -904,6 +917,8 @@ export default function ReportesAvanzadosPage() {
                     getRowId={(r) => r._id}
                     autoHeight
                     disableRowSelectionOnClick
+                    mobileVisibleFields={['entity', 'entityName']}
+                    smExtraFields={['current', 'bucket30']}
                   />
                 )
               )}
@@ -1008,12 +1023,14 @@ export default function ReportesAvanzadosPage() {
                       </Grid>
                     </Grid>
 
-                    <DataGrid
+                    <ZenttoDataGrid
                       rows={rows}
                       columns={taxCols}
                       getRowId={(r) => r._id}
                       autoHeight
                       disableRowSelectionOnClick
+                      mobileVisibleFields={['taxType', 'taxName']}
+                      smExtraFields={['taxableBase', 'taxAmount']}
                     />
                   </>
                 );

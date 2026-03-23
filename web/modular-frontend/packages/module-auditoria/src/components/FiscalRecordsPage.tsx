@@ -9,7 +9,7 @@ import {
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
@@ -96,7 +96,7 @@ export default function FiscalRecordsPage() {
         </Stack>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -110,6 +110,8 @@ export default function FiscalRecordsPage() {
             disableRowSelectionOnClick
             getRowId={(row) => row.FiscalRecordId}
             sx={{ border: "none" }}
+            mobileVisibleFields={['CreatedAt', 'InvoiceNumber']}
+            smExtraFields={['InvoiceType', 'AuthorityStatus']}
           />
         </Paper>
       </Box>

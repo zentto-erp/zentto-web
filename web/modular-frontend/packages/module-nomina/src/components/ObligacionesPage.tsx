@@ -20,7 +20,8 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
 import CheckIcon from "@mui/icons-material/Check";
@@ -207,13 +208,15 @@ export default function ObligacionesPage() {
         </Stack>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={oblRows}
             columns={oblColumns}
             loading={oblLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.id ?? r.code}
+            mobileVisibleFields={['code', 'name']}
+            smExtraFields={['frequency', 'countryCode']}
           />
         </Paper>
       </TabPanel>
@@ -243,13 +246,15 @@ export default function ObligacionesPage() {
         </Stack>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={filRows}
             columns={filColumns}
             loading={filLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.id ?? `${r.obligationCode}-${r.period}`}
+            mobileVisibleFields={['period', 'obligationName']}
+            smExtraFields={['totalAmount', 'status']}
           />
         </Paper>
       </TabPanel>

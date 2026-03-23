@@ -17,6 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import PrintIcon from "@mui/icons-material/Print";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -149,7 +150,7 @@ export default function ReportesContablesPage() {
           ) : libroDiario.error ? (
             <Alert severity="error">Error al cargar libro diario: {String(libroDiario.error)}</Alert>
           ) : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={(libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroDiarioCols}
               getRowId={(r) => r._id}
@@ -159,6 +160,8 @@ export default function ReportesContablesPage() {
                 "& .monospace-cell": { fontFamily: "monospace" },
                 flex: 1,
               }}
+              mobileVisibleFields={['fecha', 'concepto']}
+              smExtraFields={['codCuenta', 'debe']}
             />
           )}
         </TabPanel>
@@ -170,12 +173,14 @@ export default function ReportesContablesPage() {
           ) : libroMayor.isLoading ? (
             <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
           ) : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={(libroMayor.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroMayorCols}
               getRowId={(r) => r._id}
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
+              mobileVisibleFields={['codCuenta', 'saldo']}
+              smExtraFields={['descripcion', 'debe']}
             />
           )}
         </TabPanel>
@@ -187,12 +192,14 @@ export default function ReportesContablesPage() {
           ) : balance.isLoading ? (
             <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
           ) : (
-            <DataGrid
+            <ZenttoDataGrid
               rows={(balance.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={balanceCols}
               getRowId={(r) => r._id}
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
+              mobileVisibleFields={['codCuenta', 'saldo']}
+              smExtraFields={['descripcion', 'totalDebe']}
             />
           )}
         </TabPanel>

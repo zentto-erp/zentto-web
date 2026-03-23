@@ -15,8 +15,8 @@ import {
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import PrintIcon from "@mui/icons-material/Print";
-import { ContextActionHeader } from "@zentto/shared-ui";
 import { toDateOnly, formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useFiscalRecords } from "../hooks/useAuditoria";
@@ -157,31 +157,37 @@ export default function AuditoriaReportesPage() {
         ) : (
           <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
             {tab === 0 && (
-              <DataGrid
+              <ZenttoDataGrid
                 rows={moduleRows}
                 columns={moduleColumns}
                 disableRowSelectionOnClick
                 hideFooter={moduleRows.length <= 25}
                 sx={{ border: "none" }}
+                mobileVisibleFields={['moduleName', 'total']}
+                smExtraFields={['creates', 'updates']}
               />
             )}
             {tab === 1 && (
-              <DataGrid
+              <ZenttoDataGrid
                 rows={userRows}
                 columns={userColumns}
                 disableRowSelectionOnClick
                 hideFooter={userRows.length <= 25}
                 sx={{ border: "none" }}
+                mobileVisibleFields={['userName', 'total']}
+                smExtraFields={['creates', 'updates']}
               />
             )}
             {tab === 2 && (
-              <DataGrid
+              <ZenttoDataGrid
                 rows={fiscalQuery.data?.data ?? []}
                 columns={fiscalColumns}
                 getRowId={(r) => r.FiscalRecordId}
                 disableRowSelectionOnClick
                 hideFooter={(fiscalQuery.data?.data ?? []).length <= 25}
                 sx={{ border: "none" }}
+                mobileVisibleFields={['CreatedAt', 'InvoiceNumber']}
+                smExtraFields={['InvoiceType', 'AuthorityStatus']}
               />
             )}
           </Paper>

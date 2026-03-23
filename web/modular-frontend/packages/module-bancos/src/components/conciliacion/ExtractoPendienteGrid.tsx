@@ -2,6 +2,7 @@
 
 import { Box, Paper, Typography, IconButton, Tooltip, Stack } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowSelectionModel } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import LinkIcon from "@mui/icons-material/Link";
 import { formatCurrency } from "@zentto/shared-api";
 
@@ -69,7 +70,7 @@ export default function ExtractoPendienteGrid({
       </Box>
 
       {hasConciliacion && extracto.length > 0 ? (
-        <DataGrid
+        <ZenttoDataGrid
           rows={extracto}
           columns={columns}
           getRowId={(r) => r.ID ?? r.id ?? Math.random()}
@@ -87,6 +88,8 @@ export default function ExtractoPendienteGrid({
             pagination: { paginationModel: { pageSize: 5 } },
           }}
           pageSizeOptions={[5, 10]}
+          mobileVisibleFields={['Fecha', 'Monto']}
+          smExtraFields={['Descripcion', 'Tipo']}
         />
       ) : (
         <Box sx={{ p: 3, textAlign: "center" }}>

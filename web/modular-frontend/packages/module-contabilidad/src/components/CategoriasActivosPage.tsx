@@ -25,7 +25,7 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useCategoriasList,
   useUpsertCategoria,
@@ -171,7 +171,7 @@ export default function CategoriasActivosPage() {
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -179,6 +179,8 @@ export default function CategoriasActivosPage() {
             disableRowSelectionOnClick
             getRowId={(row) => row.CategoryId}
             sx={{ border: "none" }}
+            mobileVisibleFields={['CategoryName', 'DefaultDepreciationMethod']}
+            smExtraFields={['DefaultUsefulLifeMonths', 'CountryCode']}
           />
         </Paper>
       </Box>

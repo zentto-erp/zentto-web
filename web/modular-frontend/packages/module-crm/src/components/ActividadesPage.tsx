@@ -25,7 +25,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useActivitiesList,
   useCreateActivity,
@@ -196,7 +196,7 @@ export default function ActividadesPage() {
 
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           getRowId={(r) => r.ActivityId}
@@ -209,6 +209,8 @@ export default function ActividadesPage() {
           autoHeight
           disableRowSelectionOnClick
           sx={{ border: "none" }}
+          mobileVisibleFields={['Subject', 'ActivityType']}
+          smExtraFields={['DueDate', 'IsCompleted']}
         />
       </Paper>
 

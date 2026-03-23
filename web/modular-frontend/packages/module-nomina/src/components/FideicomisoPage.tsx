@@ -20,6 +20,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -128,13 +129,15 @@ export default function FideicomisoPage() {
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.id ?? `${r.employeeCode}-${r.quarter}`}
+          mobileVisibleFields={['employeeCode', 'employeeName']}
+          smExtraFields={['balance', 'quarter']}
         />
       </Paper>
 

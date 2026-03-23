@@ -24,6 +24,7 @@ import {
   Collapse,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -154,13 +155,15 @@ export default function ConceptosPage() {
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`}
+          mobileVisibleFields={['codigo', 'nombre']}
+          smExtraFields={['tipo', 'clase']}
         />
       </Paper>
 

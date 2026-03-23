@@ -12,7 +12,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -21,6 +21,8 @@ import {
   Stack,
   Paper,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import DataGrid, { Column, Action } from '../../common/DataGrid';
@@ -30,6 +32,9 @@ import { Cliente } from '@zentto/shared-api/types';
 
 export default function ClientesTable() {
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const crud = useCrudGeneric<Cliente>('clientes');
   const { data, isLoading } = crud.list();
 
@@ -48,8 +53,8 @@ export default function ClientesTable() {
       client.rif.includes(searchTerm)
   );
 
-  // Columnas
-  const columns: Column<Cliente>[] = [
+  // Columnas — se filtran según el breakpoint para responsividad en móvil
+  const allColumns: Column<Cliente>[] = [
     { accessor: 'codigo', header: 'Código', sortable: true, width: '80px' },
     { accessor: 'nombre', header: 'Nombre', sortable: true },
     { accessor: 'rif', header: 'RIF', sortable: true, width: '100px' },
@@ -67,6 +72,17 @@ export default function ClientesTable() {
       width: '100px',
     },
   ];
+
+  // Móvil: solo código y nombre. Tablet: agrega rif y estado. Desktop: todas.
+  const mobileFields: (keyof Cliente)[] = ['codigo', 'nombre'];
+  const tabletFields: (keyof Cliente)[] = ['codigo', 'nombre', 'rif', 'estado'];
+
+  const columns = useMemo<Column<Cliente>[]>(() => {
+    if (isMobile) return allColumns.filter((c) => mobileFields.includes(c.accessor));
+    if (isTablet) return allColumns.filter((c) => tabletFields.includes(c.accessor));
+    return allColumns;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, isTablet]);
 
   // Actions
   const actions: Action<Cliente>[] = [

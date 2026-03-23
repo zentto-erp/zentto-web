@@ -30,7 +30,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, useToast } from "@zentto/shared-ui";
+import { ContextActionHeader, useToast, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useCajaChicaBoxes,
   useCreateCajaChicaBox,
@@ -226,7 +226,7 @@ export default function CajaChicaPage() {
               <LocalAtmIcon sx={{ mr: 1, verticalAlign: "middle", fontSize: 20 }} />
               Cajas Chicas
             </Typography>
-            <DataGrid
+            <ZenttoDataGrid
               rows={boxes}
               columns={colsBoxes}
               loading={boxesQuery.isLoading}
@@ -236,6 +236,8 @@ export default function CajaChicaPage() {
               hideFooter
               disableRowSelectionOnClick
               sx={{ minHeight: 350 }}
+              mobileVisibleFields={['Name', 'CurrentBalance']}
+              smExtraFields={['Status']}
             />
           </Paper>
         </Grid>
@@ -328,7 +330,7 @@ export default function CajaChicaPage() {
                 <Typography variant="subtitle1" fontWeight="bold" mb={1}>
                   Gastos de la Sesión
                 </Typography>
-                <DataGrid
+                <ZenttoDataGrid
                   rows={expenses}
                   columns={colsExpenses}
                   loading={expensesQuery.isLoading}
@@ -337,6 +339,8 @@ export default function CajaChicaPage() {
                   hideFooter
                   disableRowSelectionOnClick
                   sx={{ minHeight: 300 }}
+                  mobileVisibleFields={['CreatedAt', 'Amount']}
+                  smExtraFields={['Category', 'Description']}
                 />
               </Paper>
             </Stack>

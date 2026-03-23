@@ -22,7 +22,8 @@ import {
   CircularProgress,
   Menu,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -244,7 +245,7 @@ export default function EmpleadosPage() {
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
@@ -255,6 +256,8 @@ export default function EmpleadosPage() {
           pageSizeOptions={[25, 50, 100]}
           disableRowSelectionOnClick
           getRowId={(r) => r.CEDULA ?? r.cedula ?? r.EmployeeCode ?? Math.random()}
+          mobileVisibleFields={['cedula', 'nombre']}
+          smExtraFields={['cargo', 'grupo']}
         />
       </Paper>
 
@@ -461,7 +464,7 @@ export default function EmpleadosPage() {
               return <Typography color="text.secondary" sx={{ py: 2 }}>No se encontraron registros de nómina para este empleado.</Typography>;
             }
             return (
-              <DataGrid
+              <ZenttoDataGrid
                 rows={hRows}
                 columns={[
                   { field: "nomina", headerName: "Nómina", width: 120 },
@@ -482,6 +485,11 @@ export default function EmpleadosPage() {
                 getRowId={(r) => `${r.nomina}-${r.fechaInicio ?? Math.random()}`}
                 pageSizeOptions={[10, 25]}
                 initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+                hideToolbar
+                mobileDetailDrawer={false}
+                density="compact"
+                mobileVisibleFields={['nomina', 'netoAPagar']}
+                smExtraFields={['fechaInicio', 'estado']}
               />
             );
           })()}

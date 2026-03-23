@@ -21,6 +21,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -203,7 +204,7 @@ export default function ExamenesMedicosPage() {
       </Stack>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
@@ -211,6 +212,8 @@ export default function ExamenesMedicosPage() {
           disableRowSelectionOnClick
           getRowId={(r) => r.id ?? `${r.employeeCode}-${r.examDate}`}
           getRowClassName={(params) => isOverdue(params.row.nextDueDate) ? "row-overdue" : ""}
+          mobileVisibleFields={['employeeName', 'type']}
+          smExtraFields={['examDate', 'nextDueDate']}
           sx={{
             "& .row-overdue": {
               backgroundColor: "rgba(211, 47, 47, 0.04)",

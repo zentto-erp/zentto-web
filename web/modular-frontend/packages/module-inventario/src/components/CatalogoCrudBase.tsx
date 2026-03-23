@@ -21,7 +21,6 @@ import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Close';
 import {
-  DataGrid,
   GridActionsCellItem,
   GridColDef,
   GridEventListener,
@@ -36,6 +35,7 @@ import {
   GridToolbarFilterButton,
   GridToolbarQuickFilter,
 } from '@mui/x-data-grid';
+import { ZenttoDataGrid } from '@zentto/shared-ui';
 import { ContextActionHeader } from '@zentto/shared-ui';
 
 export type CatalogField = {
@@ -582,7 +582,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
             </Box>
 
             <Box sx={{ width: '100%', minHeight: 420 }}>
-              <DataGrid
+              <ZenttoDataGrid
                 rows={localRows}
                 columns={columnsWithActions}
                 loading={listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending}
@@ -606,6 +606,12 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
                   console.error('Error al actualizar fila', error);
                 }}
                 disableRowSelectionOnClick
+                mobileVisibleFields={
+                  columnsWithActions
+                    .filter((c) => c.type !== 'actions')
+                    .slice(0, 2)
+                    .map((c) => c.field)
+                }
               />
             </Box>
           </Stack>

@@ -15,7 +15,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -260,7 +261,7 @@ export default function ViajesPage() {
       </Stack>
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.TripId ?? row.Id ?? Math.random()}
@@ -273,6 +274,8 @@ export default function ViajesPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['TripNumber', 'VehiclePlate']}
+        smExtraFields={['Status', 'DepartureDate']}
       />
 
       {/* Dialog: Nuevo Viaje */}

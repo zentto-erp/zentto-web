@@ -8,7 +8,6 @@ import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Close';
 import {
-  DataGrid,
   GridActionsCellItem,
   GridColDef,
   GridEventListener,
@@ -24,6 +23,7 @@ import {
   GridToolbarFilterButton,
   GridToolbarQuickFilter,
 } from '@mui/x-data-grid';
+import { ZenttoDataGrid } from '@zentto/shared-ui';
 
 type GridRow = Record<string, unknown>;
 
@@ -236,7 +236,7 @@ export default function EditableDataGrid({
       )}
 
       <Box sx={{ width: '100%', minHeight: 420 }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={localRows}
           columns={columnsWithActions}
           loading={loading}
@@ -268,6 +268,7 @@ export default function EditableDataGrid({
             console.error('Error al actualizar fila', error);
           }}
           disableRowSelectionOnClick
+          hideToolbar
         />
       </Box>
     </Stack>

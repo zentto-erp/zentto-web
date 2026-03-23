@@ -18,17 +18,70 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
 import BlockIcon from "@mui/icons-material/Block";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useAsientosList,
   useAsientoDetalle,
   useAnularAsiento,
   type AsientoFilter,
 } from "../hooks/useContabilidad";
+
+function AsientoDetailPanel({ asientoId }: { asientoId: number }) {
+  const detalle = useAsientoDetalle(asientoId);
+
+  if (detalle.isLoading) {
+    return (
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <CircularProgress size={16} />
+        <Typography variant="caption" color="text.secondary">Cargando detalle...</Typography>
+      </Box>
+    );
+  }
+
+  const rows = (detalle.data?.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }));
+
+  const cols: ZenttoColDef[] = [
+    { field: 'codCuenta', headerName: 'Cuenta', width: 120 },
+    { field: 'descripcion', headerName: 'Descripción', flex: 1, minWidth: 180 },
+    { field: 'debe', headerName: 'Debe', width: 130, type: 'number',
+      aggregation: 'sum',
+      renderCell: (p: any) => p.value ? formatCurrency(p.value) : '-' },
+    { field: 'haber', headerName: 'Haber', width: 130, type: 'number',
+      aggregation: 'sum',
+      renderCell: (p: any) => p.value ? formatCurrency(p.value) : '-' },
+    { field: 'centroCosto', headerName: 'C. Costo', width: 100 },
+  ];
+
+  return (
+    <Box sx={{ px: 2, py: 1.5, bgcolor: 'transparent' }}>
+      <Stack direction="row" spacing={3} sx={{ mb: 1, px: 0.5 }}>
+        <Typography variant="caption" color="text.secondary">
+          Concepto: <strong>{detalle.data?.cabecera?.concepto ?? '—'}</strong>
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Estado: <strong>{detalle.data?.cabecera?.estado ?? '—'}</strong>
+        </Typography>
+      </Stack>
+      <ZenttoDataGrid
+        rows={rows}
+        columns={cols}
+        getRowId={(r: any) => r._id}
+        hideToolbar
+        mobileDetailDrawer={false}
+        density="compact"
+        hideFooter={rows.length < 5}
+        autoHeight
+        showTotals
+        totalsLabel="Totales"
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+      />
+    </Box>
+  );
+}
 
 export default function AsientosListPage() {
   const router = useRouter();
@@ -131,7 +184,7 @@ export default function AsientosListPage() {
         </Stack>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -143,6 +196,10 @@ export default function AsientosListPage() {
             disableRowSelectionOnClick
             getRowId={(row) => row.asientoId ?? row.id ?? row.Id}
             sx={{ border: 'none' }}
+            mobileVisibleFields={['fecha', 'concepto']}
+            smExtraFields={['estado', 'totalDebe']}
+            getDetailContent={(row: any) => <AsientoDetailPanel asientoId={row.asientoId ?? row.id} />}
+            detailPanelHeight="auto"
           />
         </Paper>
       </Box>
@@ -162,7 +219,7 @@ export default function AsientosListPage() {
                 <strong>Fecha:</strong> {detalle.data.cabecera?.fecha} &nbsp;|&nbsp;
                 <strong>Estado:</strong> {detalle.data.cabecera?.estado}
               </Typography>
-              <DataGrid
+              <ZenttoDataGrid
                 rows={(detalle.data.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }))}
                 columns={[
                   { field: "codCuenta", headerName: "Cuenta", width: 120 },
@@ -175,6 +232,10 @@ export default function AsientosListPage() {
                 getRowId={(r) => r._id}
                 disableRowSelectionOnClick
                 hideFooter
+                hideToolbar
+                mobileDetailDrawer={false}
+                density="compact"
+                mobileVisibleFields={['codCuenta', 'debe']}
               />
             </Box>
           ) : (

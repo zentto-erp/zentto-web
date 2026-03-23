@@ -28,7 +28,7 @@ import SendIcon from "@mui/icons-material/Send";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useDeclaracionesList,
   useCalcularDeclaracion,
@@ -227,7 +227,7 @@ export default function DeclaracionesPage() {
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -241,6 +241,8 @@ export default function DeclaracionesPage() {
             disableRowSelectionOnClick
             getRowId={(row) => row.DeclarationId}
             sx={{ border: "none" }}
+            mobileVisibleFields={['DeclarationType', 'PeriodCode']}
+            smExtraFields={['Status', 'NetPayable']}
           />
         </Paper>
       </Box>

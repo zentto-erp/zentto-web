@@ -6,6 +6,7 @@ import {
   DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
 
@@ -58,7 +59,7 @@ export default function UnidadTributariaPage() {
         </TextField>
       </Stack>
 
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         loading={isLoading}
@@ -75,6 +76,8 @@ export default function UnidadTributariaPage() {
         sx={{ "& .MuiDataGrid-row": { cursor: "pointer" } }}
         initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
         pageSizeOptions={[10, 25]}
+        mobileVisibleFields={['CountryCode', 'UnitValue']}
+        smExtraFields={['TaxYear', 'EffectiveDate']}
       />
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>

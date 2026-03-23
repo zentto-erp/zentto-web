@@ -8,6 +8,7 @@ import {
   Checkbox, FormGroup, Divider, InputAdornment,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { ZenttoDataGrid } from '@zentto/shared-ui';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -152,7 +153,7 @@ export default function UsuariosPage() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>Error al cargar usuarios</Alert>}
 
       <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
@@ -161,6 +162,8 @@ export default function UsuariosPage() {
           initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
           disableRowSelectionOnClick
           sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+          mobileVisibleFields={['Cod_Usuario', 'Nombre']}
+          smExtraFields={['Tipo']}
         />
       </Box>
 

@@ -15,7 +15,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -224,7 +225,7 @@ export default function RecepcionMercanciaPage() {
       </Stack>
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.ReceiptId ?? row.Id ?? row.ReceiptNumber ?? Math.random()}
@@ -237,6 +238,8 @@ export default function RecepcionMercanciaPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['ReceiptNumber', 'SupplierName']}
+        smExtraFields={['Status', 'ReceiptDate']}
       />
 
       {/* Dialog: Nueva Recepcion */}

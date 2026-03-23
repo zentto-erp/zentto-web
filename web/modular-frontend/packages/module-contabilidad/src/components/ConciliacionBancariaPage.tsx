@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -263,7 +264,7 @@ export default function ConciliacionBancariaPage() {
                 Asientos contables
               </Typography>
             </Box>
-            <DataGrid
+            <ZenttoDataGrid
               rows={asientos}
               columns={entryCols}
               getRowId={(r) => r.JournalEntryId ?? r.id ?? Math.random()}
@@ -274,6 +275,8 @@ export default function ConciliacionBancariaPage() {
                 pagination: { paginationModel: { pageSize: 5 } },
               }}
               pageSizeOptions={[5, 10]}
+              mobileVisibleFields={['EntryDate', 'Concept']}
+              smExtraFields={['TotalDebit', 'TotalCredit']}
             />
           </Paper>
         </Grid>

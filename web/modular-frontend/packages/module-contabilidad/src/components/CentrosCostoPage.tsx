@@ -25,6 +25,7 @@ import {
   Divider,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -373,12 +374,14 @@ function PnLByCostCenterTab() {
       ) : error ? (
         <Alert severity="error">Error al generar reporte</Alert>
       ) : (
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           getRowId={(r) => r._id}
           autoHeight
           disableRowSelectionOnClick
+          mobileVisibleFields={['costCenterName', 'resultado']}
+          smExtraFields={['ingresos', 'gastos']}
         />
       )}
     </Box>

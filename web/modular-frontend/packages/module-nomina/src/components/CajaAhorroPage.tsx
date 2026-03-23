@@ -16,7 +16,8 @@ import {
   Tab,
   Tabs,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import IconButton from "@mui/material/IconButton";
@@ -159,13 +160,15 @@ export default function CajaAhorroPage() {
           />
         </Stack>
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={savingsRows}
             columns={savingsColumns}
             loading={savingsLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.id ?? r.employeeCode}
+            mobileVisibleFields={['employeeCode', 'employeeName']}
+            smExtraFields={['balance', 'status']}
           />
         </Paper>
       </TabPanel>
@@ -180,13 +183,15 @@ export default function CajaAhorroPage() {
           />
         </Stack>
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={loanRows}
             columns={loanColumns}
             loading={loansLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.id ?? `${r.employeeCode}-${r.amount}`}
+            mobileVisibleFields={['employeeCode', 'employeeName']}
+            smExtraFields={['amount', 'status']}
           />
         </Paper>
       </TabPanel>

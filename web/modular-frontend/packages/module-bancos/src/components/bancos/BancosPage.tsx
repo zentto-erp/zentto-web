@@ -17,7 +17,7 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useToast } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useBancosList,
   useCreateBanco,
@@ -156,7 +156,7 @@ export default function BancosPage() {
       </Stack>
 
       {/* Grid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         loading={isLoading}
@@ -171,6 +171,8 @@ export default function BancosPage() {
         disableRowSelectionOnClick
         getRowId={(r) => r.Nombre ?? r.NOMBRE ?? Math.random()}
         sx={{ minHeight: 400 }}
+        mobileVisibleFields={['Nombre', 'Telefonos']}
+        smExtraFields={['Contacto']}
       />
 
       {/* Create / Edit Dialog */}

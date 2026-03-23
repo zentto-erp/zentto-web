@@ -13,7 +13,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import {
@@ -165,7 +166,7 @@ export default function TransportistasPage() {
       />
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.CarrierId ?? row.Id ?? row.CarrierCode ?? Math.random()}
@@ -178,6 +179,8 @@ export default function TransportistasPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['CarrierCode', 'CarrierName']}
+        smExtraFields={['IsActive', 'Phone']}
       />
 
       {/* Dialog: Crear/Editar */}

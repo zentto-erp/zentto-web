@@ -18,7 +18,8 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockIcon from "@mui/icons-material/Lock";
@@ -34,6 +35,73 @@ import {
 import NominaBatchWizard from "./NominaBatchWizard";
 
 type NominaDetalleItem = Record<string, unknown>;
+
+function NominaDetailPanel({ nomina, cedula }: { nomina: string; cedula: string }) {
+  const detalle = useNominaDetalle(nomina, cedula);
+
+  if (detalle.isLoading) {
+    return (
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <CircularProgress size={16} />
+        <Typography variant="caption" color="text.secondary">Cargando conceptos...</Typography>
+      </Box>
+    );
+  }
+
+  const rows = (detalle.data?.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }));
+
+  const cols: ZenttoColDef[] = [
+    { field: 'concepto', headerName: 'Concepto', flex: 1, minWidth: 200 },
+    { field: 'tipo', headerName: 'Tipo', width: 110,
+      renderCell: (p: any) => (
+        <Chip
+          label={p.value}
+          size="small"
+          color={p.value === 'ASIGNACION' ? 'success' : p.value === 'DEDUCCION' ? 'error' : 'default'}
+          variant="outlined"
+        />
+      ),
+    },
+    { field: 'monto', headerName: 'Monto', width: 150, type: 'number',
+      aggregation: 'sum',
+      renderCell: (p: any) => (
+        <Typography
+          variant="body2"
+          fontWeight={600}
+          color={p.row?.tipo === 'DEDUCCION' ? 'error.main' : 'success.main'}
+        >
+          {formatCurrency(p.value ?? 0)}
+        </Typography>
+      ),
+    },
+  ];
+
+  return (
+    <Box sx={{ px: 2, py: 1.5 }}>
+      <Stack direction="row" spacing={3} sx={{ mb: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          Empleado: <strong>{detalle.data?.cabecera?.nombre ?? '—'}</strong>
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Período: <strong>{detalle.data?.cabecera?.fechaInicio ? String(detalle.data.cabecera.fechaInicio).slice(0, 10) : '—'} — {detalle.data?.cabecera?.fechaHasta ? String(detalle.data.cabecera.fechaHasta).slice(0, 10) : '—'}</strong>
+        </Typography>
+      </Stack>
+      <ZenttoDataGrid
+        rows={rows}
+        columns={cols}
+        getRowId={(r: any) => r._id}
+        hideToolbar
+        mobileDetailDrawer={false}
+        density="compact"
+        hideFooter={rows.length < 5}
+        autoHeight
+        showTotals
+        totalsLabel="Neto"
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+      />
+    </Box>
+  );
+}
 
 export default function NominasPage() {
   const [filter, setFilter] = useState<NominaFilter>({ page: 1, limit: 25 });
@@ -163,13 +231,17 @@ export default function NominasPage() {
         </Stack>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => `${r.nomina}-${r.cedula}-${r.fechaInicio ?? Math.random()}`}
+            mobileVisibleFields={['cedula', 'nombreEmpleado']}
+            smExtraFields={['totalNeto', 'cerrada']}
+            getDetailContent={(row: any) => <NominaDetailPanel nomina={row.nomina} cedula={row.cedula} />}
+            detailPanelHeight="auto"
           />
         </Paper>
 
@@ -192,7 +264,7 @@ export default function NominasPage() {
                 <Typography variant="body2" mb={2}>
                   <strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}
                 </Typography>
-                <DataGrid
+                <ZenttoDataGrid
                   rows={((detalle.data.detalle ?? []) as NominaDetalleItem[]).map((d, i: number) => ({ ...d, _id: i }))}
                   columns={[
                     { field: "concepto", headerName: "Concepto", flex: 1 },
@@ -203,6 +275,10 @@ export default function NominasPage() {
                   getRowId={(r) => r._id}
                   disableRowSelectionOnClick
                   hideFooter
+                  hideToolbar
+                  mobileDetailDrawer={false}
+                  density="compact"
+                  mobileVisibleFields={['concepto', 'monto']}
                 />
               </Box>
             ) : (

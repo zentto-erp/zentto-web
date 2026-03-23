@@ -15,7 +15,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -25,6 +26,33 @@ import {
   useUpdateVehicle,
   type VehicleFilter,
 } from "../hooks/useFlota";
+
+function VehiculoDetailPanel({ row }: { row: Record<string, unknown> }) {
+  const fields = [
+    { label: 'VIN / Chasis', value: row.VIN },
+    { label: 'Color', value: row.Color },
+    { label: 'Combustible', value: row.FuelType },
+    { label: 'Kilometraje', value: row.CurrentMileage != null ? `${Number(row.CurrentMileage).toLocaleString('es')} km` : null },
+    { label: 'Conductor asignado', value: row.AssignedDriverName },
+    { label: 'Notas', value: row.Notes },
+  ].filter(f => f.value != null && f.value !== '');
+
+  return (
+    <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+      {fields.map(f => (
+        <Box key={f.label} sx={{ minWidth: 150 }}>
+          <Typography variant="caption" color="text.secondary"
+            sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+            {f.label}
+          </Typography>
+          <Typography variant="body2" fontWeight={500} sx={{ mt: 0.25 }}>
+            {String(f.value)}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 const statusColors: Record<string, "success" | "warning" | "default"> = {
   ACTIVE: "success",
@@ -258,7 +286,7 @@ export default function VehiculosPage() {
       </Stack>
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.VehicleId ?? row.Id ?? Math.random()}
@@ -271,6 +299,10 @@ export default function VehiculosPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['VehiclePlate', 'Brand']}
+        smExtraFields={['VehicleType', 'Status']}
+        getDetailContent={(row: any) => <VehiculoDetailPanel row={row} />}
+        detailPanelHeight={120}
       />
 
       {/* Dialog: Crear/Editar Vehiculo */}

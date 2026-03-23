@@ -23,11 +23,11 @@ import {
   Chip,
 } from "@mui/material";
 import {
-  DataGrid,
   GridColDef,
   GridRowModel,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
 import SaveIcon from "@mui/icons-material/Save";
@@ -404,7 +404,7 @@ export default function NuevoAsientoPage() {
           </Stack>
 
           <Box sx={{ height: 300, mb: 2 }}>
-            <DataGrid
+            <ZenttoDataGrid
               rows={lineas}
               columns={columns}
               editMode="cell"
@@ -413,6 +413,9 @@ export default function NuevoAsientoPage() {
               hideFooter
               disableRowSelectionOnClick
               getRowId={(r) => r.id}
+              hideToolbar
+              mobileDetailDrawer={false}
+              mobileVisibleFields={["codCuenta", "descripcion"]}
             />
           </Box>
 

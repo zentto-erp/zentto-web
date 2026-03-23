@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useInflationIndices,
   useUpsertInflationIndex,
@@ -231,7 +231,7 @@ export default function InflacionAjustePage() {
               </Button>
             </Stack>
             <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2 }}>
-              <DataGrid
+              <ZenttoDataGrid
                 rows={indicesRows}
                 columns={indicesColumns}
                 loading={indicesQuery.isLoading}
@@ -239,6 +239,7 @@ export default function InflacionAjustePage() {
                 disableRowSelectionOnClick
                 getRowId={(row) => row.InflationIndexId ?? row.PeriodCode ?? row.id}
                 sx={{ border: "none" }}
+                mobileVisibleFields={['PeriodCode', 'IndexValue']}
               />
             </Box>
           </TabPanel>
@@ -269,7 +270,7 @@ export default function InflacionAjustePage() {
               </Alert>
             )}
             <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2 }}>
-              <DataGrid
+              <ZenttoDataGrid
                 rows={clasificacionRows}
                 columns={clasificacionColumns}
                 loading={clasificacionQuery.isLoading}
@@ -282,6 +283,8 @@ export default function InflacionAjustePage() {
                   setClasNewValue(row.Classification);
                 }}
                 sx={{ border: "none", cursor: "pointer" }}
+                mobileVisibleFields={['AccountCode', 'Classification']}
+                smExtraFields={['AccountName', 'AccountType']}
               />
             </Box>
           </TabPanel>
@@ -340,13 +343,15 @@ export default function InflacionAjustePage() {
             )}
             <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2 }}>
               {calcPreviewRows.length > 0 ? (
-                <DataGrid
+                <ZenttoDataGrid
                   rows={calcPreviewRows}
                   columns={calcPreviewColumns}
                   pageSizeOptions={[25, 50]}
                   disableRowSelectionOnClick
                   getRowId={(row) => row.AccountCode ?? row.AccountId ?? row.id}
                   sx={{ border: "none" }}
+                  mobileVisibleFields={['AccountCode', 'AdjustmentAmount']}
+                  smExtraFields={['AccountName', 'HistoricalBalance']}
                 />
               ) : (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 200 }}>
@@ -361,7 +366,7 @@ export default function InflacionAjustePage() {
           {/* ─── Tab 3: Historial ──────────────────────────── */}
           <TabPanel value={tab} index={3}>
             <Box sx={{ flex: 1, minHeight: 0, p: 2 }}>
-              <DataGrid
+              <ZenttoDataGrid
                 rows={historialRows}
                 columns={historialColumns}
                 loading={historialQuery.isLoading}
@@ -369,6 +374,8 @@ export default function InflacionAjustePage() {
                 disableRowSelectionOnClick
                 getRowId={(row) => row.InflationAdjustmentId ?? row.id}
                 sx={{ border: "none" }}
+                mobileVisibleFields={['PeriodCode', 'Status']}
+                smExtraFields={['FiscalYear', 'TotalAdjustment']}
               />
             </Box>
           </TabPanel>

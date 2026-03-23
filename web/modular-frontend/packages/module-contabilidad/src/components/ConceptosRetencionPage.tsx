@@ -6,6 +6,7 @@ import {
   DialogTitle, DialogContent, DialogActions, Alert,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
 
@@ -100,7 +101,7 @@ export default function ConceptosRetencionPage() {
           onChange={(e) => setFilter({ ...filter, search: e.target.value || undefined })} />
       </Stack>
 
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         loading={isLoading}
@@ -110,6 +111,8 @@ export default function ConceptosRetencionPage() {
         sx={{ "& .MuiDataGrid-row": { cursor: "pointer" } }}
         initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
         pageSizeOptions={[25, 50]}
+        mobileVisibleFields={['Description', 'RetentionType']}
+        smExtraFields={['Rate', 'CountryCode']}
       />
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

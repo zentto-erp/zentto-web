@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
@@ -148,7 +148,7 @@ export default function AuditLogPage() {
 
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
+          <ZenttoDataGrid
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -162,6 +162,8 @@ export default function AuditLogPage() {
             disableRowSelectionOnClick
             getRowId={(row) => row.AuditLogId}
             sx={{ border: "none" }}
+            mobileVisibleFields={['CreatedAt', 'ActionType']}
+            smExtraFields={['UserName', 'ModuleName']}
           />
         </Paper>
       </Box>

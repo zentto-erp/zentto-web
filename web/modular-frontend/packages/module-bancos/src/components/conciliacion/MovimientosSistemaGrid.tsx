@@ -2,6 +2,7 @@
 
 import { Box, Paper, Typography, CircularProgress, Chip } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowSelectionModel } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingIcon from "@mui/icons-material/Pending";
@@ -84,7 +85,7 @@ export default function MovimientosSistemaGrid({
           <CircularProgress />
         </Box>
       ) : (
-        <DataGrid
+        <ZenttoDataGrid
           rows={movimientos}
           columns={columns}
           getRowId={(r) => r.ID ?? r.id ?? Math.random()}
@@ -103,6 +104,8 @@ export default function MovimientosSistemaGrid({
             pagination: { paginationModel: { pageSize: 10 } },
           }}
           pageSizeOptions={[10, 25]}
+          mobileVisibleFields={['Fecha', 'Monto']}
+          smExtraFields={['Concepto', 'Estado']}
         />
       )}
     </Paper>

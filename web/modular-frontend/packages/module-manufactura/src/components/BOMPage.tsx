@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
@@ -239,7 +240,7 @@ export default function BOMPage() {
       </Stack>
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.BOMId ?? row.Id ?? row.BOMCode ?? Math.random()}
@@ -252,6 +253,8 @@ export default function BOMPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['BOMName', 'Status']}
+        smExtraFields={['ProductName', 'TotalCost']}
       />
 
       {/* Dialog: Crear BOM */}

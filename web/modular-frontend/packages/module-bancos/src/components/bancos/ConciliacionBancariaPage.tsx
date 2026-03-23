@@ -21,7 +21,7 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockIcon from "@mui/icons-material/Lock";
@@ -29,7 +29,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useRouter } from "next/navigation";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { useToast } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid } from "@zentto/shared-ui";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,
@@ -263,7 +263,7 @@ export default function ConciliacionBancariaPage() {
 
       {/* DataGrid principal */}
       <Paper sx={{ p: 0 }}>
-        <DataGrid
+        <ZenttoDataGrid
           rows={rows}
           columns={columns}
           loading={isLoading}
@@ -275,6 +275,8 @@ export default function ConciliacionBancariaPage() {
           disableRowSelectionOnClick
           getRowId={(r) => r.ID ?? Math.random()}
           sx={{ minHeight: 400 }}
+          mobileVisibleFields={['Nro_Cta', 'Estado']}
+          smExtraFields={['Fecha_Desde', 'Diferencia']}
         />
       </Paper>
 
@@ -309,26 +311,32 @@ export default function ConciliacionBancariaPage() {
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="subtitle2" gutterBottom>Movimientos del Sistema</Typography>
               <Box sx={{ height: 350 }}>
-                <DataGrid
+                <ZenttoDataGrid
                   rows={movSistema}
                   columns={colsMovSistema}
                   density="compact"
                   hideFooter
                   disableRowSelectionOnClick
                   getRowId={(r) => r.id ?? r.ID ?? r.Mov_ID ?? Math.random()}
+                  hideToolbar
+                  mobileDetailDrawer={false}
+                  mobileVisibleFields={['Fecha', 'Monto']}
                 />
               </Box>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="subtitle2" gutterBottom>Extracto Pendiente</Typography>
               <Box sx={{ height: 350 }}>
-                <DataGrid
+                <ZenttoDataGrid
                   rows={extractoPendiente}
                   columns={colsExtracto}
                   density="compact"
                   hideFooter
                   disableRowSelectionOnClick
                   getRowId={(r) => r.id ?? r.ID ?? r.Extracto_ID ?? Math.random()}
+                  hideToolbar
+                  mobileDetailDrawer={false}
+                  mobileVisibleFields={['Fecha', 'Monto']}
                 />
               </Box>
             </Grid>
@@ -339,7 +347,7 @@ export default function ConciliacionBancariaPage() {
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2" gutterBottom>Asientos Contables Vinculados</Typography>
               <Box sx={{ height: 200 }}>
-                <DataGrid
+                <ZenttoDataGrid
                   rows={asientosVinculados}
                   columns={[
                     { field: "EntryDate", headerName: "Fecha", width: 110, valueGetter: (v: any) => typeof v === "string" ? v.slice(0, 10) : v },
@@ -352,6 +360,9 @@ export default function ConciliacionBancariaPage() {
                   hideFooter
                   disableRowSelectionOnClick
                   getRowId={(r) => r.JournalEntryId ?? Math.random()}
+                  hideToolbar
+                  mobileDetailDrawer={false}
+                  mobileVisibleFields={['EntryDate', 'TotalDebit']}
                 />
               </Box>
             </Box>

@@ -13,7 +13,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/es";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
 
 const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "default"> = {
@@ -147,7 +147,7 @@ export default function CuentasBancariasPage() {
             <Typography variant="subtitle1" fontWeight="bold" mb={1}>
               Cuentas
             </Typography>
-            <DataGrid
+            <ZenttoDataGrid
               rows={cuentas}
               columns={colsCuentas}
               loading={loadingCtas}
@@ -160,6 +160,8 @@ export default function CuentasBancariasPage() {
                 minHeight: 400,
                 "& .MuiDataGrid-row.Mui-selected": { bgcolor: "action.selected" },
               }}
+              mobileVisibleFields={['Nro_Cta', 'Saldo']}
+              smExtraFields={['BancoNombre']}
             />
           </Paper>
         </Grid>
@@ -206,7 +208,7 @@ export default function CuentasBancariasPage() {
               )}
             </Stack>
 
-            <DataGrid
+            <ZenttoDataGrid
               rows={movs}
               columns={colsMovimientos}
               loading={loadingMovs}
@@ -219,6 +221,8 @@ export default function CuentasBancariasPage() {
               getRowId={(r) => r.id ?? r.ID ?? Math.random()}
               density="compact"
               sx={{ minHeight: 400 }}
+              mobileVisibleFields={['Fecha', 'Monto']}
+              smExtraFields={['Tipo', 'Beneficiario']}
             />
           </Paper>
         </Grid>

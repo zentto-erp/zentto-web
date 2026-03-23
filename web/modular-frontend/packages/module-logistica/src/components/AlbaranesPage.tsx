@@ -15,7 +15,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { GridColDef } from "@mui/x-data-grid";
+import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -29,6 +30,48 @@ import {
   useDeliverDeliveryNote,
   type DeliveryFilter,
 } from "../hooks/useLogistica";
+
+function AlbaranDetailPanel({ row }: { row: Record<string, unknown> }) {
+  const statusColors: Record<string, 'default' | 'info' | 'warning' | 'primary' | 'success' | 'error'> = {
+    DRAFT: 'default', CONFIRMED: 'info', PICKING: 'warning',
+    PACKED: 'primary', DISPATCHED: 'info', DELIVERED: 'success', VOIDED: 'error',
+  };
+
+  const fields = [
+    { label: 'Nº Doc. Venta', value: row.SalesDocumentNumber },
+    { label: 'Transportista', value: row.CarrierName },
+    { label: 'Entregado a', value: row.DeliveredToName },
+    { label: 'Fecha', value: row.DeliveryDate ? String(row.DeliveryDate).slice(0, 10) : null },
+  ].filter(f => f.value != null && f.value !== '');
+
+  return (
+    <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+      {fields.map(f => (
+        <Box key={f.label} sx={{ minWidth: 140 }}>
+          <Typography variant="caption" color="text.secondary"
+            sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+            {f.label}
+          </Typography>
+          <Typography variant="body2" fontWeight={500} sx={{ mt: 0.25 }}>
+            {String(f.value)}
+          </Typography>
+        </Box>
+      ))}
+      <Box>
+        <Typography variant="caption" color="text.secondary"
+          sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+          Estado
+        </Typography>
+        <Chip
+          size="small"
+          label={String(row.Status ?? '')}
+          color={statusColors[String(row.Status ?? '')] ?? 'default'}
+          sx={{ mt: 0.25, fontWeight: 600 }}
+        />
+      </Box>
+    </Box>
+  );
+}
 
 interface DeliveryLine {
   productCode: string;
@@ -263,7 +306,7 @@ export default function AlbaranesPage() {
       </Stack>
 
       {/* DataGrid */}
-      <DataGrid
+      <ZenttoDataGrid
         rows={rows}
         columns={columns}
         getRowId={(row) => row.DeliveryId ?? row.Id ?? row.DeliveryNumber ?? Math.random()}
@@ -276,6 +319,10 @@ export default function AlbaranesPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={['DeliveryNumber', 'CustomerName']}
+        smExtraFields={['Status', 'DeliveryDate']}
+        getDetailContent={(row: any) => <AlbaranDetailPanel row={row} />}
+        detailPanelHeight={100}
       />
 
       {/* Dialog: Nuevo Albaran */}
