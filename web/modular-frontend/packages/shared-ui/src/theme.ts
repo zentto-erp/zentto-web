@@ -176,14 +176,25 @@ const theme = createTheme({
         },
       },
     },
-    // Inputs: size small global (label centrado correctamente) + padding extra para altura ~44px
-    // size='medium' desplaza el label a translateY(16px) diseñado para 56px → se ve mal con inputs cortos
-    // size='small' usa translateY(8.5px) que centra perfectamente en inputs de 40-44px
+    // Inputs: size small global + padding 12px → altura ~46px uniforme (TextField, Select, DatePicker)
+    // Label no-shrink reposicionado a translateY(13px) para centrar en el nuevo padding
+    // Fondo blanco explícito en OutlinedInput para que DatePickers no hereden el gris de la página
     MuiFormControl: {
       defaultProps: { size: 'small' },
     },
     MuiInputLabel: {
       defaultProps: { size: 'small' },
+      styleOverrides: {
+        outlined: {
+          '&.MuiInputLabel-sizeSmall': {
+            // Centrar label en inputs más altos (padding 12px)
+            transform: 'translate(14px, 13px) scale(1)',
+            '&.MuiInputLabel-shrink': {
+              transform: 'translate(14px, -9px) scale(0.75)',
+            },
+          },
+        },
+      },
     },
     MuiSelect: {
       defaultProps: { size: 'small' },
@@ -215,6 +226,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
+          backgroundColor: 'var(--mui-palette-background-paper)',
+        },
+        input: {
+          // Padding más alto: ~46px total (12+22+12) vs ~40px default (8.5+23+8.5)
+          padding: '12px 14px',
         },
       },
     },

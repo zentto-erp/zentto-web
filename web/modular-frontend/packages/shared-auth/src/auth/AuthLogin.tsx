@@ -271,15 +271,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                   placeholder="Ingresa tu usuario"
                   autoComplete="username"
                   disabled={isSubmitting}
-                  sx={{
-                    '& .MuiOutlinedInput-input': {
-                      py: 1.75,
-                      px: 2,
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderRadius: 2,
-                    },
-                  }}
+              
                 />
                 {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
               </FormControl>
@@ -327,18 +319,8 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                   placeholder="Contraseña"
                   autoComplete="current-password"
                   disabled={isSubmitting}
-                  sx={{
-                    '& .MuiOutlinedInput-input': {
-                      py: 1.75,
-                      px: 2,
-                      '&::-ms-reveal, &::-ms-clear': { display: 'none' },
-                      '&::-webkit-credentials-auto-fill-button, &::-webkit-clear-button, &::-webkit-textfield-decoration-container': { display: 'none' },
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderRadius: 2,
-                    },
-                    'input::-ms-reveal': { display: 'none' },
-                  }}
+                 
+                 
                   endAdornment={
                     field.value ? (
                       <InputAdornment position="end">

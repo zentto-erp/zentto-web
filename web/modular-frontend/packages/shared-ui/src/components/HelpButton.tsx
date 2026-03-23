@@ -40,19 +40,17 @@ export default function HelpButton() {
         onClose={() => setAnchorEl(null)}
         slotProps={{ paper: { sx: { minWidth: 300, maxWidth: 360 } } }}
       >
-        {help && (
-          <>
-            <Box sx={{ px: 2, py: 1.5 }}>
-              <Typography variant="subtitle2" fontWeight={700} color="primary">
-                {help.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {help.description}
-              </Typography>
-            </Box>
-            <Divider />
-          </>
-        )}
+        {help ? [
+          <Box key="help-box" sx={{ px: 2, py: 1.5 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="primary">
+              {help.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {help.description}
+            </Typography>
+          </Box>,
+          <Divider key="help-divider" />,
+        ] : null}
 
         <MenuItem
           onClick={() => {
