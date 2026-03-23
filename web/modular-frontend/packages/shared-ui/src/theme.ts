@@ -176,6 +176,16 @@ const theme = createTheme({
         },
       },
     },
+    // size="small" global — aplica a TextField Y a FormControl+InputLabel+Select directos
+    MuiFormControl: {
+      defaultProps: { size: 'small' },
+    },
+    MuiInputLabel: {
+      defaultProps: { size: 'small' },
+    },
+    MuiSelect: {
+      defaultProps: { size: 'small' },
+    },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
