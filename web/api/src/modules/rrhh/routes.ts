@@ -58,6 +58,11 @@ const obligationFields: Record<string, string> = {
   frequency: "FilingFrequency", entity: "InstitutionName",
   description: "Notes", isActive: "IsActive",
 };
+const savingsFields: Record<string, string> = {
+  id: "SavingsFundId", employeeCode: "EmployeeCode", employeeName: "EmployeeName",
+  contributionPct: "EmployeeContribution", employerMatchPct: "EmployerMatch",
+  balance: "CurrentBalance", status: "Status", enrollmentDate: "EnrollmentDate",
+};
 
 const router = Router();
 
@@ -250,7 +255,7 @@ router.get("/caja-ahorro", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json(result);
+    res.json({ ...result, rows: mapRows(result.rows, savingsFields) });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

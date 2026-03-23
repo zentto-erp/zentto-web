@@ -1,0 +1,92 @@
+-- +goose Up
+-- Nuclear drop ALL overloads of document template functions to prevent "not unique" errors
+
+DO $do$
+DECLARE _oid OID;
+BEGIN
+  FOR _oid IN
+    SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname IN (
+      'usp_hr_documenttemplate_list', 'usp_hr_documenttemplate_get', 'usp_hr_documenttemplate_save'
+    )
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+  END LOOP;
+END $do$;
+
+-- Recreate with correct types
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(
+    p_company_id INT, p_country_code VARCHAR DEFAULT NULL, p_template_type VARCHAR DEFAULT NULL
+)
+RETURNS TABLE(
+    "TemplateId" BIGINT, "TemplateCode" VARCHAR, "TemplateName" VARCHAR,
+    "TemplateType" VARCHAR, "CountryCode" VARCHAR, "PayrollCode" VARCHAR,
+    "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN, "UpdatedAt" TIMESTAMP
+)
+LANGUAGE plpgsql AS $fn$
+BEGIN
+    RETURN QUERY
+    SELECT t."TemplateId", t."TemplateCode"::VARCHAR, t."TemplateName"::VARCHAR,
+           t."TemplateType"::VARCHAR, t."CountryCode"::VARCHAR, t."PayrollCode"::VARCHAR,
+           t."IsDefault", t."IsSystem", t."IsActive", t."UpdatedAt"
+    FROM hr."DocumentTemplate" t
+    WHERE t."CompanyId" = p_company_id AND t."IsActive" = TRUE
+      AND (p_country_code IS NULL OR t."CountryCode" = p_country_code)
+      AND (p_template_type IS NULL OR t."TemplateType" = p_template_type)
+    ORDER BY t."CountryCode", t."TemplateType", t."TemplateName";
+END;
+$fn$;
+
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(
+    p_company_id INT, p_template_code VARCHAR
+)
+RETURNS TABLE(
+    "TemplateId" BIGINT, "TemplateCode" VARCHAR, "TemplateName" VARCHAR,
+    "TemplateType" VARCHAR, "CountryCode" VARCHAR, "PayrollCode" VARCHAR,
+    "ContentMD" TEXT, "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN,
+    "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
+)
+LANGUAGE plpgsql AS $fn$
+BEGIN
+    RETURN QUERY
+    SELECT t."TemplateId", t."TemplateCode"::VARCHAR, t."TemplateName"::VARCHAR,
+           t."TemplateType"::VARCHAR, t."CountryCode"::VARCHAR, t."PayrollCode"::VARCHAR,
+           t."ContentMD", t."IsDefault", t."IsSystem", t."IsActive", t."CreatedAt", t."UpdatedAt"
+    FROM hr."DocumentTemplate" t
+    WHERE t."CompanyId" = p_company_id AND t."TemplateCode" = p_template_code;
+END;
+$fn$;
+
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
+    p_company_id INT, p_template_code VARCHAR, p_template_name VARCHAR,
+    p_template_type VARCHAR, p_country_code VARCHAR, p_content_md TEXT,
+    p_payroll_code VARCHAR DEFAULT NULL, p_is_default BOOLEAN DEFAULT FALSE,
+    OUT p_resultado INT, OUT p_mensaje TEXT
+)
+LANGUAGE plpgsql AS $fn$
+BEGIN
+    p_resultado := 0; p_mensaje := '';
+    IF EXISTS (SELECT 1 FROM hr."DocumentTemplate"
+        WHERE "CompanyId" = p_company_id AND "TemplateCode" = p_template_code AND "IsSystem" = TRUE
+    ) THEN
+        p_resultado := -1; p_mensaje := 'No se puede modificar una plantilla del sistema.'; RETURN;
+    END IF;
+    INSERT INTO hr."DocumentTemplate"(
+        "CompanyId","TemplateCode","TemplateName","TemplateType","CountryCode","PayrollCode",
+        "ContentMD","IsDefault","IsSystem","IsActive","CreatedAt","UpdatedAt"
+    ) VALUES (
+        p_company_id, p_template_code, p_template_name, p_template_type,
+        p_country_code, p_payroll_code, p_content_md, COALESCE(p_is_default,FALSE),
+        FALSE, TRUE, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
+    )
+    ON CONFLICT ("CompanyId","TemplateCode") DO UPDATE
+    SET "TemplateName"=EXCLUDED."TemplateName", "TemplateType"=EXCLUDED."TemplateType",
+        "CountryCode"=EXCLUDED."CountryCode", "PayrollCode"=EXCLUDED."PayrollCode",
+        "ContentMD"=EXCLUDED."ContentMD", "IsDefault"=EXCLUDED."IsDefault",
+        "IsSystem"=FALSE, "UpdatedAt"=NOW() AT TIME ZONE 'UTC';
+    p_resultado := 1; p_mensaje := 'Plantilla guardada correctamente.';
+END;
+$fn$;
+
+-- +goose Down
+-- No rollback
