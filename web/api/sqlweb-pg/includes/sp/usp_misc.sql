@@ -590,7 +590,7 @@ BEGIN
         d."PayableDocumentId", s."SupplierCode", s."SupplierName",
         d."DocumentType", d."DocumentNumber", d."IssueDate", d."DueDate",
         d."TotalAmount", d."PendingAmount", d."Status",
-        d."CurrencyCode", d."Notes"
+        d."CurrencyCode"::VARCHAR, d."Notes"
     FROM ap."PayableDocument" d
     INNER JOIN master."Supplier" s ON s."SupplierId" = d."SupplierId"
     WHERE d."PayableDocumentId" = p_id;
@@ -798,7 +798,7 @@ BEGIN
         d."ReceivableDocumentId", c."CustomerCode", c."CustomerName",
         d."DocumentType", d."DocumentNumber", d."IssueDate", d."DueDate",
         d."TotalAmount", d."PendingAmount", d."Status",
-        d."CurrencyCode", d."Notes"
+        d."CurrencyCode"::VARCHAR, d."Notes"
     FROM ar."ReceivableDocument" d
     INNER JOIN master."Customer" c ON c."CustomerId" = d."CustomerId"
     WHERE d."ReceivableDocumentId" = p_id;

@@ -274,6 +274,78 @@
 \echo '[88] usp_cfg_tenant_resolve.sql'
 \i includes/sp/usp_cfg_tenant_resolve.sql
 
+\echo '[89] sp_nomina_conceptolegal_crud.sql'
+\i includes/sp/sp_nomina_conceptolegal_crud.sql
+
+\echo '[90] usp_xml_compat.sql'
+\i includes/sp/usp_xml_compat.sql
+
+\echo '[91] 00_pg_helpers.sql'
+\i includes/sp/00_pg_helpers.sql
+
+\echo '[92] balance_compat.sql'
+\i includes/sp/balance_compat.sql
+
+\echo '[93] sp_nomina_conceptolegal_adapter.sql'
+\i includes/sp/sp_nomina_conceptolegal_adapter.sql
+
+\echo '[94] sp_nomina_calculo_regimen.sql'
+\i includes/sp/sp_nomina_calculo_regimen.sql
+
+\echo '[95] sp_nomina_venezuela_install.sql'
+\i includes/sp/sp_nomina_venezuela_install.sql
+
+\echo '[96] sp_crud_feriados.sql'
+\i includes/sp/sp_crud_feriados.sql
+
+\echo '[97] sp_crud_vehiculos.sql'
+\i includes/sp/sp_crud_vehiculos.sql
+
+\echo '[98] sys_alertas.sql'
+\i includes/sp/sys_alertas.sql
+
+\echo '[99] sys_notificaciones.sql'
+\i includes/sp/sys_notificaciones.sql
+
+\echo '[100] usp_cfg_tenant_getinfo.sql'
+\i includes/sp/usp_cfg_tenant_getinfo.sql
+
+\echo '[101] usp_inv_integracion.sql'
+\i includes/sp/usp_inv_integracion.sql
+
+\echo '[102] usp_mfg_integracion.sql'
+\i includes/sp/usp_mfg_integracion.sql
+
+\echo '[103] usp_sys_Lead_Upsert.sql'
+\i includes/sp/usp_sys_Lead_Upsert.sql
+
+\echo '[104] sp_vacation_request.sql'
+\i includes/sp/sp_vacation_request.sql
+
+\echo '[105] sp_emitir_compra_tx.sql'
+\i includes/sp/sp_emitir_compra_tx.sql
+
+\echo '[106] sp_emitir_cotizacion_tx.sql'
+\i includes/sp/sp_emitir_cotizacion_tx.sql
+
+\echo '[107] sp_emitir_pedido_tx.sql'
+\i includes/sp/sp_emitir_pedido_tx.sql
+
+\echo '[108] sp_emitir_presupuesto_tx.sql'
+\i includes/sp/sp_emitir_presupuesto_tx.sql
+
+\echo '[109] sp_anular_compra_tx.sql'
+\i includes/sp/sp_anular_compra_tx.sql
+
+\echo '[110] sp_anular_pedido_tx.sql'
+\i includes/sp/sp_anular_pedido_tx.sql
+
+\echo '[111] sp_anular_presupuesto_tx.sql'
+\i includes/sp/sp_anular_presupuesto_tx.sql
+
+\echo '[112] sp_restaurante_compra_xml.sql'
+\i includes/sp/sp_restaurante_compra_xml.sql
+
 \echo ''
 \echo '============================================================'
 \echo '  Todas las funciones recreadas'

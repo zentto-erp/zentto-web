@@ -23,7 +23,7 @@ import {
   Alert,
 } from "@mui/material";
 import { toDateOnly } from "@zentto/shared-api";
-import { DatePicker } from "@zentto/shared-ui";
+import { DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
@@ -205,36 +205,43 @@ export default function ReportesLegalesPage() {
 
       {/* Country selector + date filters */}
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
-          <ToggleButtonGroup
-            value={country}
-            exclusive
-            onChange={handleCountryChange}
-            size="small"
-          >
-            <ToggleButton value="VE">VE</ToggleButton>
-            <ToggleButton value="ES">ES</ToggleButton>
-          </ToggleButtonGroup>
-
-          <DatePicker
-            label="Fecha desde"
-            value={fechaDesde ? dayjs(fechaDesde) : null}
-            onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-          <DatePicker
-            label="Fecha hasta"
-            value={fechaHasta ? dayjs(fechaHasta) : null}
-            onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-          <DatePicker
-            label="Fecha corte"
-            value={fechaCorte ? dayjs(fechaCorte) : null}
-            onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-        </Stack>
+        <FormGrid spacing={2} alignItems="center">
+          <FormField xs={12} sm="auto">
+            <ToggleButtonGroup
+              value={country}
+              exclusive
+              onChange={handleCountryChange}
+              size="small"
+            >
+              <ToggleButton value="VE">VE</ToggleButton>
+              <ToggleButton value="ES">ES</ToggleButton>
+            </ToggleButtonGroup>
+          </FormField>
+          <FormField xs={12} sm={3}>
+            <DatePicker
+              label="Fecha desde"
+              value={fechaDesde ? dayjs(fechaDesde) : null}
+              onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={3}>
+            <DatePicker
+              label="Fecha hasta"
+              value={fechaHasta ? dayjs(fechaHasta) : null}
+              onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={3}>
+            <DatePicker
+              label="Fecha corte"
+              value={fechaCorte ? dayjs(fechaCorte) : null}
+              onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+        </FormGrid>
       </Paper>
 
       {/* Tabs */}

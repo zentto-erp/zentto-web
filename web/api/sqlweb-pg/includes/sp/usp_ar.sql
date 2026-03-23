@@ -128,7 +128,7 @@ BEGIN
         d."DocumentType",
         d."IssueDate",
         d."DueDate",
-        d."CurrencyCode",
+        d."CurrencyCode"::VARCHAR(10),
         d."TotalAmount",
         d."PendingAmount",
         d."PaidFlag",
@@ -542,7 +542,7 @@ BEGIN
         d."PendingAmount",
         d."TotalAmount",
         d."CustomerId",
-        d."CurrencyCode"
+        d."CurrencyCode"::VARCHAR(10)
     FROM ar."ReceivableDocument" d
     INNER JOIN master."Customer" c ON c."CustomerId" = d."CustomerId"
     WHERE d."CompanyId"       = p_company_id

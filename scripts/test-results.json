@@ -6,6 +6,11 @@
       "status": 200
     },
     {
+      "path": "/v1/proveedores",
+      "tag": "Proveedores",
+      "status": 200
+    },
+    {
       "path": "/v1/inventario",
       "tag": "Inventario",
       "status": 200
@@ -51,12 +56,32 @@
       "status": 200
     },
     {
+      "path": "/v1/cuentas-por-pagar",
+      "tag": "CuentasPorPagar",
+      "status": 200
+    },
+    {
+      "path": "/v1/p-cobrar",
+      "tag": "CuentasPorCobrar",
+      "status": 200
+    },
+    {
+      "path": "/v1/p-cobrar/c/list",
+      "tag": "CuentasPorCobrar",
+      "status": 200
+    },
+    {
       "path": "/v1/retenciones",
       "tag": "Retenciones",
       "status": 200
     },
     {
-      "path": "/v1/movinvent/mes/list",
+      "path": "/v1/movinvent",
+      "tag": "MovInvent",
+      "status": 200
+    },
+    {
+      "path": "/v1/movinvent/{id}",
       "tag": "MovInvent",
       "status": 200
     },
@@ -66,8 +91,18 @@
       "status": 200
     },
     {
-      "path": "/v1/nomina/conceptos-legales",
-      "tag": "Nomina",
+      "path": "/v1/meta/schema",
+      "tag": "Meta",
+      "status": 200
+    },
+    {
+      "path": "/v1/meta/relations",
+      "tag": "Meta",
+      "status": 200
+    },
+    {
+      "path": "/v1/crud/tables",
+      "tag": "CRUD",
       "status": 200
     },
     {
@@ -108,6 +143,31 @@
     {
       "path": "/v1/vendedores",
       "tag": "Vendedores",
+      "status": 200
+    },
+    {
+      "path": "/v1/empleados",
+      "tag": "Empleados",
+      "status": 200
+    },
+    {
+      "path": "/v1/centro-costo",
+      "tag": "CentroCosto",
+      "status": 200
+    },
+    {
+      "path": "/v1/unidades",
+      "tag": "Unidades",
+      "status": 200
+    },
+    {
+      "path": "/v1/usuarios",
+      "tag": "Usuarios",
+      "status": 200
+    },
+    {
+      "path": "/v1/usuarios/modules",
+      "tag": "Usuarios",
       "status": 200
     },
     {
@@ -226,17 +286,17 @@
       "status": 200
     },
     {
+      "path": "/v1/bancos/movimientos/{id}",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
       "path": "/v1/bancos/conciliaciones",
       "tag": "Bancos",
       "status": 200
     },
     {
       "path": "/v1/bancos/conciliaciones/{id}",
-      "tag": "Bancos",
-      "status": 200
-    },
-    {
-      "path": "/v1/bancos/caja-chica",
       "tag": "Bancos",
       "status": 200
     },
@@ -306,11 +366,6 @@
       "status": 200
     },
     {
-      "path": "/v1/auditoria/fiscal-records",
-      "tag": "Auditoria",
-      "status": 200
-    },
-    {
       "path": "/v1/settings",
       "tag": "Settings",
       "status": 200
@@ -333,6 +388,21 @@
     {
       "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}/detalle",
       "tag": "DocumentosCompra",
+      "status": 200
+    },
+    {
+      "path": "/v1/supervision/biometric/credentials",
+      "tag": "Supervision",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/utilidades",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/utilidades/{id}/summary",
+      "tag": "RRHH",
       "status": 200
     },
     {
@@ -382,11 +452,6 @@
     },
     {
       "path": "/v1/rrhh/examenes-medicos",
-      "tag": "RRHH",
-      "status": 200
-    },
-    {
-      "path": "/v1/rrhh/examenes-medicos/pending",
       "tag": "RRHH",
       "status": 200
     },
@@ -561,6 +626,18 @@
       "error": "{'error': 'not_found'}"
     },
     {
+      "path": "/v1/notas/credito",
+      "tag": "Notas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/notas/credito/{numFact}",
+      "tag": "Notas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
       "path": "/v1/notas/credito/{numFact}/detalle",
       "tag": "Notas",
       "status": 404,
@@ -705,6 +782,12 @@
       "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaCorte': ['Required']}}"
     },
     {
+      "path": "/v1/empleados/{cedula}",
+      "tag": "Empleados",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
       "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
       "tag": "Bancos",
       "status": 400,
@@ -723,12 +806,6 @@
       "error": "{'error': 'invalid_boxId'}"
     },
     {
-      "path": "/v1/nomina/batch/{id}/summary",
-      "tag": "Nomina",
-      "status": 404,
-      "error": "{'error': 'batch_not_found'}"
-    },
-    {
       "path": "/v1/nomina/vacaciones/solicitudes/{id}",
       "tag": "Nomina",
       "status": 404,
@@ -739,6 +816,12 @@
       "tag": "Nomina",
       "status": 404,
       "error": "{'error': 'vacacion_not_found'}"
+    },
+    {
+      "path": "/v1/payments/providers/{code}",
+      "tag": "Payments",
+      "status": 404,
+      "error": "{'error': 'Provider not found'}"
     },
     {
       "path": "/v1/payments/config",
@@ -845,34 +928,10 @@
   ],
   "fail_5xx": [
     {
-      "path": "/v1/clientes",
-      "tag": "Clientes",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/clientes/{codigo}",
-      "tag": "Clientes",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/proveedores",
-      "tag": "Proveedores",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
       "path": "/v1/proveedores/{codigo}",
       "tag": "Proveedores",
       "status": 500,
       "error": "{'error': 'function usp_proveedores_getbycodigo(p_company_id => unknown, p_codigo => unknown) does not exist'}"
-    },
-    {
-      "path": "/v1/cuentas-por-pagar",
-      "tag": "CuentasPorPagar",
-      "status": 500,
-      "error": "{'error': 'structure of query does not match function result type'}"
     },
     {
       "path": "/v1/cuentas-por-pagar/{id}",
@@ -881,172 +940,40 @@
       "error": "{'error': 'structure of query does not match function result type'}"
     },
     {
-      "path": "/v1/p-cobrar",
-      "tag": "CuentasPorCobrar",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+      "path": "/v1/nomina/conceptos-legales",
+      "tag": "Nomina",
+      "status": 500,
+      "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
-      "path": "/v1/p-cobrar/{id}",
-      "tag": "CuentasPorCobrar",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/p-cobrar/c/list",
-      "tag": "CuentasPorCobrar",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/p-cobrar/c/{id}",
-      "tag": "CuentasPorCobrar",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/notas/credito",
-      "tag": "Notas",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/notas/credito/{numFact}",
-      "tag": "Notas",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/retenciones/{codigo}",
-      "tag": "Retenciones",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/movinvent",
-      "tag": "MovInvent",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/movinvent/{id}",
-      "tag": "MovInvent",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/meta/schema",
-      "tag": "Meta",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/meta/relations",
-      "tag": "Meta",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/crud/tables",
-      "tag": "CRUD",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/vendedores/{codigo}",
-      "tag": "Vendedores",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/empleados",
-      "tag": "Empleados",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/empleados/{cedula}",
-      "tag": "Empleados",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/centro-costo",
-      "tag": "CentroCosto",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/centro-costo/{codigo}",
-      "tag": "CentroCosto",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/unidades",
-      "tag": "Unidades",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/empresa",
-      "tag": "Empresa",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/usuarios",
-      "tag": "Usuarios",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/usuarios/modules",
-      "tag": "Usuarios",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/bancos/movimientos/{id}",
+      "path": "/v1/bancos/caja-chica",
       "tag": "Bancos",
       "status": 500,
-      "error": "{'error': 'error: function sp_get_movimiento_bancario_by_id(bigint) does not exist'}"
+      "error": "{'error': 'error: structure of query does not match function result type'}"
+    },
+    {
+      "path": "/v1/nomina/batch/{id}/summary",
+      "tag": "Nomina",
+      "status": 500,
+      "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
       "path": "/v1/nomina/batch/{id}/grid",
       "tag": "Nomina",
       "status": 500,
-      "error": "{'error': 'error: function usp_hr_payroll_getdraftgrid(p_batch_id => unknown, p_search => unknown, p_department => unknown, p_only_modified => unknown"
+      "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
       "path": "/v1/nomina/batch/{id}/employee/{code}",
       "tag": "Nomina",
       "status": 500,
-      "error": "{'error': 'error: function usp_hr_payroll_getemployeelines(p_batch_id => unknown, p_employee_code => unknown) is not unique'}"
+      "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
-      "path": "/v1/payments/providers/{code}",
-      "tag": "Payments",
+      "path": "/v1/auditoria/fiscal-records",
+      "tag": "Auditoria",
       "status": 500,
-      "error": "{'error': 'function usp_pay_provider_get(p_provider_code => unknown) does not exist'}"
-    },
-    {
-      "path": "/v1/supervision/biometric/credentials",
-      "tag": "Supervision",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/rrhh/utilidades",
-      "tag": "RRHH",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
-    },
-    {
-      "path": "/v1/rrhh/utilidades/{id}/summary",
-      "tag": "RRHH",
-      "status": 502,
-      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+      "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
       "path": "/v1/rrhh/obligaciones/employee/{employeeId}",
@@ -1067,6 +994,12 @@
       "error": "{'error': 'error: function usp_hr_occhealth_get(p_record_id => unknown) does not exist'}"
     },
     {
+      "path": "/v1/rrhh/examenes-medicos/pending",
+      "tag": "RRHH",
+      "status": 500,
+      "error": "{'error': 'error: column reference \"CompanyId\" is ambiguous'}"
+    },
+    {
       "path": "/v1/rrhh/comites/{committeeId}/meetings",
       "tag": "RRHH",
       "status": 500,
@@ -1079,5 +1012,60 @@
       "error": "{'error': 'function usp_sys_device_listbyuser(p_company_id => unknown, p_user_id => unknown) does not exist'}"
     }
   ],
-  "fail_other": []
+  "fail_other": [
+    {
+      "path": "/v1/clientes",
+      "tag": "Clientes",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/clientes/{codigo}",
+      "tag": "Clientes",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/p-cobrar/{id}",
+      "tag": "CuentasPorCobrar",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/p-cobrar/c/{id}",
+      "tag": "CuentasPorCobrar",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/retenciones/{codigo}",
+      "tag": "Retenciones",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/movinvent/mes/list",
+      "tag": "MovInvent",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/vendedores/{codigo}",
+      "tag": "Vendedores",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/centro-costo/{codigo}",
+      "tag": "CentroCosto",
+      "status": 0,
+      "error": "The read operation timed out"
+    },
+    {
+      "path": "/v1/empresa",
+      "tag": "Empresa",
+      "status": 0,
+      "error": "The read operation timed out"
+    }
+  ]
 }

@@ -564,33 +564,36 @@ BEGIN
 
     RETURN QUERY
     WITH "LatestExam" AS (
-        SELECT *,
-               ROW_NUMBER() OVER (PARTITION BY "EmployeeCode" ORDER BY "ExamDate" DESC) AS rn
-        FROM hr."MedicalExam"
-        WHERE "CompanyId"  = p_company_id
-          AND "ExamType"   = 'PERIODIC'
-          AND "NextDueDate" IS NOT NULL
-          AND "NextDueDate" <= p_as_of_date + p_days_ahead
+        SELECT me."MedicalExamId", me."CompanyId", me."EmployeeId",
+               me."EmployeeCode", me."EmployeeName", me."ExamType",
+               me."ExamDate", me."NextDueDate", me."Result",
+               me."Restrictions", me."PhysicianName", me."ClinicName",
+               ROW_NUMBER() OVER (PARTITION BY me."EmployeeCode" ORDER BY me."ExamDate" DESC) AS rn
+        FROM hr."MedicalExam" me
+        WHERE me."CompanyId"  = p_company_id
+          AND me."ExamType"   = 'PERIODIC'
+          AND me."NextDueDate" IS NOT NULL
+          AND me."NextDueDate" <= p_as_of_date + p_days_ahead
     )
     SELECT
         COUNT(*) OVER()                                     AS p_total_count,
-        "MedicalExamId",
-        "CompanyId",
-        "EmployeeId",
-        "EmployeeCode",
-        "EmployeeName",
-        "ExamType",
-        "ExamDate",
-        "NextDueDate",
-        "Result",
-        "Restrictions",
-        "PhysicianName",
-        "ClinicName",
-        ("NextDueDate" < p_as_of_date)                     AS "IsOverdue",
-        ("NextDueDate" - p_as_of_date)::INTEGER            AS "DaysUntilDue"
-    FROM "LatestExam"
-    WHERE rn = 1
-    ORDER BY "NextDueDate" ASC
+        le."MedicalExamId",
+        le."CompanyId",
+        le."EmployeeId",
+        le."EmployeeCode",
+        le."EmployeeName",
+        le."ExamType",
+        le."ExamDate",
+        le."NextDueDate",
+        le."Result",
+        le."Restrictions",
+        le."PhysicianName",
+        le."ClinicName",
+        (le."NextDueDate" < p_as_of_date)                  AS "IsOverdue",
+        (le."NextDueDate" - p_as_of_date)::INTEGER         AS "DaysUntilDue"
+    FROM "LatestExam" le
+    WHERE le.rn = 1
+    ORDER BY le."NextDueDate" ASC
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;

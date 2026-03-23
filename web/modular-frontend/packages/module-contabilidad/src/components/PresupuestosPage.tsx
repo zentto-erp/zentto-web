@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -417,20 +417,24 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
 
   return (
     <Box>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <DatePicker
-          label="Desde"
-          value={fechaDesde ? dayjs(fechaDesde) : null}
-          onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
-          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-        />
-        <DatePicker
-          label="Hasta"
-          value={fechaHasta ? dayjs(fechaHasta) : null}
-          onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
-          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-        />
-      </Stack>
+      <FormGrid spacing={2} sx={{ mb: 2 }} alignItems="center">
+        <FormField xs={12} sm={6} md={4}>
+          <DatePicker
+            label="Desde"
+            value={fechaDesde ? dayjs(fechaDesde) : null}
+            onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </FormField>
+        <FormField xs={12} sm={6} md={4}>
+          <DatePicker
+            label="Hasta"
+            value={fechaHasta ? dayjs(fechaHasta) : null}
+            onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </FormField>
+      </FormGrid>
 
       {isLoading ? (
         <Box display="flex" justifyContent="center" p={4}>

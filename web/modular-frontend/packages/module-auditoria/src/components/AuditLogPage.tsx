@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -94,54 +94,66 @@ export default function AuditLogPage() {
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filters */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" useFlexGap>
-          <DatePicker
-            label="Desde"
-            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-            onChange={(v) => updateFilter("fechaDesde", v ? v.format('YYYY-MM-DD') : '')}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-          <DatePicker
-            label="Hasta"
-            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-            onChange={(v) => updateFilter("fechaHasta", v ? v.format('YYYY-MM-DD') : '')}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-          <TextField
-            label="Módulo"
-            size="small"
-            sx={{ minWidth: 130 }}
-            value={filter.moduleName || ""}
-            onChange={(e) => updateFilter("moduleName", e.target.value)}
-          />
-          <TextField
-            label="Usuario"
-            size="small"
-            sx={{ minWidth: 130 }}
-            value={filter.userName || ""}
-            onChange={(e) => updateFilter("userName", e.target.value)}
-          />
-          <TextField
-            label="Acción"
-            select
-            size="small"
-            sx={{ minWidth: 120 }}
-            value={filter.actionType || ""}
-            onChange={(e) => updateFilter("actionType", e.target.value)}
-          >
-            <MenuItem value="">Todas</MenuItem>
-            {ACTION_TYPES.filter(Boolean).map((a) => (
-              <MenuItem key={a} value={a}>{a}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Buscar"
-            size="small"
-            sx={{ minWidth: 180 }}
-            value={filter.search || ""}
-            onChange={(e) => updateFilter("search", e.target.value)}
-          />
-        </Stack>
+        <FormGrid spacing={2} sx={{ mb: 2 }}>
+          <FormField xs={12} sm={4} md={2}>
+            <DatePicker
+              label="Desde"
+              value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+              onChange={(v) => updateFilter("fechaDesde", v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={4} md={2}>
+            <DatePicker
+              label="Hasta"
+              value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+              onChange={(v) => updateFilter("fechaHasta", v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={4} md={2}>
+            <TextField
+              label="Módulo"
+              size="small"
+              fullWidth
+              value={filter.moduleName || ""}
+              onChange={(e) => updateFilter("moduleName", e.target.value)}
+            />
+          </FormField>
+          <FormField xs={12} sm={4} md={2}>
+            <TextField
+              label="Usuario"
+              size="small"
+              fullWidth
+              value={filter.userName || ""}
+              onChange={(e) => updateFilter("userName", e.target.value)}
+            />
+          </FormField>
+          <FormField xs={12} sm={4} md={2}>
+            <TextField
+              label="Acción"
+              select
+              size="small"
+              fullWidth
+              value={filter.actionType || ""}
+              onChange={(e) => updateFilter("actionType", e.target.value)}
+            >
+              <MenuItem value="">Todas</MenuItem>
+              {ACTION_TYPES.filter(Boolean).map((a) => (
+                <MenuItem key={a} value={a}>{a}</MenuItem>
+              ))}
+            </TextField>
+          </FormField>
+          <FormField xs={12} sm={4} md={2}>
+            <TextField
+              label="Buscar"
+              size="small"
+              fullWidth
+              value={filter.search || ""}
+              onChange={(e) => updateFilter("search", e.target.value)}
+            />
+          </FormField>
+        </FormGrid>
 
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>

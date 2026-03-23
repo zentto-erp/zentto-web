@@ -1062,4 +1062,61 @@ BEGIN
 END;
 $$;
 
+-- ═══════════════════════════════════════════════════════════════
+-- WRAPPER: usp_HR_Payroll_GetDraftSummary
+-- La API llama "usp_HR_Payroll_GetDraftSummary" como función única.
+-- Este wrapper devuelve la cabecera + totales en una sola fila.
+-- ═══════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(BIGINT) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary(
+    p_batch_id BIGINT
+)
+RETURNS TABLE(
+    "BatchId"              INTEGER,
+    "CompanyId"            INTEGER,
+    "BranchId"             INTEGER,
+    "PayrollCode"          VARCHAR(15),
+    "FromDate"             DATE,
+    "ToDate"               DATE,
+    "Status"               VARCHAR(20),
+    "TotalEmployees"       INTEGER,
+    "TotalGross"           NUMERIC(18,2),
+    "TotalDeductions"      NUMERIC(18,2),
+    "TotalNet"             NUMERIC(18,2),
+    "CreatedBy"            INTEGER,
+    "CreatedAt"            TIMESTAMP,
+    "ApprovedBy"           INTEGER,
+    "ApprovedAt"           TIMESTAMP,
+    "PrevBatchId"          INTEGER,
+    "PrevTotalGross"       NUMERIC(18,2),
+    "PrevTotalDeductions"  NUMERIC(18,2),
+    "PrevTotalNet"         NUMERIC(18,2),
+    "NetChangePercent"     NUMERIC(8,2),
+    "totalAsignaciones"    NUMERIC,
+    "totalDeducciones"     NUMERIC,
+    "totalNeto"            NUMERIC,
+    "totalEmpleados"       BIGINT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        h."BatchId", h."CompanyId", h."BranchId",
+        h."PayrollCode", h."FromDate", h."ToDate",
+        h."Status", h."TotalEmployees",
+        h."TotalGross", h."TotalDeductions", h."TotalNet",
+        h."CreatedBy", h."CreatedAt",
+        h."ApprovedBy", h."ApprovedAt",
+        h."PrevBatchId", h."PrevTotalGross",
+        h."PrevTotalDeductions", h."PrevTotalNet",
+        h."NetChangePercent",
+        -- Campos adicionales que la API consume como resumen
+        h."TotalGross"::NUMERIC       AS "totalAsignaciones",
+        h."TotalDeductions"::NUMERIC  AS "totalDeducciones",
+        h."TotalNet"::NUMERIC         AS "totalNeto",
+        h."TotalEmployees"::BIGINT    AS "totalEmpleados"
+    FROM public.usp_HR_Payroll_GetDraftSummary_Header(p_batch_id) h;
+END;
+$$;
+
 -- ═══ sp_nomina_batch.sql completado exitosamente ═══

@@ -28,7 +28,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivosFijosList,
@@ -188,42 +188,48 @@ export default function ActivosFijosListPage() {
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filtros */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <TextField
-            label="Buscar"
-            size="small"
-            value={filter.search || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value, page: 1 }))}
-            sx={{ minWidth: 200 }}
-          />
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>Categoría</InputLabel>
-            <Select
-              label="Categoría"
-              value={filter.categoryCode || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, categoryCode: e.target.value || undefined, page: 1 }))}
-            >
-              <MenuItem value="">Todas</MenuItem>
-              {categorias.map((c) => (
-                <MenuItem key={c.CategoryCode} value={c.CategoryCode}>
-                  {c.CategoryName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              label="Estado"
-              value={filter.status || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined, page: 1 }))}
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mb: 2 }}>
+          <FormField xs={12} sm={4}>
+            <TextField
+              label="Buscar"
+              size="small"
+              fullWidth
+              value={filter.search || ""}
+              onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value, page: 1 }))}
+            />
+          </FormField>
+          <FormField xs={12} sm={4}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Categoría</InputLabel>
+              <Select
+                label="Categoría"
+                value={filter.categoryCode || ""}
+                onChange={(e) => setFilter((f) => ({ ...f, categoryCode: e.target.value || undefined, page: 1 }))}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                {categorias.map((c) => (
+                  <MenuItem key={c.CategoryCode} value={c.CategoryCode}>
+                    {c.CategoryName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </FormField>
+          <FormField xs={12} sm={4}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                label="Estado"
+                value={filter.status || ""}
+                onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined, page: 1 }))}
+              >
+                {STATUS_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </FormField>
+        </FormGrid>
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
@@ -251,8 +257,8 @@ export default function ActivosFijosListPage() {
       <Dialog open={openCreate} onClose={() => setOpenCreate(false)} maxWidth="md" fullWidth>
         <DialogTitle>Nuevo activo fijo</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Stack direction="row" spacing={2}>
+          <FormGrid spacing={2} sx={{ mt: 1 }}>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Código"
                 fullWidth
@@ -260,6 +266,8 @@ export default function ActivosFijosListPage() {
                 value={form.assetCode}
                 onChange={(e) => setField("assetCode", e.target.value)}
               />
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Número de Serie"
                 fullWidth
@@ -267,15 +275,17 @@ export default function ActivosFijosListPage() {
                 value={form.serialNumber || ""}
                 onChange={(e) => setField("serialNumber", e.target.value)}
               />
-            </Stack>
-            <TextField
-              label="Descripción"
-              fullWidth
-              size="small"
-              value={form.description}
-              onChange={(e) => setField("description", e.target.value)}
-            />
-            <Stack direction="row" spacing={2}>
+            </FormField>
+            <FormField xs={12}>
+              <TextField
+                label="Descripción"
+                fullWidth
+                size="small"
+                value={form.description}
+                onChange={(e) => setField("description", e.target.value)}
+              />
+            </FormField>
+            <FormField xs={12} sm={6}>
               <FormControl size="small" fullWidth>
                 <InputLabel>Categoría</InputLabel>
                 <Select
@@ -290,14 +300,16 @@ export default function ActivosFijosListPage() {
                   ))}
                 </Select>
               </FormControl>
+            </FormField>
+            <FormField xs={12} sm={6}>
               <DatePicker
                 label="Fecha adquisición"
                 value={form.acquisitionDate ? dayjs(form.acquisitionDate) : null}
                 onChange={(v) => setField("acquisitionDate", v ? v.format('YYYY-MM-DD') : '')}
                 slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
-            </Stack>
-            <Stack direction="row" spacing={2}>
+            </FormField>
+            <FormField xs={12} sm={4}>
               <TextField
                 label="Costo adquisición"
                 type="number"
@@ -306,6 +318,8 @@ export default function ActivosFijosListPage() {
                 value={form.acquisitionCost}
                 onChange={(e) => setField("acquisitionCost", Number(e.target.value))}
               />
+            </FormField>
+            <FormField xs={12} sm={4}>
               <TextField
                 label="Valor residual"
                 type="number"
@@ -314,6 +328,8 @@ export default function ActivosFijosListPage() {
                 value={form.residualValue || 0}
                 onChange={(e) => setField("residualValue", Number(e.target.value))}
               />
+            </FormField>
+            <FormField xs={12} sm={4}>
               <TextField
                 label="Vida Útil (meses)"
                 type="number"
@@ -322,20 +338,22 @@ export default function ActivosFijosListPage() {
                 value={form.usefulLifeMonths}
                 onChange={(e) => setField("usefulLifeMonths", Number(e.target.value))}
               />
-            </Stack>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Método de Depreciación</InputLabel>
-              <Select
-                label="Método de Depreciación"
-                value={form.depreciationMethod || "STRAIGHT_LINE"}
-                onChange={(e) => setField("depreciationMethod", e.target.value)}
-              >
-                {DEPRECIATION_METHODS.map((m) => (
-                  <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Stack direction="row" spacing={2}>
+            </FormField>
+            <FormField xs={12}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Método de Depreciación</InputLabel>
+                <Select
+                  label="Método de Depreciación"
+                  value={form.depreciationMethod || "STRAIGHT_LINE"}
+                  onChange={(e) => setField("depreciationMethod", e.target.value)}
+                >
+                  {DEPRECIATION_METHODS.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </FormField>
+            <FormField xs={12} sm={4}>
               <TextField
                 label="Cuenta activo"
                 fullWidth
@@ -343,6 +361,8 @@ export default function ActivosFijosListPage() {
                 value={form.assetAccountCode}
                 onChange={(e) => setField("assetAccountCode", e.target.value)}
               />
+            </FormField>
+            <FormField xs={12} sm={4}>
               <TextField
                 label="Cuenta dep. acum."
                 fullWidth
@@ -350,6 +370,8 @@ export default function ActivosFijosListPage() {
                 value={form.deprecAccountCode}
                 onChange={(e) => setField("deprecAccountCode", e.target.value)}
               />
+            </FormField>
+            <FormField xs={12} sm={4}>
               <TextField
                 label="Cuenta gasto"
                 fullWidth
@@ -357,8 +379,8 @@ export default function ActivosFijosListPage() {
                 value={form.expenseAccountCode}
                 onChange={(e) => setField("expenseAccountCode", e.target.value)}
               />
-            </Stack>
-            <Stack direction="row" spacing={2}>
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Centro de Costo"
                 fullWidth
@@ -366,6 +388,8 @@ export default function ActivosFijosListPage() {
                 value={form.costCenterCode || ""}
                 onChange={(e) => setField("costCenterCode", e.target.value)}
               />
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Ubicación"
                 fullWidth
@@ -373,8 +397,8 @@ export default function ActivosFijosListPage() {
                 value={form.location || ""}
                 onChange={(e) => setField("location", e.target.value)}
               />
-            </Stack>
-          </Stack>
+            </FormField>
+          </FormGrid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreate(false)}>Cancelar</Button>

@@ -5,11 +5,10 @@ import {
   Box,
   Paper,
   TextField,
-  Stack,
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -77,20 +76,24 @@ export default function FiscalRecordsPage() {
       <ContextActionHeader title="Registros Fiscales" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Stack direction="row" spacing={2} mb={2}>
-          <DatePicker
-            label="Desde"
-            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-            onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-          <DatePicker
-            label="Hasta"
-            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-            onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-        </Stack>
+        <FormGrid spacing={2} sx={{ mb: 2 }}>
+          <FormField xs={12} sm={6} md={3}>
+            <DatePicker
+              label="Desde"
+              value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+              onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={6} md={3}>
+            <DatePicker
+              label="Hasta"
+              value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+              onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+        </FormGrid>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid

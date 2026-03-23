@@ -540,7 +540,7 @@ BEGIN
         d."PendingAmount",
         d."TotalAmount",
         d."SupplierId",
-        d."CurrencyCode"
+        d."CurrencyCode"::VARCHAR(10)
     FROM ap."PayableDocument" d
     INNER JOIN master."Supplier" s ON s."SupplierId" = d."SupplierId"
     WHERE d."CompanyId"      = p_company_id
