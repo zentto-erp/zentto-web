@@ -231,6 +231,15 @@ const theme = createTheme({
             fontSize: '0.875rem',
             opacity: 0.6,
           },
+          // Campos numéricos (montos, cantidades, precios) → alineados a la derecha
+          '&[type="number"]': {
+            textAlign: 'right',
+            MozAppearance: 'textfield',
+          },
+          '&[type="number"]::-webkit-outer-spin-button, &[type="number"]::-webkit-inner-spin-button': {
+            WebkitAppearance: 'none',
+            margin: 0,
+          },
         },
       },
     },
