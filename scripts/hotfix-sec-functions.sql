@@ -39,13 +39,13 @@ BEGIN
   SELECT
     c."CompanyId"::integer,
     c."CompanyCode"::character varying,
-    COALESCE(NULLIF(c."TradeName", ''), c."LegalName")::character varying,
+    COALESCE(NULLIF(c."TradeName"::VARCHAR, ''::VARCHAR), c."LegalName"::VARCHAR)::character varying,
     b."BranchId"::integer,
     b."BranchCode"::character varying,
     b."BranchName"::character varying,
-    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))::character varying,
+    UPPER(COALESCE(NULLIF(b."CountryCode"::VARCHAR, ''::VARCHAR), c."FiscalCountryCode"::VARCHAR))::character varying,
     COALESCE(
-      NULLIF(ct."TimeZoneIana", ''),
+      NULLIF(ct."TimeZoneIana"::VARCHAR, ''::VARCHAR),
       CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))
         WHEN 'VE' THEN 'America/Caracas'
         WHEN 'ES' THEN 'Europe/Madrid'
@@ -81,13 +81,13 @@ BEGIN
   SELECT
     c."CompanyId"::integer,
     c."CompanyCode"::character varying,
-    COALESCE(NULLIF(c."TradeName", ''), c."LegalName")::character varying,
+    COALESCE(NULLIF(c."TradeName"::VARCHAR, ''::VARCHAR), c."LegalName"::VARCHAR)::character varying,
     b."BranchId"::integer,
     b."BranchCode"::character varying,
     b."BranchName"::character varying,
-    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))::character varying,
+    UPPER(COALESCE(NULLIF(b."CountryCode"::VARCHAR, ''::VARCHAR), c."FiscalCountryCode"::VARCHAR))::character varying,
     COALESCE(
-      NULLIF(ct."TimeZoneIana", ''),
+      NULLIF(ct."TimeZoneIana"::VARCHAR, ''::VARCHAR),
       CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))
         WHEN 'VE' THEN 'America/Caracas'
         WHEN 'ES' THEN 'Europe/Madrid'
@@ -124,13 +124,13 @@ BEGIN
   SELECT
     a."CompanyId"::integer,
     c."CompanyCode"::character varying,
-    COALESCE(NULLIF(c."TradeName", ''), c."LegalName")::character varying,
+    COALESCE(NULLIF(c."TradeName"::VARCHAR, ''::VARCHAR), c."LegalName"::VARCHAR)::character varying,
     a."BranchId"::integer,
     b."BranchCode"::character varying,
     b."BranchName"::character varying,
-    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))::character varying,
+    UPPER(COALESCE(NULLIF(b."CountryCode"::VARCHAR, ''::VARCHAR), c."FiscalCountryCode"::VARCHAR))::character varying,
     COALESCE(
-      NULLIF(ct."TimeZoneIana", ''),
+      NULLIF(ct."TimeZoneIana"::VARCHAR, ''::VARCHAR),
       CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))
         WHEN 'VE' THEN 'America/Caracas'
         WHEN 'ES' THEN 'Europe/Madrid'
