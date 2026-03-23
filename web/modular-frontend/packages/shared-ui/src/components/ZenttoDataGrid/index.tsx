@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   DataGrid,
   GridColDef,
   GridColumnVisibilityModel,
   GridRowId,
   GridSlots,
+  useGridApiRef,
 } from '@mui/x-data-grid';
 import {
   useTheme,
@@ -300,6 +301,8 @@ export function ZenttoDataGrid({
   // ── Estado ──────────────────────────────────────────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<GridRowId>>(new Set());
   const [mobileDrawerRow, setMobileDrawerRow] = useState<GridRow | null>(null);
+  const apiRef = useGridApiRef();
+  const lastExpandedId = useRef<GridRowId | null>(null);
 
   // ── Resolver ID ─────────────────────────────────────────────────────────────
   const getRowIdFn = useCallback(
@@ -311,11 +314,46 @@ export function ZenttoDataGrid({
   const toggleExpand = useCallback((id: GridRowId) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        lastExpandedId.current = null;
+      } else {
+        next.add(id);
+        lastExpandedId.current = id;
+      }
       return next;
     });
   }, []);
+
+  // ── Fix primera renderización + scroll al panel ───────────────────────────
+  // Problema: getRowHeight:'auto' mide el contenido asíncronamente.
+  // En la primera expansión MUI asigna height=0 antes de que el contenido esté listo.
+  // Solución: resetRowHeights() tras un tick fuerza nueva medición; scrollToIndexes
+  // lleva el panel a la vista cuando la fila está cerca del fondo.
+  useEffect(() => {
+    if (!getDetailContent || !lastExpandedId.current) return;
+    const expandedId = lastExpandedId.current;
+    const detailRowId = `${expandedId}${DETAIL_ROW_KEY}`;
+
+    // Doble reset: inmediato + tras 150ms para async content (hooks de datos)
+    const reset = () => {
+      try { apiRef.current?.resetRowHeights?.(); } catch { /* noop */ }
+    };
+    reset();
+    const t1 = setTimeout(() => {
+      reset();
+      // Scroll al panel de detalle para que siempre quede visible
+      try {
+        const rowIndex = apiRef.current?.getRowIndexRelativeToVisibleRows?.(detailRowId);
+        if (rowIndex != null && rowIndex >= 0) {
+          apiRef.current?.scrollToIndexes?.({ rowIndex });
+        }
+      } catch { /* noop */ }
+    }, 150);
+
+    return () => clearTimeout(t1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedIds, getDetailContent]);
 
   // ── Pivot: transforma rows y columns ────────────────────────────────────────
   const { rows: pivotedRows, columns: pivotedColumns } = useMemo(() => {
@@ -529,6 +567,7 @@ export function ZenttoDataGrid({
     <>
       <DataGrid
         {...props}
+        apiRef={apiRef}
         rows={processedRows}
         columns={finalColumns as GridColDef[]}
         getRowId={getRowIdFn as any}
