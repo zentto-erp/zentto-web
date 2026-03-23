@@ -72,7 +72,7 @@ export async function getModulosAcceso(codUsuario: string): Promise<ModuloAcceso
 }
 
 async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
-  const rows = await query<{
+  const rows = await callSp<{
     companyId: number;
     companyCode: string;
     companyName: string;
@@ -82,7 +82,7 @@ async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
     countryCode: string;
     timeZone: string;
     isDefault: boolean;
-  }>("SELECT * FROM usp_sec_user_listcompanyaccesses_default()");
+  }>("usp_Sec_User_ListCompanyAccesses_Default");
 
   return rows.map((row) => ({
     companyId: Number(row.companyId),

@@ -43,10 +43,10 @@ BEGIN
     b."BranchId"::integer,
     b."BranchCode"::character varying,
     b."BranchName"::character varying,
-    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))::character varying,
+    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))::character varying,
     COALESCE(
       NULLIF(ct."TimeZoneIana", ''),
-      CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+      CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))
         WHEN 'VE' THEN 'America/Caracas'
         WHEN 'ES' THEN 'Europe/Madrid'
         WHEN 'CO' THEN 'America/Bogota'
@@ -58,7 +58,7 @@ BEGIN
     (c."CompanyCode" = 'DEFAULT' AND b."BranchCode" = 'MAIN')::boolean
   FROM cfg."Company" c
   INNER JOIN cfg."Branch" b ON b."CompanyId" = c."CompanyId"
-  LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")) AND ct."IsActive" = TRUE
+  LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR)) AND ct."IsActive" = TRUE
   WHERE c."IsActive" = TRUE AND c."IsDeleted" = FALSE
   ORDER BY c."CompanyId", b."BranchId";
 END;
@@ -85,10 +85,10 @@ BEGIN
     b."BranchId"::integer,
     b."BranchCode"::character varying,
     b."BranchName"::character varying,
-    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))::character varying,
+    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))::character varying,
     COALESCE(
       NULLIF(ct."TimeZoneIana", ''),
-      CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+      CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))
         WHEN 'VE' THEN 'America/Caracas'
         WHEN 'ES' THEN 'Europe/Madrid'
         WHEN 'CO' THEN 'America/Bogota'
@@ -101,7 +101,7 @@ BEGIN
   FROM sec."UserCompanyAccess" uca
   INNER JOIN cfg."Company" c ON c."CompanyId" = uca."CompanyId"
   INNER JOIN cfg."Branch" b ON b."BranchId" = uca."BranchId"
-  LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")) AND ct."IsActive" = TRUE
+  LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR)) AND ct."IsActive" = TRUE
   WHERE uca."CodUsuario" = p_cod_usuario AND uca."IsActive" = TRUE AND c."IsActive" = TRUE AND c."IsDeleted" = FALSE
   ORDER BY CASE WHEN uca."IsDefault" = TRUE THEN 0 ELSE 1 END, c."CompanyId", b."BranchId";
 END;
@@ -128,10 +128,10 @@ BEGIN
     a."BranchId"::integer,
     b."BranchCode"::character varying,
     b."BranchName"::character varying,
-    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))::character varying,
+    UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))::character varying,
     COALESCE(
       NULLIF(ct."TimeZoneIana", ''),
-      CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+      CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR))
         WHEN 'VE' THEN 'America/Caracas'
         WHEN 'ES' THEN 'Europe/Madrid'
         WHEN 'CO' THEN 'America/Bogota'
@@ -144,7 +144,7 @@ BEGIN
   FROM sec."UserCompanyAccess" a
   INNER JOIN cfg."Company" c ON c."CompanyId" = a."CompanyId" AND c."IsActive" = TRUE AND c."IsDeleted" = FALSE
   INNER JOIN cfg."Branch" b ON b."BranchId" = a."BranchId" AND b."CompanyId" = a."CompanyId" AND b."IsActive" = TRUE AND b."IsDeleted" = FALSE
-  LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")) AND ct."IsActive" = TRUE
+  LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"::VARCHAR)) AND ct."IsActive" = TRUE
   WHERE UPPER(a."CodUsuario") = UPPER(p_cod_usuario) AND a."IsActive" = TRUE
   ORDER BY CASE WHEN a."IsDefault" = TRUE THEN 0 ELSE 1 END, a."CompanyId", a."BranchId";
 EXCEPTION WHEN OTHERS THEN
