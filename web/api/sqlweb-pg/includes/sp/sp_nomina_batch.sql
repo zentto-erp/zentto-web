@@ -597,6 +597,7 @@ $$;
 --    Retorna los empleados con sus totales para la grilla.
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(INTEGER, VARCHAR(100), VARCHAR(100), BOOLEAN, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(BIGINT, VARCHAR, VARCHAR, BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
     p_batch_id      BIGINT,
     p_search        VARCHAR(100) DEFAULT NULL,
@@ -607,12 +608,12 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
 )
 RETURNS TABLE(
     p_total_count    BIGINT,
-    "EmployeeCode"   VARCHAR(24),
-    "EmployeeName"   VARCHAR(200),
+    "EmployeeCode"   VARCHAR,
+    "EmployeeName"   VARCHAR,
     "EmployeeId"     BIGINT,
-    "DepartmentCode" TEXT,
-    "DepartmentName" TEXT,
-    "PositionName"   TEXT,
+    "DepartmentCode" VARCHAR,
+    "DepartmentName" VARCHAR,
+    "PositionName"   VARCHAR,
     "TotalGross"     NUMERIC,
     "TotalDeductions" NUMERIC,
     "TotalNet"       NUMERIC,
@@ -647,16 +648,16 @@ BEGIN
     )
     SELECT
         COUNT(*) OVER()       AS p_total_count,
-        f."EmployeeCode",
-        f."EmployeeName",
+        f."EmployeeCode"::VARCHAR,
+        f."EmployeeName"::VARCHAR,
         f."EmployeeId",
-        ''::TEXT              AS "DepartmentCode",
-        ''::TEXT              AS "DepartmentName",
-        ''::TEXT              AS "PositionName",
+        ''::VARCHAR           AS "DepartmentCode",
+        ''::VARCHAR           AS "DepartmentName",
+        ''::VARCHAR           AS "PositionName",
         f."TotalGross",
         f."TotalDeductions",
         f."TotalNet",
-        f."HasModified",
+        f."HasModified"::BIGINT,
         f."ConceptCount"
     FROM "Filtered" f
     ORDER BY f."EmployeeName"
@@ -671,6 +672,7 @@ $$;
 --    Retorna todas las líneas de concepto de un empleado en un lote.
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(INTEGER, VARCHAR(24)) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(BIGINT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetEmployeeLines(
     p_batch_id      BIGINT,
     p_employee_code VARCHAR(24)
@@ -679,16 +681,16 @@ RETURNS TABLE(
     "LineId"       INTEGER,
     "BatchId"      INTEGER,
     "EmployeeId"   BIGINT,
-    "EmployeeCode" VARCHAR(24),
-    "EmployeeName" VARCHAR(200),
-    "ConceptCode"  VARCHAR(20),
-    "ConceptName"  VARCHAR(120),
-    "ConceptType"  VARCHAR(15),
-    "Quantity"     NUMERIC(18,4),
-    "Amount"       NUMERIC(18,4),
-    "Total"        NUMERIC(18,2),
+    "EmployeeCode" VARCHAR,
+    "EmployeeName" VARCHAR,
+    "ConceptCode"  VARCHAR,
+    "ConceptName"  VARCHAR,
+    "ConceptType"  VARCHAR,
+    "Quantity"     NUMERIC,
+    "Amount"       NUMERIC,
+    "Total"        NUMERIC,
     "IsModified"   BOOLEAN,
-    "Notes"        VARCHAR(500),
+    "Notes"        VARCHAR,
     "UpdatedAt"    TIMESTAMP
 )
 LANGUAGE plpgsql
@@ -1068,6 +1070,7 @@ $$;
 -- Este wrapper devuelve la cabecera + totales en una sola fila.
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(BIGINT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary(
     p_batch_id BIGINT
 )

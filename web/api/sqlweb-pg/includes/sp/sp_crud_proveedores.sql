@@ -90,9 +90,11 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_proveedores_getbycodigo(INT, VARCHAR) CASCADE;
 DROP FUNCTION IF EXISTS usp_proveedores_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_getbycodigo(
-    p_codigo VARCHAR(24)
+    p_company_id INT DEFAULT 1,
+    p_codigo VARCHAR(24) DEFAULT NULL
 )
 RETURNS TABLE(
     "CODIGO"       VARCHAR,
@@ -138,7 +140,8 @@ BEGIN
         NULL::VARCHAR                                   AS "NOTAS"
     FROM master."Supplier" s
     WHERE s."SupplierCode" = p_codigo
-      AND COALESCE(s."IsDeleted", FALSE) = FALSE;
+      AND COALESCE(s."IsDeleted", FALSE) = FALSE
+      AND (p_company_id IS NULL OR s."CompanyId" = p_company_id);
 END;
 $$;
 

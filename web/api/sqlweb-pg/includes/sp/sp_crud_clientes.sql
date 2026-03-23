@@ -64,40 +64,40 @@ BEGIN
     SELECT COUNT(1) INTO v_total
     FROM master."Customer" c
     WHERE COALESCE(c."IsDeleted", FALSE) = FALSE
-      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",'') ILIKE v_search));
+      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",''::VARCHAR) ILIKE v_search));
 
     -- Resultados paginados
     RETURN QUERY
     SELECT
         c."CustomerCode"::VARCHAR                        AS "CODIGO",
         c."CustomerName"::VARCHAR                        AS "NOMBRE",
-        COALESCE(c."FiscalId",'')::VARCHAR               AS "RIF",
-        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION   AS "SALDO_TOT",
-        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "LIMITE",
+        COALESCE(c."FiscalId",''::VARCHAR)::VARCHAR               AS "RIF",
+        COALESCE(c."TotalBalance",0::NUMERIC)::DOUBLE PRECISION   AS "SALDO_TOT",
+        COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION    AS "LIMITE",
         c."IsActive",
         c."IsDeleted",
         c."CompanyId",
         c."CustomerCode"::VARCHAR,
         c."CustomerName"::VARCHAR,
-        COALESCE(c."FiscalId",'')::VARCHAR,
-        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION,
-        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION,
+        COALESCE(c."FiscalId",''::VARCHAR)::VARCHAR,
+        COALESCE(c."TotalBalance",0::NUMERIC)::DOUBLE PRECISION,
+        COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION,
         NULL::VARCHAR                                    AS "NIT",
-        COALESCE(c."AddressLine",'')::VARCHAR            AS "Direccion",
-        COALESCE(c."Phone",'')::VARCHAR                  AS "Telefono",
+        COALESCE(c."AddressLine",''::VARCHAR)::VARCHAR            AS "Direccion",
+        COALESCE(c."Phone",''::VARCHAR)::VARCHAR                  AS "Telefono",
         NULL::VARCHAR                                    AS "Contacto",
         NULL::VARCHAR                                    AS "SalespersonCode",
         NULL::VARCHAR                                    AS "PriceListCode",
         NULL::VARCHAR                                    AS "Ciudad",
         NULL::VARCHAR                                    AS "CodPostal",
-        COALESCE(c."Email",'')::VARCHAR                  AS "Email",
+        COALESCE(c."Email",''::VARCHAR)::VARCHAR                  AS "Email",
         NULL::VARCHAR                                    AS "PaginaWww",
         NULL::VARCHAR                                    AS "CodUsuario",
-        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "Credito",
+        COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION    AS "Credito",
         v_total                                          AS "TotalCount"
     FROM master."Customer" c
     WHERE COALESCE(c."IsDeleted", FALSE) = FALSE
-      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",'') ILIKE v_search))
+      AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",''::VARCHAR) ILIKE v_search))
     ORDER BY c."CustomerCode"
     LIMIT v_limit OFFSET v_offset;
 END;
@@ -141,29 +141,29 @@ BEGIN
     SELECT
         c."CustomerCode"::VARCHAR                        AS "CODIGO",
         c."CustomerName"::VARCHAR                        AS "NOMBRE",
-        COALESCE(c."FiscalId",'')::VARCHAR               AS "RIF",
-        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION   AS "SALDO_TOT",
-        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "LIMITE",
+        COALESCE(c."FiscalId",''::VARCHAR)::VARCHAR               AS "RIF",
+        COALESCE(c."TotalBalance",0::NUMERIC)::DOUBLE PRECISION   AS "SALDO_TOT",
+        COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION    AS "LIMITE",
         c."IsActive",
         c."IsDeleted",
         c."CompanyId",
         c."CustomerCode"::VARCHAR,
         c."CustomerName"::VARCHAR,
-        COALESCE(c."FiscalId",'')::VARCHAR,
-        COALESCE(c."TotalBalance",0)::DOUBLE PRECISION,
-        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION,
+        COALESCE(c."FiscalId",''::VARCHAR)::VARCHAR,
+        COALESCE(c."TotalBalance",0::NUMERIC)::DOUBLE PRECISION,
+        COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION,
         NULL::VARCHAR                                    AS "NIT",
-        COALESCE(c."AddressLine",'')::VARCHAR            AS "Direccion",
-        COALESCE(c."Phone",'')::VARCHAR                  AS "Telefono",
+        COALESCE(c."AddressLine",''::VARCHAR)::VARCHAR            AS "Direccion",
+        COALESCE(c."Phone",''::VARCHAR)::VARCHAR                  AS "Telefono",
         NULL::VARCHAR                                    AS "Contacto",
         NULL::VARCHAR                                    AS "SalespersonCode",
         NULL::VARCHAR                                    AS "PriceListCode",
         NULL::VARCHAR                                    AS "Ciudad",
         NULL::VARCHAR                                    AS "CodPostal",
-        COALESCE(c."Email",'')::VARCHAR                  AS "Email",
+        COALESCE(c."Email",''::VARCHAR)::VARCHAR                  AS "Email",
         NULL::VARCHAR                                    AS "PaginaWww",
         NULL::VARCHAR                                    AS "CodUsuario",
-        COALESCE(c."CreditLimit",0)::DOUBLE PRECISION    AS "Credito"
+        COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION    AS "Credito"
     FROM master."Customer" c
     WHERE c."CustomerCode" = p_codigo
       AND COALESCE(c."IsDeleted", FALSE) = FALSE;

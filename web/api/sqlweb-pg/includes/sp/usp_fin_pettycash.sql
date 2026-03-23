@@ -500,16 +500,21 @@ $$;
 -- =============================================
 -- WRAPPERS en schema fin (requeridos por la API que llama fin.usp_Fin_PettyCash_*)
 -- =============================================
-GRANT CREATE ON SCHEMA fin TO zentto_app;
+DO $$ BEGIN
+  EXECUTE 'GRANT CREATE ON SCHEMA fin TO zentto_app';
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_box_list(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_list(p_company_id INTEGER)
-RETURNS TABLE("Id" INTEGER,"CompanyId" INTEGER,"BranchId" INTEGER,"Name" VARCHAR,
-    "AccountCode" VARCHAR,"MaxAmount" NUMERIC,"CurrentBalance" NUMERIC,
-    "Responsible" VARCHAR,"Status" VARCHAR,"CreatedAt" TIMESTAMP,"CreatedByUserId" INTEGER)
+RETURNS TABLE("Id" INT,"CompanyId" INT,"BranchId" INT,"Name" VARCHAR(100),
+    "AccountCode" VARCHAR(20),"MaxAmount" NUMERIC(18,2),"CurrentBalance" NUMERIC(18,2),
+    "Responsible" VARCHAR(100),"Status" VARCHAR(20),"CreatedAt" TIMESTAMP,"CreatedByUserId" INT)
 LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_list(p_company_id); END;
 $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_box_create(INTEGER, INTEGER, VARCHAR, VARCHAR, NUMERIC, VARCHAR, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_create(
     p_company_id INTEGER, p_branch_id INTEGER, p_name VARCHAR,
     p_account_code VARCHAR DEFAULT NULL, p_max_amount NUMERIC DEFAULT 0,
@@ -521,6 +526,7 @@ BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_create(
     p_max_amount, p_responsible, p_created_by_user_id); END;
 $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_open(INTEGER, NUMERIC, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_open(
     p_box_id INTEGER, p_opening_amount NUMERIC, p_opened_by_user_id INTEGER DEFAULT NULL)
 RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
@@ -529,6 +535,7 @@ BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_open(
     p_box_id, p_opening_amount, p_opened_by_user_id); END;
 $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_close(INTEGER, INTEGER, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_close(
     p_box_id INTEGER, p_closed_by_user_id INTEGER DEFAULT NULL, p_notes VARCHAR DEFAULT NULL)
 RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
@@ -537,6 +544,7 @@ BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_close(
     p_box_id, p_closed_by_user_id, p_notes); END;
 $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_getactive(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
 RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmount" NUMERIC,
     "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMP,"ClosedAt" TIMESTAMP,
@@ -546,6 +554,7 @@ LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_getactive(p_box_id); END;
 $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_expense_add(INTEGER, INTEGER, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, VARCHAR, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_add(
     p_session_id INTEGER, p_box_id INTEGER, p_category VARCHAR, p_description VARCHAR,
     p_amount NUMERIC, p_beneficiary VARCHAR DEFAULT NULL, p_receipt_number VARCHAR DEFAULT NULL,
@@ -557,6 +566,7 @@ BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_add(
     p_beneficiary, p_receipt_number, p_account_code, p_created_by_user_id); END;
 $$;
 
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_expense_list(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_list(
     p_box_id INTEGER, p_session_id INTEGER DEFAULT NULL)
 RETURNS TABLE("Id" INTEGER,"SessionId" INTEGER,"BoxId" INTEGER,"Category" VARCHAR,
@@ -567,6 +577,7 @@ BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_list(p_box_id,
 $$;
 
 -- Combined summary (API calls fin.usp_Fin_PettyCash_Summary)
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_summary(p_box_id INTEGER)
 RETURNS TABLE(
     "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,

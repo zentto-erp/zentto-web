@@ -9,25 +9,26 @@
 --    Lista conceptos legales con filtros opcionales.
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR(30), VARCHAR(30), VARCHAR(15), INT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR, VARCHAR, VARCHAR, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id       INT,
-    p_convention_code  VARCHAR(30)  DEFAULT NULL,
-    p_calculation_type VARCHAR(30)  DEFAULT NULL,
-    p_concept_type     VARCHAR(15)  DEFAULT NULL,
-    p_solo_activos     INT          DEFAULT 1
+    p_convention_code  VARCHAR  DEFAULT NULL,
+    p_calculation_type VARCHAR  DEFAULT NULL,
+    p_concept_type     VARCHAR  DEFAULT NULL,
+    p_solo_activos     INT      DEFAULT 1
 )
 RETURNS TABLE(
     "id"            BIGINT,
-    "convencion"    VARCHAR(50),
-    "tipoCalculo"   VARCHAR(50),
-    "coConcept"     VARCHAR(20),
-    "nbConcepto"    VARCHAR(120),
-    "formula"       VARCHAR(500),
-    "sobre"         VARCHAR(255),
-    "tipo"          VARCHAR(15),
-    "bonificable"   VARCHAR(1),
-    "lotttArticulo" VARCHAR(50),
-    "ccpClausula"   VARCHAR(50),
+    "convencion"    VARCHAR,
+    "tipoCalculo"   VARCHAR,
+    "coConcept"     VARCHAR,
+    "nbConcepto"    VARCHAR,
+    "formula"       VARCHAR,
+    "sobre"         VARCHAR,
+    "tipo"          VARCHAR,
+    "bonificable"   VARCHAR,
+    "lotttArticulo" VARCHAR,
+    "ccpClausula"   VARCHAR,
     "orden"         INT,
     "activo"        BOOLEAN
 )
@@ -36,16 +37,16 @@ BEGIN
     RETURN QUERY
     SELECT
         c."PayrollConceptId",
-        c."ConventionCode",
-        c."CalculationType",
-        c."ConceptCode",
-        c."ConceptName",
-        c."Formula",
-        c."BaseExpression",
-        c."ConceptType",
-        CASE WHEN c."IsBonifiable" THEN 'S'::VARCHAR(1) ELSE 'N'::VARCHAR(1) END,
-        c."LotttArticle",
-        c."CcpClause",
+        c."ConventionCode"::VARCHAR,
+        c."CalculationType"::VARCHAR,
+        c."ConceptCode"::VARCHAR,
+        c."ConceptName"::VARCHAR,
+        c."Formula"::VARCHAR,
+        c."BaseExpression"::VARCHAR,
+        c."ConceptType"::VARCHAR,
+        CASE WHEN c."IsBonifiable" THEN 'S' ELSE 'N' END::VARCHAR,
+        c."LotttArticle"::VARCHAR,
+        c."CcpClause"::VARCHAR,
         c."SortOrder",
         c."IsActive"
     FROM hr."PayrollConcept" c

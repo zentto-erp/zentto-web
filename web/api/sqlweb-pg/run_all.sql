@@ -322,7 +322,10 @@
 \echo '--- Funciones Nomina Regimen ---'
 \i includes/sp/sp_nomina_calculo_regimen.sql
 
-\echo '--- Funciones Nomina Concepto Legal ---'
+\echo '--- Funciones Nomina Concepto Legal CRUD ---'
+\i includes/sp/sp_nomina_conceptolegal_crud.sql
+
+\echo '--- Funciones Nomina Concepto Legal Adapter ---'
 \i includes/sp/sp_nomina_conceptolegal_adapter.sql
 
 \echo '--- Funciones Nomina Constantes Convenios ---'
@@ -363,6 +366,9 @@
 
 \echo '--- Funciones XML Compat ---'
 \i includes/sp/usp_xml_compat.sql
+
+\echo '--- Dispositivos Push ---'
+\i includes/sp/usp_sys_device.sql
 
 \echo '--- Notificaciones ---'
 \i includes/sp/sys_notificaciones.sql

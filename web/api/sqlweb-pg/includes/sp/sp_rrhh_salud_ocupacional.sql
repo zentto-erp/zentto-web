@@ -289,15 +289,16 @@ $$;
 -- 4. usp_HR_OccHealth_Get
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Get(INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Get(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Get(
-    p_occupational_health_id    INTEGER,
-    p_company_id                INTEGER
+    p_record_id                 INTEGER,
+    p_company_id                INTEGER  DEFAULT NULL
 )
 RETURNS TABLE (
     "OccupationalHealthId"          INTEGER,
     "CompanyId"                     INTEGER,
-    "CountryCode"                   CHAR(2),
-    "RecordType"                    VARCHAR(25),
+    "CountryCode"                   VARCHAR,
+    "RecordType"                    VARCHAR,
     "EmployeeId"                    BIGINT,
     "EmployeeCode"                  VARCHAR(24),
     "EmployeeName"                  VARCHAR(200),
@@ -353,8 +354,8 @@ BEGIN
         o."CreatedAt",
         o."UpdatedAt"
     FROM hr."OccupationalHealth" o
-    WHERE o."OccupationalHealthId" = p_occupational_health_id
-      AND o."CompanyId" = p_company_id;
+    WHERE o."OccupationalHealthId" = p_record_id
+      AND (p_company_id IS NULL OR o."CompanyId" = p_company_id);
 END;
 $$;
 
@@ -1361,9 +1362,10 @@ $$;
 -- 19. usp_HR_Committee_GetMeetings
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER, INTEGER, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_GetMeetings(
-    p_safety_committee_id   INTEGER,
-    p_company_id            INTEGER,
+    p_committee_id          INTEGER,
+    p_company_id            INTEGER     DEFAULT NULL,
     p_from_date             DATE        DEFAULT NULL,
     p_to_date               DATE        DEFAULT NULL,
     p_page                  INTEGER     DEFAULT 1,
@@ -1388,9 +1390,9 @@ BEGIN
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
     -- Verificar que el comité pertenece a la empresa
-    IF NOT EXISTS (
+    IF p_company_id IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM hr."SafetyCommittee"
-        WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
+        WHERE "SafetyCommitteeId" = p_committee_id AND "CompanyId" = p_company_id
     ) THEN
         RETURN;
     END IF;
@@ -1408,7 +1410,7 @@ BEGIN
         sc."CommitteeName"
     FROM hr."SafetyCommitteeMeeting" m
     INNER JOIN hr."SafetyCommittee" sc ON sc."SafetyCommitteeId" = m."SafetyCommitteeId"
-    WHERE m."SafetyCommitteeId" = p_safety_committee_id
+    WHERE m."SafetyCommitteeId" = p_committee_id
       AND (p_from_date IS NULL OR m."MeetingDate" >= p_from_date)
       AND (p_to_date   IS NULL OR m."MeetingDate" <= p_to_date)
     ORDER BY m."MeetingDate" DESC

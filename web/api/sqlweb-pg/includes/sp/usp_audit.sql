@@ -335,13 +335,13 @@ RETURNS TABLE(
     "TotalCount"       BIGINT,
     "FiscalRecordId"   INT,
     "InvoiceId"        INT,
-    "InvoiceNumber"    VARCHAR(50),
+    "InvoiceNumber"    VARCHAR,
     "InvoiceDate"      DATE,
-    "InvoiceType"      VARCHAR(20),
-    "RecordHash"       VARCHAR(64),
+    "InvoiceType"      VARCHAR,
+    "RecordHash"       VARCHAR,
     "SentToAuthority"  BOOLEAN,
-    "AuthorityStatus"  VARCHAR(50),
-    "CountryCode"      VARCHAR(3),
+    "AuthorityStatus"  VARCHAR,
+    "CountryCode"      VARCHAR,
     "CreatedAt"        TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
@@ -359,33 +359,33 @@ BEGIN
     ) INTO v_table_exists;
 
     IF NOT v_table_exists THEN
-        -- Retornar conjunto vacio
+        -- Retornar conjunto vacio con 0 registros
+        RETURN QUERY SELECT 0::BIGINT, 0, 0, ''::VARCHAR, CURRENT_DATE, ''::VARCHAR,
+            ''::VARCHAR, FALSE, ''::VARCHAR, ''::VARCHAR, NOW() AT TIME ZONE 'UTC'
+        WHERE FALSE;
         RETURN;
     END IF;
 
     -- Calcular total
-    EXECUTE format(
-        'SELECT COUNT(*) FROM fiscal."Record" WHERE "CompanyId" = $1 AND "BranchId" = $2'
+    EXECUTE 'SELECT COUNT(*) FROM fiscal."Record" WHERE "CompanyId" = $1 AND "BranchId" = $2'
         || CASE WHEN p_fecha_desde IS NOT NULL THEN ' AND "CreatedAt"::DATE >= $3' ELSE '' END
         || CASE WHEN p_fecha_hasta IS NOT NULL THEN ' AND "CreatedAt"::DATE <= $4' ELSE '' END
-    )
     INTO v_total
     USING p_company_id, p_branch_id, p_fecha_desde, p_fecha_hasta;
 
     -- Retornar registros paginados
-    RETURN QUERY EXECUTE format(
+    RETURN QUERY EXECUTE
         'SELECT $5::BIGINT AS "TotalCount",'
-        || ' "FiscalRecordId", "InvoiceId", "InvoiceNumber"::VARCHAR(50),'
-        || ' "InvoiceDate"::DATE, "InvoiceType"::VARCHAR(20),'
-        || ' "RecordHash"::VARCHAR(64), "SentToAuthority"::BOOLEAN,'
-        || ' "AuthorityStatus"::VARCHAR(50), "CountryCode"::VARCHAR(3), "CreatedAt"'
+        || ' "FiscalRecordId"::INT, "InvoiceId"::INT, "InvoiceNumber"::VARCHAR,'
+        || ' "InvoiceDate"::DATE, "InvoiceType"::VARCHAR,'
+        || ' "RecordHash"::VARCHAR, COALESCE("SentToAuthority", FALSE)::BOOLEAN,'
+        || ' COALESCE("AuthorityStatus", ''::VARCHAR)::VARCHAR, COALESCE("CountryCode", ''::VARCHAR)::VARCHAR, "CreatedAt"::TIMESTAMP'
         || ' FROM fiscal."Record"'
         || ' WHERE "CompanyId" = $1 AND "BranchId" = $2'
         || CASE WHEN p_fecha_desde IS NOT NULL THEN ' AND "CreatedAt"::DATE >= $3' ELSE '' END
         || CASE WHEN p_fecha_hasta IS NOT NULL THEN ' AND "CreatedAt"::DATE <= $4' ELSE '' END
         || ' ORDER BY "CreatedAt" DESC'
         || ' LIMIT $6 OFFSET $7'
-    )
     USING p_company_id, p_branch_id, p_fecha_desde, p_fecha_hasta, v_total, v_limit, v_offset;
 END;
 $$;

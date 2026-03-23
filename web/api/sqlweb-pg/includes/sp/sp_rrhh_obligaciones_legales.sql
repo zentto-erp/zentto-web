@@ -783,7 +783,7 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_GetSummary(
-    p_obligation_filing_id INTEGER
+    p_filing_id INTEGER
 )
 RETURNS TABLE (
     result_type     TEXT,
@@ -826,7 +826,7 @@ BEGIN
         )
     FROM hr."ObligationFiling" f
     INNER JOIN hr."LegalObligation" lo ON lo."LegalObligationId" = f."LegalObligationId"
-    WHERE f."ObligationFilingId" = p_obligation_filing_id;
+    WHERE f."ObligationFilingId" = p_filing_id;
 
     -- Detalle
     RETURN QUERY
@@ -847,7 +847,7 @@ BEGIN
         )
     FROM hr."ObligationFilingDetail" d
     INNER JOIN master."Employee" e ON e."EmployeeId" = d."EmployeeId"
-    WHERE d."ObligationFilingId" = p_obligation_filing_id
+    WHERE d."ObligationFilingId" = p_filing_id
     ORDER BY e."EmployeeName";
 END;
 $$;
