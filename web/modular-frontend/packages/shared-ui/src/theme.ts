@@ -176,32 +176,16 @@ const theme = createTheme({
         },
       },
     },
-    // Inputs: size small global + padding 12px → altura ~46px uniforme (TextField, Select, DatePicker)
-    // Label no-shrink reposicionado a translateY(13px) para centrar en el nuevo padding
-    // Fondo blanco explícito en OutlinedInput para que DatePickers no hereden el gris de la página
+    // Inputs: size small global — MUI defaults (8.5px padding, translate 9px) son los correctos
+    // Solo forzamos fondo blanco explícito para que no hereden el gris de la página
     MuiFormControl: {
       defaultProps: { size: 'small', fullWidth: true },
     },
     MuiInputLabel: {
       defaultProps: { size: 'small' },
-      styleOverrides: {
-        outlined: {
-          '&.MuiInputLabel-sizeSmall': {
-            transform: 'translate(14px, 10px) scale(1)',
-            '&.MuiInputLabel-shrink': {
-              transform: 'translate(14px, -9px) scale(0.75)',
-            },
-          },
-        },
-      },
     },
     MuiSelect: {
       defaultProps: { size: 'small' },
-      styleOverrides: {
-        select: {
-          padding: '10px 14px',
-        },
-      },
     },
     MuiTextField: {
       defaultProps: {
@@ -233,29 +217,14 @@ const theme = createTheme({
           borderRadius: 6,
           backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
         },
-        input: {
-          padding: '10px 14px',
-          '&.MuiInputBase-inputSizeSmall': {
-            padding: '10px 14px',
-          },
-        },
       },
     },
     // DatePicker — misma altura y estilo que TextField
     MuiPickersTextField: {
       defaultProps: { size: 'small', fullWidth: true },
     },
-    // Autocomplete — misma altura que TextField (padding ajustado para el input interno)
     MuiAutocomplete: {
       defaultProps: { size: 'small', fullWidth: true },
-      styleOverrides: {
-        inputRoot: {
-          padding: '3px 14px !important',
-          '& .MuiOutlinedInput-input': {
-            padding: '7px 0 !important',
-          },
-        },
-      },
     },
     MuiCheckbox: {
       defaultProps: { color: 'primary' },
