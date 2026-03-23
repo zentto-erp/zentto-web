@@ -23,6 +23,7 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
+  Tooltip,
 } from "@mui/material";
 import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
 import dayjs from "dayjs";
@@ -433,9 +434,11 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                       {formatCurrency(det.cantidad * det.precioUnitario - (det.descuento || 0))}
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton size="small" color="error" onClick={() => handleRemoveDetalle(idx)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Eliminar línea">
+                        <IconButton size="small" color="error" onClick={() => handleRemoveDetalle(idx)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -21,6 +21,7 @@ import {
   IconButton,
   Breadcrumbs,
   Link,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import AddIcon from "@mui/icons-material/Add";
@@ -213,9 +214,11 @@ export default function AlmacenesWMSPage() {
       {selectedWarehouse && !selectedZone && (
         <>
           <Box sx={{ mb: 2 }}>
-            <IconButton onClick={handleBackToWarehouses} size="small" sx={{ mr: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
+            <Tooltip title="Volver a almacenes">
+              <IconButton onClick={handleBackToWarehouses} size="small" sx={{ mr: 1 }}>
+                <ArrowBackIcon />
+              </IconButton>
+            </Tooltip>
             <Typography variant="subtitle1" component="span" fontWeight={600}>
               Zonas de {selectedWarehouse.name}
             </Typography>
@@ -275,9 +278,11 @@ export default function AlmacenesWMSPage() {
       {selectedZone && (
         <>
           <Box sx={{ mb: 2 }}>
-            <IconButton onClick={handleBackToZones} size="small" sx={{ mr: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
+            <Tooltip title="Volver a zonas">
+              <IconButton onClick={handleBackToZones} size="small" sx={{ mr: 1 }}>
+                <ArrowBackIcon />
+              </IconButton>
+            </Tooltip>
             <Typography variant="subtitle1" component="span" fontWeight={600}>
               Ubicaciones de {selectedZone.name}
             </Typography>

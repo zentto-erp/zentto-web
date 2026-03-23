@@ -13,12 +13,13 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import IconButton from "@mui/material/IconButton";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -108,9 +109,11 @@ export default function LiquidacionesPage() {
       width: 60,
       sortable: false,
       renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.liquidacionId)}>
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Ver liquidacion">
+          <IconButton size="small" onClick={() => setSelectedId(p.row.liquidacionId)}>
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];

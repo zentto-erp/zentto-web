@@ -264,14 +264,18 @@ function RecurrenteFormDialog({
                 size="small"
                 sx={{ width: 120 }}
               />
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => handleRemoveLine(idx)}
-                disabled={form.lines.length <= 1}
-              >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Eliminar linea">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleRemoveLine(idx)}
+                    disabled={form.lines.length <= 1}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Stack>
           ))}
 

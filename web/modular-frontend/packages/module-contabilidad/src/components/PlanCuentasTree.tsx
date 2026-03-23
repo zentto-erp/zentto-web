@@ -19,6 +19,7 @@ import {
   Alert,
   Divider,
   MenuItem,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -156,20 +157,22 @@ function TreeRow({
       >
         {/* Expand/Collapse */}
         {hasChildren ? (
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle(node.codCuenta);
-            }}
-            sx={{ mr: 0.5, p: 0.3 }}
-          >
-            {isExpanded ? (
-              <ExpandMoreIcon fontSize="small" />
-            ) : (
-              <ChevronRightIcon fontSize="small" />
-            )}
-          </IconButton>
+          <Tooltip title={isExpanded ? "Colapsar" : "Expandir"}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle(node.codCuenta);
+              }}
+              sx={{ mr: 0.5, p: 0.3 }}
+            >
+              {isExpanded ? (
+                <ExpandMoreIcon fontSize="small" />
+              ) : (
+                <ChevronRightIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
         ) : (
           <Box sx={{ width: 28, mr: 0.5 }} />
         )}

@@ -17,6 +17,7 @@ import {
   Stack,
   CircularProgress,
   Alert,
+  Tooltip,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
 import BlockIcon from "@mui/icons-material/Block";
@@ -134,13 +135,17 @@ export default function AsientosListPage() {
       sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton size="small" onClick={() => setSelectedId(p.row.id)}>
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          {p.row.estado !== "ANULADO" && (
-            <IconButton size="small" color="error" onClick={() => setAnularId(p.row.id)}>
-              <BlockIcon fontSize="small" />
+          <Tooltip title="Ver detalle del asiento">
+            <IconButton size="small" onClick={() => setSelectedId(p.row.id)}>
+              <VisibilityIcon fontSize="small" />
             </IconButton>
+          </Tooltip>
+          {p.row.estado !== "ANULADO" && (
+            <Tooltip title="Anular asiento">
+              <IconButton size="small" color="error" onClick={() => setAnularId(p.row.id)}>
+                <BlockIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),

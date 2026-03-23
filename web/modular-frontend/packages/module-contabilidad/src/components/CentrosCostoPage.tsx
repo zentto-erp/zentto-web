@@ -114,9 +114,11 @@ function CentroCostoTreeRow({
         }}
       >
         {hasChildren ? (
-          <IconButton size="small" onClick={() => onToggle(node.code)} sx={{ mr: 1 }}>
-            {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
-          </IconButton>
+          <Tooltip title={isExpanded ? "Colapsar" : "Expandir"}>
+            <IconButton size="small" onClick={() => onToggle(node.code)} sx={{ mr: 1 }}>
+              {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
         ) : (
           <Box sx={{ width: 32, mr: 1 }} />
         )}

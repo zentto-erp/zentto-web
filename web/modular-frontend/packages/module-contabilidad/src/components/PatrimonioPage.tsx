@@ -23,6 +23,7 @@ import {
   FormControl,
   InputLabel,
   type SelectChangeEvent,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
@@ -225,12 +226,16 @@ export default function PatrimonioPage() {
       sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton size="small" onClick={() => openEdit(p.row)}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton size="small" color="error" onClick={() => setDeleteId(p.row.EquityMovementId)}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Editar movimiento">
+            <IconButton size="small" onClick={() => openEdit(p.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar movimiento">
+            <IconButton size="small" color="error" onClick={() => setDeleteId(p.row.EquityMovementId)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Stack>
       ),
     },

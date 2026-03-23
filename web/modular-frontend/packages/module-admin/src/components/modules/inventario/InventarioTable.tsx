@@ -20,6 +20,7 @@ import {
   Chip,
   InputAdornment,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useInventarioList } from "../../../hooks/useInventario";
@@ -143,13 +144,14 @@ export default function InventarioTable() {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        onClick={() => router.push(`/inventario/${codigo}`)}
-                        title="Ver detalle"
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Ver detalle">
+                        <IconButton
+                          size="small"
+                          onClick={() => router.push(`/inventario/${codigo}`)}
+                        >
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );

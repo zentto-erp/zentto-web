@@ -16,7 +16,8 @@ import {
   TablePagination,
   TableRow,
   TextField,
-  Typography
+  Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add, Search, Visibility } from "@mui/icons-material";
 import { useComprasList } from "../hooks/useCompras";
@@ -137,9 +138,11 @@ export default function ComprasTable() {
                   </TableCell>
                   <TableCell align="right">{Number(row.totalAmount || 0).toFixed(2)}</TableCell>
                   <TableCell align="center">
-                    <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}`)}>
-                      <Visibility fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="Ver detalle de compra">
+                      <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}`)}>
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}

@@ -351,9 +351,11 @@ export default function PerfilPage() {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton size="small" onClick={() => setShowCurrent(p => !p)}>
+                                                            <Tooltip title={showCurrent ? "Ocultar" : "Mostrar"}>
+                                                              <IconButton size="small" onClick={() => setShowCurrent(p => !p)}>
                                                                 {showCurrent ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}
@@ -368,9 +370,11 @@ export default function PerfilPage() {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton size="small" onClick={() => setShowNew(p => !p)}>
+                                                            <Tooltip title={showNew ? "Ocultar" : "Mostrar"}>
+                                                              <IconButton size="small" onClick={() => setShowNew(p => !p)}>
                                                                 {showNew ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}
@@ -386,9 +390,11 @@ export default function PerfilPage() {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton size="small" onClick={() => setShowConfirm(p => !p)}>
+                                                            <Tooltip title={showConfirm ? "Ocultar" : "Mostrar"}>
+                                                              <IconButton size="small" onClick={() => setShowConfirm(p => !p)}>
                                                                 {showConfirm ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}

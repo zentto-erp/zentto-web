@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
@@ -128,24 +129,26 @@ export default function BOMPage() {
         return (
           <Stack direction="row" spacing={0.5}>
             {status === "DRAFT" && (
-              <IconButton
-                size="small"
-                title="Activar"
-                color="success"
-                onClick={() => id && activateBOM.mutate(id)}
-              >
-                <CheckCircleIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Activar BOM">
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => id && activateBOM.mutate(id)}
+                >
+                  <CheckCircleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             {(status === "DRAFT" || status === "ACTIVE") && (
-              <IconButton
-                size="small"
-                title="Marcar obsoleta"
-                color="error"
-                onClick={() => id && obsoleteBOM.mutate(id)}
-              >
-                <BlockIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Marcar obsoleta">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => id && obsoleteBOM.mutate(id)}
+                >
+                  <BlockIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Stack>
         );
@@ -336,14 +339,18 @@ export default function BOMPage() {
                   size="small"
                   sx={{ width: 110 }}
                 />
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemoveLine(idx)}
-                  disabled={lines.length === 1}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Eliminar componente">
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemoveLine(idx)}
+                      disabled={lines.length === 1}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Stack>
             ))}
             <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>

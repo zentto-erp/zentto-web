@@ -19,6 +19,8 @@ import {
   Select,
   FormControl,
   InputLabel,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
@@ -26,7 +28,6 @@ import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
 import CheckIcon from "@mui/icons-material/Check";
-import IconButton from "@mui/material/IconButton";
 import { formatCurrency, useCountries } from "@zentto/shared-api";
 import {
   useObligationsList,
@@ -109,27 +110,29 @@ export default function ObligacionesPage() {
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
           {p.row.status === "PENDIENTE" && (
-            <IconButton
-              size="small"
-              color="primary"
-              title="Generar"
-              onClick={() => {
-                setFilForm({ obligationCode: p.row.obligationCode, periodFrom: "", periodTo: "" });
-                setFilDialogOpen(true);
-              }}
-            >
-              <PublishIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Generar declaracion">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => {
+                  setFilForm({ obligationCode: p.row.obligationCode, periodFrom: "", periodTo: "" });
+                  setFilDialogOpen(true);
+                }}
+              >
+                <PublishIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
           {p.row.status !== "PRESENTADA" && (
-            <IconButton
-              size="small"
-              color="success"
-              title="Marcar Presentada"
-              onClick={() => markFiledMutation.mutate({ filingId: p.row.id })}
-            >
-              <CheckIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Marcar como presentada">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => markFiledMutation.mutate({ filingId: p.row.id })}
+              >
+                <CheckIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),

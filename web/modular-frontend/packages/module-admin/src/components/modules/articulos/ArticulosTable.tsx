@@ -403,9 +403,11 @@ export default function ArticulosTable() {
             ),
             endAdornment: searchText ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => { setSearchText(""); setDebouncedSearch(""); }}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Limpiar busqueda">
+                  <IconButton size="small" onClick={() => { setSearchText(""); setDebouncedSearch(""); }}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </InputAdornment>
             ) : null,
           }}
@@ -607,9 +609,11 @@ export default function ArticulosTable() {
                 InputProps={{
                   endAdornment: wildcardText ? (
                     <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => { setWildcardText(""); setDebouncedWildcard(""); }}>
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Limpiar busqueda wildcard">
+                        <IconButton size="small" onClick={() => { setWildcardText(""); setDebouncedWildcard(""); }}>
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </InputAdornment>
                   ) : null,
                 }}

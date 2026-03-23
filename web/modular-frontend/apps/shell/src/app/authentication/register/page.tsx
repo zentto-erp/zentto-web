@@ -15,6 +15,7 @@ import {
   OutlinedInput,
   Stack,
   Typography,
+  Tooltip,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import Grid from '@mui/material/Grid2';
@@ -279,9 +280,11 @@ export default function RegisterPage() {
                             endAdornment={
                               field.value ? (
                                 <InputAdornment position="end">
-                                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
-                                    {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                                  </IconButton>
+                                  <Tooltip title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
+                                      {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                                    </IconButton>
+                                  </Tooltip>
                                 </InputAdornment>
                               ) : null
                             }
@@ -314,9 +317,11 @@ export default function RegisterPage() {
                             endAdornment={
                               field.value ? (
                                 <InputAdornment position="end">
-                                  <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
-                                    {showConfirmPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                                  </IconButton>
+                                  <Tooltip title={showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
+                                      {showConfirmPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                                    </IconButton>
+                                  </Tooltip>
                                 </InputAdornment>
                               ) : null
                             }

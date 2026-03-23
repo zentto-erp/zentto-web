@@ -275,9 +275,11 @@ export default function PerfilDrawer({ open, onClose }: PerfilDrawerProps) {
                 <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
                     Mi Perfil
                 </Typography>
-                <IconButton onClick={handleClose}>
+                <Tooltip title="Cerrar">
+                  <IconButton onClick={handleClose}>
                     <CloseIcon />
-                </IconButton>
+                  </IconButton>
+                </Tooltip>
             </Stack>
 
             {/* ── Body ───────────────────────────────────────────── */}
@@ -472,9 +474,11 @@ export default function PerfilDrawer({ open, onClose }: PerfilDrawerProps) {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton onClick={() => setShow(p => !p)}>
+                                                            <Tooltip title={show ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                                                              <IconButton onClick={() => setShow(p => !p)}>
                                                                 {show ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}

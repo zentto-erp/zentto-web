@@ -16,6 +16,7 @@ import {
   Button,
   IconButton,
   Alert,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -77,9 +78,11 @@ export default function AuditLogPage() {
       width: 60,
       sortable: false,
       renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.AuditLogId)}>
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Ver detalle">
+          <IconButton size="small" onClick={() => setSelectedId(p.row.AuditLogId)}>
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];

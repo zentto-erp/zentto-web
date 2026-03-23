@@ -24,6 +24,7 @@ import {
   Chip,
   InputAdornment,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
@@ -181,21 +182,23 @@ export default function CuentasPorPagarTable() {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/cuentas-por-pagar/${cuenta.id}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(cuenta.id)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="Ver cuenta por pagar">
+                      <IconButton
+                        size="small"
+                        onClick={() => router.push(`/cuentas-por-pagar/${cuenta.id}`)}
+                      >
+                        <ViewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar cuenta por pagar">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteClick(cuenta.id)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))

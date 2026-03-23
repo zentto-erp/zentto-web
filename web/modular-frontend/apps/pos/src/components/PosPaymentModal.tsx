@@ -17,6 +17,7 @@ import {
     IconButton,
     Divider,
     Chip,
+    Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MoneyIcon from '@mui/icons-material/Money';
@@ -193,9 +194,11 @@ export function PosPaymentModal({
         >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6">Procesar Pago</Typography>
-                <IconButton onClick={onClose}>
-                    <CloseIcon />
-                </IconButton>
+                <Tooltip title="Cerrar">
+                    <IconButton onClick={onClose}>
+                        <CloseIcon />
+                    </IconButton>
+                </Tooltip>
             </DialogTitle>
 
             <DialogContent>
@@ -380,13 +383,15 @@ export function PosPaymentModal({
                                             <Typography fontWeight="medium">
                                                 {symP} {payment.monto.toFixed(2)}
                                             </Typography>
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => handleRemovePayment(idx)}
-                                            >
-                                                <CloseIcon fontSize="small" />
-                                            </IconButton>
+                                            <Tooltip title="Eliminar pago">
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={() => handleRemovePayment(idx)}
+                                                >
+                                                    <CloseIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
                                         </Box>
                                     </Box>
                                 ))}

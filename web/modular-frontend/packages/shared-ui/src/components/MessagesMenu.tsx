@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
-    List, ListItem, ListItemAvatar, ListItemText, Avatar
+    List, ListItem, ListItemAvatar, ListItemText, Avatar, Tooltip
 } from '@mui/material';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import { apiGet, apiPatch } from '@zentto/shared-api';
@@ -45,11 +45,13 @@ export default function MessagesMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
+            <Tooltip title="Mensajes">
+              <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={unreadCount} color="info" max={99}>
                     <MailOutlineIcon />
                 </Badge>
-            </IconButton>
+              </IconButton>
+            </Tooltip>
             <Menu
                 anchorEl={anchorEl}
                 open={open}

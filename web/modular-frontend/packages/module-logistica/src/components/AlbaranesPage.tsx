@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
@@ -175,41 +176,44 @@ export default function AlbaranesPage() {
         const id = Number(params.row.DeliveryId ?? params.row.Id);
         return (
           <Stack direction="row" spacing={0.5}>
-            <IconButton
-              size="small"
-              title="Ver detalle"
-              onClick={() => {
-                setSelectedRow(params.row);
-                setDetailOpen(true);
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-            {(status === "CONFIRMED" || status === "PACKED") && (
+            <Tooltip title="Ver detalle">
               <IconButton
                 size="small"
-                title="Despachar"
-                color="primary"
-                onClick={() => {
-                  if (id) dispatchDelivery.mutate(id);
-                }}
-              >
-                <LocalShippingIcon fontSize="small" />
-              </IconButton>
-            )}
-            {status === "DISPATCHED" && (
-              <IconButton
-                size="small"
-                title="Entregar"
-                color="success"
                 onClick={() => {
                   setSelectedRow(params.row);
-                  setDeliveredToName("");
-                  setDeliverDialogOpen(true);
+                  setDetailOpen(true);
                 }}
               >
-                <CheckCircleIcon fontSize="small" />
+                <VisibilityIcon fontSize="small" />
               </IconButton>
+            </Tooltip>
+            {(status === "CONFIRMED" || status === "PACKED") && (
+              <Tooltip title="Despachar">
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => {
+                    if (id) dispatchDelivery.mutate(id);
+                  }}
+                >
+                  <LocalShippingIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {status === "DISPATCHED" && (
+              <Tooltip title="Entregar">
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => {
+                    setSelectedRow(params.row);
+                    setDeliveredToName("");
+                    setDeliverDialogOpen(true);
+                  }}
+                >
+                  <CheckCircleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Stack>
         );
@@ -390,14 +394,18 @@ export default function AlbaranesPage() {
                   size="small"
                   sx={{ width: 110 }}
                 />
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemoveLine(idx)}
-                  disabled={lines.length === 1}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Eliminar linea">
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemoveLine(idx)}
+                      disabled={lines.length === 1}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Stack>
             ))}
             <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>

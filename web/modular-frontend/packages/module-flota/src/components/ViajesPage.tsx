@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
@@ -130,31 +131,33 @@ export default function ViajesPage() {
         const status = String(params.row.Status ?? "");
         return (
           <Stack direction="row" spacing={0.5}>
-            <IconButton
-              size="small"
-              title="Ver detalle"
-              onClick={() => {
-                setSelectedRow(params.row);
-                setDetailOpen(true);
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-            {(status === "PLANNED" || status === "IN_TRANSIT") && (
+            <Tooltip title="Ver detalle">
               <IconButton
                 size="small"
-                title="Completar"
-                color="success"
                 onClick={() => {
                   setSelectedRow(params.row);
-                  setEndMileage("");
-                  setArrivalDate("");
-                  setFuelUsed("");
-                  setCompleteOpen(true);
+                  setDetailOpen(true);
                 }}
               >
-                <CheckCircleIcon fontSize="small" />
+                <VisibilityIcon fontSize="small" />
               </IconButton>
+            </Tooltip>
+            {(status === "PLANNED" || status === "IN_TRANSIT") && (
+              <Tooltip title="Completar viaje">
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => {
+                    setSelectedRow(params.row);
+                    setEndMileage("");
+                    setArrivalDate("");
+                    setFuelUsed("");
+                    setCompleteOpen(true);
+                  }}
+                >
+                  <CheckCircleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Stack>
         );

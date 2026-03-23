@@ -66,7 +66,17 @@
       "status": 200
     },
     {
+      "path": "/v1/p-cobrar/{id}",
+      "tag": "CuentasPorCobrar",
+      "status": 200
+    },
+    {
       "path": "/v1/p-cobrar/c/list",
+      "tag": "CuentasPorCobrar",
+      "status": 200
+    },
+    {
+      "path": "/v1/p-cobrar/c/{id}",
       "tag": "CuentasPorCobrar",
       "status": 200
     },
@@ -456,6 +466,11 @@
       "status": 200
     },
     {
+      "path": "/v1/rrhh/examenes-medicos/pending",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
       "path": "/v1/rrhh/ordenes-medicas",
       "tag": "RRHH",
       "status": 200
@@ -622,6 +637,12 @@
     {
       "path": "/v1/abonospagos/{id}",
       "tag": "AbonosPagos",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/cuentas-por-pagar/{id}",
+      "tag": "CuentasPorPagar",
       "status": 404,
       "error": "{'error': 'not_found'}"
     },
@@ -934,16 +955,10 @@
       "error": "{'error': 'function usp_proveedores_getbycodigo(p_company_id => unknown, p_codigo => unknown) does not exist'}"
     },
     {
-      "path": "/v1/cuentas-por-pagar/{id}",
-      "tag": "CuentasPorPagar",
-      "status": 500,
-      "error": "{'error': 'structure of query does not match function result type'}"
-    },
-    {
       "path": "/v1/nomina/conceptos-legales",
       "tag": "Nomina",
       "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
+      "error": "{'error': 'error: function usp_hr_legalconcept_list(p_company_id => unknown, p_convention_code => unknown, p_calculation_type => unknown, p_concept_ty"
     },
     {
       "path": "/v1/bancos/caja-chica",
@@ -955,7 +970,7 @@
       "path": "/v1/nomina/batch/{id}/summary",
       "tag": "Nomina",
       "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
+      "error": "{'error': 'error: function usp_hr_payroll_getdraftsummary(p_batch_id => unknown) is not unique'}"
     },
     {
       "path": "/v1/nomina/batch/{id}/grid",
@@ -994,12 +1009,6 @@
       "error": "{'error': 'error: function usp_hr_occhealth_get(p_record_id => unknown) does not exist'}"
     },
     {
-      "path": "/v1/rrhh/examenes-medicos/pending",
-      "tag": "RRHH",
-      "status": 500,
-      "error": "{'error': 'error: column reference \"CompanyId\" is ambiguous'}"
-    },
-    {
       "path": "/v1/rrhh/comites/{committeeId}/meetings",
       "tag": "RRHH",
       "status": 500,
@@ -1022,18 +1031,6 @@
     {
       "path": "/v1/clientes/{codigo}",
       "tag": "Clientes",
-      "status": 0,
-      "error": "The read operation timed out"
-    },
-    {
-      "path": "/v1/p-cobrar/{id}",
-      "tag": "CuentasPorCobrar",
-      "status": 0,
-      "error": "The read operation timed out"
-    },
-    {
-      "path": "/v1/p-cobrar/c/{id}",
-      "tag": "CuentasPorCobrar",
       "status": 0,
       "error": "The read operation timed out"
     },

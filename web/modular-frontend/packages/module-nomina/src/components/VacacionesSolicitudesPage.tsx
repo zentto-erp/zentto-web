@@ -19,6 +19,7 @@ import {
   InputLabel,
   IconButton,
   Alert,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
@@ -118,40 +119,49 @@ export default function VacacionesSolicitudesPage() {
         const id = p.row.RequestId;
         return (
           <Stack direction="row" spacing={0.5}>
-            <IconButton size="small" onClick={() => setSelectedRow(p.row)} title="Ver detalle">
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Ver detalle">
+              <IconButton size="small" onClick={() => setSelectedRow(p.row)}>
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             {status === "PENDIENTE" && (
               <>
-                <IconButton
-                  size="small"
-                  color="success"
-                  onClick={() => handleAprobar(id)}
-                  disabled={aprobarMut.isPending}
-                  title="Aprobar"
-                >
-                  <CheckCircleIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => { setRejectId(id); setRejectOpen(true); }}
-                  title="Rechazar"
-                >
-                  <CancelIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Aprobar solicitud">
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="success"
+                      onClick={() => handleAprobar(id)}
+                      disabled={aprobarMut.isPending}
+                    >
+                      <CheckCircleIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Rechazar solicitud">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => { setRejectId(id); setRejectOpen(true); }}
+                  >
+                    <CancelIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </>
             )}
             {status === "APROBADA" && (
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => handleProcesarPago(id)}
-                disabled={procesarPagoMut.isPending}
-                title="Generar Pago"
-              >
-                <PaymentIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Generar pago">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={() => handleProcesarPago(id)}
+                    disabled={procesarPagoMut.isPending}
+                  >
+                    <PaymentIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             )}
           </Stack>
         );

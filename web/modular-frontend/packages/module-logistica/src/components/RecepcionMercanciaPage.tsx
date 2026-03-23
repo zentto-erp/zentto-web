@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
@@ -126,28 +127,30 @@ export default function RecepcionMercanciaPage() {
         const status = String(params.row.Status ?? "");
         return (
           <Stack direction="row" spacing={0.5}>
-            <IconButton
-              size="small"
-              title="Ver detalle"
-              onClick={() => {
-                setSelectedRow(params.row);
-                setDetailOpen(true);
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-            {(status === "DRAFT" || status === "PARTIAL") && (
+            <Tooltip title="Ver detalle">
               <IconButton
                 size="small"
-                title="Completar"
-                color="success"
                 onClick={() => {
-                  const id = Number(params.row.ReceiptId ?? params.row.Id);
-                  if (id) completeReceipt.mutate(id);
+                  setSelectedRow(params.row);
+                  setDetailOpen(true);
                 }}
               >
-                <CheckCircleIcon fontSize="small" />
+                <VisibilityIcon fontSize="small" />
               </IconButton>
+            </Tooltip>
+            {(status === "DRAFT" || status === "PARTIAL") && (
+              <Tooltip title="Completar recepcion">
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => {
+                    const id = Number(params.row.ReceiptId ?? params.row.Id);
+                    if (id) completeReceipt.mutate(id);
+                  }}
+                >
+                  <CheckCircleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Stack>
         );
@@ -321,14 +324,18 @@ export default function RecepcionMercanciaPage() {
                   onChange={(v) => handleLineChange(idx, "expirationDate", v ? v.format('YYYY-MM-DD') : '')}
                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemoveLine(idx)}
-                  disabled={lines.length === 1}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Eliminar linea">
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemoveLine(idx)}
+                      disabled={lines.length === 1}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Stack>
             ))}
             <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>

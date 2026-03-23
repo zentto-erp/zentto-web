@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
-    List, ListItem, ListItemAvatar, ListItemText, Avatar
+    List, ListItem, ListItemAvatar, ListItemText, Avatar, Tooltip
 } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -89,11 +89,13 @@ export default function NotificationsMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
+            <Tooltip title="Notificaciones">
+              <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={unreadCount} color="error" max={99}>
                     <NotificationsIcon />
                 </Badge>
-            </IconButton>
+              </IconButton>
+            </Tooltip>
             <Menu
                 anchorEl={anchorEl}
                 open={open}

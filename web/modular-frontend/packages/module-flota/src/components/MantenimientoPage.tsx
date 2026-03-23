@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
@@ -122,41 +123,44 @@ export default function MantenimientoPage() {
         const id = Number(params.row.MaintenanceOrderId ?? params.row.Id);
         return (
           <Stack direction="row" spacing={0.5}>
-            <IconButton
-              size="small"
-              title="Ver detalle"
-              onClick={() => {
-                setSelectedRow(params.row);
-                setDetailOpen(true);
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Ver detalle">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSelectedRow(params.row);
+                  setDetailOpen(true);
+                }}
+              >
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             {(status === "SCHEDULED" || status === "IN_PROGRESS") && (
               <>
-                <IconButton
-                  size="small"
-                  title="Completar"
-                  color="success"
-                  onClick={() => {
-                    setSelectedRow(params.row);
-                    setActualCost(String(params.row.EstimatedCost ?? ""));
-                    setCompletedDate("");
-                    setCompleteOpen(true);
-                  }}
-                >
-                  <CheckCircleIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  title="Cancelar"
-                  color="error"
-                  onClick={() => {
-                    if (id) cancelOrder.mutate(id);
-                  }}
-                >
-                  <CancelIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Completar">
+                  <IconButton
+                    size="small"
+                    color="success"
+                    onClick={() => {
+                      setSelectedRow(params.row);
+                      setActualCost(String(params.row.EstimatedCost ?? ""));
+                      setCompletedDate("");
+                      setCompleteOpen(true);
+                    }}
+                  >
+                    <CheckCircleIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Cancelar">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => {
+                      if (id) cancelOrder.mutate(id);
+                    }}
+                  >
+                    <CancelIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </>
             )}
           </Stack>

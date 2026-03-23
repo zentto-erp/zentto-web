@@ -237,7 +237,9 @@ export default function TemplateEditorPage({ templateCode, onBack }: Props) {
       <Paper sx={{ px: 2, py: 1.5, borderRadius: 0, borderBottom: '1px solid', borderColor: 'divider' }} elevation={1}>
         <Stack direction="row" alignItems="center" spacing={2}>
           {onBack && (
-            <IconButton size="small" onClick={onBack}><ArrowBackIcon /></IconButton>
+            <Tooltip title="Volver">
+              <IconButton size="small" onClick={onBack}><ArrowBackIcon /></IconButton>
+            </Tooltip>
           )}
           <DescriptionIcon color="primary" />
           <Stack sx={{ flex: 1 }} spacing={0}>

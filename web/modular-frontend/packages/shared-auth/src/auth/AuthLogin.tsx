@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  Tooltip,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -324,15 +325,19 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                   endAdornment={
                     field.value ? (
                       <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                          disabled={isSubmitting}
-                          size="small"
-                          sx={{ p: 0.5 }}
-                        >
-                          {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                        </IconButton>
+                        <Tooltip title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                          <span>
+                            <IconButton
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge="end"
+                              disabled={isSubmitting}
+                              size="small"
+                              sx={{ p: 0.5 }}
+                            >
+                              {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       </InputAdornment>
                     ) : null
                   }

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Box, CircularProgress, Alert, Typography,
-  FormControl, InputLabel, Select, MenuItem, Stack, Chip, IconButton,
+  FormControl, InputLabel, Select, MenuItem, Stack, Chip, IconButton, Tooltip,
 } from "@mui/material";
 import PrintIcon from "@mui/icons-material/Print";
 import CloseIcon from "@mui/icons-material/Close";
@@ -186,7 +186,7 @@ export default function DocumentViewerModal({
             <Typography variant="caption" color="text.secondary">{employeeName}</Typography>
           )}
         </Box>
-        <IconButton size="small" onClick={onClose}><CloseIcon /></IconButton>
+        <Tooltip title="Cerrar"><IconButton size="small" onClick={onClose}><CloseIcon /></IconButton></Tooltip>
       </DialogTitle>
 
       <Box sx={{ px: 3, pb: 1, display: 'flex', gap: 2, alignItems: 'center' }}>

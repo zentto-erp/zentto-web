@@ -19,6 +19,7 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
+    Tooltip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
@@ -408,9 +409,11 @@ export default function AppsStorePage() {
                                     />
                                 </Box>
                             </Box>
-                            <IconButton onClick={() => setSelectedApp(null)} size="small">
+                            <Tooltip title="Cerrar">
+                              <IconButton onClick={() => setSelectedApp(null)} size="small">
                                 <CloseIcon />
-                            </IconButton>
+                              </IconButton>
+                            </Tooltip>
                         </DialogTitle>
 
                         <DialogContent>

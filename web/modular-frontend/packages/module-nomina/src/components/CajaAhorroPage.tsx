@@ -15,12 +15,13 @@ import {
   Chip,
   Tab,
   Tabs,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import IconButton from "@mui/material/IconButton";
 import { formatCurrency } from "@zentto/shared-api";
 import {
   useSavingsList,
@@ -104,13 +105,15 @@ export default function CajaAhorroPage() {
       sortable: false,
       renderCell: (p) =>
         p.row.status === "PENDIENTE" ? (
-          <IconButton
-            size="small"
-            color="success"
-            onClick={() => approveLoanMutation.mutate({ loanId: p.row.id, approved: true })}
-          >
-            <CheckCircleIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Aprobar prestamo">
+            <IconButton
+              size="small"
+              color="success"
+              onClick={() => approveLoanMutation.mutate({ loanId: p.row.id, approved: true })}
+            >
+              <CheckCircleIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         ) : null,
     },
   ];

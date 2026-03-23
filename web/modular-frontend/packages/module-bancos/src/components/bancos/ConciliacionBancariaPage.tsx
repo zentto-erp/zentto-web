@@ -19,6 +19,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type GridColDef } from "@mui/x-data-grid";
@@ -180,20 +181,24 @@ export default function ConciliacionBancariaPage() {
       field: "acciones", headerName: "Acciones", width: 120, sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton size="small" onClick={() => setSelectedId(Number(p.row.ID))}>
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          {p.row.Estado === "ABIERTA" && (
-            <IconButton
-              size="small"
-              color="warning"
-              onClick={() => {
-                setSelectedId(Number(p.row.ID));
-                setCerrarOpen(true);
-              }}
-            >
-              <LockIcon fontSize="small" />
+          <Tooltip title="Ver conciliacion">
+            <IconButton size="small" onClick={() => setSelectedId(Number(p.row.ID))}>
+              <VisibilityIcon fontSize="small" />
             </IconButton>
+          </Tooltip>
+          {p.row.Estado === "ABIERTA" && (
+            <Tooltip title="Cerrar conciliacion">
+              <IconButton
+                size="small"
+                color="warning"
+                onClick={() => {
+                  setSelectedId(Number(p.row.ID));
+                  setCerrarOpen(true);
+                }}
+              >
+                <LockIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),

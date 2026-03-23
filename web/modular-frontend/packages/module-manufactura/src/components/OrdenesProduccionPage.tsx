@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
@@ -178,34 +179,37 @@ export default function OrdenesProduccionPage() {
         return (
           <Stack direction="row" spacing={0.5}>
             {status === "DRAFT" && (
-              <IconButton
-                size="small"
-                title="Iniciar"
-                color="info"
-                onClick={() => id && startOrder.mutate(id)}
-              >
-                <PlayArrowIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Iniciar orden">
+                <IconButton
+                  size="small"
+                  color="info"
+                  onClick={() => id && startOrder.mutate(id)}
+                >
+                  <PlayArrowIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             {status === "IN_PROGRESS" && (
-              <IconButton
-                size="small"
-                title="Completar"
-                color="success"
-                onClick={() => id && completeOrder.mutate(id)}
-              >
-                <CheckCircleIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Completar orden">
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => id && completeOrder.mutate(id)}
+                >
+                  <CheckCircleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             {(status === "DRAFT" || status === "IN_PROGRESS") && (
-              <IconButton
-                size="small"
-                title="Cancelar"
-                color="error"
-                onClick={() => id && cancelOrder.mutate(id)}
-              >
-                <CancelIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Cancelar orden">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => id && cancelOrder.mutate(id)}
+                >
+                  <CancelIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Stack>
         );

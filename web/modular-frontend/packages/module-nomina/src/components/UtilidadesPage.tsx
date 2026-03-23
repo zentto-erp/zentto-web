@@ -14,13 +14,14 @@ import {
   DialogActions,
   Chip,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import IconButton from "@mui/material/IconButton";
 import { formatCurrency } from "@zentto/shared-api";
 import {
   useProfitSharingList,
@@ -76,17 +77,21 @@ export default function UtilidadesPage() {
       sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton size="small" onClick={() => setSummaryId(p.row.id)}>
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          {p.row.status !== "APROBADO" && p.row.status !== "PROCESADO" && (
-            <IconButton
-              size="small"
-              color="success"
-              onClick={() => approveMutation.mutate({ id: p.row.id })}
-            >
-              <CheckCircleIcon fontSize="small" />
+          <Tooltip title="Ver resumen">
+            <IconButton size="small" onClick={() => setSummaryId(p.row.id)}>
+              <VisibilityIcon fontSize="small" />
             </IconButton>
+          </Tooltip>
+          {p.row.status !== "APROBADO" && p.row.status !== "PROCESADO" && (
+            <Tooltip title="Aprobar calculo">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => approveMutation.mutate({ id: p.row.id })}
+              >
+                <CheckCircleIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),

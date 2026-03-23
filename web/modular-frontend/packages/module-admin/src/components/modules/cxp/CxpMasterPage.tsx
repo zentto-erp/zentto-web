@@ -592,9 +592,13 @@ function AplicarPagosTab({
                 />
               </TableCell>
               <TableCell align="center">
-                <IconButton color="error" size="small" onClick={() => removeFormaPago(idx)} disabled={formasPago.length === 1}>
-                  <Delete fontSize="small" />
-                </IconButton>
+                <Tooltip title="Eliminar forma de pago">
+                  <span>
+                    <IconButton color="error" size="small" onClick={() => removeFormaPago(idx)} disabled={formasPago.length === 1}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </TableCell>
             </TableRow>
           ))}

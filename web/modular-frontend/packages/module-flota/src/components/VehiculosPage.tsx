@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
@@ -144,23 +145,25 @@ export default function VehiculosPage() {
       filterable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton
-            size="small"
-            title="Ver detalle"
-            onClick={() => {
-              setSelectedRow(params.row);
-              setDetailOpen(true);
-            }}
-          >
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            title="Editar"
-            onClick={() => openEditDialog(params.row)}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Ver detalle">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedRow(params.row);
+                setDetailOpen(true);
+              }}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Editar vehículo">
+            <IconButton
+              size="small"
+              onClick={() => openEditDialog(params.row)}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Stack>
       ),
     },

@@ -264,9 +264,11 @@ function PresupuestoDetailView({
   return (
     <Box>
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-        <IconButton onClick={onBack}>
-          <ArrowBackIcon />
-        </IconButton>
+        <Tooltip title="Volver">
+          <IconButton onClick={onBack}>
+            <ArrowBackIcon />
+          </IconButton>
+        </Tooltip>
         <Typography variant="h5" fontWeight={700}>
           {detail?.name || "Presupuesto"}
         </Typography>

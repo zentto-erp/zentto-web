@@ -177,9 +177,11 @@ export default function PipelineKanban() {
               </Select>
             </FormControl>
           )}
-          <IconButton onClick={() => setShowFilters(!showFilters)} color={showFilters ? "primary" : "default"}>
-            <FilterListIcon />
-          </IconButton>
+          <Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
+            <IconButton onClick={() => setShowFilters(!showFilters)} color={showFilters ? "primary" : "default"}>
+              <FilterListIcon />
+            </IconButton>
+          </Tooltip>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setNewLeadOpen(true)}>
             Nuevo Lead
           </Button>

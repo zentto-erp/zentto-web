@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
@@ -116,16 +117,17 @@ export default function DevolucionesPage() {
       sortable: false,
       filterable: false,
       renderCell: (params) => (
-        <IconButton
-          size="small"
-          title="Ver detalle"
-          onClick={() => {
-            setSelectedRow(params.row);
-            setDetailOpen(true);
-          }}
-        >
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Ver detalle">
+          <IconButton
+            size="small"
+            onClick={() => {
+              setSelectedRow(params.row);
+              setDetailOpen(true);
+            }}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];
@@ -282,14 +284,18 @@ export default function DevolucionesPage() {
                   size="small"
                   sx={{ flex: 1 }}
                 />
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemoveLine(idx)}
-                  disabled={lines.length === 1}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Eliminar linea">
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemoveLine(idx)}
+                      disabled={lines.length === 1}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Stack>
             ))}
             <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>

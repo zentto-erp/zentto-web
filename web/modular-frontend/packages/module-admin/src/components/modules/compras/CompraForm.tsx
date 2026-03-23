@@ -21,7 +21,8 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography
+  Typography,
+  Tooltip,
 } from "@mui/material";
 import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
 import dayjs from "dayjs";
@@ -496,9 +497,11 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 <TableCell align="right">{Number(d.PRECIO_COSTO).toFixed(2)}</TableCell>
                 <TableCell align="right">{(Number(d.CANTIDAD) * Number(d.PRECIO_COSTO)).toFixed(2)}</TableCell>
                 <TableCell align="center">
-                  <IconButton size="small" color="error" onClick={() => eliminarLinea(idx)}>
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="Eliminar línea">
+                    <IconButton size="small" color="error" onClick={() => eliminarLinea(idx)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}

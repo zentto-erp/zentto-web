@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
-    List, ListItem, ListItemText, Checkbox, LinearProgress
+    List, ListItem, ListItemText, Checkbox, LinearProgress, Tooltip
 } from '@mui/material';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -46,11 +46,13 @@ export default function TasksMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
+            <Tooltip title="Tareas">
+              <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={pendingTasks} color="warning" max={9}>
                     <FormatListBulletedIcon />
                 </Badge>
-            </IconButton>
+              </IconButton>
+            </Tooltip>
             <Menu
                 anchorEl={anchorEl}
                 open={open}

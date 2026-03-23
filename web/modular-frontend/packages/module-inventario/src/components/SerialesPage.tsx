@@ -28,6 +28,7 @@ import {
   DialogActions,
   Alert,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
@@ -252,12 +253,16 @@ export default function SerialesPage() {
                     <TableCell>{String(row.SalesDoc ?? "")}</TableCell>
                     <TableCell>{String(row.WarrantyExpiry ?? "").slice(0, 10)}</TableCell>
                     <TableCell align="center">
-                      <IconButton size="small" title="Ver detalle" onClick={() => handleViewDetail(serial)}>
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" title="Cambiar estado" onClick={() => handleOpenStatusChange(serial, status)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Ver detalle">
+                        <IconButton size="small" onClick={() => handleViewDetail(serial)}>
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Cambiar estado">
+                        <IconButton size="small" onClick={() => handleOpenStatusChange(serial, status)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );

@@ -203,9 +203,11 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
                 Recibo
               </Button>
             </Tooltip>
-            <IconButton onClick={onClose} sx={{ color: "#fff" }}>
-              <CloseIcon />
-            </IconButton>
+            <Tooltip title="Cerrar">
+              <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </Box>
 

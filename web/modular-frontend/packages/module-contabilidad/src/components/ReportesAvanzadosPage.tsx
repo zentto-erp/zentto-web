@@ -178,9 +178,11 @@ function DrillDownDialog({
           <Typography variant="h6" fontWeight={600}>
             Drill-Down: {accountCode} {accountName ? `- ${accountName}` : ""}
           </Typography>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
+          <Tooltip title="Cerrar">
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
         </Stack>
         <Typography variant="body2" color="text.secondary">
           {fechaDesde} a {fechaHasta}

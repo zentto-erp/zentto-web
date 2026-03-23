@@ -17,6 +17,8 @@ import {
   Select,
   FormControl,
   InputLabel,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
@@ -24,7 +26,6 @@ import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
-import IconButton from "@mui/material/IconButton";
 import { formatCurrency } from "@zentto/shared-api";
 import {
   useMedOrderList,
@@ -105,22 +106,24 @@ export default function OrdenesMedicasPage() {
       renderCell: (p) =>
         p.row.status === "PENDIENTE" ? (
           <Stack direction="row" spacing={0.5}>
-            <IconButton
-              size="small"
-              color="success"
-              title="Aprobar"
-              onClick={() => approveMutation.mutate({ orderId: p.row.id, approved: true })}
-            >
-              <CheckCircleIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              title="Rechazar"
-              onClick={() => approveMutation.mutate({ orderId: p.row.id, approved: false })}
-            >
-              <CancelIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Aprobar orden">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => approveMutation.mutate({ orderId: p.row.id, approved: true })}
+              >
+                <CheckCircleIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Rechazar orden">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => approveMutation.mutate({ orderId: p.row.id, approved: false })}
+              >
+                <CancelIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Stack>
         ) : null,
     },

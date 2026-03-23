@@ -241,16 +241,18 @@ function buildMobileDetailColumn(onOpen: (row: GridRow) => void): ZenttoColDef {
       const row = params.row as GridRow;
       if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY]) return null;
       return (
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen(row);
-          }}
-          sx={{ color: 'primary.main' }}
-        >
-          <InfoOutlinedIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Ver detalle del registro">
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen(row);
+            }}
+            sx={{ color: 'primary.main' }}
+          >
+            <InfoOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       );
     },
   };
@@ -713,9 +715,11 @@ export function ZenttoDataGrid({
               <Typography variant="h6" fontWeight={700} sx={{ flex: 1, fontSize: '1.05rem' }}>
                 Detalle del registro
               </Typography>
-              <IconButton size="small" onClick={() => setMobileDrawerRow(null)}>
-                <CloseIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Cerrar">
+                <IconButton size="small" onClick={() => setMobileDrawerRow(null)}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
 
             <Divider sx={{ mb: 2 }} />

@@ -18,6 +18,7 @@ import {
   Checkbox,
   InputAdornment,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -125,9 +126,13 @@ export default function EtiquetasPage() {
                             <TableCell>{String(item.DescripcionCompleta ?? item.DESCRIPCION ?? "")}</TableCell>
                             <TableCell align="right">{formatCurrency(Number(item.PRECIO_VENTA ?? 0))}</TableCell>
                             <TableCell align="center">
-                              <IconButton size="small" color="primary" onClick={() => addItem(item)} disabled={alreadyAdded}>
-                                <AddIcon fontSize="small" />
-                              </IconButton>
+                              <Tooltip title="Agregar articulo">
+                                <span>
+                                  <IconButton size="small" color="primary" onClick={() => addItem(item)} disabled={alreadyAdded}>
+                                    <AddIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
                             </TableCell>
                           </TableRow>
                         );
@@ -189,9 +194,11 @@ export default function EtiquetasPage() {
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <IconButton size="small" color="error" onClick={() => removeItem(s.codigo)}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                          <Tooltip title="Quitar articulo">
+                            <IconButton size="small" color="error" onClick={() => removeItem(s.codigo)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}

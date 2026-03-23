@@ -24,6 +24,7 @@ import {
   Chip,
   InputAdornment,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { usePagosList, useDeletePago } from "../../../hooks/usePagos";
@@ -162,20 +163,21 @@ export default function PagosTable() {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/pagos/${pago.numeroPago}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(pago.numeroPago)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon fontSize="small" />
+                    <Tooltip title="Ver pago">
+                      <IconButton
+                        size="small"
+                        onClick={() => router.push(`/pagos/${pago.numeroPago}`)}
+                      >
+                        <ViewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar pago">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteClick(pago.numeroPago)}
+                      >
+                        <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>

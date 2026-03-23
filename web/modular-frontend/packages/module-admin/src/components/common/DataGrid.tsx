@@ -32,6 +32,7 @@ import {
   Toolbar,
   Typography,
   TableSortLabel,
+  Tooltip,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -226,15 +227,15 @@ export default function DataGrid<T extends Record<string, unknown>>({
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                         {actions.map((action) => (
-                          <IconButton
-                            key={action.id}
-                            size="small"
-                            color={action.color || 'primary'}
-                            onClick={() => action.onClick(row)}
-                            title={action.label}
-                          >
-                            {action.icon || getDefaultIcon(action.id)}
-                          </IconButton>
+                          <Tooltip key={action.id} title={action.label}>
+                            <IconButton
+                              size="small"
+                              color={action.color || 'primary'}
+                              onClick={() => action.onClick(row)}
+                            >
+                              {action.icon || getDefaultIcon(action.id)}
+                            </IconButton>
+                          </Tooltip>
                         ))}
                       </Box>
                     </TableCell>

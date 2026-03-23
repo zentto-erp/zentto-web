@@ -16,6 +16,7 @@ import {
   IconButton,
   Alert,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
@@ -201,9 +202,11 @@ export default function MovimientosTable() {
               severity="info"
               sx={{ mb: 2 }}
               action={
-                <IconButton size="small" onClick={() => { setSelectedProductCode(""); setPage(0); }}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Limpiar filtro">
+                  <IconButton size="small" onClick={() => { setSelectedProductCode(""); setPage(0); }}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               }
             >
               Filtrando movimientos de: <strong>{selectedProductCode}</strong>

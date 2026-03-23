@@ -13,12 +13,13 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import IconButton from "@mui/material/IconButton";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -76,9 +77,11 @@ export default function VacacionesPage() {
       width: 60,
       sortable: false,
       renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.vacacion)}>
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Ver detalle">
+          <IconButton size="small" onClick={() => setSelectedId(p.row.vacacion)}>
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];

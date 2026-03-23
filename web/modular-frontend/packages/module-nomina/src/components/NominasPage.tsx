@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
+  Tooltip,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ContextActionHeader } from "@zentto/shared-ui";
@@ -161,23 +162,27 @@ export default function NominasPage() {
       sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton
-            size="small"
-            onClick={() => {
-              setSelectedNomina(p.row.nomina);
-              setSelectedCedula(p.row.cedula);
-            }}
-          >
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          {p.row.estado !== "CERRADA" && (
+          <Tooltip title="Ver nomina">
             <IconButton
               size="small"
-              color="warning"
-              onClick={() => cerrarMutation.mutate({ nomina: p.row.nomina, cedula: p.row.cedula })}
+              onClick={() => {
+                setSelectedNomina(p.row.nomina);
+                setSelectedCedula(p.row.cedula);
+              }}
             >
-              <LockIcon fontSize="small" />
+              <VisibilityIcon fontSize="small" />
             </IconButton>
+          </Tooltip>
+          {p.row.estado !== "CERRADA" && (
+            <Tooltip title="Cerrar nomina">
+              <IconButton
+                size="small"
+                color="warning"
+                onClick={() => cerrarMutation.mutate({ nomina: p.row.nomina, cedula: p.row.cedula })}
+              >
+                <LockIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),

@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
   Paper,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
@@ -68,16 +69,20 @@ export default function BancosPage() {
         sortable: false,
         renderCell: (params) => (
           <Stack direction="row" spacing={0.5}>
-            <IconButton size="small" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => setDeleteTarget(params.row.Nombre)}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Editar banco">
+              <IconButton size="small" onClick={() => handleEdit(params.row)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Eliminar banco">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => setDeleteTarget(params.row.Nombre)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Stack>
         ),
       },

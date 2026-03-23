@@ -24,6 +24,8 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
@@ -31,7 +33,6 @@ import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import IconButton from "@mui/material/IconButton";
 import {
   useCommitteeList,
   useSaveCommittee,
@@ -127,16 +128,18 @@ export default function ComitesPage() {
       width: 80,
       sortable: false,
       renderCell: (p) => (
-        <IconButton
-          size="small"
-          onClick={() => {
-            setDetailId(p.row.id);
-            setDetailData(p.row);
-            setDetailTab(0);
-          }}
-        >
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Ver detalle">
+          <IconButton
+            size="small"
+            onClick={() => {
+              setDetailId(p.row.id);
+              setDetailData(p.row);
+              setDetailTab(0);
+            }}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];
@@ -313,14 +316,16 @@ export default function ComitesPage() {
                       secondary={`Rol: ${String(m.role ?? "—")}`}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        size="small"
-                        color="error"
-                        onClick={() => handleRemoveMember(m.id as number)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Eliminar miembro">
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          color="error"
+                          onClick={() => handleRemoveMember(m.id as number)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </ListItemSecondaryAction>
                   </ListItem>
                 ))}

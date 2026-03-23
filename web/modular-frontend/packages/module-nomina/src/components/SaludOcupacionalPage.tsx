@@ -18,6 +18,8 @@ import {
   FormControl,
   InputLabel,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
@@ -25,7 +27,6 @@ import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import IconButton from "@mui/material/IconButton";
 import {
   useOccHealthList,
   useCreateOccHealth,
@@ -131,29 +132,33 @@ export default function SaludOcupacionalPage() {
       sortable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
-          <IconButton size="small" onClick={() => setDetailId(p.row.id)}>
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => {
-              setForm({
-                id: p.row.id,
-                employeeCode: p.row.employeeCode ?? "",
-                type: p.row.type ?? "",
-                date: p.row.date ?? "",
-                severity: p.row.severity ?? "LEVE",
-                daysLost: p.row.daysLost ?? 0,
-                description: p.row.description ?? "",
-                status: p.row.status ?? "OPEN",
-                correctiveActions: p.row.correctiveActions ?? "",
-              });
-              setEditMode(true);
-              setDialogOpen(true);
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Ver detalle">
+            <IconButton size="small" onClick={() => setDetailId(p.row.id)}>
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Editar registro">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setForm({
+                  id: p.row.id,
+                  employeeCode: p.row.employeeCode ?? "",
+                  type: p.row.type ?? "",
+                  date: p.row.date ?? "",
+                  severity: p.row.severity ?? "LEVE",
+                  daysLost: p.row.daysLost ?? 0,
+                  description: p.row.description ?? "",
+                  status: p.row.status ?? "OPEN",
+                  correctiveActions: p.row.correctiveActions ?? "",
+                });
+                setEditMode(true);
+                setDialogOpen(true);
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Stack>
       ),
     },

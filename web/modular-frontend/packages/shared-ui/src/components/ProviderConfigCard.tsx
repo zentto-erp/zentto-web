@@ -110,9 +110,11 @@ export default function ProviderConfigCard({
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton onClick={() => setExpanded(!expanded)} size="small">
-              <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
-            </IconButton>
+            <Tooltip title={expanded ? "Colapsar" : "Expandir"}>
+              <IconButton onClick={() => setExpanded(!expanded)} size="small">
+                <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+              </IconButton>
+            </Tooltip>
           </Box>
         }
       />
@@ -204,9 +206,11 @@ export default function ProviderConfigCard({
             {isSaving ? 'Guardando...' : isConfigured ? 'Actualizar' : 'Configurar'}
           </Button>
           {isConfigured && onDelete && (
-            <IconButton color="error" onClick={() => onDelete(existingConfig!.id)}>
-              <DeleteIcon />
-            </IconButton>
+            <Tooltip title="Eliminar configuracion">
+              <IconButton color="error" onClick={() => onDelete(existingConfig!.id)}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
           )}
         </CardActions>
       </Collapse>

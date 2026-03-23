@@ -23,6 +23,7 @@ import {
   DialogActions,
   InputAdornment,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
@@ -155,20 +156,21 @@ export default function AbonosTable() {
                   <TableCell>{formatDate(abono.fecha, { timeZone })}</TableCell>
                   <TableCell align="right">{formatCurrency(abono.monto)}</TableCell>
                   <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/abonos/${abono.numeroAbono}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(abono.numeroAbono)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon fontSize="small" />
+                    <Tooltip title="Ver abono">
+                      <IconButton
+                        size="small"
+                        onClick={() => router.push(`/abonos/${abono.numeroAbono}`)}
+                      >
+                        <ViewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar abono">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteClick(abono.numeroAbono)}
+                      >
+                        <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>

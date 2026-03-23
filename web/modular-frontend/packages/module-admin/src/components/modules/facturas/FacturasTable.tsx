@@ -24,6 +24,7 @@ import {
   Chip,
   InputAdornment,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useFacturasList, useDeleteFactura } from "../../../hooks/useFacturas";
@@ -178,28 +179,31 @@ export default function FacturasTable() {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/facturas/${factura.numeroFactura}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/facturas/${factura.numeroFactura}/edit`)}
-                      title="Editar"
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(factura.numeroFactura)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="Ver detalle de factura">
+                      <IconButton
+                        size="small"
+                        onClick={() => router.push(`/facturas/${factura.numeroFactura}`)}
+                      >
+                        <ViewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Editar factura">
+                      <IconButton
+                        size="small"
+                        onClick={() => router.push(`/facturas/${factura.numeroFactura}/edit`)}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar factura">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteClick(factura.numeroFactura)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))

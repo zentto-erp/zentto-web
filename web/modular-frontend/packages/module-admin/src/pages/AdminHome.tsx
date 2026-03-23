@@ -8,6 +8,7 @@ import {
   Typography,
   IconButton,
   Skeleton,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import ReceiptIcon from "@mui/icons-material/Receipt";
@@ -123,9 +124,11 @@ export default function AdminHome() {
                       {s.title}
                     </Typography>
                   </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
+                  <Tooltip title="Mas opciones">
+                    <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
 
                 <Box sx={{ mt: 3, height: 40, width: "100%" }}>
