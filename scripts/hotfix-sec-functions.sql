@@ -157,4 +157,11 @@ ALTER FUNCTION public.usp_sec_user_listcompanyaccesses_default() OWNER TO zentto
 ALTER FUNCTION public.usp_sec_user_listcompanyaccesses(character varying) OWNER TO zentto_app;
 ALTER FUNCTION public.usp_sec_user_getcompanyaccesses(character varying) OWNER TO zentto_app;
 
-DO $$ BEGIN RAISE NOTICE 'Hotfix sec functions v2: OK'; END $$;
+-- 5. Matar conexiones activas para forzar reconexión (limpia cached plans)
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = current_database()
+  AND pid <> pg_backend_pid()
+  AND usename = 'zentto_app';
+
+DO $$ BEGIN RAISE NOTICE 'Hotfix sec functions v3: OK (connections reset)'; END $$;
