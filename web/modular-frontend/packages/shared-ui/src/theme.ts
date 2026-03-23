@@ -198,12 +198,6 @@ const theme = createTheme({
     },
     MuiSelect: {
       defaultProps: { size: 'small' },
-      styleOverrides: {
-        select: {
-          // Mismo alto que TextField con padding 10px
-          padding: '10px 14px',
-        },
-      },
     },
     MuiTextField: {
       defaultProps: {
