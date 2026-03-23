@@ -45,22 +45,22 @@ echo "╔═══════════════════════�
 echo "║  Zentto — goose migrate up (PostgreSQL)  ║"
 echo "╚══════════════════════════════════════════╝"
 
-# Detectar si la BD ya existía antes de goose
-# Si goose_db_version no existe, dejamos que goose la cree con 'up-to 0'
-# y luego marcamos el baseline (1) como aplicado para no re-ejecutar 117K líneas
-HAS_GOOSE=$(su -c "psql -d ${PG_DATABASE} -tAc \"SELECT count(*) FROM information_schema.tables WHERE table_name='goose_db_version';\"" postgres || echo "0")
+# Asegurar que goose_db_version tiene baseline marcado como aplicado
+# La BD de producción ya tiene todo — no queremos re-ejecutar el baseline de 117K líneas
+su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' version" postgres 2>/dev/null || true
 
-if [ "$HAS_GOOSE" = "0" ]; then
-  echo "→ Primera vez con goose en esta BD (existente pre-goose)"
-  echo "→ Inicializando tabla goose_db_version y marcando baseline..."
-
-  # Dejar que goose cree su tabla con el formato correcto
-  su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' version" postgres 2>/dev/null || true
-
-  # Marcar baseline (migración 00001) como ya aplicada
-  su -c "psql -d ${PG_DATABASE} -c \"INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (1, true) ON CONFLICT DO NOTHING;\"" postgres
-
-  echo "✓ Baseline marcado como aplicado (BD ya tiene todo)"
+# Marcar baseline (1) y migraciones conocidas como aplicadas
+BASELINE_APPLIED=$(su -c "psql -d ${PG_DATABASE} -tAc \"SELECT count(*) FROM public.goose_db_version WHERE version_id = 1 AND is_applied = true;\"" postgres 2>/dev/null || echo "0")
+if [ "$BASELINE_APPLIED" = "0" ]; then
+  echo "→ Marcando baseline + migraciones existentes como aplicadas..."
+  su -c "psql -d ${PG_DATABASE} -c \"
+    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (1, true) ON CONFLICT DO NOTHING;
+    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (2, true) ON CONFLICT DO NOTHING;
+    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (3, true) ON CONFLICT DO NOTHING;
+    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (4, true) ON CONFLICT DO NOTHING;
+    INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (5, true) ON CONFLICT DO NOTHING;
+  \"" postgres
+  echo "✓ Migraciones 1-5 marcadas como aplicadas"
 fi
 
 # Ejecutar migraciones pendientes (solo las que vengan después de baseline)
