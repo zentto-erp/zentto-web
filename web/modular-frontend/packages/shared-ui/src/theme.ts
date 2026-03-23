@@ -176,34 +176,27 @@ const theme = createTheme({
         },
       },
     },
-    // Inputs al estilo Windows: altura cómoda (~44px), etiquetas correctas
+    // Inputs: size small global (label centrado correctamente) + padding extra para altura ~44px
+    // size='medium' desplaza el label a translateY(16px) diseñado para 56px → se ve mal con inputs cortos
+    // size='small' usa translateY(8.5px) que centra perfectamente en inputs de 40-44px
     MuiFormControl: {
-      defaultProps: { size: 'medium' },
+      defaultProps: { size: 'small' },
     },
     MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          fontSize: '0.875rem',
-        },
-      },
+      defaultProps: { size: 'small' },
     },
     MuiSelect: {
-      defaultProps: { size: 'medium' },
+      defaultProps: { size: 'small' },
     },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
-        size: 'medium',
+        size: 'small',
       },
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 6,
-            // Altura fija ~44px (más alto que small=40px, más compacto que medium=56px)
-            '& input': {
-              paddingTop: '10.5px',
-              paddingBottom: '10.5px',
-            },
             '& fieldset': {
               borderColor: 'var(--mui-palette-divider)',
             },
@@ -222,10 +215,6 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
-        },
-        input: {
-          paddingTop: '10.5px',
-          paddingBottom: '10.5px',
         },
       },
     },
