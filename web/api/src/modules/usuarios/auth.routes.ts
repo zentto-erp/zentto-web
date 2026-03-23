@@ -282,6 +282,7 @@ authRouter.get("/login-options", loginOptionsLimiter, async (req, res) => {
 
 // --- POST /v1/auth/login --------------------------------------
 authRouter.post("/login", loginLimiter, async (req, res) => {
+  try {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
@@ -390,6 +391,10 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
       isAdmin,
     },
   });
+  } catch (err: any) {
+    console.error("[LOGIN CRASH]", err?.message, err?.stack);
+    return res.status(500).json({ error: "login_internal_error", message: err?.message, stack: err?.stack?.split("\n").slice(0, 5) });
+  }
 });
 
 // --- GET /v1/auth/companies -----------------------------------
