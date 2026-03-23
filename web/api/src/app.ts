@@ -232,17 +232,106 @@ export async function createApp() {
     res.json({ ok: true, clientToken, environment: "production" });
   });
 
-  // DEBUG: test function call directo (quitar después)
-  app.get("/debug/test-sec-func", async (_req, res) => {
+  // Startup: fix funciones sec si tienen type mismatch (text vs varchar)
+  (async () => {
     try {
       const { getPgPool } = await import("./db/pg.js");
       const pool = getPgPool();
-      const r = await pool.query("SELECT * FROM usp_sec_user_listcompanyaccesses_default() LIMIT 3");
-      res.json({ ok: true, rows: r.rows, fields: r.fields.map((f: any) => ({ name: f.name, dataTypeID: f.dataTypeID })) });
+      // Test si la función funciona
+      await pool.query("SELECT * FROM usp_sec_user_listcompanyaccesses_default() LIMIT 1");
     } catch (err: any) {
-      res.json({ ok: false, error: err.message, detail: err.detail, hint: err.hint, code: err.code });
+      if (err.message?.includes("structure of query does not match")) {
+        console.warn("[startup] Fixing sec functions (text vs varchar mismatch)...");
+        try {
+          const { getPgPool } = await import("./db/pg.js");
+          const pool = getPgPool();
+          await pool.query(`
+            DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses_default() CASCADE;
+            DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses(character varying) CASCADE;
+            DROP FUNCTION IF EXISTS public.usp_sec_user_getcompanyaccesses(character varying) CASCADE;
+          `);
+          await pool.query(`
+            CREATE FUNCTION public.usp_sec_user_listcompanyaccesses_default()
+            RETURNS TABLE("companyId" integer, "companyCode" character varying, "companyName" character varying,
+              "branchId" integer, "branchCode" character varying, "branchName" character varying,
+              "countryCode" character varying, "timeZone" character varying, "isDefault" boolean)
+            LANGUAGE plpgsql AS $fn$
+            BEGIN
+              RETURN QUERY
+              SELECT c."CompanyId"::integer, c."CompanyCode"::varchar,
+                COALESCE(NULLIF(c."TradeName"::varchar, ''::varchar), c."LegalName"::varchar)::varchar,
+                b."BranchId"::integer, b."BranchCode"::varchar, b."BranchName"::varchar,
+                UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar))::varchar,
+                COALESCE(NULLIF(ct."TimeZoneIana"::varchar, ''::varchar),
+                  CASE UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar))
+                    WHEN 'VE' THEN 'America/Caracas' WHEN 'ES' THEN 'Europe/Madrid'
+                    WHEN 'CO' THEN 'America/Bogota' WHEN 'MX' THEN 'America/Mexico_City' ELSE 'UTC' END)::varchar,
+                (c."CompanyCode" = 'DEFAULT' AND b."BranchCode" = 'MAIN')::boolean
+              FROM cfg."Company" c
+              JOIN cfg."Branch" b ON b."CompanyId" = c."CompanyId"
+              LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar)) AND ct."IsActive" = TRUE
+              WHERE c."IsActive" = TRUE AND c."IsDeleted" = FALSE
+              ORDER BY c."CompanyId", b."BranchId";
+            END; $fn$;
+          `);
+          await pool.query(`
+            CREATE FUNCTION public.usp_sec_user_listcompanyaccesses(p_cod_usuario character varying)
+            RETURNS TABLE("companyId" integer, "companyCode" character varying, "companyName" character varying,
+              "branchId" integer, "branchCode" character varying, "branchName" character varying,
+              "countryCode" character varying, "timeZone" character varying, "isDefault" boolean)
+            LANGUAGE plpgsql AS $fn$
+            BEGIN
+              RETURN QUERY
+              SELECT c."CompanyId"::integer, c."CompanyCode"::varchar,
+                COALESCE(NULLIF(c."TradeName"::varchar, ''::varchar), c."LegalName"::varchar)::varchar,
+                b."BranchId"::integer, b."BranchCode"::varchar, b."BranchName"::varchar,
+                UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar))::varchar,
+                COALESCE(NULLIF(ct."TimeZoneIana"::varchar, ''::varchar),
+                  CASE UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar))
+                    WHEN 'VE' THEN 'America/Caracas' WHEN 'ES' THEN 'Europe/Madrid'
+                    WHEN 'CO' THEN 'America/Bogota' WHEN 'MX' THEN 'America/Mexico_City' ELSE 'UTC' END)::varchar,
+                COALESCE(uca."IsDefault", FALSE)::boolean
+              FROM sec."UserCompanyAccess" uca
+              JOIN cfg."Company" c ON c."CompanyId" = uca."CompanyId"
+              JOIN cfg."Branch" b ON b."BranchId" = uca."BranchId"
+              LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar)) AND ct."IsActive" = TRUE
+              WHERE uca."CodUsuario" = p_cod_usuario AND uca."IsActive" = TRUE AND c."IsActive" = TRUE AND c."IsDeleted" = FALSE
+              ORDER BY CASE WHEN uca."IsDefault" = TRUE THEN 0 ELSE 1 END, c."CompanyId", b."BranchId";
+            END; $fn$;
+          `);
+          await pool.query(`
+            CREATE FUNCTION public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
+            RETURNS TABLE("companyId" integer, "companyCode" character varying, "companyName" character varying,
+              "branchId" integer, "branchCode" character varying, "branchName" character varying,
+              "countryCode" character varying, "timeZone" character varying, "isDefault" boolean)
+            LANGUAGE plpgsql AS $fn$
+            BEGIN
+              RETURN QUERY
+              SELECT a."CompanyId"::integer, c."CompanyCode"::varchar,
+                COALESCE(NULLIF(c."TradeName"::varchar, ''::varchar), c."LegalName"::varchar)::varchar,
+                a."BranchId"::integer, b."BranchCode"::varchar, b."BranchName"::varchar,
+                UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar))::varchar,
+                COALESCE(NULLIF(ct."TimeZoneIana"::varchar, ''::varchar),
+                  CASE UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar))
+                    WHEN 'VE' THEN 'America/Caracas' WHEN 'ES' THEN 'Europe/Madrid'
+                    WHEN 'CO' THEN 'America/Bogota' WHEN 'MX' THEN 'America/Mexico_City' ELSE 'UTC' END)::varchar,
+                a."IsDefault"::boolean
+              FROM sec."UserCompanyAccess" a
+              JOIN cfg."Company" c ON c."CompanyId" = a."CompanyId" AND c."IsActive" = TRUE AND c."IsDeleted" = FALSE
+              JOIN cfg."Branch" b ON b."BranchId" = a."BranchId" AND b."CompanyId" = a."CompanyId" AND b."IsActive" = TRUE AND b."IsDeleted" = FALSE
+              LEFT JOIN cfg."Country" ct ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode"::varchar, ''::varchar), c."FiscalCountryCode"::varchar)) AND ct."IsActive" = TRUE
+              WHERE UPPER(a."CodUsuario") = UPPER(p_cod_usuario) AND a."IsActive" = TRUE
+              ORDER BY CASE WHEN a."IsDefault" = TRUE THEN 0 ELSE 1 END, a."CompanyId", a."BranchId";
+            EXCEPTION WHEN OTHERS THEN RETURN;
+            END; $fn$;
+          `);
+          console.log("[startup] ✓ Sec functions fixed");
+        } catch (fixErr: any) {
+          console.error("[startup] Failed to fix sec functions:", fixErr.message);
+        }
+      }
     }
-  });
+  })().catch(() => {});
 
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
