@@ -16,7 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -227,33 +227,39 @@ export default function ViajesPage() {
       </Box>
 
       {/* Filter */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-          size="small"
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="PLANNED">Planificado</MenuItem>
-          <MenuItem value="IN_TRANSIT">En Transito</MenuItem>
-          <MenuItem value="COMPLETED">Completado</MenuItem>
-        </TextField>
-        <DatePicker
-          label="Desde"
-          value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-          onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
-          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-        />
-        <DatePicker
-          label="Hasta"
-          value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-          onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
-          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-        />
-      </Stack>
+      <FormGrid spacing={2} sx={{ mb: 2 }}>
+        <FormField xs={12} sm={4}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="PLANNED">Planificado</MenuItem>
+            <MenuItem value="IN_TRANSIT">En Transito</MenuItem>
+            <MenuItem value="COMPLETED">Completado</MenuItem>
+          </TextField>
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <DatePicker
+            label="Desde"
+            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <DatePicker
+            label="Hasta"
+            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </FormField>
+      </FormGrid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
@@ -279,10 +285,14 @@ export default function ViajesPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" fullWidth required />
-            <Stack direction="row" spacing={2}>
-              <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} size="small" fullWidth required />
-              <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} size="small" fullWidth required />
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} size="small" fullWidth required />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} size="small" fullWidth required />
+              </FormField>
+            </FormGrid>
             <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartureDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} size="small" fullWidth required />
             <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} size="small" fullWidth multiline rows={2} />

@@ -27,7 +27,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -506,42 +506,43 @@ export default function ReportesAvanzadosPage() {
       </Stack>
 
       {/* Date Controls */}
-      <Stack
-        direction="row"
-        spacing={2}
-        mt={1}
-        mb={2}
-        alignItems="center"
-        sx={{ "@media print": { display: "none" } }}
-      >
+      <FormGrid spacing={2} sx={{ mt: 1, mb: 2, "@media print": { display: "none" } }}>
         {needsRange && (
           <>
-            <DatePicker
-              label="Desde"
-              value={fechaDesde ? dayjs(fechaDesde) : null}
-              onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-            <DatePicker
-              label="Hasta"
-              value={fechaHasta ? dayjs(fechaHasta) : null}
-              onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
+            <FormField xs={12} sm={4} md={3}>
+              <DatePicker
+                label="Desde"
+                value={fechaDesde ? dayjs(fechaDesde) : null}
+                onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </FormField>
+            <FormField xs={12} sm={4} md={3}>
+              <DatePicker
+                label="Hasta"
+                value={fechaHasta ? dayjs(fechaHasta) : null}
+                onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </FormField>
           </>
         )}
         {needsCorte && (
-          <DatePicker
-            label="Fecha de Corte"
-            value={fechaCorte ? dayjs(fechaCorte) : null}
-            onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
+          <FormField xs={12} sm={4} md={3}>
+            <DatePicker
+              label="Fecha de Corte"
+              value={fechaCorte ? dayjs(fechaCorte) : null}
+              onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
         )}
-        <Button variant="contained" onClick={() => setRun(true)}>
-          Generar
-        </Button>
-      </Stack>
+        <FormField xs={12} sm="auto">
+          <Button variant="contained" onClick={() => setRun(true)}>
+            Generar
+          </Button>
+        </FormField>
+      </FormGrid>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         {/* Tab 0: Libro Diario */}

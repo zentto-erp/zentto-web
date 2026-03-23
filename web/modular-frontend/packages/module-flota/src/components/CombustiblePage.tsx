@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
@@ -127,20 +127,24 @@ export default function CombustiblePage() {
       </Box>
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <DatePicker
-          label="Desde"
-          value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-          onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
-          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-        />
-        <DatePicker
-          label="Hasta"
-          value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-          onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
-          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-        />
-      </Stack>
+      <FormGrid spacing={2} sx={{ mb: 2 }}>
+        <FormField xs={12} sm={6} md={3}>
+          <DatePicker
+            label="Desde"
+            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </FormField>
+        <FormField xs={12} sm={6} md={3}>
+          <DatePicker
+            label="Hasta"
+            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </FormField>
+      </FormGrid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
@@ -169,11 +173,17 @@ export default function CombustiblePage() {
             <DatePicker label="Fecha" value={logDate ? dayjs(logDate) : null} onChange={(v) => setLogDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Kilometraje" type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} size="small" fullWidth required />
             <TextField label="Tipo Combustible" value={fuelType} onChange={(e) => setFuelType(e.target.value)} size="small" fullWidth required />
-            <Stack direction="row" spacing={2}>
-              <TextField label="Litros" type="number" value={liters} onChange={(e) => setLiters(e.target.value)} size="small" fullWidth required />
-              <TextField label="Precio/Litro" type="number" value={pricePerLiter} onChange={(e) => setPricePerLiter(e.target.value)} size="small" fullWidth required />
-              <TextField label="Costo Total" type="number" value={totalCost} onChange={(e) => setTotalCost(e.target.value)} size="small" fullWidth required />
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={4}>
+                <TextField label="Litros" type="number" value={liters} onChange={(e) => setLiters(e.target.value)} size="small" fullWidth required />
+              </FormField>
+              <FormField xs={12} sm={4}>
+                <TextField label="Precio/Litro" type="number" value={pricePerLiter} onChange={(e) => setPricePerLiter(e.target.value)} size="small" fullWidth required />
+              </FormField>
+              <FormField xs={12} sm={4}>
+                <TextField label="Costo Total" type="number" value={totalCost} onChange={(e) => setTotalCost(e.target.value)} size="small" fullWidth required />
+              </FormField>
+            </FormGrid>
             <TextField label="Estacion" value={stationName} onChange={(e) => setStationName(e.target.value)} size="small" fullWidth />
             <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} size="small" fullWidth multiline rows={2} />
           </Stack>

@@ -19,7 +19,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -141,41 +141,48 @@ export default function OrdenesMedicasPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-          size="small"
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-        />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={filter.type || ""}
-            label="Tipo"
-            onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="CONSULTA">Consulta</MenuItem>
-            <MenuItem value="FARMACIA">Farmacia</MenuItem>
-            <MenuItem value="LABORATORIO">Laboratorio</MenuItem>
-            <MenuItem value="EMERGENCIA">Emergencia</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Estado</InputLabel>
-          <Select
-            value={filter.status || ""}
-            label="Estado"
-            onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-            <MenuItem value="APROBADO">Aprobado</MenuItem>
-            <MenuItem value="RECHAZADO">Rechazado</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <FormGrid spacing={2} sx={{ mb: 2 }}>
+        <FormField xs={12} sm={4}>
+          <TextField
+            label="Buscar"
+            size="small"
+            fullWidth
+            value={filter.search || ""}
+            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
+          />
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Tipo</InputLabel>
+            <Select
+              value={filter.type || ""}
+              label="Tipo"
+              onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="CONSULTA">Consulta</MenuItem>
+              <MenuItem value="FARMACIA">Farmacia</MenuItem>
+              <MenuItem value="LABORATORIO">Laboratorio</MenuItem>
+              <MenuItem value="EMERGENCIA">Emergencia</MenuItem>
+            </Select>
+          </FormControl>
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Estado</InputLabel>
+            <Select
+              value={filter.status || ""}
+              label="Estado"
+              onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="PENDIENTE">Pendiente</MenuItem>
+              <MenuItem value="APROBADO">Aprobado</MenuItem>
+              <MenuItem value="RECHAZADO">Rechazado</MenuItem>
+            </Select>
+          </FormControl>
+        </FormField>
+      </FormGrid>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

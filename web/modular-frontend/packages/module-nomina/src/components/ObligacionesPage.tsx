@@ -21,7 +21,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
@@ -173,40 +173,47 @@ export default function ObligacionesPage() {
 
       {/* Tab: Obligaciones (Catálogo) */}
       <TabPanel value={tab} index={0}>
-        <Stack direction="row" spacing={2} mb={2}>
-          <TextField
-            label="Buscar"
-            size="small"
-            value={oblFilter.search || ""}
-            onChange={(e) => setOblFilter((f) => ({ ...f, search: e.target.value }))}
-          />
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>País</InputLabel>
-            <Select
-              value={oblFilter.countryCode || ""}
-              label="País"
-              onChange={(e) => setOblFilter((f) => ({ ...f, countryCode: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              {countries.map(c => (
-                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Frecuencia</InputLabel>
-            <Select
-              value={oblFilter.frequency || ""}
-              label="Frecuencia"
-              onChange={(e) => setOblFilter((f) => ({ ...f, frequency: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todas</MenuItem>
-              <MenuItem value="MENSUAL">Mensual</MenuItem>
-              <MenuItem value="TRIMESTRAL">Trimestral</MenuItem>
-              <MenuItem value="ANUAL">Anual</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mb: 2 }}>
+          <FormField xs={12} sm={4}>
+            <TextField
+              label="Buscar"
+              size="small"
+              fullWidth
+              value={oblFilter.search || ""}
+              onChange={(e) => setOblFilter((f) => ({ ...f, search: e.target.value }))}
+            />
+          </FormField>
+          <FormField xs={12} sm={4}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>País</InputLabel>
+              <Select
+                value={oblFilter.countryCode || ""}
+                label="País"
+                onChange={(e) => setOblFilter((f) => ({ ...f, countryCode: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                {countries.map(c => (
+                  <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </FormField>
+          <FormField xs={12} sm={4}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Frecuencia</InputLabel>
+              <Select
+                value={oblFilter.frequency || ""}
+                label="Frecuencia"
+                onChange={(e) => setOblFilter((f) => ({ ...f, frequency: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="MENSUAL">Mensual</MenuItem>
+                <MenuItem value="TRIMESTRAL">Trimestral</MenuItem>
+                <MenuItem value="ANUAL">Anual</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+        </FormGrid>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
@@ -224,27 +231,32 @@ export default function ObligacionesPage() {
 
       {/* Tab: Declaraciones (Filings) */}
       <TabPanel value={tab} index={1}>
-        <Stack direction="row" spacing={2} mb={2}>
-          <TextField
-            label="Buscar"
-            size="small"
-            value={filFilter.search || ""}
-            onChange={(e) => setFilFilter((f) => ({ ...f, search: e.target.value }))}
-          />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filFilter.status || ""}
-              label="Estado"
-              onChange={(e) => setFilFilter((f) => ({ ...f, status: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-              <MenuItem value="GENERADA">Generada</MenuItem>
-              <MenuItem value="PRESENTADA">Presentada</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mb: 2 }}>
+          <FormField xs={12} sm={6}>
+            <TextField
+              label="Buscar"
+              size="small"
+              fullWidth
+              value={filFilter.search || ""}
+              onChange={(e) => setFilFilter((f) => ({ ...f, search: e.target.value }))}
+            />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filFilter.status || ""}
+                label="Estado"
+                onChange={(e) => setFilFilter((f) => ({ ...f, status: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="PENDIENTE">Pendiente</MenuItem>
+                <MenuItem value="GENERADA">Generada</MenuItem>
+                <MenuItem value="PRESENTADA">Presentada</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+        </FormGrid>
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid

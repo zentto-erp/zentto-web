@@ -20,7 +20,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -185,55 +185,64 @@ export default function SaludOcupacionalPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-          size="small"
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-        />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={filter.type || ""}
-            label="Tipo"
-            onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="ACCIDENTE">Accidente</MenuItem>
-            <MenuItem value="INCIDENTE">Incidente</MenuItem>
-            <MenuItem value="ENFERMEDAD">Enfermedad</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Estado</InputLabel>
-          <Select
-            value={filter.status || ""}
-            label="Estado"
-            onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="OPEN">Abierto</MenuItem>
-            <MenuItem value="REPORTED">Reportado</MenuItem>
-            <MenuItem value="INVESTIGATING">En Investigación</MenuItem>
-            <MenuItem value="CLOSED">Cerrado</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Severidad</InputLabel>
-          <Select
-            value={filter.severity || ""}
-            label="Severidad"
-            onChange={(e) => setFilter((f) => ({ ...f, severity: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todas</MenuItem>
-            <MenuItem value="LEVE">Leve</MenuItem>
-            <MenuItem value="MODERADO">Moderado</MenuItem>
-            <MenuItem value="GRAVE">Grave</MenuItem>
-            <MenuItem value="FATAL">Fatal</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <FormGrid spacing={2} sx={{ mb: 2 }}>
+        <FormField xs={12} sm={3}>
+          <TextField
+            label="Buscar"
+            size="small"
+            fullWidth
+            value={filter.search || ""}
+            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
+          />
+        </FormField>
+        <FormField xs={12} sm={3}>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Tipo</InputLabel>
+            <Select
+              value={filter.type || ""}
+              label="Tipo"
+              onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="ACCIDENTE">Accidente</MenuItem>
+              <MenuItem value="INCIDENTE">Incidente</MenuItem>
+              <MenuItem value="ENFERMEDAD">Enfermedad</MenuItem>
+            </Select>
+          </FormControl>
+        </FormField>
+        <FormField xs={12} sm={3}>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Estado</InputLabel>
+            <Select
+              value={filter.status || ""}
+              label="Estado"
+              onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="OPEN">Abierto</MenuItem>
+              <MenuItem value="REPORTED">Reportado</MenuItem>
+              <MenuItem value="INVESTIGATING">En Investigación</MenuItem>
+              <MenuItem value="CLOSED">Cerrado</MenuItem>
+            </Select>
+          </FormControl>
+        </FormField>
+        <FormField xs={12} sm={3}>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Severidad</InputLabel>
+            <Select
+              value={filter.severity || ""}
+              label="Severidad"
+              onChange={(e) => setFilter((f) => ({ ...f, severity: e.target.value || undefined }))}
+            >
+              <MenuItem value="">Todas</MenuItem>
+              <MenuItem value="LEVE">Leve</MenuItem>
+              <MenuItem value="MODERADO">Moderado</MenuItem>
+              <MenuItem value="GRAVE">Grave</MenuItem>
+              <MenuItem value="FATAL">Fatal</MenuItem>
+            </Select>
+          </FormControl>
+        </FormField>
+      </FormGrid>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

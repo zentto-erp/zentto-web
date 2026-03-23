@@ -6,7 +6,7 @@ import {
   DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries } from "@zentto/shared-api";
@@ -79,8 +79,8 @@ export default function UnidadTributariaPage() {
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Valor Unidad Tributaria</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Stack direction="row" spacing={2}>
+          <FormGrid spacing={2} sx={{ mt: 1 }}>
+            <FormField xs={12} sm={6}>
               <TextField select label="Pais" size="small" fullWidth value={form.countryCode}
                 onChange={(e) => {
                   const country = countries.find((c) => c.CountryCode === e.target.value);
@@ -88,21 +88,27 @@ export default function UnidadTributariaPage() {
                 }}>
                 {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
               </TextField>
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField label="Ano" type="number" size="small" fullWidth value={form.taxYear}
                 onChange={(e) => setForm({ ...form, taxYear: Number(e.target.value) })} />
-            </Stack>
-            <Stack direction="row" spacing={2}>
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField label="Valor UT" type="number" size="small" fullWidth value={form.unitValue}
                 onChange={(e) => setForm({ ...form, unitValue: Number(e.target.value) })} />
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField label="Moneda" size="small" fullWidth value={form.currency} disabled />
-            </Stack>
-            <DatePicker
-              label="Vigente desde"
-              value={form.effectiveDate ? dayjs(form.effectiveDate) : null}
-              onChange={(v) => setForm({ ...form, effectiveDate: v ? v.format('YYYY-MM-DD') : '' })}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </Stack>
+            </FormField>
+            <FormField xs={12}>
+              <DatePicker
+                label="Vigente desde"
+                value={form.effectiveDate ? dayjs(form.effectiveDate) : null}
+                onChange={(v) => setForm({ ...form, effectiveDate: v ? v.format('YYYY-MM-DD') : '' })}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </FormField>
+          </FormGrid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>

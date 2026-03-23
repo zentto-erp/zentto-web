@@ -23,7 +23,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -162,29 +162,34 @@ export default function CapacitacionPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-          size="small"
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-        />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={filter.type || ""}
-            label="Tipo"
-            onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="INDUCCION">Inducción</MenuItem>
-            <MenuItem value="TECNICA">Técnica</MenuItem>
-            <MenuItem value="SEGURIDAD">Seguridad</MenuItem>
-            <MenuItem value="LIDERAZGO">Liderazgo</MenuItem>
-            <MenuItem value="CUMPLIMIENTO">Cumplimiento</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <FormGrid spacing={2} sx={{ mb: 2 }}>
+        <FormField xs={12} sm={6}>
+          <TextField
+            label="Buscar"
+            size="small"
+            fullWidth
+            value={filter.search || ""}
+            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
+          />
+        </FormField>
+        <FormField xs={12} sm={6}>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Tipo</InputLabel>
+            <Select
+              value={filter.type || ""}
+              label="Tipo"
+              onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="INDUCCION">Inducción</MenuItem>
+              <MenuItem value="TECNICA">Técnica</MenuItem>
+              <MenuItem value="SEGURIDAD">Seguridad</MenuItem>
+              <MenuItem value="LIDERAZGO">Liderazgo</MenuItem>
+              <MenuItem value="CUMPLIMIENTO">Cumplimiento</MenuItem>
+            </Select>
+          </FormControl>
+        </FormField>
+      </FormGrid>
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

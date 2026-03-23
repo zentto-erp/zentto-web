@@ -25,7 +25,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivitiesList,
@@ -157,42 +157,46 @@ export default function ActividadesPage() {
 
       {/* Filtros */}
       <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              value={filter.type ?? ""}
-              label="Tipo"
-              onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined, page: 1 })}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="CALL">Llamada</MenuItem>
-              <MenuItem value="EMAIL">Correo</MenuItem>
-              <MenuItem value="MEETING">Reunión</MenuItem>
-              <MenuItem value="NOTE">Nota</MenuItem>
-              <MenuItem value="TASK">Tarea</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filter.isCompleted === undefined ? "" : filter.isCompleted ? "true" : "false"}
-              label="Estado"
-              onChange={(e) => {
-                const val = e.target.value;
-                setFilter({
-                  ...filter,
-                  isCompleted: val === "" ? undefined : val === "true",
-                  page: 1,
-                });
-              }}
-            >
-              <MenuItem value="">Todas</MenuItem>
-              <MenuItem value="false">Pendientes</MenuItem>
-              <MenuItem value="true">Completadas</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        <FormGrid spacing={2}>
+          <FormField xs={12} sm={6}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Tipo</InputLabel>
+              <Select
+                value={filter.type ?? ""}
+                label="Tipo"
+                onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined, page: 1 })}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="CALL">Llamada</MenuItem>
+                <MenuItem value="EMAIL">Correo</MenuItem>
+                <MenuItem value="MEETING">Reunión</MenuItem>
+                <MenuItem value="NOTE">Nota</MenuItem>
+                <MenuItem value="TASK">Tarea</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filter.isCompleted === undefined ? "" : filter.isCompleted ? "true" : "false"}
+                label="Estado"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFilter({
+                    ...filter,
+                    isCompleted: val === "" ? undefined : val === "true",
+                    page: 1,
+                  });
+                }}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="false">Pendientes</MenuItem>
+                <MenuItem value="true">Completadas</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+        </FormGrid>
       </Paper>
 
       {/* DataGrid */}
