@@ -171,7 +171,8 @@ export default function AbonosTable() {
                         onClick={() => handleDeleteClick(abono.numeroAbono)}
                       >
                         <DeleteIcon fontSize="small" />
-                    </IconButton>
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))

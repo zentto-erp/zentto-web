@@ -178,7 +178,8 @@ export default function PagosTable() {
                         onClick={() => handleDeleteClick(pago.numeroPago)}
                       >
                         <DeleteIcon fontSize="small" />
-                    </IconButton>
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))
