@@ -56,7 +56,7 @@ const baseGridSx = {
     borderBottom: '2px solid',
     borderColor: 'divider',
     fontSize: '0.8rem',
-    fontWeight: 600,
+    fontWeight: 700,
     color: 'text.secondary',
   },
   '& .MuiDataGrid-columnHeader': {
@@ -104,9 +104,9 @@ const baseGridSx = {
     borderTop: '2px solid',
     borderColor: 'divider',
   },
-  // Celdas
+  // Celdas — un punto menos que el header
   '& .MuiDataGrid-cell': {
-    fontSize: '0.85rem',
+    fontSize: '0.75rem',
     borderColor: 'divider',
     '&:focus, &:focus-within': { outline: 'none' },
   },
