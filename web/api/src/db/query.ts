@@ -10,11 +10,10 @@ import { env } from "../config/env.js";
 import { sql, getPool } from "./mssql.js";
 import { getPgPool } from "./pg.js";
 import { getTenantPoolFromContext } from "../context/request-context.js";
-import { getMasterPool } from "./pg-pool-manager.js";
 
-/** Pool del tenant actual (context) o master pool (rutas públicas, health) */
+/** Pool del tenant actual (context) o default pool (fallback seguro) */
 function getActivePgPool() {
-  return getTenantPoolFromContext() ?? getMasterPool();
+  return getTenantPoolFromContext() ?? getPgPool();
 }
 import { xmlParamToJson } from "../utils/xml.js";
 
