@@ -504,5 +504,22 @@ export async function createApp() {
 
   await loadAddons(app);
 
+  // ── Global error handler — NUNCA retornar 502, siempre JSON ──
+  app.use((err: any, _req: any, res: any, _next: any) => {
+    console.error("[UNHANDLED]", err?.message || err, err?.stack?.split("\n").slice(0, 3).join("\n"));
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "internal_server_error",
+        message: err?.message || "Error interno del servidor",
+        ...(process.env.NODE_ENV !== "production" ? { stack: err?.stack?.split("\n").slice(0, 5) } : {}),
+      });
+    }
+  });
+
+  // Catch unhandled promise rejections para que no crasheen el proceso
+  process.on("unhandledRejection", (reason: any) => {
+    console.error("[UNHANDLED REJECTION]", reason?.message || reason);
+  });
+
   return app;
 }

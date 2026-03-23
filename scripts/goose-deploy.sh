@@ -96,6 +96,18 @@ else
   echo "WARN: No se encontró ${SEEDS_FILE} — saltando seeds"
 fi
 
+# Re-crear TODAS las funciones (CREATE OR REPLACE — fix text vs varchar)
+FUNCTIONS_FILE="${SEEDS_DIR}/run-functions.sql"
+if [ -f "$FUNCTIONS_FILE" ]; then
+  echo ""
+  echo "-> Recreando TODAS las funciones PostgreSQL..."
+  cd "$SEEDS_DIR"
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f run-functions.sql" postgres 2>&1 || {
+    echo "WARN: Algunas funciones tuvieron errores (ver arriba)"
+  }
+  echo "OK Funciones recreadas"
+fi
+
 # Ownership de todo → zentto_app
 echo "→ Transfiriendo ownership a zentto_app..."
 su -c "psql -d ${PG_DATABASE} <<'EOSQL'
