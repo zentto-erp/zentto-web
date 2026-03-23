@@ -176,25 +176,34 @@ const theme = createTheme({
         },
       },
     },
-    // size="small" global — aplica a TextField Y a FormControl+InputLabel+Select directos
+    // Inputs al estilo Windows: altura cómoda (~44px), etiquetas correctas
     MuiFormControl: {
-      defaultProps: { size: 'small' },
+      defaultProps: { size: 'medium' },
     },
     MuiInputLabel: {
-      defaultProps: { size: 'small' },
+      styleOverrides: {
+        root: {
+          fontSize: '0.875rem',
+        },
+      },
     },
     MuiSelect: {
-      defaultProps: { size: 'small' },
+      defaultProps: { size: 'medium' },
     },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
-        size: 'small',
+        size: 'medium',
       },
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 6,
+            // Altura fija ~44px (más alto que small=40px, más compacto que medium=56px)
+            '& input': {
+              paddingTop: '10.5px',
+              paddingBottom: '10.5px',
+            },
             '& fieldset': {
               borderColor: 'var(--mui-palette-divider)',
             },
@@ -213,6 +222,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
+        },
+        input: {
+          paddingTop: '10.5px',
+          paddingBottom: '10.5px',
         },
       },
     },
