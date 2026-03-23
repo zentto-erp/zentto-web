@@ -1375,7 +1375,7 @@ RETURNS TABLE(
     p_total_count           BIGINT,
     "MeetingId"             INTEGER,
     "SafetyCommitteeId"     INTEGER,
-    "MeetingDate"           DATE,
+    "MeetingDate"           TIMESTAMP,
     "MinutesUrl"            VARCHAR(500),
     "TopicsSummary"         TEXT,
     "ActionItems"           TEXT,

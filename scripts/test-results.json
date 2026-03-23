@@ -321,6 +321,21 @@
       "status": 200
     },
     {
+      "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/caja-chica/{boxId}/gastos",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/caja-chica/{boxId}/resumen",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
       "path": "/v1/nomina/batch",
       "tag": "Nomina",
       "status": 200
@@ -532,6 +547,11 @@
     },
     {
       "path": "/v1/rrhh/comites",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/comites/{committeeId}/meetings",
       "tag": "RRHH",
       "status": 200
     },
@@ -944,6 +964,12 @@
       "error": "{'error': 'year and quarter required'}"
     },
     {
+      "path": "/v1/devices/my",
+      "tag": "UNDOCUMENTED",
+      "status": 400,
+      "error": "{'error': 'Could not resolve user ID from token'}"
+    },
+    {
       "path": "/v1/integrations/zoho/callback",
       "tag": "UNDOCUMENTED",
       "status": 400,
@@ -974,38 +1000,7 @@
       "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
     }
   ],
-  "fail_5xx": [
-    {
-      "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
-      "tag": "Bancos",
-      "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
-    },
-    {
-      "path": "/v1/bancos/caja-chica/{boxId}/gastos",
-      "tag": "Bancos",
-      "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
-    },
-    {
-      "path": "/v1/bancos/caja-chica/{boxId}/resumen",
-      "tag": "Bancos",
-      "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
-    },
-    {
-      "path": "/v1/rrhh/comites/{committeeId}/meetings",
-      "tag": "RRHH",
-      "status": 500,
-      "error": "{'error': 'error: column reference \"SafetyCommitteeId\" is ambiguous'}"
-    },
-    {
-      "path": "/v1/devices/my",
-      "tag": "UNDOCUMENTED",
-      "status": 500,
-      "error": "{'error': 'invalid input syntax for type integer: \"NaN\"'}"
-    }
-  ],
+  "fail_5xx": [],
   "fail_other": [
     {
       "path": "/v1/clientes",
