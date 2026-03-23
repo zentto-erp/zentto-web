@@ -294,6 +294,9 @@ export function ZenttoDataGrid({
   toolbarTitle,
   toolbarActions,
   hideToolbar = false,
+  hideColumnsButton = false,
+  hideDensityButton = false,
+  hideQuickFilter = false,
   // DataGrid passthrough
   getRowId,
   columnVisibilityModel: externalVisibilityModel,
@@ -676,6 +679,9 @@ export function ZenttoDataGrid({
                   showExportMarkdown,
                   hasCustomLayout: layout.hasCustomLayout,
                   onResetLayout: layout.resetLayout,
+                  hideColumnsButton,
+                  hideDensityButton,
+                  hideQuickFilter,
                 } as any,
               }
         }

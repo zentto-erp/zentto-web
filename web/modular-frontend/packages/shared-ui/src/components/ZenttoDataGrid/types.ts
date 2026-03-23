@@ -116,6 +116,9 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   toolbarActions?: React.ReactNode;
   /** Ocultar completamente el toolbar. Default: false */
   hideToolbar?: boolean;
+  hideColumnsButton?: boolean;
+  hideDensityButton?: boolean;
+  hideQuickFilter?: boolean;
 }
 
 // Marcadores internos para filas especiales

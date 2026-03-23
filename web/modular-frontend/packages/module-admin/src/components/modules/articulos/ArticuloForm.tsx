@@ -18,7 +18,10 @@ import {
   Autocomplete,
   Switch,
   FormControlLabel,
+  InputAdornment,
+  Tooltip,
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useArticuloById, useCreateArticulo, useUpdateArticulo } from "../../../hooks/useArticulos";
 import { apiGet } from "@zentto/shared-api";
@@ -78,6 +81,14 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Tasa de cambio BCV
+  const { data: tasaData } = useQuery({
+    queryKey: ["config-tasas"],
+    queryFn: () => apiGet("/v1/config/tasas") as Promise<{ success?: boolean; USD?: number; EUR?: number }>,
+    staleTime: 10 * 60 * 1000,
+  });
+  const tasaCambio = tasaData?.USD || 1;
+
   const { data: articulo, isLoading: isLoadingArticulo } = useArticuloById(codigoArticulo || "");
   const { mutate: createArticulo, isPending: isCreating } = useCreateArticulo();
   const { mutate: updateArticulo, isPending: isUpdating } = useUpdateArticulo(codigoArticulo || "");
@@ -102,7 +113,9 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
         barra: articulo.barra || "",
         referencia: articulo.referencia || "",
         nParte: articulo.nParte || "",
-        porcentaje: (articulo as any).porcentaje || 0,
+        porcentaje: (articulo.precioCompra && articulo.precioVenta && articulo.precioCompra > 0)
+          ? Math.round(((articulo.precioVenta - articulo.precioCompra) / articulo.precioCompra) * 10000) / 100
+          : 0,
         servicio: articulo.servicio || false,
         descripcion: (articulo as any).descripcion || "",
       });
@@ -138,7 +151,7 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
         DESCRIPCION: formData.nombre,
         Categoria: formData.categoria,
         Marca: formData.marca,
-        Tipo: formData.tipo,
+        Tipo: formData.servicio ? 'Servicio' : 'Producto',
         Linea: formData.linea,
         Clase: formData.clase,
         Unidad: formData.unidad,
@@ -234,7 +247,8 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
           </FormField>
 
           <FormField xs={12} sm={4}>
-            <TextField label="Referencia" value={formData.referencia} onChange={set('referencia')} size="small" />
+            <TextField label="Referencia" value={formData.referencia} onChange={set('referencia')} size="small"
+              InputProps={{ endAdornment: <InputAdornment position="end"><Tooltip title="Código que el proveedor asigna a este producto en su sistema. Útil para hacer pedidos de reposición."><InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary', cursor: 'pointer' }} /></Tooltip></InputAdornment> }} />
           </FormField>
         </FormGrid>
 
@@ -247,51 +261,62 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
             {autoField("Marca", "marca", filters?.marcas ?? [])}
           </FormField>
           <FormField xs={12} sm={4}>
-            {autoField("Tipo", "tipo", filters?.tipos ?? [])}
-          </FormField>
-          <FormField xs={12} sm={4}>
             {autoField("Línea", "linea", filters?.lineas ?? [])}
           </FormField>
           <FormField xs={12} sm={4}>
             {autoField("Clase", "clase", filters?.clases ?? [])}
           </FormField>
           <FormField xs={12} sm={4}>
-            {autoField("Unidad", "unidad", filters?.unidades ?? [])}
+            {formData.servicio ? (
+              <TextField label="Unidad" value="UND" disabled size="small" />
+            ) : (
+              autoField("Unidad", "unidad", filters?.unidades ?? [])
+            )}
+          </FormField>
+          <FormField xs={12} sm={4} sx={{ display: "flex", alignItems: "center" }}>
+            <FormControlLabel
+              control={<Switch checked={formData.servicio} onChange={(e) => setFormData({ ...formData, servicio: e.target.checked })} />}
+              label="Es servicio (sin stock)"
+            />
           </FormField>
         </FormGrid>
 
         <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 3, mb: 2 }}>Precios</Typography>
         <FormGrid spacing={2}>
           <FormField xs={12} sm={4}>
-            <TextField label="Precio Venta" type="number" inputProps={{ min: 0, step: "0.01" }}
-              value={formData.precioVenta || ""} onChange={setNum('precioVenta')} size="small" />
-          </FormField>
-          <FormField xs={12} sm={4}>
-            <TextField label="Precio Compra" type="number" inputProps={{ min: 0, step: "0.01" }}
+            <TextField label="Precio Compra (Bs)" type="number" inputProps={{ min: 0, step: "0.01" }}
               value={formData.precioCompra || ""} onChange={setNum('precioCompra')} size="small" />
           </FormField>
           <FormField xs={12} sm={4}>
-            <TextField label="Margen %" type="number" inputProps={{ min: 0, step: "0.01" }}
-              value={formData.porcentaje || ""} onChange={setNum('porcentaje')} size="small" />
+            <TextField label="Precio Venta (Bs)" type="number" inputProps={{ min: 0, step: "0.01" }}
+              value={formData.precioVenta || ""} onChange={setNum('precioVenta')} size="small" />
+          </FormField>
+          <FormField xs={12} sm={4}>
+            <TextField
+              label="Precio Venta ($)"
+              value={formData.precioVenta > 0 && tasaCambio > 1 ? `$ ${(formData.precioVenta / tasaCambio).toFixed(2)}` : "—"}
+              disabled
+              size="small"
+              helperText={tasaCambio > 1 ? `Tasa BCV: ${tasaCambio.toFixed(2)} Bs/$` : "Sin tasa disponible"}
+            />
           </FormField>
         </FormGrid>
 
         <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 3, mb: 2 }}>Inventario</Typography>
         <FormGrid spacing={2}>
-          <FormField xs={12} sm={3}>
-            <TextField label="Stock" type="number" inputProps={{ min: 0 }}
-              value={formData.stock || ""} onChange={setNum('stock')} size="small" />
+          <FormField xs={12} sm={4}>
+            <TextField label="Stock" type={formData.servicio ? "text" : "number"} inputProps={{ min: 0 }}
+              value={formData.servicio ? "—" : (formData.stock || "")} onChange={setNum('stock')} size="small" disabled={formData.servicio} />
           </FormField>
-          <FormField xs={12} sm={3}>
-            <TextField label="Mínimo" type="number" inputProps={{ min: 0 }}
-              value={formData.minimo || ""} onChange={setNum('minimo')} size="small" />
+          <FormField xs={12} sm={4}>
+            <TextField label="Mínimo" type={formData.servicio ? "text" : "number"} inputProps={{ min: 0 }}
+              value={formData.servicio ? "—" : (formData.minimo || "")} onChange={setNum('minimo')} size="small" disabled={formData.servicio}
+              InputProps={{ endAdornment: !formData.servicio ? <InputAdornment position="end"><Tooltip title="Cantidad mínima de stock. Si el inventario baja de este número, se genera una alerta de reposición."><InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary', cursor: 'pointer' }} /></Tooltip></InputAdornment> : undefined }} />
           </FormField>
-          <FormField xs={12} sm={3}>
-            <TextField label="Máximo" type="number" inputProps={{ min: 0 }}
-              value={formData.maximo || ""} onChange={setNum('maximo')} size="small" />
-          </FormField>
-          <FormField xs={12} sm={3}>
-            <TextField label="Ubicación" value={formData.ubicacion} onChange={set('ubicacion')} size="small" />
+          <FormField xs={12} sm={4}>
+            <TextField label="Máximo" type={formData.servicio ? "text" : "number"} inputProps={{ min: 0 }}
+              value={formData.servicio ? "—" : (formData.maximo || "")} onChange={setNum('maximo')} size="small" disabled={formData.servicio}
+              InputProps={{ endAdornment: !formData.servicio ? <InputAdornment position="end"><Tooltip title="Cantidad máxima de stock recomendada. Ayuda a evitar sobrecompras."><InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary', cursor: 'pointer' }} /></Tooltip></InputAdornment> : undefined }} />
           </FormField>
         </FormGrid>
 
@@ -303,11 +328,8 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
           <FormField xs={12} sm={4}>
             <TextField label="N° Parte" value={formData.nParte} onChange={set('nParte')} size="small" />
           </FormField>
-          <FormField xs={12} sm={4} sx={{ display: "flex", alignItems: "center" }}>
-            <FormControlLabel
-              control={<Switch checked={formData.servicio} onChange={(e) => setFormData({ ...formData, servicio: e.target.checked })} />}
-              label="Es servicio (sin stock)"
-            />
+          <FormField xs={12} sm={4}>
+            <TextField label="Ubicación" value={formData.ubicacion} onChange={set('ubicacion')} size="small" />
           </FormField>
 
           {isEdit && (

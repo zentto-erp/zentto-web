@@ -26,6 +26,9 @@ interface ZenttoToolbarProps {
   showExportExcel?: boolean;
   showExportJson?: boolean;
   showExportMarkdown?: boolean;
+  hideColumnsButton?: boolean;
+  hideDensityButton?: boolean;
+  hideQuickFilter?: boolean;
   /** true si hay layout personalizado guardado — muestra botón de reset */
   hasCustomLayout?: boolean;
   onResetLayout?: () => void;
@@ -42,6 +45,9 @@ export function ZenttoToolbar({
   showExportExcel,
   showExportJson,
   showExportMarkdown,
+  hideColumnsButton,
+  hideDensityButton,
+  hideQuickFilter,
   hasCustomLayout,
   onResetLayout,
 }: ZenttoToolbarProps) {
@@ -69,8 +75,8 @@ export function ZenttoToolbar({
 
       {/* Herramientas nativas MUI */}
       <GridToolbarFilterButton />
-      <GridToolbarColumnsButton />
-      <GridToolbarDensitySelector />
+      {!hideColumnsButton && <GridToolbarColumnsButton />}
+      {!hideDensityButton && <GridToolbarDensitySelector />}
 
       {/* Reset layout — visible solo si hay personalización guardada */}
       {hasCustomLayout && (
@@ -151,17 +157,19 @@ export function ZenttoToolbar({
       )}
 
       {/* Búsqueda rápida */}
-      <GridToolbarQuickFilter
-        debounceMs={300}
-        size="small"
-        sx={{
-          '& .MuiInputBase-root': { fontSize: '0.85rem' },
-          '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-          bgcolor: 'action.hover',
-          borderRadius: 1,
-          px: 0.5,
-        }}
-      />
+      {!hideQuickFilter && (
+        <GridToolbarQuickFilter
+          debounceMs={300}
+          size="small"
+          sx={{
+            '& .MuiInputBase-root': { fontSize: '0.85rem' },
+            '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+            bgcolor: 'action.hover',
+            borderRadius: 1,
+            px: 0.5,
+          }}
+        />
+      )}
     </GridToolbarContainer>
   );
 }

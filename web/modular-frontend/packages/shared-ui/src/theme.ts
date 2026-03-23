@@ -120,7 +120,7 @@ const theme = createTheme({
         density: 'compact',
         disableColumnMenu: false,
         showCellVerticalBorder: false,
-        rowHeight: 40,
+        rowHeight: 44,
         columnHeaderHeight: 48,
       },
       styleOverrides: {
@@ -181,18 +181,22 @@ const theme = createTheme({
       defaultProps: { size: 'medium', fullWidth: true },
     },
     MuiInputLabel: {
-      defaultProps: { size: 'medium' },
+      defaultProps: { size: 'medium', shrink: true },
       styleOverrides: {
         outlined: {
-          // Label NO shrunk → centrado vertical, letra más chica que el texto de escritura
-          '&:not(.MuiInputLabel-shrink)': {
-            transform: 'translate(14px, 16px) scale(0.9)',
+          '&.MuiInputLabel-shrink': {
+            transform: 'translate(14px, -9px) scale(0.75)',
           },
         },
       },
     },
     MuiSelect: {
       defaultProps: { size: 'medium' },
+      styleOverrides: {
+        select: {
+          padding: '14px 14px',
+        },
+      },
     },
     MuiTextField: {
       defaultProps: {
@@ -219,21 +223,25 @@ const theme = createTheme({
       },
     },
     MuiOutlinedInput: {
+      defaultProps: { notched: true },
       styleOverrides: {
         root: {
           borderRadius: 6,
           backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
           fontSize: '0.875rem',
+          '& .MuiOutlinedInput-notchedOutline legend': {
+            paddingRight: '6px',
+          },
         },
         input: {
+          padding: '14px 14px',
           fontSize: '0.875rem',
           '&::placeholder': {
             fontSize: '0.875rem',
             opacity: 0.6,
           },
-          // Campos numéricos (montos, cantidades, precios) → alineados a la derecha
           '&[type="number"]': {
-            textAlign: 'right',
+            textAlign: 'left',
             MozAppearance: 'textfield',
           },
           '&[type="number"]::-webkit-outer-spin-button, &[type="number"]::-webkit-inner-spin-button': {
@@ -249,6 +257,14 @@ const theme = createTheme({
     },
     MuiAutocomplete: {
       defaultProps: { size: 'medium', fullWidth: true },
+      styleOverrides: {
+        inputRoot: {
+          padding: '0 14px !important',
+          '& .MuiOutlinedInput-input': {
+            padding: '14px 0 !important',
+          },
+        },
+      },
     },
     MuiCheckbox: {
       defaultProps: { color: 'primary' },

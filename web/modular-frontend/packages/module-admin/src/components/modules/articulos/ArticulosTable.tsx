@@ -32,7 +32,6 @@ import {
   GridPaginationModel,
   GridSortModel,
   GridRenderCellParams,
-  GridActionsCellItem,
 } from "@mui/x-data-grid";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import {
@@ -87,7 +86,6 @@ function FilterSelect({
 export default function ArticulosTable() {
   const router = useRouter();
   const pathname = usePathname() || '';
-  // Detectar base: si estamos en /inventario/articulos usar esa base, sino /articulos
   const basePath = pathname.includes('/inventario/') ? '/inventario/articulos' : '/articulos';
 
   // ========== Estado del DataGrid ==========
@@ -271,9 +269,11 @@ export default function ArticulosTable() {
           renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
         },
         {
-          field: "estado", headerName: "Estado", width: 90, sortable: true,
+          field: "estado", headerName: "Estado", width: 100, sortable: true,
           renderCell: (params: GridRenderCellParams) => (
-            <Chip label={params.value === "Activo" ? "Activo" : "Inactivo"} color={params.value === "Activo" ? "success" : "default"} size="small" variant="outlined" />
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              <Chip label={params.value === "Activo" ? "Activo" : "Inactivo"} color={params.value === "Activo" ? "success" : "default"} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.75rem' }} />
+            </Box>
           ),
         },
       ];
@@ -299,12 +299,21 @@ export default function ArticulosTable() {
       const actions: GridColDef = {
         field: "actions", type: "actions", headerName: "Acciones", width: 120, resizable: false,
         getActions: (params) => [
-          <GridActionsCellItem key="view" icon={<ViewIcon />} label="Ver"
-            onClick={() => router.push(`${basePath}/${params.row.codigo}`)} />,
-          <GridActionsCellItem key="edit" icon={<EditIcon />} label="Editar"
-            onClick={() => router.push(`${basePath}/${params.row.codigo}/edit`)} />,
-          <GridActionsCellItem key="delete" icon={<DeleteIcon color="error" />} label="Eliminar"
-            onClick={() => { setSelectedArticulo(params.row.codigo); setDeleteDialogOpen(true); }} />,
+          <Tooltip title="Ver detalle" key="view">
+            <IconButton size="small" onClick={() => router.push(`${basePath}/${params.row.codigo}`)}>
+              <ViewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>,
+          <Tooltip title="Editar artículo" key="edit">
+            <IconButton size="small" onClick={() => router.push(`${basePath}/${params.row.codigo}/edit`)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>,
+          <Tooltip title="Eliminar artículo" key="delete">
+            <IconButton size="small" onClick={() => { setSelectedArticulo(params.row.codigo); setDeleteDialogOpen(true); }}>
+              <DeleteIcon fontSize="small" color="error" />
+            </IconButton>
+          </Tooltip>,
         ],
       };
 
@@ -388,25 +397,26 @@ export default function ArticulosTable() {
 
         <Box sx={{ flex: 1 }} />
 
-        <Tooltip title={extendedView ? "Vista compacta" : "Vista extendida"}>
+        <Tooltip title="Crear un nuevo artículo en inventario">
           <Button
-            variant={extendedView ? "contained" : "outlined"}
-            startIcon={<ViewColumnIcon />}
-            onClick={() => setExtendedView(!extendedView)}
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => router.push(`${basePath}/new`)}
             size="small"
           >
-            {extendedView ? "Compacta" : "Extendida"}
+            Nuevo Artículo
           </Button>
         </Tooltip>
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push(`${basePath}/new`)}
-          size="small"
-        >
-          Nuevo Artículo
-        </Button>
+        <Tooltip title="Registrar entrada o salida de stock">
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/inventario/ajuste")}
+            size="small"
+          >
+            Ajuste de Inventario
+          </Button>
+        </Tooltip>
       </Stack>
 
       {/* ===== PANEL DE FILTROS COLAPSABLE ===== */}
@@ -605,12 +615,14 @@ export default function ArticulosTable() {
         </Paper>
       </Collapse>
 
-      {/* ===== RESUMEN ===== */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {totalRows.toLocaleString("es-VE")} artículo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
-        </Typography>
-      </Stack>
+      {/* ===== RESUMEN — solo si hay búsqueda o filtros activos ===== */}
+      {(debouncedSearch || activeFilterCount > 0) && (
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {totalRows.toLocaleString("es-VE")} artículo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
+          </Typography>
+        </Stack>
+      )}
 
       {/* ===== DATA GRID ===== */}
       <ZenttoDataGrid
@@ -628,11 +640,35 @@ export default function ArticulosTable() {
         disableRowSelectionOnClick
         disableColumnFilter
         disableVirtualization
+        hideColumnsButton
+        hideQuickFilter
+        toolbarActions={
+          <Tooltip title={extendedView ? "Vista compacta" : "Vista extendida"}>
+            <Button
+              variant={extendedView ? "contained" : "outlined"}
+              startIcon={<ViewColumnIcon />}
+              onClick={() => setExtendedView(!extendedView)}
+              size="small"
+            >
+              {extendedView ? "Compacta" : "Extendida"}
+            </Button>
+          </Tooltip>
+        }
         getRowId={(row) => row.codigo}
         mobileVisibleFields={["codigo", "descripcion"]}
         sx={{
           flex: 1,
           minHeight: 0,
+          // Escalar texto con densidad
+          '&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell, &.MuiDataGrid-root--densityCompact .MuiDataGrid-columnHeaderTitle': {
+            fontSize: '0.8rem',
+          },
+          '&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell, &.MuiDataGrid-root--densityStandard .MuiDataGrid-columnHeaderTitle': {
+            fontSize: '0.875rem',
+          },
+          '&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell, &.MuiDataGrid-root--densityComfortable .MuiDataGrid-columnHeaderTitle': {
+            fontSize: '0.95rem',
+          },
           "& .MuiDataGrid-row:hover": {
             backgroundColor: "action.hover",
           },
@@ -646,6 +682,11 @@ export default function ArticulosTable() {
         }}
         localeText={{
           noRowsLabel: "No se encontraron artículos",
+          toolbarDensity: "Tamaño",
+          toolbarDensityLabel: "Tamaño de fila",
+          toolbarDensityCompact: "Compacto",
+          toolbarDensityStandard: "Normal",
+          toolbarDensityComfortable: "Amplio",
           MuiTablePagination: {
             labelRowsPerPage: "Filas por página:",
             labelDisplayedRows: ({ from, to, count }) =>
