@@ -86,17 +86,17 @@ const baseGridSx = {
       bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.07),
     },
   },
-  // Fila de DETALLE → sin hover, fondo diferenciado
+  // Fila de DETALLE → sin hover, fondo sólido (no transparent)
   '& .zentto-row-detail': {
-    bgcolor: 'grey.50',
+    bgcolor: 'background.paper',
     borderLeft: '3px solid',
     borderColor: 'primary.main',
     '& .MuiDataGrid-cell': {
       padding: 0,
-      overflow: 'visible !important',
+      overflow: 'hidden',
     },
     '&:hover': {
-      bgcolor: 'grey.50 !important',
+      bgcolor: 'background.paper !important',
     },
   },
   // Fila de TOTALES → bold + fondo
@@ -115,7 +115,7 @@ const baseGridSx = {
   // Columna de expand — sin padding
   [`& .MuiDataGrid-cell[data-field="${EXPAND_COL_FIELD}"]`]: {
     padding: '0 !important',
-    overflow: 'visible !important',
+    overflow: 'hidden',
   },
   // Footer
   '& .MuiDataGrid-footerContainer': {
@@ -165,22 +165,23 @@ function buildExpandColumn(
               minHeight: typeof detailPanelHeight === 'number' ? detailPanelHeight : undefined,
               display: 'flex',
               flexDirection: 'column',
+              bgcolor: 'background.paper',
               // Animación de entrada
               animation: 'zenttoDetailIn 0.22s ease',
               '@keyframes zenttoDetailIn': {
-                from: { opacity: 0, transform: 'translateY(-8px)' },
+                from: { opacity: 0, transform: 'translateY(-4px)' },
                 to: { opacity: 1, transform: 'translateY(0)' },
               },
             }}
           >
-            {/* Barra de acento izquierdo */}
             <Box
               sx={{
                 display: 'flex',
                 flex: 1,
-                pl: 1,
+                pl: 2,
                 pr: 2,
                 py: 1.5,
+                bgcolor: 'background.paper',
               }}
             >
               {row.__content as React.ReactNode}
