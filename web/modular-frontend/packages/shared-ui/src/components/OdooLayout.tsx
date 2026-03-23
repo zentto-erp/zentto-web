@@ -27,6 +27,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Avatar from '@mui/material/Avatar';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import NotificationsMenu from './NotificationsMenu';
 import HelpButton from './HelpButton';
 import TasksMenu from './TasksMenu';
@@ -57,7 +58,9 @@ export default function OdooLayout({
     const theme = useTheme();
     const { data: session } = useSession();
 
-    const { mode, setMode } = useColorScheme();
+    const { mode, setMode, systemMode } = useColorScheme();
+    // Resuelve el modo real: si es 'system' usa systemMode, sino usa mode explícito
+    const resolvedMode = (mode === 'system' ? systemMode : mode) ?? 'light';
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const hideSidebar = !navigationFields || navigationFields.length === 0;
     const fullSidebarWidth = 260;
@@ -315,9 +318,9 @@ export default function OdooLayout({
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-                            <Tooltip title="Alternar Modo Oscuro">
-                                <IconButton onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} size="small" sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                                    <Brightness4Icon />
+                            <Tooltip title={resolvedMode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}>
+                                <IconButton onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')} size="small" sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                                    {resolvedMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                                 </IconButton>
                             </Tooltip>
                             <HelpButton />
