@@ -329,8 +329,8 @@ BEGIN
     SELECT
         o."OccupationalHealthId",
         o."CompanyId",
-        o."CountryCode",
-        o."RecordType",
+        o."CountryCode"::VARCHAR,
+        o."RecordType"::VARCHAR,
         o."EmployeeId",
         o."EmployeeCode",
         o."EmployeeName",

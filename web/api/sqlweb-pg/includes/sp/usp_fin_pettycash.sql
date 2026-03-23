@@ -84,9 +84,9 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        b."Id", b."CompanyId", b."BranchId", b."Name",
-        b."AccountCode", b."MaxAmount", b."CurrentBalance",
-        b."Responsible", b."Status", b."CreatedAt", b."CreatedByUserId"
+        b."Id"::INT, b."CompanyId"::INT, b."BranchId"::INT, b."Name"::VARCHAR(100),
+        b."AccountCode"::VARCHAR(20), b."MaxAmount"::NUMERIC(18,2), b."CurrentBalance"::NUMERIC(18,2),
+        b."Responsible"::VARCHAR(100), b."Status"::VARCHAR(20), b."CreatedAt"::TIMESTAMP, b."CreatedByUserId"::INT
     FROM fin."PettyCashBox" b
     WHERE b."CompanyId" = p_company_id
     ORDER BY b."Name";

@@ -333,7 +333,7 @@ CREATE OR REPLACE FUNCTION usp_Audit_FiscalRecord_List(
 )
 RETURNS TABLE(
     "TotalCount"       BIGINT,
-    "FiscalRecordId"   INT,
+    "FiscalRecordId"   BIGINT,
     "InvoiceId"        INT,
     "InvoiceNumber"    VARCHAR,
     "InvoiceDate"      DATE,
@@ -359,9 +359,9 @@ BEGIN
     ) INTO v_table_exists;
 
     IF NOT v_table_exists THEN
-        -- Retornar conjunto vacio con 0 registros
-        RETURN QUERY SELECT 0::BIGINT, 0, 0, ''::VARCHAR, CURRENT_DATE, ''::VARCHAR,
-            ''::VARCHAR, FALSE, ''::VARCHAR, ''::VARCHAR, NOW() AT TIME ZONE 'UTC'
+        -- Retornar conjunto vacio (WHERE FALSE nunca produce filas)
+        RETURN QUERY SELECT 0::BIGINT, 0::BIGINT, 0::INT, ''::VARCHAR, CURRENT_DATE, ''::VARCHAR,
+            ''::VARCHAR, FALSE, ''::VARCHAR, ''::VARCHAR, (NOW() AT TIME ZONE 'UTC')::TIMESTAMP
         WHERE FALSE;
         RETURN;
     END IF;
@@ -376,10 +376,10 @@ BEGIN
     -- Retornar registros paginados
     RETURN QUERY EXECUTE
         'SELECT $5::BIGINT AS "TotalCount",'
-        || ' "FiscalRecordId"::INT, "InvoiceId"::INT, "InvoiceNumber"::VARCHAR,'
+        || ' "FiscalRecordId"::BIGINT, "InvoiceId"::INT, "InvoiceNumber"::VARCHAR,'
         || ' "InvoiceDate"::DATE, "InvoiceType"::VARCHAR,'
         || ' "RecordHash"::VARCHAR, COALESCE("SentToAuthority", FALSE)::BOOLEAN,'
-        || ' COALESCE("AuthorityStatus", ''::VARCHAR)::VARCHAR, COALESCE("CountryCode", ''::VARCHAR)::VARCHAR, "CreatedAt"::TIMESTAMP'
+        || ' COALESCE("AuthorityStatus", ''''::VARCHAR)::VARCHAR, COALESCE("CountryCode"::VARCHAR, ''''::VARCHAR)::VARCHAR, "CreatedAt"::TIMESTAMP'
         || ' FROM fiscal."Record"'
         || ' WHERE "CompanyId" = $1 AND "BranchId" = $2'
         || CASE WHEN p_fecha_desde IS NOT NULL THEN ' AND "CreatedAt"::DATE >= $3' ELSE '' END

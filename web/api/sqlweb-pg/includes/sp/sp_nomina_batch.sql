@@ -68,6 +68,38 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
     ON hr."PayrollBatchLine" ("BatchId", "EmployeeCode")
     INCLUDE ("ConceptType", "Total", "IsModified");
 
+-- ═══════════════════════════════════════════════════════════════
+-- ALTER TABLE: Agregar columnas faltantes si la tabla fue creada
+-- por 08_fin_hr_extensions.sql con esquema incompleto.
+-- ═══════════════════════════════════════════════════════════════
+DO $$ BEGIN
+  -- hr."PayrollBatch" — columnas que 08_fin_hr_extensions.sql no incluye
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='BranchId') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "BranchId" INTEGER NOT NULL DEFAULT 1;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalEmployees') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalEmployees" INTEGER NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalGross') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalGross" NUMERIC(18,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalDeductions') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalDeductions" NUMERIC(18,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalNet') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalNet" NUMERIC(18,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='CreatedBy') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "CreatedBy" INTEGER NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='ApprovedBy') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedBy" INTEGER NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='ApprovedAt') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedAt" TIMESTAMP NULL;
+  END IF;
+END $$;
+
 
 -- ═══════════════════════════════════════════════════════════════
 -- 1. usp_HR_Payroll_GenerateDraft
@@ -451,25 +483,25 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        b."BatchId",
-        b."CompanyId",
-        b."BranchId",
-        b."PayrollCode",
-        b."FromDate",
-        b."ToDate",
-        b."Status",
-        b."TotalEmployees",
-        b."TotalGross",
-        b."TotalDeductions",
-        b."TotalNet",
-        b."CreatedBy",
-        b."CreatedAt",
-        b."ApprovedBy",
-        b."ApprovedAt",
-        prev."PrevBatchId",
-        prev."PrevTotalGross",
-        prev."PrevTotalDeductions",
-        prev."PrevTotalNet",
+        b."BatchId"::INTEGER,
+        b."CompanyId"::INTEGER,
+        b."BranchId"::INTEGER,
+        b."PayrollCode"::VARCHAR(15),
+        b."FromDate"::DATE,
+        b."ToDate"::DATE,
+        b."Status"::VARCHAR(20),
+        b."TotalEmployees"::INTEGER,
+        b."TotalGross"::NUMERIC(18,2),
+        b."TotalDeductions"::NUMERIC(18,2),
+        b."TotalNet"::NUMERIC(18,2),
+        b."CreatedBy"::INTEGER,
+        b."CreatedAt"::TIMESTAMP,
+        b."ApprovedBy"::INTEGER,
+        b."ApprovedAt"::TIMESTAMP,
+        prev."PrevBatchId"::INTEGER,
+        prev."PrevTotalGross"::NUMERIC(18,2),
+        prev."PrevTotalDeductions"::NUMERIC(18,2),
+        prev."PrevTotalNet"::NUMERIC(18,2),
         CASE WHEN prev."PrevTotalNet" > 0
              THEN CAST(((b."TotalNet" - prev."PrevTotalNet") / prev."PrevTotalNet") * 100 AS NUMERIC(8,2))
              ELSE 0::NUMERIC(8,2)
@@ -477,10 +509,10 @@ BEGIN
     FROM hr."PayrollBatch" b
     LEFT JOIN LATERAL (
         SELECT
-            pb."BatchId"          AS "PrevBatchId",
-            pb."TotalGross"       AS "PrevTotalGross",
-            pb."TotalDeductions"  AS "PrevTotalDeductions",
-            pb."TotalNet"         AS "PrevTotalNet"
+            pb."BatchId"::INTEGER          AS "PrevBatchId",
+            pb."TotalGross"::NUMERIC(18,2)       AS "PrevTotalGross",
+            pb."TotalDeductions"::NUMERIC(18,2)  AS "PrevTotalDeductions",
+            pb."TotalNet"::NUMERIC(18,2)         AS "PrevTotalNet"
         FROM hr."PayrollBatch" pb
         WHERE pb."CompanyId"   = b."CompanyId"
           AND pb."BranchId"    = b."BranchId"
@@ -698,20 +730,20 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        bl."LineId",
-        bl."BatchId",
-        bl."EmployeeId",
-        bl."EmployeeCode",
-        bl."EmployeeName",
-        bl."ConceptCode",
-        bl."ConceptName",
-        bl."ConceptType",
-        bl."Quantity",
-        bl."Amount",
-        bl."Total",
-        bl."IsModified",
-        bl."Notes",
-        bl."UpdatedAt"
+        bl."LineId"::INTEGER,
+        bl."BatchId"::INTEGER,
+        bl."EmployeeId"::BIGINT,
+        bl."EmployeeCode"::VARCHAR,
+        bl."EmployeeName"::VARCHAR,
+        bl."ConceptCode"::VARCHAR,
+        bl."ConceptName"::VARCHAR,
+        bl."ConceptType"::VARCHAR,
+        bl."Quantity"::NUMERIC,
+        bl."Amount"::NUMERIC,
+        bl."Total"::NUMERIC,
+        bl."IsModified"::BOOLEAN,
+        bl."Notes"::VARCHAR,
+        bl."UpdatedAt"::TIMESTAMP
     FROM hr."PayrollBatchLine" bl
     WHERE bl."BatchId"      = p_batch_id
       AND bl."EmployeeCode" = p_employee_code

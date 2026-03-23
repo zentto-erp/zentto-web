@@ -316,6 +316,11 @@
       "status": 200
     },
     {
+      "path": "/v1/nomina/batch/{id}/grid",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
       "path": "/v1/nomina/vacaciones/solicitudes",
       "tag": "Nomina",
       "status": 200
@@ -456,6 +461,11 @@
       "status": 200
     },
     {
+      "path": "/v1/rrhh/obligaciones/filings/{id}",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
       "path": "/v1/rrhh/salud-ocupacional",
       "tag": "RRHH",
       "status": 200
@@ -567,6 +577,12 @@
       "tag": "Auth",
       "status": 400,
       "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'token': ['Token invalido']}"
+    },
+    {
+      "path": "/v1/proveedores/{codigo}",
+      "tag": "Proveedores",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
     },
     {
       "path": "/v1/inventario/{codigo}",
@@ -949,12 +965,6 @@
   ],
   "fail_5xx": [
     {
-      "path": "/v1/proveedores/{codigo}",
-      "tag": "Proveedores",
-      "status": 500,
-      "error": "{'error': 'function usp_proveedores_getbycodigo(p_company_id => unknown, p_codigo => unknown) does not exist'}"
-    },
-    {
       "path": "/v1/nomina/conceptos-legales",
       "tag": "Nomina",
       "status": 500,
@@ -970,13 +980,7 @@
       "path": "/v1/nomina/batch/{id}/summary",
       "tag": "Nomina",
       "status": 500,
-      "error": "{'error': 'error: function usp_hr_payroll_getdraftsummary(p_batch_id => unknown) is not unique'}"
-    },
-    {
-      "path": "/v1/nomina/batch/{id}/grid",
-      "tag": "Nomina",
-      "status": 500,
-      "error": "{'error': 'error: structure of query does not match function result type'}"
+      "error": "{'error': 'error: column pb.TotalGross does not exist'}"
     },
     {
       "path": "/v1/nomina/batch/{id}/employee/{code}",
@@ -997,28 +1001,22 @@
       "error": "{'error': 'error: invalid input syntax for type bigint: \"NaN\"'}"
     },
     {
-      "path": "/v1/rrhh/obligaciones/filings/{id}",
-      "tag": "RRHH",
-      "status": 500,
-      "error": "{'error': 'error: function usp_hr_filing_getsummary(p_filing_id => unknown) does not exist'}"
-    },
-    {
       "path": "/v1/rrhh/salud-ocupacional/{id}",
       "tag": "RRHH",
       "status": 500,
-      "error": "{'error': 'error: function usp_hr_occhealth_get(p_record_id => unknown) does not exist'}"
+      "error": "{'error': 'error: structure of query does not match function result type'}"
     },
     {
       "path": "/v1/rrhh/comites/{committeeId}/meetings",
       "tag": "RRHH",
       "status": 500,
-      "error": "{'error': 'error: function usp_hr_committee_getmeetings(p_committee_id => unknown) does not exist'}"
+      "error": "{'error': 'error: invalid input syntax for type integer: \"NaN\"'}"
     },
     {
       "path": "/v1/devices/my",
       "tag": "UNDOCUMENTED",
       "status": 500,
-      "error": "{'error': 'function usp_sys_device_listbyuser(p_company_id => unknown, p_user_id => unknown) does not exist'}"
+      "error": "{'error': 'invalid input syntax for type integer: \"NaN\"'}"
     }
   ],
   "fail_other": [

@@ -8,8 +8,13 @@
 -- 1. usp_HR_LegalConcept_List
 --    Lista conceptos legales con filtros opcionales.
 -- =============================================================================
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR(30), VARCHAR(30), VARCHAR(15), INT) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR, VARCHAR, VARCHAR, INT) CASCADE;
+-- Drop ALL possible overloads to avoid ambiguity
+DO $$ BEGIN
+  EXECUTE 'DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR(30), VARCHAR(30), VARCHAR(15), INT) CASCADE';
+  EXECUTE 'DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR, VARCHAR, VARCHAR, INT) CASCADE';
+  EXECUTE 'DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INTEGER, CHARACTER VARYING, CHARACTER VARYING, CHARACTER VARYING, INTEGER) CASCADE';
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id       INT,
     p_convention_code  VARCHAR  DEFAULT NULL,
@@ -36,7 +41,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        c."PayrollConceptId",
+        c."PayrollConceptId"::BIGINT,
         c."ConventionCode"::VARCHAR,
         c."CalculationType"::VARCHAR,
         c."ConceptCode"::VARCHAR,
@@ -47,7 +52,7 @@ BEGIN
         CASE WHEN c."IsBonifiable" THEN 'S' ELSE 'N' END::VARCHAR,
         c."LotttArticle"::VARCHAR,
         c."CcpClause"::VARCHAR,
-        c."SortOrder",
+        c."SortOrder"::INT,
         c."IsActive"
     FROM hr."PayrollConcept" c
     WHERE c."CompanyId" = p_company_id
