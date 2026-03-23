@@ -10,7 +10,12 @@ import { DETAIL_ROW_KEY, TOTALS_ROW_KEY } from './types';
 // ─── Row ID ───────────────────────────────────────────────────────────────────
 
 export function resolveId(row: GridRow, getRowId?: (r: GridRow) => GridRowId): GridRowId {
-  if (getRowId) return getRowId(row);
+  if (getRowId) {
+    const id = getRowId(row);
+    // Si getRowId retorna undefined/null (ej: fila pivot no tiene el campo del user),
+    // fallback a los campos estándar. Esto permite usar pivotConfig con getRowId definido.
+    if (id != null && id !== '') return id;
+  }
   return String(row.id ?? row.Id ?? row.Codigo ?? row.codigo ?? crypto.randomUUID());
 }
 
@@ -238,7 +243,15 @@ export function exportToExcel(rows: GridRowsProp, columns: ZenttoColDef[], filen
   downloadBlob(blob, `${filename}.xls`);
 }
 
-export function exportToJson(rows: GridRowsProp, columns: ZenttoColDef[], filename: string) {
+export function exportToJson(
+  rows: GridRowsProp,
+  columns: ZenttoColDef[],
+  filename: string,
+  /** Opcional: provee datos raw del detalle de una fila para exportación anidada */
+  getDetailExportData?: (row: GridRow) => Record<string, unknown>[],
+  /** Nombre del campo anidado. Default: 'detalles' */
+  detailExportKey = 'detalles',
+) {
   const exportCols = getExportableColumns(columns);
   const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY] && !r[TOTALS_ROW_KEY]);
   const data = exportRows.map(row => {
@@ -246,6 +259,9 @@ export function exportToJson(rows: GridRowsProp, columns: ZenttoColDef[], filena
     exportCols.forEach(col => {
       obj[col.headerName ?? col.field] = row[col.field] ?? null;
     });
+    if (getDetailExportData) {
+      obj[detailExportKey] = getDetailExportData(row);
+    }
     return obj;
   });
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

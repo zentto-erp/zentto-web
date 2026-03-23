@@ -268,6 +268,8 @@ export function ZenttoDataGrid({
   // Master-detail
   getDetailContent,
   detailPanelHeight = 'auto',
+  getDetailExportData,
+  detailExportKey = 'detalles',
   // Pivot
   pivotConfig,
   // Aggregation
@@ -319,6 +321,18 @@ export function ZenttoDataGrid({
 
   // ── Toggle expand ───────────────────────────────────────────────────────────
   const toggleExpand = useCallback((id: GridRowId) => {
+    // Scroll el padre cerca del top ANTES de inyectar el detalle.
+    // Esto garantiza que la fila de detalle (inyectada justo debajo) quede dentro
+    // del viewport de virtualización y MUI la pueda medir correctamente.
+    // Sin esto, filas al fondo del DataGrid no se miden (altura=0 permanente).
+    try {
+      const allIds = apiRef.current?.getSortedRowIds?.() ?? [];
+      const rowIndex = allIds.findIndex(rid => rid === id);
+      if (rowIndex >= 0) {
+        apiRef.current?.scrollToIndexes?.({ rowIndex: Math.max(0, rowIndex - 3) });
+      }
+    } catch { /* noop */ }
+
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -332,31 +346,50 @@ export function ZenttoDataGrid({
     });
   }, []);
 
-  // ── Fix primera renderización + scroll al panel ───────────────────────────
-  // Problema: getRowHeight:'auto' mide el contenido asíncronamente.
-  // En la primera expansión MUI asigna height=0 antes de que el contenido esté listo.
-  // Solución: resetRowHeights() tras un tick fuerza nueva medición; scrollToIndexes
-  // lleva el panel a la vista cuando la fila está cerca del fondo.
+  // ── Fix render + scroll del panel de detalle ─────────────────────────────
+  // Problema 1: getRowHeight:'auto' mide asíncronamente → height=0 en primera expansión.
+  // Problema 2: scrollToIndexes mueve al TOP de la fila, pero el panel puede ser alto.
+  // Problema 3: el id del panel era calculado incorrectamente (formato no coincidía).
+  //
+  // Solución:
+  //   - resetRowHeights() fuerza nueva medición (inmediato + tras doble rAF)
+  //   - getRowElement(detailRowId) + scrollIntoView({ block:'nearest' }) mueve el
+  //     panel al viewport sin pasarse del top ni cortar el bottom
   useEffect(() => {
     if (!getDetailContent || !lastExpandedId.current) return;
     const expandedId = lastExpandedId.current;
-    const detailRowId = `${expandedId}${DETAIL_ROW_KEY}`;
+    // CORRECTO: injectDetailRows crea las filas con id `__detail__${id}`
+    const detailRowId = `__detail__${String(expandedId)}`;
 
-    // Doble reset: inmediato + tras 150ms para async content (hooks de datos)
     const reset = () => {
       try { apiRef.current?.resetRowHeights?.(); } catch { /* noop */ }
     };
+
+    // Reset inmediato
     reset();
+
+    // Doble rAF para esperar que el DOM haya pintado con la nueva altura
     const t1 = setTimeout(() => {
       reset();
-      // Scroll al panel de detalle para que siempre quede visible
-      try {
-        const rowIndex = apiRef.current?.getRowIndexRelativeToVisibleRows?.(detailRowId);
-        if (rowIndex != null && rowIndex >= 0) {
-          apiRef.current?.scrollToIndexes?.({ rowIndex });
-        }
-      } catch { /* noop */ }
-    }, 150);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          reset();
+          try {
+            // Intentar scroll via DOM element (más preciso que scrollToIndexes)
+            const el = (apiRef.current as any)?.getRowElement?.(detailRowId);
+            if (el) {
+              el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+              // Fallback: scroll al índice del padre + 1
+              const parentIdx = apiRef.current?.getRowIndexRelativeToVisibleRows?.(expandedId);
+              if (parentIdx != null && parentIdx >= 0) {
+                apiRef.current?.scrollToIndexes?.({ rowIndex: parentIdx + 1 });
+              }
+            }
+          } catch { /* noop */ }
+        });
+      });
+    }, 80);
 
     return () => clearTimeout(t1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -541,8 +574,8 @@ export function ZenttoDataGrid({
   }, [processedRows, finalColumns, exportFilename]);
 
   const handleExportJson = useCallback(() => {
-    exportToJson(processedRows, finalColumns, exportFilename);
-  }, [processedRows, finalColumns, exportFilename]);
+    exportToJson(processedRows, finalColumns, exportFilename, getDetailExportData, detailExportKey);
+  }, [processedRows, finalColumns, exportFilename, getDetailExportData, detailExportKey]);
 
   const handleExportMarkdown = useCallback(() => {
     exportToMarkdown(processedRows, finalColumns, exportFilename);

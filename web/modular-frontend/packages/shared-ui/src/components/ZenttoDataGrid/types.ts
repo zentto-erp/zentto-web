@@ -52,6 +52,14 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   getDetailContent?: (row: GridRow) => React.ReactNode;
   /** Altura del panel de detalle en px, o 'auto'. Default: 'auto' */
   detailPanelHeight?: number | 'auto';
+  /**
+   * Para exportación JSON anidada: retorna el array de datos raw del detalle de una fila.
+   * Independiente de getDetailContent (que retorna JSX).
+   * Ej: (row) => row.lineas as Record<string, unknown>[]
+   */
+  getDetailExportData?: (row: GridRow) => Record<string, unknown>[];
+  /** Nombre del campo anidado en el JSON exportado. Default: 'detalles' */
+  detailExportKey?: string;
 
   // ─── Pivot ────────────────────────────────────────────────────
   /** Configuración para transformar los datos en tabla pivot */
