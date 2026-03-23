@@ -60,9 +60,6 @@ const baseGridSx = {
     textTransform: 'uppercase',
     letterSpacing: '0.04em',
     color: 'text.secondary',
-    minHeight: '42px !important',
-    maxHeight: '42px !important',
-    lineHeight: '42px',
   },
   '& .MuiDataGrid-columnHeader': {
     '&:focus, &:focus-within': { outline: 'none' },
