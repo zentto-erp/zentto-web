@@ -182,10 +182,22 @@ const theme = createTheme({
       defaultProps: { size: 'small', fullWidth: true },
     },
     MuiInputLabel: {
-      defaultProps: { size: 'small' },
+      defaultProps: { size: 'small', shrink: true },
+      styleOverrides: {
+        outlined: {
+          '&.MuiInputLabel-sizeSmall': {
+            transform: 'translate(14px, -9px) scale(0.75)',
+          },
+        },
+      },
     },
     MuiSelect: {
       defaultProps: { size: 'small' },
+      styleOverrides: {
+        select: {
+          padding: '12px 14px',
+        },
+      },
     },
     MuiTextField: {
       defaultProps: {
@@ -212,10 +224,27 @@ const theme = createTheme({
       },
     },
     MuiOutlinedInput: {
+      defaultProps: { notched: true },
       styleOverrides: {
         root: {
           borderRadius: 6,
           backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
+          fontSize: '0.875rem',
+          '& .MuiOutlinedInput-notchedOutline legend': {
+            paddingRight: '6px',
+          },
+        },
+        input: {
+          padding: '12px 14px',
+          fontSize: '0.875rem',
+          '&::placeholder': {
+            fontSize: '0.875rem',
+            opacity: 0.6,
+          },
+          '&.MuiInputBase-inputSizeSmall': {
+            padding: '12px 14px',
+            fontSize: '0.875rem',
+          },
         },
       },
     },
@@ -225,6 +254,14 @@ const theme = createTheme({
     },
     MuiAutocomplete: {
       defaultProps: { size: 'small', fullWidth: true },
+      styleOverrides: {
+        inputRoot: {
+          padding: '0 14px !important',
+          '& .MuiOutlinedInput-input': {
+            padding: '12px 0 !important',
+          },
+        },
+      },
     },
     MuiCheckbox: {
       defaultProps: { color: 'primary' },

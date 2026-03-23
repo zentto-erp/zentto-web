@@ -254,19 +254,6 @@ export default function OdooLayout({
                                 </IconButton>
                             )}
 
-                            {hideSidebar && (
-                                <React.Fragment>
-                                    <Tooltip title="Ir al Inicio">
-                                        <IconButton onClick={goToShell} size="small" sx={{ mr: 2, color: '#fff', bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                                            <AppsIcon fontSize="large" />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Typography variant="h5" color="#fff" onClick={goToShell} sx={{ fontWeight: 700, letterSpacing: -0.5, cursor: 'pointer' }}>
-                                        <AppTitle lightText={true} />
-                                    </Typography>
-                                </React.Fragment>
-                            )}
-
                             {/* Breadcrumbs */}
                             {!hideSidebar && (
                                 <Typography variant="body1" sx={{ ml: { xs: 0, sm: 2 }, color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 1 }}>
