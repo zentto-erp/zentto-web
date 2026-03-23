@@ -7,7 +7,6 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Grid,
   Paper,
   Stack,
   Table,
@@ -18,6 +17,7 @@ import {
   TextField,
   Typography
 } from "@mui/material";
+import { FormGrid, FormField } from "@zentto/shared-ui";
 import { Add, Delete } from "@mui/icons-material";
 import {
   CxpAplicarPagoPayload,
@@ -121,19 +121,17 @@ export default function PagoTxForm() {
       </Typography>
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={3}>
+        <FormGrid spacing={2}>
+          <FormField xs={12} sm={3}>
             <TextField
-              fullWidth
               size="small"
               label="Cod Proveedor"
               value={codProveedor}
               onChange={(e) => setCodProveedor(e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={2}>
+          </FormField>
+          <FormField xs={12} sm={2}>
             <TextField
-              fullWidth
               size="small"
               label="Fecha"
               type="date"
@@ -141,26 +139,24 @@ export default function PagoTxForm() {
               InputLabelProps={{ shrink: true }}
               onChange={(e) => setFecha(e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={2}>
+          </FormField>
+          <FormField xs={12} sm={2}>
             <TextField
-              fullWidth
               size="small"
               label="Cod Usuario"
               value={codUsuario}
               onChange={(e) => setCodUsuario(e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12}>
+          </FormField>
+          <FormField xs={12}>
             <TextField
-              fullWidth
               size="small"
               label="Observaciones"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
           <Button

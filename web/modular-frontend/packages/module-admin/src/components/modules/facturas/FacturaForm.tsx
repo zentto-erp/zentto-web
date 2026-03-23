@@ -24,6 +24,7 @@ import {
   DialogActions,
   MenuItem,
 } from "@mui/material";
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import Autocomplete from "@mui/material/Autocomplete";
 import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
@@ -275,8 +276,8 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
         {/* Encabezado */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6}>
+        <FormGrid spacing={2} sx={{ mb: 3 }}>
+          <FormField xs={12} sm={6}>
             <Autocomplete
               options={clienteOptions}
               getOptionLabel={(opt: any) =>
@@ -325,46 +326,41 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 />
               )}
               size="small"
-              fullWidth
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </FormField>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Nombre Cliente"
               value={formData.nombreCliente}
               onChange={(e) => setFormData({ ...formData, nombreCliente: e.target.value })}
-              fullWidth
               size="small"
               InputProps={{ readOnly: true }}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </FormField>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Fecha"
               type="date"
               value={formData.fecha}
               onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-              fullWidth
               size="small"
               InputLabelProps={{ shrink: true }}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </FormField>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Referencia"
               value={formData.referencia}
               onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-              fullWidth
               size="small"
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </FormField>
+          <FormField xs={12} sm={6}>
             <TextField
               select
               label="Forma de Pago"
               value={formData.formaPago}
               onChange={(e) => setFormData({ ...formData, formaPago: e.target.value })}
-              fullWidth
               size="small"
             >
               {FORMAS_PAGO.map((fp) => (
@@ -373,14 +369,13 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 </MenuItem>
               ))}
             </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </FormField>
+          <FormField xs={12} sm={6}>
             <TextField
               select
               label="Moneda"
               value={formData.moneda}
               onChange={(e) => setFormData({ ...formData, moneda: e.target.value })}
-              fullWidth
               size="small"
             >
               {MONEDAS.map((m) => (
@@ -389,19 +384,18 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                 </MenuItem>
               ))}
             </TextField>
-          </Grid>
-          <Grid item xs={12}>
+          </FormField>
+          <FormField xs={12}>
             <TextField
               label="Observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              fullWidth
               multiline
               rows={2}
               size="small"
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         {/* Detalles */}
         <Box sx={{ mb: 3 }}>
@@ -517,8 +511,8 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
       <Dialog open={detalleDialogOpen} onClose={() => setDetalleDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Agregar Artículo</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid item xs={12}>
+          <FormGrid spacing={2} sx={{ mt: 0.5 }}>
+            <FormField xs={12}>
               <Autocomplete
                 options={articuloOptions}
                 getOptionLabel={(opt: any) =>
@@ -567,52 +561,47 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
                   />
                 )}
                 size="small"
-                fullWidth
               />
-            </Grid>
-            <Grid item xs={12}>
+            </FormField>
+            <FormField xs={12}>
               <TextField
                 label="Nombre Artículo"
                 value={currentDetalle.nombreArticulo}
-                fullWidth
                 size="small"
                 InputProps={{ readOnly: true }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Cantidad"
                 type="number"
                 inputProps={{ min: 1 }}
                 value={currentDetalle.cantidad}
                 onChange={(e) => setCurrentDetalle({ ...currentDetalle, cantidad: parseInt(e.target.value, 10) })}
-                fullWidth
                 size="small"
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </FormField>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Precio Unitario"
                 type="number"
                 inputProps={{ min: 0, step: "0.01" }}
                 value={currentDetalle.precioUnitario}
                 onChange={(e) => setCurrentDetalle({ ...currentDetalle, precioUnitario: parseFloat(e.target.value) })}
-                fullWidth
                 size="small"
               />
-            </Grid>
-            <Grid item xs={12}>
+            </FormField>
+            <FormField xs={12}>
               <TextField
                 label="Descuento (Bs.)"
                 type="number"
                 inputProps={{ min: 0, step: "0.01" }}
                 value={currentDetalle.descuento}
                 onChange={(e) => setCurrentDetalle({ ...currentDetalle, descuento: parseFloat(e.target.value) })}
-                fullWidth
                 size="small"
               />
-            </Grid>
-          </Grid>
+            </FormField>
+          </FormGrid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetalleDialogOpen(false)}>Cancelar</Button>

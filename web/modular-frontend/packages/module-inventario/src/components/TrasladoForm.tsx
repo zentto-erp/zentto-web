@@ -17,7 +17,7 @@ import {
   MenuItem,
   Autocomplete,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import { FormGrid, FormField } from "@zentto/shared-ui";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { useCreateTraslado } from "../hooks/useInventario";
 import { apiGet } from "@zentto/shared-api";
@@ -135,9 +135,9 @@ export default function TrasladoForm() {
       {submitError && <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert>}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
+        <FormGrid spacing={2}>
           {/* Articulo */}
-          <Grid size={12}>
+          <FormField xs={12}>
             <Autocomplete<ArticuloOption>
               value={articuloSelected}
               onChange={(_, value) => setArticuloSelected(value)}
@@ -177,20 +177,20 @@ export default function TrasladoForm() {
                 />
               )}
             />
-          </Grid>
+          </FormField>
 
           {/* Stock actual */}
           {articuloSelected && (
-            <Grid size={12}>
+            <FormField xs={12}>
               <Alert severity="info" sx={{ py: 0.5 }}>
                 Stock actual de <strong>{articuloSelected.CODIGO}</strong>: <strong>{articuloSelected.EXISTENCIA ?? 0}</strong> unidades
               </Alert>
-            </Grid>
+            </FormField>
           )}
 
           {/* Almacen Origen */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth size="small" error={!!errors.warehouseFrom}>
+          <FormField xs={12} sm={6}>
+            <FormControl size="small" error={!!errors.warehouseFrom}>
               <InputLabel>Almacen Origen</InputLabel>
               <Select value={warehouseFrom} label="Almacen Origen" onChange={(e) => setWarehouseFrom(e.target.value)}>
                 <MenuItem value="">— Seleccionar —</MenuItem>
@@ -200,11 +200,11 @@ export default function TrasladoForm() {
               </Select>
               {errors.warehouseFrom && <Typography variant="caption" color="error" sx={{ ml: 2 }}>{errors.warehouseFrom}</Typography>}
             </FormControl>
-          </Grid>
+          </FormField>
 
           {/* Almacen Destino */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth size="small" error={!!errors.warehouseTo}>
+          <FormField xs={12} sm={6}>
+            <FormControl size="small" error={!!errors.warehouseTo}>
               <InputLabel>Almacen Destino</InputLabel>
               <Select value={warehouseTo} label="Almacen Destino" onChange={(e) => setWarehouseTo(e.target.value)}>
                 <MenuItem value="">— Seleccionar —</MenuItem>
@@ -214,37 +214,35 @@ export default function TrasladoForm() {
               </Select>
               {errors.warehouseTo && <Typography variant="caption" color="error" sx={{ ml: 2 }}>{errors.warehouseTo}</Typography>}
             </FormControl>
-          </Grid>
+          </FormField>
 
           {/* Cantidad */}
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Cantidad"
               type="number"
               inputProps={{ min: 1 }}
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 0)}
-              fullWidth
               size="small"
               required
               error={!!errors.quantity}
               helperText={errors.quantity}
             />
-          </Grid>
+          </FormField>
 
           {/* Notas */}
-          <Grid size={12}>
+          <FormField xs={12}>
             <TextField
               label="Notas / Observaciones"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              fullWidth
               multiline
               rows={2}
               size="small"
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         {/* Actions */}
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>

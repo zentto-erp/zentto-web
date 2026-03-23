@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink, Grid } from '@mui/material';
+import { Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink } from '@mui/material';
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useCustomerRegister } from '@zentto/module-ecommerce';
 
 export default function RegistroPage() {
@@ -85,23 +86,23 @@ export default function RegistroPage() {
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
                 <form onSubmit={handleSubmit}>
-                    <Grid container spacing={2}>
-                        <Grid xs={12}>
-                            <TextField label="Nombre completo" fullWidth required value={name} onChange={(e) => setName(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12}>
-                            <TextField label="Email" type="email" fullWidth required value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12}>
-                            <TextField label="Telefono (opcional)" fullWidth value={phone} onChange={(e) => setPhone(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12} sm={6}>
-                            <TextField label="Contraseña" type="password" fullWidth required value={password} onChange={(e) => setPassword(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12} sm={6}>
-                            <TextField label="Confirmar contraseña" type="password" fullWidth required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                        </Grid>
-                    </Grid>
+                    <FormGrid spacing={2}>
+                        <FormField xs={12}>
+                            <TextField label="Nombre completo" required value={name} onChange={(e) => setName(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12}>
+                            <TextField label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12}>
+                            <TextField label="Telefono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12} sm={6}>
+                            <TextField label="Contraseña" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12} sm={6}>
+                            <TextField label="Confirmar contraseña" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                        </FormField>
+                    </FormGrid>
                     <Button type="submit" variant="contained" fullWidth size="large" disabled={registerMutation.isPending} sx={{ mt: 3 }}>
                         {registerMutation.isPending ? 'Registrando...' : 'Crear cuenta'}
                     </Button>

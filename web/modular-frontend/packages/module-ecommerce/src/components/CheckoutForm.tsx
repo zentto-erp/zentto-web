@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Box, TextField, Button, Typography, Alert, CircularProgress, Paper, Divider, FormControlLabel, Checkbox, MenuItem } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { FormGrid, FormField } from "@zentto/shared-ui";
 import LockIcon from "@mui/icons-material/Lock";
 import ShieldIcon from "@mui/icons-material/Shield";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -132,20 +133,20 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
             </Box>
             <Box sx={{ p: 3 }}>
               {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} fullWidth required size="small" />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth required size="small" />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth size="small" />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="RIF / Cedula" value={fiscalId} onChange={(e) => setFiscalId(e.target.value)} fullWidth size="small" />
-                </Grid>
-              </Grid>
+              <FormGrid spacing={2}>
+                <FormField xs={12} sm={6}>
+                  <TextField label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required size="small" />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required size="small" />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} size="small" />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField label="RIF / Cedula" value={fiscalId} onChange={(e) => setFiscalId(e.target.value)} size="small" />
+                </FormField>
+              </FormGrid>
             </Box>
 
             {/* 2. Dirección de envío */}
@@ -166,26 +167,26 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
                   }}
                 />
               ) : (
-                <Grid container spacing={2}>
-                  <Grid size={12}>
-                    <TextField label="Direccion" value={guestAddress.addressLine} onChange={(e) => setGuestAddress({ ...guestAddress, addressLine: e.target.value })} fullWidth size="small" required />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField label="Ciudad" value={guestAddress.city} onChange={(e) => setGuestAddress({ ...guestAddress, city: e.target.value })} fullWidth size="small" />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField select label="Pais" value={guestAddress.country} onChange={(e) => setGuestAddress({ ...guestAddress, country: e.target.value, state: "" })} fullWidth size="small">
+                <FormGrid spacing={2}>
+                  <FormField xs={12}>
+                    <TextField label="Direccion" value={guestAddress.addressLine} onChange={(e) => setGuestAddress({ ...guestAddress, addressLine: e.target.value })} size="small" required />
+                  </FormField>
+                  <FormField xs={12} sm={4}>
+                    <TextField label="Ciudad" value={guestAddress.city} onChange={(e) => setGuestAddress({ ...guestAddress, city: e.target.value })} size="small" />
+                  </FormField>
+                  <FormField xs={12} sm={4}>
+                    <TextField select label="Pais" value={guestAddress.country} onChange={(e) => setGuestAddress({ ...guestAddress, country: e.target.value, state: "" })} size="small">
                       <MenuItem value="VE">Venezuela</MenuItem>
                       <MenuItem value="ES">Espana</MenuItem>
                       <MenuItem value="CO">Colombia</MenuItem>
                       <MenuItem value="MX">Mexico</MenuItem>
                       <MenuItem value="US">Estados Unidos</MenuItem>
                     </TextField>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField label="Estado / Provincia" value={guestAddress.state} onChange={(e) => setGuestAddress({ ...guestAddress, state: e.target.value })} fullWidth size="small" />
-                  </Grid>
-                </Grid>
+                  </FormField>
+                  <FormField xs={12} sm={4}>
+                    <TextField label="Estado / Provincia" value={guestAddress.state} onChange={(e) => setGuestAddress({ ...guestAddress, state: e.target.value })} size="small" />
+                  </FormField>
+                </FormGrid>
               )}
             </Box>
 

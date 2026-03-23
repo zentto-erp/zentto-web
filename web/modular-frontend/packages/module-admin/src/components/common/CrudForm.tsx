@@ -27,14 +27,14 @@ import {
   FormHelperText,
   CircularProgress,
   Alert,
-  Grid,
   Paper,
   Typography,
 } from '@mui/material';
-import { FormField } from '@zentto/shared-api/types';
+import { FormField as FormFieldDef } from '@zentto/shared-api/types';
+import { FormGrid, FormField } from '@zentto/shared-ui';
 
 interface CrudFormProps {
-  fields: FormField[];
+  fields: FormFieldDef[];
   schema: ZodSchema;
   initialValues?: Record<string, unknown>;
   onSave: (data: Record<string, unknown>) => Promise<void>;
@@ -100,16 +100,15 @@ export default function CrudForm({
       )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Grid container spacing={2}>
+        <FormGrid spacing={2}>
           {fields.map((field) => (
-            <Grid item xs={12} sm={6} key={field.name}>
+            <FormField xs={12} sm={6} key={field.name}>
               <Controller
                 name={field.name}
                 control={control}
                 render={({ field: fieldProps }) =>
                   field.type === 'select' ? (
                     <FormControl
-                      fullWidth
                       error={!!errors[field.name]}
                       required={field.required}
                     >
@@ -140,7 +139,6 @@ export default function CrudForm({
                       placeholder={field.placeholder}
                       multiline
                       rows={4}
-                      fullWidth
                       required={field.required}
                       error={!!errors[field.name]}
                       helperText={
@@ -155,7 +153,6 @@ export default function CrudForm({
                       label={field.label}
                       placeholder={field.placeholder}
                       type={field.type}
-                      fullWidth
                       required={field.required}
                       error={!!errors[field.name]}
                       helperText={
@@ -167,9 +164,9 @@ export default function CrudForm({
                   )
                 }
               />
-            </Grid>
+            </FormField>
           ))}
-        </Grid>
+        </FormGrid>
 
         <Box
           sx={{

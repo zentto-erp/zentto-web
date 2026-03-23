@@ -41,7 +41,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import { useRouter } from "next/navigation";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { CustomStepper, useToast } from "@zentto/shared-ui";
+import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
 import { EditableDataGrid } from "@zentto/module-contabilidad";
 
@@ -312,9 +312,9 @@ export default function ConciliacionWizard() {
                 Seleccione la cuenta bancaria y el período
               </Typography>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
+              <FormGrid spacing={3}>
+                <FormField xs={12} md={6}>
+                  <FormControl>
                     <InputLabel>Cuenta Bancaria</InputLabel>
                     <Select
                       value={nroCtaSeleccionada}
@@ -334,30 +334,28 @@ export default function ConciliacionWizard() {
                       ))}
                     </Select>
                   </FormControl>
-                </Grid>
+                </FormField>
 
-                <Grid item xs={12} md={3}>
+                <FormField xs={12} md={3}>
                   <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
                     <DatePicker
                       label="Fecha Desde"
                       value={fechaDesde}
                       onChange={setFechaDesde}
-                      slotProps={{ textField: { fullWidth: true } }}
                     />
                   </LocalizationProvider>
-                </Grid>
+                </FormField>
 
-                <Grid item xs={12} md={3}>
+                <FormField xs={12} md={3}>
                   <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
                     <DatePicker
                       label="Fecha Hasta"
                       value={fechaHasta}
                       onChange={setFechaHasta}
-                      slotProps={{ textField: { fullWidth: true } }}
                     />
                   </LocalizationProvider>
-                </Grid>
-              </Grid>
+                </FormField>
+              </FormGrid>
 
               {cuentaObj && (
                 <Alert severity="info" sx={{ mt: 3 }}>

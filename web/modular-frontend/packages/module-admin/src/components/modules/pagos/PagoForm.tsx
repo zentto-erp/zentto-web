@@ -10,13 +10,13 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Typography,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
 } from "@mui/material";
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import { usePagoById, useCreatePago, useUpdatePago } from "../../../hooks/usePagos";
 import { CreatePagoDTO, UpdatePagoDTO } from "@zentto/shared-api/types";
 import { useTimezone } from "@zentto/shared-auth";
@@ -151,23 +151,22 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
       )}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+        <FormGrid spacing={2}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Nombre"
               placeholder="Cliente o Proveedor"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              fullWidth
               size="small"
               required
               error={!!errors.nombre}
               helperText={errors.nombre}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth size="small">
+          <FormField xs={12} sm={6}>
+            <FormControl size="small">
               <InputLabel>Tipo</InputLabel>
               <Select
                 value={formData.tipo}
@@ -178,37 +177,35 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
                 <MenuItem value="proveedor">Pago a Proveedor</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Monto (Bs.)"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.monto}
               onChange={(e) => setFormData({ ...formData, monto: parseFloat(e.target.value) })}
-              fullWidth
               size="small"
               required
               error={!!errors.monto}
               helperText={errors.monto}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Fecha"
               type="date"
               value={formData.fecha}
               onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-              fullWidth
               size="small"
               InputLabelProps={{ shrink: true }}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth size="small">
+          <FormField xs={12} sm={6}>
+            <FormControl size="small">
               <InputLabel>Método de Pago</InputLabel>
               <Select
                 value={formData.metodoPago}
@@ -222,31 +219,29 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
                 <MenuItem value="Otro">Otro</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Referencia"
               placeholder="Número de cheque o ref. transf."
               value={formData.referencia}
               onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-              fullWidth
               size="small"
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              fullWidth
               multiline
               rows={3}
               size="small"
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button

@@ -25,6 +25,7 @@ import {
   Chip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { FormGrid, FormField } from "@zentto/shared-ui";
 import SearchIcon from "@mui/icons-material/Search";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useCreateMovimiento, useInventarioList } from "../hooks/useInventario";
@@ -252,9 +253,9 @@ export default function AjusteInventarioForm() {
               </Alert>
             )}
 
-            <Grid container spacing={2}>
-              <Grid size={12}>
-                <FormControl fullWidth size="small">
+            <FormGrid spacing={2}>
+              <FormField xs={12}>
+                <FormControl size="small">
                   <InputLabel>Tipo de Movimiento</InputLabel>
                   <Select value={tipo} label="Tipo de Movimiento" onChange={(e) => setTipo(e.target.value)}>
                     <MenuItem value="ENTRADA">Entrada (Suma)</MenuItem>
@@ -262,25 +263,24 @@ export default function AjusteInventarioForm() {
                     <MenuItem value="AJUSTE">Ajuste</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
+              </FormField>
 
-              <Grid size={12}>
+              <FormField xs={12}>
                 <TextField
                   label="Cantidad"
                   type="number"
                   inputProps={{ min: 1 }}
                   value={cantidad}
                   onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 0)}
-                  fullWidth
                   size="small"
                   required
                   error={!!errors.cantidad}
                   helperText={errors.cantidad}
                 />
-              </Grid>
+              </FormField>
 
-              <Grid size={12}>
-                <FormControl fullWidth size="small" error={!!errors.motivo}>
+              <FormField xs={12}>
+                <FormControl size="small" error={!!errors.motivo}>
                   <InputLabel>Motivo</InputLabel>
                   <Select value={motivo} label="Motivo" onChange={(e) => setMotivo(e.target.value)}>
                     <MenuItem value="">— Seleccionar —</MenuItem>
@@ -297,21 +297,20 @@ export default function AjusteInventarioForm() {
                     </Typography>
                   )}
                 </FormControl>
-              </Grid>
+              </FormField>
 
-              <Grid size={12}>
+              <FormField xs={12}>
                 <TextField
                   label="Observaciones"
                   placeholder="Detalles adicionales del movimiento"
                   value={observaciones}
                   onChange={(e) => setObservaciones(e.target.value)}
-                  fullWidth
                   multiline
                   rows={3}
                   size="small"
                 />
-              </Grid>
-            </Grid>
+              </FormField>
+            </FormGrid>
 
             <Box sx={{ display: "flex", gap: 2, mt: 3, justifyContent: "flex-end" }}>
               <Button variant="outlined" onClick={() => router.back()} disabled={isCreating}>

@@ -10,13 +10,13 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Typography,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
 } from "@mui/material";
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useArticuloById, useCreateArticulo, useUpdateArticulo } from "../../../hooks/useArticulos";
 import { Articulo, CreateArticuloDTO, UpdateArticuloDTO } from "@zentto/shared-api/types";
 
@@ -161,99 +161,93 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
       )}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
+        <FormGrid spacing={2}>
           {/* Código (Read-only en edición) */}
           {isEdit && (
-            <Grid item xs={12} sm={6}>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Código"
                 value={formData.codigo || ""}
                 disabled
-                fullWidth
                 size="small"
               />
-            </Grid>
+            </FormField>
           )}
 
           {/* Nombre */}
-          <Grid item xs={12} sm={isEdit ? 6 : 12}>
+          <FormField xs={12} sm={isEdit ? 6 : 12}>
             <TextField
               label="Nombre del Artículo"
               placeholder="Ej: Laptop Dell"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              fullWidth
               size="small"
               required
               error={!!errors.nombre}
               helperText={errors.nombre}
             />
-          </Grid>
+          </FormField>
 
           {/* Descripción */}
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Descripción"
               placeholder="Detalles adicionales del artículo"
               value={formData.descripcion}
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-              fullWidth
               multiline
               rows={3}
               size="small"
             />
-          </Grid>
+          </FormField>
 
           {/* Categoría */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Categoría"
               placeholder="Ej: Electrónica, Ropa, etc."
               value={formData.categoria}
               onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-              fullWidth
               size="small"
               required
               error={!!errors.categoria}
               helperText={errors.categoria}
             />
-          </Grid>
+          </FormField>
 
           {/* Precio */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Precio (Bs.)"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.precio}
               onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) })}
-              fullWidth
               size="small"
               required
               error={!!errors.precio}
               helperText={errors.precio}
             />
-          </Grid>
+          </FormField>
 
           {/* Stock */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Stock Disponible"
               type="number"
               inputProps={{ min: 0 }}
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value, 10) })}
-              fullWidth
               size="small"
               error={!!errors.stock}
               helperText={errors.stock}
             />
-          </Grid>
+          </FormField>
 
           {/* Estado */}
           {isEdit && (
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
+            <FormField xs={12} sm={6}>
+              <FormControl size="small">
                 <InputLabel>Estado</InputLabel>
                 <Select
                   value={estado}
@@ -264,9 +258,9 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
                   <MenuItem value="Inactivo">Inactivo</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
+            </FormField>
           )}
-        </Grid>
+        </FormGrid>
 
         {/* Actions */}
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>

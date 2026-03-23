@@ -10,7 +10,6 @@ import {
   Alert,
   Card,
   CardContent,
-  Grid,
   Chip,
   Avatar,
   Divider,
@@ -48,7 +47,7 @@ import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { CustomStepper, useToast } from "@zentto/shared-ui";
+import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
 import { EditableDataGrid } from "@zentto/module-contabilidad";
 import type { GridColDef } from "@mui/x-data-grid";
@@ -391,9 +390,9 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
               )}
 
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={4}>
-                    <FormControl fullWidth>
+                <FormGrid spacing={3}>
+                  <FormField xs={12} md={4}>
+                    <FormControl>
                       <InputLabel>Tipo de Cálculo</InputLabel>
                       <Select
                         value={tipoCalculo}
@@ -407,49 +406,45 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
                         <MenuItem value="LIQUIDACION">Liquidación</MenuItem>
                       </Select>
                     </FormControl>
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={4}>
+                  <FormField xs={12} md={4}>
                     <DatePicker
                       label="Fecha Inicio"
                       value={fechaInicio}
                       onChange={setFechaInicio}
-                      slotProps={{ textField: { fullWidth: true } }}
                     />
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={4}>
+                  <FormField xs={12} md={4}>
                     <DatePicker
                       label="Fecha Fin"
                       value={fechaFin}
                       onChange={setFechaFin}
-                      slotProps={{ textField: { fullWidth: true } }}
                     />
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={6}>
+                  <FormField xs={12} md={6}>
                     <TextField
                       label="Sueldo Base"
                       type="number"
                       value={sueldoBase}
                       onChange={(e) => setSueldoBase(Number(e.target.value))}
-                      fullWidth
                       InputProps={{
                         startAdornment: <InputAdornment position="start">$</InputAdornment>,
                       }}
                     />
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={6}>
+                  <FormField xs={12} md={6}>
                     <TextField
                       label="Días del Período"
                       type="number"
                       value={diasPeriodo}
                       onChange={(e) => setDiasPeriodo(Number(e.target.value))}
-                      fullWidth
                     />
-                  </Grid>
-                </Grid>
+                  </FormField>
+                </FormGrid>
               </LocalizationProvider>
             </CardContent>
           </Card>

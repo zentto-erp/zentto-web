@@ -15,7 +15,6 @@ import {
   Tooltip,
   Card,
   CardContent,
-  Grid,
   FormControl,
   InputLabel,
   Select,
@@ -27,7 +26,7 @@ import {
   GridRowModel,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, FormGrid, FormField } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
 import SaveIcon from "@mui/icons-material/Save";
@@ -326,19 +325,18 @@ export default function NuevoAsientoPage() {
             Datos del Asiento
           </Typography>
           
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={3}>
+          <FormGrid spacing={2}>
+            <FormField xs={12} md={3}>
               <TextField
                 label="Fecha"
                 type="date"
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                fullWidth
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
+            </FormField>
+            <FormField xs={12} md={3}>
+              <FormControl>
                 <InputLabel>Tipo de Asiento</InputLabel>
                 <Select
                   value={tipoAsiento}
@@ -354,17 +352,16 @@ export default function NuevoAsientoPage() {
                   <MenuItem value="NOMINA">Nómina</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} md={3}>
+            </FormField>
+            <FormField xs={12} md={3}>
               <TextField
                 label="Referencia"
                 value={referencia}
                 onChange={(e) => setReferencia(e.target.value)}
-                fullWidth
                 placeholder="Ej: FAC-001"
               />
-            </Grid>
-            <Grid item xs={12} md={3}>
+            </FormField>
+            <FormField xs={12} md={3}>
               <Box sx={{ display: "flex", gap: 1, alignItems: "center", height: "100%" }}>
                 <Chip
                   label={isBalanced ? "✓ Cuadrado" : "⚠ Descuadrado"}
@@ -372,18 +369,17 @@ export default function NuevoAsientoPage() {
                   sx={{ fontWeight: 600 }}
                 />
               </Box>
-            </Grid>
-            <Grid item xs={12}>
+            </FormField>
+            <FormField xs={12}>
               <TextField
                 label="Concepto"
                 value={concepto}
                 onChange={(e) => setConcepto(e.target.value)}
-                fullWidth
                 required
                 placeholder="Describa el motivo del asiento..."
               />
-            </Grid>
-          </Grid>
+            </FormField>
+          </FormGrid>
         </CardContent>
       </Card>
 
@@ -421,27 +417,27 @@ export default function NuevoAsientoPage() {
 
           {/* Totales */}
           <Divider sx={{ my: 2 }} />
-          <Grid container spacing={2} justifyContent="flex-end">
-            <Grid item xs={12} md={4}>
+          <FormGrid spacing={2} justifyContent="flex-end">
+            <FormField xs={12} md={4}>
               <Paper sx={{ p: 2, bgcolor: "success.light", color: "success.contrastText" }}>
                 <Typography variant="body2">Total debe</Typography>
                 <Typography variant="h5" fontWeight={700}>
                   {formatCurrency(totalDebe)}
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </FormField>
+            <FormField xs={12} md={4}>
               <Paper sx={{ p: 2, bgcolor: "info.light", color: "info.contrastText" }}>
                 <Typography variant="body2">Total haber</Typography>
                 <Typography variant="h5" fontWeight={700}>
                   {formatCurrency(totalHaber)}
                 </Typography>
               </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper 
-                sx={{ 
-                  p: 2, 
+            </FormField>
+            <FormField xs={12} md={4}>
+              <Paper
+                sx={{
+                  p: 2,
                   bgcolor: isBalanced ? "success.main" : "warning.main",
                   color: "white",
                 }}
@@ -451,8 +447,8 @@ export default function NuevoAsientoPage() {
                   {formatCurrency(diferencia)}
                 </Typography>
               </Paper>
-            </Grid>
-          </Grid>
+            </FormField>
+          </FormGrid>
         </CardContent>
       </Card>
 
