@@ -184,9 +184,9 @@ const theme = createTheme({
       defaultProps: { size: 'medium' },
       styleOverrides: {
         outlined: {
-          // Cuando el label NO está shrunk → centrado verticalmente dentro del campo
+          // Label NO shrunk → centrado vertical, letra más chica que el texto de escritura
           '&:not(.MuiInputLabel-shrink)': {
-            transform: 'translate(14px, 12px) scale(1)',
+            transform: 'translate(14px, 16px) scale(0.9)',
           },
         },
       },
