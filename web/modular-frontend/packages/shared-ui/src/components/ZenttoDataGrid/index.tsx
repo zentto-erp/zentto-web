@@ -55,10 +55,8 @@ const baseGridSx = {
     bgcolor: 'background.default',
     borderBottom: '2px solid',
     borderColor: 'divider',
-    fontSize: '0.78rem',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
+    fontSize: '0.8rem',
+    fontWeight: 600,
     color: 'text.secondary',
   },
   '& .MuiDataGrid-columnHeader': {
@@ -273,6 +271,9 @@ export function ZenttoDataGrid({
   totalsLabel = 'Total',
   // Pinned columns
   pinnedColumns,
+  // Fechas y monedas
+  dateLocale,
+  defaultCurrency,
   // Export
   exportFilename = 'zentto-export',
   showExportCsv = false,
@@ -338,13 +339,13 @@ export function ZenttoDataGrid({
   // ── Columnas responsive (visibilidad) ────────────────────────────────────────
   const dataColumns = useMemo(
     () =>
-      (pivotedColumns as ZenttoColDef[]).filter(
+      normalizedColumns.filter(
         (c) =>
           c.field !== 'actions' &&
           c.type !== 'actions' &&
           !c.field.startsWith('__')
       ),
-    [pivotedColumns]
+    [normalizedColumns]
   );
 
   const effectiveMobileFields = useMemo(() => {
@@ -375,9 +376,70 @@ export function ZenttoDataGrid({
     return { ...model, ...(externalVisibilityModel ?? {}) };
   }, [isSmall, isMobile, effectiveMobileFields, effectiveSmFields, dataColumns, externalVisibilityModel]);
 
+  // ── Normalizar columnas de fecha — locale dinámico según país ────────────────
+  const resolvedDateLocale = dateLocale
+    ?? (typeof navigator !== 'undefined' ? navigator.language : 'es');
+
+  const normalizedColumns = useMemo(() => {
+    return (pivotedColumns as ZenttoColDef[]).map((col) => {
+      let result = col;
+
+      // ── Auto-formato de fechas ────────────────────────────────────────────
+      if ((col.type === 'date' || col.type === 'dateTime') && !col.valueFormatter) {
+        const isDateTime = col.type === 'dateTime';
+        result = {
+          ...result,
+          valueGetter: col.valueGetter ?? ((value: unknown) => {
+            if (value == null || value === '') return null;
+            if (value instanceof Date) return value;
+            const d = new Date(value as string);
+            return isNaN(d.getTime()) ? null : d;
+          }),
+          valueFormatter: (value: unknown) => {
+            if (value == null) return '';
+            const d = value instanceof Date ? value : new Date(String(value));
+            if (isNaN(d.getTime())) return '';
+            const opts: Intl.DateTimeFormatOptions = isDateTime
+              ? { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+              : { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return d.toLocaleDateString(resolvedDateLocale, opts);
+          },
+        } as ZenttoColDef;
+      }
+
+      // ── Auto-formato de moneda ────────────────────────────────────────────
+      if (col.currency && !col.valueFormatter) {
+        const currencyCode = col.currency === true ? (defaultCurrency ?? 'USD') : col.currency;
+        result = {
+          ...result,
+          align: result.align ?? 'right',
+          headerAlign: result.headerAlign ?? 'right',
+          valueFormatter: (value: unknown) => {
+            if (value == null || value === '') return '';
+            const num = Number(value);
+            if (isNaN(num)) return String(value);
+            try {
+              return new Intl.NumberFormat(resolvedDateLocale, {
+                style: 'currency',
+                currency: currencyCode,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }).format(num);
+            } catch {
+              return num.toFixed(2);
+            }
+          },
+        } as ZenttoColDef;
+      }
+
+      return result;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pivotedColumns, resolvedDateLocale, defaultCurrency]);
+
   // ── Construir columnas finales ────────────────────────────────────────────────
   const finalColumns = useMemo<ZenttoColDef[]>(() => {
-    let cols = pivotedColumns as ZenttoColDef[];
+    let cols = normalizedColumns;
 
     // Aplicar column pinning CSS
     if (pinnedColumns) cols = applyColumnPinning(cols, pinnedColumns);
@@ -406,7 +468,7 @@ export function ZenttoDataGrid({
     result.push(...actionCols);
 
     return result;
-  }, [pivotedColumns, getDetailContent, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall]);
+  }, [normalizedColumns, getDetailContent, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall]);
 
   // ── Export ───────────────────────────────────────────────────────────────────
   const handleExportCsv = useCallback(() => {

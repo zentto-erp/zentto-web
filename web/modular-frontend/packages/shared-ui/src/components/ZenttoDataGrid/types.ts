@@ -11,6 +11,12 @@ export interface ZenttoColDef extends GridColDef {
   tabletHide?: boolean;
   /** Función de agregación para la fila de totales */
   aggregation?: AggregationType;
+  /**
+   * Código ISO 4217 de moneda para auto-formatear con Intl.NumberFormat.
+   * Ej: 'VES', 'USD', 'EUR'. Requiere que la columna sea numérica.
+   * Si se pasa `true`, usa el `defaultCurrency` del grid.
+   */
+  currency?: string | true;
 }
 
 /** Configuración para modo pivot */
@@ -68,6 +74,20 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   showExportCsv?: boolean;
   /** Mostrar botón Exportar Excel (.xls) */
   showExportExcel?: boolean;
+
+  // ─── Fechas y Monedas ─────────────────────────────────────────
+  /**
+   * Locale BCP-47 para formatear columnas date/dateTime y moneda automáticamente.
+   * Ej: 'es-VE', 'es-ES', 'es-CO', 'en-US'.
+   * Default: navigator.language del navegador (refleja configuración regional del usuario).
+   * Pasar explícitamente cuando se quiere forzar el locale del país de la empresa.
+   */
+  dateLocale?: string;
+  /**
+   * Código ISO 4217 de moneda por defecto para columnas con `currency: true`.
+   * Ej: 'VES', 'USD', 'EUR', 'COP', 'MXN'.
+   */
+  defaultCurrency?: string;
 
   // ─── Toolbar ──────────────────────────────────────────────────
   /** Título en el toolbar */
