@@ -1,7 +1,8 @@
 "use client";
 
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, CircularProgress } from "@mui/material";
-import { formatDate } from "@zentto/shared-api";
+import { Box, Typography, CircularProgress, Chip } from "@mui/material";
+import { formatDate, formatCurrency } from "@zentto/shared-api";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 
 interface OrderRow {
   orderNumber: string;
@@ -22,6 +23,7 @@ interface Props {
 
 export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -38,39 +40,44 @@ export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
     );
   }
 
+  const columns: ZenttoColDef[] = [
+    { field: "orderNumber", headerName: "Pedido", flex: 1 },
+    {
+      field: "orderDate",
+      headerName: "Fecha",
+      flex: 1,
+      renderCell: (params) => formatDate(params.value, { timeZone }),
+    },
+    {
+      field: "totalAmount",
+      headerName: "Total",
+      flex: 1,
+      type: "number",
+      renderCell: (params) => `$${(params.value as number)?.toFixed(2)}`,
+    },
+    {
+      field: "isPaid",
+      headerName: "Estado",
+      flex: 1,
+      renderCell: (params) => (
+        <Chip
+          size="small"
+          label={params.value === "S" ? "Pagado" : "Pendiente"}
+          color={params.value === "S" ? "success" : "warning"}
+        />
+      ),
+    },
+  ];
+
   return (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Pedido</TableCell>
-            <TableCell>Fecha</TableCell>
-            <TableCell align="right">Total</TableCell>
-            <TableCell>Estado</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {orders.map((o) => (
-            <TableRow
-              key={o.orderNumber}
-              hover
-              sx={{ cursor: onViewOrder ? "pointer" : "default" }}
-              onClick={() => onViewOrder?.(o.orderNumber)}
-            >
-              <TableCell>{o.orderNumber}</TableCell>
-              <TableCell>{formatDate(o.orderDate, { timeZone })}</TableCell>
-              <TableCell align="right">${o.totalAmount?.toFixed(2)}</TableCell>
-              <TableCell>
-                <Chip
-                  size="small"
-                  label={o.isPaid === "S" ? "Pagado" : "Pendiente"}
-                  color={o.isPaid === "S" ? "success" : "warning"}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <ZenttoDataGrid
+      rows={orders}
+      columns={columns}
+      getRowId={(row) => row.orderNumber}
+      hideToolbar
+      autoHeight
+      onRowClick={onViewOrder ? (params) => onViewOrder(params.row.orderNumber) : undefined}
+      sx={{ cursor: onViewOrder ? "pointer" : "default" }}
+    />
   );
 }

@@ -16,8 +16,15 @@ import {
   Divider,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
+
+const taxRateColumns: ZenttoColDef[] = [
+  { field: "code", headerName: "Código", flex: 1 },
+  { field: "name", headerName: "Nombre", flex: 2 },
+  { field: "rate", headerName: "Tasa %", flex: 1, type: "number", renderCell: (p) => `${p.value}%` },
+  { field: "surchargeRate", headerName: "Recargo %", flex: 1, type: "number", renderCell: (p) => `${p.value ?? 0}%` },
+];
 
 export default function FiscalConfigPage() {
   const [countryCode, setCountryCode] = useState<string>("");
@@ -134,21 +141,13 @@ export default function FiscalConfigPage() {
             {taxRateOptions.length > 0 && (
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>Tasas de Impuesto ({countryCode})</Typography>
-                <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", "& td, & th": { px: 1.5, py: 0.8, fontSize: "0.85rem", borderBottom: "1px solid", borderColor: "divider", textAlign: "left" } }}>
-                  <thead>
-                    <tr><th>Código</th><th>Nombre</th><th>Tasa %</th><th>Recargo %</th></tr>
-                  </thead>
-                  <tbody>
-                    {taxRateOptions.map((t: any) => (
-                      <tr key={t.code}>
-                        <td>{t.code}</td>
-                        <td>{t.name}</td>
-                        <td>{t.rate}%</td>
-                        <td>{t.surchargeRate ?? 0}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Box>
+                <ZenttoDataGrid
+                  rows={taxRateOptions}
+                  columns={taxRateColumns}
+                  getRowId={(row: any) => row.code}
+                  hideToolbar
+                  autoHeight
+                />
               </Paper>
             )}
 

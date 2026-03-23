@@ -1,8 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { ColumnDef, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Box, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 
 type FacturaRow = {
   NUM_FACT: string;
@@ -12,48 +10,22 @@ type FacturaRow = {
   COD_USUARIO?: string;
 };
 
+const columns: ZenttoColDef[] = [
+  { field: "NUM_FACT", headerName: "Numero", flex: 1 },
+  { field: "FECHA", headerName: "Fecha", flex: 1 },
+  { field: "NOMBRE", headerName: "Cliente", flex: 1.5 },
+  { field: "TOTAL", headerName: "Total", flex: 1, type: "number", currency: true },
+  { field: "COD_USUARIO", headerName: "Usuario", flex: 1 },
+];
+
 export function FacturaTable({ rows }: { rows: FacturaRow[] }) {
-  const columns = useMemo<ColumnDef<FacturaRow>[]>(
-    () => [
-      { header: "Numero", accessorKey: "NUM_FACT" },
-      { header: "Fecha", accessorKey: "FECHA" },
-      { header: "Cliente", accessorKey: "NOMBRE" },
-      { header: "Total", accessorKey: "TOTAL" },
-      { header: "Usuario", accessorKey: "COD_USUARIO" }
-    ],
-    []
-  );
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  });
-
   return (
-    <Box sx={{ overflowX: "auto", background: "#fff", borderRadius: 2, boxShadow: 1 }}>
-      <Table size="small">
-        <TableHead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableCell key={header.id} sx={{ fontWeight: 600 }}>
-                  {String(header.column.columnDef.header)}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableHead>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>{String(cell.getValue() ?? "")}</TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
+    <ZenttoDataGrid
+      rows={rows}
+      columns={columns}
+      getRowId={(row) => row.NUM_FACT}
+      hideToolbar
+      autoHeight
+    />
   );
 }

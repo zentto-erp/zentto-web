@@ -23,7 +23,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
 import { formatCurrency, toDateOnly, formatDateTime } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
@@ -43,6 +43,27 @@ const ACTION_ICONS: Record<string, React.ReactElement> = {
   VOID: <BlockIcon fontSize="small" />,
   LOGIN: <LoginIcon fontSize="small" />,
 };
+
+const logColumns: ZenttoColDef[] = [
+  { field: "CreatedAt", headerName: "Fecha", flex: 1.2, renderCell: (p) => p.value ? formatDateTime(p.value, {}) : "-" },
+  { field: "UserName", headerName: "Usuario", flex: 1, renderCell: (p) => p.value ?? "-" },
+  { field: "ModuleName", headerName: "Módulo", flex: 1 },
+  {
+    field: "ActionType",
+    headerName: "Acción",
+    flex: 1,
+    renderCell: (p) => (
+      <Chip
+        icon={ACTION_ICONS[p.value as string]}
+        label={p.value}
+        size="small"
+        color={ACTION_COLORS[p.value as string] ?? "default"}
+        variant="outlined"
+      />
+    ),
+  },
+  { field: "Summary", headerName: "Descripción", flex: 2, renderCell: (p) => p.value ?? `${p.row.EntityName} ${p.row.EntityId ?? ""}` },
+];
 
 export default function AuditoriaHome() {
   const router = useRouter();
@@ -123,36 +144,13 @@ export default function AuditoriaHome() {
                   </Typography>
                 </Box>
               ) : (
-                <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", "& td, & th": { px: 1.5, py: 1, fontSize: "0.85rem", borderBottom: "1px solid", borderColor: "divider" } }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: "left" }}>Fecha</th>
-                      <th style={{ textAlign: "left" }}>Usuario</th>
-                      <th style={{ textAlign: "left" }}>Módulo</th>
-                      <th style={{ textAlign: "left" }}>Acción</th>
-                      <th style={{ textAlign: "left" }}>Descripción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data?.ultimosLogs ?? []).slice(0, 10).map((log: any, i: number) => (
-                      <tr key={log.AuditLogId ?? i}>
-                        <td>{log.CreatedAt ? formatDateTime(log.CreatedAt, { timeZone }) : "-"}</td>
-                        <td>{log.UserName ?? "-"}</td>
-                        <td>{log.ModuleName}</td>
-                        <td>
-                          <Chip
-                            icon={ACTION_ICONS[log.ActionType]}
-                            label={log.ActionType}
-                            size="small"
-                            color={ACTION_COLORS[log.ActionType] ?? "default"}
-                            variant="outlined"
-                          />
-                        </td>
-                        <td>{log.Summary ?? `${log.EntityName} ${log.EntityId ?? ""}`}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Box>
+                <ZenttoDataGrid
+                  rows={(data?.ultimosLogs ?? []).slice(0, 10)}
+                  columns={logColumns}
+                  getRowId={(row: any) => row.AuditLogId ?? Math.random()}
+                  hideToolbar
+                  autoHeight
+                />
               )}
             </Paper>
           </Box>
