@@ -13,9 +13,6 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Instalar goose para migraciones
-RUN wget -qO /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64 && chmod +x /usr/local/bin/goose
-
 # Copiar solo lo necesario para producción
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
@@ -25,19 +22,11 @@ COPY --from=builder /app/.npmrc ./
 # Contrato OpenAPI para Swagger UI
 COPY web/contracts/openapi.yaml ./contracts/openapi.yaml
 
-# Migraciones y entrypoint
-COPY web/api/migrations/ ./migrations/
-COPY scripts/goose-entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
-
 # Reinstalar solo dependencias de producción
 RUN npm ci --omit=dev
 
 # Carpeta de media persistente
 RUN mkdir -p /app/storage/media
 
-# Instalar bash (Alpine usa sh por defecto)
-RUN apk add --no-cache bash
-
 EXPOSE 4000
-ENTRYPOINT ["./entrypoint.sh"]
+CMD ["node", "dist/index.js"]
