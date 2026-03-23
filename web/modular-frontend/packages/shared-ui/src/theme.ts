@@ -203,68 +203,6 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
-          // Asegurar que el notch (legend) tenga el tamaño correcto
-          // para que el label flotante no aparezca sobre el borde
-          '& .MuiOutlinedInput-notchedOutline legend': {
-            // MUI calcula el ancho del gap basado en el label × 0.75
-            // Este font-size asegura que el cálculo sea correcto
-            fontSize: '0.75em',
-          },
-        },
-        input: {
-          // padding estándar MUI para size=small — alineado con el label transform
-          padding: '8.5px 14px',
-        },
-        inputSizeSmall: {
-          padding: '8.5px 14px',
-        },
-      },
-    },
-    MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          // Tamaño de fuente ligeramente reducido en móvil mejora la legibilidad
-          fontSize: '0.95rem',
-          // Evitar que el label se corte en pantallas pequeñas
-          maxWidth: 'calc(100% - 32px)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        },
-        outlined: {
-          // Transform centrado para size=small (input de ~40px)
-          '&:not(.MuiInputLabel-shrink)': {
-            transform: 'translate(14px, 9px) scale(1)',
-          },
-          // Transform cuando flota (shrink) — encima del borde
-          '&.MuiInputLabel-shrink': {
-            transform: 'translate(14px, -9px) scale(0.75)',
-            // El fondo DEBE coincidir con el contenedor.
-            // Usamos un degradado para adaptarse a cualquier fondo
-            // en vez de color sólido que choca con fondos grises/coloreados
-            padding: '0 5px',
-            borderRadius: 2,
-            zIndex: 1,
-            maxWidth: 'calc(133% - 32px)',
-            // Fondo del label: toma el color del campo input en vez del Paper global
-            backgroundColor: 'var(--mui-palette-background-paper)',
-          },
-        },
-        sizeSmall: {
-          '&:not(.MuiInputLabel-shrink)': {
-            transform: 'translate(14px, 9px) scale(1)',
-          },
-          '&.MuiInputLabel-shrink': {
-            transform: 'translate(14px, -9px) scale(0.75)',
-          },
-        },
-      },
-    },
-    MuiFormLabel: {
-      styleOverrides: {
-        root: {
-          // El label nunca debe salir del contenedor visible
-          overflow: 'visible',
         },
       },
     },
