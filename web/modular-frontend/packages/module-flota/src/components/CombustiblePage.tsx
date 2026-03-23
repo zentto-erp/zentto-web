@@ -13,7 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -127,23 +128,17 @@ export default function CombustiblePage() {
 
       {/* Filters */}
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
+        <DatePicker
           label="Desde"
-          type="date"
-          value={filter.fechaDesde ?? ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value || undefined }))}
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 150 }}
+          value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+          onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
+          slotProps={{ textField: { size: 'small', fullWidth: true } }}
         />
-        <TextField
+        <DatePicker
           label="Hasta"
-          type="date"
-          value={filter.fechaHasta ?? ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value || undefined }))}
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 150 }}
+          value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+          onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
+          slotProps={{ textField: { size: 'small', fullWidth: true } }}
         />
       </Stack>
 
@@ -171,7 +166,7 @@ export default function CombustiblePage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" fullWidth required />
-            <TextField label="Fecha" type="date" value={logDate} onChange={(e) => setLogDate(e.target.value)} size="small" fullWidth required InputLabelProps={{ shrink: true }} />
+            <DatePicker label="Fecha" value={logDate ? dayjs(logDate) : null} onChange={(v) => setLogDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Kilometraje" type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} size="small" fullWidth required />
             <TextField label="Tipo Combustible" value={fuelType} onChange={(e) => setFuelType(e.target.value)} size="small" fullWidth required />
             <Stack direction="row" spacing={2}>

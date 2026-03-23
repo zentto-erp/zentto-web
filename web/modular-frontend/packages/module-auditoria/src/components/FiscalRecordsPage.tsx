@@ -9,7 +9,8 @@ import {
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
@@ -77,21 +78,17 @@ export default function FiscalRecordsPage() {
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <Stack direction="row" spacing={2} mb={2}>
-          <TextField
+          <DatePicker
             label="Desde"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaDesde || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value || undefined, page: 1 }))}
+            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Hasta"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaHasta || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value || undefined, page: 1 }))}
+            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Stack>
 

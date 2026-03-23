@@ -26,6 +26,8 @@ import { GridColDef } from '@mui/x-data-grid';
 import { EditableDataGrid } from '@zentto/module-admin';
 import { useTimezone } from '@zentto/shared-auth';
 import { formatDateTime } from '@zentto/shared-api';
+import { DatePicker } from '@zentto/shared-ui';
+import dayjs from 'dayjs';
 import {
     CompraRestauranteAdmin,
     CompraDetalleRowAdmin,
@@ -524,23 +526,17 @@ export default function AdminComprasPage() {
                     InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
                     inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
                 />
-                <TextField
+                <DatePicker
                     label="Desde"
-                    type="date"
-                    size="medium"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
-                    inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
+                    value={from ? dayjs(from) : null}
+                    onChange={(v) => setFrom(v ? v.format('YYYY-MM-DD') : '')}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
-                <TextField
+                <DatePicker
                     label="Hasta"
-                    type="date"
-                    size="medium"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
-                    inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
+                    value={to ? dayjs(to) : null}
+                    onChange={(v) => setTo(v ? v.format('YYYY-MM-DD') : '')}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
             </Paper>
 

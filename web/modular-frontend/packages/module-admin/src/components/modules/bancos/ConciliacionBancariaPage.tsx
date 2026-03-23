@@ -21,6 +21,8 @@ import {
   Typography
 } from "@mui/material";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   useCerrarConciliacion,
@@ -195,10 +197,10 @@ export default function ConciliacionBancariaPage() {
             </TextField>
           </Grid>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" type="date" label="Desde" InputLabelProps={{ shrink: true }} value={newDesde} onChange={(e) => setNewDesde(e.target.value)} />
+            <DatePicker label="Desde" value={newDesde ? dayjs(newDesde) : null} onChange={(v) => setNewDesde(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
           </Grid>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" type="date" label="Hasta" InputLabelProps={{ shrink: true }} value={newHasta} onChange={(e) => setNewHasta(e.target.value)} />
+            <DatePicker label="Hasta" value={newHasta ? dayjs(newHasta) : null} onChange={(v) => setNewHasta(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
           </Grid>
           <Grid item xs={12} md={2}>
             <Button fullWidth variant="contained" onClick={handleCrear} disabled={crear.isPending}>Crear</Button>

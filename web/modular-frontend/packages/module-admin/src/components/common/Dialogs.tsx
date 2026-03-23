@@ -22,6 +22,8 @@ import {
   Checkbox,
 } from '@mui/material';
 import { toDateOnly } from '@zentto/shared-api';
+import { DatePicker } from '@zentto/shared-ui';
+import dayjs from 'dayjs';
 import { useTimezone } from '@zentto/shared-auth';
 
 // ============================================================================
@@ -191,21 +193,17 @@ export function DateRangeDialog({
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-          <TextField
+          <DatePicker
             label="Desde"
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
+            value={from ? dayjs(from) : null}
+            onChange={(v) => setFrom(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Hasta"
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
+            value={to ? dayjs(to) : null}
+            onChange={(v) => setTo(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Box>
       </DialogContent>

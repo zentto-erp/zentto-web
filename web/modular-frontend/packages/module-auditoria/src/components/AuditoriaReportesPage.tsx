@@ -15,7 +15,8 @@ import {
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { toDateOnly, formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -121,21 +122,17 @@ export default function AuditoriaReportesPage() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filters */}
         <Stack direction="row" spacing={2} mb={2} alignItems="center">
-          <TextField
+          <DatePicker
             label="Desde"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={fechaDesde}
-            onChange={(e) => { setFechaDesde(e.target.value); setRun(false); }}
+            value={fechaDesde ? dayjs(fechaDesde) : null}
+            onChange={(v) => { setFechaDesde(v ? v.format('YYYY-MM-DD') : ''); setRun(false); }}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Hasta"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={fechaHasta}
-            onChange={(e) => { setFechaHasta(e.target.value); setRun(false); }}
+            value={fechaHasta ? dayjs(fechaHasta) : null}
+            onChange={(v) => { setFechaHasta(v ? v.format('YYYY-MM-DD') : ''); setRun(false); }}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
           <Button variant="contained" onClick={handleGenerar}>Generar</Button>
           <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()}>

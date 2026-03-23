@@ -21,7 +21,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -244,21 +245,17 @@ export default function ExamenesMedicosPage() {
                 <MenuItem value="ESPECIAL">Especial</MenuItem>
               </Select>
             </FormControl>
-            <TextField
+            <DatePicker
               label="Fecha del Examen"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.examDate}
-              onChange={(e) => setForm((f) => ({ ...f, examDate: e.target.value }))}
+              value={form.examDate ? dayjs(form.examDate) : null}
+              onChange={(v) => setForm((f) => ({ ...f, examDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-            <TextField
+            <DatePicker
               label="Próximo Vencimiento"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.nextDueDate || ""}
-              onChange={(e) => setForm((f) => ({ ...f, nextDueDate: e.target.value }))}
+              value={form.nextDueDate ? dayjs(form.nextDueDate) : null}
+              onChange={(v) => setForm((f) => ({ ...f, nextDueDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <TextField
               label="Resultado"

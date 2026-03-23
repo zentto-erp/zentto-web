@@ -28,7 +28,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import {
   useActivosFijosList,
   useCategoriasList,
@@ -289,14 +290,11 @@ export default function ActivosFijosListPage() {
                   ))}
                 </Select>
               </FormControl>
-              <TextField
+              <DatePicker
                 label="Fecha adquisición"
-                type="date"
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
-                value={form.acquisitionDate}
-                onChange={(e) => setField("acquisitionDate", e.target.value)}
+                value={form.acquisitionDate ? dayjs(form.acquisitionDate) : null}
+                onChange={(v) => setField("acquisitionDate", v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
             </Stack>
             <Stack direction="row" spacing={2}>

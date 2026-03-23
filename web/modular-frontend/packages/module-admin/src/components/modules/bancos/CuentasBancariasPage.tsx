@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../../hooks/useBancosAuxiliares";
 import { toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 
 type CuentaRow = Record<string, unknown>;
@@ -90,10 +92,10 @@ export default function CuentasBancariasPage() {
                 <TextField fullWidth size="small" label="Cuenta" value={nroCta} onChange={(e) => setNroCta(e.target.value)} />
               </Grid>
               <Grid item xs={12} md={3}>
-                <TextField fullWidth size="small" type="date" label="Desde" InputLabelProps={{ shrink: true }} value={desde} onChange={(e) => setDesde(e.target.value)} />
+                <DatePicker label="Desde" value={desde ? dayjs(desde) : null} onChange={(v) => setDesde(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
               </Grid>
               <Grid item xs={12} md={3}>
-                <TextField fullWidth size="small" type="date" label="Hasta" InputLabelProps={{ shrink: true }} value={hasta} onChange={(e) => setHasta(e.target.value)} />
+                <DatePicker label="Hasta" value={hasta ? dayjs(hasta) : null} onChange={(v) => setHasta(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
               </Grid>
               <Grid item xs={12} md={2}>
                 <TextField fullWidth size="small" type="number" label="Pagina" value={page} onChange={(e) => setPage(Number(e.target.value) || 1)} />

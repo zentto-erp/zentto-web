@@ -28,6 +28,8 @@ import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
@@ -223,25 +225,19 @@ export default function MovimientosTable() {
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
+                <DatePicker
                   label="Desde"
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => { setFechaDesde(e.target.value); setPage(0); }}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
+                  value={fechaDesde ? dayjs(fechaDesde) : null}
+                  onChange={(v) => { setFechaDesde(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </Grid>
               <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
+                <DatePicker
                   label="Hasta"
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => { setFechaHasta(e.target.value); setPage(0); }}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
+                  value={fechaHasta ? dayjs(fechaHasta) : null}
+                  onChange={(v) => { setFechaHasta(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </Grid>
             </Grid>

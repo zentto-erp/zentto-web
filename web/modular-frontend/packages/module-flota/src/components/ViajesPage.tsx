@@ -16,7 +16,8 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -240,23 +241,17 @@ export default function ViajesPage() {
           <MenuItem value="IN_TRANSIT">En Transito</MenuItem>
           <MenuItem value="COMPLETED">Completado</MenuItem>
         </TextField>
-        <TextField
+        <DatePicker
           label="Desde"
-          type="date"
-          value={filter.fechaDesde ?? ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value || undefined }))}
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 150 }}
+          value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+          onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
+          slotProps={{ textField: { size: 'small', fullWidth: true } }}
         />
-        <TextField
+        <DatePicker
           label="Hasta"
-          type="date"
-          value={filter.fechaHasta ?? ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value || undefined }))}
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 150 }}
+          value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+          onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
+          slotProps={{ textField: { size: 'small', fullWidth: true } }}
         />
       </Stack>
 
@@ -288,7 +283,7 @@ export default function ViajesPage() {
               <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} size="small" fullWidth required />
               <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} size="small" fullWidth required />
             </Stack>
-            <TextField label="Fecha Salida" type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} size="small" fullWidth required InputLabelProps={{ shrink: true }} />
+            <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartureDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} size="small" fullWidth required />
             <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} size="small" fullWidth multiline rows={2} />
           </Stack>
@@ -314,7 +309,7 @@ export default function ViajesPage() {
               Viaje: {String(selectedRow?.TripNumber ?? "")} — {String(selectedRow?.Origin ?? "")} a {String(selectedRow?.Destination ?? "")}
             </Typography>
             <TextField label="Kilometraje Final" type="number" value={endMileage} onChange={(e) => setEndMileage(e.target.value)} size="small" fullWidth required />
-            <TextField label="Fecha Llegada" type="date" value={arrivalDate} onChange={(e) => setArrivalDate(e.target.value)} size="small" fullWidth required InputLabelProps={{ shrink: true }} />
+            <DatePicker label="Fecha Llegada" value={arrivalDate ? dayjs(arrivalDate) : null} onChange={(v) => setArrivalDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Combustible Usado (L)" type="number" value={fuelUsed} onChange={(e) => setFuelUsed(e.target.value)} size="small" fullWidth />
           </Stack>
         </DialogContent>

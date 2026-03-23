@@ -19,7 +19,8 @@ import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import DescriptionIcon from "@mui/icons-material/Description";
 import dynamic from "next/dynamic";
 const DocumentViewerModal = dynamic(() => import("./DocumentViewerModal"), { ssr: false });
-import { brandColors, FormGrid, FormField } from "@zentto/shared-ui";
+import { brandColors, FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { formatCurrency, useLookup } from "@zentto/shared-api";
 import {
   useGenerateDraft,
@@ -182,23 +183,19 @@ export default function NominaBatchWizard({ onBack }: Props) {
                 </FormControl>
               </FormField>
               <FormField xs={12} md={4}>
-                <TextField
+                <DatePicker
                   label="Fecha Inicio"
-                  type="date"
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  value={config.fechaInicio}
-                  onChange={(e) => setConfig((c) => ({ ...c, fechaInicio: e.target.value }))}
+                  value={config.fechaInicio ? dayjs(config.fechaInicio) : null}
+                  onChange={(v) => setConfig((c) => ({ ...c, fechaInicio: v ? v.format('YYYY-MM-DD') : '' }))}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </FormField>
               <FormField xs={12} md={4}>
-                <TextField
+                <DatePicker
                   label="Fecha Hasta"
-                  type="date"
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  value={config.fechaHasta}
-                  onChange={(e) => setConfig((c) => ({ ...c, fechaHasta: e.target.value }))}
+                  value={config.fechaHasta ? dayjs(config.fechaHasta) : null}
+                  onChange={(v) => setConfig((c) => ({ ...c, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </FormField>
               <FormField xs={12} md={4}>

@@ -21,7 +21,8 @@ import {
   InputLabel,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
 import CheckIcon from "@mui/icons-material/Check";
@@ -343,21 +344,17 @@ export default function ObligacionesPage() {
               value={filForm.obligationCode}
               onChange={(e) => setFilForm((f) => ({ ...f, obligationCode: e.target.value }))}
             />
-            <TextField
+            <DatePicker
               label="Período Desde"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={filForm.periodFrom}
-              onChange={(e) => setFilForm((f) => ({ ...f, periodFrom: e.target.value }))}
+              value={filForm.periodFrom ? dayjs(filForm.periodFrom) : null}
+              onChange={(v) => setFilForm((f) => ({ ...f, periodFrom: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-            <TextField
+            <DatePicker
               label="Período Hasta"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={filForm.periodTo}
-              onChange={(e) => setFilForm((f) => ({ ...f, periodTo: e.target.value }))}
+              value={filForm.periodTo ? dayjs(filForm.periodTo) : null}
+              onChange={(v) => setFilForm((f) => ({ ...f, periodTo: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Stack>
         </DialogContent>

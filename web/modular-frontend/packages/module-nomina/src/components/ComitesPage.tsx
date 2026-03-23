@@ -26,7 +26,8 @@ import {
   ListItemSecondaryAction,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -242,21 +243,17 @@ export default function ComitesPage() {
               value={committeeForm.description || ""}
               onChange={(e) => setCommitteeForm((f) => ({ ...f, description: e.target.value }))}
             />
-            <TextField
+            <DatePicker
               label="Fecha Inicio"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={committeeForm.startDate}
-              onChange={(e) => setCommitteeForm((f) => ({ ...f, startDate: e.target.value }))}
+              value={committeeForm.startDate ? dayjs(committeeForm.startDate) : null}
+              onChange={(v) => setCommitteeForm((f) => ({ ...f, startDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-            <TextField
+            <DatePicker
               label="Fecha Fin"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={committeeForm.endDate || ""}
-              onChange={(e) => setCommitteeForm((f) => ({ ...f, endDate: e.target.value }))}
+              value={committeeForm.endDate ? dayjs(committeeForm.endDate) : null}
+              onChange={(v) => setCommitteeForm((f) => ({ ...f, endDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Stack>
         </DialogContent>
@@ -396,13 +393,11 @@ export default function ComitesPage() {
         <DialogTitle>Registrar Reunión</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
+            <DatePicker
               label="Fecha"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={meetingForm.date}
-              onChange={(e) => setMeetingForm((f) => ({ ...f, date: e.target.value }))}
+              value={meetingForm.date ? dayjs(meetingForm.date) : null}
+              onChange={(v) => setMeetingForm((f) => ({ ...f, date: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <TextField
               label="Resumen"

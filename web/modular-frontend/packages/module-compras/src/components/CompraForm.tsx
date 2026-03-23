@@ -26,7 +26,8 @@ import {
 import { Add, Delete } from "@mui/icons-material";
 import { apiGet, apiPost, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { FormGrid, FormField } from "@zentto/shared-ui";
+import { FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useEmitirCompraTx } from "../hooks/useCompras";
 
 type ProveedorRow = {
@@ -308,13 +309,11 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
             <TextField size="small" label="NUM_FACT" value={numFact} onChange={(e) => setNumFact(e.target.value)} />
           </FormField>
           <FormField xs={12} md={3}>
-            <TextField
-              size="small"
+            <DatePicker
               label="Fecha"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              value={fecha ? dayjs(fecha) : null}
+              onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </FormField>
           <FormField xs={12} md={2}>

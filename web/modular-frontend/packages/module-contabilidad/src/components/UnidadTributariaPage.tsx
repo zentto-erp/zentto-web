@@ -6,7 +6,8 @@ import {
   DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
@@ -95,9 +96,12 @@ export default function UnidadTributariaPage() {
                 onChange={(e) => setForm({ ...form, unitValue: Number(e.target.value) })} />
               <TextField label="Moneda" size="small" fullWidth value={form.currency} disabled />
             </Stack>
-            <TextField label="Vigente desde" type="date" size="small" fullWidth value={form.effectiveDate}
-              onChange={(e) => setForm({ ...form, effectiveDate: e.target.value })}
-              slotProps={{ inputLabel: { shrink: true } }} />
+            <DatePicker
+              label="Vigente desde"
+              value={form.effectiveDate ? dayjs(form.effectiveDate) : null}
+              onChange={(v) => setForm({ ...form, effectiveDate: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
           </Stack>
         </DialogContent>
         <DialogActions>

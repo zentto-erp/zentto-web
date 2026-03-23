@@ -35,6 +35,8 @@ import {
 } from "@mui/icons-material";
 import { useClientesList } from "../../../hooks/useClientes";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   CxcAplicarCobroPayload,
@@ -451,10 +453,11 @@ function AplicarCobrosTab({
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth size="small" label="Fecha de Cobro" type="date" value={fecha}
-              InputLabelProps={{ shrink: true }}
-              onChange={(e) => setFecha(e.target.value)}
+            <DatePicker
+              label="Fecha de Cobro"
+              value={fecha ? dayjs(fecha) : null}
+              onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Grid>
           <Grid item xs={12} sm={5}>
@@ -579,10 +582,10 @@ function AplicarCobrosTab({
                 <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small" type="date" value={fp.fechaVencimiento || ""}
-                  InputLabelProps={{ shrink: true }}
-                  onChange={(e) => updateFormaPago(idx, { fechaVencimiento: e.target.value || undefined })}
+                <DatePicker
+                  value={fp.fechaVencimiento ? dayjs(fp.fechaVencimiento) : null}
+                  onChange={(v) => updateFormaPago(idx, { fechaVencimiento: v ? v.format('YYYY-MM-DD') : undefined })}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </TableCell>
               <TableCell align="center">

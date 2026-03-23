@@ -19,7 +19,8 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
@@ -94,21 +95,17 @@ export default function AuditLogPage() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filters */}
         <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" useFlexGap>
-          <TextField
+          <DatePicker
             label="Desde"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaDesde || ""}
-            onChange={(e) => updateFilter("fechaDesde", e.target.value)}
+            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+            onChange={(v) => updateFilter("fechaDesde", v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Hasta"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaHasta || ""}
-            onChange={(e) => updateFilter("fechaHasta", e.target.value)}
+            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+            onChange={(v) => updateFilter("fechaHasta", v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
           <TextField
             label="Módulo"

@@ -25,7 +25,8 @@ import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import {
   useActivitiesList,
   useCreateActivity,
@@ -248,13 +249,11 @@ export default function ActividadesPage() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
-            <TextField
+            <DatePicker
               label="Fecha límite"
-              fullWidth
-              type="date"
-              value={form.dueDate}
-              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              slotProps={{ inputLabel: { shrink: true } }}
+              value={form.dueDate ? dayjs(form.dueDate) : null}
+              onChange={(v) => setForm({ ...form, dueDate: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <TextField
               label="Lead ID (opcional)"

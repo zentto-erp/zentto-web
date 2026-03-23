@@ -12,7 +12,8 @@ import {
   Alert,
   Typography,
 } from "@mui/material";
-import { FormGrid, FormField } from '@zentto/shared-ui';
+import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
+import dayjs from "dayjs";
 import { useCuentaPorPagarById, useCreateCuentaPorPagar, useUpdateCuentaPorPagar } from "../../../hooks/useCuentasPorPagar";
 import { CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO } from "@zentto/shared-api/types";
 import { useTimezone } from "@zentto/shared-auth";
@@ -198,24 +199,20 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
           </FormField>
 
           <FormField xs={12} sm={6}>
-            <TextField
+            <DatePicker
               label="Fecha de Creación"
-              type="date"
-              value={formData.fechaCreacion}
-              onChange={(e) => setFormData({ ...formData, fechaCreacion: e.target.value })}
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fechaCreacion ? dayjs(formData.fechaCreacion) : null}
+              onChange={(v) => setFormData({ ...formData, fechaCreacion: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </FormField>
 
           <FormField xs={12} sm={6}>
-            <TextField
+            <DatePicker
               label="Fecha de Vencimiento"
-              type="date"
-              value={formData.fechaVencimiento}
-              onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fechaVencimiento ? dayjs(formData.fechaVencimiento) : null}
+              onChange={(v) => setFormData({ ...formData, fechaVencimiento: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </FormField>
 

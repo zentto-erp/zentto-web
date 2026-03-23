@@ -16,7 +16,8 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -267,7 +268,7 @@ export default function MantenimientoPage() {
             <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} size="small" fullWidth required />
             <TextField label="Tipo Mantenimiento (ID)" type="number" value={maintenanceTypeId} onChange={(e) => setMaintenanceTypeId(e.target.value)} size="small" fullWidth required />
             <TextField label="Kilometraje al Servicio" type="number" value={mileageAtService} onChange={(e) => setMileageAtService(e.target.value)} size="small" fullWidth required />
-            <TextField label="Fecha Programada" type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} size="small" fullWidth required InputLabelProps={{ shrink: true }} />
+            <DatePicker label="Fecha Programada" value={scheduledDate ? dayjs(scheduledDate) : null} onChange={(v) => setScheduledDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Costo Estimado" type="number" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} size="small" fullWidth required />
             <TextField label="Descripcion" value={description} onChange={(e) => setDescription(e.target.value)} size="small" fullWidth required multiline rows={3} />
           </Stack>
@@ -293,7 +294,7 @@ export default function MantenimientoPage() {
               Orden: {String(selectedRow?.OrderNumber ?? "")}
             </Typography>
             <TextField label="Costo Real" type="number" value={actualCost} onChange={(e) => setActualCost(e.target.value)} size="small" fullWidth required />
-            <TextField label="Fecha Completado" type="date" value={completedDate} onChange={(e) => setCompletedDate(e.target.value)} size="small" fullWidth required InputLabelProps={{ shrink: true }} />
+            <DatePicker label="Fecha Completado" value={completedDate ? dayjs(completedDate) : null} onChange={(v) => setCompletedDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
           </Stack>
         </DialogContent>
         <DialogActions>

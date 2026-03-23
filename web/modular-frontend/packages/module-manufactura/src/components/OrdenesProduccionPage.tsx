@@ -16,7 +16,8 @@ import {
   Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -326,23 +327,17 @@ export default function OrdenesProduccionPage() {
               type="number"
               fullWidth
             />
-            <TextField
+            <DatePicker
               label="Fecha Inicio"
-              type="date"
-              value={plannedStart}
-              onChange={(e) => setPlannedStart(e.target.value)}
-              size="small"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
+              value={plannedStart ? dayjs(plannedStart) : null}
+              onChange={(v) => setPlannedStart(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-            <TextField
+            <DatePicker
               label="Fecha Fin"
-              type="date"
-              value={plannedEnd}
-              onChange={(e) => setPlannedEnd(e.target.value)}
-              size="small"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
+              value={plannedEnd ? dayjs(plannedEnd) : null}
+              onChange={(v) => setPlannedEnd(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <TextField
               select

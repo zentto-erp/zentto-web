@@ -1,0 +1,1083 @@
+{
+  "ok": [
+    {
+      "path": "/v1/auth/me",
+      "tag": "Auth",
+      "status": 200
+    },
+    {
+      "path": "/v1/inventario",
+      "tag": "Inventario",
+      "status": 200
+    },
+    {
+      "path": "/v1/articulos",
+      "tag": "Inventario",
+      "status": 200
+    },
+    {
+      "path": "/v1/abonos",
+      "tag": "Abonos",
+      "status": 200
+    },
+    {
+      "path": "/v1/abonos/{id}/detalle",
+      "tag": "Abonos",
+      "status": 200
+    },
+    {
+      "path": "/v1/pagos",
+      "tag": "Pagos",
+      "status": 200
+    },
+    {
+      "path": "/v1/pagos/{id}/detalle",
+      "tag": "Pagos",
+      "status": 200
+    },
+    {
+      "path": "/v1/pagosc",
+      "tag": "PagosC",
+      "status": 200
+    },
+    {
+      "path": "/v1/pagosc/{id}/detalle",
+      "tag": "PagosC",
+      "status": 200
+    },
+    {
+      "path": "/v1/abonospagos",
+      "tag": "AbonosPagos",
+      "status": 200
+    },
+    {
+      "path": "/v1/retenciones",
+      "tag": "Retenciones",
+      "status": 200
+    },
+    {
+      "path": "/v1/movinvent/mes/list",
+      "tag": "MovInvent",
+      "status": 200
+    },
+    {
+      "path": "/v1/addons",
+      "tag": "Addons",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/conceptos-legales",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/convenciones",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/contabilidad/cuentas",
+      "tag": "Contabilidad",
+      "status": 200
+    },
+    {
+      "path": "/v1/contabilidad/asientos",
+      "tag": "Contabilidad",
+      "status": 200
+    },
+    {
+      "path": "/v1/contabilidad/asientos/{id}",
+      "tag": "Contabilidad",
+      "status": 200
+    },
+    {
+      "path": "/v1/cxc/documentos",
+      "tag": "CxC",
+      "status": 200
+    },
+    {
+      "path": "/v1/cxp/documentos",
+      "tag": "CxP",
+      "status": 200
+    },
+    {
+      "path": "/health/db",
+      "tag": "Health",
+      "status": 200
+    },
+    {
+      "path": "/v1/vendedores",
+      "tag": "Vendedores",
+      "status": 200
+    },
+    {
+      "path": "/v1/usuarios/{codigo}",
+      "tag": "Usuarios",
+      "status": 200
+    },
+    {
+      "path": "/v1/usuarios/{codigo}/modulos",
+      "tag": "Usuarios",
+      "status": 200
+    },
+    {
+      "path": "/v1/sistema/notificaciones",
+      "tag": "Sistema",
+      "status": 200
+    },
+    {
+      "path": "/v1/sistema/tareas",
+      "tag": "Sistema",
+      "status": 200
+    },
+    {
+      "path": "/v1/sistema/mensajes",
+      "tag": "Sistema",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/plugins",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries/{countryCode}",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries/{countryCode}/default-config",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries/{countryCode}/tax-rates",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries/{countryCode}/invoice-types",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries/{countryCode}/milestones",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/countries/{countryCode}/sources",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/fiscal/config",
+      "tag": "Fiscal",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/tasas",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/countries",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/countries/all",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/countries/{code}",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/states/{countryCode}",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/states",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/config/lookups/{typeCode}",
+      "tag": "Config",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/cuentas/list",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/cuentas/{nroCta}/movimientos",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/conciliaciones",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/conciliaciones/{id}",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/bancos/caja-chica",
+      "tag": "Bancos",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/batch",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/vacaciones/solicitudes",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/vacaciones/dias-disponibles/{cedula}",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/vacaciones/list",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/liquidaciones/list",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/liquidaciones/{id}",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/nomina/constantes",
+      "tag": "Nomina",
+      "status": 200
+    },
+    {
+      "path": "/v1/payments/methods",
+      "tag": "Payments",
+      "status": 200
+    },
+    {
+      "path": "/v1/payments/providers",
+      "tag": "Payments",
+      "status": 200
+    },
+    {
+      "path": "/v1/payments/providers/{code}/fields",
+      "tag": "Payments",
+      "status": 200
+    },
+    {
+      "path": "/v1/payments/plugins",
+      "tag": "Payments",
+      "status": 200
+    },
+    {
+      "path": "/v1/auditoria/logs",
+      "tag": "Auditoria",
+      "status": 200
+    },
+    {
+      "path": "/v1/auditoria/logs/{id}",
+      "tag": "Auditoria",
+      "status": 200
+    },
+    {
+      "path": "/v1/auditoria/fiscal-records",
+      "tag": "Auditoria",
+      "status": 200
+    },
+    {
+      "path": "/v1/settings",
+      "tag": "Settings",
+      "status": 200
+    },
+    {
+      "path": "/v1/settings/modules",
+      "tag": "Settings",
+      "status": 200
+    },
+    {
+      "path": "/v1/settings/{module}",
+      "tag": "Settings",
+      "status": 200
+    },
+    {
+      "path": "/v1/documentos-compra",
+      "tag": "DocumentosCompra",
+      "status": 200
+    },
+    {
+      "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}/detalle",
+      "tag": "DocumentosCompra",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/fideicomiso",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/fideicomiso/balance/{employeeCode}",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/caja-ahorro",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/caja-ahorro/balance/{employeeCode}",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/caja-ahorro/loans",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/obligaciones",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/obligaciones/country/{code}",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/obligaciones/filings",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/salud-ocupacional",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/examenes-medicos",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/examenes-medicos/pending",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/ordenes-medicas",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/capacitacion",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/capacitacion/certifications/{employeeCode}",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/rrhh/comites",
+      "tag": "RRHH",
+      "status": 200
+    },
+    {
+      "path": "/v1/cxc/documentos-pendientes/{codCliente}",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/cxc/saldo/{codCliente}",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/cxp/documentos-pendientes/{codProveedor}",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/cxp/saldo/{codProveedor}",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/analytics/debug",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/analytics/dashboard",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/analytics/activity",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/analytics/business",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/analytics/performance",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/analytics/audit",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/support/tickets",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/support/tickets/{number}",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/integrations/zoho/connect",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    },
+    {
+      "path": "/v1/integrations/zoho/status",
+      "tag": "UNDOCUMENTED",
+      "status": 200
+    }
+  ],
+  "fail_4xx": [
+    {
+      "path": "/v1/auth/verify-email",
+      "tag": "Auth",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'token': ['Token invalido']}"
+    },
+    {
+      "path": "/v1/inventario/{codigo}",
+      "tag": "Inventario",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/articulos/{codigo}",
+      "tag": "Inventario",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/compras",
+      "tag": "Compras",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/compras/{numFact}",
+      "tag": "Compras",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/compras/{numFact}/detalle",
+      "tag": "Compras",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/facturas",
+      "tag": "Facturas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/facturas/{numFact}",
+      "tag": "Facturas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/facturas/{numFact}/detalle",
+      "tag": "Facturas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/abonos/{id}",
+      "tag": "Abonos",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/pagos/{id}",
+      "tag": "Pagos",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/pagosc/{id}",
+      "tag": "PagosC",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/abonospagos/{id}",
+      "tag": "AbonosPagos",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/notas/credito/{numFact}/detalle",
+      "tag": "Notas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/notas/debito",
+      "tag": "Notas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/notas/debito/{numFact}",
+      "tag": "Notas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/notas/debito/{numFact}/detalle",
+      "tag": "Notas",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/pedidos",
+      "tag": "Pedidos",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/pedidos/{numFact}",
+      "tag": "Pedidos",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/pedidos/{numFact}/detalle",
+      "tag": "Pedidos",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/cotizaciones",
+      "tag": "Cotizaciones",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/cotizaciones/{numFact}",
+      "tag": "Cotizaciones",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/cotizaciones/{numFact}/detalle",
+      "tag": "Cotizaciones",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/ordenes",
+      "tag": "Ordenes",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/ordenes/{numFact}",
+      "tag": "Ordenes",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/ordenes/{numFact}/detalle",
+      "tag": "Ordenes",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/presupuestos",
+      "tag": "Presupuestos",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/presupuestos/{numFact}",
+      "tag": "Presupuestos",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/presupuestos/{numFact}/detalle",
+      "tag": "Presupuestos",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/crud/{table}/describe",
+      "tag": "CRUD",
+      "status": 404,
+      "error": "{'error': 'table_not_found'}"
+    },
+    {
+      "path": "/v1/crud/{table}/{key}",
+      "tag": "CRUD",
+      "status": 400,
+      "error": "{'error': 'Error: table_not_found'}"
+    },
+    {
+      "path": "/v1/contabilidad/cuentas/{codCuenta}",
+      "tag": "Contabilidad",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/contabilidad/reportes/libro-mayor",
+      "tag": "Contabilidad",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaDesde': ['Required'], "
+    },
+    {
+      "path": "/v1/contabilidad/reportes/mayor-analitico",
+      "tag": "Contabilidad",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'codCuenta': ['Required'], '"
+    },
+    {
+      "path": "/v1/contabilidad/reportes/balance-comprobacion",
+      "tag": "Contabilidad",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaDesde': ['Required'], "
+    },
+    {
+      "path": "/v1/contabilidad/reportes/estado-resultados",
+      "tag": "Contabilidad",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaDesde': ['Required'], "
+    },
+    {
+      "path": "/v1/contabilidad/reportes/balance-general",
+      "tag": "Contabilidad",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaCorte': ['Required']}}"
+    },
+    {
+      "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
+      "tag": "Bancos",
+      "status": 400,
+      "error": "{'error': 'invalid_boxId'}"
+    },
+    {
+      "path": "/v1/bancos/caja-chica/{boxId}/gastos",
+      "tag": "Bancos",
+      "status": 400,
+      "error": "{'error': 'invalid_boxId'}"
+    },
+    {
+      "path": "/v1/bancos/caja-chica/{boxId}/resumen",
+      "tag": "Bancos",
+      "status": 400,
+      "error": "{'error': 'invalid_boxId'}"
+    },
+    {
+      "path": "/v1/nomina/batch/{id}/summary",
+      "tag": "Nomina",
+      "status": 404,
+      "error": "{'error': 'batch_not_found'}"
+    },
+    {
+      "path": "/v1/nomina/vacaciones/solicitudes/{id}",
+      "tag": "Nomina",
+      "status": 404,
+      "error": "{'error': 'solicitud_not_found'}"
+    },
+    {
+      "path": "/v1/nomina/vacaciones/{id}",
+      "tag": "Nomina",
+      "status": 404,
+      "error": "{'error': 'vacacion_not_found'}"
+    },
+    {
+      "path": "/v1/payments/config",
+      "tag": "Payments",
+      "status": 400,
+      "error": "{'error': 'empresaId required'}"
+    },
+    {
+      "path": "/v1/payments/accepted",
+      "tag": "Payments",
+      "status": 400,
+      "error": "{'error': 'empresaId required'}"
+    },
+    {
+      "path": "/v1/payments/card-readers",
+      "tag": "Payments",
+      "status": 400,
+      "error": "{'error': 'empresaId required'}"
+    },
+    {
+      "path": "/v1/payments/transactions",
+      "tag": "Payments",
+      "status": 400,
+      "error": "{'error': 'empresaId required'}"
+    },
+    {
+      "path": "/v1/auditoria/dashboard",
+      "tag": "Auditoria",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'fechaDesde': ['Required'], "
+    },
+    {
+      "path": "/v1/media/entities/{entityType}/{entityId}/images",
+      "tag": "Media",
+      "status": 400,
+      "error": "{'error': 'invalid_params', 'issues': {'formErrors': [], 'fieldErrors': {'entityType': ['entityType "
+    },
+    {
+      "path": "/v1/documentos-venta",
+      "tag": "DocumentosVenta",
+      "status": 400,
+      "error": "{'error': 'invalid_query', 'issues': {'formErrors': [], 'fieldErrors': {'tipoOperacion': ['Required'"
+    },
+    {
+      "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}",
+      "tag": "DocumentosVenta",
+      "status": 400,
+      "error": "{'error': 'Error: tipo_operacion_invalido'}"
+    },
+    {
+      "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}/detalle",
+      "tag": "DocumentosVenta",
+      "status": 400,
+      "error": "{'error': 'Error: tipo_operacion_invalido'}"
+    },
+    {
+      "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}",
+      "tag": "DocumentosCompra",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}/indicadores",
+      "tag": "DocumentosCompra",
+      "status": 404,
+      "error": "{'error': 'not_found'}"
+    },
+    {
+      "path": "/v1/rrhh/fideicomiso/summary",
+      "tag": "RRHH",
+      "status": 400,
+      "error": "{'error': 'year and quarter required'}"
+    },
+    {
+      "path": "/v1/integrations/zoho/callback",
+      "tag": "UNDOCUMENTED",
+      "status": 400,
+      "error": "{'ok': False, 'message': 'No authorization code'}"
+    },
+    {
+      "path": "/v1/nomina/templates",
+      "tag": "UNDOCUMENTED",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/nomina/templates/vars/batch/{batchId}/{employeeCode}",
+      "tag": "UNDOCUMENTED",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    },
+    {
+      "path": "/v1/nomina/templates/{code}",
+      "tag": "UNDOCUMENTED",
+      "status": 404,
+      "error": "{'error': 'nomina_not_found'}"
+    },
+    {
+      "path": "/v1/nomina/templates/{code}/vars/{runId}",
+      "tag": "UNDOCUMENTED",
+      "status": 404,
+      "error": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<"
+    }
+  ],
+  "fail_5xx": [
+    {
+      "path": "/v1/clientes",
+      "tag": "Clientes",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/clientes/{codigo}",
+      "tag": "Clientes",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/proveedores",
+      "tag": "Proveedores",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/proveedores/{codigo}",
+      "tag": "Proveedores",
+      "status": 500,
+      "error": "{'error': 'function usp_proveedores_getbycodigo(p_company_id => unknown, p_codigo => unknown) does not exist'}"
+    },
+    {
+      "path": "/v1/cuentas-por-pagar",
+      "tag": "CuentasPorPagar",
+      "status": 500,
+      "error": "{'error': 'structure of query does not match function result type'}"
+    },
+    {
+      "path": "/v1/cuentas-por-pagar/{id}",
+      "tag": "CuentasPorPagar",
+      "status": 500,
+      "error": "{'error': 'structure of query does not match function result type'}"
+    },
+    {
+      "path": "/v1/p-cobrar",
+      "tag": "CuentasPorCobrar",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/p-cobrar/{id}",
+      "tag": "CuentasPorCobrar",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/p-cobrar/c/list",
+      "tag": "CuentasPorCobrar",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/p-cobrar/c/{id}",
+      "tag": "CuentasPorCobrar",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/notas/credito",
+      "tag": "Notas",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/notas/credito/{numFact}",
+      "tag": "Notas",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/retenciones/{codigo}",
+      "tag": "Retenciones",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/movinvent",
+      "tag": "MovInvent",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/movinvent/{id}",
+      "tag": "MovInvent",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/meta/schema",
+      "tag": "Meta",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/meta/relations",
+      "tag": "Meta",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/crud/tables",
+      "tag": "CRUD",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/vendedores/{codigo}",
+      "tag": "Vendedores",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/empleados",
+      "tag": "Empleados",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/empleados/{cedula}",
+      "tag": "Empleados",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/centro-costo",
+      "tag": "CentroCosto",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/centro-costo/{codigo}",
+      "tag": "CentroCosto",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/unidades",
+      "tag": "Unidades",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/empresa",
+      "tag": "Empresa",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/usuarios",
+      "tag": "Usuarios",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/usuarios/modules",
+      "tag": "Usuarios",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/bancos/movimientos/{id}",
+      "tag": "Bancos",
+      "status": 500,
+      "error": "{'error': 'error: function sp_get_movimiento_bancario_by_id(bigint) does not exist'}"
+    },
+    {
+      "path": "/v1/nomina/batch/{id}/grid",
+      "tag": "Nomina",
+      "status": 500,
+      "error": "{'error': 'error: function usp_hr_payroll_getdraftgrid(p_batch_id => unknown, p_search => unknown, p_department => unknown, p_only_modified => unknown"
+    },
+    {
+      "path": "/v1/nomina/batch/{id}/employee/{code}",
+      "tag": "Nomina",
+      "status": 500,
+      "error": "{'error': 'error: function usp_hr_payroll_getemployeelines(p_batch_id => unknown, p_employee_code => unknown) is not unique'}"
+    },
+    {
+      "path": "/v1/payments/providers/{code}",
+      "tag": "Payments",
+      "status": 500,
+      "error": "{'error': 'function usp_pay_provider_get(p_provider_code => unknown) does not exist'}"
+    },
+    {
+      "path": "/v1/supervision/biometric/credentials",
+      "tag": "Supervision",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/rrhh/utilidades",
+      "tag": "RRHH",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/rrhh/utilidades/{id}/summary",
+      "tag": "RRHH",
+      "status": 502,
+      "error": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</"
+    },
+    {
+      "path": "/v1/rrhh/obligaciones/employee/{employeeId}",
+      "tag": "RRHH",
+      "status": 500,
+      "error": "{'error': 'error: invalid input syntax for type bigint: \"NaN\"'}"
+    },
+    {
+      "path": "/v1/rrhh/obligaciones/filings/{id}",
+      "tag": "RRHH",
+      "status": 500,
+      "error": "{'error': 'error: function usp_hr_filing_getsummary(p_filing_id => unknown) does not exist'}"
+    },
+    {
+      "path": "/v1/rrhh/salud-ocupacional/{id}",
+      "tag": "RRHH",
+      "status": 500,
+      "error": "{'error': 'error: function usp_hr_occhealth_get(p_record_id => unknown) does not exist'}"
+    },
+    {
+      "path": "/v1/rrhh/comites/{committeeId}/meetings",
+      "tag": "RRHH",
+      "status": 500,
+      "error": "{'error': 'error: function usp_hr_committee_getmeetings(p_committee_id => unknown) does not exist'}"
+    },
+    {
+      "path": "/v1/devices/my",
+      "tag": "UNDOCUMENTED",
+      "status": 500,
+      "error": "{'error': 'function usp_sys_device_listbyuser(p_company_id => unknown, p_user_id => unknown) does not exist'}"
+    }
+  ],
+  "fail_other": []
+}

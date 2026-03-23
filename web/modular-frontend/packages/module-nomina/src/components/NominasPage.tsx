@@ -19,7 +19,8 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockIcon from "@mui/icons-material/Lock";
@@ -212,21 +213,17 @@ export default function NominasPage() {
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <Stack direction="row" spacing={2} mb={2}>
-          <TextField
+          <DatePicker
             label="Desde"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaDesde || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value }))}
+            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : '' }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Hasta"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaHasta || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value }))}
+            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
+            onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Stack>
 
@@ -301,21 +298,17 @@ export default function NominasPage() {
                 value={procesarData.nomina}
                 onChange={(e) => setProcesarData((d) => ({ ...d, nomina: e.target.value }))}
               />
-              <TextField
+              <DatePicker
                 label="Fecha Inicio"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={procesarData.fechaInicio}
-                onChange={(e) => setProcesarData((d) => ({ ...d, fechaInicio: e.target.value }))}
+                value={procesarData.fechaInicio ? dayjs(procesarData.fechaInicio) : null}
+                onChange={(v) => setProcesarData((d) => ({ ...d, fechaInicio: v ? v.format('YYYY-MM-DD') : '' }))}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
-              <TextField
+              <DatePicker
                 label="Fecha Hasta"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={procesarData.fechaHasta}
-                onChange={(e) => setProcesarData((d) => ({ ...d, fechaHasta: e.target.value }))}
+                value={procesarData.fechaHasta ? dayjs(procesarData.fechaHasta) : null}
+                onChange={(v) => setProcesarData((d) => ({ ...d, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
               <FormControlLabel
                 control={

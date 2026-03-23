@@ -17,7 +17,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -128,11 +129,11 @@ export default function ReportesContablesPage() {
       <Stack direction="row" spacing={2} mt={1} mb={2} alignItems="center" sx={{ "@media print": { display: "none" } }}>
         {needsRange ? (
           <>
-            <TextField label="Desde" type="date" size="small" InputLabelProps={{ shrink: true }} value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
-            <TextField label="Hasta" type="date" size="small" InputLabelProps={{ shrink: true }} value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+            <DatePicker label="Desde" value={fechaDesde ? dayjs(fechaDesde) : null} onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+            <DatePicker label="Hasta" value={fechaHasta ? dayjs(fechaHasta) : null} onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
           </>
         ) : (
-          <TextField label="Fecha de Corte" type="date" size="small" InputLabelProps={{ shrink: true }} value={fechaCorte} onChange={(e) => setFechaCorte(e.target.value)} />
+          <DatePicker label="Fecha de Corte" value={fechaCorte ? dayjs(fechaCorte) : null} onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
         )}
         <Button variant="contained" onClick={() => setRun(true)}>
           Generar

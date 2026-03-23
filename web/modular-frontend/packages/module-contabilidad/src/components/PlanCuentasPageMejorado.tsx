@@ -38,7 +38,8 @@ import {
   useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 
@@ -86,21 +87,17 @@ function MayorAnaliticoDialog({
       </DialogTitle>
       <DialogContent>
         <Stack direction="row" spacing={2} sx={{ mb: 2, mt: 1 }}>
-          <TextField
+          <DatePicker
             label="Desde"
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            size="small"
-            InputLabelProps={{ shrink: true }}
+            value={fechaDesde ? dayjs(fechaDesde) : null}
+            onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Hasta"
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            size="small"
-            InputLabelProps={{ shrink: true }}
+            value={fechaHasta ? dayjs(fechaHasta) : null}
+            onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Stack>
 

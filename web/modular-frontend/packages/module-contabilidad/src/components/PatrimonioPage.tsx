@@ -29,7 +29,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import {
   useEquityMovements,
   useInsertEquityMovement,
@@ -479,14 +480,11 @@ export default function PatrimonioPage() {
                 ))}
               </Select>
             </FormControl>
-            <TextField
+            <DatePicker
               label="Fecha"
-              type="date"
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              value={form.movementDate}
-              onChange={(e) => setForm((f) => ({ ...f, movementDate: e.target.value }))}
+              value={form.movementDate ? dayjs(form.movementDate) : null}
+              onChange={(v) => setForm((f) => ({ ...f, movementDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <TextField
               label="Monto"

@@ -16,7 +16,8 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -314,14 +315,11 @@ export default function RecepcionMercanciaPage() {
                   size="small"
                   sx={{ width: 100 }}
                 />
-                <TextField
+                <DatePicker
                   label="Vencimiento"
-                  type="date"
-                  value={line.expirationDate}
-                  onChange={(e) => handleLineChange(idx, "expirationDate", e.target.value)}
-                  size="small"
-                  sx={{ width: 140 }}
-                  InputLabelProps={{ shrink: true }}
+                  value={line.expirationDate ? dayjs(line.expirationDate) : null}
+                  onChange={(v) => handleLineChange(idx, "expirationDate", v ? v.format('YYYY-MM-DD') : '')}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
                 <IconButton
                   size="small"

@@ -19,7 +19,8 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import { FormGrid, FormField } from '@zentto/shared-ui';
+import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
+import dayjs from "dayjs";
 import { Add, Delete } from "@mui/icons-material";
 import { apiGet, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -164,13 +165,11 @@ export default function PagoTxForm() {
             />
           </FormField>
           <FormField xs={12} sm={2}>
-            <TextField
-              size="small"
+            <DatePicker
               label="Fecha"
-              type="date"
-              value={fecha}
-              InputLabelProps={{ shrink: true }}
-              onChange={(e) => setFecha(e.target.value)}
+              value={fecha ? dayjs(fecha) : null}
+              onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </FormField>
           <FormField xs={12} sm={2}>
@@ -274,12 +273,10 @@ export default function PagoTxForm() {
                   <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
                 </TableCell>
                 <TableCell>
-                  <TextField
-                    size="small"
-                    type="date"
-                    value={fp.fechaVencimiento || ""}
-                    InputLabelProps={{ shrink: true }}
-                    onChange={(e) => updateFormaPago(idx, { fechaVencimiento: e.target.value || undefined })}
+                  <DatePicker
+                    value={fp.fechaVencimiento ? dayjs(fp.fechaVencimiento) : null}
+                    onChange={(v) => updateFormaPago(idx, { fechaVencimiento: v ? v.format('YYYY-MM-DD') : undefined })}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
                 </TableCell>
                 <TableCell align="center">

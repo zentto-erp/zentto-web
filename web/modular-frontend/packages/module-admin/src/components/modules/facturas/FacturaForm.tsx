@@ -24,7 +24,8 @@ import {
   DialogActions,
   MenuItem,
 } from "@mui/material";
-import { FormGrid, FormField } from '@zentto/shared-ui';
+import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
+import dayjs from "dayjs";
 import Autocomplete from "@mui/material/Autocomplete";
 import { Delete as DeleteIcon, Add as AddIcon } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
@@ -338,13 +339,11 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
             />
           </FormField>
           <FormField xs={12} sm={6}>
-            <TextField
+            <DatePicker
               label="Fecha"
-              type="date"
-              value={formData.fecha}
-              onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fecha ? dayjs(formData.fecha) : null}
+              onChange={(v) => setFormData({ ...formData, fecha: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </FormField>
           <FormField xs={12} sm={6}>

@@ -16,7 +16,8 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { FormGrid, FormField } from '@zentto/shared-ui';
+import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
+import dayjs from "dayjs";
 import { usePagoById, useCreatePago, useUpdatePago } from "../../../hooks/usePagos";
 import { CreatePagoDTO, UpdatePagoDTO } from "@zentto/shared-api/types";
 import { useTimezone } from "@zentto/shared-auth";
@@ -194,13 +195,11 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
           </FormField>
 
           <FormField xs={12} sm={6}>
-            <TextField
+            <DatePicker
               label="Fecha"
-              type="date"
-              value={formData.fecha}
-              onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fecha ? dayjs(formData.fecha) : null}
+              onChange={(v) => setFormData({ ...formData, fecha: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </FormField>
 

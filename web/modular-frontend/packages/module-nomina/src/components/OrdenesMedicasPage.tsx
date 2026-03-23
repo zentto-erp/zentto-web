@@ -19,7 +19,8 @@ import {
   InputLabel,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -211,13 +212,11 @@ export default function OrdenesMedicasPage() {
                 <MenuItem value="EMERGENCIA">Emergencia</MenuItem>
               </Select>
             </FormControl>
-            <TextField
+            <DatePicker
               label="Fecha"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.date}
-              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              value={form.date ? dayjs(form.date) : null}
+              onChange={(v) => setForm((f) => ({ ...f, date: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <TextField
               label="Diagnóstico"

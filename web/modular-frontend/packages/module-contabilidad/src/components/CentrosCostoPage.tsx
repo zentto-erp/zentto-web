@@ -25,7 +25,8 @@ import {
   Divider,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import PivotTableChartIcon from "@mui/icons-material/PivotTableChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import AddIcon from "@mui/icons-material/Add";
@@ -319,10 +320,12 @@ function PnLByCostCenterTab() {
 
   const filters = (
     <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-      <TextField label="Desde" type="date" size="small" InputLabelProps={{ shrink: true }}
-        value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
-      <TextField label="Hasta" type="date" size="small" InputLabelProps={{ shrink: true }}
-        value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+      <DatePicker label="Desde" value={fechaDesde ? dayjs(fechaDesde) : null}
+        onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+        slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+      <DatePicker label="Hasta" value={fechaHasta ? dayjs(fechaHasta) : null}
+        onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+        slotProps={{ textField: { size: 'small', fullWidth: true } }} />
       <Button variant="contained" onClick={() => setRun(true)}>Generar</Button>
     </Stack>
   );
@@ -387,10 +390,12 @@ function PivotTab() {
 
   const filters = (
     <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-      <TextField label="Desde" type="date" size="small" InputLabelProps={{ shrink: true }}
-        value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
-      <TextField label="Hasta" type="date" size="small" InputLabelProps={{ shrink: true }}
-        value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+      <DatePicker label="Desde" value={fechaDesde ? dayjs(fechaDesde) : null}
+        onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+        slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+      <DatePicker label="Hasta" value={fechaHasta ? dayjs(fechaHasta) : null}
+        onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+        slotProps={{ textField: { size: 'small', fullWidth: true } }} />
       <Button variant="contained" onClick={() => setRun(true)}>Generar</Button>
     </Stack>
   );

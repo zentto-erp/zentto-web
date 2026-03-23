@@ -23,7 +23,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -255,21 +256,17 @@ export default function CapacitacionPage() {
               }
               label="Capacitación regulatoria"
             />
-            <TextField
+            <DatePicker
               label="Fecha Inicio"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.startDate}
-              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+              value={form.startDate ? dayjs(form.startDate) : null}
+              onChange={(v) => setForm((f) => ({ ...f, startDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-            <TextField
+            <DatePicker
               label="Fecha Fin"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.endDate || ""}
-              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+              value={form.endDate ? dayjs(form.endDate) : null}
+              onChange={(v) => setForm((f) => ({ ...f, endDate: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Stack>
         </DialogContent>

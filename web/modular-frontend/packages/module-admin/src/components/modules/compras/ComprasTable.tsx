@@ -20,6 +20,8 @@ import {
 } from "@mui/material";
 import { Add, Search, Visibility } from "@mui/icons-material";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import { useComprasList } from "../../../hooks/useCompras";
 
@@ -92,27 +94,17 @@ export default function ComprasTable() {
               )
             }}
           />
-          <TextField
-            size="small"
-            type="date"
+          <DatePicker
             label="Desde"
-            InputLabelProps={{ shrink: true }}
-            value={fechaDesde}
-            onChange={(e) => {
-              setFechaDesde(e.target.value);
-              setPage(0);
-            }}
+            value={fechaDesde ? dayjs(fechaDesde) : null}
+            onChange={(v) => { setFechaDesde(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
-            size="small"
-            type="date"
+          <DatePicker
             label="Hasta"
-            InputLabelProps={{ shrink: true }}
-            value={fechaHasta}
-            onChange={(e) => {
-              setFechaHasta(e.target.value);
-              setPage(0);
-            }}
+            value={fechaHasta ? dayjs(fechaHasta) : null}
+            onChange={(v) => { setFechaHasta(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Box>
       </Paper>

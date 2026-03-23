@@ -30,6 +30,8 @@ import {
 import Grid from "@mui/material/Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import { useLotesList, useCreateLote } from "../hooks/useInventarioAvanzado";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { formatCurrency } from "@zentto/shared-api";
 
 const LOT_STATUS_CONFIG: Record<string, { label: string; color: "success" | "error" | "warning" | "default" }> = {
@@ -231,25 +233,19 @@ export default function LotesPage() {
               />
             </Grid>
             <Grid size={6}>
-              <TextField
+              <DatePicker
                 label="Fecha Fabricación"
-                type="date"
-                value={formData.manufactureDate}
-                onChange={(e) => setFormData({ ...formData, manufactureDate: e.target.value })}
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
+                value={formData.manufactureDate ? dayjs(formData.manufactureDate) : null}
+                onChange={(v) => setFormData({ ...formData, manufactureDate: v ? v.format('YYYY-MM-DD') : '' })}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
             </Grid>
             <Grid size={6}>
-              <TextField
+              <DatePicker
                 label="Fecha Expiración"
-                type="date"
-                value={formData.expiryDate}
-                onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
+                value={formData.expiryDate ? dayjs(formData.expiryDate) : null}
+                onChange={(v) => setFormData({ ...formData, expiryDate: v ? v.format('YYYY-MM-DD') : '' })}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
             </Grid>
             <Grid size={6}>

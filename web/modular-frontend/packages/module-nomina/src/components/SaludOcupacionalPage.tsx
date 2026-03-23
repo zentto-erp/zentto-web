@@ -20,7 +20,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -268,13 +269,11 @@ export default function SaludOcupacionalPage() {
                 <MenuItem value="ENFERMEDAD">Enfermedad</MenuItem>
               </Select>
             </FormControl>
-            <TextField
+            <DatePicker
               label="Fecha"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.date}
-              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              value={form.date ? dayjs(form.date) : null}
+              onChange={(v) => setForm((f) => ({ ...f, date: v ? v.format('YYYY-MM-DD') : '' }))}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
             <FormControl fullWidth>
               <InputLabel>Severidad</InputLabel>

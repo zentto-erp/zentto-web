@@ -24,7 +24,8 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -206,14 +207,11 @@ function RecurrenteFormDialog({
               fullWidth
               size="small"
             />
-            <TextField
+            <DatePicker
               label="Próxima ejecución"
-              type="date"
-              value={form.nextExecution}
-              onChange={(e) => setForm({ ...form, nextExecution: e.target.value })}
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 180 }}
+              value={form.nextExecution ? dayjs(form.nextExecution) : null}
+              onChange={(v) => setForm({ ...form, nextExecution: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Stack>
 

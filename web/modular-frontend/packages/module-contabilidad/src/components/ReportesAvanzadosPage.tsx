@@ -27,7 +27,8 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -515,32 +516,26 @@ export default function ReportesAvanzadosPage() {
       >
         {needsRange && (
           <>
-            <TextField
+            <DatePicker
               label="Desde"
-              type="date"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
+              value={fechaDesde ? dayjs(fechaDesde) : null}
+              onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-            <TextField
+            <DatePicker
               label="Hasta"
-              type="date"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
+              value={fechaHasta ? dayjs(fechaHasta) : null}
+              onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </>
         )}
         {needsCorte && (
-          <TextField
+          <DatePicker
             label="Fecha de Corte"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={fechaCorte}
-            onChange={(e) => setFechaCorte(e.target.value)}
+            value={fechaCorte ? dayjs(fechaCorte) : null}
+            onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         )}
         <Button variant="contained" onClick={() => setRun(true)}>

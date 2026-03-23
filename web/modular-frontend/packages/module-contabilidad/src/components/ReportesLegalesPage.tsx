@@ -23,6 +23,8 @@ import {
   Alert,
 } from "@mui/material";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   useBalanceReexpresado,
@@ -214,29 +216,23 @@ export default function ReportesLegalesPage() {
             <ToggleButton value="ES">ES</ToggleButton>
           </ToggleButtonGroup>
 
-          <TextField
+          <DatePicker
             label="Fecha desde"
-            type="date"
-            size="small"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            value={fechaDesde ? dayjs(fechaDesde) : null}
+            onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Fecha hasta"
-            type="date"
-            size="small"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            value={fechaHasta ? dayjs(fechaHasta) : null}
+            onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
+          <DatePicker
             label="Fecha corte"
-            type="date"
-            size="small"
-            value={fechaCorte}
-            onChange={(e) => setFechaCorte(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            value={fechaCorte ? dayjs(fechaCorte) : null}
+            onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Stack>
       </Paper>

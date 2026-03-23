@@ -26,7 +26,8 @@ import {
   GridRowModel,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
-import { ZenttoDataGrid, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
 import SaveIcon from "@mui/icons-material/Save";
@@ -327,12 +328,11 @@ export default function NuevoAsientoPage() {
           
           <FormGrid spacing={2}>
             <FormField xs={12} md={3}>
-              <TextField
+              <DatePicker
                 label="Fecha"
-                type="date"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                value={fecha ? dayjs(fecha) : null}
+                onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
             </FormField>
             <FormField xs={12} md={3}>
