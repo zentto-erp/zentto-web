@@ -83,12 +83,9 @@ jobs:
             cp -rf /opt/zentto/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto/sqlweb-pg/
             cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto/goose-deploy.sh
             cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy-all.sh /opt/zentto/goose-deploy-all.sh
+            cp -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql /opt/zentto/hotfix-sec-functions.sql 2>/dev/null || true
             chmod +x /opt/zentto/goose-deploy.sh /opt/zentto/goose-deploy-all.sh
             rm -rf /opt/zentto/_deploy_tmp
-            # Hotfix: ejecutar SQL directo para columnas/funciones faltantes
-            if [ -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql ]; then
-              su -c "psql -d $PG_DATABASE -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql" postgres || true
-            fi
             PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy-all.sh
 
   deploy:

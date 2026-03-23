@@ -26,6 +26,14 @@ su -c "psql -d ${PG_DATABASE} -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE
 echo "→ Aplicando grants de schemas..."
 su -c "psql -d ${PG_DATABASE} -c 'GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;'" postgres || true
 
+# Hotfix: ejecutar SQL directo para columnas/funciones faltantes
+HOTFIX_SQL="/opt/zentto/hotfix-sec-functions.sql"
+if [ -f "$HOTFIX_SQL" ]; then
+  echo "→ Ejecutando hotfix SQL..."
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f ${HOTFIX_SQL}" postgres 2>&1
+  echo "✓ Hotfix SQL ejecutado"
+fi
+
 echo "╔══════════════════════════════════════════╗"
 echo "║  Zentto — goose migrate up (PostgreSQL)  ║"
 echo "╚══════════════════════════════════════════╝"
