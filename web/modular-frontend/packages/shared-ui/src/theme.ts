@@ -187,8 +187,7 @@ const theme = createTheme({
       styleOverrides: {
         outlined: {
           '&.MuiInputLabel-sizeSmall': {
-            // Centrar label — alineado al padding MUI default 8.5px
-            transform: 'translate(14px, 9px) scale(1)',
+            transform: 'translate(14px, 10px) scale(1)',
             '&.MuiInputLabel-shrink': {
               transform: 'translate(14px, -9px) scale(0.75)',
             },
@@ -198,6 +197,11 @@ const theme = createTheme({
     },
     MuiSelect: {
       defaultProps: { size: 'small' },
+      styleOverrides: {
+        select: {
+          padding: '10px 14px',
+        },
+      },
     },
     MuiTextField: {
       defaultProps: {
@@ -230,8 +234,7 @@ const theme = createTheme({
           backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
         },
         input: {
-          // Padding MUI default — misma altura que Select size="small"
-          padding: '8.5px 14px',
+          padding: '10px 14px',
         },
       },
     },
