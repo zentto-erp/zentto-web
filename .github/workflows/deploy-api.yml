@@ -63,7 +63,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh,scripts/goose-deploy-all.sh"
+          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh,scripts/goose-deploy-all.sh,scripts/hotfix-sec-functions.sql"
           target: /opt/zentto/_deploy_tmp/
           strip_components: 0
 
@@ -85,6 +85,10 @@ jobs:
             cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy-all.sh /opt/zentto/goose-deploy-all.sh
             chmod +x /opt/zentto/goose-deploy.sh /opt/zentto/goose-deploy-all.sh
             rm -rf /opt/zentto/_deploy_tmp
+            # Hotfix: ejecutar SQL directo para columnas/funciones faltantes
+            if [ -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql ]; then
+              su -c "psql -d $PG_DATABASE -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql" postgres || true
+            fi
             PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy-all.sh
 
   deploy:
