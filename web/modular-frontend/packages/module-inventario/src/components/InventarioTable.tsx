@@ -74,13 +74,21 @@ export default function InventarioTable() {
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>Inventario</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/ajuste")}
-        >
-          Ajuste de Inventario
-        </Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => router.push("/inventario/articulos/new")}
+          >
+            Nuevo Artículo
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/ajuste")}
+          >
+            Ajuste de Inventario
+          </Button>
+        </Box>
       </Box>
 
       {/* Search */}

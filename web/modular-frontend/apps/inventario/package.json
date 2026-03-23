@@ -9,6 +9,7 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@zentto/module-admin": "*",
         "@zentto/module-inventario": "*",
         "@zentto/shared-api": "*",
         "@zentto/shared-auth": "*",

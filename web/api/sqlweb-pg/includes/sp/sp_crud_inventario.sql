@@ -53,7 +53,16 @@ RETURNS TABLE (
     "PRECIO"              DOUBLE PRECISION,
     "COSTO"               DOUBLE PRECISION,
     "Servicio"            BOOLEAN,
-    "DescripcionCompleta" TEXT
+    "DescripcionCompleta" TEXT,
+    "PRECIO_VENTA1"       DOUBLE PRECISION,
+    "PRECIO_VENTA2"       DOUBLE PRECISION,
+    "PRECIO_VENTA3"       DOUBLE PRECISION,
+    "COSTO_PROMEDIO"      DOUBLE PRECISION,
+    "Alicuota"            DOUBLE PRECISION,
+    "PLU"                 INT,
+    "UbicaFisica"         VARCHAR,
+    "Garantia"            VARCHAR,
+    "Descripcion"         TEXT
 ) LANGUAGE plpgsql AS $$
 DECLARE
     v_offset  INT;
@@ -127,7 +136,16 @@ BEGIN
             CASE WHEN RTRIM(COALESCE(p."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END ||
             CASE WHEN RTRIM(COALESCE(p."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Marca") ELSE '' END ||
             CASE WHEN RTRIM(COALESCE(p."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Clase") ELSE '' END
-        )                           AS "DescripcionCompleta"
+        )                           AS "DescripcionCompleta",
+        p."PRECIO_VENTA1",
+        p."PRECIO_VENTA2",
+        p."PRECIO_VENTA3",
+        p."COSTO_PROMEDIO",
+        p."Alicuota",
+        p."PLU",
+        p."UbicaFisica",
+        p."Garantia",
+        p."Descripcion"
     FROM master."Product" p
     WHERE COALESCE(p."IsDeleted", FALSE) = FALSE
       AND (v_search IS NULL OR
@@ -180,7 +198,16 @@ RETURNS TABLE (
     "PRECIO"              DOUBLE PRECISION,
     "COSTO"               DOUBLE PRECISION,
     "Servicio"            BOOLEAN,
-    "DescripcionCompleta" TEXT
+    "DescripcionCompleta" TEXT,
+    "PRECIO_VENTA1"       DOUBLE PRECISION,
+    "PRECIO_VENTA2"       DOUBLE PRECISION,
+    "PRECIO_VENTA3"       DOUBLE PRECISION,
+    "COSTO_PROMEDIO"      DOUBLE PRECISION,
+    "Alicuota"            DOUBLE PRECISION,
+    "PLU"                 INT,
+    "UbicaFisica"         VARCHAR,
+    "Garantia"            VARCHAR,
+    "Descripcion"         TEXT
 ) LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -221,7 +248,16 @@ BEGIN
             CASE WHEN RTRIM(COALESCE(p."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END ||
             CASE WHEN RTRIM(COALESCE(p."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Marca") ELSE '' END ||
             CASE WHEN RTRIM(COALESCE(p."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Clase") ELSE '' END
-        )                      AS "DescripcionCompleta"
+        )                      AS "DescripcionCompleta",
+        p."PRECIO_VENTA1",
+        p."PRECIO_VENTA2",
+        p."PRECIO_VENTA3",
+        p."COSTO_PROMEDIO",
+        p."Alicuota",
+        p."PLU",
+        p."UbicaFisica",
+        p."Garantia",
+        p."Descripcion"
     FROM master."Product" p
     WHERE p."ProductCode" = p_codigo
       AND COALESCE(p."IsDeleted", FALSE) = FALSE;
@@ -230,7 +266,8 @@ $$;
 
 -- ---------- 3. Insert (columnas principales segun schema canonico) ----------
 CREATE OR REPLACE FUNCTION usp_inventario_insert(
-    p_row_json JSONB
+    p_company_id INT DEFAULT NULL,
+    p_row_json JSONB DEFAULT '{}'::JSONB
 )
 RETURNS TABLE (
     "Resultado" INT,
@@ -240,11 +277,14 @@ DECLARE
     v_company_id INT;
     v_codigo     VARCHAR(15);
 BEGIN
-    -- Obtener CompanyId
-    SELECT "CompanyId" INTO v_company_id
-    FROM cfg."Company"
-    WHERE COALESCE("IsDeleted", FALSE) = FALSE
-    ORDER BY "CompanyId" LIMIT 1;
+    -- Usar CompanyId del parámetro, o buscar el primero activo
+    v_company_id := p_company_id;
+    IF v_company_id IS NULL THEN
+        SELECT "CompanyId" INTO v_company_id
+        FROM cfg."Company"
+        WHERE COALESCE("IsDeleted", FALSE) = FALSE
+        ORDER BY "CompanyId" LIMIT 1;
+    END IF;
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
     v_codigo := NULLIF(p_row_json->>'CODIGO', ''::VARCHAR);
@@ -263,7 +303,7 @@ BEGIN
             "ProductCode", "Referencia", "Categoria", "Marca", "Tipo", "Unidad", "Clase", "ProductName",
             "StockQty", "VENTA", "MINIMO", "MAXIMO", "CostPrice", "SalesPrice", "PORCENTAJE",
             "UBICACION", "Co_Usuario", "Linea", "N_PARTE", "Barra",
-            "IsService", "IsActive", "IsDeleted", "CompanyId"
+            "Servicio", "IsService", "IsActive", "IsDeleted", "CompanyId", "Descripcion"
         ) VALUES (
             v_codigo,
             NULLIF(p_row_json->>'Referencia', ''::VARCHAR),
@@ -286,9 +326,11 @@ BEGIN
             NULLIF(p_row_json->>'N_PARTE', ''::VARCHAR),
             NULLIF(p_row_json->>'Barra', ''::VARCHAR),
             COALESCE((NULLIF(p_row_json->>'Servicio', ''::VARCHAR))::BOOLEAN, FALSE),
+            COALESCE((NULLIF(p_row_json->>'Servicio', ''::VARCHAR))::BOOLEAN, FALSE),
             TRUE,
             FALSE,
-            v_company_id
+            v_company_id,
+            NULLIF(p_row_json->>'Descripcion', ''::VARCHAR)
         );
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR;
@@ -300,8 +342,9 @@ $$;
 
 -- ---------- 4. Update ----------
 CREATE OR REPLACE FUNCTION usp_inventario_update(
-    p_codigo   VARCHAR(15),
-    p_row_json JSONB
+    p_company_id INT DEFAULT NULL,
+    p_codigo   VARCHAR(15) DEFAULT NULL,
+    p_row_json JSONB DEFAULT '{}'::JSONB
 )
 RETURNS TABLE (
     "Resultado" INT,
@@ -336,7 +379,8 @@ BEGIN
             "Co_Usuario" = COALESCE(NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR), "Co_Usuario"),
             "Linea"      = COALESCE(NULLIF(p_row_json->>'Linea', ''::VARCHAR), "Linea"),
             "N_PARTE"    = COALESCE(NULLIF(p_row_json->>'N_PARTE', ''::VARCHAR), "N_PARTE"),
-            "Barra"      = COALESCE(NULLIF(p_row_json->>'Barra', ''::VARCHAR), "Barra")
+            "Barra"      = COALESCE(NULLIF(p_row_json->>'Barra', ''::VARCHAR), "Barra"),
+            "Descripcion" = COALESCE(NULLIF(p_row_json->>'Descripcion', ''::VARCHAR), "Descripcion")
         WHERE "ProductCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE;
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR;

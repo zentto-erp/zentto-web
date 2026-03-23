@@ -31,6 +31,16 @@ export interface InventarioRow {
   Linea?: string;
   N_PARTE?: string;
   Barra?: string;
+  Servicio?: boolean;
+  Descripcion?: string;
+  PRECIO_VENTA1?: number;
+  PRECIO_VENTA2?: number;
+  PRECIO_VENTA3?: number;
+  COSTO_PROMEDIO?: number;
+  Alicuota?: number;
+  PLU?: number;
+  UbicaFisica?: string;
+  Garantia?: string;
   [key: string]: unknown;
 }
 

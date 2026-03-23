@@ -312,17 +312,19 @@ export const pinningSx = {
   '& .zentto-pin-left': {
     position: 'sticky !important',
     left: '0 !important',
-    zIndex: '2 !important',
-    bgcolor: 'background.paper',
+    zIndex: '3 !important',
+    backgroundColor: 'var(--mui-palette-background-paper, #fff) !important',
     borderRight: '2px solid',
     borderColor: 'divider',
+    boxShadow: '4px 0 8px rgba(0,0,0,0.08)',
   },
   '& .zentto-pin-right': {
     position: 'sticky !important',
     right: '0 !important',
-    zIndex: '2 !important',
-    bgcolor: 'background.paper',
+    zIndex: '3 !important',
+    backgroundColor: 'var(--mui-palette-background-paper, #fff) !important',
     borderLeft: '2px solid',
     borderColor: 'divider',
+    boxShadow: '-4px 0 8px rgba(0,0,0,0.08)',
   },
 } as const;

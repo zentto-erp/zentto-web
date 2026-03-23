@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, type Dispatch, type SetStateAction } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Box,
   Button,
@@ -45,6 +45,7 @@ import {
   Clear as ClearIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  ViewColumn as ViewColumnIcon,
 } from "@mui/icons-material";
 import { useArticulosList, useDeleteArticulo, useArticuloFilterOptions } from "../../../hooks/useArticulos";
 import { formatCurrency } from "@zentto/shared-api";
@@ -85,6 +86,9 @@ function FilterSelect({
 
 export default function ArticulosTable() {
   const router = useRouter();
+  const pathname = usePathname() || '';
+  // Detectar base: si estamos en /inventario/articulos usar esa base, sino /articulos
+  const basePath = pathname.includes('/inventario/') ? '/inventario/articulos' : '/articulos';
 
   // ========== Estado del DataGrid ==========
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -121,6 +125,7 @@ export default function ArticulosTable() {
   // ========== UI ==========
   const [showFilters, setShowFilters] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [extendedView, setExtendedView] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState<string | null>(null);
 
@@ -155,7 +160,7 @@ export default function ArticulosTable() {
   const sortFieldMap: Record<string, string> = {
     codigo: "CODIGO",
     linea: "Linea",
-    descripcionCompleta: "DescripcionCompleta",
+    descripcion: "ProductName",
     precioVenta: "PRECIO_VENTA",
     precioCompra: "PRECIO_COMPRA",
     stock: "EXISTENCIA",
@@ -249,119 +254,63 @@ export default function ArticulosTable() {
 
   // ========== Columnas del DataGrid ==========
   const columns: GridColDef[] = useMemo(
-    () => [
-      {
-        field: "codigo",
-        headerName: "Código",
-        width: 120,
-        sortable: true,
-      },
-      {
-        field: "descripcionCompleta",
-        headerName: "Descripción",
-        flex: 1,
-        minWidth: 250,
-        sortable: true,
-      },
-      {
-        field: "linea",
-        headerName: "Línea",
-        width: 100,
-        sortable: true,
-        renderCell: (params: GridRenderCellParams) =>
-          params.value ? (
-            <Chip label={params.value} size="small" variant="outlined" color="info" />
-          ) : "—",
-      },
-      {
-        field: "categoria",
-        headerName: "Categoría",
-        width: 110,
-        sortable: true,
-      },
-      {
-        field: "marca",
-        headerName: "Marca",
-        width: 110,
-        sortable: true,
-      },
-      {
-        field: "unidad",
-        headerName: "Unidad",
-        width: 80,
-        sortable: true,
-      },
-      {
-        field: "ubicacion",
-        headerName: "Ubicación",
-        width: 100,
-        sortable: true,
-      },
-      {
-        field: "precioVenta",
-        headerName: "Precio",
-        width: 110,
-        sortable: true,
-        align: "right",
-        headerAlign: "right",
-        renderCell: (params: GridRenderCellParams) =>
-          formatCurrency(params.value),
-      },
-      {
-        field: "stock",
-        headerName: "Stock",
-        width: 80,
-        sortable: true,
-        align: "right",
-        headerAlign: "right",
-        renderCell: (params: GridRenderCellParams) =>
-          params.value?.toLocaleString("es-VE") ?? "0",
-      },
-      {
-        field: "estado",
-        headerName: "Estado",
-        width: 90,
-        sortable: true,
-        renderCell: (params: GridRenderCellParams) => (
-          <Chip
-            label={params.value === "Activo" ? "Activo" : "Inactivo"}
-            color={params.value === "Activo" ? "success" : "default"}
-            size="small"
-            variant="outlined"
-          />
-        ),
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: "Acciones",
-        width: 120,
+    () => {
+      const base: GridColDef[] = [
+        { field: "codigo", headerName: "Código", width: 120, sortable: true },
+        { field: "descripcion", headerName: "Artículo", flex: 1, minWidth: 250, sortable: true },
+        { field: "categoria", headerName: "Categoría", width: 110, sortable: true },
+        { field: "stock", headerName: "Stock", width: 80, sortable: true, align: "right", headerAlign: "right",
+          renderCell: (params: GridRenderCellParams) => params.value?.toLocaleString("es-VE") ?? "0",
+        },
+        {
+          field: "precioCompra", headerName: "Costo", width: 110, sortable: true, align: "right", headerAlign: "right",
+          renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
+        },
+        {
+          field: "precioVenta", headerName: "Precio", width: 110, sortable: true, align: "right", headerAlign: "right",
+          renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
+        },
+        {
+          field: "estado", headerName: "Estado", width: 90, sortable: true,
+          renderCell: (params: GridRenderCellParams) => (
+            <Chip label={params.value === "Activo" ? "Activo" : "Inactivo"} color={params.value === "Activo" ? "success" : "default"} size="small" variant="outlined" />
+          ),
+        },
+      ];
+
+      const extended: GridColDef[] = [
+        {
+          field: "linea", headerName: "Línea", width: 100, sortable: true,
+          renderCell: (params: GridRenderCellParams) =>
+            params.value ? <Chip label={params.value} size="small" variant="outlined" color="info" /> : "—",
+        },
+        { field: "marca", headerName: "Marca", width: 110, sortable: true },
+        { field: "tipo", headerName: "Tipo", width: 100, sortable: true },
+        { field: "clase", headerName: "Clase", width: 100, sortable: true },
+        { field: "unidad", headerName: "Unidad", width: 80, sortable: true },
+        { field: "ubicacion", headerName: "Ubicación", width: 100, sortable: true },
+        { field: "minimo", headerName: "Mínimo", width: 80, sortable: true, align: "right", headerAlign: "right" },
+        { field: "maximo", headerName: "Máximo", width: 80, sortable: true, align: "right", headerAlign: "right" },
+        { field: "referencia", headerName: "Referencia", width: 120, sortable: true },
+        { field: "barra", headerName: "Cód. Barras", width: 120, sortable: true },
+        { field: "nParte", headerName: "N° Parte", width: 110, sortable: true },
+      ];
+
+      const actions: GridColDef = {
+        field: "actions", type: "actions", headerName: "Acciones", width: 120, resizable: false,
         getActions: (params) => [
-          <GridActionsCellItem
-            key="view"
-            icon={<ViewIcon />}
-            label="Ver"
-            onClick={() => router.push(`/articulos/${params.row.codigo}`)}
-          />,
-          <GridActionsCellItem
-            key="edit"
-            icon={<EditIcon />}
-            label="Editar"
-            onClick={() => router.push(`/articulos/${params.row.codigo}/edit`)}
-          />,
-          <GridActionsCellItem
-            key="delete"
-            icon={<DeleteIcon color="error" />}
-            label="Eliminar"
-            onClick={() => {
-              setSelectedArticulo(params.row.codigo);
-              setDeleteDialogOpen(true);
-            }}
-          />,
+          <GridActionsCellItem key="view" icon={<ViewIcon />} label="Ver"
+            onClick={() => router.push(`${basePath}/${params.row.codigo}`)} />,
+          <GridActionsCellItem key="edit" icon={<EditIcon />} label="Editar"
+            onClick={() => router.push(`${basePath}/${params.row.codigo}/edit`)} />,
+          <GridActionsCellItem key="delete" icon={<DeleteIcon color="error" />} label="Eliminar"
+            onClick={() => { setSelectedArticulo(params.row.codigo); setDeleteDialogOpen(true); }} />,
         ],
-      },
-    ],
-    [router]
+      };
+
+      return extendedView ? [...base, ...extended, actions] : [...base, actions];
+    },
+    [router, basePath, extendedView]
   );
 
   // ========== Filas mapeadas ==========
@@ -439,10 +388,21 @@ export default function ArticulosTable() {
 
         <Box sx={{ flex: 1 }} />
 
+        <Tooltip title={extendedView ? "Vista compacta" : "Vista extendida"}>
+          <Button
+            variant={extendedView ? "contained" : "outlined"}
+            startIcon={<ViewColumnIcon />}
+            onClick={() => setExtendedView(!extendedView)}
+            size="small"
+          >
+            {extendedView ? "Compacta" : "Extendida"}
+          </Button>
+        </Tooltip>
+
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => router.push("/articulos/new")}
+          onClick={() => router.push(`${basePath}/new`)}
           size="small"
         >
           Nuevo Artículo
@@ -667,13 +627,21 @@ export default function ArticulosTable() {
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick
         disableColumnFilter
+        disableVirtualization
         getRowId={(row) => row.codigo}
-        mobileVisibleFields={["codigo", "descripcionCompleta"]}
+        mobileVisibleFields={["codigo", "descripcion"]}
         sx={{
           flex: 1,
           minHeight: 0,
           "& .MuiDataGrid-row:hover": {
             backgroundColor: "action.hover",
+          },
+          '& .MuiDataGrid-cell[data-field="actions"], & .MuiDataGrid-columnHeader[data-field="actions"]': {
+            position: "sticky !important",
+            right: "0 !important",
+            zIndex: "4 !important",
+            backgroundColor: "var(--mui-palette-background-paper, #fff) !important",
+            boxShadow: "-4px 0 8px rgba(0,0,0,0.08)",
           },
         }}
         localeText={{

@@ -43,7 +43,7 @@ function mapRowToArticulo(r: RawArticuloRow): Articulo {
     // Inventario
     stock: r.EXISTENCIA ?? r.stock ?? 0,
     unidad: (r.Unidad ?? r.unidad ?? "").trim(),
-    estado: r.Eliminado === true ? "Inactivo" : "Activo",
+    estado: r.Eliminado === true ? "Inactivo" : (r.IsActive === false ? "Inactivo" : "Activo"),
     // Campos adicionales
     referencia: (r.Referencia ?? "").trim(),
     alicuota: r.Alicuota ?? 0,
@@ -62,6 +62,8 @@ function mapRowToArticulo(r: RawArticuloRow): Articulo {
     costoPromedio: r.COSTO_PROMEDIO ?? 0,
     minimo: r.MINIMO ?? 0,
     maximo: r.MAXIMO ?? 0,
+    porcentaje: r.PORCENTAJE ?? 0,
+    descripcionLarga: (r.Descripcion ?? "").trim(),
     id: r.Id ?? r.id,
   };
 }

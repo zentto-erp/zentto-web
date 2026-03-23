@@ -1,7 +1,7 @@
 "use client";
 
-import { InventarioTable } from "@zentto/module-inventario";
+import { ArticulosTable } from "@zentto/module-admin";
 
 export default function ArticulosPage() {
-  return <InventarioTable />;
+  return <ArticulosTable />;
 }
