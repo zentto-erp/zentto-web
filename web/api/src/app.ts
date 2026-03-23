@@ -232,6 +232,18 @@ export async function createApp() {
     res.json({ ok: true, clientToken, environment: "production" });
   });
 
+  // DEBUG: test function call directo (quitar después)
+  app.get("/debug/test-sec-func", async (_req, res) => {
+    try {
+      const { getPgPool } = await import("./db/pg.js");
+      const pool = getPgPool();
+      const r = await pool.query("SELECT * FROM usp_sec_user_listcompanyaccesses_default() LIMIT 3");
+      res.json({ ok: true, rows: r.rows, fields: r.fields.map((f: any) => ({ name: f.name, dataTypeID: f.dataTypeID })) });
+    } catch (err: any) {
+      res.json({ ok: false, error: err.message, detail: err.detail, hint: err.hint, code: err.code });
+    }
+  });
+
   // JWT required for all /v1 routes
   app.use("/v1", requireJwt);
   app.use("/v1", normalizeRequestDateTimesToUtc);
