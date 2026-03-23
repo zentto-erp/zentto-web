@@ -279,7 +279,7 @@ BEGIN
     -- Anular cabecera
     UPDATE ar."SalesDocument"
     SET "IsVoided"  = TRUE,
-        "Notes"     = CONCAT(COALESCE("Notes", ''), ' | ANULADO ',
+        "Notes"     = CONCAT(COALESCE("Notes",''::VARCHAR), ' | ANULADO ',
                        to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI'),
                        ' por ', p_cod_usuario,
                        CASE WHEN p_motivo <> '' THEN ' - Motivo: ' || p_motivo ELSE '' END),
@@ -489,7 +489,7 @@ BEGIN
         )
         SELECT
             p_num_doc_factura,
-            COALESCE(elem->>'serialType', ''),
+            COALESCE(elem->>'serialType',''::VARCHAR),
             COALESCE(elem->>'fiscalMemoryNumber', '1'),
             'FACT',
             elem->>'paymentMethod',
@@ -509,7 +509,7 @@ BEGIN
     -- Marcar el pedido como facturado
     UPDATE ar."SalesDocument"
     SET "IsInvoiced" = 'S',
-        "Notes"      = CONCAT(COALESCE("Notes", ''), ' | Facturado como ', p_num_doc_factura,
+        "Notes"      = CONCAT(COALESCE("Notes",''::VARCHAR), ' | Facturado como ', p_num_doc_factura,
                         ' el ', to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI'),
                         ' por ', p_cod_usuario),
         "UpdatedAt"  = NOW() AT TIME ZONE 'UTC'
@@ -596,7 +596,7 @@ DECLARE
 BEGIN
     -- Parsear cabecera
     v_num_doc           := TRIM(p_header_json->>'DocumentNumber');
-    v_serial_type       := COALESCE(p_header_json->>'SerialType', '');
+    v_serial_type       := COALESCE(p_header_json->>'SerialType',''::VARCHAR);
     v_fiscal_memory     := COALESCE(p_header_json->>'FiscalMemoryNumber', '1');
     v_customer_code     := p_header_json->>'CustomerCode';
     v_customer_name     := p_header_json->>'CustomerName';
@@ -759,7 +759,7 @@ BEGIN
 
     -- Sincronizar cuenta por cobrar para FACT/NOTADEB/NOTACRED
     IF p_tipo_operacion IN ('FACT', 'NOTADEB', 'NOTACRED') THEN
-        v_cod_cliente := TRIM(COALESCE(v_customer_code, ''));
+        v_cod_cliente := TRIM(COALESCE(v_customer_code,''::VARCHAR));
 
         IF v_cod_cliente <> '' THEN
             -- Resolver contexto canonico
@@ -791,7 +791,7 @@ BEGIN
                         SELECT COALESCE(SUM(COALESCE((elem->>'Amount')::NUMERIC, 0)), 0)
                         INTO v_total_pagado
                         FROM jsonb_array_elements(p_payments_json) elem
-                        WHERE UPPER(COALESCE(elem->>'PaymentMethod', '')) NOT LIKE '%SALDO%';
+                        WHERE UPPER(COALESCE(elem->>'PaymentMethod',''::VARCHAR)) NOT LIKE '%SALDO%';
                     END IF;
 
                     v_pending_amount := CASE

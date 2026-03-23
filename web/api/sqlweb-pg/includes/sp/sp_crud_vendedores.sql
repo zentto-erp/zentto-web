@@ -180,7 +180,7 @@ BEGIN
     LIMIT 1;
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(p_row_json->>'Codigo', '');
+    v_codigo := NULLIF(p_row_json->>'Codigo', ''::VARCHAR);
 
     IF EXISTS (SELECT 1 FROM master."Seller" WHERE "SellerCode" = v_codigo AND "CompanyId" = v_company_id) THEN
         RETURN QUERY SELECT -1, 'Vendedor ya existe'::VARCHAR(500);
@@ -199,12 +199,12 @@ BEGIN
         )
         VALUES (
             v_codigo,
-            NULLIF(p_row_json->>'Nombre', ''),
+            NULLIF(p_row_json->>'Nombre', ''::VARCHAR),
             CASE WHEN p_row_json->>'Comision' IS NULL OR p_row_json->>'Comision' = '' THEN NULL
                  ELSE (p_row_json->>'Comision')::DOUBLE PRECISION END,
-            NULLIF(p_row_json->>'Direccion', ''),
-            NULLIF(p_row_json->>'Telefonos', ''),
-            NULLIF(p_row_json->>'Email', ''),
+            NULLIF(p_row_json->>'Direccion', ''::VARCHAR),
+            NULLIF(p_row_json->>'Telefonos', ''::VARCHAR),
+            NULLIF(p_row_json->>'Email', ''::VARCHAR),
             CASE WHEN p_row_json->>'Rango_ventas_Uno' IS NULL OR p_row_json->>'Rango_ventas_Uno' = '' THEN NULL
                  ELSE (p_row_json->>'Rango_ventas_Uno')::DOUBLE PRECISION END,
             CASE WHEN p_row_json->>'Comision_ventas_Uno' IS NULL OR p_row_json->>'Comision_ventas_Uno' = '' THEN NULL
@@ -222,8 +222,8 @@ BEGIN
             CASE WHEN p_row_json->>'Comision_ventas_Cuatro' IS NULL OR p_row_json->>'Comision_ventas_Cuatro' = '' THEN NULL
                  ELSE (p_row_json->>'Comision_ventas_Cuatro')::DOUBLE PRECISION END,
             COALESCE((p_row_json->>'Status')::BOOLEAN, TRUE),
-            NULLIF(p_row_json->>'Tipo', ''),
-            NULLIF(p_row_json->>'clave', ''),
+            NULLIF(p_row_json->>'Tipo', ''::VARCHAR),
+            NULLIF(p_row_json->>'clave', ''::VARCHAR),
             FALSE,  -- IsDeleted
             v_company_id
         );
@@ -254,16 +254,16 @@ BEGIN
     BEGIN
         UPDATE master."Seller"
         SET
-            "SellerName" = COALESCE(NULLIF(p_row_json->>'Nombre', ''), "SellerName"),
+            "SellerName" = COALESCE(NULLIF(p_row_json->>'Nombre', ''::VARCHAR), "SellerName"),
             "Commission" = CASE WHEN p_row_json->>'Comision' IS NULL OR p_row_json->>'Comision' = ''
                                 THEN "Commission"
                                 ELSE (p_row_json->>'Comision')::DOUBLE PRECISION END,
-            "Direccion"  = COALESCE(NULLIF(p_row_json->>'Direccion', ''), "Direccion"),
-            "Telefonos"  = COALESCE(NULLIF(p_row_json->>'Telefonos', ''), "Telefonos"),
-            "Email"      = COALESCE(NULLIF(p_row_json->>'Email', ''), "Email"),
+            "Direccion"  = COALESCE(NULLIF(p_row_json->>'Direccion', ''::VARCHAR), "Direccion"),
+            "Telefonos"  = COALESCE(NULLIF(p_row_json->>'Telefonos', ''::VARCHAR), "Telefonos"),
+            "Email"      = COALESCE(NULLIF(p_row_json->>'Email', ''::VARCHAR), "Email"),
             "IsActive"   = COALESCE((p_row_json->>'Status')::BOOLEAN, "IsActive"),
-            "Tipo"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''), "Tipo"),
-            "Clave"      = COALESCE(NULLIF(p_row_json->>'clave', ''), "Clave")
+            "Tipo"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), "Tipo"),
+            "Clave"      = COALESCE(NULLIF(p_row_json->>'clave', ''::VARCHAR), "Clave")
         WHERE "SellerCode" = p_codigo
           AND COALESCE("IsDeleted", FALSE) = FALSE;
 

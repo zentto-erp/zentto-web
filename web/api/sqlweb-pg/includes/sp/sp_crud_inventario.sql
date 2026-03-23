@@ -122,11 +122,11 @@ BEGIN
         p."CostPrice"               AS "COSTO",
         p."IsService"               AS "Servicio",
         TRIM(BOTH FROM
-            COALESCE(RTRIM(p."Categoria"), '') ||
-            CASE WHEN RTRIM(COALESCE(p."Tipo", '')) <> '' THEN ' ' || RTRIM(p."Tipo") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(p."ProductName", '')) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(p."Marca", '')) <> '' THEN ' ' || RTRIM(p."Marca") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(p."Clase", '')) <> '' THEN ' ' || RTRIM(p."Clase") ELSE '' END
+            COALESCE(RTRIM(p."Categoria"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(p."Tipo",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Tipo") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(p."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(p."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Marca") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(p."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Clase") ELSE '' END
         )                           AS "DescripcionCompleta"
     FROM master."Product" p
     WHERE COALESCE(p."IsDeleted", FALSE) = FALSE
@@ -216,11 +216,11 @@ BEGIN
         p."CostPrice"          AS "COSTO",
         p."IsService"          AS "Servicio",
         TRIM(BOTH FROM
-            COALESCE(RTRIM(p."Categoria"), '') ||
-            CASE WHEN RTRIM(COALESCE(p."Tipo", '')) <> '' THEN ' ' || RTRIM(p."Tipo") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(p."ProductName", '')) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(p."Marca", '')) <> '' THEN ' ' || RTRIM(p."Marca") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(p."Clase", '')) <> '' THEN ' ' || RTRIM(p."Clase") ELSE '' END
+            COALESCE(RTRIM(p."Categoria"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(p."Tipo",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Tipo") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(p."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(p."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Marca") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(p."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."Clase") ELSE '' END
         )                      AS "DescripcionCompleta"
     FROM master."Product" p
     WHERE p."ProductCode" = p_codigo
@@ -247,7 +247,7 @@ BEGIN
     ORDER BY "CompanyId" LIMIT 1;
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(p_row_json->>'CODIGO', '');
+    v_codigo := NULLIF(p_row_json->>'CODIGO', ''::VARCHAR);
 
     -- Verificar duplicado
     IF EXISTS (
@@ -266,26 +266,26 @@ BEGIN
             "IsService", "IsActive", "IsDeleted", "CompanyId"
         ) VALUES (
             v_codigo,
-            NULLIF(p_row_json->>'Referencia', ''),
-            NULLIF(p_row_json->>'Categoria', ''),
-            NULLIF(p_row_json->>'Marca', ''),
-            NULLIF(p_row_json->>'Tipo', ''),
-            NULLIF(p_row_json->>'Unidad', ''),
-            NULLIF(p_row_json->>'Clase', ''),
-            NULLIF(p_row_json->>'DESCRIPCION', ''),
-            CASE WHEN NULLIF(p_row_json->>'EXISTENCIA', '') IS NULL THEN NULL ELSE (p_row_json->>'EXISTENCIA')::DOUBLE PRECISION END,
-            CASE WHEN NULLIF(p_row_json->>'VENTA', '') IS NULL THEN NULL ELSE (p_row_json->>'VENTA')::DOUBLE PRECISION END,
-            CASE WHEN NULLIF(p_row_json->>'MINIMO', '') IS NULL THEN NULL ELSE (p_row_json->>'MINIMO')::DOUBLE PRECISION END,
-            CASE WHEN NULLIF(p_row_json->>'MAXIMO', '') IS NULL THEN NULL ELSE (p_row_json->>'MAXIMO')::DOUBLE PRECISION END,
-            CASE WHEN NULLIF(p_row_json->>'PRECIO_COMPRA', '') IS NULL THEN NULL ELSE (p_row_json->>'PRECIO_COMPRA')::DOUBLE PRECISION END,
-            CASE WHEN NULLIF(p_row_json->>'PRECIO_VENTA', '') IS NULL THEN NULL ELSE (p_row_json->>'PRECIO_VENTA')::DOUBLE PRECISION END,
-            CASE WHEN NULLIF(p_row_json->>'PORCENTAJE', '') IS NULL THEN NULL ELSE (p_row_json->>'PORCENTAJE')::DOUBLE PRECISION END,
-            NULLIF(p_row_json->>'UBICACION', ''),
-            NULLIF(p_row_json->>'Co_Usuario', ''),
-            NULLIF(p_row_json->>'Linea', ''),
-            NULLIF(p_row_json->>'N_PARTE', ''),
-            NULLIF(p_row_json->>'Barra', ''),
-            COALESCE((NULLIF(p_row_json->>'Servicio', ''))::BOOLEAN, FALSE),
+            NULLIF(p_row_json->>'Referencia', ''::VARCHAR),
+            NULLIF(p_row_json->>'Categoria', ''::VARCHAR),
+            NULLIF(p_row_json->>'Marca', ''::VARCHAR),
+            NULLIF(p_row_json->>'Tipo', ''::VARCHAR),
+            NULLIF(p_row_json->>'Unidad', ''::VARCHAR),
+            NULLIF(p_row_json->>'Clase', ''::VARCHAR),
+            NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR),
+            CASE WHEN NULLIF(p_row_json->>'EXISTENCIA', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'EXISTENCIA')::DOUBLE PRECISION END,
+            CASE WHEN NULLIF(p_row_json->>'VENTA', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'VENTA')::DOUBLE PRECISION END,
+            CASE WHEN NULLIF(p_row_json->>'MINIMO', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'MINIMO')::DOUBLE PRECISION END,
+            CASE WHEN NULLIF(p_row_json->>'MAXIMO', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'MAXIMO')::DOUBLE PRECISION END,
+            CASE WHEN NULLIF(p_row_json->>'PRECIO_COMPRA', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'PRECIO_COMPRA')::DOUBLE PRECISION END,
+            CASE WHEN NULLIF(p_row_json->>'PRECIO_VENTA', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'PRECIO_VENTA')::DOUBLE PRECISION END,
+            CASE WHEN NULLIF(p_row_json->>'PORCENTAJE', ''::VARCHAR) IS NULL THEN NULL ELSE (p_row_json->>'PORCENTAJE')::DOUBLE PRECISION END,
+            NULLIF(p_row_json->>'UBICACION', ''::VARCHAR),
+            NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR),
+            NULLIF(p_row_json->>'Linea', ''::VARCHAR),
+            NULLIF(p_row_json->>'N_PARTE', ''::VARCHAR),
+            NULLIF(p_row_json->>'Barra', ''::VARCHAR),
+            COALESCE((NULLIF(p_row_json->>'Servicio', ''::VARCHAR))::BOOLEAN, FALSE),
             TRUE,
             FALSE,
             v_company_id
@@ -318,25 +318,25 @@ BEGIN
 
     BEGIN
         UPDATE master."Product" SET
-            "Referencia" = COALESCE(NULLIF(p_row_json->>'Referencia', ''), "Referencia"),
-            "Categoria"  = COALESCE(NULLIF(p_row_json->>'Categoria', ''), "Categoria"),
-            "Marca"      = COALESCE(NULLIF(p_row_json->>'Marca', ''), "Marca"),
-            "Tipo"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''), "Tipo"),
-            "Unidad"     = COALESCE(NULLIF(p_row_json->>'Unidad', ''), "Unidad"),
-            "Clase"      = COALESCE(NULLIF(p_row_json->>'Clase', ''), "Clase"),
-            "ProductName"= COALESCE(NULLIF(p_row_json->>'DESCRIPCION', ''), "ProductName"),
-            "StockQty"   = CASE WHEN NULLIF(p_row_json->>'EXISTENCIA', '') IS NULL THEN "StockQty" ELSE (p_row_json->>'EXISTENCIA')::DOUBLE PRECISION END,
-            "VENTA"      = CASE WHEN NULLIF(p_row_json->>'VENTA', '') IS NULL THEN "VENTA" ELSE (p_row_json->>'VENTA')::DOUBLE PRECISION END,
-            "MINIMO"     = CASE WHEN NULLIF(p_row_json->>'MINIMO', '') IS NULL THEN "MINIMO" ELSE (p_row_json->>'MINIMO')::DOUBLE PRECISION END,
-            "MAXIMO"     = CASE WHEN NULLIF(p_row_json->>'MAXIMO', '') IS NULL THEN "MAXIMO" ELSE (p_row_json->>'MAXIMO')::DOUBLE PRECISION END,
-            "CostPrice"  = CASE WHEN NULLIF(p_row_json->>'PRECIO_COMPRA', '') IS NULL THEN "CostPrice" ELSE (p_row_json->>'PRECIO_COMPRA')::DOUBLE PRECISION END,
-            "SalesPrice" = CASE WHEN NULLIF(p_row_json->>'PRECIO_VENTA', '') IS NULL THEN "SalesPrice" ELSE (p_row_json->>'PRECIO_VENTA')::DOUBLE PRECISION END,
-            "PORCENTAJE" = CASE WHEN NULLIF(p_row_json->>'PORCENTAJE', '') IS NULL THEN "PORCENTAJE" ELSE (p_row_json->>'PORCENTAJE')::DOUBLE PRECISION END,
-            "UBICACION"  = COALESCE(NULLIF(p_row_json->>'UBICACION', ''), "UBICACION"),
-            "Co_Usuario" = COALESCE(NULLIF(p_row_json->>'Co_Usuario', ''), "Co_Usuario"),
-            "Linea"      = COALESCE(NULLIF(p_row_json->>'Linea', ''), "Linea"),
-            "N_PARTE"    = COALESCE(NULLIF(p_row_json->>'N_PARTE', ''), "N_PARTE"),
-            "Barra"      = COALESCE(NULLIF(p_row_json->>'Barra', ''), "Barra")
+            "Referencia" = COALESCE(NULLIF(p_row_json->>'Referencia', ''::VARCHAR), "Referencia"),
+            "Categoria"  = COALESCE(NULLIF(p_row_json->>'Categoria', ''::VARCHAR), "Categoria"),
+            "Marca"      = COALESCE(NULLIF(p_row_json->>'Marca', ''::VARCHAR), "Marca"),
+            "Tipo"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), "Tipo"),
+            "Unidad"     = COALESCE(NULLIF(p_row_json->>'Unidad', ''::VARCHAR), "Unidad"),
+            "Clase"      = COALESCE(NULLIF(p_row_json->>'Clase', ''::VARCHAR), "Clase"),
+            "ProductName"= COALESCE(NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR), "ProductName"),
+            "StockQty"   = CASE WHEN NULLIF(p_row_json->>'EXISTENCIA', ''::VARCHAR) IS NULL THEN "StockQty" ELSE (p_row_json->>'EXISTENCIA')::DOUBLE PRECISION END,
+            "VENTA"      = CASE WHEN NULLIF(p_row_json->>'VENTA', ''::VARCHAR) IS NULL THEN "VENTA" ELSE (p_row_json->>'VENTA')::DOUBLE PRECISION END,
+            "MINIMO"     = CASE WHEN NULLIF(p_row_json->>'MINIMO', ''::VARCHAR) IS NULL THEN "MINIMO" ELSE (p_row_json->>'MINIMO')::DOUBLE PRECISION END,
+            "MAXIMO"     = CASE WHEN NULLIF(p_row_json->>'MAXIMO', ''::VARCHAR) IS NULL THEN "MAXIMO" ELSE (p_row_json->>'MAXIMO')::DOUBLE PRECISION END,
+            "CostPrice"  = CASE WHEN NULLIF(p_row_json->>'PRECIO_COMPRA', ''::VARCHAR) IS NULL THEN "CostPrice" ELSE (p_row_json->>'PRECIO_COMPRA')::DOUBLE PRECISION END,
+            "SalesPrice" = CASE WHEN NULLIF(p_row_json->>'PRECIO_VENTA', ''::VARCHAR) IS NULL THEN "SalesPrice" ELSE (p_row_json->>'PRECIO_VENTA')::DOUBLE PRECISION END,
+            "PORCENTAJE" = CASE WHEN NULLIF(p_row_json->>'PORCENTAJE', ''::VARCHAR) IS NULL THEN "PORCENTAJE" ELSE (p_row_json->>'PORCENTAJE')::DOUBLE PRECISION END,
+            "UBICACION"  = COALESCE(NULLIF(p_row_json->>'UBICACION', ''::VARCHAR), "UBICACION"),
+            "Co_Usuario" = COALESCE(NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR), "Co_Usuario"),
+            "Linea"      = COALESCE(NULLIF(p_row_json->>'Linea', ''::VARCHAR), "Linea"),
+            "N_PARTE"    = COALESCE(NULLIF(p_row_json->>'N_PARTE', ''::VARCHAR), "N_PARTE"),
+            "Barra"      = COALESCE(NULLIF(p_row_json->>'Barra', ''::VARCHAR), "Barra")
         WHERE "ProductCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE;
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR;
@@ -428,7 +428,7 @@ BEGIN
 
             v_doc_ref := COALESCE(p_document_ref,
                 'TRASL-' || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYYMMDD') || '-' ||
-                LEFT(REPLACE(gen_random_uuid()::TEXT, '-', ''), 6));
+                LEFT(REPLACE(gen_random_uuid()::TEXT, '-',''::VARCHAR), 6));
 
             -- Movimiento SALIDA del almacen origen
             INSERT INTO master."InventoryMovement"
@@ -640,8 +640,8 @@ BEGIN
         p."ProductCode"       AS "CODIGO",
         p."ProductName"       AS "DESCRIPCION",
         TRIM(BOTH FROM
-            COALESCE(RTRIM(p."CategoryCode"), '') ||
-            CASE WHEN RTRIM(COALESCE(p."ProductName", '')) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END
+            COALESCE(RTRIM(p."CategoryCode"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(p."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(p."ProductName") ELSE '' END
         )                     AS "DescripcionCompleta",
         COALESCE(p."StockQty", 0) - COALESCE(m."EntradasDesde", 0) + COALESCE(m."SalidasDesde", 0) AS "StockInicial",
         COALESCE(m."EntradasR", 0)  AS "Entradas",
@@ -716,8 +716,8 @@ BEGIN
     WHERE m."CompanyId" = p_company_id
       AND COALESCE(m."IsDeleted", FALSE) = FALSE
       AND (p_search IS NULL OR m."ProductCode" ILIKE '%' || p_search || '%'
-           OR COALESCE(m."ProductName",'') ILIKE '%' || p_search || '%'
-           OR COALESCE(m."DocumentRef",'') ILIKE '%' || p_search || '%')
+           OR COALESCE(m."ProductName",''::VARCHAR) ILIKE '%' || p_search || '%'
+           OR COALESCE(m."DocumentRef",''::VARCHAR) ILIKE '%' || p_search || '%')
       AND (p_product_code IS NULL OR m."ProductCode" = p_product_code)
       AND (p_movement_type IS NULL OR m."MovementType" = p_movement_type)
       AND (p_fecha_desde IS NULL OR m."MovementDate" >= p_fecha_desde)
@@ -728,24 +728,24 @@ BEGIN
         v_total,
         m."MovementId",
         m."ProductCode"::VARCHAR,
-        COALESCE(m."ProductName",'')::VARCHAR,
+        COALESCE(m."ProductName",''::VARCHAR)::VARCHAR,
         m."MovementType"::VARCHAR,
         m."MovementDate",
         m."Quantity",
         m."UnitCost",
         m."TotalCost",
-        COALESCE(m."DocumentRef",'')::VARCHAR AS "DocumentRef",
+        COALESCE(m."DocumentRef",''::VARCHAR)::VARCHAR AS "DocumentRef",
         NULL::VARCHAR                         AS "WarehouseFrom",
         NULL::VARCHAR                         AS "WarehouseTo",
-        COALESCE(m."Notes",'')::VARCHAR       AS "Notes",
+        COALESCE(m."Notes",''::VARCHAR)::VARCHAR       AS "Notes",
         m."CreatedAt",
         m."CreatedByUserId"
     FROM master."InventoryMovement" m
     WHERE m."CompanyId" = p_company_id
       AND COALESCE(m."IsDeleted", FALSE) = FALSE
       AND (p_search IS NULL OR m."ProductCode" ILIKE '%' || p_search || '%'
-           OR COALESCE(m."ProductName",'') ILIKE '%' || p_search || '%'
-           OR COALESCE(m."DocumentRef",'') ILIKE '%' || p_search || '%')
+           OR COALESCE(m."ProductName",''::VARCHAR) ILIKE '%' || p_search || '%'
+           OR COALESCE(m."DocumentRef",''::VARCHAR) ILIKE '%' || p_search || '%')
       AND (p_product_code IS NULL OR m."ProductCode" = p_product_code)
       AND (p_movement_type IS NULL OR m."MovementType" = p_movement_type)
       AND (p_fecha_desde IS NULL OR m."MovementDate" >= p_fecha_desde)
@@ -797,12 +797,12 @@ BEGIN
         p_company_id,
         p_product_code,
         COALESCE(v_product_name, p_product_code),
-        COALESCE(NULLIF(p_movement_type,''), 'ENTRADA'),
+        COALESCE(NULLIF(p_movement_type,''::VARCHAR), 'ENTRADA'),
         COALESCE(p_quantity, 0),
         COALESCE(p_unit_cost, 0),
         COALESCE(p_quantity, 0) * COALESCE(p_unit_cost, 0),
-        NULLIF(p_document_ref,''),
-        NULLIF(p_notes,''),
+        NULLIF(p_document_ref,''::VARCHAR),
+        NULLIF(p_notes,''::VARCHAR),
         p_user_id
     );
 

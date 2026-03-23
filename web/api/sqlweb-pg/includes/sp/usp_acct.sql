@@ -125,7 +125,7 @@ BEGIN
 
     -- Auto-resolver nivel desde AccountCode si no se proporciono
     IF v_level IS NULL OR v_level < 1 THEN
-        v_level := LENGTH(p_account_code) - LENGTH(REPLACE(p_account_code, '.', '')) + 1;
+        v_level := LENGTH(p_account_code) - LENGTH(REPLACE(p_account_code, '.',''::VARCHAR)) + 1;
         IF v_level < 1 THEN v_level := 1; END IF;
     END IF;
 
@@ -895,8 +895,8 @@ BEGIN
         UPDATE acct."JournalEntry"
         SET "Status"    = 'VOIDED',
             "Concept"   = CONCAT(
-                COALESCE("Concept", ''),
-                CASE WHEN COALESCE("Concept", '') = '' THEN '' ELSE ' | ' END,
+                COALESCE("Concept",''::VARCHAR),
+                CASE WHEN COALESCE("Concept",''::VARCHAR) = '' THEN '' ELSE ' | ' END,
                 'ANULADO: ',
                 p_motivo
             ),

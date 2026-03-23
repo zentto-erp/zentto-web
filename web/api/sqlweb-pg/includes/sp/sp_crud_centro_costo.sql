@@ -97,10 +97,10 @@ DECLARE
     v_presupuestado VARCHAR(50);
     v_saldo_real    VARCHAR(50);
 BEGIN
-    v_codigo        := NULLIF(p_row_json->>'Codigo', '');
-    v_descripcion   := NULLIF(p_row_json->>'Descripcion', '');
-    v_presupuestado := NULLIF(p_row_json->>'Presupuestado', '');
-    v_saldo_real    := NULLIF(p_row_json->>'Saldo_Real', '');
+    v_codigo        := NULLIF(p_row_json->>'Codigo', ''::VARCHAR);
+    v_descripcion   := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_presupuestado := NULLIF(p_row_json->>'Presupuestado', ''::VARCHAR);
+    v_saldo_real    := NULLIF(p_row_json->>'Saldo_Real', ''::VARCHAR);
 
     -- Verificar duplicado
     IF EXISTS (SELECT 1 FROM public."Centro_Costo" WHERE "Codigo" = v_codigo) THEN
@@ -141,9 +141,9 @@ BEGIN
         RETURN;
     END IF;
 
-    v_descripcion   := NULLIF(p_row_json->>'Descripcion', '');
-    v_presupuestado := NULLIF(p_row_json->>'Presupuestado', '');
-    v_saldo_real    := NULLIF(p_row_json->>'Saldo_Real', '');
+    v_descripcion   := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_presupuestado := NULLIF(p_row_json->>'Presupuestado', ''::VARCHAR);
+    v_saldo_real    := NULLIF(p_row_json->>'Saldo_Real', ''::VARCHAR);
 
     UPDATE public."Centro_Costo" SET
         "Descripcion"   = COALESCE(v_descripcion, "Descripcion"),

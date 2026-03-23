@@ -57,13 +57,13 @@ DECLARE
     v_detalle_rows    INT;
 BEGIN
     -- Parsear cabecera
-    v_num_fact     := NULLIF(TRIM(p_factura_json->>'NUM_FACT'), '');
-    v_codigo       := NULLIF(TRIM(p_factura_json->>'CODIGO'), '');
-    v_pago         := UPPER(COALESCE(NULLIF(TRIM(p_factura_json->>'PAGO'), ''), ''));
-    v_cod_usuario  := COALESCE(NULLIF(TRIM(p_factura_json->>'COD_USUARIO'), ''), 'API');
-    v_serial_tipo  := COALESCE(NULLIF(TRIM(p_factura_json->>'SERIALTIPO'), ''), '');
-    v_tipo_orden   := COALESCE(NULLIF(TRIM(p_factura_json->>'TIPO_ORDEN'), ''), '1');
-    v_observ       := NULLIF(TRIM(p_factura_json->>'OBSERV'), '');
+    v_num_fact     := NULLIF(TRIM(p_factura_json->>'NUM_FACT'), ''::VARCHAR);
+    v_codigo       := NULLIF(TRIM(p_factura_json->>'CODIGO'), ''::VARCHAR);
+    v_pago         := UPPER(COALESCE(NULLIF(TRIM(p_factura_json->>'PAGO'), ''::VARCHAR),''::VARCHAR));
+    v_cod_usuario  := COALESCE(NULLIF(TRIM(p_factura_json->>'COD_USUARIO'), ''::VARCHAR), 'API');
+    v_serial_tipo  := COALESCE(NULLIF(TRIM(p_factura_json->>'SERIALTIPO'), ''::VARCHAR),''::VARCHAR);
+    v_tipo_orden   := COALESCE(NULLIF(TRIM(p_factura_json->>'TIPO_ORDEN'), ''::VARCHAR), '1');
+    v_observ       := NULLIF(TRIM(p_factura_json->>'OBSERV'), ''::VARCHAR);
 
     BEGIN
         v_fecha := (p_factura_json->>'FECHA')::TIMESTAMP;
@@ -118,10 +118,10 @@ BEGIN
         "DiscountedPrice", "RelatedRef", "AlternateCode"
     )
     SELECT
-        COALESCE(NULLIF(TRIM(row_data->>'NUM_FACT'), ''), v_num_fact),
-        COALESCE(NULLIF(TRIM(row_data->>'SERIALTIPO'), ''), v_serial_tipo),
+        COALESCE(NULLIF(TRIM(row_data->>'NUM_FACT'), ''::VARCHAR), v_num_fact),
+        COALESCE(NULLIF(TRIM(row_data->>'SERIALTIPO'), ''::VARCHAR), v_serial_tipo),
         v_tipo_orden, 'FACT',
-        NULLIF(TRIM(row_data->>'COD_SERV'), ''),
+        NULLIF(TRIM(row_data->>'COD_SERV'), ''::VARCHAR),
         COALESCE((row_data->>'CANTIDAD')::NUMERIC(18,4), 0),
         COALESCE((row_data->>'PRECIO')::NUMERIC(18,4), 0),
         COALESCE((row_data->>'ALICUOTA')::NUMERIC(18,4), 0),
@@ -133,8 +133,8 @@ BEGIN
             (row_data->>'PRECIO_DESCUENTO')::NUMERIC(18,4),
             COALESCE((row_data->>'PRECIO')::NUMERIC(18,4), 0)
         ),
-        COALESCE(NULLIF(TRIM(row_data->>'RELACIONADA'), ''), '0'),
-        NULLIF(TRIM(row_data->>'COD_ALTERNO'), '')
+        COALESCE(NULLIF(TRIM(row_data->>'RELACIONADA'), ''::VARCHAR), '0'),
+        NULLIF(TRIM(row_data->>'COD_ALTERNO'), ''::VARCHAR)
     FROM jsonb_array_elements(p_detalle_json) AS row_data;
 
     -- Contar filas de detalle
@@ -156,22 +156,22 @@ BEGIN
         )
         SELECT
             COALESCE((fp->>'tasacambio')::NUMERIC(18,6), 1),
-            NULLIF(TRIM(fp->>'tipo'), ''),
+            NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),
             v_num_fact,
             COALESCE((fp->>'monto')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(TRIM(fp->>'banco'), ''), ' '),
-            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'banco'), ''::VARCHAR), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''::VARCHAR), ' '),
             v_fecha,
-            COALESCE(NULLIF(TRIM(fp->>'numero'), ''), '0'),
+            COALESCE(NULLIF(TRIM(fp->>'numero'), ''::VARCHAR), '0'),
             v_memoria, v_serial_tipo, 'FACT'
         FROM jsonb_array_elements(p_formas_pago_json) AS fp;
 
         -- Calcular resumen de pagos
         SELECT
-            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''), '')) = 'EFECTIVO' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''), '')) = 'CHEQUE' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''), '')) LIKE 'TARJETA%' OR UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''), '')) LIKE 'TICKET%' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''), '')) = 'SALDO PENDIENTE' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0)
+            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),''::VARCHAR)) = 'EFECTIVO' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),''::VARCHAR)) = 'CHEQUE' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),''::VARCHAR)) LIKE 'TARJETA%' OR UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),''::VARCHAR)) LIKE 'TICKET%' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),''::VARCHAR)) = 'SALDO PENDIENTE' THEN COALESCE((fp->>'monto')::NUMERIC(18,4), 0) ELSE 0 END), 0)
         INTO v_monto_efectivo, v_monto_cheque, v_monto_tarjeta, v_saldo_pendiente
         FROM jsonb_array_elements(p_formas_pago_json) AS fp;
 
@@ -179,13 +179,13 @@ BEGIN
         INSERT INTO acct."BankDeposit" ("Amount", "CheckNumber", "BankAccount", "CustomerCode", "IsRelated", "BankName", "DocumentRef", "OperationType")
         SELECT
             COALESCE((fp->>'monto')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(TRIM(fp->>'numero'), ''), '0'),
-            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'numero'), ''::VARCHAR), '0'),
+            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''::VARCHAR), ' '),
             v_codigo, FALSE,
-            COALESCE(NULLIF(TRIM(fp->>'banco'), ''), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'banco'), ''::VARCHAR), ' '),
             v_num_fact, 'FACT'
         FROM jsonb_array_elements(p_formas_pago_json) AS fp
-        WHERE UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''), '')) = 'CHEQUE';
+        WHERE UPPER(COALESCE(NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),''::VARCHAR)) = 'CHEQUE';
     END IF;
 
     v_abono := v_total - v_saldo_pendiente;
@@ -222,24 +222,24 @@ BEGIN
         INSERT INTO master."InventoryMovement" ("CompanyId", "ProductCode", "DocumentRef", "MovementType", "MovementDate", "Quantity", "UnitCost", "TotalCost", "Notes")
         SELECT
             v_default_company_id,
-            NULLIF(TRIM(d->>'COD_SERV'), ''),
+            NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR),
             v_num_fact, 'SALIDA', v_fecha::DATE,
             COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0),
             COALESCE(i."COSTO_REFERENCIA", 0),
             COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) * COALESCE(i."COSTO_REFERENCIA", 0),
             'Doc:' || v_num_fact
         FROM jsonb_array_elements(p_detalle_json) AS d
-        INNER JOIN master."Product" i ON i."ProductCode" = NULLIF(TRIM(d->>'COD_SERV'), '')
-        WHERE NULLIF(TRIM(d->>'COD_SERV'), '') IS NOT NULL
+        INNER JOIN master."Product" i ON i."ProductCode" = NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR)
+        WHERE NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) IS NOT NULL
           AND COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) > 0;
 
         -- Descontar stock -> master."Product"."StockQty"
         UPDATE master."Product" AS p
            SET "StockQty" = COALESCE(p."StockQty", 0) - agg."Total"
           FROM (
-              SELECT NULLIF(TRIM(d->>'COD_SERV'), '') AS cod_serv, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
+              SELECT NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) AS cod_serv, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
                 FROM jsonb_array_elements(p_detalle_json) AS d
-               GROUP BY NULLIF(TRIM(d->>'COD_SERV'), '')
+               GROUP BY NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR)
           ) agg
          WHERE p."ProductCode" = agg.cod_serv;
 
@@ -247,10 +247,10 @@ BEGIN
         UPDATE master."AlternateStock" AS a
            SET "StockQty" = COALESCE(a."StockQty", 0) - agg."Total"
           FROM (
-              SELECT NULLIF(TRIM(d->>'COD_ALTERNO'), '') AS cod_alterno, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
+              SELECT NULLIF(TRIM(d->>'COD_ALTERNO'), ''::VARCHAR) AS cod_alterno, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
                 FROM jsonb_array_elements(p_detalle_json) AS d
                WHERE COALESCE((d->>'RELACIONADA')::INT, 0) = 1
-               GROUP BY NULLIF(TRIM(d->>'COD_ALTERNO'), '')
+               GROUP BY NULLIF(TRIM(d->>'COD_ALTERNO'), ''::VARCHAR)
           ) agg
          WHERE a."ProductCode" = agg.cod_alterno;
     END IF;

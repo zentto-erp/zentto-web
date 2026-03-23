@@ -137,20 +137,20 @@ BEGIN
         "COD_CUENTA", "DESCRIPCION", "TIPO", "PRESUPUESTO", "SALDO",
         "COD_USUARIO", "grupo", "LINEA", "USO", "Nivel", "Porcentaje"
     ) VALUES (
-        NULLIF(p_row_json->>'COD_CUENTA', ''),
-        NULLIF(p_row_json->>'DESCRIPCION', ''),
-        NULLIF(p_row_json->>'TIPO', ''),
-        CASE WHEN COALESCE(p_row_json->>'PRESUPUESTO', '') = '' THEN NULL
+        NULLIF(p_row_json->>'COD_CUENTA', ''::VARCHAR),
+        NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR),
+        NULLIF(p_row_json->>'TIPO', ''::VARCHAR),
+        CASE WHEN COALESCE(p_row_json->>'PRESUPUESTO',''::VARCHAR) = '' THEN NULL
              ELSE (p_row_json->>'PRESUPUESTO')::INT END,
-        CASE WHEN COALESCE(p_row_json->>'SALDO', '') = '' THEN NULL
+        CASE WHEN COALESCE(p_row_json->>'SALDO',''::VARCHAR) = '' THEN NULL
              ELSE (p_row_json->>'SALDO')::INT END,
-        NULLIF(p_row_json->>'COD_USUARIO', ''),
-        NULLIF(p_row_json->>'grupo', ''),
-        NULLIF(p_row_json->>'LINEA', ''),
-        NULLIF(p_row_json->>'USO', ''),
-        CASE WHEN COALESCE(p_row_json->>'Nivel', '') = '' THEN NULL
+        NULLIF(p_row_json->>'COD_USUARIO', ''::VARCHAR),
+        NULLIF(p_row_json->>'grupo', ''::VARCHAR),
+        NULLIF(p_row_json->>'LINEA', ''::VARCHAR),
+        NULLIF(p_row_json->>'USO', ''::VARCHAR),
+        CASE WHEN COALESCE(p_row_json->>'Nivel',''::VARCHAR) = '' THEN NULL
              ELSE (p_row_json->>'Nivel')::INT END,
-        CASE WHEN COALESCE(p_row_json->>'Porcentaje', '') = '' THEN NULL
+        CASE WHEN COALESCE(p_row_json->>'Porcentaje',''::VARCHAR) = '' THEN NULL
              ELSE (p_row_json->>'Porcentaje')::DOUBLE PRECISION END
     );
 
@@ -178,14 +178,14 @@ BEGIN
     END IF;
 
     UPDATE public."Cuentas" SET
-        "DESCRIPCION" = COALESCE(NULLIF(p_row_json->>'DESCRIPCION', ''), "DESCRIPCION"),
-        "TIPO"        = COALESCE(NULLIF(p_row_json->>'TIPO', ''), "TIPO"),
-        "grupo"       = COALESCE(NULLIF(p_row_json->>'grupo', ''), "grupo"),
-        "LINEA"       = COALESCE(NULLIF(p_row_json->>'LINEA', ''), "LINEA"),
-        "USO"         = COALESCE(NULLIF(p_row_json->>'USO', ''), "USO"),
-        "Nivel"       = CASE WHEN COALESCE(p_row_json->>'Nivel', '') = '' THEN "Nivel"
+        "DESCRIPCION" = COALESCE(NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR), "DESCRIPCION"),
+        "TIPO"        = COALESCE(NULLIF(p_row_json->>'TIPO', ''::VARCHAR), "TIPO"),
+        "grupo"       = COALESCE(NULLIF(p_row_json->>'grupo', ''::VARCHAR), "grupo"),
+        "LINEA"       = COALESCE(NULLIF(p_row_json->>'LINEA', ''::VARCHAR), "LINEA"),
+        "USO"         = COALESCE(NULLIF(p_row_json->>'USO', ''::VARCHAR), "USO"),
+        "Nivel"       = CASE WHEN COALESCE(p_row_json->>'Nivel',''::VARCHAR) = '' THEN "Nivel"
                              ELSE (p_row_json->>'Nivel')::INT END,
-        "Porcentaje"  = CASE WHEN COALESCE(p_row_json->>'Porcentaje', '') = '' THEN "Porcentaje"
+        "Porcentaje"  = CASE WHEN COALESCE(p_row_json->>'Porcentaje',''::VARCHAR) = '' THEN "Porcentaje"
                              ELSE (p_row_json->>'Porcentaje')::DOUBLE PRECISION END
     WHERE "COD_CUENTA" = p_cod_cuenta;
 

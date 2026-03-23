@@ -88,7 +88,7 @@ LANGUAGE plpgsql AS $$
 DECLARE
     v_nombre VARCHAR(50);
 BEGIN
-    v_nombre := NULLIF(p_row_json->>'Nombre', '');
+    v_nombre := NULLIF(p_row_json->>'Nombre', ''::VARCHAR);
 
     IF EXISTS (SELECT 1 FROM public."Moneda" WHERE "Nombre" = v_nombre) THEN
         RETURN QUERY SELECT -1, 'Moneda ya existe'::VARCHAR(500);
@@ -99,12 +99,12 @@ BEGIN
         INSERT INTO public."Moneda" ("Nombre", "Simbolo", "Tasa_Local", "Local_Tasa", "Local")
         VALUES (
             v_nombre,
-            NULLIF(p_row_json->>'Simbolo', ''),
+            NULLIF(p_row_json->>'Simbolo', ''::VARCHAR),
             CASE WHEN p_row_json->>'Tasa_Local' IS NULL OR p_row_json->>'Tasa_Local' = '' THEN NULL
                  ELSE (p_row_json->>'Tasa_Local')::DOUBLE PRECISION END,
             CASE WHEN p_row_json->>'Local_Tasa' IS NULL OR p_row_json->>'Local_Tasa' = '' THEN NULL
                  ELSE (p_row_json->>'Local_Tasa')::DOUBLE PRECISION END,
-            NULLIF(p_row_json->>'Local', '')
+            NULLIF(p_row_json->>'Local', ''::VARCHAR)
         );
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
@@ -133,14 +133,14 @@ BEGIN
     BEGIN
         UPDATE public."Moneda"
         SET
-            "Simbolo"    = COALESCE(NULLIF(p_row_json->>'Simbolo', ''), "Simbolo"),
+            "Simbolo"    = COALESCE(NULLIF(p_row_json->>'Simbolo', ''::VARCHAR), "Simbolo"),
             "Tasa_Local" = CASE WHEN p_row_json->>'Tasa_Local' IS NULL OR p_row_json->>'Tasa_Local' = ''
                                 THEN "Tasa_Local"
                                 ELSE (p_row_json->>'Tasa_Local')::DOUBLE PRECISION END,
             "Local_Tasa" = CASE WHEN p_row_json->>'Local_Tasa' IS NULL OR p_row_json->>'Local_Tasa' = ''
                                 THEN "Local_Tasa"
                                 ELSE (p_row_json->>'Local_Tasa')::DOUBLE PRECISION END,
-            "Local"      = COALESCE(NULLIF(p_row_json->>'Local', ''), "Local")
+            "Local"      = COALESCE(NULLIF(p_row_json->>'Local', ''::VARCHAR), "Local")
         WHERE "Nombre" = p_nombre;
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);

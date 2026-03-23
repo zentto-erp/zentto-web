@@ -599,7 +599,7 @@ BEGIN
             LIMIT 1;
 
             IF v_default_stage IS NOT NULL THEN
-                SELECT COALESCE(MAX(CAST(REPLACE("LeadCode", 'LEAD-', '') AS INT)), 0) + 1
+                SELECT COALESCE(MAX(CAST(REPLACE("LeadCode", 'LEAD-',''::VARCHAR) AS INT)), 0) + 1
                 INTO v_lead_seq
                 FROM crm."Lead"
                 WHERE "CompanyId" = p_company_id AND "LeadCode" LIKE 'LEAD-%';

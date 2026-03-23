@@ -504,7 +504,7 @@ BEGIN
     -- Anular cabecera del documento
     UPDATE ap."PurchaseDocument"
     SET "IsVoided"  = TRUE,
-        "Notes"     = COALESCE("Notes", '') || ' | ANULADO '
+        "Notes"     = COALESCE("Notes",''::VARCHAR) || ' | ANULADO '
                       || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI')
                       || ' por ' || p_cod_usuario
                       || CASE WHEN p_motivo <> '' THEN ' - Motivo: ' || p_motivo ELSE '' END,
@@ -617,7 +617,7 @@ BEGIN
     -- Marcar como recibida
     UPDATE ap."PurchaseDocument"
     SET "IsReceived" = 'S',
-        "Notes"      = COALESCE("Notes", '') || ' | Recibido '
+        "Notes"      = COALESCE("Notes",''::VARCHAR) || ' | Recibido '
                        || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI')
                        || ' por ' || p_cod_usuario,
         "UpdatedAt"  = NOW() AT TIME ZONE 'UTC'
@@ -715,7 +715,7 @@ BEGIN
     )
     VALUES (
         v_num_doc,
-        COALESCE(p_header_json->>'SerialType', ''),
+        COALESCE(p_header_json->>'SerialType',''::VARCHAR),
         p_tipo_operacion,
         p_header_json->>'SupplierCode',
         p_header_json->>'SupplierName',
@@ -1183,7 +1183,7 @@ BEGIN
     -- 4. Marcar la orden como recibida
     UPDATE ap."PurchaseDocument"
     SET "IsReceived" = 'S',
-        "Notes"      = COALESCE("Notes", '') || ' | Convertida a compra ' || p_num_doc_compra
+        "Notes"      = COALESCE("Notes",''::VARCHAR) || ' | Convertida a compra ' || p_num_doc_compra
                        || ' el ' || TO_CHAR(v_now, 'YYYY-MM-DD HH24:MI')
                        || ' por ' || p_cod_usuario,
         "UpdatedAt"  = v_now

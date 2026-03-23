@@ -1688,7 +1688,7 @@ BEGIN
 
     IF v_country_code IS NULL THEN v_country_code := 'VE'; END IF;
 
-    v_meeting_freq := CASE UPPER(COALESCE(p_committee_type, ''))
+    v_meeting_freq := CASE UPPER(COALESCE(p_committee_type,''::VARCHAR))
         WHEN 'MONTHLY'   THEN 'MONTHLY'
         WHEN 'QUARTERLY' THEN 'QUARTERLY'
         WHEN 'BIMONTHLY' THEN 'BIMONTHLY'

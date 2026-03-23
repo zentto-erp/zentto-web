@@ -97,14 +97,14 @@ BEGIN
     SELECT
         c."CompanyId",
         c."CompanyCode",
-        COALESCE(NULLIF(c."TradeName", ''), c."LegalName"),
+        COALESCE(NULLIF(c."TradeName", ''::VARCHAR), c."LegalName"),
         b."BranchId",
         b."BranchCode",
         b."BranchName",
-        UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")),
+        UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode")),
         COALESCE(
-            NULLIF(ct."TimeZoneIana", ''),
-            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+            NULLIF(ct."TimeZoneIana", ''::VARCHAR),
+            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
                 WHEN 'ES' THEN 'Europe/Madrid'
                 WHEN 'VE' THEN 'America/Caracas'
                 ELSE 'UTC'
@@ -115,7 +115,7 @@ BEGIN
     INNER JOIN cfg."Branch" b
         ON b."CompanyId" = c."CompanyId"
     LEFT JOIN cfg."Country" ct
-        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
        AND ct."IsActive" = TRUE
     WHERE c."IsActive"  = TRUE
       AND c."IsDeleted" = FALSE
@@ -144,14 +144,14 @@ BEGIN
     SELECT
         a."CompanyId",
         c."CompanyCode",
-        COALESCE(NULLIF(c."TradeName", ''), c."LegalName"),
+        COALESCE(NULLIF(c."TradeName", ''::VARCHAR), c."LegalName"),
         a."BranchId",
         b."BranchCode",
         b."BranchName",
-        UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")),
+        UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode")),
         COALESCE(
-            NULLIF(ct."TimeZoneIana", ''),
-            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+            NULLIF(ct."TimeZoneIana", ''::VARCHAR),
+            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
                 WHEN 'ES' THEN 'Europe/Madrid'
                 WHEN 'VE' THEN 'America/Caracas'
                 ELSE 'UTC'
@@ -169,7 +169,7 @@ BEGIN
        AND b."IsActive"  = TRUE
        AND b."IsDeleted" = FALSE
     LEFT JOIN cfg."Country" ct
-        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
        AND ct."IsActive" = TRUE
     WHERE UPPER(a."CodUsuario") = UPPER(p_cod_usuario)
       AND a."IsActive" = TRUE

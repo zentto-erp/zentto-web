@@ -83,10 +83,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- nullif_empty: NULLIF(valor, '') - muy usado en el codebase
+-- nullif_empty: NULLIF(valor, ''::VARCHAR) - muy usado en el codebase
 CREATE OR REPLACE FUNCTION nullif_empty(p_val TEXT)
 RETURNS TEXT AS $$
 BEGIN
-    RETURN NULLIF(TRIM(p_val), '');
+    RETURN NULLIF(TRIM(p_val), ''::VARCHAR);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;

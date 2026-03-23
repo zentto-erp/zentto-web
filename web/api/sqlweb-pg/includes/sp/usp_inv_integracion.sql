@@ -97,7 +97,7 @@ BEGIN
   -- Verificar cantidad
   IF v_qty_on_hand < p_quantity THEN
     RETURN QUERY SELECT 0, 'insufficient_lot_quantity'::VARCHAR, 0,
-      COALESCE(TO_CHAR(v_expiry_date, 'YYYY-MM-DD'), '')::VARCHAR;
+      COALESCE(TO_CHAR(v_expiry_date, 'YYYY-MM-DD'),''::VARCHAR)::VARCHAR;
     RETURN;
   END IF;
 
@@ -113,7 +113,7 @@ BEGIN
     CASE WHEN v_is_expired = 1 THEN 0 ELSE 1 END,
     v_warning::VARCHAR,
     v_is_expired,
-    COALESCE(TO_CHAR(v_expiry_date, 'YYYY-MM-DD'), '')::VARCHAR;
+    COALESCE(TO_CHAR(v_expiry_date, 'YYYY-MM-DD'),''::VARCHAR)::VARCHAR;
 END;
 $$ LANGUAGE plpgsql;
 

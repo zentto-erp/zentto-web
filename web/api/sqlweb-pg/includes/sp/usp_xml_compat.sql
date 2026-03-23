@@ -83,7 +83,7 @@ BEGIN
     )
     VALUES (
         v_num_doc,
-        COALESCE(p_header_json->>'SerialType', ''),
+        COALESCE(p_header_json->>'SerialType',''::VARCHAR),
         p_tipo_operacion,
         p_header_json->>'SupplierCode',
         p_header_json->>'SupplierName',
@@ -478,7 +478,7 @@ BEGIN
     -- 4. Mark order as received
     UPDATE doc."PurchaseDocument"
     SET "IsReceived" = 'S',
-        "Notes" = COALESCE("Notes", '') || ' | Convertida a compra ' || p_num_doc_compra
+        "Notes" = COALESCE("Notes",''::VARCHAR) || ' | Convertida a compra ' || p_num_doc_compra
                   || ' el ' || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' por ' || p_cod_usuario,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_doc_orden AND "DocumentType" = 'ORDEN' AND "IsDeleted" = FALSE;

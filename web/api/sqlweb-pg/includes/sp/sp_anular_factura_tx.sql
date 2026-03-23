@@ -58,7 +58,7 @@ BEGIN
     -- 2. Marcar anulada -> ar.SalesDocument
     UPDATE ar."SalesDocument"
     SET "IsVoided" = TRUE,
-        "Notes" = COALESCE("Notes", '') || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']',
+        "Notes" = COALESCE("Notes",''::VARCHAR) || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']',
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_fact AND "OperationType" = 'FACT';
 

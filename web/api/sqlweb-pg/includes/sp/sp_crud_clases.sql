@@ -86,7 +86,7 @@ DECLARE
     v_descripcion VARCHAR(25);
     v_new_id      INT;
 BEGIN
-    v_descripcion := NULLIF(p_row_json->>'Descripcion', '');
+    v_descripcion := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
 
     INSERT INTO public."Clases" ("Descripcion")
     VALUES (v_descripcion)
@@ -117,7 +117,7 @@ BEGIN
         RETURN;
     END IF;
 
-    v_descripcion := NULLIF(p_row_json->>'Descripcion', '');
+    v_descripcion := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
 
     UPDATE public."Clases"
     SET "Descripcion" = v_descripcion

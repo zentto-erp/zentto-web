@@ -84,8 +84,8 @@ BEGIN
 
     INSERT INTO master."UnitOfMeasure" ("UnitCode", "Description", "CompanyId", "IsActive", "IsDeleted")
     VALUES (
-        NULLIF(COALESCE(p_row_json->>'Unidad', p_row_json->>'UnitCode'), ''),
-        COALESCE(NULLIF(p_row_json->>'Descripcion',''), NULLIF(COALESCE(p_row_json->>'Unidad', p_row_json->>'UnitCode'),''), 'SIN DESCRIPCION'),
+        NULLIF(COALESCE(p_row_json->>'Unidad', p_row_json->>'UnitCode'),''::VARCHAR),
+        COALESCE(NULLIF(p_row_json->>'Descripcion',''::VARCHAR), NULLIF(COALESCE(p_row_json->>'Unidad', p_row_json->>'UnitCode'),''::VARCHAR), 'SIN DESCRIPCION'),
         v_company_id, TRUE, FALSE
     )
     RETURNING "UnitId" INTO v_nuevo_id;
@@ -105,8 +105,8 @@ BEGIN
         RETURN QUERY SELECT -1, 'Unidad no encontrada'::VARCHAR(500); RETURN;
     END IF;
     UPDATE master."UnitOfMeasure" SET
-        "UnitCode"    = COALESCE(NULLIF(COALESCE(p_row_json->>'Unidad',p_row_json->>'UnitCode'),''), "UnitCode"),
-        "Description" = COALESCE(NULLIF(p_row_json->>'Descripcion',''), "Description")
+        "UnitCode"    = COALESCE(NULLIF(COALESCE(p_row_json->>'Unidad',p_row_json->>'UnitCode'),''::VARCHAR), "UnitCode"),
+        "Description" = COALESCE(NULLIF(p_row_json->>'Descripcion',''::VARCHAR), "Description")
     WHERE "UnitId" = p_id;
     RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
 EXCEPTION WHEN OTHERS THEN RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);

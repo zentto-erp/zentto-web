@@ -522,7 +522,7 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT COALESCE(MAX(REPLACE(c."CustomerCode", 'ECOM-', '')::INT), 0) + 1
+    SELECT COALESCE(MAX(REPLACE(c."CustomerCode", 'ECOM-',''::VARCHAR)::INT), 0) + 1
     INTO v_seq
     FROM master."Customer" c
     WHERE c."CompanyId" = p_company_id AND c."CustomerCode" LIKE 'ECOM-%';
@@ -534,7 +534,7 @@ BEGIN
         "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt"
     ) VALUES (
         p_company_id, v_code, p_name, p_email, p_phone, p_address,
-        COALESCE(p_fiscal_id, ''),
+        COALESCE(p_fiscal_id,''::VARCHAR),
         TRUE, FALSE, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
     );
 
@@ -682,7 +682,7 @@ BEGIN
     WHERE "OperationType" = 'PEDIDO' AND "DocumentNumber" LIKE 'ECOM-' || v_today || '-%';
 
     v_order_number := 'ECOM-' || v_today || '-' || LPAD(v_seq::TEXT, 4, '0');
-    v_order_token  := LOWER(REPLACE(gen_random_uuid()::TEXT, '-', ''));
+    v_order_token  := LOWER(REPLACE(gen_random_uuid()::TEXT, '-',''::VARCHAR));
 
     -- Calcular totales desde JSON
     SELECT COALESCE(SUM((item->>'st')::NUMERIC(18,2)), 0),
@@ -702,11 +702,11 @@ BEGIN
         "CreatedAt", "UpdatedAt", "IsDeleted"
     ) VALUES (
         v_order_number, 'ECOM', 'PEDIDO',
-        p_customer_code, p_customer_name, COALESCE(p_fiscal_id, ''),
+        p_customer_code, p_customer_name, COALESCE(p_fiscal_id,''::VARCHAR),
         CURRENT_DATE, TO_CHAR(NOW(), 'HH24:MI:SS'),
         v_total_sub, v_total_sub, 0, v_total_tax, v_total_sub + v_total_tax, 0,
         FALSE, 'N', 'N', 'N',
-        COALESCE(p_notes, '') || ' | token=' || v_order_token,
+        COALESCE(p_notes,''::VARCHAR) || ' | token=' || v_order_token,
         'USD', 1.0,
         p_address_id, COALESCE(p_billing_address_id, p_address_id),
         COALESCE(p_shipping_address_text, p_address),

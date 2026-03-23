@@ -58,23 +58,23 @@ BEGIN
     FROM master."Supplier" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
       AND (p_company_id IS NULL OR s."CompanyId" = p_company_id)
-      AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",'') ILIKE v_search));
+      AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",''::VARCHAR) ILIKE v_search));
 
     RETURN QUERY
     SELECT
         s."SupplierCode"::VARCHAR                       AS "CODIGO",
         s."SupplierName"::VARCHAR                       AS "NOMBRE",
-        COALESCE(s."FiscalId",'')::VARCHAR              AS "RIF",
+        COALESCE(s."FiscalId",''::VARCHAR)::VARCHAR              AS "RIF",
         NULL::VARCHAR                                   AS "NIT",
-        COALESCE(s."AddressLine",'')::VARCHAR           AS "DIRECCION",
-        COALESCE(s."Phone",'')::VARCHAR                 AS "TELEFONO",
+        COALESCE(s."AddressLine",''::VARCHAR)::VARCHAR           AS "DIRECCION",
+        COALESCE(s."Phone",''::VARCHAR)::VARCHAR                 AS "TELEFONO",
         NULL::VARCHAR                                   AS "FAX",
         NULL::VARCHAR                                   AS "CONTACTO",
         NULL::VARCHAR                                   AS "VENDEDOR",
         CASE WHEN s."IsActive" THEN 'A' ELSE 'I' END::VARCHAR AS "ESTADO",
         NULL::VARCHAR                                   AS "CIUDAD",
         NULL::VARCHAR                                   AS "CPOSTAL",
-        COALESCE(s."Email",'')::VARCHAR                 AS "EMAIL",
+        COALESCE(s."Email",''::VARCHAR)::VARCHAR                 AS "EMAIL",
         NULL::VARCHAR                                   AS "PAGINA_WWW",
         NULL::VARCHAR                                   AS "COD_USUARIO",
         COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "LIMITE",
@@ -83,7 +83,7 @@ BEGIN
         v_total                                         AS "TotalCount"
     FROM master."Supplier" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
-      AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",'') ILIKE v_search))
+      AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",''::VARCHAR) ILIKE v_search))
     ORDER BY s."SupplierCode"
     LIMIT v_limit OFFSET v_offset;
 END;
@@ -120,17 +120,17 @@ BEGIN
     SELECT
         s."SupplierCode"::VARCHAR                       AS "CODIGO",
         s."SupplierName"::VARCHAR                       AS "NOMBRE",
-        COALESCE(s."FiscalId",'')::VARCHAR              AS "RIF",
+        COALESCE(s."FiscalId",''::VARCHAR)::VARCHAR              AS "RIF",
         NULL::VARCHAR                                   AS "NIT",
-        COALESCE(s."AddressLine",'')::VARCHAR           AS "DIRECCION",
-        COALESCE(s."Phone",'')::VARCHAR                 AS "TELEFONO",
+        COALESCE(s."AddressLine",''::VARCHAR)::VARCHAR           AS "DIRECCION",
+        COALESCE(s."Phone",''::VARCHAR)::VARCHAR                 AS "TELEFONO",
         NULL::VARCHAR                                   AS "FAX",
         NULL::VARCHAR                                   AS "CONTACTO",
         NULL::VARCHAR                                   AS "VENDEDOR",
         CASE WHEN s."IsActive" THEN 'A' ELSE 'I' END::VARCHAR AS "ESTADO",
         NULL::VARCHAR                                   AS "CIUDAD",
         NULL::VARCHAR                                   AS "CPOSTAL",
-        COALESCE(s."Email",'')::VARCHAR                 AS "EMAIL",
+        COALESCE(s."Email",''::VARCHAR)::VARCHAR                 AS "EMAIL",
         NULL::VARCHAR                                   AS "PAGINA_WWW",
         NULL::VARCHAR                                   AS "COD_USUARIO",
         COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "LIMITE",
@@ -164,7 +164,7 @@ BEGIN
 
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(TRIM(COALESCE(p_row_json->>'CODIGO', '')), '');
+    v_codigo := NULLIF(TRIM(COALESCE(p_row_json->>'CODIGO', ''::VARCHAR)),''::VARCHAR);
 
     IF v_codigo IS NULL THEN
         RETURN QUERY SELECT -1, 'CODIGO requerido'::VARCHAR(500);
@@ -186,12 +186,12 @@ BEGIN
     )
     VALUES (
         v_codigo,
-        COALESCE(NULLIF(p_row_json->>'NOMBRE',''), v_codigo),
-        NULLIF(p_row_json->>'RIF', ''),
-        NULLIF(p_row_json->>'EMAIL', ''),
-        NULLIF(p_row_json->>'TELEFONO', ''),
-        NULLIF(p_row_json->>'DIRECCION', ''),
-        CASE WHEN COALESCE(p_row_json->>'LIMITE','') = '' THEN 0
+        COALESCE(NULLIF(p_row_json->>'NOMBRE',''::VARCHAR), v_codigo),
+        NULLIF(p_row_json->>'RIF', ''::VARCHAR),
+        NULLIF(p_row_json->>'EMAIL', ''::VARCHAR),
+        NULLIF(p_row_json->>'TELEFONO', ''::VARCHAR),
+        NULLIF(p_row_json->>'DIRECCION', ''::VARCHAR),
+        CASE WHEN COALESCE(p_row_json->>'LIMITE',''::VARCHAR) = '' THEN 0
              ELSE (p_row_json->>'LIMITE')::NUMERIC END,
         TRUE,
         FALSE,
@@ -226,12 +226,12 @@ BEGIN
     END IF;
 
     UPDATE master."Supplier" SET
-        "SupplierName" = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''), "SupplierName"),
-        "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''), "FiscalId"),
-        "Email"        = COALESCE(NULLIF(p_row_json->>'EMAIL', ''), "Email"),
-        "Phone"        = COALESCE(NULLIF(p_row_json->>'TELEFONO', ''), "Phone"),
-        "AddressLine"  = COALESCE(NULLIF(p_row_json->>'DIRECCION', ''), "AddressLine"),
-        "CreditLimit"  = CASE WHEN COALESCE(p_row_json->>'LIMITE','') = '' THEN "CreditLimit"
+        "SupplierName" = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''::VARCHAR), "SupplierName"),
+        "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''::VARCHAR), "FiscalId"),
+        "Email"        = COALESCE(NULLIF(p_row_json->>'EMAIL', ''::VARCHAR), "Email"),
+        "Phone"        = COALESCE(NULLIF(p_row_json->>'TELEFONO', ''::VARCHAR), "Phone"),
+        "AddressLine"  = COALESCE(NULLIF(p_row_json->>'DIRECCION', ''::VARCHAR), "AddressLine"),
+        "CreditLimit"  = CASE WHEN COALESCE(p_row_json->>'LIMITE',''::VARCHAR) = '' THEN "CreditLimit"
                               ELSE (p_row_json->>'LIMITE')::NUMERIC END
     WHERE "SupplierCode" = p_codigo
       AND COALESCE("IsDeleted", FALSE) = FALSE;

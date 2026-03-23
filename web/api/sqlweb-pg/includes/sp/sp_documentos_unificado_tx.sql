@@ -47,22 +47,22 @@ BEGIN
         RAISE EXCEPTION 'tipo_operacion_invalido';
     END IF;
 
-    v_num_fact       := NULLIF(p_doc_json->>'NUM_FACT', '');
-    v_serial_tipo    := COALESCE(NULLIF(p_doc_json->>'SERIALTIPO', ''), '');
-    v_tipo_orden     := COALESCE(NULLIF(p_doc_json->>'Tipo_Orden', ''), '');
-    v_codigo         := NULLIF(p_doc_json->>'CODIGO', '');
-    v_fecha_str      := NULLIF(p_doc_json->>'FECHA', '');
+    v_num_fact       := NULLIF(p_doc_json->>'NUM_FACT', ''::VARCHAR);
+    v_serial_tipo    := COALESCE(NULLIF(p_doc_json->>'SERIALTIPO', ''::VARCHAR),''::VARCHAR);
+    v_tipo_orden     := COALESCE(NULLIF(p_doc_json->>'Tipo_Orden', ''::VARCHAR),''::VARCHAR);
+    v_codigo         := NULLIF(p_doc_json->>'CODIGO', ''::VARCHAR);
+    v_fecha_str      := NULLIF(p_doc_json->>'FECHA', ''::VARCHAR);
     v_fecha          := CASE WHEN v_fecha_str IS NOT NULL THEN v_fecha_str::TIMESTAMP ELSE NOW() AT TIME ZONE 'UTC' END;
-    v_total          := COALESCE(NULLIF(p_doc_json->>'TOTAL', '')::NUMERIC(18,4), 0);
-    v_observ         := NULLIF(p_doc_json->>'OBSERV', '');
-    v_cod_usuario_doc := COALESCE(NULLIF(p_doc_json->>'COD_USUARIO', ''), p_cod_usuario);
-    v_monto_efect    := COALESCE(NULLIF(p_doc_json->>'Monto_Efect', '')::NUMERIC(18,4), 0);
-    v_monto_cheque   := COALESCE(NULLIF(p_doc_json->>'Monto_Cheque', '')::NUMERIC(18,4), 0);
-    v_monto_tarjeta  := COALESCE(NULLIF(p_doc_json->>'Monto_Tarjeta', '')::NUMERIC(18,4), 0);
-    v_banco_cheque   := NULLIF(p_doc_json->>'BANCO_CHEQUE', '');
-    v_banco_tarjeta  := NULLIF(p_doc_json->>'Banco_Tarjeta', '');
-    v_tarjeta        := NULLIF(p_doc_json->>'Tarjeta', '');
-    v_cta            := NULLIF(p_doc_json->>'Cta', '');
+    v_total          := COALESCE(NULLIF(p_doc_json->>'TOTAL', ''::VARCHAR)::NUMERIC(18,4), 0);
+    v_observ         := NULLIF(p_doc_json->>'OBSERV', ''::VARCHAR);
+    v_cod_usuario_doc := COALESCE(NULLIF(p_doc_json->>'COD_USUARIO', ''::VARCHAR), p_cod_usuario);
+    v_monto_efect    := COALESCE(NULLIF(p_doc_json->>'Monto_Efect', ''::VARCHAR)::NUMERIC(18,4), 0);
+    v_monto_cheque   := COALESCE(NULLIF(p_doc_json->>'Monto_Cheque', ''::VARCHAR)::NUMERIC(18,4), 0);
+    v_monto_tarjeta  := COALESCE(NULLIF(p_doc_json->>'Monto_Tarjeta', ''::VARCHAR)::NUMERIC(18,4), 0);
+    v_banco_cheque   := NULLIF(p_doc_json->>'BANCO_CHEQUE', ''::VARCHAR);
+    v_banco_tarjeta  := NULLIF(p_doc_json->>'Banco_Tarjeta', ''::VARCHAR);
+    v_tarjeta        := NULLIF(p_doc_json->>'Tarjeta', ''::VARCHAR);
+    v_cta            := NULLIF(p_doc_json->>'Cta', ''::VARCHAR);
 
     IF v_num_fact IS NULL THEN
         RAISE EXCEPTION 'num_fact_requerido';
@@ -93,14 +93,14 @@ BEGIN
             "CANTIDAD", "PRECIO", "ALICUOTA", "TOTAL", "PRECIO_DESCUENTO", "Relacionada", "Cod_Alterno"
         ) VALUES (
             v_num_fact, v_serial_tipo, v_tipo_orden,
-            NULLIF(v_row->>'COD_SERV', ''),
-            COALESCE(NULLIF(v_row->>'CANTIDAD', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'PRECIO', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'ALICUOTA', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'TOTAL', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'PRECIO_DESCUENTO', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'Relacionada', '')::INT, 0),
-            NULLIF(v_row->>'Cod_Alterno', '')
+            NULLIF(v_row->>'COD_SERV', ''::VARCHAR),
+            COALESCE(NULLIF(v_row->>'CANTIDAD', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'PRECIO', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'ALICUOTA', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'TOTAL', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'PRECIO_DESCUENTO', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'Relacionada', ''::VARCHAR)::INT, 0),
+            NULLIF(v_row->>'Cod_Alterno', ''::VARCHAR)
         );
     END LOOP;
 
@@ -112,10 +112,10 @@ BEGIN
                 "NUM_DOC", "TIPO_OPERACION", "TIPO_PAGO", "BANCO", "NUMERO", "MONTO", "FECHA", "CO_USUARIO"
             ) VALUES (
                 v_num_fact, p_tipo_operacion,
-                NULLIF(v_row->>'TIPO_PAGO', ''),
-                NULLIF(v_row->>'BANCO', ''),
-                NULLIF(v_row->>'NUMERO', ''),
-                COALESCE(NULLIF(v_row->>'MONTO', '')::DOUBLE PRECISION, 0),
+                NULLIF(v_row->>'TIPO_PAGO', ''::VARCHAR),
+                NULLIF(v_row->>'BANCO', ''::VARCHAR),
+                NULLIF(v_row->>'NUMERO', ''::VARCHAR),
+                COALESCE(NULLIF(v_row->>'MONTO', ''::VARCHAR)::DOUBLE PRECISION, 0),
                 v_fecha, p_cod_usuario
             );
         END LOOP;
@@ -170,17 +170,17 @@ BEGIN
         RAISE EXCEPTION 'tipo_operacion_invalido';
     END IF;
 
-    v_num_fact      := NULLIF(p_doc_json->>'NUM_FACT', '');
-    v_cod_proveedor := NULLIF(p_doc_json->>'COD_PROVEEDOR', '');
-    v_serial_tipo   := COALESCE(NULLIF(p_doc_json->>'SERIALTIPO', ''), '');
-    v_tipo_orden    := COALESCE(NULLIF(p_doc_json->>'Tipo_Orden', ''), '');
-    v_fecha_str     := NULLIF(p_doc_json->>'FECHA', '');
+    v_num_fact      := NULLIF(p_doc_json->>'NUM_FACT', ''::VARCHAR);
+    v_cod_proveedor := NULLIF(p_doc_json->>'COD_PROVEEDOR', ''::VARCHAR);
+    v_serial_tipo   := COALESCE(NULLIF(p_doc_json->>'SERIALTIPO', ''::VARCHAR),''::VARCHAR);
+    v_tipo_orden    := COALESCE(NULLIF(p_doc_json->>'Tipo_Orden', ''::VARCHAR),''::VARCHAR);
+    v_fecha_str     := NULLIF(p_doc_json->>'FECHA', ''::VARCHAR);
     v_fecha         := CASE WHEN v_fecha_str IS NOT NULL THEN v_fecha_str::TIMESTAMP ELSE NOW() AT TIME ZONE 'UTC' END;
-    v_total         := COALESCE(NULLIF(p_doc_json->>'TOTAL', '')::NUMERIC(18,4), 0);
-    v_observ        := NULLIF(p_doc_json->>'CONCEPTO', '');
-    v_nombre        := NULLIF(p_doc_json->>'NOMBRE', '');
-    v_rif           := NULLIF(p_doc_json->>'RIF', '');
-    v_tipo          := NULLIF(p_doc_json->>'TIPO', '');
+    v_total         := COALESCE(NULLIF(p_doc_json->>'TOTAL', ''::VARCHAR)::NUMERIC(18,4), 0);
+    v_observ        := NULLIF(p_doc_json->>'CONCEPTO', ''::VARCHAR);
+    v_nombre        := NULLIF(p_doc_json->>'NOMBRE', ''::VARCHAR);
+    v_rif           := NULLIF(p_doc_json->>'RIF', ''::VARCHAR);
+    v_tipo          := NULLIF(p_doc_json->>'TIPO', ''::VARCHAR);
 
     IF v_num_fact IS NULL THEN
         RAISE EXCEPTION 'num_fact_requerido';
@@ -207,13 +207,13 @@ BEGIN
             "FECHA", "CANTIDAD", "PRECIO_COSTO", "Alicuota", "Co_Usuario"
         ) VALUES (
             v_num_fact, v_cod_proveedor,
-            NULLIF(v_row->>'CODIGO', ''),
-            NULLIF(v_row->>'Referencia', ''),
-            NULLIF(v_row->>'DESCRIPCION', ''),
+            NULLIF(v_row->>'CODIGO', ''::VARCHAR),
+            NULLIF(v_row->>'Referencia', ''::VARCHAR),
+            NULLIF(v_row->>'DESCRIPCION', ''::VARCHAR),
             v_fecha,
-            COALESCE(NULLIF(v_row->>'CANTIDAD', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'PRECIO_COSTO', '')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(v_row->>'Alicuota', '')::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'CANTIDAD', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'PRECIO_COSTO', ''::VARCHAR)::NUMERIC(18,4), 0),
+            COALESCE(NULLIF(v_row->>'Alicuota', ''::VARCHAR)::NUMERIC(18,4), 0),
             p_cod_usuario
         );
     END LOOP;
@@ -226,10 +226,10 @@ BEGIN
                 "NUM_DOC", "TIPO_OPERACION", "TIPO_PAGO", "BANCO", "NUMERO", "MONTO", "FECHA", "CO_USUARIO"
             ) VALUES (
                 v_num_fact, p_tipo_operacion,
-                NULLIF(v_row->>'TIPO_PAGO', ''),
-                NULLIF(v_row->>'BANCO', ''),
-                NULLIF(v_row->>'NUMERO', ''),
-                COALESCE(NULLIF(v_row->>'MONTO', '')::DOUBLE PRECISION, 0),
+                NULLIF(v_row->>'TIPO_PAGO', ''::VARCHAR),
+                NULLIF(v_row->>'BANCO', ''::VARCHAR),
+                NULLIF(v_row->>'NUMERO', ''::VARCHAR),
+                COALESCE(NULLIF(v_row->>'MONTO', ''::VARCHAR)::DOUBLE PRECISION, 0),
                 v_fecha, p_cod_usuario
             );
         END LOOP;
@@ -409,7 +409,7 @@ BEGIN
         UPDATE "P_Cobrar" SET
             "SALDO" = 0,
             "PAID" = 1,
-            "OBS" = COALESCE("OBS", '') || ' [ANULADO]'
+            "OBS" = COALESCE("OBS",''::VARCHAR) || ' [ANULADO]'
         WHERE "DOCUMENTO" = p_num_fact;
     END IF;
 
@@ -448,7 +448,7 @@ BEGIN
         UPDATE "P_Pagar" SET
             "SALDO" = 0,
             "PAID" = 1,
-            "OBS" = COALESCE("OBS", '') || ' [ANULADO]'
+            "OBS" = COALESCE("OBS",''::VARCHAR) || ' [ANULADO]'
         WHERE "DOCUMENTO" = p_num_fact;
     END IF;
 

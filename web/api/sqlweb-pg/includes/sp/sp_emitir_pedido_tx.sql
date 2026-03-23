@@ -35,11 +35,11 @@ DECLARE
     v_vendedor      VARCHAR(60);
     v_detalle_rows  INT;
 BEGIN
-    v_num_fact    := NULLIF(TRIM(p_pedido_json->>'NUM_FACT'), '');
-    v_codigo      := NULLIF(TRIM(p_pedido_json->>'CODIGO'), '');
-    v_nombre      := COALESCE(NULLIF(TRIM(p_pedido_json->>'NOMBRE'), ''), '');
-    v_serial_tipo := COALESCE(NULLIF(TRIM(p_pedido_json->>'SERIALTIPO'), ''), '');
-    v_vendedor    := COALESCE(NULLIF(TRIM(p_pedido_json->>'Vendedor'), ''), '');
+    v_num_fact    := NULLIF(TRIM(p_pedido_json->>'NUM_FACT'), ''::VARCHAR);
+    v_codigo      := NULLIF(TRIM(p_pedido_json->>'CODIGO'), ''::VARCHAR);
+    v_nombre      := COALESCE(NULLIF(TRIM(p_pedido_json->>'NOMBRE'), ''::VARCHAR),''::VARCHAR);
+    v_serial_tipo := COALESCE(NULLIF(TRIM(p_pedido_json->>'SERIALTIPO'), ''::VARCHAR),''::VARCHAR);
+    v_vendedor    := COALESCE(NULLIF(TRIM(p_pedido_json->>'Vendedor'), ''::VARCHAR),''::VARCHAR);
 
     BEGIN
         v_fecha := (p_pedido_json->>'FECHA')::TIMESTAMP;
@@ -76,9 +76,9 @@ BEGIN
     )
     SELECT
         v_num_fact,
-        COALESCE(NULLIF(TRIM(d->>'SERIALTIPO'), ''), v_serial_tipo),
-        NULLIF(TRIM(d->>'COD_SERV'), ''),
-        NULLIF(TRIM(d->>'DESCRIPCION'), ''),
+        COALESCE(NULLIF(TRIM(d->>'SERIALTIPO'), ''::VARCHAR), v_serial_tipo),
+        NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR),
+        NULLIF(TRIM(d->>'DESCRIPCION'), ''::VARCHAR),
         v_fecha,
         COALESCE((d->>'CANTIDAD')::DOUBLE PRECISION, 0),
         COALESCE((d->>'PRECIO')::DOUBLE PRECISION, 0),
@@ -93,10 +93,10 @@ BEGIN
             (d->>'PRECIO_DESCUENTO')::DOUBLE PRECISION,
             COALESCE((d->>'PRECIO')::DOUBLE PRECISION, 0)
         ),
-        COALESCE(NULLIF(TRIM(d->>'Relacionada'), ''), '0'),
+        COALESCE(NULLIF(TRIM(d->>'Relacionada'), ''::VARCHAR), '0'),
         COALESCE((d->>'RENGLON')::DOUBLE PRECISION, 0),
-        COALESCE(NULLIF(TRIM(d->>'Vendedor'), ''), v_vendedor),
-        NULLIF(TRIM(d->>'Cod_alterno'), '')
+        COALESCE(NULLIF(TRIM(d->>'Vendedor'), ''::VARCHAR), v_vendedor),
+        NULLIF(TRIM(d->>'Cod_alterno'), ''::VARCHAR)
     FROM jsonb_array_elements(p_detalle_json) AS d;
 
     -- Contar filas de detalle
@@ -112,8 +112,8 @@ BEGIN
         )
         SELECT
             v_num_fact,
-            NULLIF(TRIM(d->>'COD_SERV'), ''),
-            NULLIF(TRIM(d->>'COD_SERV'), ''),
+            NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR),
+            NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR),
             v_fecha,
             'Pedido:' || v_num_fact,
             'Pedido',
@@ -125,19 +125,19 @@ BEGIN
             COALESCE((d->>'ALICUOTA')::NUMERIC(18,4), 0),
             COALESCE((d->>'PRECIO')::NUMERIC(18,4), 0)
         FROM jsonb_array_elements(p_detalle_json) AS d
-        INNER JOIN master."Product" inv ON inv."ProductCode" = NULLIF(TRIM(d->>'COD_SERV'), '')
-        WHERE NULLIF(TRIM(d->>'COD_SERV'), '') IS NOT NULL
+        INNER JOIN master."Product" inv ON inv."ProductCode" = NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR)
+        WHERE NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) IS NOT NULL
           AND COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) > 0;
 
         -- Descontar existencias en master."Product"."StockQty"
         UPDATE master."Product" AS p
            SET "StockQty" = COALESCE(p."StockQty", 0) - agg."Total"
           FROM (
-              SELECT NULLIF(TRIM(d->>'COD_SERV'), '') AS cod_serv,
+              SELECT NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) AS cod_serv,
                      SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
                 FROM jsonb_array_elements(p_detalle_json) AS d
-               WHERE NULLIF(TRIM(d->>'COD_SERV'), '') IS NOT NULL
-               GROUP BY NULLIF(TRIM(d->>'COD_SERV'), '')
+               WHERE NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) IS NOT NULL
+               GROUP BY NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR)
           ) agg
          WHERE p."ProductCode" = agg.cod_serv;
     END IF;
@@ -190,7 +190,7 @@ BEGIN
     -- Marcar pedido como anulado (legacy)
     UPDATE "Pedidos"
        SET "ANULADA" = 1,
-           "OBSERV" = COALESCE("OBSERV", '') || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+           "OBSERV" = COALESCE("OBSERV",''::VARCHAR) || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
      WHERE "NUM_FACT" = p_num_pedido;
 
     UPDATE "Detalle_Pedidos" SET "ANULADA" = 1 WHERE "NUM_FACT" = p_num_pedido;

@@ -40,15 +40,15 @@ BEGIN
         -- 3. Poblar la columna tsvector (spanish = LANGUAGE 3082)
         UPDATE public."Inventario"
         SET "ts_search" =
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("CODIGO", '')),      'A') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Referencia", '')),  'B') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("DESCRIPCION", '')), 'A') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Categoria", '')),   'C') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Marca", '')),       'C') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Tipo", '')),        'C') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Clase", '')),       'D') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Linea", '')),       'C') ||
-            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Barra", '')),       'B')
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("CODIGO",''::VARCHAR)),      'A') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Referencia",''::VARCHAR)),  'B') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("DESCRIPCION",''::VARCHAR)), 'A') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Categoria",''::VARCHAR)),   'C') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Marca",''::VARCHAR)),       'C') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Tipo",''::VARCHAR)),        'C') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Clase",''::VARCHAR)),       'D') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Linea",''::VARCHAR)),       'C') ||
+            SETWEIGHT(TO_TSVECTOR('spanish', COALESCE("Barra",''::VARCHAR)),       'B')
         WHERE "ts_search" IS NULL;
 
         -- 4. Trigger para mantenimiento automatico (= CHANGE_TRACKING AUTO)
@@ -58,15 +58,15 @@ BEGIN
         AS $fn$
         BEGIN
             NEW."ts_search" :=
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."CODIGO", '')),      'A') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Referencia", '')),  'B') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."DESCRIPCION", '')), 'A') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Categoria", '')),   'C') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Marca", '')),       'C') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Tipo", '')),        'C') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Clase", '')),       'D') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Linea", '')),       'C') ||
-                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Barra", '')),       'B');
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."CODIGO",''::VARCHAR)),      'A') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Referencia",''::VARCHAR)),  'B') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."DESCRIPCION",''::VARCHAR)), 'A') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Categoria",''::VARCHAR)),   'C') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Marca",''::VARCHAR)),       'C') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Tipo",''::VARCHAR)),        'C') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Clase",''::VARCHAR)),       'D') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Linea",''::VARCHAR)),       'C') ||
+                SETWEIGHT(TO_TSVECTOR('spanish', COALESCE(NEW."Barra",''::VARCHAR)),       'B');
             RETURN NEW;
         END;
         $fn$;

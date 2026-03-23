@@ -26,7 +26,7 @@ BEGIN
   INSERT INTO hr."PayrollCalcVariable" ("SessionID", "Variable", "Valor", "Descripcion")
   SELECT
     p_session_id,
-    REPLACE(pc."ConstantCode", v_prefix, ''),
+    REPLACE(pc."ConstantCode", v_prefix,''::VARCHAR),
     pc."ConstantValue",
     (pc."ConstantName" || ' [' || p_regimen || ']')
   FROM hr."PayrollConstant" pc
@@ -37,7 +37,7 @@ BEGIN
       SELECT 1
       FROM hr."PayrollCalcVariable" v
       WHERE v."SessionID" = p_session_id
-        AND v."Variable" = REPLACE(pc."ConstantCode", v_prefix, '')
+        AND v."Variable" = REPLACE(pc."ConstantCode", v_prefix,''::VARCHAR)
     );
 
   PERFORM sp_nomina_set_variable(p_session_id, 'REGIMEN_ID', 0, p_regimen);

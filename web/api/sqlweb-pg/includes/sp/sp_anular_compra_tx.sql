@@ -61,7 +61,7 @@ BEGIN
     -- ============================================
     UPDATE "Compras"
     SET "ANULADA" = 1,
-        "CONCEPTO" = COALESCE("CONCEPTO", '') || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+        "CONCEPTO" = COALESCE("CONCEPTO",''::VARCHAR) || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
     WHERE "NUM_FACT" = p_num_fact;
 
     -- ============================================

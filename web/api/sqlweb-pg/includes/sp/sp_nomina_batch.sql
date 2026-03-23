@@ -139,7 +139,7 @@ BEGIN
             p_batch_id,
             e."EmployeeId",
             e."EmployeeCode",
-            COALESCE(e."EmployeeName", ''),
+            COALESCE(e."EmployeeName",''::VARCHAR),
             pc."ConceptCode",
             pc."ConceptName",
             pc."ConceptType",
@@ -284,7 +284,7 @@ BEGIN
     END IF;
 
     -- Obtener nombre del empleado
-    SELECT COALESCE(e."EmployeeName", ''), e."EmployeeId"
+    SELECT COALESCE(e."EmployeeName",''::VARCHAR), e."EmployeeId"
     INTO v_employee_name, v_employee_id
     FROM master."Employee" e
     WHERE e."EmployeeCode" = p_employee_code
@@ -874,7 +874,7 @@ BEGIN
                     'qty',         "Quantity",
                     'amount',      "Amount",
                     'total',       "Total",
-                    'description', COALESCE("Notes", '')
+                    'description', COALESCE("Notes",''::VARCHAR)
                 )
             )::TEXT
             INTO v_lines_json

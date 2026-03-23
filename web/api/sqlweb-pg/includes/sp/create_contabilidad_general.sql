@@ -143,7 +143,7 @@ BEGIN
                (CASE s."grupo" WHEN '1' THEN 'A' WHEN '2' THEN 'P' WHEN '3' THEN 'C' WHEN '4' THEN 'I' WHEN '5' THEN 'G' WHEN '6' THEN 'G' WHEN '7' THEN 'C' ELSE 'A' END)::CHAR(1),
                s."Nivel",
                CASE WHEN s."Nivel" = 1 THEN NULL
-                    ELSE REGEXP_REPLACE(s."COD_CUENTA", '\.[^.]+$', '')
+                    ELSE REGEXP_REPLACE(s."COD_CUENTA", '\.[^.]+$',''::VARCHAR)
                END,
                TRUE,
                CASE WHEN s."USO" = 'MOV' THEN TRUE ELSE FALSE END

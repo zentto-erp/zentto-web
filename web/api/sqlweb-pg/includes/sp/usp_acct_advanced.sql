@@ -1733,7 +1733,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "EntryType" = v_tipo_asiento AND "PeriodCode" = v_period_fmt;
 
         v_entry_number := v_tipo_asiento || '-'
-            || REPLACE(v_period_fmt, '-', '') || '-'
+            || REPLACE(v_period_fmt, '-',''::VARCHAR) || '-'
             || LPAD(v_seq_num::TEXT, 6, '0');
 
         INSERT INTO acct."JournalEntry" (
@@ -1907,7 +1907,7 @@ BEGIN
         VALUES (
             p_company_id, v_branch_id, v_rev_number, p_fecha, v_period_fmt,
             'REV', v_orig_number,
-            'REVERSION de ' || v_orig_number || ': ' || COALESCE(p_motivo, ''),
+            'REVERSION de ' || v_orig_number || ': ' || COALESCE(p_motivo,''::VARCHAR),
             v_orig_currency, v_orig_rate, 0, 0, 'APPROVED', 'CONTABILIDAD', p_user_id
         )
         RETURNING "JournalEntryId" INTO v_new_entry_id;
@@ -1921,7 +1921,7 @@ BEGIN
                "LineNumber",
                "AccountId",
                "AccountCodeSnapshot",
-               'REV: ' || COALESCE("Description", ''),
+               'REV: ' || COALESCE("Description",''::VARCHAR),
                "CreditAmount",   -- invertido
                "DebitAmount",    -- invertido
                "CostCenterCode"

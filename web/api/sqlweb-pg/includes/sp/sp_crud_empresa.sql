@@ -44,12 +44,12 @@ BEGIN
     END IF;
 
     UPDATE public."Empresa" SET
-        "Empresa"   = COALESCE(NULLIF(p_row_json->>'Empresa', ''), "Empresa"),
-        "RIF"       = COALESCE(NULLIF(p_row_json->>'RIF', ''), "RIF"),
-        "Nit"       = COALESCE(NULLIF(p_row_json->>'Nit', ''), "Nit"),
-        "Telefono"  = COALESCE(NULLIF(p_row_json->>'Telefono', ''), "Telefono"),
-        "Direccion" = COALESCE(NULLIF(p_row_json->>'Direccion', ''), "Direccion"),
-        "Rifs"      = COALESCE(NULLIF(p_row_json->>'Rifs', ''), "Rifs");
+        "Empresa"   = COALESCE(NULLIF(p_row_json->>'Empresa', ''::VARCHAR), "Empresa"),
+        "RIF"       = COALESCE(NULLIF(p_row_json->>'RIF', ''::VARCHAR), "RIF"),
+        "Nit"       = COALESCE(NULLIF(p_row_json->>'Nit', ''::VARCHAR), "Nit"),
+        "Telefono"  = COALESCE(NULLIF(p_row_json->>'Telefono', ''::VARCHAR), "Telefono"),
+        "Direccion" = COALESCE(NULLIF(p_row_json->>'Direccion', ''::VARCHAR), "Direccion"),
+        "Rifs"      = COALESCE(NULLIF(p_row_json->>'Rifs', ''::VARCHAR), "Rifs");
 
     RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
 

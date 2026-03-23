@@ -283,9 +283,9 @@ BEGIN
         CASE WHEN (elem->>'Fecha') IS NOT NULL
              THEN (elem->>'Fecha')::TIMESTAMP
              ELSE NOW() AT TIME ZONE 'UTC' END,
-        NULLIF(elem->>'Descripcion', ''),
-        NULLIF(elem->>'Referencia', ''),
-        NULLIF(elem->>'Tipo', ''),                -- DEBITO/CREDITO
+        NULLIF(elem->>'Descripcion', ''::VARCHAR),
+        NULLIF(elem->>'Referencia', ''::VARCHAR),
+        NULLIF(elem->>'Tipo', ''::VARCHAR),                -- DEBITO/CREDITO
         CASE WHEN (elem->>'Monto') IS NOT NULL
              THEN (elem->>'Monto')::NUMERIC(18,2)
              ELSE 0 END,

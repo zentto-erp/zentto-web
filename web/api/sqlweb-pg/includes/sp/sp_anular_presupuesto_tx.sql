@@ -39,7 +39,7 @@ BEGIN
     -- 1. Marcar presupuesto como anulado
     UPDATE "Presupuestos"
     SET "ANULADA" = TRUE,
-        "OBSERV" = COALESCE("OBSERV", '') || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+        "OBSERV" = COALESCE("OBSERV",''::VARCHAR) || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
     WHERE "NUM_FACT" = p_num_fact;
 
     -- 2. Anular detalle

@@ -394,7 +394,7 @@ BEGIN
       AND (v_search_pattern IS NULL OR (
               d."DocumentNumber" ILIKE v_search_pattern
            OR s."SupplierName"   ILIKE v_search_pattern
-           OR COALESCE(a."PaymentReference", '') ILIKE v_search_pattern
+           OR COALESCE(a."PaymentReference",''::VARCHAR) ILIKE v_search_pattern
           ))
       AND (p_codigo       IS NULL OR s."SupplierCode" = p_codigo)
       AND (p_currency_code IS NULL OR d."CurrencyCode" = p_currency_code);
@@ -431,7 +431,7 @@ BEGIN
       AND (v_search_pattern IS NULL OR (
               d."DocumentNumber" ILIKE v_search_pattern
            OR s."SupplierName"   ILIKE v_search_pattern
-           OR COALESCE(a."PaymentReference", '') ILIKE v_search_pattern
+           OR COALESCE(a."PaymentReference",''::VARCHAR) ILIKE v_search_pattern
           ))
       AND (p_codigo       IS NULL OR s."SupplierCode" = p_codigo)
       AND (p_currency_code IS NULL OR d."CurrencyCode" = p_currency_code)

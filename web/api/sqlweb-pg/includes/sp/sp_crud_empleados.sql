@@ -200,8 +200,8 @@ BEGIN
 
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_cedula := NULLIF(TRIM(COALESCE(p_row_json->>'CEDULA', '')), '');
-    v_nombre := NULLIF(TRIM(COALESCE(p_row_json->>'NOMBRE', '')), '');
+    v_cedula := NULLIF(TRIM(COALESCE(p_row_json->>'CEDULA', ''::VARCHAR)),''::VARCHAR);
+    v_nombre := NULLIF(TRIM(COALESCE(p_row_json->>'NOMBRE', ''::VARCHAR)),''::VARCHAR);
 
     IF v_cedula IS NULL THEN
         RETURN QUERY SELECT -1, 'CEDULA requerida'::VARCHAR(500);
@@ -229,9 +229,9 @@ BEGIN
     VALUES (
         v_cedula,
         v_nombre,
-        NULLIF(p_row_json->>'CEDULA', ''),
-        NULLIF(p_row_json->>'CARGO', ''),
-        NULLIF(p_row_json->>'GRUPO', ''),
+        NULLIF(p_row_json->>'CEDULA', ''::VARCHAR),
+        NULLIF(p_row_json->>'CARGO', ''::VARCHAR),
+        NULLIF(p_row_json->>'GRUPO', ''::VARCHAR),
         CASE WHEN COALESCE(p_row_json->>'SUELDO','') = '' THEN NULL
              ELSE (p_row_json->>'SUELDO')::NUMERIC END,
         CASE WHEN COALESCE(p_row_json->>'INGRESO','') = '' THEN NULL
@@ -269,9 +269,9 @@ BEGIN
     END IF;
 
     UPDATE master."Employee" SET
-        "EmployeeName"   = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''), "EmployeeName"),
-        "PositionName"   = COALESCE(NULLIF(p_row_json->>'CARGO', ''), "PositionName"),
-        "DepartmentName" = COALESCE(NULLIF(p_row_json->>'GRUPO', ''), "DepartmentName"),
+        "EmployeeName"   = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''::VARCHAR), "EmployeeName"),
+        "PositionName"   = COALESCE(NULLIF(p_row_json->>'CARGO', ''::VARCHAR), "PositionName"),
+        "DepartmentName" = COALESCE(NULLIF(p_row_json->>'GRUPO', ''::VARCHAR), "DepartmentName"),
         "Salary"         = CASE WHEN COALESCE(p_row_json->>'SUELDO','') = '' THEN "Salary"
                                 ELSE (p_row_json->>'SUELDO')::NUMERIC END,
         "IsActive"       = CASE WHEN p_row_json->>'STATUS' = 'A' THEN TRUE

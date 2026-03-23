@@ -709,7 +709,7 @@ BEGIN
           AND "CountryCode"    = p_country_code;
 
         v_voucher_number := p_withholding_type || '-'
-                          || REPLACE(v_period_code, '-', '') || '-'
+                          || REPLACE(v_period_code, '-',''::VARCHAR) || '-'
                           || LPAD(v_next_seq::TEXT, 4, '0');
 
         INSERT INTO fiscal."WithholdingVoucher" (

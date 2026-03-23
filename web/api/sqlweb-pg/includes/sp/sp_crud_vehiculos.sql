@@ -87,7 +87,7 @@ RETURNS TABLE (
 DECLARE
     v_placa VARCHAR(20);
 BEGIN
-    v_placa := NULLIF(p_row_json->>'Placa', '');
+    v_placa := NULLIF(p_row_json->>'Placa', ''::VARCHAR);
 
     IF EXISTS (SELECT 1 FROM public."Vehiculos" WHERE "Placa" = v_placa) THEN
         RETURN QUERY SELECT -1, 'Vehiculo ya existe'::VARCHAR;
@@ -98,10 +98,10 @@ BEGIN
         INSERT INTO public."Vehiculos" ("Placa", "Cedula", "Marca", "Anio", "Cauchos")
         VALUES (
             v_placa,
-            NULLIF(p_row_json->>'Cedula', ''),
-            NULLIF(p_row_json->>'Marca', ''),
-            NULLIF(p_row_json->>'Anio', ''),
-            NULLIF(p_row_json->>'Cauchos', '')
+            NULLIF(p_row_json->>'Cedula', ''::VARCHAR),
+            NULLIF(p_row_json->>'Marca', ''::VARCHAR),
+            NULLIF(p_row_json->>'Anio', ''::VARCHAR),
+            NULLIF(p_row_json->>'Cauchos', ''::VARCHAR)
         );
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR;
@@ -128,10 +128,10 @@ BEGIN
 
     BEGIN
         UPDATE public."Vehiculos" SET
-            "Cedula"  = COALESCE(NULLIF(p_row_json->>'Cedula', ''), "Cedula"),
-            "Marca"   = COALESCE(NULLIF(p_row_json->>'Marca', ''), "Marca"),
-            "Anio"    = COALESCE(NULLIF(p_row_json->>'Anio', ''), "Anio"),
-            "Cauchos" = COALESCE(NULLIF(p_row_json->>'Cauchos', ''), "Cauchos")
+            "Cedula"  = COALESCE(NULLIF(p_row_json->>'Cedula', ''::VARCHAR), "Cedula"),
+            "Marca"   = COALESCE(NULLIF(p_row_json->>'Marca', ''::VARCHAR), "Marca"),
+            "Anio"    = COALESCE(NULLIF(p_row_json->>'Anio', ''::VARCHAR), "Anio"),
+            "Cauchos" = COALESCE(NULLIF(p_row_json->>'Cauchos', ''::VARCHAR), "Cauchos")
         WHERE "Placa" = p_placa;
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR;

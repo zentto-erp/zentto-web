@@ -52,11 +52,11 @@ BEGIN
         i."ProductCode",
         i."ProductCode",
         TRIM(
-            COALESCE(RTRIM(i."Categoria"), '') ||
-            CASE WHEN RTRIM(COALESCE(i."Tipo", '')) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."ProductName", '')) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Marca", '')) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Clase", '')) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
+            COALESCE(RTRIM(i."Categoria"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(i."Tipo",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
         ),
         i."SalesPrice",
         COALESCE(i."PRECIO_VENTA2", i."SalesPrice" * 0.90),
@@ -108,11 +108,11 @@ BEGIN
         i."ProductCode",
         i."ProductCode",
         TRIM(
-            COALESCE(RTRIM(i."Categoria"), '') ||
-            CASE WHEN RTRIM(COALESCE(i."Tipo", '')) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."ProductName", '')) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Marca", '')) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Clase", '')) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
+            COALESCE(RTRIM(i."Categoria"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(i."Tipo",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
         ),
         i."SalesPrice",
         COALESCE(i."PRECIO_VENTA2", i."SalesPrice" * 0.90),

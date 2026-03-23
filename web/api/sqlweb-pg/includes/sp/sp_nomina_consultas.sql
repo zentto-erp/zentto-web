@@ -142,8 +142,8 @@ BEGIN
         WHERE "CompanyId" = v_company_id
           AND "PayrollCode" = p_co_nomina
           AND "ConceptCode" = p_co_concept
-          AND COALESCE("ConventionCode", '') = ''
-          AND COALESCE("CalculationType", '') = ''
+          AND COALESCE("ConventionCode",''::VARCHAR) = ''
+          AND COALESCE("CalculationType",''::VARCHAR) = ''
     ) THEN
         UPDATE hr."PayrollConcept"
         SET "ConceptName"           = p_nb_concepto,
@@ -162,8 +162,8 @@ BEGIN
         WHERE "CompanyId" = v_company_id
           AND "PayrollCode" = p_co_nomina
           AND "ConceptCode" = p_co_concept
-          AND COALESCE("ConventionCode", '') = ''
-          AND COALESCE("CalculationType", '') = '';
+          AND COALESCE("ConventionCode",''::VARCHAR) = ''
+          AND COALESCE("CalculationType",''::VARCHAR) = '';
 
         v_resultado := 1;
         v_mensaje   := 'Concepto actualizado';

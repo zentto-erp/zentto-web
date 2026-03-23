@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION sp_nomina_reemplazar_variables(
 RETURNS TEXT
 LANGUAGE plpgsql AS $$
 DECLARE
-  v_result TEXT := COALESCE(p_formula, '');
+  v_result TEXT := COALESCE(p_formula,''::VARCHAR);
   rec RECORD;
 BEGIN
   FOR rec IN
@@ -249,7 +249,7 @@ BEGIN
         1, COALESCE(v_monto, 0), COALESCE(v_total, 0), v_desc, rec."AccountingAccountCode", NOW() AT TIME ZONE 'UTC'
       );
 
-      IF UPPER(COALESCE(rec."ConceptType", '')) = 'DEDUCCION' THEN
+      IF UPPER(COALESCE(rec."ConceptType",''::VARCHAR)) = 'DEDUCCION' THEN
         v_ded := v_ded + COALESCE(v_total, 0);
       ELSE
         v_asig := v_asig + COALESCE(v_total, 0);

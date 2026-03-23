@@ -192,7 +192,7 @@ BEGIN
 
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(TRIM(COALESCE(p_row_json->>'CODIGO', p_row_json->>'CodCliente', '')), '');
+    v_codigo := NULLIF(TRIM(COALESCE(p_row_json->>'CODIGO', p_row_json->>'CodCliente',''::VARCHAR)),''::VARCHAR);
 
     IF v_codigo IS NULL THEN
         RETURN QUERY SELECT -1, 'CODIGO requerido'::VARCHAR(500);
@@ -214,11 +214,11 @@ BEGIN
     )
     VALUES (
         v_codigo,
-        COALESCE(NULLIF(COALESCE(p_row_json->>'NOMBRE', p_row_json->>'Nombre'), ''), v_codigo),
-        NULLIF(p_row_json->>'RIF', ''),
-        NULLIF(COALESCE(p_row_json->>'EMAIL', p_row_json->>'Email'), ''),
-        NULLIF(COALESCE(p_row_json->>'TELEFONO', p_row_json->>'Telefono'), ''),
-        NULLIF(COALESCE(p_row_json->>'DIRECCION', p_row_json->>'Direccion'), ''),
+        COALESCE(NULLIF(COALESCE(p_row_json->>'NOMBRE', p_row_json->>'Nombre'),''::VARCHAR), v_codigo),
+        NULLIF(p_row_json->>'RIF', ''::VARCHAR),
+        NULLIF(COALESCE(p_row_json->>'EMAIL', p_row_json->>'Email'),''::VARCHAR),
+        NULLIF(COALESCE(p_row_json->>'TELEFONO', p_row_json->>'Telefono'),''::VARCHAR),
+        NULLIF(COALESCE(p_row_json->>'DIRECCION', p_row_json->>'Direccion'),''::VARCHAR),
         CASE WHEN COALESCE(p_row_json->>'LIMITE','') = '' THEN 0
              ELSE (p_row_json->>'LIMITE')::NUMERIC END,
         TRUE,
@@ -254,11 +254,11 @@ BEGIN
     END IF;
 
     UPDATE master."Customer" SET
-        "CustomerName" = COALESCE(NULLIF(COALESCE(p_row_json->>'NOMBRE', p_row_json->>'Nombre'), ''), "CustomerName"),
-        "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''), "FiscalId"),
-        "Email"        = COALESCE(NULLIF(COALESCE(p_row_json->>'EMAIL', p_row_json->>'Email'), ''), "Email"),
-        "Phone"        = COALESCE(NULLIF(COALESCE(p_row_json->>'TELEFONO', p_row_json->>'Telefono'), ''), "Phone"),
-        "AddressLine"  = COALESCE(NULLIF(COALESCE(p_row_json->>'DIRECCION', p_row_json->>'Direccion'), ''), "AddressLine"),
+        "CustomerName" = COALESCE(NULLIF(COALESCE(p_row_json->>'NOMBRE', p_row_json->>'Nombre'),''::VARCHAR), "CustomerName"),
+        "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''::VARCHAR), "FiscalId"),
+        "Email"        = COALESCE(NULLIF(COALESCE(p_row_json->>'EMAIL', p_row_json->>'Email'),''::VARCHAR), "Email"),
+        "Phone"        = COALESCE(NULLIF(COALESCE(p_row_json->>'TELEFONO', p_row_json->>'Telefono'),''::VARCHAR), "Phone"),
+        "AddressLine"  = COALESCE(NULLIF(COALESCE(p_row_json->>'DIRECCION', p_row_json->>'Direccion'),''::VARCHAR), "AddressLine"),
         "CreditLimit"  = CASE WHEN COALESCE(p_row_json->>'LIMITE','') = '' THEN "CreditLimit"
                               ELSE (p_row_json->>'LIMITE')::NUMERIC END,
         "IsActive"     = CASE WHEN p_row_json->>'Activo' = 'true' OR p_row_json->>'ESTADO' = 'A' THEN TRUE

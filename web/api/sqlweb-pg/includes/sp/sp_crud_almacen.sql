@@ -131,9 +131,9 @@ BEGIN
 
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(p_row_json->>'Codigo', '');
-    v_desc   := NULLIF(p_row_json->>'Descripcion', '');
-    v_tipo   := NULLIF(p_row_json->>'Tipo', '');
+    v_codigo := NULLIF(p_row_json->>'Codigo', ''::VARCHAR);
+    v_desc   := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_tipo   := NULLIF(p_row_json->>'Tipo', ''::VARCHAR);
 
     -- Verificar duplicado
     IF EXISTS (
@@ -181,8 +181,8 @@ BEGIN
         RETURN;
     END IF;
 
-    v_desc := NULLIF(p_row_json->>'Descripcion', '');
-    v_tipo := NULLIF(p_row_json->>'Tipo', '');
+    v_desc := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_tipo := NULLIF(p_row_json->>'Tipo', ''::VARCHAR);
 
     UPDATE master."Warehouse" SET
         "Description"   = COALESCE(v_desc, "Description"),

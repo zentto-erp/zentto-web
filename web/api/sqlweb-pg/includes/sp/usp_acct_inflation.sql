@@ -732,7 +732,7 @@ BEGIN
 
         UPDATE acct."InflationAdjustment"
         SET "Status"    = 'VOIDED',
-            "Notes"     = COALESCE("Notes" || ' | ', '') || 'ANULADO: ' || COALESCE(p_motivo, 'Sin motivo'),
+            "Notes"     = COALESCE("Notes" || ' | ',''::VARCHAR) || 'ANULADO: ' || COALESCE(p_motivo, 'Sin motivo'),
             "UpdatedAt" = (NOW() AT TIME ZONE 'UTC')
         WHERE "InflationAdjustmentId" = p_adjustment_id;
 

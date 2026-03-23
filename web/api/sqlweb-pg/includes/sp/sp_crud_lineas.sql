@@ -75,7 +75,7 @@ DECLARE
     v_descripcion VARCHAR(50);
     v_nuevo_codigo INT;
 BEGIN
-    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', '');
+    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR);
 
     BEGIN
         INSERT INTO public."Lineas" ("DESCRIPCION")
@@ -107,7 +107,7 @@ BEGIN
         RETURN;
     END IF;
 
-    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', '');
+    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR);
 
     BEGIN
         UPDATE public."Lineas"

@@ -82,7 +82,7 @@ BEGIN
 
     INSERT INTO master."Brand" ("BrandName", "CompanyId", "IsActive", "IsDeleted")
     VALUES (
-        NULLIF(COALESCE(p_row_json->>'Descripcion', p_row_json->>'BrandName'), ''),
+        NULLIF(COALESCE(p_row_json->>'Descripcion', p_row_json->>'BrandName'),''::VARCHAR),
         v_company_id, TRUE, FALSE
     )
     RETURNING "BrandId" INTO v_nuevo_codigo;
@@ -102,7 +102,7 @@ BEGIN
         RETURN QUERY SELECT -1, 'Marca no encontrada'::VARCHAR(500); RETURN;
     END IF;
     UPDATE master."Brand" SET
-        "BrandName" = COALESCE(NULLIF(COALESCE(p_row_json->>'Descripcion', p_row_json->>'BrandName'),''), "BrandName")
+        "BrandName" = COALESCE(NULLIF(COALESCE(p_row_json->>'Descripcion', p_row_json->>'BrandName'),''::VARCHAR), "BrandName")
     WHERE "BrandId" = p_codigo;
     RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
 EXCEPTION WHEN OTHERS THEN RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);

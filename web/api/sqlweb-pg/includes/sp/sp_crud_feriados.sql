@@ -97,7 +97,7 @@ BEGIN
     INSERT INTO public."Feriados" ("Fecha", "Descripcion")
     VALUES (
         v_fecha,
-        NULLIF(p_row_json->>'Descripcion', '')
+        NULLIF(p_row_json->>'Descripcion', ''::VARCHAR)
     );
 
     RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
@@ -124,7 +124,7 @@ BEGIN
     END IF;
 
     UPDATE public."Feriados" SET
-        "Descripcion" = COALESCE(NULLIF(p_row_json->>'Descripcion', ''), "Descripcion")
+        "Descripcion" = COALESCE(NULLIF(p_row_json->>'Descripcion', ''::VARCHAR), "Descripcion")
     WHERE "Fecha"::DATE = p_fecha;
 
     RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);

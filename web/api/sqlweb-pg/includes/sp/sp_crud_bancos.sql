@@ -91,7 +91,7 @@ AS $$
 DECLARE
     v_nombre VARCHAR(50);
 BEGIN
-    v_nombre := NULLIF(p_row_json->>'Nombre', '');
+    v_nombre := NULLIF(p_row_json->>'Nombre', ''::VARCHAR);
 
     IF EXISTS (SELECT 1 FROM dbo."Bancos" WHERE "Nombre" = v_nombre) THEN
         RETURN QUERY SELECT -1, 'Banco ya existe'::VARCHAR(500);
@@ -102,10 +102,10 @@ BEGIN
         INSERT INTO dbo."Bancos" ("Nombre", "Contacto", "Direccion", "Telefonos", "Co_Usuario")
         VALUES (
             v_nombre,
-            NULLIF(p_row_json->>'Contacto', ''),
-            NULLIF(p_row_json->>'Direccion', ''),
-            NULLIF(p_row_json->>'Telefonos', ''),
-            NULLIF(p_row_json->>'Co_Usuario', '')
+            NULLIF(p_row_json->>'Contacto', ''::VARCHAR),
+            NULLIF(p_row_json->>'Direccion', ''::VARCHAR),
+            NULLIF(p_row_json->>'Telefonos', ''::VARCHAR),
+            NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR)
         );
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
@@ -132,10 +132,10 @@ BEGIN
 
     BEGIN
         UPDATE dbo."Bancos"
-        SET "Contacto"   = COALESCE(NULLIF(p_row_json->>'Contacto', ''), "Contacto"),
-            "Direccion"  = COALESCE(NULLIF(p_row_json->>'Direccion', ''), "Direccion"),
-            "Telefonos"  = COALESCE(NULLIF(p_row_json->>'Telefonos', ''), "Telefonos"),
-            "Co_Usuario" = COALESCE(NULLIF(p_row_json->>'Co_Usuario', ''), "Co_Usuario")
+        SET "Contacto"   = COALESCE(NULLIF(p_row_json->>'Contacto', ''::VARCHAR), "Contacto"),
+            "Direccion"  = COALESCE(NULLIF(p_row_json->>'Direccion', ''::VARCHAR), "Direccion"),
+            "Telefonos"  = COALESCE(NULLIF(p_row_json->>'Telefonos', ''::VARCHAR), "Telefonos"),
+            "Co_Usuario" = COALESCE(NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR), "Co_Usuario")
         WHERE "Nombre" = p_nombre;
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);

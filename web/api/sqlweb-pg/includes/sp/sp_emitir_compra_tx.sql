@@ -36,13 +36,13 @@ DECLARE
     v_saldo_total     DOUBLE PRECISION;
 BEGIN
     -- Extraer datos de la compra
-    v_num_fact      := NULLIF(TRIM(p_compra_json->>'NUM_FACT'), '');
-    v_cod_proveedor := NULLIF(TRIM(p_compra_json->>'COD_PROVEEDOR'), '');
-    v_cod_usuario   := COALESCE(NULLIF(TRIM(p_compra_json->>'COD_USUARIO'), ''), 'API');
-    v_tipo          := UPPER(COALESCE(NULLIF(TRIM(p_compra_json->>'TIPO'), ''), 'CONTADO'));
-    v_nombre        := COALESCE(NULLIF(TRIM(p_compra_json->>'NOMBRE'), ''), '');
-    v_rif           := COALESCE(NULLIF(TRIM(p_compra_json->>'RIF'), ''), '');
-    v_concepto      := NULLIF(TRIM(p_compra_json->>'CONCEPTO'), '');
+    v_num_fact      := NULLIF(TRIM(p_compra_json->>'NUM_FACT'), ''::VARCHAR);
+    v_cod_proveedor := NULLIF(TRIM(p_compra_json->>'COD_PROVEEDOR'), ''::VARCHAR);
+    v_cod_usuario   := COALESCE(NULLIF(TRIM(p_compra_json->>'COD_USUARIO'), ''::VARCHAR), 'API');
+    v_tipo          := UPPER(COALESCE(NULLIF(TRIM(p_compra_json->>'TIPO'), ''::VARCHAR), 'CONTADO'));
+    v_nombre        := COALESCE(NULLIF(TRIM(p_compra_json->>'NOMBRE'), ''::VARCHAR),''::VARCHAR);
+    v_rif           := COALESCE(NULLIF(TRIM(p_compra_json->>'RIF'), ''::VARCHAR),''::VARCHAR);
+    v_concepto      := NULLIF(TRIM(p_compra_json->>'CONCEPTO'), ''::VARCHAR);
 
     BEGIN
         v_fecha := (p_compra_json->>'FECHA')::TIMESTAMP;
@@ -78,9 +78,9 @@ BEGIN
     )
     SELECT
         v_num_fact,
-        NULLIF(TRIM(d->>'CODIGO'), ''),
-        NULLIF(TRIM(d->>'REFERENCIA'), ''),
-        NULLIF(TRIM(d->>'DESCRIPCION'), ''),
+        NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR),
+        NULLIF(TRIM(d->>'REFERENCIA'), ''::VARCHAR),
+        NULLIF(TRIM(d->>'DESCRIPCION'), ''::VARCHAR),
         v_fecha,
         COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0),
         COALESCE((d->>'PRECIO_COSTO')::NUMERIC(18,4), 0),
@@ -100,8 +100,8 @@ BEGIN
         )
         SELECT
             v_num_fact,
-            NULLIF(TRIM(d->>'CODIGO'), ''),
-            NULLIF(TRIM(d->>'CODIGO'), ''),
+            NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR),
+            NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR),
             v_fecha,
             'Compra:' || v_num_fact,
             'Ingreso',
@@ -113,19 +113,19 @@ BEGIN
             COALESCE((d->>'ALICUOTA')::NUMERIC(18,4), 0),
             COALESCE(inv."SalesPrice", 0)
         FROM jsonb_array_elements(p_detalle_json) AS d
-        INNER JOIN master."Product" inv ON inv."ProductCode" = NULLIF(TRIM(d->>'CODIGO'), '')
-        WHERE NULLIF(TRIM(d->>'CODIGO'), '') IS NOT NULL
+        INNER JOIN master."Product" inv ON inv."ProductCode" = NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR)
+        WHERE NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR) IS NOT NULL
           AND COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) > 0;
 
         -- Actualizar existencias
         UPDATE master."Product" AS p
            SET "StockQty" = COALESCE(p."StockQty", 0) + agg."Total"
           FROM (
-              SELECT NULLIF(TRIM(d->>'CODIGO'), '') AS cod_serv,
+              SELECT NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR) AS cod_serv,
                      SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
                 FROM jsonb_array_elements(p_detalle_json) AS d
-               WHERE NULLIF(TRIM(d->>'CODIGO'), '') IS NOT NULL
-               GROUP BY NULLIF(TRIM(d->>'CODIGO'), '')
+               WHERE NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR) IS NOT NULL
+               GROUP BY NULLIF(TRIM(d->>'CODIGO'), ''::VARCHAR)
           ) agg
          WHERE p."ProductCode" = agg.cod_serv;
     END IF;

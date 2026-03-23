@@ -33,7 +33,7 @@ BEGIN
 
     UPDATE "Pedidos" SET
         "ANULADA" = TRUE,
-        "OBSERV" = COALESCE("OBSERV", '') || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+        "OBSERV" = COALESCE("OBSERV",''::VARCHAR) || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
     WHERE "NUM_FACT" = p_num_pedido;
 
     UPDATE "Detalle_Pedidos" SET "ANULADA" = TRUE WHERE "NUM_FACT" = p_num_pedido;

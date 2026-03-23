@@ -59,7 +59,7 @@ BEGIN
         SELECT
             v_request_id,
             (elem->>'dt')::DATE,
-            COALESCE(NULLIF(elem->>'tp', ''), 'COMPLETO')
+            COALESCE(NULLIF(elem->>'tp', ''::VARCHAR), 'COMPLETO')
           FROM jsonb_array_elements(p_days) AS elem
          WHERE elem->>'dt' IS NOT NULL;
     END IF;

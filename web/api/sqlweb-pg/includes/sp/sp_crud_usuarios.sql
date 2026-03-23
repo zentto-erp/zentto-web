@@ -133,7 +133,7 @@ RETURNS TABLE (
 DECLARE
     v_cod_usuario VARCHAR(50);
 BEGIN
-    v_cod_usuario := NULLIF(p_row_json->>'Cod_Usuario', '');
+    v_cod_usuario := NULLIF(p_row_json->>'Cod_Usuario', ''::VARCHAR);
 
     -- Check if active user already exists
     IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = v_cod_usuario AND "IsDeleted" = FALSE) THEN
@@ -145,9 +145,9 @@ BEGIN
         -- If soft-deleted record exists, restore it with new data
         IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = v_cod_usuario AND "IsDeleted" = TRUE) THEN
             UPDATE sec."User" SET
-                "PasswordHash"   = NULLIF(p_row_json->>'Password', ''),
-                "UserName"       = NULLIF(p_row_json->>'Nombre', ''),
-                "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''), 'USER'),
+                "PasswordHash"   = NULLIF(p_row_json->>'Password', ''::VARCHAR),
+                "UserName"       = NULLIF(p_row_json->>'Nombre', ''::VARCHAR),
+                "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), 'USER'),
                 "CanUpdate"      = COALESCE((p_row_json->>'Updates')::BOOLEAN, TRUE),
                 "CanCreate"      = COALESCE((p_row_json->>'Addnews')::BOOLEAN, TRUE),
                 "CanDelete"      = COALESCE((p_row_json->>'Deletes')::BOOLEAN, FALSE),
@@ -170,9 +170,9 @@ BEGIN
                 "IsAdmin", "IsActive", "CreatedAt", "UpdatedAt", "IsDeleted"
             ) VALUES (
                 v_cod_usuario,
-                NULLIF(p_row_json->>'Password', ''),
-                NULLIF(p_row_json->>'Nombre', ''),
-                COALESCE(NULLIF(p_row_json->>'Tipo', ''), 'USER'),
+                NULLIF(p_row_json->>'Password', ''::VARCHAR),
+                NULLIF(p_row_json->>'Nombre', ''::VARCHAR),
+                COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), 'USER'),
                 COALESCE((p_row_json->>'Updates')::BOOLEAN, TRUE),
                 COALESCE((p_row_json->>'Addnews')::BOOLEAN, TRUE),
                 COALESCE((p_row_json->>'Deletes')::BOOLEAN, FALSE),
@@ -212,9 +212,9 @@ BEGIN
 
     BEGIN
         UPDATE sec."User" SET
-            "PasswordHash"   = COALESCE(NULLIF(p_row_json->>'Password', ''), "PasswordHash"),
-            "UserName"       = COALESCE(NULLIF(p_row_json->>'Nombre', ''), "UserName"),
-            "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''), "UserType"),
+            "PasswordHash"   = COALESCE(NULLIF(p_row_json->>'Password', ''::VARCHAR), "PasswordHash"),
+            "UserName"       = COALESCE(NULLIF(p_row_json->>'Nombre', ''::VARCHAR), "UserName"),
+            "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), "UserType"),
             "IsAdmin"        = COALESCE((p_row_json->>'IsAdmin')::BOOLEAN, "IsAdmin"),
             "CanUpdate"      = COALESCE((p_row_json->>'Updates')::BOOLEAN, "CanUpdate"),
             "CanCreate"      = COALESCE((p_row_json->>'Addnews')::BOOLEAN, "CanCreate"),

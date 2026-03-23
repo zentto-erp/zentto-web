@@ -30,7 +30,7 @@ BEGIN
     SELECT
         c."CompanyId",
         b."BranchId",
-        UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))::VARCHAR
+        UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))::VARCHAR
     FROM cfg."Company" c
     INNER JOIN cfg."Branch" b ON b."CompanyId" = c."CompanyId"
     WHERE c."CompanyCode" = 'DEFAULT'
@@ -320,15 +320,15 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        COALESCE(NULLIF(TRIM("CategoryCode"), ''), '(Sin Categoria)')::VARCHAR,
-        COALESCE(NULLIF(TRIM("CategoryCode"), ''), '(Sin Categoria)')::VARCHAR,
+        COALESCE(NULLIF(TRIM("CategoryCode"), ''::VARCHAR), '(Sin Categoria)')::VARCHAR,
+        COALESCE(NULLIF(TRIM("CategoryCode"), ''::VARCHAR), '(Sin Categoria)')::VARCHAR,
         COUNT(1)
     FROM master."Product"
     WHERE "CompanyId" = p_company_id
       AND "IsDeleted" = FALSE AND "IsActive" = TRUE
       AND ("StockQty" > 0 OR "IsService" = TRUE)
-    GROUP BY COALESCE(NULLIF(TRIM("CategoryCode"), ''), '(Sin Categoria)')
-    ORDER BY COALESCE(NULLIF(TRIM("CategoryCode"), ''), '(Sin Categoria)');
+    GROUP BY COALESCE(NULLIF(TRIM("CategoryCode"), ''::VARCHAR), '(Sin Categoria)')
+    ORDER BY COALESCE(NULLIF(TRIM("CategoryCode"), ''::VARCHAR), '(Sin Categoria)');
 END;
 $$;
 
@@ -473,7 +473,7 @@ BEGIN
         v."SaleTicketId",
         v."InvoiceNumber",
         v."SoldAt",
-        COALESCE(NULLIF(TRIM(v."CustomerName"), ''), 'Consumidor Final')::VARCHAR,
+        COALESCE(NULLIF(TRIM(v."CustomerName"), ''::VARCHAR), 'Consumidor Final')::VARCHAR,
         v."CashRegisterCode",
         v."TotalAmount",
         'Completada'::VARCHAR,
@@ -543,14 +543,14 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        COALESCE(NULLIF(TRIM(v."PaymentMethod"), ''), 'No especificado')::VARCHAR,
+        COALESCE(NULLIF(TRIM(v."PaymentMethod"), ''::VARCHAR), 'No especificado')::VARCHAR,
         COUNT(1),
         SUM(v."TotalAmount")
     FROM pos."SaleTicket" v
     WHERE v."CompanyId" = p_company_id AND v."BranchId" = p_branch_id
       AND (v."SoldAt")::DATE BETWEEN p_from_date AND p_to_date
       AND (p_caja_id IS NULL OR UPPER(v."CashRegisterCode") = p_caja_id)
-    GROUP BY COALESCE(NULLIF(TRIM(v."PaymentMethod"), ''), 'No especificado')
+    GROUP BY COALESCE(NULLIF(TRIM(v."PaymentMethod"), ''::VARCHAR), 'No especificado')
     ORDER BY SUM(v."TotalAmount") DESC;
 END;
 $$;
@@ -572,7 +572,7 @@ BEGIN
         UPPER(v."CashRegisterCode")::VARCHAR,
         COUNT(1),
         SUM(v."TotalAmount"),
-        MAX(COALESCE(corr."SerialFiscal", ''))::VARCHAR
+        MAX(COALESCE(corr."SerialFiscal",''::VARCHAR))::VARCHAR
     FROM pos."SaleTicket" v
     LEFT JOIN LATERAL (
         SELECT fc."SerialFiscal"
@@ -929,7 +929,7 @@ BEGIN
     SELECT
         dt."DiningTableId",
         dt."TableNumber"::VARCHAR,
-        COALESCE(NULLIF(dt."TableName", ''), 'Mesa ' || dt."TableNumber")::VARCHAR,
+        COALESCE(NULLIF(dt."TableName", ''::VARCHAR), 'Mesa ' || dt."TableNumber")::VARCHAR,
         dt."Capacity",
         dt."EnvironmentCode"::VARCHAR,
         dt."EnvironmentName"::VARCHAR,
