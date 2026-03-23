@@ -5,8 +5,9 @@
 -- ============================================================
 
 -- ---------- 1. List ----------
-DROP FUNCTION IF EXISTS usp_proveedores_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_proveedores_list CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_list(
+    p_company_id INT         DEFAULT 1,
     p_search   VARCHAR(100) DEFAULT NULL,
     p_estado   VARCHAR(20)  DEFAULT NULL,
     p_vendedor VARCHAR(60)  DEFAULT NULL,
@@ -56,6 +57,7 @@ BEGIN
     SELECT COUNT(1) INTO v_total
     FROM master."Supplier" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
+      AND (p_company_id IS NULL OR s."CompanyId" = p_company_id)
       AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",'') ILIKE v_search));
 
     RETURN QUERY
