@@ -238,6 +238,37 @@ export function exportToExcel(rows: GridRowsProp, columns: ZenttoColDef[], filen
   downloadBlob(blob, `${filename}.xls`);
 }
 
+export function exportToJson(rows: GridRowsProp, columns: ZenttoColDef[], filename: string) {
+  const exportCols = getExportableColumns(columns);
+  const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY] && !r[TOTALS_ROW_KEY]);
+  const data = exportRows.map(row => {
+    const obj: Record<string, unknown> = {};
+    exportCols.forEach(col => {
+      obj[col.headerName ?? col.field] = row[col.field] ?? null;
+    });
+    return obj;
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, `${filename}.json`);
+}
+
+export function exportToMarkdown(rows: GridRowsProp, columns: ZenttoColDef[], filename: string) {
+  const exportCols = getExportableColumns(columns);
+  const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY]);
+  const headers = exportCols.map(c => c.headerName ?? c.field);
+  const separator = exportCols.map(() => '---');
+  const dataRows = exportRows.map(row =>
+    exportCols.map(col => formatCellForExport(row, col).replace(/\|/g, '\\|'))
+  );
+  const lines = [
+    `| ${headers.join(' | ')} |`,
+    `| ${separator.join(' | ')} |`,
+    ...dataRows.map(r => `| ${r.join(' | ')} |`),
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  downloadBlob(blob, `${filename}.md`);
+}
+
 // ─── Column Pinning (CSS simulation) ─────────────────────────────────────────
 
 export function applyColumnPinning(

@@ -74,6 +74,10 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   showExportCsv?: boolean;
   /** Mostrar botón Exportar Excel (.xls) */
   showExportExcel?: boolean;
+  /** Mostrar botón Exportar JSON (legible por IA/Claude) */
+  showExportJson?: boolean;
+  /** Mostrar botón Exportar Markdown (tabla renderizable por IA/Claude) */
+  showExportMarkdown?: boolean;
 
   // ─── Fechas y Monedas ─────────────────────────────────────────
   /**

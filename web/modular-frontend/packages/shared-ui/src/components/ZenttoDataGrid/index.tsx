@@ -33,6 +33,8 @@ import {
   applyPivot,
   exportToCsv,
   exportToExcel,
+  exportToJson,
+  exportToMarkdown,
   applyColumnPinning,
   pinningSx,
 } from './utils';
@@ -277,8 +279,10 @@ export function ZenttoDataGrid({
   defaultCurrency,
   // Export
   exportFilename = 'zentto-export',
-  showExportCsv = false,
-  showExportExcel = false,
+  showExportCsv = true,
+  showExportExcel = true,
+  showExportJson = true,
+  showExportMarkdown = false,
   // Toolbar
   toolbarTitle,
   toolbarActions,
@@ -517,6 +521,14 @@ export function ZenttoDataGrid({
     exportToExcel(processedRows, finalColumns, exportFilename);
   }, [processedRows, finalColumns, exportFilename]);
 
+  const handleExportJson = useCallback(() => {
+    exportToJson(processedRows, finalColumns, exportFilename);
+  }, [processedRows, finalColumns, exportFilename]);
+
+  const handleExportMarkdown = useCallback(() => {
+    exportToMarkdown(processedRows, finalColumns, exportFilename);
+  }, [processedRows, finalColumns, exportFilename]);
+
   // ── getRowHeight ──────────────────────────────────────────────────────────────
   const resolvedGetRowHeight = useCallback(
     (params: any) => {
@@ -595,8 +607,12 @@ export function ZenttoDataGrid({
                   toolbarActions,
                   onExportCsv: showExportCsv ? handleExportCsv : undefined,
                   onExportExcel: showExportExcel ? handleExportExcel : undefined,
+                  onExportJson: showExportJson ? handleExportJson : undefined,
+                  onExportMarkdown: showExportMarkdown ? handleExportMarkdown : undefined,
                   showExportCsv,
                   showExportExcel,
+                  showExportJson,
+                  showExportMarkdown,
                 } as any,
               }
         }

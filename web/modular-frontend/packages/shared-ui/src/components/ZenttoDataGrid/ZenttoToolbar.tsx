@@ -10,15 +10,20 @@ import {
 import { Box, Button, Divider, Typography, Tooltip, Stack } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import FilterListIcon from '@mui/icons-material/FilterList';
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import ArticleIcon from '@mui/icons-material/Article';
 
 interface ZenttoToolbarProps {
   title?: string;
   toolbarActions?: React.ReactNode;
   onExportCsv?: () => void;
   onExportExcel?: () => void;
+  onExportJson?: () => void;
+  onExportMarkdown?: () => void;
   showExportCsv?: boolean;
   showExportExcel?: boolean;
+  showExportJson?: boolean;
+  showExportMarkdown?: boolean;
 }
 
 export function ZenttoToolbar({
@@ -26,8 +31,12 @@ export function ZenttoToolbar({
   toolbarActions,
   onExportCsv,
   onExportExcel,
+  onExportJson,
+  onExportMarkdown,
   showExportCsv,
   showExportExcel,
+  showExportJson,
+  showExportMarkdown,
 }: ZenttoToolbarProps) {
   return (
     <GridToolbarContainer
@@ -92,6 +101,34 @@ export function ZenttoToolbar({
             sx={{ textTransform: 'none', fontSize: '0.8rem', color: 'success.main' }}
           >
             Excel
+          </Button>
+        </Tooltip>
+      )}
+
+      {/* Export JSON */}
+      {showExportJson && (
+        <Tooltip title="Exportar JSON (legible por IA)">
+          <Button
+            size="small"
+            startIcon={<DataObjectIcon fontSize="small" />}
+            onClick={onExportJson}
+            sx={{ textTransform: 'none', fontSize: '0.8rem', color: 'warning.main' }}
+          >
+            JSON
+          </Button>
+        </Tooltip>
+      )}
+
+      {/* Export Markdown */}
+      {showExportMarkdown && (
+        <Tooltip title="Exportar Markdown (tabla renderizable)">
+          <Button
+            size="small"
+            startIcon={<ArticleIcon fontSize="small" />}
+            onClick={onExportMarkdown}
+            sx={{ textTransform: 'none', fontSize: '0.8rem', color: 'info.main' }}
+          >
+            MD
           </Button>
         </Tooltip>
       )}
