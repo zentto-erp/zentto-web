@@ -2,6 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import crypto from "node:crypto";
 import { provisionTenant, getTenantInfo, sendWelcomeEmail, resolveTenantBySubdomain, resolveTenantByEmail } from "./tenant.service.js";
+import { callSp } from "../../db/query.js";
+import { provisionTenantDatabase } from "../../db/provision-tenant-db.js";
 
 export const tenantsRouter = Router();
 
@@ -109,6 +111,33 @@ tenantsRouter.get("/resolve/:subdomain", async (req, res) => {
     return;
   }
   res.json(tenant);
+});
+
+// POST /api/tenants/:companyId/provision-db — Crear BD dedicada (admin)
+tenantsRouter.post("/:companyId/provision-db", requireMasterKey, async (req, res) => {
+  const companyId = Number(req.params.companyId);
+  if (!companyId || isNaN(companyId)) {
+    res.status(400).json({ error: "invalid_company_id" });
+    return;
+  }
+
+  try {
+    const companies = await callSp<{ CompanyCode: string }>(
+      "usp_CFG_Company_Get",
+      { CompanyId: companyId },
+    );
+    if (!companies.length) {
+      res.status(404).json({ error: "company_not_found" });
+      return;
+    }
+
+    const company = companies[0];
+    const result = await provisionTenantDatabase(companyId, company.CompanyCode);
+    res.json(result);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    res.status(500).json({ error: msg });
+  }
 });
 
 // GET /api/tenants/:companyId

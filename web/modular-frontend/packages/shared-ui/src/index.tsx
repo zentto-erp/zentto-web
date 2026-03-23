@@ -48,6 +48,9 @@ export type { ZenttoDataGridProps as ResponsiveDataGridProps } from './component
 export { FormGrid, FormField } from './components/FormGrid';
 export type { FormGridProps, FormFieldProps } from './components/FormGrid';
 
+// Db Mode Toggle
+export { DbModeToggle } from './components/DbModeToggle';
+
 // Help
 export { default as HelpButton } from './components/HelpButton';
 export { HELP_MAP, getHelpForPath } from './lib/help-map';

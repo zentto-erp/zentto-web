@@ -78,6 +78,12 @@ async function authHeader(): Promise<Record<string, string>> {
       headers['x-country-code'] = countryCode;
     }
 
+    // Demo mode header
+    const dbMode = typeof window !== 'undefined' ? localStorage.getItem('zentto-db-mode') : null;
+    if (dbMode === 'demo') {
+      headers['x-db-mode'] = 'demo';
+    }
+
     return headers;
   } catch {
     const token = await getAuthToken();

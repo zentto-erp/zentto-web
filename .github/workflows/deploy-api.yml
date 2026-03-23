@@ -10,6 +10,8 @@ on:
       - 'scripts/deploy-db.sh'
       - 'scripts/goose-entrypoint.sh'
       - 'scripts/migrate.sh'
+      - 'scripts/goose-deploy.sh'
+      - 'scripts/goose-deploy-all.sh'
   workflow_dispatch:
 
 concurrency:
@@ -61,7 +63,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh"
+          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh,scripts/goose-deploy-all.sh"
           target: /opt/zentto/_deploy_tmp/
           strip_components: 0
 
@@ -80,9 +82,10 @@ jobs:
             cp -f /opt/zentto/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto/migrations/postgres/
             cp -rf /opt/zentto/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto/sqlweb-pg/
             cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto/goose-deploy.sh
-            chmod +x /opt/zentto/goose-deploy.sh
+            cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy-all.sh /opt/zentto/goose-deploy-all.sh
+            chmod +x /opt/zentto/goose-deploy.sh /opt/zentto/goose-deploy-all.sh
             rm -rf /opt/zentto/_deploy_tmp
-            PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy.sh
+            PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy-all.sh
 
   deploy:
     name: Deploy API to server

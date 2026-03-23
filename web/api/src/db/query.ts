@@ -9,6 +9,13 @@
 import { env } from "../config/env.js";
 import { sql, getPool } from "./mssql.js";
 import { getPgPool } from "./pg.js";
+import { getTenantPoolFromContext } from "../context/request-context.js";
+import { getMasterPool } from "./pg-pool-manager.js";
+
+/** Pool del tenant actual (context) o master pool (rutas públicas, health) */
+function getActivePgPool() {
+  return getTenantPoolFromContext() ?? getMasterPool();
+}
 import { xmlParamToJson } from "../utils/xml.js";
 
 // ── Utilidades de conversión de nombres ───────────────────────────────────────
@@ -97,7 +104,7 @@ async function pgCallSp<T>(
   spName: string,
   inputs?: Record<string, unknown>
 ): Promise<T[]> {
-  const pool = getPgPool();
+  const pool = getActivePgPool();
 
   // Construir: SELECT * FROM spName(p_key1 => $1, p_key2 => $2, ...)
   const adapted = adaptParamsForPg(inputs);
@@ -121,7 +128,7 @@ async function pgCallSpOut<T>(
   inputs?: Record<string, unknown>,
   outputs?: Record<string, unknown>
 ): Promise<{ rows: T[]; output: Record<string, unknown>; rowsAffected: number[] }> {
-  const pool = getPgPool();
+  const pool = getActivePgPool();
 
   const adapted = adaptParamsForPg(inputs);
   const entries = adapted ? Object.entries(adapted).filter(([, v]) => v !== undefined) : [];
@@ -246,7 +253,7 @@ export async function query<T>(
   params?: Record<string, unknown>
 ): Promise<T[]> {
   if (usePg()) {
-    const pool = getPgPool();
+    const pool = getActivePgPool();
     const entries = params ? Object.entries(params) : [];
     // Reemplazar @ParamName → $1, $2, ... en orden de aparición
     let pg_sql = statement;
@@ -280,7 +287,7 @@ export async function execute(
   params?: Record<string, unknown>
 ): Promise<{ rowsAffected: number[]; recordset: unknown[] }> {
   if (usePg()) {
-    const pool = getPgPool();
+    const pool = getActivePgPool();
     const entries = params ? Object.entries(params) : [];
     let pg_sql = statement;
     const values: unknown[] = [];

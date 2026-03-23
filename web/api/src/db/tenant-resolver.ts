@@ -1,0 +1,73 @@
+/**
+ * tenant-resolver.ts — Resuelve CompanyId → config de BD del tenant
+ *
+ * Cache en memoria con TTL de 5 minutos. Consulta sys.TenantDatabase
+ * en la BD master (demo). Si el CompanyId no tiene registro, retorna
+ * la BD demo como fallback (retrocompatibilidad total).
+ */
+
+import { getMasterPool, type TenantDbConfig } from "./pg-pool-manager.js";
+
+interface CacheEntry {
+  config: TenantDbConfig;
+  expiresAt: number;
+}
+
+const cache = new Map<number, CacheEntry>();
+const TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+/**
+ * Resuelve la config de BD para un CompanyId.
+ * Fallback: BD demo si el tenant no tiene BD propia.
+ */
+export async function resolveTenantDb(companyId: number): Promise<TenantDbConfig> {
+  // Check cache
+  const cached = cache.get(companyId);
+  if (cached && cached.expiresAt > Date.now()) return cached.config;
+
+  try {
+    const masterPool = getMasterPool();
+    const result = await masterPool.query(
+      `SELECT * FROM usp_sys_tenantdb_resolve($1)`,
+      [companyId],
+    );
+
+    if (result.rows.length > 0) {
+      const row = result.rows[0];
+      const config: TenantDbConfig = {
+        dbName: row.DbName,
+        host: row.DbHost || null,
+        port: row.DbPort || null,
+        user: row.DbUser || null,
+        password: row.DbPassword || null,
+        poolMin: row.PoolMin ?? 0,
+        poolMax: row.PoolMax ?? 5,
+        isDemo: row.IsDemo ?? true,
+      };
+      cache.set(companyId, { config, expiresAt: Date.now() + TTL_MS });
+      return config;
+    }
+  } catch {
+    // Si la tabla sys.TenantDatabase no existe aún (pre-migración),
+    // o hay error de conexión, fallback silencioso a master
+  }
+
+  // Fallback: BD master (demo)
+  const masterPool = getMasterPool();
+  const fallback: TenantDbConfig = {
+    dbName: (masterPool as any).options?.database || process.env.PG_DATABASE || "zentto_prod",
+    isDemo: true,
+  };
+  cache.set(companyId, { config: fallback, expiresAt: Date.now() + TTL_MS });
+  return fallback;
+}
+
+/** Invalida el cache para un CompanyId (después de provisioning) */
+export function invalidateTenantCache(companyId: number): void {
+  cache.delete(companyId);
+}
+
+/** Invalida todo el cache (deploy, etc.) */
+export function invalidateAllTenantCache(): void {
+  cache.clear();
+}

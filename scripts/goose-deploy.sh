@@ -60,16 +60,23 @@ echo "→ Estado de migraciones:"
 su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' status" postgres 2>&1 || true
 
 # Seeds idempotentes — se ejecutan SIEMPRE en cada deploy
+# SEEDS_TYPE=config → solo run-seeds-config.sql (categoría A: config)
+# SEEDS_TYPE=all   → run-seeds.sql (categorías A+B+C: config+starter+demo)
 SEEDS_DIR="${SEEDS_DIR:-/opt/zentto/sqlweb-pg}"
-SEEDS_FILE="${SEEDS_DIR}/run-seeds.sql"
+SEEDS_TYPE="${SEEDS_TYPE:-all}"
+if [ "$SEEDS_TYPE" = "config" ]; then
+  SEEDS_FILE="${SEEDS_DIR}/run-seeds-config.sql"
+else
+  SEEDS_FILE="${SEEDS_DIR}/run-seeds.sql"
+fi
 if [ -f "$SEEDS_FILE" ]; then
   echo ""
-  echo "→ Ejecutando seeds idempotentes..."
+  echo "→ Ejecutando seeds idempotentes (tipo: ${SEEDS_TYPE})..."
   cd "$SEEDS_DIR"
-  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f run-seeds.sql" postgres 2>&1 || {
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f $(basename ${SEEDS_FILE})" postgres 2>&1 || {
     echo "WARN: Algunos seeds tuvieron errores (ver arriba) — continuando..."
   }
-  echo "✓ Seeds ejecutados"
+  echo "✓ Seeds ejecutados (${SEEDS_TYPE})"
 else
   echo "WARN: No se encontró ${SEEDS_FILE} — saltando seeds"
 fi
