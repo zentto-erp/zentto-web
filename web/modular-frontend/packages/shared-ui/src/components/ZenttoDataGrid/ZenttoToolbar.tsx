@@ -6,12 +6,14 @@ import {
   GridToolbarFilterButton,
   GridToolbarColumnsButton,
   GridToolbarQuickFilter,
+  GridToolbarDensitySelector,
 } from '@mui/x-data-grid';
-import { Box, Button, Divider, Typography, Tooltip, Stack } from '@mui/material';
+import { Box, Button, Divider, Typography, Tooltip, Stack, IconButton } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import DataObjectIcon from '@mui/icons-material/DataObject';
 import ArticleIcon from '@mui/icons-material/Article';
+import LayersClearIcon from '@mui/icons-material/LayersClear';
 
 interface ZenttoToolbarProps {
   title?: string;
@@ -24,6 +26,9 @@ interface ZenttoToolbarProps {
   showExportExcel?: boolean;
   showExportJson?: boolean;
   showExportMarkdown?: boolean;
+  /** true si hay layout personalizado guardado — muestra botón de reset */
+  hasCustomLayout?: boolean;
+  onResetLayout?: () => void;
 }
 
 export function ZenttoToolbar({
@@ -37,6 +42,8 @@ export function ZenttoToolbar({
   showExportExcel,
   showExportJson,
   showExportMarkdown,
+  hasCustomLayout,
+  onResetLayout,
 }: ZenttoToolbarProps) {
   return (
     <GridToolbarContainer
@@ -63,6 +70,16 @@ export function ZenttoToolbar({
       {/* Herramientas nativas MUI */}
       <GridToolbarFilterButton />
       <GridToolbarColumnsButton />
+      <GridToolbarDensitySelector />
+
+      {/* Reset layout — visible solo si hay personalización guardada */}
+      {hasCustomLayout && (
+        <Tooltip title="Restablecer vista (orden, anchos y visibilidad)">
+          <IconButton size="small" onClick={onResetLayout} color="default" sx={{ opacity: 0.6 }}>
+            <LayersClearIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
 
       {/* Spacer */}
       <Box sx={{ flex: 1 }} />

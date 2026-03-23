@@ -93,6 +93,14 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
    */
   defaultCurrency?: string;
 
+  // ─── Layout Persistente ───────────────────────────────────────
+  /**
+   * Identificador único de la tabla para persistir el layout en IndexedDB.
+   * Ej: 'empleados-grid', 'vacaciones-grid', 'centros-costo-grid'.
+   * Si se omite, no se persiste nada.
+   */
+  gridId?: string;
+
   // ─── Toolbar ──────────────────────────────────────────────────
   /** Título en el toolbar */
   toolbarTitle?: string;

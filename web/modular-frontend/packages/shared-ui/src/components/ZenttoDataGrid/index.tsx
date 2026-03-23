@@ -26,6 +26,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { ZenttoToolbar } from './ZenttoToolbar';
+import { useGridLayout } from './useGridLayout';
 import {
   resolveId,
   injectDetailRows,
@@ -283,6 +284,8 @@ export function ZenttoDataGrid({
   showExportExcel = true,
   showExportJson = true,
   showExportMarkdown = false,
+  // Layout persistente
+  gridId,
   // Toolbar
   toolbarTitle,
   toolbarActions,
@@ -378,47 +381,7 @@ export function ZenttoDataGrid({
     [hasTotals, pivotedRows, pivotedColumns, totalsLabel]
   );
 
-  // ── Columnas responsive (visibilidad) ────────────────────────────────────────
-  const dataColumns = useMemo(
-    () =>
-      normalizedColumns.filter(
-        (c) =>
-          c.field !== 'actions' &&
-          c.type !== 'actions' &&
-          !c.field.startsWith('__')
-      ),
-    [normalizedColumns]
-  );
-
-  const effectiveMobileFields = useMemo(() => {
-    if (mobileVisibleFields) return mobileVisibleFields;
-    return dataColumns
-      .filter((c) => !c.mobileHide)
-      .slice(0, 2)
-      .map((c) => c.field);
-  }, [mobileVisibleFields, dataColumns]);
-
-  const effectiveSmFields = useMemo(() => {
-    const extra =
-      smExtraFields ??
-      dataColumns
-        .filter((c) => !c.tabletHide && !effectiveMobileFields.includes(c.field))
-        .slice(0, 2)
-        .map((c) => c.field);
-    return [...effectiveMobileFields, ...extra];
-  }, [effectiveMobileFields, smExtraFields, dataColumns]);
-
-  const responsiveVisibilityModel = useMemo<GridColumnVisibilityModel>(() => {
-    if (!isSmall) return externalVisibilityModel ?? {};
-    const visible = isMobile ? effectiveMobileFields : effectiveSmFields;
-    const model: GridColumnVisibilityModel = {};
-    dataColumns.forEach((col) => {
-      model[col.field] = visible.includes(col.field);
-    });
-    return { ...model, ...(externalVisibilityModel ?? {}) };
-  }, [isSmall, isMobile, effectiveMobileFields, effectiveSmFields, dataColumns, externalVisibilityModel]);
-
-  // ── Normalizar columnas de fecha — locale dinámico según país ────────────────
+  // ── Normalizar columnas de fecha / moneda (debe ir ANTES de dataColumns) ─────
   const resolvedDateLocale = dateLocale
     ?? (typeof navigator !== 'undefined' ? navigator.language : 'es');
 
@@ -479,9 +442,65 @@ export function ZenttoDataGrid({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pivotedColumns, resolvedDateLocale, defaultCurrency]);
 
+  // ── Layout persistente (orden, anchos, visibilidad, densidad) ─────────────────
+  const layout = useGridLayout(gridId, normalizedColumns);
+
+  // ── Columnas responsive (visibilidad) ────────────────────────────────────────
+  const dataColumns = useMemo(
+    () =>
+      layout.processedColumns.filter(
+        (c) =>
+          c.field !== 'actions' &&
+          c.type !== 'actions' &&
+          !c.field.startsWith('__')
+      ),
+    [layout.processedColumns]
+  );
+
+  const effectiveMobileFields = useMemo(() => {
+    if (mobileVisibleFields) return mobileVisibleFields;
+    return dataColumns
+      .filter((c) => !c.mobileHide)
+      .slice(0, 2)
+      .map((c) => c.field);
+  }, [mobileVisibleFields, dataColumns]);
+
+  const effectiveSmFields = useMemo(() => {
+    const extra =
+      smExtraFields ??
+      dataColumns
+        .filter((c) => !c.tabletHide && !effectiveMobileFields.includes(c.field))
+        .slice(0, 2)
+        .map((c) => c.field);
+    return [...effectiveMobileFields, ...extra];
+  }, [effectiveMobileFields, smExtraFields, dataColumns]);
+
+  const responsiveVisibilityModel = useMemo<GridColumnVisibilityModel>(() => {
+    if (!isSmall) {
+      // Desktop: preferencias del usuario del layout + overrides del desarrollador
+      return { ...layout.columnVisibilityModel, ...(externalVisibilityModel ?? {}) };
+    }
+    // Móvil/Tablet: control responsivo (anula preferencias de layout)
+    const visible = isMobile ? effectiveMobileFields : effectiveSmFields;
+    const model: GridColumnVisibilityModel = {};
+    dataColumns.forEach((col) => {
+      model[col.field] = visible.includes(col.field);
+    });
+    return { ...model, ...(externalVisibilityModel ?? {}) };
+  }, [isSmall, isMobile, effectiveMobileFields, effectiveSmFields, dataColumns, externalVisibilityModel, layout.columnVisibilityModel]);
+
+  // ── Handler visibilidad unificado (layout + external callback) ────────────────
+  const handleColumnVisibilityChange = useCallback(
+    (model: GridColumnVisibilityModel, details: any) => {
+      if (!isSmall) layout.onColumnVisibilityModelChange(model);
+      onColumnVisibilityModelChange?.(model, details);
+    },
+    [isSmall, layout, onColumnVisibilityModelChange]
+  );
+
   // ── Construir columnas finales ────────────────────────────────────────────────
   const finalColumns = useMemo<ZenttoColDef[]>(() => {
-    let cols = normalizedColumns;
+    let cols = layout.processedColumns;
 
     // Aplicar column pinning CSS
     if (pinnedColumns) cols = applyColumnPinning(cols, pinnedColumns);
@@ -510,7 +529,7 @@ export function ZenttoDataGrid({
     result.push(...actionCols);
 
     return result;
-  }, [normalizedColumns, getDetailContent, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall]);
+  }, [layout.processedColumns, getDetailContent, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall]);
 
   // ── Export ───────────────────────────────────────────────────────────────────
   const handleExportCsv = useCallback(() => {
@@ -583,8 +602,15 @@ export function ZenttoDataGrid({
         rows={processedRows}
         columns={finalColumns as GridColDef[]}
         getRowId={getRowIdFn as any}
+        density={layout.density}
+        onDensityChange={(d) => layout.onDensityChange(d as any)}
         columnVisibilityModel={responsiveVisibilityModel}
-        onColumnVisibilityModelChange={onColumnVisibilityModelChange}
+        onColumnVisibilityModelChange={handleColumnVisibilityChange}
+        onColumnOrderChange={() => {
+          const cols = apiRef.current?.getAllColumns?.();
+          if (cols) layout.onColumnOrderChange(cols.map(c => c.field).filter(f => !f.startsWith('__')));
+        }}
+        onColumnWidthChange={(params) => layout.onColumnWidthChange(params.colDef.field, params.width)}
         getRowHeight={getDetailContent ? resolvedGetRowHeight : getRowHeight ?? (() => null)}
         getRowClassName={resolvedGetRowClassName}
         isRowSelectable={resolvedIsRowSelectable}
@@ -613,6 +639,8 @@ export function ZenttoDataGrid({
                   showExportExcel,
                   showExportJson,
                   showExportMarkdown,
+                  hasCustomLayout: layout.hasCustomLayout,
+                  onResetLayout: layout.resetLayout,
                 } as any,
               }
         }
