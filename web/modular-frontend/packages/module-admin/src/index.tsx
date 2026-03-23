@@ -52,7 +52,6 @@ export { default as FacturaForm } from './components/modules/facturas/FacturaFor
 export { default as PedidosEcommercePage } from './components/modules/facturas/PedidosEcommercePage';
 
 // Re-export components — inventario
-export { default as InventarioTable } from './components/modules/inventario/InventarioTable';
 export { default as AjusteInventarioForm } from './components/modules/inventario/AjusteInventarioForm';
 export { default as CatalogoCrudPage } from './components/modules/inventario/CatalogoCrudPage';
 export { default as GenericEntityCrudPage } from './components/modules/inventario/CatalogoCrudPage';
