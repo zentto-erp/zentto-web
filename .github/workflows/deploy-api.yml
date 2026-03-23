@@ -78,31 +78,61 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${SSH_USER}@${SSH_HOST} "
             set -e
 
-            # Grants de schemas (requiere superuser)
-            su -c \"psql -d $PG_DATABASE -c \\\"GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;\\\"\" postgres || true
-
             # Instalar goose si no existe
             if ! command -v goose &>/dev/null; then
               wget -qO /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
               chmod +x /usr/local/bin/goose
             fi
 
-            # Ejecutar migraciones
+            # Grants de schemas (superuser)
+            su -c \"psql -d $PG_DATABASE -c \\\"GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;\\\"\" postgres || true
+
+            # Ejecutar goose como superuser (postgres) para evitar problemas de ownership
             echo '╔══════════════════════════════════════════╗'
             echo '║  Zentto — goose migrate up (PostgreSQL)  ║'
             echo '╚══════════════════════════════════════════╝'
 
-            DATABASE_URL=\"postgres://${PG_USER}:${PG_PASSWORD}@127.0.0.1:5432/${PG_DATABASE}?sslmode=disable\"
-            goose -dir /opt/zentto/migrations/postgres postgres \"\$DATABASE_URL\" up
+            su -c \"goose -dir /opt/zentto/migrations/postgres postgres 'postgres://postgres@/\${PG_DATABASE}?host=/var/run/postgresql&sslmode=disable' up\" postgres
 
             echo ''
             echo '→ Estado de migraciones:'
-            goose -dir /opt/zentto/migrations/postgres postgres \"\$DATABASE_URL\" status
+            su -c \"goose -dir /opt/zentto/migrations/postgres postgres 'postgres://postgres@/\${PG_DATABASE}?host=/var/run/postgresql&sslmode=disable' status\" postgres
 
-            # Ownership de funciones → zentto_app (post-migracion)
-            su -c \"psql -d $PG_DATABASE -c \\\"DO \\\\\\\$\\\\\\\$ DECLARE r RECORD; BEGIN FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' LOOP BEGIN EXECUTE 'ALTER FUNCTION ' || r.oid::regprocedure || ' OWNER TO zentto_app'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; END LOOP; END \\\\\\\$\\\\\\\$;\\\"\" postgres || true
+            # Ownership de TODAS las funciones, tablas y vistas → zentto_app
+            su -c \"psql -d $PG_DATABASE -c \\\"
+              DO \\\\\\\$\\\\\\\$
+              DECLARE r RECORD; s TEXT;
+              BEGIN
+                -- Schemas ownership
+                FOR s IN SELECT schema_name FROM information_schema.schemata
+                  WHERE schema_name NOT IN ('pg_catalog','information_schema','pg_toast')
+                LOOP
+                  EXECUTE 'GRANT USAGE ON SCHEMA ' || quote_ident(s) || ' TO zentto_app';
+                  EXECUTE 'GRANT ALL ON ALL TABLES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app';
+                  EXECUTE 'GRANT ALL ON ALL SEQUENCES IN SCHEMA ' || quote_ident(s) || ' TO zentto_app';
+                END LOOP;
+                -- Functions ownership
+                FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+                  WHERE n.nspname = 'public'
+                LOOP
+                  BEGIN
+                    EXECUTE 'ALTER FUNCTION ' || r.oid::regprocedure || ' OWNER TO zentto_app';
+                  EXCEPTION WHEN OTHERS THEN NULL;
+                  END;
+                END LOOP;
+                -- Views ownership
+                FOR r IN SELECT schemaname, viewname FROM pg_views
+                  WHERE schemaname NOT IN ('pg_catalog','information_schema')
+                LOOP
+                  BEGIN
+                    EXECUTE 'ALTER VIEW ' || quote_ident(r.schemaname) || '.' || quote_ident(r.viewname) || ' OWNER TO zentto_app';
+                  EXCEPTION WHEN OTHERS THEN NULL;
+                  END;
+                END LOOP;
+              END \\\\\\\$\\\\\\\$;
+            \\\"\" postgres || true
 
-            echo '✓ Migraciones goose completadas: $(date -u)'
+            echo '✓ Migraciones goose + ownership completados: $(date -u)'
           "
           rm -f /tmp/ssh_key
 
