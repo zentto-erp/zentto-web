@@ -59,6 +59,21 @@ echo ""
 echo "→ Estado de migraciones:"
 su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' status" postgres 2>&1 || true
 
+# Seeds idempotentes — se ejecutan SIEMPRE en cada deploy
+SEEDS_DIR="${SEEDS_DIR:-/opt/zentto/sqlweb-pg}"
+SEEDS_FILE="${SEEDS_DIR}/run-seeds.sql"
+if [ -f "$SEEDS_FILE" ]; then
+  echo ""
+  echo "→ Ejecutando seeds idempotentes..."
+  cd "$SEEDS_DIR"
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f run-seeds.sql" postgres 2>&1 || {
+    echo "WARN: Algunos seeds tuvieron errores (ver arriba) — continuando..."
+  }
+  echo "✓ Seeds ejecutados"
+else
+  echo "WARN: No se encontró ${SEEDS_FILE} — saltando seeds"
+fi
+
 # Ownership de todo → zentto_app
 echo "→ Transfiriendo ownership a zentto_app..."
 su -c "psql -d ${PG_DATABASE} <<'EOSQL'
