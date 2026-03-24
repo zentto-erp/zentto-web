@@ -118,9 +118,11 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(INT, VARCHAR) CASCADE;
 DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clientes_getbycodigo(
-    p_codigo VARCHAR(24)
+    p_company_id INT DEFAULT 1,
+    p_codigo VARCHAR(24) DEFAULT NULL
 )
 RETURNS TABLE(
     "CODIGO"          VARCHAR,
@@ -180,6 +182,7 @@ BEGIN
         COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION    AS "Credito"
     FROM master."Customer" c
     WHERE c."CustomerCode" = p_codigo
+      AND c."CompanyId" = p_company_id
       AND COALESCE(c."IsDeleted", FALSE) = FALSE;
 END;
 $$;

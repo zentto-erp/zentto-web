@@ -78,6 +78,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Clientes_G
     DROP PROCEDURE usp_Clientes_GetByCodigo
 GO
 CREATE PROCEDURE usp_Clientes_GetByCodigo
+    @CompanyId INT = 1,
     @Codigo NVARCHAR(12)
 AS
 BEGIN
@@ -96,6 +97,7 @@ BEGIN
         Ciudad, CodPostal, Email, PaginaWww, CodUsuario, Credito
     FROM [master].[Customer]
     WHERE CustomerCode = @Codigo
+      AND CompanyId = @CompanyId
       AND ISNULL(IsDeleted, 0) = 0;
 END
 GO
