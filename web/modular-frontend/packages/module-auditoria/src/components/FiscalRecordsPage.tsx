@@ -4,19 +4,23 @@ import React, { useState } from "react";
 import {
   Box,
   Paper,
-  TextField,
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
-import dayjs from "dayjs";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
 
+const FISCAL_FILTERS: FilterFieldDef[] = [
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function FiscalRecordsPage() {
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<FiscalRecordFilter>({ page: 1, limit: 25 });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const { data, isLoading } = useFiscalRecords(filter);
 
   const rows = data?.data ?? [];
@@ -76,24 +80,22 @@ export default function FiscalRecordsPage() {
       <ContextActionHeader title="Registros Fiscales" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <FormGrid spacing={2} sx={{ mb: 2 }}>
-          <FormField xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Desde"
-              value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-              onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-          <FormField xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Hasta"
-              value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-              onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined, page: 1 }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-        </FormGrid>
+        <ZenttoFilterPanel
+          filters={FISCAL_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              fechaDesde: vals.fechaDesde || undefined,
+              fechaHasta: vals.fechaHasta || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar registros fiscales..."
+          searchValue=""
+          onSearchChange={() => {}}
+        />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid

@@ -3,17 +3,29 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import PrintIcon from "@mui/icons-material/Print";
 import Grid from "@mui/material/Grid2";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { type Dayjs } from "dayjs";
-import "dayjs/locale/es";
+import dayjs from "dayjs";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
+
+const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo",
+    label: "Tipo",
+    type: "select",
+    options: [
+      { value: "DEP", label: "Depósito" },
+      { value: "PCH", label: "Cheque" },
+      { value: "NCR", label: "Nota Crédito" },
+      { value: "NDB", label: "Nota Débito" },
+      { value: "IDB", label: "Int. Débito" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
 
 const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "default"> = {
   DEP: "success",
@@ -90,10 +102,16 @@ export default function CuentasBancariasPage() {
     },
   ];
   const [nroCta, setNroCta] = useState<string>("");
-  const [fechaDesde, setFechaDesde] = useState<Dayjs | null>(dayjs().tz(timeZone).startOf("month"));
-  const [fechaHasta, setFechaHasta] = useState<Dayjs | null>(dayjs().tz(timeZone));
+  const [movSearch, setMovSearch] = useState("");
+  const [movFilterValues, setMovFilterValues] = useState<Record<string, string>>({
+    from: dayjs().tz(timeZone).startOf("month").format("YYYY-MM-DD"),
+    to: dayjs().tz(timeZone).format("YYYY-MM-DD"),
+  });
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(50);
+
+  const fechaDesde = movFilterValues.from ? dayjs(movFilterValues.from) : null;
+  const fechaHasta = movFilterValues.to ? dayjs(movFilterValues.to) : null;
 
   const { data: cuentasData, isLoading: loadingCtas } = useCuentasBancarias();
 
@@ -190,29 +208,22 @@ export default function CuentasBancariasPage() {
               </Button>
             </Stack>
 
-            <Stack direction="row" spacing={2} mb={2} alignItems="center">
-              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                <DatePicker
-                  label="Desde"
-                  value={fechaDesde}
-                  onChange={setFechaDesde}
-                  slotProps={{ textField: { size: "small" } }}
-                />
-                <DatePicker
-                  label="Hasta"
-                  value={fechaHasta}
-                  onChange={setFechaHasta}
-                  slotProps={{ textField: { size: "small" } }}
-                />
-              </LocalizationProvider>
-              {nroCta && (
-                <Chip
-                  label={`Cuenta: ${nroCta}`}
-                  onDelete={() => setNroCta("")}
-                  color="primary"
-                />
-              )}
-            </Stack>
+            <ZenttoFilterPanel
+              filters={MOVIMIENTOS_FILTERS}
+              values={movFilterValues}
+              onChange={(v) => { setMovFilterValues(v); setPage(1); }}
+              searchPlaceholder="Buscar movimiento..."
+              searchValue={movSearch}
+              onSearchChange={(v) => { setMovSearch(v); setPage(1); }}
+            />
+            {nroCta && (
+              <Chip
+                label={`Cuenta: ${nroCta}`}
+                onDelete={() => setNroCta("")}
+                color="primary"
+                sx={{ mb: 1 }}
+              />
+            )}
 
             <ZenttoDataGrid
             gridId="bancos-cuentas-movimientos"

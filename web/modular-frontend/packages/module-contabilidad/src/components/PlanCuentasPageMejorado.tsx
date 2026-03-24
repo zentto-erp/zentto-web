@@ -37,7 +37,7 @@ import {
   useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
-import { ContextActionHeader, DatePicker, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -136,9 +136,22 @@ function MayorAnaliticoDialog({
 
 // ─── Componente Principal ──────────────────────────────────────
 
+const PLAN_MEJORADO_FILTERS: FilterFieldDef[] = [
+  { field: "tipo", label: "Tipo", type: "select", options: [
+    { value: "A", label: "Acreedor" },
+    { value: "D", label: "Deudor" },
+  ]},
+  { field: "nivel", label: "Nivel", type: "select", options: [
+    { value: "1", label: "Nivel 1" },
+    { value: "2", label: "Nivel 2" },
+    { value: "3", label: "Nivel 3" },
+  ]},
+];
+
 export default function PlanCuentasPageMejorado() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [tabValue, setTabValue] = useState(0);
   const [cuentaMayor, setCuentaMayor] = useState<CuentaContable | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -366,6 +379,16 @@ export default function PlanCuentasPageMejorado() {
         ]}
         onSearch={setSearch}
         searchPlaceholder="Buscar por código o descripción..."
+      />
+
+      {/* Filtros */}
+      <ZenttoFilterPanel
+        filters={PLAN_MEJORADO_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar por codigo o descripcion..."
+        searchValue={search}
+        onSearchChange={setSearch}
       />
 
       {/* Error */}

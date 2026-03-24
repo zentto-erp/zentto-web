@@ -22,7 +22,7 @@ import {
   CircularProgress,
   Menu,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -48,6 +48,23 @@ import { useNominasList } from "../hooks/useNomina";
 const GRUPOS = ["ADMIN", "ALMACEN", "GERENCIA", "PRODUCCION", "VENTAS"];
 const NOMINAS = ["MENSUAL", "QUINCENAL", "SEMANAL"];
 
+const EMPLEADOS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "grupo", label: "Departamento", type: "select",
+    options: GRUPOS.map((g) => ({ value: g, label: g })),
+  },
+  {
+    field: "cargo", label: "Cargo", type: "text", placeholder: "Filtrar por cargo...",
+  },
+  {
+    field: "status", label: "Estado", type: "select",
+    options: [
+      { value: "ACTIVO", label: "Activo" },
+      { value: "INACTIVO", label: "Inactivo" },
+    ],
+  },
+];
+
 const emptyForm: EmpleadoInput = {
   CEDULA: "",
   NOMBRE: "",
@@ -64,6 +81,8 @@ const emptyForm: EmpleadoInput = {
 
 export default function EmpleadosPage() {
   const [filter, setFilter] = useState<EmpleadoFilter>({ page: 1, limit: 50 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [editCedula, setEditCedula] = useState<string | null>(null);
   const [form, setForm] = useState<EmpleadoInput>({ ...emptyForm });
@@ -212,39 +231,20 @@ export default function EmpleadosPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-         
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-        />
-        <FormControl sx={{ minWidth: 130 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={filter.status || ""}
-            label="Status"
-            onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="ACTIVO">Activo</MenuItem>
-            <MenuItem value="INACTIVO">Inactivo</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl sx={{ minWidth: 130 }}>
-          <InputLabel>Grupo</InputLabel>
-          <Select
-            value={filter.grupo || ""}
-            label="Grupo"
-            onChange={(e) => setFilter((f) => ({ ...f, grupo: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            {GRUPOS.map((g) => (
-              <MenuItem key={g} value={g}>{g}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={EMPLEADOS_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, status: v.status || undefined, grupo: v.grupo || undefined }));
+        }}
+        searchPlaceholder="Buscar empleados..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, search: v || undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid

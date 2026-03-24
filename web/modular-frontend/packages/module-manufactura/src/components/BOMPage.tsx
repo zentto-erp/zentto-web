@@ -11,7 +11,6 @@ import {
   DialogTitle,
   Grid,
   IconButton,
-  MenuItem,
   Stack,
   TextField,
   Toolbar,
@@ -20,7 +19,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
@@ -56,6 +55,17 @@ const emptyLine = (): BOMLine => ({
   unitCost: 0,
 });
 
+const BOM_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "DRAFT", label: "Borrador" },
+      { value: "ACTIVE", label: "Activa" },
+      { value: "OBSOLETE", label: "Obsoleta" },
+    ],
+  },
+];
+
 export default function BOMPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -64,6 +74,7 @@ export default function BOMPage() {
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   // Form state
   const [productId, setProductId] = useState("");
@@ -152,11 +163,6 @@ export default function BOMPage() {
     },
   ];
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, status: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
   const handleAddLine = () => setLines((prev) => [...prev, emptyLine()]);
 
   const handleRemoveLine = (idx: number) =>
@@ -226,33 +232,18 @@ export default function BOMPage() {
       </Box>
 
       {/* Filters */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={8} md={9}>
-          <TextField
-            placeholder="Buscar por codigo, nombre..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPaginationModel((p) => ({ ...p, page: 0 }));
-            }}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={4} md={3}>
-          <TextField
-            select
-            label="Estado"
-            value={filter.status ?? ""}
-            onChange={handleStatusFilter}
-            fullWidth
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="DRAFT">Borrador</MenuItem>
-            <MenuItem value="ACTIVE">Activa</MenuItem>
-            <MenuItem value="OBSOLETE">Obsoleta</MenuItem>
-          </TextField>
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={BOM_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilter((f) => ({ ...f, status: vals.estado || undefined }));
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar por codigo, nombre..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

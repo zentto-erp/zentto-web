@@ -11,19 +11,49 @@ import {
   Stack,
   TextField,
   Typography,
-  Paper,
   Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useBancosList,
   useCreateBanco,
   useUpdateBanco,
   useDeleteBanco,
 } from "../../hooks/useBancosAuxiliares";
+
+const BANCOS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo",
+    label: "Tipo",
+    type: "select",
+    options: [
+      { value: "NACIONAL", label: "Nacional" },
+      { value: "INTERNACIONAL", label: "Internacional" },
+    ],
+  },
+  {
+    field: "moneda",
+    label: "Moneda",
+    type: "select",
+    options: [
+      { value: "VES", label: "VES" },
+      { value: "USD", label: "USD" },
+      { value: "EUR", label: "EUR" },
+    ],
+  },
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "ACTIVO", label: "Activo" },
+      { value: "INACTIVO", label: "Inactivo" },
+    ],
+  },
+];
 
 const EMPTY_FORM = {
   Nombre: "",
@@ -36,6 +66,7 @@ const EMPTY_FORM = {
 export default function BancosPage() {
   /* ── state ── */
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
@@ -146,18 +177,14 @@ export default function BancosPage() {
       </Stack>
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-         
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          sx={{ minWidth: 300 }}
-        />
-      </Stack>
+      <ZenttoFilterPanel
+        filters={BANCOS_FILTERS}
+        values={filterValues}
+        onChange={(v) => { setFilterValues(v); setPage(1); }}
+        searchPlaceholder="Buscar banco..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPage(1); }}
+      />
 
       {/* Grid */}
       <ZenttoDataGrid

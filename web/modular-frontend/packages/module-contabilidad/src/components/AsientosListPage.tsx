@@ -23,8 +23,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
-import dayjs from "dayjs";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useAsientosList,
   useAsientoDetalle,
@@ -85,10 +84,28 @@ function AsientoDetailPanel({ asientoId }: { asientoId: number }) {
   );
 }
 
+const ASIENTOS_FILTERS: FilterFieldDef[] = [
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+  { field: "tipoAsiento", label: "Tipo", type: "select", options: [
+    { value: "APERTURA", label: "Apertura" },
+    { value: "DIARIO", label: "Diario" },
+    { value: "AJUSTE", label: "Ajuste" },
+    { value: "CIERRE", label: "Cierre" },
+  ]},
+  { field: "estado", label: "Estado", type: "select", options: [
+    { value: "BORRADOR", label: "Borrador" },
+    { value: "APROBADO", label: "Aprobado" },
+    { value: "ANULADO", label: "Anulado" },
+  ]},
+];
+
 export default function AsientosListPage() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<AsientoFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [anularId, setAnularId] = useState<number | null>(null);
   const [motivoAnulacion, setMotivoAnulacion] = useState("");
@@ -170,24 +187,27 @@ export default function AsientosListPage() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <FormGrid spacing={2} sx={{ mb: 2 }}>
-          <FormField xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Desde"
-              value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-              onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : '' }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-          <FormField xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Hasta"
-              value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-              onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-        </FormGrid>
+        <ZenttoFilterPanel
+          filters={ASIENTOS_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              fechaDesde: vals.fechaDesde || undefined,
+              fechaHasta: vals.fechaHasta || undefined,
+              tipoAsiento: vals.tipoAsiento || undefined,
+              estado: vals.estado || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar asiento..."
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
+          }}
+        />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 400, width: "100%", elevation: 0, border: '1px solid #E5E7EB', overflow: 'auto' }}>
           <ZenttoDataGrid

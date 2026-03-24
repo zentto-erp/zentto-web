@@ -1,112 +1,80 @@
 // components/modules/clientes/ClientesTable.tsx
-/**
- * Tabla de Clientes con ZenttoDataGrid
- * Incluye: clipboard, header filters, totales, acciones CRUD
- */
+"use client";
 
-'use client';
-
-import React, { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Button,
-  TextField,
-  Stack,
-  Paper,
-  Typography,
-} from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Box, Button, Typography } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
 import {
   ZenttoDataGrid,
   type ZenttoColDef,
   buildCrudActionsColumn,
   DeleteDialog,
-} from '@zentto/shared-ui';
-import { useCrudGeneric } from '../../../hooks/useCrudGeneric';
-import { Cliente } from '@zentto/shared-api/types';
+  ZenttoFilterPanel,
+  type FilterFieldDef,
+} from "@zentto/shared-ui";
+import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
+import { Cliente } from "@zentto/shared-api/types";
+
+const CLIENTE_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "Activo", label: "Activo" },
+      { value: "Inactivo", label: "Inactivo" },
+      { value: "Suspendido", label: "Suspendido" },
+    ],
+  },
+];
 
 export default function ClientesTable() {
   const router = useRouter();
-  const crud = useCrudGeneric<Cliente>('clientes');
+  const crud = useCrudGeneric<Cliente>("clientes");
   const { data, isLoading } = crud.list();
 
-  // State
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
 
-  // Mutations
-  const { mutate: deleteCliente, isPending: isDeleting } = crud.delete('');
+  const { mutate: deleteCliente, isPending: isDeleting } = crud.delete("");
 
   // Filtrado local
   const filteredData = useMemo(() => {
     const items = data?.items || data?.data || [];
-    if (!searchTerm) return items;
-    const term = searchTerm.toLowerCase();
-    return items.filter(
-      (client: Cliente) =>
-        client.nombre.toLowerCase().includes(term) ||
-        client.rif.includes(searchTerm)
-    );
-  }, [data, searchTerm]);
+    let filtered = items;
+    if (search) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (client: Cliente) =>
+          client.nombre.toLowerCase().includes(term) ||
+          client.rif.includes(search)
+      );
+    }
+    if (filterValues.estado) {
+      filtered = filtered.filter(
+        (client: Cliente) => client.estado === filterValues.estado
+      );
+    }
+    return filtered;
+  }, [data, search, filterValues]);
 
-  // Columnas ZenttoDataGrid
   const columns = useMemo<ZenttoColDef[]>(
     () => [
+      { field: "codigo", headerName: "Codigo", width: 100, sortable: true },
+      { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200, sortable: true },
+      { field: "rif", headerName: "RIF", width: 130, sortable: true, mobileHide: true },
+      { field: "email", headerName: "Email", width: 200, mobileHide: true, tabletHide: true },
+      { field: "telefono", headerName: "Telefono", width: 140, mobileHide: true, tabletHide: true },
+      { field: "saldo", headerName: "Saldo", width: 140, type: "number", currency: true, aggregation: "sum", mobileHide: true },
       {
-        field: 'codigo',
-        headerName: 'Codigo',
-        width: 100,
-        sortable: true,
-      },
-      {
-        field: 'nombre',
-        headerName: 'Nombre',
-        flex: 1,
-        minWidth: 200,
-        sortable: true,
-      },
-      {
-        field: 'rif',
-        headerName: 'RIF',
-        width: 130,
-        sortable: true,
-        mobileHide: true,
-      },
-      {
-        field: 'email',
-        headerName: 'Email',
-        width: 200,
-        mobileHide: true,
-        tabletHide: true,
-      },
-      {
-        field: 'telefono',
-        headerName: 'Telefono',
-        width: 140,
-        mobileHide: true,
-        tabletHide: true,
-      },
-      {
-        field: 'saldo',
-        headerName: 'Saldo',
-        width: 140,
-        type: 'number',
-        currency: true,
-        aggregation: 'sum',
-        mobileHide: true,
-      },
-      {
-        field: 'estado',
-        headerName: 'Estado',
+        field: "estado",
+        headerName: "Estado",
         width: 110,
-        statusColors: {
-          Activo: 'success',
-          Inactivo: 'error',
-          Suspendido: 'warning',
-        },
-        statusVariant: 'outlined',
+        statusColors: { Activo: "success", Inactivo: "error", Suspendido: "warning" },
+        statusVariant: "outlined",
       },
       buildCrudActionsColumn({
         onView: (row) => router.push(`/clientes/${row.codigo}`),
@@ -120,7 +88,6 @@ export default function ClientesTable() {
     [router]
   );
 
-  // Rows con id
   const rows = useMemo(
     () =>
       filteredData.map((client: Cliente, idx: number) => ({
@@ -142,40 +109,26 @@ export default function ClientesTable() {
   };
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
           Gestion de Clientes
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push('/clientes/new')}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/clientes/new")}>
           Nuevo Cliente
         </Button>
       </Box>
 
-      {/* Search Bar */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack spacing={2}>
-          <TextField
-            placeholder="Buscar por nombre o RIF..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </Stack>
-      </Paper>
+      {/* Filtros */}
+      <ZenttoFilterPanel
+        filters={CLIENTE_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar por nombre o RIF..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       {/* ZenttoDataGrid */}
       <Box sx={{ flex: 1, minHeight: 400 }}>
@@ -191,14 +144,13 @@ export default function ClientesTable() {
           gridId="clientes-table"
           toolbarTitle={`${filteredData.length} clientes`}
           pageSizeOptions={[10, 25, 50, 100]}
-          sx={{ height: '100%' }}
+          sx={{ height: "100%" }}
         />
       </Box>
 
-      {/* Delete Dialog */}
       <DeleteDialog
         open={deleteOpen}
-        itemName={selectedClient?.nombre || ''}
+        itemName={selectedClient?.nombre || ""}
         onConfirm={handleDeleteConfirm}
         onClose={() => {
           setDeleteOpen(false);

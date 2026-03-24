@@ -6,7 +6,6 @@ import {
   Paper,
   Typography,
   Button,
-  TextField,
   Stack,
   Dialog,
   DialogTitle,
@@ -16,7 +15,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useRouter } from "next/navigation";
@@ -25,7 +24,7 @@ import {
   useLiquidacionesList,
   useLiquidacionDetalle,
 } from "../hooks/useNomina";
-import EmployeeSelector from "./EmployeeSelector";
+
 
 type LiquidacionDetalleItem = Record<string, any>;
 
@@ -80,9 +79,30 @@ function LiquidacionDetailPanel({ liquidacionId }: { liquidacionId: string }) {
   );
 }
 
+const LIQUIDACIONES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "VOLUNTARIA", label: "Voluntaria" },
+      { value: "DESPIDO", label: "Despido" },
+      { value: "JUBILACION", label: "Jubilacion" },
+    ],
+  },
+  { field: "fecha", label: "Fecha", type: "date" },
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "PENDIENTE", label: "Pendiente" },
+      { value: "PROCESADA", label: "Procesada" },
+    ],
+  },
+];
+
 export default function LiquidacionesPage() {
   const router = useRouter();
   const [cedula, setCedula] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading } = useLiquidacionesList({ cedula: cedula || undefined });
@@ -134,16 +154,17 @@ export default function LiquidacionesPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <Box sx={{ minWidth: 320 }}>
-          <EmployeeSelector
-            value={cedula}
-            onChange={(code) => setCedula(code)}
-            label="Filtrar por empleado"
-            size="small"
-          />
-        </Box>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={LIQUIDACIONES_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar por cedula..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setCedula(v);
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid

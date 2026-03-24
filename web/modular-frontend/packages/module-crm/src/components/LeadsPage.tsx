@@ -21,7 +21,7 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useLeadsList,
   usePipelinesList,
@@ -63,12 +63,32 @@ const emptyLead = {
   stageId: "" as number | string,
 };
 
+const LEADS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "OPEN", label: "Abierto" },
+      { value: "WON", label: "Ganado" },
+      { value: "LOST", label: "Perdido" },
+    ],
+  },
+  {
+    field: "prioridad", label: "Prioridad", type: "select",
+    options: [
+      { value: "HIGH", label: "Alta" },
+      { value: "MEDIUM", label: "Media" },
+      { value: "LOW", label: "Baja" },
+    ],
+  },
+];
+
 export default function LeadsPage() {
   const [filter, setFilter] = useState<LeadFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyLead);
   const [searchText, setSearchText] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useLeadsList(filter);
   const { data: pipelinesData } = usePipelinesList();
@@ -163,10 +183,6 @@ export default function LeadsPage() {
     }
   };
 
-  const handleSearch = () => {
-    setFilter({ ...filter, search: searchText || undefined, page: 1 });
-  };
-
   return (
     <Box>
       <ContextActionHeader
@@ -179,61 +195,27 @@ export default function LeadsPage() {
       />
 
       {/* Filtros */}
-      <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-          <TextField
-           
-            label="Buscar"
-            placeholder="Nombre, empresa, email..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            sx={{ minWidth: 240 }}
-          />
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Pipeline</InputLabel>
-            <Select
-              value={filter.pipelineId ?? ""}
-              label="Pipeline"
-              onChange={(e) => setFilter({ ...filter, pipelineId: e.target.value ? Number(e.target.value) : undefined, page: 1 })}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              {pipelines.map((p: any) => (
-                <MenuItem key={p.PipelineId} value={p.PipelineId}>{p.Name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filter.status ?? ""}
-              label="Estado"
-              onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined, page: 1 })}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="OPEN">Abierto</MenuItem>
-              <MenuItem value="WON">Ganado</MenuItem>
-              <MenuItem value="LOST">Perdido</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Prioridad</InputLabel>
-            <Select
-              value={filter.priority ?? ""}
-              label="Prioridad"
-              onChange={(e) => setFilter({ ...filter, priority: e.target.value || undefined, page: 1 })}
-            >
-              <MenuItem value="">Todas</MenuItem>
-              <MenuItem value="HIGH">Alta</MenuItem>
-              <MenuItem value="MEDIUM">Media</MenuItem>
-              <MenuItem value="LOW">Baja</MenuItem>
-            </Select>
-          </FormControl>
-          <Button variant="outlined" size="small" onClick={handleSearch}>
-            Filtrar
-          </Button>
-        </Stack>
-      </Paper>
+      <Box sx={{ mb: 2 }}>
+        <ZenttoFilterPanel
+          filters={LEADS_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              status: vals.estado || undefined,
+              priority: vals.prioridad || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Nombre, empresa, email..."
+          searchValue={searchText}
+          onSearchChange={(v) => {
+            setSearchText(v);
+            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
+          }}
+        />
+      </Box>
 
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>

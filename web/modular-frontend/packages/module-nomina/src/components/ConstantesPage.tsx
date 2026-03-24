@@ -14,13 +14,26 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useConstantesList, useSaveConstante, useDeleteConstante, type ConstanteInput } from "../hooks/useNomina";
 
+const CONSTANTES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "SISTEMA", label: "Sistema" },
+      { value: "USUARIO", label: "Usuario" },
+      { value: "LEGAL", label: "Legal" },
+    ],
+  },
+];
+
 export default function ConstantesPage() {
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConstanteInput>({ codigo: "", nombre: "", valor: 0 });
@@ -96,6 +109,15 @@ export default function ConstantesPage() {
           Nueva Constante
         </Button>
       </Stack>
+
+      <ZenttoFilterPanel
+        filters={CONSTANTES_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar constantes..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid

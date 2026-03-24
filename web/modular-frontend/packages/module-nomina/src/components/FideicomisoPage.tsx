@@ -19,7 +19,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -29,8 +29,22 @@ import {
   type TrustFilter,
 } from "../hooks/useRRHH";
 
+const FIDEICOMISO_FILTERS: FilterFieldDef[] = [
+  {
+    field: "quarter", label: "Trimestre", type: "select",
+    options: [
+      { value: "1", label: "Q1" },
+      { value: "2", label: "Q2" },
+      { value: "3", label: "Q3" },
+      { value: "4", label: "Q4" },
+    ],
+  },
+];
+
 export default function FideicomisoPage() {
   const currentYear = new Date().getFullYear();
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<TrustFilter>({ year: currentYear, page: 1, limit: 25 });
   const [calcOpen, setCalcOpen] = useState(false);
   const [calcForm, setCalcForm] = useState({ year: currentYear, quarter: 1 });
@@ -109,29 +123,17 @@ export default function FideicomisoPage() {
       </Stack>
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Año"
-          type="number"
-         
-          value={filter.year || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, year: Number(e.target.value) || undefined }))}
-        />
-        <FormControl sx={{ minWidth: 140 }}>
-          <InputLabel>Trimestre</InputLabel>
-          <Select
-            value={filter.quarter || ""}
-            label="Trimestre"
-            onChange={(e) => setFilter((f) => ({ ...f, quarter: Number(e.target.value) || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value={1}>Q1</MenuItem>
-            <MenuItem value={2}>Q2</MenuItem>
-            <MenuItem value={3}>Q3</MenuItem>
-            <MenuItem value={4}>Q4</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={FIDEICOMISO_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, quarter: v.quarter ? Number(v.quarter) : undefined }));
+        }}
+        searchPlaceholder="Buscar empleados..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

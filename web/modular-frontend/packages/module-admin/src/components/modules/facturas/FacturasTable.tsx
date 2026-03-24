@@ -1,32 +1,22 @@
 // components/modules/facturas/FacturasTable.tsx
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  TextField,
-  InputAdornment,
   Typography,
-  MenuItem,
-  Collapse,
-  Paper,
-  Badge,
-  Stack,
   CircularProgress,
 } from "@mui/material";
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Clear as ClearIcon,
-} from "@mui/icons-material";
+import { Add as AddIcon } from "@mui/icons-material";
 import {
   ZenttoDataGrid,
   type ZenttoColDef,
   buildCrudActionsColumn,
   ConfirmDialog,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
 } from "@zentto/shared-ui";
 import {
   useFacturasList,
@@ -35,40 +25,6 @@ import {
 } from "../../../hooks/useFacturas";
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly } from "@zentto/shared-api";
-import { debounce } from "lodash";
-
-// ============ Componente selector reutilizable ============
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (val: string) => void;
-}) {
-  return (
-    <TextField
-      select
-      label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      size="small"
-      sx={{ minWidth: 140, flex: 1 }}
-    >
-      <MenuItem value="">
-        <em>Todos</em>
-      </MenuItem>
-      {options.map((o) => (
-        <MenuItem key={o.value} value={o.value}>
-          {o.label}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
-}
 
 // ============ Master-detail: renglones de factura ============
 const detailColumns: ZenttoColDef[] = [
@@ -143,11 +99,26 @@ function FacturaDetailPanel({ numeroFactura }: { numeroFactura: string }) {
   );
 }
 
-// ============ Opciones de estado ============
-const ESTADO_OPTIONS = [
-  { value: "Emitida", label: "Emitida" },
-  { value: "Pagada", label: "Pagada" },
-  { value: "Anulada", label: "Anulada" },
+// ============ Definicion de filtros ============
+const FACTURA_FILTERS: FilterFieldDef[] = [
+  {
+    field: "cliente",
+    label: "Cliente",
+    type: "text",
+    placeholder: "Nombre o codigo...",
+  },
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "Emitida", label: "Emitida" },
+      { value: "Pagada", label: "Pagada" },
+      { value: "Anulada", label: "Anulada" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
 ];
 
 export default function FacturasTable() {
@@ -158,63 +129,28 @@ export default function FacturasTable() {
   const [anularOpen, setAnularOpen] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<string | null>(null);
 
-  // ========== Filtros ==========
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [filterEstado, setFilterEstado] = useState("");
-  const [filterCliente, setFilterCliente] = useState("");
-  const [debouncedCliente, setDebouncedCliente] = useState("");
-  const [filterFrom, setFilterFrom] = useState("");
-  const [filterTo, setFilterTo] = useState("");
+  // Filtros (manejados por ZenttoFilterPanel)
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
-  // Debounced search
-  const debouncedSetSearch = useCallback(
-    debounce((value: string) => {
-      setDebouncedSearch(value);
-      setPage(0);
-    }, 400),
-    []
-  );
+  const handleFilterChange = (vals: Record<string, string>) => {
+    setFilterValues(vals);
+    setPage(0);
+  };
 
-  const debouncedSetCliente = useCallback(
-    debounce((value: string) => {
-      setDebouncedCliente(value);
-      setPage(0);
-    }, 400),
-    []
-  );
-
-  // Contar filtros activos
-  const activeFilterCount = useMemo(() => {
-    let c = 0;
-    if (debouncedSearch) c++;
-    if (filterEstado) c++;
-    if (debouncedCliente) c++;
-    if (filterFrom) c++;
-    if (filterTo) c++;
-    return c;
-  }, [debouncedSearch, filterEstado, debouncedCliente, filterFrom, filterTo]);
-
-  const clearFilters = () => {
-    setSearchInput("");
-    setDebouncedSearch("");
-    setFilterEstado("");
-    setFilterCliente("");
-    setDebouncedCliente("");
-    setFilterFrom("");
-    setFilterTo("");
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
     setPage(0);
   };
 
   const { data: facturas, isLoading } = useFacturasList({
-    search: debouncedSearch || undefined,
+    search: search || undefined,
     page: page + 1,
     limit: pageSize,
-    estado: filterEstado || undefined,
-    cliente: debouncedCliente || undefined,
-    from: filterFrom || undefined,
-    to: filterTo || undefined,
+    estado: filterValues.estado || undefined,
+    cliente: filterValues.cliente || undefined,
+    from: filterValues.from || undefined,
+    to: filterValues.to || undefined,
   });
 
   const { mutate: deleteFactura, isPending: isDeleting } = useDeleteFactura();
@@ -240,59 +176,21 @@ export default function FacturasTable() {
 
   const columns = useMemo<ZenttoColDef[]>(
     () => [
+      { field: "numeroFactura", headerName: "Numero", width: 150, sortable: true },
+      { field: "nombreCliente", headerName: "Cliente", flex: 1, minWidth: 180, sortable: true, mobileHide: true },
       {
-        field: "numeroFactura",
-        headerName: "Numero",
-        width: 150,
-        sortable: true,
+        field: "fecha", headerName: "Fecha", width: 120, sortable: true,
+        valueFormatter: (value: string) => value ? toDateOnly(value, timeZone) : "",
       },
       {
-        field: "nombreCliente",
-        headerName: "Cliente",
-        flex: 1,
-        minWidth: 180,
-        sortable: true,
-        mobileHide: true,
-      },
-      {
-        field: "fecha",
-        headerName: "Fecha",
-        width: 120,
-        sortable: true,
-        valueFormatter: (value: string) =>
-          value ? toDateOnly(value, timeZone) : "",
-      },
-      {
-        field: "tipoDoc",
-        headerName: "Tipo",
-        width: 110,
-        tabletHide: true,
-        statusColors: {
-          FACT: "primary",
-          PRESUP: "info",
-          PEDIDO: "warning",
-        },
+        field: "tipoDoc", headerName: "Tipo", width: 110, tabletHide: true,
+        statusColors: { FACT: "primary", PRESUP: "info", PEDIDO: "warning" },
         statusVariant: "outlined",
       },
+      { field: "totalFactura", headerName: "Total", width: 140, type: "number", currency: true, aggregation: "sum" },
       {
-        field: "totalFactura",
-        headerName: "Total",
-        width: 140,
-        type: "number",
-        currency: true,
-        aggregation: "sum",
-      },
-      {
-        field: "estado",
-        headerName: "Estado",
-        width: 120,
-        statusColors: {
-          Pagada: "success",
-          Pendiente: "warning",
-          Emitida: "info",
-          Anulada: "error",
-          Cancelada: "default",
-        },
+        field: "estado", headerName: "Estado", width: 120,
+        statusColors: { Pagada: "success", Pendiente: "warning", Emitida: "info", Anulada: "error", Cancelada: "default" },
         statusVariant: "outlined",
       },
       buildCrudActionsColumn({
@@ -315,123 +213,24 @@ export default function FacturasTable() {
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h5" fontWeight={600}>
           Facturas
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/facturas/new")}
-          size="large"
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/facturas/new")} size="large">
           Nueva Factura
         </Button>
       </Box>
 
-      {/* Search bar + Filter toggle */}
-      <Box sx={{ display: "flex", gap: 1, mb: 1.5, alignItems: "center" }}>
-        <TextField
-          placeholder="Buscar por numero, cliente o referencia..."
-          value={searchInput}
-          onChange={(e) => {
-            setSearchInput(e.target.value);
-            debouncedSetSearch(e.target.value);
-          }}
-          fullWidth
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Badge badgeContent={activeFilterCount} color="primary">
-          <Button
-            variant={showFilters ? "contained" : "outlined"}
-            startIcon={<FilterIcon />}
-            onClick={() => setShowFilters(!showFilters)}
-            sx={{ whiteSpace: "nowrap" }}
-          >
-            Filtros
-          </Button>
-        </Badge>
-        {activeFilterCount > 0 && (
-          <Button
-            size="small"
-            startIcon={<ClearIcon />}
-            onClick={clearFilters}
-            color="error"
-          >
-            Limpiar ({activeFilterCount})
-          </Button>
-        )}
-      </Box>
-
-      {/* Panel de Filtros */}
-      <Collapse in={showFilters}>
-        <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5 }}>
-          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-            {/* Cliente */}
-            <TextField
-              label="Cliente"
-              value={filterCliente}
-              onChange={(e) => {
-                setFilterCliente(e.target.value);
-                debouncedSetCliente(e.target.value);
-              }}
-              size="small"
-              sx={{ minWidth: 200, flex: 1 }}
-              placeholder="Nombre o codigo..."
-            />
-            {/* Estado */}
-            <FilterSelect
-              label="Estado"
-              value={filterEstado}
-              options={ESTADO_OPTIONS}
-              onChange={(val) => {
-                setFilterEstado(val);
-                setPage(0);
-              }}
-            />
-            {/* Fecha desde */}
-            <TextField
-              label="Fecha desde"
-              type="date"
-              value={filterFrom}
-              onChange={(e) => {
-                setFilterFrom(e.target.value);
-                setPage(0);
-              }}
-              size="small"
-              sx={{ minWidth: 155 }}
-              InputLabelProps={{ shrink: true }}
-            />
-            {/* Fecha hasta */}
-            <TextField
-              label="Fecha hasta"
-              type="date"
-              value={filterTo}
-              onChange={(e) => {
-                setFilterTo(e.target.value);
-                setPage(0);
-              }}
-              size="small"
-              sx={{ minWidth: 155 }}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Stack>
-        </Paper>
-      </Collapse>
+      {/* Filtros reutilizables */}
+      <ZenttoFilterPanel
+        filters={FACTURA_FILTERS}
+        values={filterValues}
+        onChange={handleFilterChange}
+        searchPlaceholder="Buscar por numero, cliente o referencia..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
+      />
 
       {/* ZenttoDataGrid con master-detail */}
       <Box sx={{ flex: 1, minHeight: 400 }}>

@@ -10,12 +10,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   TextField,
   Typography,
@@ -29,7 +25,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useRouter } from "next/navigation";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,
@@ -59,10 +55,13 @@ export default function ConciliacionBancariaPage() {
   const showAsientos = hasModule("contabilidad");
 
   // Filtros
-  const [nroCta, setNroCta] = useState("");
-  const [estado, setEstado] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
+
+  const nroCta = filterValues.cuenta ?? "";
+  const estado = filterValues.estado ?? "";
 
   // Detalle dialog
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -100,6 +99,29 @@ export default function ConciliacionBancariaPage() {
 
   const rows = (listData?.rows ?? []) as ConciliacionRow[];
   const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
+
+  const conciliacionFilters = useMemo<FilterFieldDef[]>(() => [
+    {
+      field: "cuenta",
+      label: "Cuenta",
+      type: "select",
+      options: cuentas.map((c) => ({
+        value: String(c.Nro_Cta),
+        label: `${String(c.Nro_Cta)} - ${String(c.BancoNombre ?? c.Banco ?? "")}`,
+      })),
+      minWidth: 220,
+    },
+    {
+      field: "estado",
+      label: "Estado",
+      type: "select",
+      options: [
+        { value: "ABIERTA", label: "Abierta" },
+        { value: "EN_PROCESO", label: "En Proceso" },
+        { value: "CERRADA", label: "Cerrada" },
+      ],
+    },
+  ], [cuentas]);
 
   // Movimientos del detalle
   const movSistema = (detalleData?.movimientosSistema ?? []) as Record<string, any>[];
@@ -242,28 +264,14 @@ export default function ConciliacionBancariaPage() {
       </Stack>
 
       {/* Filtros */}
-      <Stack direction="row" spacing={2}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Cuenta</InputLabel>
-          <Select value={nroCta} label="Cuenta" onChange={(e) => setNroCta(e.target.value)}>
-            <MenuItem value="">Todas</MenuItem>
-            {cuentas.map((c) => (
-              <MenuItem key={String(c.Nro_Cta)} value={String(c.Nro_Cta)}>
-                {String(c.Nro_Cta)} - {String(c.BancoNombre ?? c.Banco ?? "")}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl sx={{ minWidth: 160 }}>
-          <InputLabel>Estado</InputLabel>
-          <Select value={estado} label="Estado" onChange={(e) => setEstado(e.target.value)}>
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="ABIERTA">Abierta</MenuItem>
-            <MenuItem value="EN_PROCESO">En Proceso</MenuItem>
-            <MenuItem value="CERRADA">Cerrada</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={conciliacionFilters}
+        values={filterValues}
+        onChange={(v) => { setFilterValues(v); setPage(1); }}
+        searchPlaceholder="Buscar conciliación..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPage(1); }}
+      />
 
       {/* DataGrid principal */}
       <Paper sx={{ p: 0 }}>

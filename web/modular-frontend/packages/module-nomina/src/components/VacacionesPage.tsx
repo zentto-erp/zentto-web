@@ -6,7 +6,6 @@ import {
   Paper,
   Typography,
   Button,
-  TextField,
   Stack,
   Dialog,
   DialogTitle,
@@ -16,7 +15,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useRouter } from "next/navigation";
@@ -26,9 +25,23 @@ import {
   useVacacionDetalle,
 } from "../hooks/useNomina";
 
+const VACACIONES_FILTERS: FilterFieldDef[] = [
+  { field: "departamento", label: "Departamento", type: "text", placeholder: "Filtrar por departamento..." },
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "VIGENTE", label: "Vigente" },
+      { value: "VENCIDA", label: "Vencida" },
+      { value: "PROCESADA", label: "Procesada" },
+    ],
+  },
+];
+
 export default function VacacionesPage() {
   const router = useRouter();
   const [cedula, setCedula] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
@@ -102,14 +115,17 @@ export default function VacacionesPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar por Cédula"
-         
-          value={cedula}
-          onChange={(e) => setCedula(e.target.value)}
-        />
-      </Stack>
+      <ZenttoFilterPanel
+        filters={VACACIONES_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar por cedula..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setCedula(v);
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid

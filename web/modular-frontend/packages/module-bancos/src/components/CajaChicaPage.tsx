@@ -29,7 +29,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useCajaChicaBoxes,
   useCreateCajaChicaBox,
@@ -48,6 +48,20 @@ const CATEGORIAS = [
   { value: "MANTENIMIENTO", label: "Mantenimiento" },
   { value: "MENSAJERIA", label: "Mensajería" },
   { value: "OTROS", label: "Otros" },
+];
+
+const CAJA_CHICA_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "ACTIVE", label: "Activa" },
+      { value: "INACTIVE", label: "Inactiva" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
 ];
 
 const colsBoxes: ZenttoColDef[] = [
@@ -110,6 +124,8 @@ const colsExpenses: ZenttoColDef[] = [
 
 export default function CajaChicaPage() {
   const { showToast } = useToast();
+  const [cajaSearch, setCajaSearch] = useState("");
+  const [cajaFilterValues, setCajaFilterValues] = useState<Record<string, string>>({});
   const [selectedBoxId, setSelectedBoxId] = useState<number | null>(null);
   const [showCreateBox, setShowCreateBox] = useState(false);
   const [showOpenSession, setShowOpenSession] = useState(false);
@@ -229,6 +245,14 @@ export default function CajaChicaPage() {
               <LocalAtmIcon sx={{ mr: 1, verticalAlign: "middle", fontSize: 20 }} />
               Cajas Chicas
             </Typography>
+            <ZenttoFilterPanel
+              filters={CAJA_CHICA_FILTERS}
+              values={cajaFilterValues}
+              onChange={setCajaFilterValues}
+              searchPlaceholder="Buscar caja chica..."
+              searchValue={cajaSearch}
+              onSearchChange={setCajaSearch}
+            />
             <ZenttoDataGrid
             gridId="bancos-caja-chica-list"
               rows={boxes}

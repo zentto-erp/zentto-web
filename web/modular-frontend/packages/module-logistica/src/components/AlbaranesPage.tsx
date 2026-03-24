@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  MenuItem,
   TextField,
   Typography,
   Tooltip,
@@ -19,7 +18,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -114,11 +113,31 @@ const emptyLine = (): DeliveryLine => ({
   packedQty: 0,
 });
 
+const ALBARANES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "DRAFT", label: "Borrador" },
+      { value: "CONFIRMED", label: "Confirmado" },
+      { value: "PICKING", label: "En Picking" },
+      { value: "PACKED", label: "Empacado" },
+      { value: "DISPATCHED", label: "Despachado" },
+      { value: "IN_TRANSIT", label: "En Transito" },
+      { value: "DELIVERED", label: "Entregado" },
+      { value: "VOIDED", label: "Anulado" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
+
 export default function AlbaranesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [filter, setFilter] = useState<DeliveryFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -132,8 +151,20 @@ export default function AlbaranesPage() {
   const [carrierId, setCarrierId] = useState("");
   const [lines, setLines] = useState<DeliveryLine[]>([emptyLine()]);
 
+  const handleFilterChange = (vals: Record<string, string>) => {
+    setFilterValues(vals);
+    setFilter((f) => ({
+      ...f,
+      status: vals.estado || undefined,
+      fechaDesde: vals.from || undefined,
+      fechaHasta: vals.to || undefined,
+    }));
+    setPaginationModel((p) => ({ ...p, page: 0 }));
+  };
+
   const { data, isLoading } = useDeliveryNotesList({
     ...filter,
+    search: search || undefined,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
@@ -228,11 +259,6 @@ export default function AlbaranesPage() {
     },
   ];
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, status: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
   const handleAddLine = () => setLines((prev) => [...prev, emptyLine()]);
 
   const handleRemoveLine = (idx: number) =>
@@ -309,27 +335,14 @@ export default function AlbaranesPage() {
       </Box>
 
       {/* Filter */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            select
-            label="Estado"
-            value={filter.status ?? ""}
-            onChange={handleStatusFilter}
-            fullWidth
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="DRAFT">Borrador</MenuItem>
-            <MenuItem value="CONFIRMED">Confirmado</MenuItem>
-            <MenuItem value="PICKING">En Picking</MenuItem>
-            <MenuItem value="PACKED">Empacado</MenuItem>
-            <MenuItem value="DISPATCHED">Despachado</MenuItem>
-            <MenuItem value="IN_TRANSIT">En Transito</MenuItem>
-            <MenuItem value="DELIVERED">Entregado</MenuItem>
-            <MenuItem value="VOIDED">Anulado</MenuItem>
-          </TextField>
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={ALBARANES_FILTERS}
+        values={filterValues}
+        onChange={handleFilterChange}
+        searchPlaceholder="Buscar albaranes..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

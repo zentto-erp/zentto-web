@@ -27,7 +27,7 @@ import SendIcon from "@mui/icons-material/Send";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useDeclaracionesList,
   useCalcularDeclaracion,
@@ -71,6 +71,8 @@ export default function DeclaracionesPage() {
   const { data: countries = [] } = useCountries();
   const router = useRouter();
   const [filter, setFilter] = useState<DeclarationFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [openCalc, setOpenCalc] = useState(false);
   const [calcForm, setCalcForm] = useState<CalcForm>({
     declarationType: "IVA",
@@ -189,41 +191,27 @@ export default function DeclaracionesPage() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filtros */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <FormControl sx={{ minWidth: 160 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              label="Tipo"
-              value={filter.declarationType || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, declarationType: e.target.value || undefined, page: 1 }))}
-            >
-              {DECLARATION_TYPES.map((t) => (
-                <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Ano"
-            type="number"
-           
-            value={filter.year || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, year: Number(e.target.value) || undefined, page: 1 }))}
-            sx={{ minWidth: 100 }}
-          />
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              label="Estado"
-              value={filter.status || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined, page: 1 }))}
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
+        <ZenttoFilterPanel
+          filters={[
+            { field: "declarationType", label: "Tipo", type: "select", options: DECLARATION_TYPES.filter((t) => t.value).map((t) => ({ value: t.value, label: t.label })) },
+            { field: "year", label: "Periodo (ano)", type: "text", placeholder: "2026", minWidth: 120 },
+            { field: "status", label: "Estado", type: "select", options: STATUS_OPTIONS.filter((o) => o.value).map((o) => ({ value: o.value, label: o.label })) },
+          ] as FilterFieldDef[]}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              declarationType: vals.declarationType || undefined,
+              year: vals.year ? Number(vals.year) : undefined,
+              status: vals.status || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar declaracion..."
+          searchValue={search}
+          onSearchChange={setSearch}
+        />
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>

@@ -21,7 +21,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { useRouter } from "next/navigation";
-import { useCuentasBancarias } from "../hooks/useBancosAuxiliares";
+import { useCuentasBancarias, useMovimientosCuenta } from "../hooks/useBancosAuxiliares";
 import { useConciliaciones } from "../hooks/useConciliacionBancaria";
 import { formatCurrency } from "@zentto/shared-api";
 import { brandColors } from "@zentto/shared-ui";
@@ -34,6 +34,21 @@ export default function BancosHome() {
   const cuentasData: any[] = cuentas.data?.data ?? cuentas.data?.rows ?? [];
   const saldoTotal = cuentasData.reduce((sum: number, c: any) => sum + (Number(c.Saldo) || 0), 0);
   const conciliacionesPendientes = conciliaciones.data?.totalCount ?? conciliaciones.data?.total ?? 0;
+
+  const now = new Date();
+  const mesDesde = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const mesHasta = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .slice(0, 10);
+  const primeraCuenta: string | undefined = cuentasData[0]?.NumeroCuenta ?? cuentasData[0]?.Nro_Cta;
+  const movimientosMes = useMovimientosCuenta(
+    primeraCuenta ? { nroCta: primeraCuenta, desde: mesDesde, hasta: mesHasta, limit: 1 } : undefined
+  );
+  const totalMovimientosMes = !cuentas.isLoading && cuentasData.length === 0
+    ? "0"
+    : movimientosMes.data?.total != null
+    ? String(movimientosMes.data.total)
+    : "—";
 
   const statsCards = [
     {
@@ -52,8 +67,8 @@ export default function BancosHome() {
     },
     {
       title: "Movimientos del mes",
-      value: "—",
-      loading: false,
+      value: totalMovimientosMes,
+      loading: cuentas.isLoading || movimientosMes.isLoading,
       color: brandColors.statOrange,
       icon: <TrendingDownIcon />,
     },

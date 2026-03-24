@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  TextField,
   Typography,
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
@@ -15,34 +14,43 @@ import {
   type ZenttoColDef,
   buildCrudActionsColumn,
   DeleteDialog,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
 } from "@zentto/shared-ui";
 import { useProveedoresList, useDeleteProveedor } from "../hooks/useProveedores";
 import { Proveedor, ProveedorFilter } from "@zentto/shared-api/types";
 
+const PROVEEDORES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "Activo", label: "Activo" },
+      { value: "Inactivo", label: "Inactivo" },
+    ],
+  },
+];
+
 export default function ProveedoresTable() {
   const router = useRouter();
-  const [filter, setFilter] = useState<ProveedorFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
-  const [searchTerm, setSearchTerm] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
 
   // Queries
   const { data, isLoading } = useProveedoresList({
-    ...filter,
-    search: searchTerm,
+    search,
+    estado: filterValues.estado || undefined,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
-  });
+  } as ProveedorFilter);
   const { mutate: deleteProveedor, isPending: isDeleting } = useDeleteProveedor();
 
   const rows = (data?.items ?? []) as unknown as Record<string, unknown>[];
   const total = data?.total ?? 0;
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
 
   const handleDeleteClick = (row: Record<string, unknown>) => {
     setSelectedProveedor(row as unknown as Proveedor);
@@ -109,15 +117,20 @@ export default function ProveedoresTable() {
         </Button>
       </Box>
 
-      {/* Search */}
-      <TextField
-        placeholder="Buscar por nombre o RIF..."
-        value={searchTerm}
-        onChange={handleSearch}
-        fullWidth
-        size="small"
-        variant="outlined"
-        sx={{ mb: 2 }}
+      {/* Filters */}
+      <ZenttoFilterPanel
+        filters={PROVEEDORES_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar por nombre o RIF..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
       />
 
       {/* DataGrid */}

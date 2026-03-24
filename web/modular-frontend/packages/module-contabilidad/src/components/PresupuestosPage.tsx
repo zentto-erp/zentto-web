@@ -24,7 +24,7 @@ import {
   Skeleton,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -528,12 +528,25 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
 
 // ─── Main Component ──────────────────────────────────────────
 
+const PRESUPUESTOS_FILTERS: FilterFieldDef[] = [
+  { field: "fiscalYear", label: "Ano fiscal", type: "select", options:
+    Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => ({ value: String(y), label: String(y) }))
+  },
+  { field: "status", label: "Estado", type: "select", options: [
+    { value: "DRAFT", label: "Borrador" },
+    { value: "APPROVED", label: "Aprobado" },
+    { value: "CLOSED", label: "Cerrado" },
+  ]},
+];
+
 export default function PresupuestosPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Presupuesto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [fiscalYear, setFiscalYear] = useState<number>(new Date().getFullYear());
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading } = usePresupuestosList(fiscalYear);
@@ -641,38 +654,48 @@ export default function PresupuestosPage() {
     }
   };
 
+  // Client-side filter by status
+  const filteredPresupuestos = useMemo(() => {
+    let result = presupuestos;
+    if (filterValues.status) {
+      result = result.filter((r: any) => (r.status || "DRAFT") === filterValues.status);
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      result = result.filter((r: any) => (r.name || "").toLowerCase().includes(s));
+    }
+    return result;
+  }, [presupuestos, filterValues, search]);
+
   return (
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={700}>
           Presupuestos
         </Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <TextField
-            select
-            label="Año fiscal"
-            value={fiscalYear}
-            onChange={(e) => setFiscalYear(Number(e.target.value))}
-            sx={{ minWidth: 120 }}
-          >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
-              <MenuItem key={y} value={y}>
-                {y}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setEditItem(null);
-              setDialogOpen(true);
-            }}
-          >
-            Crear Presupuesto
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => {
+            setEditItem(null);
+            setDialogOpen(true);
+          }}
+        >
+          Crear Presupuesto
+        </Button>
       </Stack>
+
+      <ZenttoFilterPanel
+        filters={PRESUPUESTOS_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          if (vals.fiscalYear) setFiscalYear(Number(vals.fiscalYear));
+        }}
+        searchPlaceholder="Buscar presupuesto..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -683,7 +706,7 @@ export default function PresupuestosPage() {
       <Paper sx={{ borderRadius: 2 }}>
         <ZenttoDataGrid
             gridId="contabilidad-presupuestos-list"
-          rows={presupuestos}
+          rows={filteredPresupuestos}
           columns={columns}
           getRowId={(r) => r.BudgetId ?? r.id ?? r._id}
           loading={isLoading}

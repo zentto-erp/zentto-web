@@ -19,7 +19,7 @@ import {
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { formatCurrency, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useGenerarLibroFiscal,
   useLibroFiscal,
@@ -40,6 +40,11 @@ export default function LibroFiscalPage() {
     countryCode: "VE",
     page: 1,
     limit: 50,
+  });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    bookType: "PURCHASE",
+    countryCode: "VE",
   });
 
   const generarMutation = useGenerarLibroFiscal();
@@ -132,40 +137,29 @@ export default function LibroFiscalPage() {
       <ContextActionHeader title="Libro fiscal de compras / ventas" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filtros */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" alignItems="center">
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              label="Tipo"
-              value={filter.bookType}
-              onChange={(e) => setFilter((f) => ({ ...f, bookType: e.target.value }))}
-            >
-              {BOOK_TYPES.map((t) => (
-                <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Periodo (YYYY-MM)"
-           
-            placeholder="2026-03"
-            value={filter.periodCode}
-            onChange={(e) => setFilter((f) => ({ ...f, periodCode: e.target.value }))}
-            sx={{ minWidth: 160 }}
-          />
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Pais</InputLabel>
-            <Select
-              label="Pais"
-              value={filter.countryCode}
-              onChange={(e) => setFilter((f) => ({ ...f, countryCode: e.target.value }))}
-            >
-              {countries.map((c) => (
-                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <ZenttoFilterPanel
+          filters={[
+            { field: "bookType", label: "Tipo", type: "select", options: BOOK_TYPES.map((t) => ({ value: t.value, label: t.label })) },
+            { field: "periodCode", label: "Periodo (YYYY-MM)", type: "text", placeholder: "2026-03", minWidth: 160 },
+            { field: "countryCode", label: "Pais", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
+          ] as FilterFieldDef[]}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              bookType: vals.bookType || "PURCHASE",
+              periodCode: vals.periodCode || "",
+              countryCode: vals.countryCode || "VE",
+            }));
+          }}
+          searchPlaceholder="Buscar en libro fiscal..."
+          searchValue={search}
+          onSearchChange={setSearch}
+          defaultOpen
+          hideToggle
+        />
+        <Stack direction="row" spacing={2} mb={2} alignItems="center">
           <Button
             variant="contained"
             onClick={handleGenerar}

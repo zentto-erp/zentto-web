@@ -27,7 +27,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -54,8 +54,28 @@ const emptyCommittee: CommitteeInput = {
   name: "", type: "", description: "", startDate: "", endDate: "",
 };
 
+const COMITES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "type", label: "Tipo", type: "select",
+    options: [
+      { value: "SEGURIDAD_HIGIENE", label: "Seguridad e Higiene" },
+      { value: "SALUD_LABORAL", label: "Salud Laboral" },
+      { value: "BIENESTAR", label: "Bienestar" },
+    ],
+  },
+  {
+    field: "status", label: "Estado", type: "select",
+    options: [
+      { value: "ACTIVO", label: "Activo" },
+      { value: "INACTIVO", label: "Inactivo" },
+    ],
+  },
+];
+
 export default function ComitesPage() {
   const [filter, setFilter] = useState<CommitteeFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [createOpen, setCreateOpen] = useState(false);
   const [committeeForm, setCommitteeForm] = useState<CommitteeInput>({ ...emptyCommittee });
 
@@ -178,32 +198,20 @@ export default function ComitesPage() {
         </Button>
       </Stack>
 
-      <FormGrid spacing={2} sx={{ mb: 2 }}>
-        <FormField xs={12} sm={6}>
-          <TextField
-            label="Buscar"
-           
-            fullWidth
-            value={filter.search || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-          />
-        </FormField>
-        <FormField xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              value={filter.type || ""}
-              label="Tipo"
-              onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="SEGURIDAD_HIGIENE">Seguridad e Higiene</MenuItem>
-              <MenuItem value="SALUD_LABORAL">Salud Laboral</MenuItem>
-              <MenuItem value="BIENESTAR">Bienestar</MenuItem>
-            </Select>
-          </FormControl>
-        </FormField>
-      </FormGrid>
+      <ZenttoFilterPanel
+        filters={COMITES_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, type: v.type || undefined }));
+        }}
+        searchPlaceholder="Buscar comites..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, search: v || undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

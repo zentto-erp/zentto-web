@@ -5,23 +5,47 @@ import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  InputAdornment,
-  Paper,
-  TextField,
   Typography,
 } from "@mui/material";
-import { Add, Search } from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import {
   ZenttoDataGrid,
   type ZenttoColDef,
   buildCrudActionsColumn,
   ConfirmDialog,
-  DatePicker,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
 } from "@zentto/shared-ui";
 import { useComprasList } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly, formatDate } from "@zentto/shared-api";
-import dayjs from "dayjs";
+
+const COMPRAS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "DRAFT", label: "Borrador" },
+      { value: "EMITIDA", label: "Emitida" },
+      { value: "RECIBIDA", label: "Recibida" },
+      { value: "PARCIAL", label: "Parcial" },
+      { value: "ANULADA", label: "Anulada" },
+    ],
+  },
+  {
+    field: "tipo",
+    label: "Tipo",
+    type: "select",
+    options: [
+      { value: "CONTADO", label: "Contado" },
+      { value: "CREDITO", label: "Credito" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+  { field: "proveedor", label: "Proveedor", type: "text", placeholder: "Nombre del proveedor..." },
+];
 
 export default function ComprasTable() {
   const router = useRouter();
@@ -38,8 +62,10 @@ export default function ComprasTable() {
   }
 
   const [search, setSearch] = useState("");
-  const [fechaDesde, setFechaDesde] = useState(firstDayOfCurrentMonth());
-  const [fechaHasta, setFechaHasta] = useState(lastDayOfCurrentMonth());
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    from: firstDayOfCurrentMonth(),
+    to: lastDayOfCurrentMonth(),
+  });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 50 });
 
   // Anular dialog
@@ -49,12 +75,15 @@ export default function ComprasTable() {
   const filter = useMemo(
     () => ({
       search: search.trim() || undefined,
-      fechaDesde,
-      fechaHasta,
+      fechaDesde: filterValues.from || undefined,
+      fechaHasta: filterValues.to || undefined,
+      estado: filterValues.estado || undefined,
+      tipo: filterValues.tipo || undefined,
+      proveedor: filterValues.proveedor?.trim() || undefined,
       page: paginationModel.page + 1,
       limit: paginationModel.pageSize,
     }),
-    [search, fechaDesde, fechaHasta, paginationModel]
+    [search, filterValues, paginationModel]
   );
 
   const { data, isLoading } = useComprasList(filter);
@@ -135,45 +164,21 @@ export default function ComprasTable() {
         </Button>
       </Box>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr 1fr" } }}>
-          <TextField
-            label="Buscar"
-            placeholder="Numero, proveedor, rif"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPaginationModel((p) => ({ ...p, page: 0 }));
-            }}
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <DatePicker
-            label="Desde"
-            value={fechaDesde ? dayjs(fechaDesde) : null}
-            onChange={(v) => {
-              setFechaDesde(v ? v.format("YYYY-MM-DD") : "");
-              setPaginationModel((p) => ({ ...p, page: 0 }));
-            }}
-            slotProps={{ textField: { size: "small", fullWidth: true } }}
-          />
-          <DatePicker
-            label="Hasta"
-            value={fechaHasta ? dayjs(fechaHasta) : null}
-            onChange={(v) => {
-              setFechaHasta(v ? v.format("YYYY-MM-DD") : "");
-              setPaginationModel((p) => ({ ...p, page: 0 }));
-            }}
-            slotProps={{ textField: { size: "small", fullWidth: true } }}
-          />
-        </Box>
-      </Paper>
+      <ZenttoFilterPanel
+        filters={COMPRAS_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar por numero, proveedor, rif..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        defaultOpen
+      />
 
       <ZenttoDataGrid
         gridId="compras-compras-list"

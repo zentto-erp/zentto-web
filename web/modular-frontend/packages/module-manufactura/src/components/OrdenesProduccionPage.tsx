@@ -23,7 +23,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -164,6 +164,30 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelada",
 };
 
+/* ─── Filter Definitions ──────────────────────────────────── */
+
+const ORDENES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "DRAFT", label: "Borrador" },
+      { value: "IN_PROGRESS", label: "En Proceso" },
+      { value: "COMPLETED", label: "Completada" },
+      { value: "CANCELLED", label: "Cancelada" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+  {
+    field: "prioridad", label: "Prioridad", type: "select",
+    options: [
+      { value: "HIGH", label: "Alta" },
+      { value: "MEDIUM", label: "Media" },
+      { value: "LOW", label: "Baja" },
+    ],
+  },
+];
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function OrdenesProduccionPage() {
@@ -171,6 +195,8 @@ export default function OrdenesProduccionPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [filter, setFilter] = useState<WorkOrderFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
@@ -184,8 +210,21 @@ export default function OrdenesProduccionPage() {
   const [priority, setPriority] = useState("MEDIUM");
   const [notes, setNotes] = useState("");
 
+  const handleFilterChange = (vals: Record<string, string>) => {
+    setFilterValues(vals);
+    setFilter((f) => ({
+      ...f,
+      status: vals.estado || undefined,
+      priority: vals.prioridad || undefined,
+      fechaDesde: vals.from || undefined,
+      fechaHasta: vals.to || undefined,
+    }));
+    setPaginationModel((p) => ({ ...p, page: 0 }));
+  };
+
   const { data, isLoading } = useWorkOrdersList({
     ...filter,
+    search: search || undefined,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
@@ -291,11 +330,6 @@ export default function OrdenesProduccionPage() {
     },
   ];
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, status: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
   const resetForm = () => {
     setBomId("");
     setProductId("");
@@ -353,23 +387,14 @@ export default function OrdenesProduccionPage() {
       </Box>
 
       {/* Filter */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={4} md={3}>
-          <TextField
-            select
-            label="Estado"
-            value={filter.status ?? ""}
-            onChange={handleStatusFilter}
-            fullWidth
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="DRAFT">Borrador</MenuItem>
-            <MenuItem value="IN_PROGRESS">En Proceso</MenuItem>
-            <MenuItem value="COMPLETED">Completada</MenuItem>
-            <MenuItem value="CANCELLED">Cancelada</MenuItem>
-          </TextField>
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={ORDENES_FILTERS}
+        values={filterValues}
+        onChange={handleFilterChange}
+        searchPlaceholder="Buscar ordenes..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
+      />
 
       {/* DataGrid con master-detail */}
       <ZenttoDataGrid

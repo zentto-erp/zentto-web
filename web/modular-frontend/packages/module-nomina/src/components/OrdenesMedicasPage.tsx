@@ -20,7 +20,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -35,8 +35,31 @@ import {
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
 
+const ORDENES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "type", label: "Tipo", type: "select",
+    options: [
+      { value: "CONSULTA", label: "Consulta" },
+      { value: "FARMACIA", label: "Farmacia" },
+      { value: "LABORATORIO", label: "Laboratorio" },
+      { value: "EMERGENCIA", label: "Emergencia" },
+    ],
+  },
+  { field: "fecha", label: "Fecha", type: "date" },
+  {
+    field: "status", label: "Estado", type: "select",
+    options: [
+      { value: "PENDIENTE", label: "Pendiente" },
+      { value: "APROBADO", label: "Aprobado" },
+      { value: "RECHAZADO", label: "Rechazado" },
+    ],
+  },
+];
+
 export default function OrdenesMedicasPage() {
   const [filter, setFilter] = useState<MedOrderFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<MedOrderInput>({
     employeeCode: "",
@@ -143,48 +166,24 @@ export default function OrdenesMedicasPage() {
         </Button>
       </Stack>
 
-      <FormGrid spacing={2} sx={{ mb: 2 }}>
-        <FormField xs={12} sm={4}>
-          <TextField
-            label="Buscar"
-           
-            fullWidth
-            value={filter.search || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-          />
-        </FormField>
-        <FormField xs={12} sm={4}>
-          <FormControl fullWidth>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              value={filter.type || ""}
-              label="Tipo"
-              onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="CONSULTA">Consulta</MenuItem>
-              <MenuItem value="FARMACIA">Farmacia</MenuItem>
-              <MenuItem value="LABORATORIO">Laboratorio</MenuItem>
-              <MenuItem value="EMERGENCIA">Emergencia</MenuItem>
-            </Select>
-          </FormControl>
-        </FormField>
-        <FormField xs={12} sm={4}>
-          <FormControl fullWidth>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filter.status || ""}
-              label="Estado"
-              onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-              <MenuItem value="APROBADO">Aprobado</MenuItem>
-              <MenuItem value="RECHAZADO">Rechazado</MenuItem>
-            </Select>
-          </FormControl>
-        </FormField>
-      </FormGrid>
+      <ZenttoFilterPanel
+        filters={ORDENES_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({
+            ...f,
+            type: v.type || undefined,
+            status: v.status || undefined,
+          }));
+        }}
+        searchPlaceholder="Buscar ordenes..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, search: v || undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

@@ -27,7 +27,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivosFijosList,
@@ -78,6 +78,17 @@ const emptyForm: CreateAssetInput = {
   serialNumber: "",
 };
 
+const ACTIVOS_FILTERS: FilterFieldDef[] = [
+  { field: "status", label: "Estado", type: "select", options: [
+    { value: "ACTIVE", label: "Activo" },
+    { value: "DISPOSED", label: "Dado de baja" },
+    { value: "FULLY_DEPRECIATED", label: "Totalmente depreciado" },
+  ]},
+  { field: "categoryCode", label: "Categoria", type: "select", options: [] },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function ActivosFijosListPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<AssetFilter>({ page: 1, limit: 25 });
@@ -93,6 +104,16 @@ export default function ActivosFijosListPage() {
 
   const rows = data?.rows ?? [];
   const categorias: any[] = categoriasData?.rows ?? [];
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+
+  // Build dynamic filter defs with category options from API
+  const activosFilterDefs: FilterFieldDef[] = React.useMemo(() => {
+    const catOptions = categorias.map((c) => ({ value: c.CategoryCode, label: c.CategoryName }));
+    return ACTIVOS_FILTERS.map((f) =>
+      f.field === "categoryCode" ? { ...f, options: catOptions } : f
+    );
+  }, [categorias]);
 
   const columns: ZenttoColDef[] = [
     { field: "AssetCode", headerName: "Código", width: 110 },
@@ -193,49 +214,25 @@ export default function ActivosFijosListPage() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filtros */}
-        <FormGrid spacing={2} sx={{ mb: 2 }}>
-          <FormField xs={12} sm={4}>
-            <TextField
-              label="Buscar"
-             
-              fullWidth
-              value={filter.search || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value, page: 1 }))}
-            />
-          </FormField>
-          <FormField xs={12} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Categoría</InputLabel>
-              <Select
-                label="Categoría"
-                value={filter.categoryCode || ""}
-                onChange={(e) => setFilter((f) => ({ ...f, categoryCode: e.target.value || undefined, page: 1 }))}
-              >
-                <MenuItem value="">Todas</MenuItem>
-                {categorias.map((c) => (
-                  <MenuItem key={c.CategoryCode} value={c.CategoryCode}>
-                    {c.CategoryName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </FormField>
-          <FormField xs={12} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select
-                label="Estado"
-                value={filter.status || ""}
-                onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined, page: 1 }))}
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </FormField>
-        </FormGrid>
+        <ZenttoFilterPanel
+          filters={activosFilterDefs}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              status: vals.status || undefined,
+              categoryCode: vals.categoryCode || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar activo..."
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
+          }}
+        />
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>

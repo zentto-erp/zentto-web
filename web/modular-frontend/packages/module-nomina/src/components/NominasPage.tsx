@@ -19,7 +19,7 @@ import {
   FormControlLabel,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ContextActionHeader } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -103,8 +103,31 @@ function NominaDetailPanel({ nomina, cedula }: { nomina: string; cedula: string 
   );
 }
 
+const NOMINAS_FILTERS: FilterFieldDef[] = [
+  { field: "periodo", label: "Período", type: "text", placeholder: "Ej: MENSUAL, QUINCENAL..." },
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "MENSUAL", label: "Mensual" },
+      { value: "QUINCENAL", label: "Quincenal" },
+      { value: "SEMANAL", label: "Semanal" },
+    ],
+  },
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "ABIERTA", label: "Abierta" },
+      { value: "CERRADA", label: "Cerrada" },
+    ],
+  },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function NominasPage() {
   const [filter, setFilter] = useState<NominaFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedNomina, setSelectedNomina] = useState<string | null>(null);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
   const [procesarOpen, setProcesarOpen] = useState(false);
@@ -221,24 +244,24 @@ export default function NominasPage() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <FormGrid spacing={2} sx={{ mb: 2 }}>
-          <FormField xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Desde"
-              value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-              onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : '' }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-          <FormField xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Hasta"
-              value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-              onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-        </FormGrid>
+        <ZenttoFilterPanel
+          filters={NOMINAS_FILTERS}
+          values={filterValues}
+          onChange={(v) => {
+            setFilterValues(v);
+            setFilter((f) => ({
+              ...f,
+              fechaDesde: v.fechaDesde || undefined,
+              fechaHasta: v.fechaHasta || undefined,
+            }));
+          }}
+          searchPlaceholder="Buscar nominas..."
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setFilter((f) => ({ ...f, search: v || undefined }));
+          }}
+        />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
           <ZenttoDataGrid

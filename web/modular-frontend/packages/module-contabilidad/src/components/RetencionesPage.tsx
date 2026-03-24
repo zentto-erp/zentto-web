@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency, useCountries, useLookup } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useRetencionesList,
   useGenerarRetencion,
@@ -44,6 +44,8 @@ function ComprobantesTab() {
   const { data: countries = [] } = useCountries();
   const { data: withholdingTypes = [] } = useLookup('RETENTION_TYPE');
   const [filter, setFilter] = useState<WithholdingFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [openGen, setOpenGen] = useState(false);
   const [genForm, setGenForm] = useState<GenForm>({
     documentId: 0,
@@ -123,42 +125,27 @@ function ComprobantesTab() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filtros */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              label="Tipo"
-              value={filter.withholdingType || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, withholdingType: e.target.value || undefined, page: 1 }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              {withholdingTypes.map((t) => (
-                <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Periodo (YYYY-MM)"
-           
-            value={filter.periodCode || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, periodCode: e.target.value || undefined, page: 1 }))}
-            sx={{ minWidth: 160 }}
-          />
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Pais</InputLabel>
-            <Select
-              label="Pais"
-              value={filter.countryCode || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, countryCode: e.target.value || undefined, page: 1 }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              {countries.map((c) => (
-                <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
+        <ZenttoFilterPanel
+          filters={[
+            { field: "withholdingType", label: "Tipo", type: "select", options: withholdingTypes.map((t) => ({ value: t.Code, label: t.Label })) },
+            { field: "periodCode", label: "Fecha (YYYY-MM)", type: "text", placeholder: "2026-03", minWidth: 160 },
+            { field: "countryCode", label: "Pais", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
+          ] as FilterFieldDef[]}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              withholdingType: vals.withholdingType || undefined,
+              periodCode: vals.periodCode || undefined,
+              countryCode: vals.countryCode || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar retencion..."
+          searchValue={search}
+          onSearchChange={setSearch}
+        />
 
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>

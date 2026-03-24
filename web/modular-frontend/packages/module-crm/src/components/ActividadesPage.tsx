@@ -25,7 +25,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivitiesList,
@@ -59,10 +59,31 @@ const emptyActivity = {
   dueDate: "",
 };
 
+const ACTIVIDADES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "CALL", label: "Llamada" },
+      { value: "EMAIL", label: "Correo" },
+      { value: "MEETING", label: "Reunion" },
+      { value: "NOTE", label: "Nota" },
+      { value: "TASK", label: "Tarea" },
+    ],
+  },
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "false", label: "Pendientes" },
+      { value: "true", label: "Completadas" },
+    ],
+  },
+];
+
 export default function ActividadesPage() {
   const [filter, setFilter] = useState<ActivityFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyActivity);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useActivitiesList(filter);
   const createActivity = useCreateActivity();
@@ -156,48 +177,24 @@ export default function ActividadesPage() {
       />
 
       {/* Filtros */}
-      <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-        <FormGrid spacing={2}>
-          <FormField xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Tipo</InputLabel>
-              <Select
-                value={filter.type ?? ""}
-                label="Tipo"
-                onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined, page: 1 })}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="CALL">Llamada</MenuItem>
-                <MenuItem value="EMAIL">Correo</MenuItem>
-                <MenuItem value="MEETING">Reunión</MenuItem>
-                <MenuItem value="NOTE">Nota</MenuItem>
-                <MenuItem value="TASK">Tarea</MenuItem>
-              </Select>
-            </FormControl>
-          </FormField>
-          <FormField xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select
-                value={filter.isCompleted === undefined ? "" : filter.isCompleted ? "true" : "false"}
-                label="Estado"
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFilter({
-                    ...filter,
-                    isCompleted: val === "" ? undefined : val === "true",
-                    page: 1,
-                  });
-                }}
-              >
-                <MenuItem value="">Todas</MenuItem>
-                <MenuItem value="false">Pendientes</MenuItem>
-                <MenuItem value="true">Completadas</MenuItem>
-              </Select>
-            </FormControl>
-          </FormField>
-        </FormGrid>
-      </Paper>
+      <Box sx={{ mb: 2 }}>
+        <ZenttoFilterPanel
+          filters={ACTIVIDADES_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              type: vals.tipo || undefined,
+              isCompleted: vals.estado === "" || !vals.estado ? undefined : vals.estado === "true",
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar actividades..."
+          searchValue=""
+          onSearchChange={() => {}}
+        />
+      </Box>
 
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>

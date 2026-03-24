@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -73,11 +73,35 @@ const statusLabels: Record<string, string> = {
   INACTIVE: "Inactivo",
 };
 
+const VEHICULOS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "SEDAN", label: "Sedan" },
+      { value: "SUV", label: "SUV" },
+      { value: "PICKUP", label: "Pickup" },
+      { value: "VAN", label: "Van" },
+      { value: "TRUCK", label: "Camion" },
+      { value: "MOTORCYCLE", label: "Moto" },
+      { value: "OTHER", label: "Otro" },
+    ],
+  },
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "ACTIVE", label: "Activo" },
+      { value: "MAINTENANCE", label: "Mantenimiento" },
+      { value: "INACTIVE", label: "Inactivo" },
+    ],
+  },
+];
+
 export default function VehiculosPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [filter, setFilter] = useState<VehicleFilter>({ page: 1, limit: 25 });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -241,16 +265,6 @@ export default function VehiculosPage() {
     }
   };
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, status: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
-  const handleSearchFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, search: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
   const isPending = createVehicle.isPending || updateVehicle.isPending;
 
   const dialogTitle = editMode ? "Editar Vehiculo" : "Nuevo Vehiculo";
@@ -281,31 +295,25 @@ export default function VehiculosPage() {
       </Box>
 
       {/* Filters */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            select
-            label="Estado"
-            value={filter.status ?? ""}
-            onChange={handleStatusFilter}
-            fullWidth
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="ACTIVE">Activo</MenuItem>
-            <MenuItem value="MAINTENANCE">Mantenimiento</MenuItem>
-            <MenuItem value="INACTIVE">Inactivo</MenuItem>
-          </TextField>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label="Buscar"
-            value={filter.search ?? ""}
-            onChange={handleSearchFilter}
-            fullWidth
-            placeholder="Placa, marca, modelo..."
-          />
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={VEHICULOS_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilter((f) => ({
+            ...f,
+            status: vals.estado || undefined,
+            vehicleType: vals.tipo || undefined,
+          }));
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Placa, marca, modelo..."
+        searchValue={filter.search ?? ""}
+        onSearchChange={(v) => {
+          setFilter((f) => ({ ...f, search: v || undefined }));
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

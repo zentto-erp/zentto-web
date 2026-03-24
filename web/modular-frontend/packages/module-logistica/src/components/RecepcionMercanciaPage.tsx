@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  MenuItem,
   TextField,
   Typography,
   Tooltip,
@@ -19,7 +18,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -67,11 +66,27 @@ const emptyLine = (): ReceiptLine => ({
   expirationDate: "",
 });
 
+const RECEPCION_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "DRAFT", label: "Borrador" },
+      { value: "PARTIAL", label: "Parcial" },
+      { value: "COMPLETE", label: "Completa" },
+      { value: "VOIDED", label: "Anulada" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
+
 export default function RecepcionMercanciaPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [filter, setFilter] = useState<ReceiptFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -83,8 +98,20 @@ export default function RecepcionMercanciaPage() {
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
   const [lines, setLines] = useState<ReceiptLine[]>([emptyLine()]);
 
+  const handleFilterChange = (vals: Record<string, string>) => {
+    setFilterValues(vals);
+    setFilter((f) => ({
+      ...f,
+      status: vals.estado || undefined,
+      fechaDesde: vals.from || undefined,
+      fechaHasta: vals.to || undefined,
+    }));
+    setPaginationModel((p) => ({ ...p, page: 0 }));
+  };
+
   const { data, isLoading } = useReceiptsList({
     ...filter,
+    search: search || undefined,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
@@ -163,11 +190,6 @@ export default function RecepcionMercanciaPage() {
     },
   ];
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, status: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
   const handleAddLine = () => setLines((prev) => [...prev, emptyLine()]);
 
   const handleRemoveLine = (idx: number) =>
@@ -229,23 +251,14 @@ export default function RecepcionMercanciaPage() {
       </Box>
 
       {/* Filter */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            select
-            label="Estado"
-            value={filter.status ?? ""}
-            onChange={handleStatusFilter}
-            fullWidth
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="DRAFT">Borrador</MenuItem>
-            <MenuItem value="PARTIAL">Parcial</MenuItem>
-            <MenuItem value="COMPLETE">Completa</MenuItem>
-            <MenuItem value="VOIDED">Anulada</MenuItem>
-          </TextField>
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={RECEPCION_FILTERS}
+        values={filterValues}
+        onChange={handleFilterChange}
+        searchPlaceholder="Buscar recepciones..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

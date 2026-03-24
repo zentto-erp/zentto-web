@@ -19,7 +19,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -47,6 +47,16 @@ const emptyForm = (): WorkCenterFormData => ({
   isActive: true,
 });
 
+const CENTROS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "true", label: "Activo" },
+      { value: "false", label: "Inactivo" },
+    ],
+  },
+];
+
 export default function CentrosTrabajoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -56,6 +66,7 @@ export default function CentrosTrabajoPage() {
   const [formData, setFormData] = useState<WorkCenterFormData>(emptyForm());
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useWorkCentersList({
     search,
@@ -175,16 +186,17 @@ export default function CentrosTrabajoPage() {
         </Button>
       </Box>
 
-      {/* Search */}
-      <TextField
-        placeholder="Buscar por codigo, nombre..."
-        value={search}
-        onChange={(e) => {
-          setSearch(e.target.value);
+      {/* Filter */}
+      <ZenttoFilterPanel
+        filters={CENTROS_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
           setPaginationModel((p) => ({ ...p, page: 0 }));
         }}
-        fullWidth
-        sx={{ mb: 2 }}
+        searchPlaceholder="Buscar por codigo, nombre..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
       />
 
       {/* DataGrid */}

@@ -5,7 +5,7 @@ import {
   Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
   DialogTitle, DialogContent, DialogActions, Alert,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
@@ -28,6 +28,8 @@ export default function ConceptosRetencionPage() {
   const { data: retTypes = [] } = useLookup('RETENTION_TYPE');
   const { data: supplierTypes = [] } = useLookup('SUPPLIER_TYPE');
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
     conceptCode: "", description: "", supplierType: "AMBOS", activityCode: "",
@@ -68,20 +70,27 @@ export default function ConceptosRetencionPage() {
         }}>Nuevo Concepto</Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField select label="Pais" value={filter.countryCode ?? ""} sx={{ minWidth: 140 }}
-          onChange={(e) => setFilter({ ...filter, countryCode: e.target.value || undefined })}>
-          <MenuItem value="">Todos</MenuItem>
-          {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
-        </TextField>
-        <TextField select label="Tipo" value={filter.retentionType ?? ""} sx={{ minWidth: 130 }}
-          onChange={(e) => setFilter({ ...filter, retentionType: e.target.value || undefined })}>
-          <MenuItem value="">Todos</MenuItem>
-          {retTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
-        </TextField>
-        <TextField label="Buscar" value={filter.search ?? ""}
-          onChange={(e) => setFilter({ ...filter, search: e.target.value || undefined })} />
-      </Stack>
+      <ZenttoFilterPanel
+        filters={[
+          { field: "retentionType", label: "Tipo", type: "select", options: retTypes.map((t) => ({ value: t.Code, label: t.Label })) },
+          { field: "countryCode", label: "Pais", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
+        ] as FilterFieldDef[]}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilter((f) => ({
+            ...f,
+            retentionType: vals.retentionType || undefined,
+            countryCode: vals.countryCode || undefined,
+          }));
+        }}
+        searchPlaceholder="Buscar concepto..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, search: v || undefined }));
+        }}
+      />
 
       <ZenttoDataGrid
         gridId="contabilidad-conceptos-retencion-list"

@@ -5,17 +5,15 @@ import {
   Box, Paper, Typography, TextField, Button, IconButton, Chip,
   Dialog, DialogTitle, DialogContent, DialogActions, Stack,
   FormControl, InputLabel, Select, MenuItem, Alert, Tooltip,
-  InputAdornment, Switch, FormControlLabel,
+  Switch, FormControlLabel,
 } from "@mui/material";
 // GridRenderCellParams removed — using `any` to avoid duplicate @mui/x-data-grid version mismatch
-import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { brandColors, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useBatchGrid,
   useBatchBulkUpdate,
@@ -73,9 +71,21 @@ interface Props {
   batchId: number;
 }
 
+const BATCH_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "EDITADO", label: "Editado" },
+      { value: "SIN_EDITAR", label: "Sin editar" },
+    ],
+  },
+  { field: "departamento", label: "Departamento", type: "text", placeholder: "Filtrar por departamento..." },
+];
+
 export default function PayrollBatchGrid({ batchId }: Props) {
   const [filter, setFilter] = useState<BatchGridFilter>({ page: 1, limit: 50 });
   const [searchText, setSearchText] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [onlyModified, setOnlyModified] = useState(false);
@@ -92,10 +102,6 @@ export default function PayrollBatchGrid({ batchId }: Props) {
   const gridData = grid.data?.data ?? grid.data ?? { rows: [], total: 0 };
   const rows = Array.isArray(gridData) ? gridData : (gridData.rows ?? []);
   const totalCount = gridData.total ?? rows.length;
-
-  const handleSearch = useCallback(() => {
-    setFilter((f) => ({ ...f, search: searchText || undefined, page: 1 }));
-  }, [searchText]);
 
   const handleBulkApply = useCallback(async () => {
     await bulkUpdate.mutateAsync({
@@ -216,56 +222,55 @@ export default function PayrollBatchGrid({ batchId }: Props) {
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Toolbar */}
-      <Paper sx={{ p: 2, mb: 2, borderRadius: 2, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-        <TextField
-         
-          placeholder="Buscar por nombre o cédula..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
+      <Box sx={{ mb: 2 }}>
+        <ZenttoFilterPanel
+          filters={BATCH_FILTERS}
+          values={filterValues}
+          onChange={(v) => {
+            setFilterValues(v);
+            if (v.estado === "EDITADO") setOnlyModified(true);
+            else if (v.estado === "SIN_EDITAR") setOnlyModified(false);
+            else setOnlyModified(false);
           }}
-          sx={{ minWidth: 280 }}
+          searchPlaceholder="Buscar por nombre o cedula..."
+          searchValue={searchText}
+          onSearchChange={(v) => {
+            setSearchText(v);
+            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
+          }}
         />
-        <Button size="small" variant="outlined" onClick={handleSearch} startIcon={<FilterListIcon />}>
-          Filtrar
-        </Button>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={onlyModified}
+                onChange={(e) => setOnlyModified(e.target.checked)}
+              />
+            }
+            label={<Typography variant="body2">Solo editados</Typography>}
+          />
 
-        <FormControlLabel
-          control={
-            <Switch
-              size="small"
-              checked={onlyModified}
-              onChange={(e) => setOnlyModified(e.target.checked)}
-            />
-          }
-          label={<Typography variant="body2">Solo editados</Typography>}
-        />
+          <Box sx={{ flexGrow: 1 }} />
 
-        <Box sx={{ flexGrow: 1 }} />
+          <Button
+            size="small"
+            variant="outlined"
+            color="secondary"
+            startIcon={<GroupWorkIcon />}
+            onClick={() => setBulkOpen(true)}
+          >
+            Accion Masiva
+          </Button>
 
-        <Button
-          size="small"
-          variant="outlined"
-          color="secondary"
-          startIcon={<GroupWorkIcon />}
-          onClick={() => setBulkOpen(true)}
-        >
-          Acción Masiva
-        </Button>
-
-        <Chip
-          label={`${totalCount} empleados`}
-          variant="outlined"
-          size="small"
-          sx={{ fontWeight: 600 }}
-        />
-      </Paper>
+          <Chip
+            label={`${totalCount} empleados`}
+            variant="outlined"
+            size="small"
+            sx={{ fontWeight: 600 }}
+          />
+        </Stack>
+      </Box>
 
       {/* Grid */}
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, borderRadius: 2, overflow: "hidden" }}>

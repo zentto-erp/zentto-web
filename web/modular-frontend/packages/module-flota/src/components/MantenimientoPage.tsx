@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  MenuItem,
   Stack,
   TextField,
   Toolbar,
@@ -22,7 +21,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -52,11 +51,26 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
+const MANTENIMIENTO_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "SCHEDULED", label: "Programado" },
+      { value: "IN_PROGRESS", label: "En Progreso" },
+      { value: "COMPLETED", label: "Completado" },
+      { value: "CANCELLED", label: "Cancelado" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
+
 export default function MantenimientoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [filter, setFilter] = useState<MaintenanceFilter>({ page: 1, limit: 25 });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -178,11 +192,6 @@ export default function MantenimientoPage() {
     },
   ];
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((f) => ({ ...f, status: e.target.value || undefined }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
   const resetForm = () => {
     setVehicleId("");
     setMaintenanceTypeId("");
@@ -247,23 +256,23 @@ export default function MantenimientoPage() {
       </Box>
 
       {/* Filter */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            select
-            label="Estado"
-            value={filter.status ?? ""}
-            onChange={handleStatusFilter}
-            fullWidth
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="SCHEDULED">Programado</MenuItem>
-            <MenuItem value="IN_PROGRESS">En Progreso</MenuItem>
-            <MenuItem value="COMPLETED">Completado</MenuItem>
-            <MenuItem value="CANCELLED">Cancelado</MenuItem>
-          </TextField>
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={MANTENIMIENTO_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilter((f) => ({
+            ...f,
+            status: vals.estado || undefined,
+            fechaDesde: vals.from || undefined,
+            fechaHasta: vals.to || undefined,
+          }));
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar ordenes de mantenimiento..."
+        searchValue=""
+        onSearchChange={() => {}}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

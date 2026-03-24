@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -30,11 +30,17 @@ import {
   type FuelFilter,
 } from "../hooks/useFlota";
 
+const COMBUSTIBLE_FILTERS: FilterFieldDef[] = [
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
+
 export default function CombustiblePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [filter, setFilter] = useState<FuelFilter>({ page: 1, limit: 25 });
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -145,24 +151,22 @@ export default function CombustiblePage() {
       </Box>
 
       {/* Filters */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <DatePicker
-            label="Desde"
-            value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-            onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <DatePicker
-            label="Hasta"
-            value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-            onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
-          />
-        </Grid>
-      </Grid>
+      <ZenttoFilterPanel
+        filters={COMBUSTIBLE_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilter((f) => ({
+            ...f,
+            fechaDesde: vals.from || undefined,
+            fechaHasta: vals.to || undefined,
+          }));
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar registros..."
+        searchValue=""
+        onSearchChange={() => {}}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import {
@@ -45,6 +45,16 @@ const emptyForm = (): CarrierFormData => ({
   isActive: true,
 });
 
+const TRANSPORTISTAS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "true", label: "Activo" },
+      { value: "false", label: "Inactivo" },
+    ],
+  },
+];
+
 export default function TransportistasPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -55,6 +65,7 @@ export default function TransportistasPage() {
   const [formData, setFormData] = useState<CarrierFormData>(emptyForm());
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useCarriersList({
     ...filter,
@@ -166,20 +177,19 @@ export default function TransportistasPage() {
         </Button>
       </Box>
 
-      {/* Search */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            placeholder="Buscar por codigo, nombre, RIF..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPaginationModel((p) => ({ ...p, page: 0 }));
-            }}
-            fullWidth
-          />
-        </Grid>
-      </Grid>
+      {/* Filter */}
+      <ZenttoFilterPanel
+        filters={TRANSPORTISTAS_FILTERS}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilter((f) => ({ ...f, isActive: vals.estado || undefined }));
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar por codigo, nombre, RIF..."
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
+      />
 
       {/* DataGrid */}
       <ZenttoDataGrid

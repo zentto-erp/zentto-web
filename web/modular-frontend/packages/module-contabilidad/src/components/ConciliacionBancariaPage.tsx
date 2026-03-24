@@ -12,7 +12,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -80,8 +80,15 @@ const entryCols: ZenttoColDef[] = [
 
 // ─── Main Component ──────────────────────────────────────────
 
+const CONCILIACION_FILTERS: FilterFieldDef[] = [
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function ConciliacionBancariaPage() {
   const [selectedNroCta, setSelectedNroCta] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedConciliacionId, setSelectedConciliacionId] = useState<number | null>(null);
   const [selectedMovSistemaId, setSelectedMovSistemaId] = useState<number | null>(null);
   const [selectedExtractoId, setSelectedExtractoId] = useState<number | null>(null);
@@ -169,6 +176,15 @@ export default function ConciliacionBancariaPage() {
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
         Conciliacion bancaria
       </Typography>
+
+      <ZenttoFilterPanel
+        filters={CONCILIACION_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar movimiento..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       {/* Top Section */}
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>

@@ -6,49 +6,58 @@ import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  InputAdornment,
-  TextField,
   Typography,
 } from "@mui/material";
-import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Add as AddIcon } from "@mui/icons-material";
 import {
   ZenttoDataGrid,
   type ZenttoColDef,
   buildCrudActionsColumn,
   DeleteDialog,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
 } from "@zentto/shared-ui";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
-import { formatCurrency, formatDate } from "@zentto/shared-api";
+import { formatDate } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { debounce } from "lodash";
+
+const CUENTAS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "Pendiente", label: "Pendiente" },
+      { value: "Pagada", label: "Pagada" },
+      { value: "Vencida", label: "Vencida" },
+      { value: "Parcial", label: "Parcial" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+  { field: "proveedor", label: "Proveedor", type: "text", placeholder: "Nombre del proveedor..." },
+];
 
 export default function CuentasPorPagarTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCuenta, setSelectedCuenta] = useState<Record<string, unknown> | null>(null);
 
   const { data: cuentas, isLoading } = useCuentasPorPagarList({
     search,
+    estado: filterValues.estado || undefined,
+    from: filterValues.from || undefined,
+    to: filterValues.to || undefined,
+    proveedor: filterValues.proveedor?.trim() || undefined,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
 
   const { mutate: deleteCuenta, isPending: isDeleting } = useDeleteCuentaPorPagar();
-
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearch(value);
-      setPaginationModel((p) => ({ ...p, page: 0 }));
-    }, 500),
-    []
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
 
   const handleDeleteClick = (row: Record<string, unknown>) => {
     setSelectedCuenta(row);
@@ -160,19 +169,18 @@ export default function CuentasPorPagarTable() {
         </Button>
       </Box>
 
-      <TextField
-        placeholder="Buscar por proveedor, numero o referencia..."
-        defaultValue=""
-        onChange={handleSearchChange}
-        fullWidth
-        size="small"
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
+      <ZenttoFilterPanel
+        filters={CUENTAS_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setPaginationModel((p) => ({ ...p, page: 0 }));
+        }}
+        searchPlaceholder="Buscar por proveedor, numero o referencia..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPaginationModel((p) => ({ ...p, page: 0 }));
         }}
       />
 

@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useInflationIndices,
   useUpsertInflationIndex,
@@ -217,15 +217,19 @@ export default function InflacionAjustePage() {
 
           {/* ─── Tab 0: Indices INPC ───────────────────────── */}
           <TabPanel value={tab} index={0}>
-            <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 2 }}>
-              <TextField
-                label="Año"
-                type="number"
-               
-                value={indiceYear}
-                onChange={(e) => setIndiceYear(Number(e.target.value))}
-                sx={{ width: 120 }}
+            <Box sx={{ px: 2, pt: 2 }}>
+              <ZenttoFilterPanel
+                filters={[
+                  { field: "indiceYear", label: "Periodo (ano)", type: "text", placeholder: String(currentYear), minWidth: 120 },
+                ] as FilterFieldDef[]}
+                values={{ indiceYear: String(indiceYear) }}
+                onChange={(vals) => {
+                  if (vals.indiceYear) setIndiceYear(Number(vals.indiceYear));
+                }}
+                searchPlaceholder="Buscar indice..."
               />
+            </Box>
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ px: 2, pb: 1 }}>
               <Button variant="contained" size="small" onClick={() => setIndiceDialogOpen(true)}>
                 Agregar Índice
               </Button>
@@ -248,14 +252,17 @@ export default function InflacionAjustePage() {
 
           {/* ─── Tab 1: Clasificacion Monetaria ────────────── */}
           <TabPanel value={tab} index={1}>
-            <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 2 }}>
-              <TextField
-                label="Buscar cuenta"
-               
-                value={clasSearch}
-                onChange={(e) => setClasSearch(e.target.value)}
-                sx={{ minWidth: 240 }}
+            <Box sx={{ px: 2, pt: 2 }}>
+              <ZenttoFilterPanel
+                filters={[] as FilterFieldDef[]}
+                values={{}}
+                onChange={() => {}}
+                searchPlaceholder="Buscar cuenta..."
+                searchValue={clasSearch}
+                onSearchChange={setClasSearch}
               />
+            </Box>
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ px: 2, pb: 1 }}>
               <Button
                 variant="outlined"
                 size="small"

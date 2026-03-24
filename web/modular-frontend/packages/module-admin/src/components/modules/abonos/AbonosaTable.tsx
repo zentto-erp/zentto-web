@@ -1,55 +1,57 @@
 // components/modules/abonos/AbonosaTable.tsx
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Box,
-  Button,
-  TextField,
-  InputAdornment,
-  Typography,
-} from "@mui/material";
-import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Box, Button, Typography } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
 import {
   ZenttoDataGrid,
   type ZenttoColDef,
   buildCrudActionsColumn,
   ConfirmDialog,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
 } from "@zentto/shared-ui";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly } from "@zentto/shared-api";
-import { debounce } from "lodash";
+
+const ABONO_FILTERS: FilterFieldDef[] = [
+  { field: "cliente", label: "Cliente", type: "text", placeholder: "Nombre del cliente..." },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
 
 export default function AbonosTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAbono, setSelectedAbono] = useState<string | null>(null);
 
+  // Filtros
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+
+  const handleFilterChange = (vals: Record<string, string>) => {
+    setFilterValues(vals);
+    setPage(0);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setPage(0);
+  };
+
   const { data: abonos, isLoading } = useAbonosList({
-    search,
+    search: search || undefined,
     page: page + 1,
     limit: pageSize,
   });
 
   const { mutate: deleteAbono, isPending: isDeleting } = useDeleteAbono();
-
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearch(value);
-      setPage(0);
-    }, 500),
-    []
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
 
   const handleDeleteClick = (numero: string) => {
     setSelectedAbono(numero);
@@ -72,42 +74,14 @@ export default function AbonosTable() {
 
   const columns = useMemo<ZenttoColDef[]>(
     () => [
+      { field: "numeroAbono", headerName: "Numero Abono", width: 140, sortable: true },
+      { field: "nombreCliente", headerName: "Cliente", flex: 1, minWidth: 180, sortable: true },
+      { field: "numeroFactura", headerName: "Factura", width: 140, sortable: true, mobileHide: true },
       {
-        field: "numeroAbono",
-        headerName: "Numero Abono",
-        width: 140,
-        sortable: true,
+        field: "fecha", headerName: "Fecha", width: 120, sortable: true,
+        valueFormatter: (value: string) => value ? toDateOnly(value, timeZone) : "",
       },
-      {
-        field: "nombreCliente",
-        headerName: "Cliente",
-        flex: 1,
-        minWidth: 180,
-        sortable: true,
-      },
-      {
-        field: "numeroFactura",
-        headerName: "Factura",
-        width: 140,
-        sortable: true,
-        mobileHide: true,
-      },
-      {
-        field: "fecha",
-        headerName: "Fecha",
-        width: 120,
-        sortable: true,
-        valueFormatter: (value: string) =>
-          value ? toDateOnly(value, timeZone) : "",
-      },
-      {
-        field: "monto",
-        headerName: "Monto",
-        width: 140,
-        type: "number",
-        currency: true,
-        aggregation: "sum",
-      },
+      { field: "monto", headerName: "Monto", width: 140, type: "number", currency: true, aggregation: "sum" },
       buildCrudActionsColumn({
         onView: (row) => router.push(`/abonos/${row.numeroAbono}`),
         onDelete: (row) => handleDeleteClick(row.numeroAbono),
@@ -127,39 +101,23 @@ export default function AbonosTable() {
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>
           Abonos
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/abonos/new")}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/abonos/new")}>
           Nuevo Abono
         </Button>
       </Box>
 
-      <TextField
-        placeholder="Buscar por numero, cliente o factura..."
-        defaultValue=""
-        onChange={handleSearchChange}
-        fullWidth
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        }}
+      {/* Filtros */}
+      <ZenttoFilterPanel
+        filters={ABONO_FILTERS}
+        values={filterValues}
+        onChange={handleFilterChange}
+        searchPlaceholder="Buscar por numero, cliente o factura..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
       />
 
       {/* ZenttoDataGrid */}
@@ -187,7 +145,6 @@ export default function AbonosTable() {
         />
       </Box>
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Eliminar Abono"

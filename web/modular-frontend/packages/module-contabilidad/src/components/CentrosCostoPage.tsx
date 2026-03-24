@@ -25,7 +25,7 @@ import {
   Divider,
 } from "@mui/material";
 import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PivotTableChartIcon from "@mui/icons-material/PivotTableChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
@@ -35,7 +35,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import SearchIcon from "@mui/icons-material/Search";
 import { formatCurrency } from "@zentto/shared-api";
 import {
   useCentrosCostoList,
@@ -436,8 +435,16 @@ function PivotTab() {
 
 // ─── Main Component ──────────────────────────────────────────
 
+const CENTROS_COSTO_FILTERS: FilterFieldDef[] = [
+  { field: "estado", label: "Estado", type: "select", options: [
+    { value: "active", label: "Activo" },
+    { value: "inactive", label: "Inactivo" },
+  ]},
+];
+
 export default function CentrosCostoPage() {
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [tabValue, setTabValue] = useState(0);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -509,16 +516,13 @@ export default function CentrosCostoPage() {
 
       {tabValue === 0 && (
         <>
-          {/* Search */}
-          <TextField
-            placeholder="Buscar por codigo o nombre..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ mb: 2, maxWidth: 400 }}
-            fullWidth
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
-            }}
+          <ZenttoFilterPanel
+            filters={CENTROS_COSTO_FILTERS}
+            values={filterValues}
+            onChange={setFilterValues}
+            searchPlaceholder="Buscar por codigo o nombre..."
+            searchValue={search}
+            onSearchChange={setSearch}
           />
 
           {/* Tree */}

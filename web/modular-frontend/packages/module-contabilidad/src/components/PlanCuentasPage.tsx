@@ -5,18 +5,28 @@ import {
   Box,
   Paper,
   Typography,
-  TextField,
   Stack,
   CircularProgress,
   Alert,
-  InputAdornment,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { usePlanCuentas } from "../hooks/useContabilidad";
+
+const PLAN_CUENTAS_FILTERS: FilterFieldDef[] = [
+  { field: "tipo", label: "Tipo", type: "select", options: [
+    { value: "A", label: "Acreedor" },
+    { value: "D", label: "Deudor" },
+  ]},
+  { field: "nivel", label: "Nivel", type: "select", options: [
+    { value: "1", label: "Nivel 1" },
+    { value: "2", label: "Nivel 2" },
+    { value: "3", label: "Nivel 3" },
+  ]},
+];
 
 export default function PlanCuentasPage() {
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const { data, isLoading, error } = usePlanCuentas({ search: search || undefined });
 
   const rows = data?.data ?? [];
@@ -28,24 +38,28 @@ export default function PlanCuentasPage() {
     { field: "nivel", headerName: "Nivel", width: 80, type: "number" },
   ];
 
+  // Client-side filter by tipo/nivel since the API may not support it
+  const filteredRows = React.useMemo(() => {
+    let result = rows;
+    if (filterValues.tipo) {
+      result = result.filter((r: any) => r.tipo === filterValues.tipo);
+    }
+    if (filterValues.nivel) {
+      result = result.filter((r: any) => String(r.nivel) === filterValues.nivel);
+    }
+    return result;
+  }, [rows, filterValues]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          placeholder="Buscar cuenta..."
-         
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ minWidth: 300 }}
-        />
-      </Stack>
+      <ZenttoFilterPanel
+        filters={PLAN_CUENTAS_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar cuenta..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>Error al cargar cuentas</Alert>}
 
@@ -57,7 +71,7 @@ export default function PlanCuentasPage() {
         ) : (
           <ZenttoDataGrid
             gridId="contabilidad-plan-cuentas-list"
-            rows={rows}
+            rows={filteredRows}
             columns={columns}
             pageSizeOptions={[25, 50, 100]}
             disableRowSelectionOnClick

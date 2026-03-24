@@ -17,7 +17,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -30,8 +30,21 @@ import {
   type ProfitSharingFilter,
 } from "../hooks/useRRHH";
 
+const UTILIDADES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "status", label: "Estado", type: "select",
+    options: [
+      { value: "PENDIENTE", label: "Pendiente" },
+      { value: "APROBADO", label: "Aprobado" },
+      { value: "PROCESADO", label: "Procesado" },
+    ],
+  },
+];
+
 export default function UtilidadesPage() {
   const [filter, setFilter] = useState<ProfitSharingFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [generateOpen, setGenerateOpen] = useState(false);
   const [summaryId, setSummaryId] = useState<number | null>(null);
   const [generateForm, setGenerateForm] = useState({ fiscalYear: new Date().getFullYear(), daysGranted: 15 });
@@ -122,15 +135,20 @@ export default function UtilidadesPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Año Fiscal"
-          type="number"
-         
-          value={filter.fiscalYear || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, fiscalYear: Number(e.target.value) || undefined }))}
-        />
-      </Stack>
+      <ZenttoFilterPanel
+        filters={UTILIDADES_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, status: v.status || undefined }));
+        }}
+        searchPlaceholder="Buscar por ano fiscal..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, fiscalYear: v ? Number(v) || undefined : undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

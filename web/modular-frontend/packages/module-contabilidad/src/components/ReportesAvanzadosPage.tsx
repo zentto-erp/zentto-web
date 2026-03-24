@@ -26,7 +26,7 @@ import {
   LinearProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -95,6 +95,7 @@ function SectionHeader({ title, total }: { title: string; total?: number }) {
     </Stack>
   );
 }
+
 
 function exportToCSV(rows: any[], columns: { field: string; headerName?: string }[], filename: string) {
   const headers = columns.map((c) => c.headerName).join(",");
@@ -279,6 +280,7 @@ export default function ReportesAvanzadosPage() {
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
 
   const [tab, setTab] = useState(0);
+  const [reportSearch, setReportSearch] = useState("");
   const [fechaDesde, setFechaDesde] = useState(firstDay);
   const [fechaHasta, setFechaHasta] = useState(today);
   const [fechaCorte, setFechaCorte] = useState(today);
@@ -456,6 +458,15 @@ export default function ReportesAvanzadosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <ZenttoFilterPanel
+        filters={[] as FilterFieldDef[]}
+        values={{}}
+        onChange={() => {}}
+        searchPlaceholder="Buscar en reportes avanzados..."
+        searchValue={reportSearch}
+        onSearchChange={setReportSearch}
+      />
+
       {/* Tab Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
         <Tabs

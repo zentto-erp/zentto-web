@@ -5,7 +5,7 @@ import {
   Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
   DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
@@ -23,6 +23,8 @@ const columns: ZenttoColDef[] = [
 export default function UnidadTributariaPage() {
   const { data: countries = [] } = useCountries();
   const [filterCountry, setFilterCountry] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ countryCode: "VE", taxYear: new Date().getFullYear(), unitValue: 0, currency: "VES", effectiveDate: "" });
 
@@ -47,13 +49,19 @@ export default function UnidadTributariaPage() {
         }}>Nuevo Valor</Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField select label="Pais" value={filterCountry} sx={{ minWidth: 150 }}
-          onChange={(e) => setFilterCountry(e.target.value)}>
-          <MenuItem value="">Todos</MenuItem>
-          {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
-        </TextField>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={[
+          { field: "countryCode", label: "Periodo (pais)", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
+        ] as FilterFieldDef[]}
+        values={filterValues}
+        onChange={(vals) => {
+          setFilterValues(vals);
+          setFilterCountry(vals.countryCode || "");
+        }}
+        searchPlaceholder="Buscar..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
       <ZenttoDataGrid
         gridId="contabilidad-unidad-tributaria-list"

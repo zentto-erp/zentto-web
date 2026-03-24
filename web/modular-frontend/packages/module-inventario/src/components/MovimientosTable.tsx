@@ -9,10 +9,6 @@ import {
   Chip,
   InputAdornment,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   IconButton,
   Alert,
   Stack,
@@ -22,12 +18,25 @@ import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
-import { DatePicker, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ZenttoColDef } from "@zentto/shared-ui";
-import dayjs from "dayjs";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
+
+const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "ENTRADA", label: "Entrada" },
+      { value: "SALIDA", label: "Salida" },
+      { value: "AJUSTE", label: "Ajuste" },
+      { value: "TRASLADO", label: "Traslado" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
 
 export default function MovimientosTable() {
   const { timeZone } = useTimezone();
@@ -35,6 +44,7 @@ export default function MovimientosTable() {
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [search, setSearch] = useState("");
   const [movementType, setMovementType] = useState("");
+  const [movFilterValues, setMovFilterValues] = useState<Record<string, string>>({});
   const [fechaDesde, setFechaDesde] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -66,11 +76,6 @@ export default function MovimientosTable() {
 
   const rows = (movimientos?.rows ?? []) as Record<string, unknown>[];
   const total = movimientos?.total ?? 0;
-
-  const debouncedSearch = useCallback(
-    debounce((value: string) => { setSearch(value); setPage(0); }, 500),
-    []
-  );
 
   const getTypeColor = (type: string): "success" | "error" | "info" | "warning" | "default" => {
     switch (type) {
@@ -213,48 +218,21 @@ export default function MovimientosTable() {
           )}
 
           {/* Filtros */}
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  placeholder="Buscar por referencia, notas..."
-                  onChange={(e) => debouncedSearch(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Tipo</InputLabel>
-                  <Select value={movementType} label="Tipo" onChange={(e) => { setMovementType(e.target.value); setPage(0); }}>
-                    <MenuItem value="">Todos</MenuItem>
-                    <MenuItem value="ENTRADA">Entrada</MenuItem>
-                    <MenuItem value="SALIDA">Salida</MenuItem>
-                    <MenuItem value="AJUSTE">Ajuste</MenuItem>
-                    <MenuItem value="TRASLADO">Traslado</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 3 }}>
-                <DatePicker
-                  label="Desde"
-                  value={fechaDesde ? dayjs(fechaDesde) : null}
-                  onChange={(v) => { setFechaDesde(v ? v.format("YYYY-MM-DD") : ""); setPage(0); }}
-                  slotProps={{ textField: { size: "small", fullWidth: true } }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 3 }}>
-                <DatePicker
-                  label="Hasta"
-                  value={fechaHasta ? dayjs(fechaHasta) : null}
-                  onChange={(v) => { setFechaHasta(v ? v.format("YYYY-MM-DD") : ""); setPage(0); }}
-                  slotProps={{ textField: { size: "small", fullWidth: true } }}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
+          <ZenttoFilterPanel
+            filters={MOVIMIENTOS_FILTERS}
+            values={movFilterValues}
+            onChange={(vals) => {
+              setMovFilterValues(vals);
+              setMovementType(vals.tipo || "");
+              if (vals.from !== undefined) setFechaDesde(vals.from);
+              if (vals.to !== undefined) setFechaHasta(vals.to);
+              setPage(0);
+            }}
+            searchPlaceholder="Buscar por referencia, notas..."
+            searchValue={search}
+            onSearchChange={(v) => { setSearch(v); setPage(0); }}
+            defaultOpen
+          />
 
           {/* Tabla de movimientos con master-detail y pivot */}
           <ZenttoDataGrid

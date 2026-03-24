@@ -13,15 +13,11 @@ import {
   DialogContent,
   DialogActions,
   Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   IconButton,
   Alert,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -43,8 +39,25 @@ const statusColors: Record<string, "warning" | "success" | "error" | "info" | "d
   CANCELADA: "default",
 };
 
+const SOLICITUDES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "status", label: "Estado", type: "select",
+    options: [
+      { value: "PENDIENTE", label: "Pendiente" },
+      { value: "APROBADA", label: "Aprobada" },
+      { value: "RECHAZADA", label: "Rechazada" },
+      { value: "PROCESADA", label: "Procesada" },
+      { value: "CANCELADA", label: "Cancelada" },
+    ],
+  },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function VacacionesSolicitudesPage() {
   const [filter, setFilter] = useState<SolicitudFilter>({ page: 1, limit: 50 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectId, setRejectId] = useState<number | null>(null);
@@ -177,29 +190,20 @@ export default function VacacionesSolicitudesPage() {
 
       {successMsg && <Alert severity="success" sx={{ mb: 2 }}>{successMsg}</Alert>}
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Cédula Empleado"
-         
-          value={filter.employeeCode || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, employeeCode: e.target.value || undefined }))}
-        />
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Estado</InputLabel>
-          <Select
-            value={filter.status || ""}
-            label="Estado"
-            onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-            <MenuItem value="APROBADA">Aprobada</MenuItem>
-            <MenuItem value="RECHAZADA">Rechazada</MenuItem>
-            <MenuItem value="PROCESADA">Procesada</MenuItem>
-            <MenuItem value="CANCELADA">Cancelada</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={SOLICITUDES_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, status: v.status || undefined }));
+        }}
+        searchPlaceholder="Buscar por cedula..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, employeeCode: v || undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid

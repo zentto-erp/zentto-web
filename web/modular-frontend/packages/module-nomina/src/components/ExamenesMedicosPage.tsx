@@ -20,7 +20,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -52,8 +52,24 @@ const emptyForm: MedExamInput = {
   notes: "",
 };
 
+const EXAMENES_FILTERS: FilterFieldDef[] = [
+  {
+    field: "type", label: "Tipo", type: "select",
+    options: [
+      { value: "PREEMPLEO", label: "Pre-Empleo" },
+      { value: "PERIODICO", label: "Periodico" },
+      { value: "EGRESO", label: "Egreso" },
+      { value: "ESPECIAL", label: "Especial" },
+    ],
+  },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function ExamenesMedicosPage() {
   const [filter, setFilter] = useState<MedExamFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<MedExamInput>({ ...emptyForm });
@@ -181,33 +197,20 @@ export default function ExamenesMedicosPage() {
         </Button>
       </Stack>
 
-      <FormGrid spacing={2} sx={{ mb: 2 }}>
-        <FormField xs={12} sm={6}>
-          <TextField
-            label="Buscar"
-           
-            fullWidth
-            value={filter.search || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-          />
-        </FormField>
-        <FormField xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              value={filter.type || ""}
-              label="Tipo"
-              onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="PREEMPLEO">Pre-Empleo</MenuItem>
-              <MenuItem value="PERIODICO">Periódico</MenuItem>
-              <MenuItem value="EGRESO">Egreso</MenuItem>
-              <MenuItem value="ESPECIAL">Especial</MenuItem>
-            </Select>
-          </FormControl>
-        </FormField>
-      </FormGrid>
+      <ZenttoFilterPanel
+        filters={EXAMENES_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, type: v.type || undefined }));
+        }}
+        searchPlaceholder="Buscar examenes..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, search: v || undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid

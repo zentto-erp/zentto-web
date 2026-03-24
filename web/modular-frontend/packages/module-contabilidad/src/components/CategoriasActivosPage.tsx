@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useCategoriasList,
   useUpsertCategoria,
@@ -75,7 +75,16 @@ function formatLifespan(months: number): string {
   return parts.join(" ") || "0 meses";
 }
 
+const CATEGORIAS_FILTERS: FilterFieldDef[] = [
+  { field: "estado", label: "Estado", type: "select", options: [
+    { value: "active", label: "Activo" },
+    { value: "inactive", label: "Inactivo" },
+  ]},
+];
+
 export default function CategoriasActivosPage() {
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [openDialog, setOpenDialog] = useState(false);
   const [form, setForm] = useState<CategoryForm>({ ...emptyForm });
   const [isEditing, setIsEditing] = useState(false);
@@ -169,6 +178,14 @@ export default function CategoriasActivosPage() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <ZenttoFilterPanel
+          filters={CATEGORIAS_FILTERS}
+          values={filterValues}
+          onChange={setFilterValues}
+          searchPlaceholder="Buscar categoria..."
+          searchValue={search}
+          onSearchChange={setSearch}
+        />
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
             gridId="contabilidad-categorias-activos-list"

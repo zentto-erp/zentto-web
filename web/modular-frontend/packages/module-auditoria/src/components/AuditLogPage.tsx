@@ -5,8 +5,6 @@ import {
   Box,
   Paper,
   Typography,
-  TextField,
-  MenuItem,
   Stack,
   Chip,
   Dialog,
@@ -20,13 +18,11 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
-import dayjs from "dayjs";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
 
-const ACTION_TYPES = ["", "CREATE", "UPDATE", "DELETE", "VOID", "LOGIN"];
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
   UPDATE: "info",
@@ -35,10 +31,27 @@ const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "
   LOGIN: "default",
 };
 
+const AUDIT_FILTERS: FilterFieldDef[] = [
+  {
+    field: "actionType", label: "Accion", type: "select",
+    options: [
+      { value: "CREATE", label: "CREATE" },
+      { value: "UPDATE", label: "UPDATE" },
+      { value: "DELETE", label: "DELETE" },
+      { value: "VOID", label: "VOID" },
+      { value: "LOGIN", label: "LOGIN" },
+    ],
+  },
+  { field: "userName", label: "Usuario", type: "text" },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
 export default function AuditLogPage() {
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<AuditLogFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useAuditLogs(filter);
   const detalle = useAuditLogDetail(selectedId);
@@ -97,66 +110,25 @@ export default function AuditLogPage() {
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filters */}
-        <FormGrid spacing={2} sx={{ mb: 2 }}>
-          <FormField xs={12} sm={4} md={2}>
-            <DatePicker
-              label="Desde"
-              value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
-              onChange={(v) => updateFilter("fechaDesde", v ? v.format('YYYY-MM-DD') : '')}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-          <FormField xs={12} sm={4} md={2}>
-            <DatePicker
-              label="Hasta"
-              value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
-              onChange={(v) => updateFilter("fechaHasta", v ? v.format('YYYY-MM-DD') : '')}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-          </FormField>
-          <FormField xs={12} sm={4} md={2}>
-            <TextField
-              label="Módulo"
-             
-              fullWidth
-              value={filter.moduleName || ""}
-              onChange={(e) => updateFilter("moduleName", e.target.value)}
-            />
-          </FormField>
-          <FormField xs={12} sm={4} md={2}>
-            <TextField
-              label="Usuario"
-             
-              fullWidth
-              value={filter.userName || ""}
-              onChange={(e) => updateFilter("userName", e.target.value)}
-            />
-          </FormField>
-          <FormField xs={12} sm={4} md={2}>
-            <TextField
-              label="Acción"
-              select
-             
-              fullWidth
-              value={filter.actionType || ""}
-              onChange={(e) => updateFilter("actionType", e.target.value)}
-            >
-              <MenuItem value="">Todas</MenuItem>
-              {ACTION_TYPES.filter(Boolean).map((a) => (
-                <MenuItem key={a} value={a}>{a}</MenuItem>
-              ))}
-            </TextField>
-          </FormField>
-          <FormField xs={12} sm={4} md={2}>
-            <TextField
-              label="Buscar"
-             
-              fullWidth
-              value={filter.search || ""}
-              onChange={(e) => updateFilter("search", e.target.value)}
-            />
-          </FormField>
-        </FormGrid>
+        <ZenttoFilterPanel
+          filters={AUDIT_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              actionType: vals.actionType || undefined,
+              userName: vals.userName || undefined,
+              fechaDesde: vals.fechaDesde || undefined,
+              fechaHasta: vals.fechaHasta || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar por modulo, entidad..."
+          searchValue={filter.search || ""}
+          onSearchChange={(v) => updateFilter("search", v)}
+          defaultOpen
+        />
 
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>

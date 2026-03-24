@@ -23,7 +23,7 @@ import {
   Typography,
   Collapse,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { useLookup } from "@zentto/shared-api";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -40,8 +40,21 @@ const emptyForm: ConceptoInput = {
   tipo: "ASIGNACION",
 };
 
+const CONCEPTOS_FILTERS: FilterFieldDef[] = [
+  {
+    field: "tipo", label: "Tipo", type: "select",
+    options: [
+      { value: "ASIGNACION", label: "Asignacion" },
+      { value: "DEDUCCION", label: "Deduccion" },
+      { value: "BONO", label: "Bono" },
+    ],
+  },
+];
+
 export default function ConceptosPage() {
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConceptoInput>({ ...emptyForm });
@@ -133,27 +146,20 @@ export default function ConceptosPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-         
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-        />
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={filter.tipo || ""}
-            label="Tipo"
-            onChange={(e) => setFilter((f) => ({ ...f, tipo: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="ASIGNACION">Asignación</MenuItem>
-            <MenuItem value="DEDUCCION">Deducción</MenuItem>
-            <MenuItem value="BONO">Bono</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <ZenttoFilterPanel
+        filters={CONCEPTOS_FILTERS}
+        values={filterValues}
+        onChange={(v) => {
+          setFilterValues(v);
+          setFilter((f) => ({ ...f, tipo: v.tipo || undefined }));
+        }}
+        searchPlaceholder="Buscar conceptos..."
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setFilter((f) => ({ ...f, search: v || undefined }));
+        }}
+      />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid

@@ -19,7 +19,9 @@ import {
   ZenttoDataGrid,
   FormDialog,
   DeleteDialog,
+  ZenttoFilterPanel,
   type ZenttoColDef,
+  type FilterFieldDef,
 } from "@zentto/shared-ui";
 import {
   useAutomationRules,
@@ -109,6 +111,16 @@ const emptyForm: RuleForm = {
   SortOrder: 0,
 };
 
+const AUTOMATION_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado", label: "Estado", type: "select",
+    options: [
+      { value: "true", label: "Activas" },
+      { value: "false", label: "Inactivas" },
+    ],
+  },
+];
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function AutomationRulesPage() {
@@ -116,10 +128,24 @@ export default function AutomationRulesPage() {
   const upsertMutation = useUpsertRule();
   const deleteMutation = useDeleteRule();
 
-  const rules: AutomationRule[] = useMemo(() => {
+  const allRules: AutomationRule[] = useMemo(() => {
     if (!rulesRaw) return [];
     return Array.isArray(rulesRaw) ? rulesRaw : (rulesRaw as any)?.data ?? [];
   }, [rulesRaw]);
+
+  const rules = useMemo(() => {
+    let filtered = allRules;
+    if (filterValues.estado === "true") filtered = filtered.filter((r) => r.IsActive);
+    if (filterValues.estado === "false") filtered = filtered.filter((r) => !r.IsActive);
+    if (searchText) {
+      const q = searchText.toLowerCase();
+      filtered = filtered.filter((r) => r.RuleName.toLowerCase().includes(q));
+    }
+    return filtered;
+  }, [allRules, filterValues, searchText]);
+
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [searchText, setSearchText] = useState("");
 
   // Dialog state
   const [formOpen, setFormOpen] = useState(false);
@@ -456,6 +482,15 @@ export default function AutomationRulesPage() {
           Nueva Regla
         </Button>
       </Box>
+
+      <ZenttoFilterPanel
+        filters={AUTOMATION_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar reglas..."
+        searchValue={searchText}
+        onSearchChange={setSearchText}
+      />
 
       <ZenttoDataGrid
         gridId="crm-automation-rules-list"
