@@ -97,6 +97,18 @@
 \echo '[29] usp_crm_callcenter.sql'
 \i includes/sp/usp_crm_callcenter.sql
 
+\echo '[29b] usp_crm_analytics.sql'
+\i includes/sp/usp_crm_analytics.sql
+
+\echo '[29c] usp_crm_scoring.sql'
+\i includes/sp/usp_crm_scoring.sql
+
+\echo '[29d] usp_crm_automation.sql'
+\i includes/sp/usp_crm_automation.sql
+
+\echo '[29e] usp_crm_reports.sql'
+\i includes/sp/usp_crm_reports.sql
+
 \echo '[30] usp_mfg.sql'
 \i includes/sp/usp_mfg.sql
 
