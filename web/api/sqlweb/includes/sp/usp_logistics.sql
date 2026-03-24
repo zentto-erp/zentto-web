@@ -969,3 +969,45 @@ BEGIN
     SELECT 1 AS ok, N'Entrega confirmada' AS mensaje;
 END
 GO
+
+-- ============================================================================
+--  SP: usp_Logistics_Dashboard_Get
+-- ============================================================================
+IF OBJECT_ID('dbo.usp_Logistics_Dashboard_Get', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Logistics_Dashboard_Get;
+GO
+CREATE PROCEDURE dbo.usp_Logistics_Dashboard_Get
+    @CompanyId  INT,
+    @BranchId   INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        (SELECT COUNT(*)
+         FROM logistics.GoodsReceipt
+         WHERE CompanyId = @CompanyId AND BranchId = @BranchId
+           AND Status IN ('DRAFT','PARTIAL')
+           AND IsDeleted = 0
+        ) AS RecepcionesPendientes,
+
+        (SELECT COUNT(*)
+         FROM logistics.GoodsReturn
+         WHERE CompanyId = @CompanyId AND BranchId = @BranchId
+           AND Status IN ('DRAFT','APPROVED')
+           AND IsDeleted = 0
+        ) AS DevolucionesEnProceso,
+
+        (SELECT COUNT(*)
+         FROM logistics.DeliveryNote
+         WHERE CompanyId = @CompanyId AND BranchId = @BranchId
+           AND Status IN ('DISPATCHED','IN_TRANSIT')
+           AND IsDeleted = 0
+        ) AS AlbaranesEnTransito,
+
+        (SELECT COUNT(*)
+         FROM logistics.Carrier
+         WHERE CompanyId = @CompanyId
+           AND IsActive = 1
+        ) AS TransportistasActivos;
+END
+GO

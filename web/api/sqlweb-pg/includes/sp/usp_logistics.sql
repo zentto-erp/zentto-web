@@ -1139,3 +1139,50 @@ BEGIN
     RETURN QUERY SELECT 1, 'Entrega confirmada'::VARCHAR;
 END;
 $$;
+
+-- ============================================================================
+--  SP: usp_Logistics_Dashboard_Get
+-- ============================================================================
+DROP FUNCTION IF EXISTS usp_Logistics_Dashboard_Get(INT, INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_Logistics_Dashboard_Get(
+    p_company_id  INT,
+    p_branch_id   INT
+)
+RETURNS TABLE (
+    "RecepcionesPendientes" INT,
+    "DevolucionesEnProceso" INT,
+    "AlbaranesEnTransito"   INT,
+    "TransportistasActivos" INT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        (SELECT COUNT(*)::INT
+         FROM logistics."GoodsReceipt"
+         WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+           AND "Status" IN ('DRAFT','PARTIAL')
+           AND "IsDeleted" = FALSE
+        ) AS "RecepcionesPendientes",
+
+        (SELECT COUNT(*)::INT
+         FROM logistics."GoodsReturn"
+         WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+           AND "Status" IN ('DRAFT','APPROVED')
+           AND "IsDeleted" = FALSE
+        ) AS "DevolucionesEnProceso",
+
+        (SELECT COUNT(*)::INT
+         FROM logistics."DeliveryNote"
+         WHERE "CompanyId" = p_company_id AND "BranchId" = p_branch_id
+           AND "Status" IN ('DISPATCHED','IN_TRANSIT')
+           AND "IsDeleted" = FALSE
+        ) AS "AlbaranesEnTransito",
+
+        (SELECT COUNT(*)::INT
+         FROM logistics."Carrier"
+         WHERE "CompanyId" = p_company_id
+           AND "IsActive" = TRUE
+        ) AS "TransportistasActivos";
+END;
+$$;

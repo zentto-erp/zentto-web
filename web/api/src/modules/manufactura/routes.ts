@@ -6,6 +6,7 @@
 import { Router, Request, Response } from "express";
 import * as svc from "./service.js";
 import { emitWorkOrderAccountingEntry } from "./mfg-contabilidad.service.js";
+import { obs } from "../integrations/observability.js";
 
 export const manufacturaRouter = Router();
 
@@ -57,10 +58,13 @@ manufacturaRouter.post("/bom", async (req: Request, res: Response) => {
       productId: body.productId,
       bomCode: body.bomCode,
       bomName: body.bomName,
-      expectedQuantity: body.expectedQuantity,
+      outputQuantity: body.outputQuantity ?? body.expectedQuantity,
       linesJson: body.lines ? JSON.stringify(body.lines) : null,
       userId: userId(req),
     });
+    if (result.success) {
+      try { obs.event('mfg.bom.created', { bomId: result.id, productId: body.productId, bomCode: body.bomCode, bomName: body.bomName, module: 'manufactura', userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 201 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -70,6 +74,9 @@ manufacturaRouter.post("/bom", async (req: Request, res: Response) => {
 manufacturaRouter.post("/bom/:id/activar", async (req: Request, res: Response) => {
   try {
     const result = await svc.activateBOM(Number(req.params.id), userId(req));
+    if (result.success) {
+      try { obs.audit('mfg.bom.activated', { userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'manufactura', entity: 'BOM', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -170,6 +177,9 @@ manufacturaRouter.get("/ordenes/:id", async (req: Request, res: Response) => {
 manufacturaRouter.post("/ordenes", async (req: Request, res: Response) => {
   try {
     const result = await svc.createWorkOrder({ ...req.body, userId: userId(req) });
+    if (result.success) {
+      try { obs.event('mfg.workorder.created', { workOrderId: result.id, workOrderNumber: result.WorkOrderNumber, bomId: req.body.bomId, productId: req.body.productId, plannedQuantity: req.body.plannedQuantity, priority: req.body.priority, module: 'manufactura', userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 201 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -179,6 +189,9 @@ manufacturaRouter.post("/ordenes", async (req: Request, res: Response) => {
 manufacturaRouter.post("/ordenes/:id/iniciar", async (req: Request, res: Response) => {
   try {
     const result = await svc.startWorkOrder(Number(req.params.id), userId(req));
+    if (result.success) {
+      try { obs.audit('mfg.workorder.started', { userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'manufactura', entity: 'WorkOrder', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -191,6 +204,9 @@ manufacturaRouter.post("/ordenes/:id/consumir", async (req: Request, res: Respon
       ...req.body,
       userId: userId(req),
     });
+    if (result.success) {
+      try { obs.event('mfg.workorder.material_consumed', { workOrderId: Number(req.params.id), productId: req.body.productId, quantity: req.body.quantity, lotNumber: req.body.lotNumber, module: 'manufactura', userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -213,6 +229,8 @@ manufacturaRouter.post("/ordenes/:id/completar", async (req: Request, res: Respo
   try {
     const result = await svc.completeWorkOrder(Number(req.params.id), userId(req));
     if (!result.success) return res.status(400).json(result);
+
+    try { obs.audit('mfg.workorder.completed', { userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, workOrderNumber: result.WorkOrderNumber, module: 'manufactura', entity: 'WorkOrder', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
 
     // Best-effort: contabilidad (nunca bloquea la operacion principal)
     let contabilidad: { ok: boolean } = { ok: false };
@@ -253,6 +271,47 @@ manufacturaRouter.post("/ordenes/:id/cancelar", async (req: Request, res: Respon
   try {
     const result = await svc.cancelWorkOrder(Number(req.params.id), userId(req));
     res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ANALYTICS / DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+manufacturaRouter.get("/dashboard", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getAnalyticsDashboard();
+    if (!data) return res.status(404).json({ error: "no_data" });
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/analytics/production-by-product", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getProductionByProduct();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/analytics/orders-by-status", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getOrdersByStatus();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/analytics/recent-orders", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getRecentOrders();
+    res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

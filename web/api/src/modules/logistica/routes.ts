@@ -20,11 +20,17 @@ import {
   createDeliveryNote,
   dispatchDeliveryNote,
   deliverDeliveryNote,
+  getDashboard,
+  getReceiptsByMonth,
+  getDeliveryByStatus,
+  getRecentActivity,
+  getTrendCards,
 } from "./service.js";
 import {
   processGoodsReceiptStock,
   processDeliveryNoteStock,
 } from "../inventario-avanzado/inv-integracion.service.js";
+import { obs } from "../integrations/observability.js";
 
 export const logisticaRouter = Router();
 
@@ -108,6 +114,9 @@ logisticaRouter.get("/recepciones/:id", async (req, res) => {
 logisticaRouter.post("/recepciones", async (req, res) => {
   try {
     const result = await createGoodsReceipt(req.body);
+    if (result.ok) {
+      try { obs.event('logistics.receipt.created', { receiptId: result.goodsReceiptId, receiptNumber: result.receiptNumber, purchaseDocumentNumber: req.body.purchaseDocumentNumber, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica' }); } catch { /* never blocks */ }
+    }
     return res.status(result.ok ? 201 : 400).json(result);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -134,6 +143,8 @@ logisticaRouter.post("/recepciones/:id/aprobar", async (req, res) => {
           codUsuario,
         });
       } catch { /* never blocks */ }
+
+      try { obs.audit('logistics.receipt.approved', { userId: codUsuario, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica', entity: 'GoodsReceipt', entityId: parseInt(req.params.id) }); } catch { /* never blocks */ }
     }
 
     return res.status(result.ok ? 200 : 400).json({ ...result, stock: stockResult });
@@ -160,6 +171,9 @@ logisticaRouter.get("/devoluciones", async (req, res) => {
 logisticaRouter.post("/devoluciones", async (req, res) => {
   try {
     const result = await createGoodsReturn(req.body);
+    if (result.ok) {
+      try { obs.event('logistics.return.created', { returnNumber: result.returnNumber, reason: req.body.reason, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica' }); } catch { /* never blocks */ }
+    }
     return res.status(result.ok ? 201 : 400).json(result);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -172,6 +186,9 @@ logisticaRouter.post("/devoluciones/:id/aprobar", async (req, res) => {
       parseInt(req.params.id),
       req.body.userId
     );
+    if (result.ok) {
+      try { obs.audit('logistics.return.approved', { userId: req.body.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica', entity: 'GoodsReturn', entityId: parseInt(req.params.id) }); } catch { /* never blocks */ }
+    }
     return res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -209,6 +226,9 @@ logisticaRouter.get("/notas-entrega/:id", async (req, res) => {
 logisticaRouter.post("/notas-entrega", async (req, res) => {
   try {
     const result = await createDeliveryNote(req.body);
+    if (result.ok) {
+      try { obs.event('logistics.delivery.created', { deliveryNoteId: result.deliveryNoteId, deliveryNumber: result.deliveryNumber, salesDocumentNumber: req.body.salesDocumentNumber, shipToAddress: req.body.shipToAddress, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica' }); } catch { /* never blocks */ }
+    }
     return res.status(result.ok ? 201 : 400).json(result);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -235,6 +255,8 @@ logisticaRouter.post("/notas-entrega/:id/despachar", async (req, res) => {
           codUsuario,
         });
       } catch { /* never blocks */ }
+
+      try { obs.audit('logistics.delivery.dispatched', { userId: codUsuario, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica', entity: 'DeliveryNote', entityId: parseInt(req.params.id) }); } catch { /* never blocks */ }
     }
 
     return res.status(result.ok ? 200 : 400).json({ ...result, stock: stockResult });
@@ -249,6 +271,9 @@ logisticaRouter.post("/notas-entrega/:id/entregar", async (req, res) => {
       deliveryNoteId: parseInt(req.params.id),
       ...req.body,
     });
+    if (result.ok) {
+      try { obs.audit('logistics.delivery.delivered', { deliveredToName: req.body.deliveredToName, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica', entity: 'DeliveryNote', entityId: parseInt(req.params.id) }); } catch { /* never blocks */ }
+    }
     return res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -265,12 +290,45 @@ logisticaRouter.post("/albaranes/:id/entregar", (req, res) => { res.redirect(307
 // ─── Dashboard ───
 logisticaRouter.get("/dashboard", async (_req, res) => {
   try {
-    res.json({
-      recepcionesPendientes: 0,
-      devolucionesEnProceso: 0,
-      albaranesEnTransito: 0,
-      transportistasActivos: 0,
-    });
+    const data = await getDashboard();
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Analytics ───
+logisticaRouter.get("/analytics/receipts-by-month", async (_req, res) => {
+  try {
+    const data = await getReceiptsByMonth();
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+logisticaRouter.get("/analytics/delivery-by-status", async (_req, res) => {
+  try {
+    const data = await getDeliveryByStatus();
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+logisticaRouter.get("/analytics/recent-activity", async (_req, res) => {
+  try {
+    const data = await getRecentActivity();
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+logisticaRouter.get("/analytics/trends", async (_req, res) => {
+  try {
+    const data = await getTrendCards();
+    return res.json(data);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

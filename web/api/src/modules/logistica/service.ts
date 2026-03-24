@@ -386,6 +386,58 @@ export async function dispatchDeliveryNote(deliveryNoteId: number, userId?: numb
   return { ok: Number(r?.ok ?? 0) === 1, mensaje: String(r?.mensaje ?? "") };
 }
 
+// ── Dashboard ──────────────────────────────────────────────────────────────
+
+export async function getDashboard() {
+  const { companyId, branchId } = requireScope();
+  const rows = await callSp("usp_Logistics_Dashboard_Get", {
+    CompanyId: companyId,
+    BranchId: branchId,
+  });
+  const r = rows[0] as Record<string, unknown> | undefined;
+  return {
+    recepcionesPendientes: Number(r?.RecepcionesPendientes ?? 0),
+    devolucionesEnProceso: Number(r?.DevolucionesEnProceso ?? 0),
+    albaranesEnTransito: Number(r?.AlbaranesEnTransito ?? 0),
+    transportistasActivos: Number(r?.TransportistasActivos ?? 0),
+  };
+}
+
+// ── Analytics ──────────────────────────────────────────────────────────────
+
+export async function getReceiptsByMonth() {
+  const { companyId, branchId } = requireScope();
+  return callSp("usp_Logistics_Analytics_ReceiptsByMonth", {
+    CompanyId: companyId,
+    BranchId: branchId,
+  });
+}
+
+export async function getDeliveryByStatus() {
+  const { companyId, branchId } = requireScope();
+  return callSp("usp_Logistics_Analytics_DeliveryByStatus", {
+    CompanyId: companyId,
+    BranchId: branchId,
+  });
+}
+
+export async function getRecentActivity() {
+  const { companyId, branchId } = requireScope();
+  return callSp("usp_Logistics_Analytics_RecentActivity", {
+    CompanyId: companyId,
+    BranchId: branchId,
+  });
+}
+
+export async function getTrendCards() {
+  const { companyId, branchId } = requireScope();
+  const rows = await callSp("usp_Logistics_Analytics_TrendCards", {
+    CompanyId: companyId,
+    BranchId: branchId,
+  });
+  return rows[0] || null;
+}
+
 export async function deliverDeliveryNote(data: {
   deliveryNoteId: number;
   deliveredToName?: string;

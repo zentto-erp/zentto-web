@@ -207,3 +207,34 @@ BEGIN
     END
 END
 GO
+
+-- Insertar tarea (con deduplicación: no crear si ya existe tarea con mismo título no completada)
+IF OBJECT_ID('dbo.usp_Sys_Tarea_Insert', 'P') IS NOT NULL DROP PROCEDURE dbo.usp_Sys_Tarea_Insert;
+GO
+CREATE PROCEDURE dbo.usp_Sys_Tarea_Insert
+    @Titulo NVARCHAR(200),
+    @Descripcion NVARCHAR(500) = NULL,
+    @Color NVARCHAR(30) = 'blue',
+    @AsignadoA NVARCHAR(50) = NULL,
+    @FechaVencimiento DATETIME = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Deduplicación: no crear si ya existe tarea con mismo título no completada
+    IF EXISTS (
+        SELECT 1 FROM dbo.Sys_Tareas
+        WHERE Titulo = @Titulo
+          AND Completado = 0
+    )
+    BEGIN
+        SELECT 0 AS Id, 'duplicado_tarea_activa' AS Mensaje;
+        RETURN;
+    END
+
+    INSERT INTO dbo.Sys_Tareas (Titulo, Descripcion, Color, AsignadoA, FechaVencimiento)
+    VALUES (@Titulo, @Descripcion, @Color, @AsignadoA, @FechaVencimiento);
+
+    SELECT SCOPE_IDENTITY() AS Id, 'ok' AS Mensaje;
+END
+GO

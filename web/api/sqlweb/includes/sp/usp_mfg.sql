@@ -43,7 +43,7 @@ BEGIN
 
     SELECT
         b.BOMId, b.BOMCode, b.BOMName,
-        b.ProductId, b.ExpectedQuantity,
+        b.ProductId, b.OutputQuantity,
         b.Status, b.CreatedAt, b.UpdatedAt,
         (SELECT COUNT(*) FROM mfg.BOMLine bl WHERE bl.BOMId = b.BOMId) AS LineCount
     FROM   mfg.BillOfMaterials b
@@ -69,19 +69,19 @@ BEGIN
     -- Header
     SELECT
         b.BOMId, b.BOMCode, b.BOMName, b.CompanyId,
-        b.ProductId, b.ExpectedQuantity,
+        b.ProductId, b.OutputQuantity,
         b.Status, b.CreatedAt, b.UpdatedAt
     FROM mfg.BillOfMaterials b
     WHERE b.BOMId = @BOMId;
 
     -- Lines
     SELECT
-        bl.BOMLineId, bl.BOMId, bl.ProductId,
-        bl.Quantity, bl.UnitOfMeasure, bl.Sequence,
-        bl.ScrapPercent, bl.Notes
+        bl.BOMLineId, bl.BOMId, bl.ComponentProductId,
+        bl.Quantity, bl.UnitOfMeasure, bl.LineNumber,
+        bl.WastePercent, bl.IsOptional, bl.Notes
     FROM mfg.BOMLine bl
     WHERE bl.BOMId = @BOMId
-    ORDER BY bl.Sequence;
+    ORDER BY bl.LineNumber;
 END;
 GO
 
@@ -94,7 +94,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_Mfg_BOM_Create
     @ProductId        INT,
     @BOMCode          NVARCHAR(30),
     @BOMName          NVARCHAR(200),
-    @ExpectedQuantity DECIMAL(18,4) = 1,
+    @OutputQuantity   DECIMAL(18,4) = 1,
     @LinesJson        NVARCHAR(MAX) = NULL,
     @UserId           INT,
     @Resultado        INT           OUTPUT,
@@ -116,11 +116,11 @@ BEGIN
 
         INSERT INTO mfg.BillOfMaterials (
             CompanyId, ProductId, BOMCode, BOMName,
-            ExpectedQuantity, Status,
+            OutputQuantity, Status,
             CreatedByUserId, UpdatedByUserId, CreatedAt, UpdatedAt
         ) VALUES (
             @CompanyId, @ProductId, @BOMCode, @BOMName,
-            @ExpectedQuantity, 'DRAFT',
+            @OutputQuantity, 'DRAFT',
             @UserId, @UserId, SYSUTCDATETIME(), SYSUTCDATETIME()
         );
 
@@ -129,22 +129,24 @@ BEGIN
         -- Insertar lineas desde JSON
         IF @LinesJson IS NOT NULL AND LEN(@LinesJson) > 2
         BEGIN
-            INSERT INTO mfg.BOMLine (BOMId, ProductId, Quantity, UnitOfMeasure, Sequence, ScrapPercent, Notes)
+            INSERT INTO mfg.BOMLine (BOMId, LineNumber, ComponentProductId, Quantity, UnitOfMeasure, WastePercent, IsOptional, Notes)
             SELECT
                 @BOMId,
-                CAST(j.ProductId AS INT),
+                CAST(ISNULL(j.LineNumber, '0') AS INT),
+                CAST(j.ComponentProductId AS INT),
                 CAST(j.Quantity AS DECIMAL(18,4)),
                 j.UnitOfMeasure,
-                CAST(j.Sequence AS INT),
-                CAST(ISNULL(j.ScrapPercent, '0') AS DECIMAL(5,2)),
+                CAST(ISNULL(j.WastePercent, '0') AS DECIMAL(5,2)),
+                CAST(ISNULL(j.IsOptional, '0') AS BIT),
                 j.Notes
             FROM OPENJSON(@LinesJson) WITH (
-                ProductId     INT            '$.ProductId',
-                Quantity       NVARCHAR(50)   '$.Quantity',
-                UnitOfMeasure  NVARCHAR(20)   '$.UnitOfMeasure',
-                Sequence       INT            '$.Sequence',
-                ScrapPercent   NVARCHAR(20)   '$.ScrapPercent',
-                Notes          NVARCHAR(500)  '$.Notes'
+                LineNumber           INT            '$.LineNumber',
+                ComponentProductId   INT            '$.ComponentProductId',
+                Quantity             NVARCHAR(50)   '$.Quantity',
+                UnitOfMeasure        NVARCHAR(20)   '$.UnitOfMeasure',
+                WastePercent         NVARCHAR(20)   '$.WastePercent',
+                IsOptional           NVARCHAR(10)   '$.IsOptional',
+                Notes                NVARCHAR(500)  '$.Notes'
             ) j;
         END;
 
@@ -318,8 +320,8 @@ BEGIN
     SELECT
         r.RoutingId, r.BOMId, r.OperationNumber,
         r.WorkCenterId, wc.WorkCenterName,
-        r.OperationName, r.SetupTime, r.RunTime,
-        r.Description
+        r.OperationName, r.SetupTimeMinutes, r.RunTimeMinutes,
+        r.Notes
     FROM   mfg.Routing r
     LEFT JOIN mfg.WorkCenter wc ON wc.WorkCenterId = r.WorkCenterId
     WHERE  r.BOMId = @BOMId
@@ -336,9 +338,9 @@ CREATE OR ALTER PROCEDURE dbo.usp_Mfg_Routing_Upsert
     @OperationNumber INT,
     @WorkCenterId    INT,
     @OperationName   NVARCHAR(200),
-    @SetupTime       DECIMAL(10,2) = 0,
-    @RunTime         DECIMAL(10,2) = 0,
-    @Description     NVARCHAR(500) = NULL,
+    @SetupTimeMinutes DECIMAL(10,2) = 0,
+    @RunTimeMinutes   DECIMAL(10,2) = 0,
+    @Notes            NVARCHAR(500) = NULL,
     @UserId          INT,
     @Resultado       INT           OUTPUT,
     @Mensaje         NVARCHAR(500) OUTPUT
@@ -350,18 +352,18 @@ BEGIN
     BEGIN TRY
         IF @RoutingId IS NULL
         BEGIN
-            INSERT INTO mfg.Routing (BOMId, OperationNumber, WorkCenterId, OperationName, SetupTime, RunTime, Description, CreatedByUserId, UpdatedByUserId, CreatedAt, UpdatedAt)
-            VALUES (@BOMId, @OperationNumber, @WorkCenterId, @OperationName, @SetupTime, @RunTime, @Description, @UserId, @UserId, SYSUTCDATETIME(), SYSUTCDATETIME());
+            INSERT INTO mfg.Routing (BOMId, OperationNumber, WorkCenterId, OperationName, SetupTimeMinutes, RunTimeMinutes, Notes, CreatedByUserId, UpdatedByUserId, CreatedAt, UpdatedAt)
+            VALUES (@BOMId, @OperationNumber, @WorkCenterId, @OperationName, @SetupTimeMinutes, @RunTimeMinutes, @Notes, @UserId, @UserId, SYSUTCDATETIME(), SYSUTCDATETIME());
         END
         ELSE
         BEGIN
             UPDATE mfg.Routing
             SET    OperationNumber = @OperationNumber,
                    WorkCenterId    = @WorkCenterId,
-                   OperationName   = @OperationName,
-                   SetupTime       = @SetupTime,
-                   RunTime         = @RunTime,
-                   Description     = @Description,
+                   OperationName    = @OperationName,
+                   SetupTimeMinutes = @SetupTimeMinutes,
+                   RunTimeMinutes   = @RunTimeMinutes,
+                   Notes            = @Notes,
                    UpdatedByUserId = @UserId,
                    UpdatedAt       = SYSUTCDATETIME()
             WHERE  RoutingId = @RoutingId AND BOMId = @BOMId;
@@ -397,23 +399,23 @@ BEGIN
     FROM   mfg.WorkOrder wo
     WHERE  wo.CompanyId = @CompanyId
       AND  (@Status     IS NULL OR wo.Status      = @Status)
-      AND  (@FechaDesde IS NULL OR wo.PlannedStart >= @FechaDesde)
-      AND  (@FechaHasta IS NULL OR wo.PlannedEnd   <= @FechaHasta);
+      AND  (@FechaDesde IS NULL OR wo.PlannedStartDate >= @FechaDesde)
+      AND  (@FechaHasta IS NULL OR wo.PlannedEndDate   <= @FechaHasta);
 
     SELECT
         wo.WorkOrderId, wo.WorkOrderNumber,
         wo.BOMId, wo.ProductId,
         wo.PlannedQuantity, wo.ProducedQuantity,
         wo.Status, wo.Priority,
-        wo.PlannedStart, wo.PlannedEnd,
-        wo.ActualStart, wo.ActualEnd,
+        wo.PlannedStartDate, wo.PlannedEndDate,
+        wo.ActualStartDate, wo.ActualEndDate,
         wo.WarehouseId, wo.AssignedToUserId,
         wo.Notes, wo.CreatedAt, wo.UpdatedAt
     FROM   mfg.WorkOrder wo
     WHERE  wo.CompanyId = @CompanyId
       AND  (@Status     IS NULL OR wo.Status      = @Status)
-      AND  (@FechaDesde IS NULL OR wo.PlannedStart >= @FechaDesde)
-      AND  (@FechaHasta IS NULL OR wo.PlannedEnd   <= @FechaHasta)
+      AND  (@FechaDesde IS NULL OR wo.PlannedStartDate >= @FechaDesde)
+      AND  (@FechaHasta IS NULL OR wo.PlannedEndDate   <= @FechaHasta)
     ORDER BY wo.CreatedAt DESC
     OFFSET (@Page - 1) * @Limit ROWS FETCH NEXT @Limit ROWS ONLY;
 END;
@@ -435,7 +437,7 @@ BEGIN
         wo.BOMId, wo.ProductId,
         wo.PlannedQuantity, wo.ProducedQuantity,
         wo.Status, wo.Priority,
-        wo.PlannedStart, wo.PlannedEnd, wo.ActualStart, wo.ActualEnd,
+        wo.PlannedStartDate, wo.PlannedEndDate, wo.ActualStartDate, wo.ActualEndDate,
         wo.WarehouseId, wo.AssignedToUserId,
         wo.Notes, wo.CreatedAt, wo.UpdatedAt
     FROM mfg.WorkOrder wo
@@ -471,8 +473,8 @@ CREATE OR ALTER PROCEDURE dbo.usp_Mfg_WorkOrder_Create
     @BOMId            INT,
     @ProductId        INT,
     @PlannedQuantity  DECIMAL(18,4),
-    @PlannedStart     DATETIME2,
-    @PlannedEnd       DATETIME2,
+    @PlannedStartDate     DATETIME2,
+    @PlannedEndDate       DATETIME2,
     @Priority         NVARCHAR(20) = 'MEDIUM',
     @WarehouseId      INT          = NULL,
     @Notes            NVARCHAR(MAX)= NULL,
@@ -498,14 +500,14 @@ BEGIN
             CompanyId, BranchId, WorkOrderNumber,
             BOMId, ProductId, PlannedQuantity, ProducedQuantity,
             Status, Priority,
-            PlannedStart, PlannedEnd,
+            PlannedStartDate, PlannedEndDate,
             WarehouseId, AssignedToUserId, Notes,
             CreatedByUserId, UpdatedByUserId, CreatedAt, UpdatedAt
         ) VALUES (
             @CompanyId, @BranchId, @WorkOrderNumber,
             @BOMId, @ProductId, @PlannedQuantity, 0,
             'PLANNED', @Priority,
-            @PlannedStart, @PlannedEnd,
+            @PlannedStartDate, @PlannedEndDate,
             @WarehouseId, @AssignedToUserId, @Notes,
             @UserId, @UserId, SYSUTCDATETIME(), SYSUTCDATETIME()
         );
@@ -546,7 +548,7 @@ BEGIN
 
         UPDATE mfg.WorkOrder
         SET    Status          = 'IN_PROGRESS',
-               ActualStart     = SYSUTCDATETIME(),
+               ActualStartDate     = SYSUTCDATETIME(),
                UpdatedByUserId = @UserId,
                UpdatedAt       = SYSUTCDATETIME()
         WHERE  WorkOrderId = @WorkOrderId;
@@ -659,7 +661,7 @@ BEGIN
 
         UPDATE mfg.WorkOrder
         SET    Status          = 'COMPLETED',
-               ActualEnd       = SYSUTCDATETIME(),
+               ActualEndDate       = SYSUTCDATETIME(),
                UpdatedByUserId = @UserId,
                UpdatedAt       = SYSUTCDATETIME()
         WHERE  WorkOrderId = @WorkOrderId;

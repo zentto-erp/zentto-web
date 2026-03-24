@@ -932,7 +932,178 @@ END;
 GO
 
 -- =============================================================================
---  SECCION 7: DASHBOARD
+--  SECCION 7: ALERTAS
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+--  usp_Fleet_Alerts_Get
+--  Documentos vencidos, por vencer (30d), mantenimientos vencidos, licencias.
+-- -----------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.usp_Fleet_Alerts_Get
+    @CompanyId  INT,
+    @BranchId   INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Now DATETIME2 = SYSUTCDATETIME();
+    DECLARE @In30Days DATETIME2 = DATEADD(DAY, 30, @Now);
+
+    -- Conteos precalculados
+    DECLARE @ExpiredDocs INT, @ExpiringSoonDocs INT, @OverdueMaint INT;
+
+    SELECT @ExpiredDocs = COUNT(*)
+    FROM fleet.VehicleDocument vd
+    INNER JOIN fleet.Vehicle v ON v.VehicleId = vd.VehicleId
+    WHERE v.CompanyId = @CompanyId AND v.IsActive = 1
+      AND vd.ExpiryDate < @Now AND vd.ExpiryDate IS NOT NULL;
+
+    SELECT @ExpiringSoonDocs = COUNT(*)
+    FROM fleet.VehicleDocument vd
+    INNER JOIN fleet.Vehicle v ON v.VehicleId = vd.VehicleId
+    WHERE v.CompanyId = @CompanyId AND v.IsActive = 1
+      AND vd.ExpiryDate >= @Now AND vd.ExpiryDate <= @In30Days;
+
+    SELECT @OverdueMaint = COUNT(*)
+    FROM fleet.MaintenanceOrder mo
+    INNER JOIN fleet.Vehicle v ON v.VehicleId = mo.VehicleId
+    WHERE v.CompanyId = @CompanyId
+      AND mo.[Status] = N'SCHEDULED' AND mo.ScheduledDate < @Now;
+
+    -- Recordset unico: todas las alertas unificadas
+    SELECT * FROM (
+        -- Documentos vencidos
+        SELECT
+            N'EXPIRED' AS AlertType,
+            CAST(vd.DocumentId AS BIGINT) AS ItemId,
+            CAST(vd.VehicleId AS BIGINT) AS VehicleId,
+            v.VehiclePlate AS LicensePlate,
+            v.Brand,
+            v.Model,
+            vd.DocumentType,
+            vd.DocumentNumber,
+            CAST(NULL AS NVARCHAR(100)) AS MaintenanceTypeName,
+            CAST(NULL AS NVARCHAR(20)) AS OrderNumber,
+            vd.ExpiryDate,
+            CAST(NULL AS DATETIME2) AS ScheduledDate,
+            DATEDIFF(DAY, vd.ExpiryDate, @Now) AS DaysOverdue,
+            CAST(NULL AS INT) AS DaysUntilExpiry,
+            @ExpiredDocs AS ExpiredDocsCount,
+            @ExpiringSoonDocs AS ExpiringSoonDocsCount,
+            @OverdueMaint AS OverdueMaintenanceCount
+        FROM fleet.VehicleDocument vd
+        INNER JOIN fleet.Vehicle v ON v.VehicleId = vd.VehicleId
+        WHERE v.CompanyId = @CompanyId
+          AND v.IsActive = 1
+          AND vd.ExpiryDate < @Now
+          AND vd.ExpiryDate IS NOT NULL
+
+        UNION ALL
+
+        -- Documentos por vencer (proximos 30 dias)
+        SELECT
+            N'EXPIRING_SOON',
+            CAST(vd.DocumentId AS BIGINT),
+            CAST(vd.VehicleId AS BIGINT),
+            v.VehiclePlate,
+            v.Brand,
+            v.Model,
+            vd.DocumentType,
+            vd.DocumentNumber,
+            NULL,
+            NULL,
+            vd.ExpiryDate,
+            NULL,
+            NULL,
+            DATEDIFF(DAY, @Now, vd.ExpiryDate),
+            @ExpiredDocs,
+            @ExpiringSoonDocs,
+            @OverdueMaint
+        FROM fleet.VehicleDocument vd
+        INNER JOIN fleet.Vehicle v ON v.VehicleId = vd.VehicleId
+        WHERE v.CompanyId = @CompanyId
+          AND v.IsActive = 1
+          AND vd.ExpiryDate >= @Now
+          AND vd.ExpiryDate <= @In30Days
+
+        UNION ALL
+
+        -- Mantenimientos vencidos
+        SELECT
+            N'MAINTENANCE_OVERDUE',
+            CAST(mo.MaintenanceOrderId AS BIGINT),
+            CAST(mo.VehicleId AS BIGINT),
+            v.VehiclePlate,
+            v.Brand,
+            v.Model,
+            NULL,
+            NULL,
+            mt.TypeName,
+            mo.OrderNumber,
+            NULL,
+            mo.ScheduledDate,
+            DATEDIFF(DAY, mo.ScheduledDate, @Now),
+            NULL,
+            @ExpiredDocs,
+            @ExpiringSoonDocs,
+            @OverdueMaint
+        FROM fleet.MaintenanceOrder mo
+        INNER JOIN fleet.Vehicle v ON v.VehicleId = mo.VehicleId
+        INNER JOIN fleet.MaintenanceType mt ON mt.MaintenanceTypeId = mo.MaintenanceTypeId
+        WHERE v.CompanyId = @CompanyId
+          AND mo.[Status] = N'SCHEDULED'
+          AND mo.ScheduledDate < @Now
+    ) AS alerts
+    ORDER BY
+        CASE AlertType
+            WHEN 'EXPIRED' THEN 1
+            WHEN 'EXPIRING_SOON' THEN 2
+            WHEN 'MAINTENANCE_OVERDUE' THEN 3
+        END,
+        COALESCE(ExpiryDate, ScheduledDate);
+END;
+GO
+
+-- =============================================================================
+--  SECCION 8: REPORTES
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+--  usp_Fleet_Report_FuelMonthly
+--  Consumo de combustible agrupado por vehiculo y mes.
+-- -----------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.usp_Fleet_Report_FuelMonthly
+    @CompanyId  INT,
+    @BranchId   INT = NULL,
+    @Year       INT,
+    @Month      INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        fl.VehicleId,
+        v.VehiclePlate       AS LicensePlate,
+        v.Brand,
+        v.Model,
+        ISNULL(SUM(fl.Liters), 0)         AS TotalLiters,
+        ISNULL(SUM(fl.TotalCost), 0)      AS TotalCost,
+        CASE
+            WHEN SUM(fl.Liters) > 0 THEN SUM(fl.TotalCost) / SUM(fl.Liters)
+            ELSE 0
+        END                                AS AvgCostPerLiter
+    FROM fleet.FuelLog fl
+    INNER JOIN fleet.Vehicle v ON v.VehicleId = fl.VehicleId
+    WHERE v.CompanyId = @CompanyId
+      AND YEAR(fl.LogDate) = @Year
+      AND MONTH(fl.LogDate) = @Month
+    GROUP BY fl.VehicleId, v.VehiclePlate, v.Brand, v.Model
+    ORDER BY v.VehiclePlate;
+END;
+GO
+
+-- =============================================================================
+--  SECCION 9: DASHBOARD
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------

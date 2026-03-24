@@ -249,7 +249,18 @@ $$;
 -- PRODUCTOS MENU
 -- ============================================================================
 
-DROP FUNCTION IF EXISTS usp_rest_admin_producto_list(INT, INT, INT, VARCHAR(100), BOOLEAN) CASCADE;
+-- Nuclear drop: eliminar TODAS las sobrecargas por OID
+DO $do$
+DECLARE _oid OID;
+BEGIN
+  FOR _oid IN
+    SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'usp_rest_admin_producto_list'
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+  END LOOP;
+END $do$;
+
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_list(
     p_company_id       INT,
     p_branch_id        INT,

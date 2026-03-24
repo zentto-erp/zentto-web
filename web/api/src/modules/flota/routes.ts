@@ -7,6 +7,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import * as svc from "./service.js";
 import { emitFuelAccountingEntry, emitMaintenanceAccountingEntry } from "./fleet-contabilidad.service.js";
+import { obs } from "../integrations/observability.js";
 
 export const flotaRouter = Router();
 
@@ -117,6 +118,9 @@ flotaRouter.post("/vehiculos", async (req: Request, res: Response) => {
   }
   try {
     const result = await svc.upsertVehicle({ ...parsed.data, userId: getUserId(req) });
+    if (result.success) {
+      try { obs.event('fleet.vehicle.upserted', { vehicleId: result.vehicleId ?? parsed.data.vehicleId, licensePlate: parsed.data.vehiclePlate, brand: parsed.data.brand, model: parsed.data.model, year: parsed.data.year, vehicleType: parsed.data.vehicleType, module: 'flota', userId: getUserId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -165,6 +169,8 @@ flotaRouter.post("/combustible", async (req: Request, res: Response) => {
   try {
     const result = await svc.createFuelLog({ ...parsed.data, userId: getUserId(req) });
     if (!result.success) return res.status(400).json(result);
+
+    try { obs.event('fleet.fuel.created', { fuelLogId: result.fuelLogId, vehicleId: parsed.data.vehicleId, liters: parsed.data.liters, totalCost: parsed.data.totalCost, fuelType: parsed.data.fuelType, stationName: parsed.data.stationName, module: 'flota', userId: getUserId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
 
     // Best-effort: contabilidad (nunca bloquea la operacion principal)
     let contabilidad: { ok: boolean } = { ok: false };
@@ -276,6 +282,9 @@ flotaRouter.post("/mantenimientos", async (req: Request, res: Response) => {
   }
   try {
     const result = await svc.createMaintenanceOrder({ ...parsed.data, userId: getUserId(req) });
+    if (result.success) {
+      try { obs.event('fleet.maintenance.created', { maintenanceOrderId: result.maintenanceOrderId, vehicleId: parsed.data.vehicleId, description: parsed.data.description, scheduledDate: parsed.data.scheduledDate, estimatedCost: parsed.data.estimatedCost, module: 'flota', userId: getUserId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 201 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -300,6 +309,8 @@ flotaRouter.post("/mantenimientos/:id/completar", async (req: Request, res: Resp
       userId: getUserId(req),
     });
     if (!result.success) return res.status(400).json(result);
+
+    try { obs.audit('fleet.maintenance.completed', { userId: getUserId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, actualCost: parsed.data.actualCost, completedDate: parsed.data.completedDate, module: 'flota', entity: 'MaintenanceOrder', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
 
     // Best-effort: contabilidad (nunca bloquea la operacion principal)
     let contabilidad: { ok: boolean } = { ok: false };
@@ -373,6 +384,9 @@ flotaRouter.post("/viajes", async (req: Request, res: Response) => {
   }
   try {
     const result = await svc.createTrip({ ...parsed.data, userId: getUserId(req) });
+    if (result.success) {
+      try { obs.event('fleet.trip.created', { tripId: result.tripId, vehicleId: parsed.data.vehicleId, origin: parsed.data.origin, destination: parsed.data.destination, departureDate: parsed.data.departureDate, module: 'flota', userId: getUserId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 201 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -397,6 +411,9 @@ flotaRouter.post("/viajes/:id/completar", async (req: Request, res: Response) =>
       ...parsed.data,
       userId: getUserId(req),
     });
+    if (result.success) {
+      try { obs.audit('fleet.trip.completed', { userId: getUserId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, endMileage: parsed.data.endMileage, arrivalDate: parsed.data.arrivalDate, module: 'flota', entity: 'Trip', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+    }
     res.status(result.success ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -446,6 +463,54 @@ flotaRouter.post("/vehiculos/:id/documentos", async (req: Request, res: Response
 });
 
 // ═══════════════════════════════════════════════════════════════
+// ALERTAS
+// ═══════════════════════════════════════════════════════════════
+
+// GET /v1/flota/alertas
+flotaRouter.get("/alertas", async (_req: Request, res: Response) => {
+  try {
+    const rows = await svc.getAlerts();
+
+    // Separar por tipo de alerta y extraer conteos de la primera fila
+    const expired = rows.filter((r: any) => r.AlertType === "EXPIRED");
+    const expiringSoon = rows.filter((r: any) => r.AlertType === "EXPIRING_SOON");
+    const maintenanceOverdue = rows.filter((r: any) => r.AlertType === "MAINTENANCE_OVERDUE");
+
+    const first = rows[0] ?? {};
+    const summary = {
+      expiredDocsCount: Number(first.ExpiredDocsCount ?? 0),
+      expiringSoonDocsCount: Number(first.ExpiringSoonDocsCount ?? 0),
+      overdueMaintenanceCount: Number(first.OverdueMaintenanceCount ?? 0),
+    };
+
+    res.json({ expired, expiringSoon, maintenanceOverdue, summary });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// REPORTES
+// ═══════════════════════════════════════════════════════════════
+
+// GET /v1/flota/reportes/combustible-mensual
+flotaRouter.get("/reportes/combustible-mensual", async (req: Request, res: Response) => {
+  try {
+    const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+    const month = req.query.month ? parseInt(req.query.month as string) : new Date().getMonth() + 1;
+
+    if (year < 2000 || year > 2100 || month < 1 || month > 12) {
+      return res.status(400).json({ error: "invalid_params", message: "Year (2000-2100) and Month (1-12) required" });
+    }
+
+    const rows = await svc.reportFuelMonthly({ year, month });
+    res.json({ rows, year, month });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════
 
@@ -455,6 +520,46 @@ flotaRouter.get("/dashboard", async (_req: Request, res: Response) => {
     const result = await svc.getDashboard();
     if (!result) return res.status(404).json({ error: "no_data" });
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════════════
+
+flotaRouter.get("/analytics/fuel-by-vehicle", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getFuelCostByVehicle();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+flotaRouter.get("/analytics/km-by-month", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getKmByMonth();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+flotaRouter.get("/analytics/next-maintenance", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getNextMaintenance();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+flotaRouter.get("/analytics/trends", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getTrendCards();
+    res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

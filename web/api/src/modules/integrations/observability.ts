@@ -14,6 +14,7 @@ export const TOPICS = {
   AUDIT: 'zentto-api-audit',
   PERFORMANCE: 'zentto-api-performance',
   EVENTS: 'zentto-api-events',
+  NOTIFICATIONS: 'zentto-notifications',
 } as const;
 
 let producer: Producer | null = null;
@@ -91,7 +92,7 @@ export const obs = {
 
   // Audit trail (who did what)
   audit(action: string, details: {
-    userId?: number;
+    userId?: number | string;
     userName?: string;
     companyId?: number;
     module?: string;
@@ -100,6 +101,7 @@ export const obs = {
     before?: any;
     after?: any;
     ip?: string;
+    [key: string]: any;
   }) {
     send(TOPICS.AUDIT, { action, ...details });
   },
@@ -142,6 +144,11 @@ export const obs = {
         statusCode: req.statusCode,
       });
     }
+  },
+
+  // Direct notification (writes to zentto-notifications topic)
+  notify(config: { tipo: string; titulo: string; mensaje: string; usuarioId?: string; ruta?: string }) {
+    send(TOPICS.NOTIFICATIONS, config);
   },
 
   // Graceful shutdown

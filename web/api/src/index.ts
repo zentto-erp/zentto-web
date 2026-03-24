@@ -5,6 +5,7 @@ import { createApp } from "./app.js";
 import { warmUp } from "./modules/inventario/inventario-cache.js";
 import { getTasasBCV, triggerSyncTasas } from "./modules/config/service.js";
 import { attachFiscalRelayWs } from "./modules/pos/fiscal-relay.js";
+import { startNotificationConsumer, stopNotificationConsumer } from "./modules/integrations/kafka-notification-consumer.js";
 
 const port = Number(process.env.PORT || 4000);
 const app = await createApp();
@@ -35,6 +36,11 @@ httpServer.listen(port, () => {
     timezone: "America/Caracas"
   });
 
+  // Kafka notification consumer — best-effort, no bloquea
+  startNotificationConsumer().catch(err =>
+    console.warn('[kafka-consumer] Failed to start:', err.message || err)
+  );
+
   // Alertas automáticas del sistema — cada hora (minuto 15)
   cron.schedule("15 * * * *", async () => {
     try {
@@ -48,3 +54,14 @@ httpServer.listen(port, () => {
     }
   });
 });
+
+// Graceful shutdown
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, async () => {
+    console.log(`[api] ${signal} received — shutting down`);
+    await stopNotificationConsumer();
+    const { obs } = await import("./modules/integrations/observability.js");
+    await obs.disconnect();
+    httpServer.close(() => process.exit(0));
+  });
+}

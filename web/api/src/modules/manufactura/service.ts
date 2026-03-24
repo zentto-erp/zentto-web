@@ -74,7 +74,7 @@ export async function createBOM(data: {
   productId: number;
   bomCode: string;
   bomName: string;
-  expectedQuantity?: number;
+  outputQuantity?: number;
   linesJson?: string | null;
   userId: number;
 }): Promise<SpResult> {
@@ -86,7 +86,7 @@ export async function createBOM(data: {
       ProductId: data.productId,
       BOMCode: data.bomCode,
       BOMName: data.bomName,
-      ExpectedQuantity: data.expectedQuantity ?? 1,
+      OutputQuantity: data.outputQuantity ?? 1,
       LinesJson: data.linesJson ?? null,
       UserId: data.userId,
     },
@@ -189,9 +189,9 @@ export async function upsertRouting(
     operationNumber: number;
     workCenterId: number;
     operationName: string;
-    setupTime?: number;
-    runTime?: number;
-    description?: string | null;
+    setupTimeMinutes?: number;
+    runTimeMinutes?: number;
+    notes?: string | null;
     userId: number;
   },
 ): Promise<SpResult> {
@@ -203,9 +203,9 @@ export async function upsertRouting(
       OperationNumber: data.operationNumber,
       WorkCenterId: data.workCenterId,
       OperationName: data.operationName,
-      SetupTime: data.setupTime ?? 0,
-      RunTime: data.runTime ?? 0,
-      Description: data.description ?? null,
+      SetupTimeMinutes: data.setupTimeMinutes ?? 0,
+      RunTimeMinutes: data.runTimeMinutes ?? 0,
+      Notes: data.notes ?? null,
       UserId: data.userId,
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
@@ -372,4 +372,27 @@ export async function cancelWorkOrder(workOrderId: number, userId: number): Prom
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
+}
+
+// ── Analytics ──────────────────────────────────────────────────────────────────
+
+export async function getAnalyticsDashboard() {
+  const { companyId } = scope();
+  const rows = await callSp("usp_Mfg_Analytics_Dashboard", { CompanyId: companyId });
+  return rows[0] || null;
+}
+
+export async function getProductionByProduct() {
+  const { companyId } = scope();
+  return callSp("usp_Mfg_Analytics_ProductionByProduct", { CompanyId: companyId });
+}
+
+export async function getOrdersByStatus() {
+  const { companyId } = scope();
+  return callSp("usp_Mfg_Analytics_OrdersByStatus", { CompanyId: companyId });
+}
+
+export async function getRecentOrders() {
+  const { companyId } = scope();
+  return callSp("usp_Mfg_Analytics_RecentOrders", { CompanyId: companyId });
 }

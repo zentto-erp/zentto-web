@@ -34,7 +34,7 @@ BEGIN TRY
       BOMCode             NVARCHAR(40) NOT NULL,
       BOMName             NVARCHAR(200) NOT NULL,
       Version             INT NOT NULL CONSTRAINT DF_mfg_BOM_Version DEFAULT(1),
-      ExpectedQuantity    DECIMAL(18,3) NOT NULL CONSTRAINT DF_mfg_BOM_ExpectedQty DEFAULT(1),
+      OutputQuantity      DECIMAL(18,3) NOT NULL CONSTRAINT DF_mfg_BOM_OutputQty DEFAULT(1),
       ExpectedCost        DECIMAL(18,4) NOT NULL CONSTRAINT DF_mfg_BOM_ExpectedCost DEFAULT(0),
       Status              NVARCHAR(10) NOT NULL CONSTRAINT DF_mfg_BOM_Status DEFAULT('DRAFT'),
       IsActive            BIT NOT NULL CONSTRAINT DF_mfg_BOM_IsActive DEFAULT(1),
@@ -68,7 +68,7 @@ BEGIN TRY
       ComponentProductId  BIGINT NOT NULL,
       Quantity            DECIMAL(18,4) NOT NULL,
       UnitOfMeasure       NVARCHAR(20) NULL,
-      ScrapPercent        DECIMAL(9,4) NOT NULL CONSTRAINT DF_mfg_BOMLine_Scrap DEFAULT(0),
+      WastePercent        DECIMAL(9,4) NOT NULL CONSTRAINT DF_mfg_BOMLine_WastePercent DEFAULT(0),
       IsOptional          BIT NOT NULL CONSTRAINT DF_mfg_BOMLine_IsOptional DEFAULT(0),
       Notes               NVARCHAR(500) NULL,
       CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_mfg_BOMLine_CreatedAt DEFAULT(SYSUTCDATETIME()),
@@ -128,9 +128,9 @@ BEGIN TRY
       OperationNumber     INT NOT NULL,
       WorkCenterId        BIGINT NOT NULL,
       OperationName       NVARCHAR(200) NOT NULL,
-      SetupTime           DECIMAL(18,2) NOT NULL CONSTRAINT DF_mfg_Routing_SetupTime DEFAULT(0),
-      RunTime             DECIMAL(18,2) NOT NULL CONSTRAINT DF_mfg_Routing_RunTime DEFAULT(0),
-      Description         NVARCHAR(500) NULL,
+      SetupTimeMinutes    DECIMAL(18,2) NOT NULL CONSTRAINT DF_mfg_Routing_SetupTimeMinutes DEFAULT(0),
+      RunTimeMinutes      DECIMAL(18,2) NOT NULL CONSTRAINT DF_mfg_Routing_RunTimeMinutes DEFAULT(0),
+      Notes               NVARCHAR(500) NULL,
       CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_mfg_Routing_CreatedAt DEFAULT(SYSUTCDATETIME()),
       UpdatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_mfg_Routing_UpdatedAt DEFAULT(SYSUTCDATETIME()),
       CreatedByUserId     INT NULL,
@@ -161,12 +161,12 @@ BEGIN TRY
       BOMId               BIGINT NOT NULL,
       ProductId           BIGINT NOT NULL,
       PlannedQuantity     DECIMAL(18,3) NOT NULL,
-      CompletedQuantity   DECIMAL(18,3) NOT NULL CONSTRAINT DF_mfg_WO_CompletedQty DEFAULT(0),
+      ProducedQuantity    DECIMAL(18,3) NOT NULL CONSTRAINT DF_mfg_WO_ProducedQty DEFAULT(0),
       ScrapQuantity       DECIMAL(18,3) NOT NULL CONSTRAINT DF_mfg_WO_ScrapQty DEFAULT(0),
-      PlannedStart        DATE NOT NULL,
-      PlannedEnd          DATE NOT NULL,
-      ActualStart         DATETIME2(0) NULL,
-      ActualEnd           DATETIME2(0) NULL,
+      PlannedStartDate    DATE NOT NULL,
+      PlannedEndDate      DATE NOT NULL,
+      ActualStartDate     DATETIME2(0) NULL,
+      ActualEndDate       DATETIME2(0) NULL,
       Status              NVARCHAR(15) NOT NULL CONSTRAINT DF_mfg_WO_Status DEFAULT('DRAFT'),
       Priority            NVARCHAR(10) NOT NULL CONSTRAINT DF_mfg_WO_Priority DEFAULT('MEDIUM'),
       WarehouseId         BIGINT NULL,
@@ -195,7 +195,7 @@ BEGIN TRY
     );
 
     CREATE INDEX IX_mfg_WorkOrder_Status
-      ON mfg.WorkOrder (CompanyId, Status, PlannedStart);
+      ON mfg.WorkOrder (CompanyId, Status, PlannedStartDate);
   END;
 
   -- =========================================================================

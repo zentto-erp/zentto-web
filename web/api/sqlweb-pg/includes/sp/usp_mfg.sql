@@ -91,8 +91,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Create
---  Service envía: CompanyId, ProductId, BOMCode, BOMName, ExpectedQuantity, LinesJson, UserId
---  Nota: p_expected_quantity se inserta como "OutputQuantity" en la tabla
+--  Service envía: CompanyId, ProductId, BOMCode, BOMName, OutputQuantity, LinesJson, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_create(INT, INT, VARCHAR, VARCHAR, NUMERIC, TEXT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
@@ -100,7 +99,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
     p_product_id          INT,
     p_bom_code            VARCHAR(30),
     p_bom_name            VARCHAR(200),
-    p_expected_quantity   NUMERIC(18,4) DEFAULT 1,
+    p_output_quantity     NUMERIC(18,4) DEFAULT 1,
     p_lines_json          TEXT DEFAULT NULL,
     p_user_id             INT DEFAULT NULL
 )
@@ -121,7 +120,7 @@ BEGIN
         "CreatedByUserId", "UpdatedByUserId", "CreatedAt", "UpdatedAt"
     ) VALUES (
         p_company_id, p_product_id, p_bom_code, p_bom_name,
-        p_expected_quantity, 'DRAFT',
+        p_output_quantity, 'DRAFT',
         p_user_id, p_user_id, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
     ) RETURNING "BOMId" INTO v_id;
 
@@ -335,9 +334,7 @@ $$;
 -- =============================================================================
 --  usp_Mfg_Routing_Upsert
 --  Service envía: BOMId, RoutingId, OperationNumber, WorkCenterId,
---                 OperationName, SetupTime, RunTime, Description, UserId
---  Mapeo: p_setup_time → "SetupTimeMinutes", p_run_time → "RunTimeMinutes",
---         p_description → "Notes"
+--                 OperationName, SetupTimeMinutes, RunTimeMinutes, Notes, UserId
 --  Nota: Tabla Routing NO tiene CreatedByUserId/UpdatedByUserId, solo timestamps
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_routing_upsert(INT, INT, INT, INT, VARCHAR, NUMERIC, NUMERIC, VARCHAR, INT) CASCADE;
@@ -347,9 +344,9 @@ CREATE OR REPLACE FUNCTION usp_mfg_routing_upsert(
     p_operation_number   INT DEFAULT 0,
     p_work_center_id     INT DEFAULT NULL,
     p_operation_name     VARCHAR(200) DEFAULT NULL,
-    p_setup_time         NUMERIC(10,2) DEFAULT 0,
-    p_run_time           NUMERIC(10,2) DEFAULT 0,
-    p_description        VARCHAR(500) DEFAULT NULL,
+    p_setup_time_minutes NUMERIC(10,2) DEFAULT 0,
+    p_run_time_minutes   NUMERIC(10,2) DEFAULT 0,
+    p_notes              VARCHAR(500) DEFAULT NULL,
     p_user_id            INT DEFAULT NULL
 )
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
@@ -357,15 +354,15 @@ LANGUAGE plpgsql AS $$
 BEGIN
     IF p_routing_id IS NULL THEN
         INSERT INTO mfg."Routing" ("BOMId", "OperationNumber", "WorkCenterId", "OperationName", "SetupTimeMinutes", "RunTimeMinutes", "Notes", "CreatedAt", "UpdatedAt")
-        VALUES (p_bom_id, p_operation_number, p_work_center_id, p_operation_name, p_setup_time, p_run_time, p_description, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
+        VALUES (p_bom_id, p_operation_number, p_work_center_id, p_operation_name, p_setup_time_minutes, p_run_time_minutes, p_notes, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC');
     ELSE
         UPDATE mfg."Routing"
         SET    "OperationNumber"  = p_operation_number,
                "WorkCenterId"     = p_work_center_id,
                "OperationName"    = p_operation_name,
-               "SetupTimeMinutes" = p_setup_time,
-               "RunTimeMinutes"   = p_run_time,
-               "Notes"            = p_description,
+               "SetupTimeMinutes" = p_setup_time_minutes,
+               "RunTimeMinutes"   = p_run_time_minutes,
+               "Notes"            = p_notes,
                "UpdatedAt"        = NOW() AT TIME ZONE 'UTC'
         WHERE  "RoutingId" = p_routing_id AND "BOMId" = p_bom_id;
     END IF;
@@ -499,7 +496,6 @@ $$;
 --  Service envía: CompanyId, BranchId, BOMId, ProductId, PlannedQuantity,
 --                 PlannedStart, PlannedEnd, Priority, WarehouseId, Notes,
 --                 AssignedToUserId, UserId
---  Mapeo: p_planned_start → "PlannedStartDate", p_planned_end → "PlannedEndDate"
 --  Nota: AssignedToUserId se acepta pero se ignora (tabla no tiene esa columna)
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_create(INT, INT, INT, INT, NUMERIC, TIMESTAMP, TIMESTAMP, VARCHAR, INT, TEXT, INT, INT) CASCADE;

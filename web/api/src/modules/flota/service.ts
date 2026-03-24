@@ -487,11 +487,67 @@ export async function upsertVehicleDocument(params: {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ALERTAS
+// ═══════════════════════════════════════════════════════════════
+
+export async function getAlerts() {
+  const { companyId, branchId } = scope();
+  const rows = await callSp<any>("usp_Fleet_Alerts_Get", {
+    CompanyId: companyId,
+    BranchId: branchId ?? null,
+  });
+  return rows;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPORTES
+// ═══════════════════════════════════════════════════════════════
+
+export async function reportFuelMonthly(params: {
+  year: number;
+  month: number;
+}) {
+  const { companyId, branchId } = scope();
+  const rows = await callSp<any>("usp_Fleet_Report_FuelMonthly", {
+    CompanyId: companyId,
+    BranchId: branchId ?? null,
+    Year: params.year,
+    Month: params.month,
+  });
+  return rows;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════
 
 export async function getDashboard() {
   const { companyId } = scope();
   const rows = await callSp<any>("usp_Fleet_Dashboard", { CompanyId: companyId });
+  return rows[0] ?? null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════════════
+
+export async function getFuelCostByVehicle() {
+  const { companyId } = scope();
+  return callSp<any>("usp_Fleet_Analytics_FuelCostByVehicle", { CompanyId: companyId });
+}
+
+export async function getKmByMonth() {
+  const { companyId } = scope();
+  return callSp<any>("usp_Fleet_Analytics_KmByMonth", { CompanyId: companyId });
+}
+
+export async function getNextMaintenance() {
+  const { companyId } = scope();
+  return callSp<any>("usp_Fleet_Analytics_NextMaintenance", { CompanyId: companyId });
+}
+
+export async function getTrendCards() {
+  const { companyId } = scope();
+  const rows = await callSp<any>("usp_Fleet_Analytics_TrendCards", { CompanyId: companyId });
   return rows[0] ?? null;
 }
