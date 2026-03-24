@@ -102,3 +102,77 @@ CREATE TABLE IF NOT EXISTS sys."TenantBackup" (
 
 CREATE INDEX IF NOT EXISTS idx_backup_company ON sys."TenantBackup" ("CompanyId");
 CREATE INDEX IF NOT EXISTS idx_backup_status  ON sys."TenantBackup" ("Status");
+
+-- ─── SEED: cfg.Company agregar columna LicenseKey si no existe ────────────────
+ALTER TABLE cfg."Company" ADD COLUMN IF NOT EXISTS "LicenseKey"      VARCHAR(64);
+ALTER TABLE cfg."Company" ADD COLUMN IF NOT EXISTS "Plan"            VARCHAR(30);
+ALTER TABLE cfg."Company" ADD COLUMN IF NOT EXISTS "TenantStatus"    VARCHAR(20);
+ALTER TABLE cfg."Company" ADD COLUMN IF NOT EXISTS "OwnerEmail"      VARCHAR(255);
+ALTER TABLE cfg."Company" ADD COLUMN IF NOT EXISTS "TenantSubdomain" VARCHAR(100);
+
+-- ─── SEED: Zentto como primer tenant (interno) ────────────────────────────────
+-- Inserta la empresa Zentto si no existe (primer tenant del sistema)
+INSERT INTO cfg."Company" (
+  "CompanyCode", "LegalName", "TradeName",
+  "FiscalCountryCode", "BaseCurrency",
+  "Plan", "TenantStatus", "IsActive",
+  "OwnerEmail", "TenantSubdomain", "CreatedAt"
+)
+SELECT
+  'ZENTTO', 'Zentto ERP S.A.', 'Zentto',
+  'VE', 'USD',
+  'ENTERPRISE', 'ACTIVE', TRUE,
+  'admin@zentto.net', 'app', NOW()
+WHERE NOT EXISTS (SELECT 1 FROM cfg."Company" WHERE "CompanyCode" = 'ZENTTO')
+ON CONFLICT ("CompanyCode") DO NOTHING;
+
+-- ─── SEED: TenantDatabase — BD demo apunta a la BD actual ────────────────────
+INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
+VALUES (0, 'DEMO', current_database(), TRUE)
+ON CONFLICT ("CompanyId") DO UPDATE SET "DbName" = EXCLUDED."DbName";
+
+-- TenantDatabase para la empresa DEFAULT (primer tenant real)
+INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
+SELECT c."CompanyId", c."CompanyCode", current_database(), FALSE
+FROM cfg."Company" c
+WHERE c."CompanyCode" = 'DEFAULT'
+  AND NOT EXISTS (
+    SELECT 1 FROM sys."TenantDatabase" t WHERE t."CompanyCode" = 'DEFAULT'
+  )
+ON CONFLICT ("CompanyId") DO NOTHING;
+
+-- TenantDatabase para Zentto (tenant interno)
+INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
+SELECT c."CompanyId", c."CompanyCode", current_database(), FALSE
+FROM cfg."Company" c
+WHERE c."CompanyCode" = 'ZENTTO'
+  AND NOT EXISTS (
+    SELECT 1 FROM sys."TenantDatabase" t WHERE t."CompanyCode" = 'ZENTTO'
+  )
+ON CONFLICT ("CompanyId") DO NOTHING;
+
+-- ─── SEED: sys.License — licencia INTERNAL LIFETIME para Zentto ──────────────
+INSERT INTO sys."License" (
+  "CompanyId", "LicenseType", "Plan", "LicenseKey", "Status",
+  "StartsAt", "ExpiresAt", "Notes"
+)
+SELECT
+  c."CompanyId",
+  'INTERNAL', 'ENTERPRISE',
+  md5('zentto-internal-license-forever'),
+  'ACTIVE', NOW(), NULL,
+  'Licencia interna Zentto — nunca expira'
+FROM cfg."Company" c
+WHERE c."CompanyCode" = 'ZENTTO'
+  AND NOT EXISTS (
+    SELECT 1 FROM sys."License" l
+    WHERE l."CompanyId" = c."CompanyId"
+      AND l."LicenseType" = 'INTERNAL'
+  )
+ON CONFLICT DO NOTHING;
+
+-- Actualizar LicenseKey en cfg.Company para Zentto
+UPDATE cfg."Company"
+SET "LicenseKey" = md5('zentto-internal-license-forever')
+WHERE "CompanyCode" = 'ZENTTO'
+  AND "LicenseKey" IS NULL;
