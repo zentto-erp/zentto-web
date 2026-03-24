@@ -560,6 +560,12 @@
 \echo '[F6-09] POS / Restaurante...'
 \i 09_pos.sql
 
+-- Drop overloads INTEGER de POS que duplican las versiones BIGINT de usp_ops.sql
+DROP FUNCTION IF EXISTS public.usp_pos_saleticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, text, integer, numeric, numeric, numeric, numeric) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_pos_saleticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, numeric, character varying, numeric, numeric, numeric, numeric, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_pos_waitticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, numeric, numeric, numeric, numeric) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, numeric, character varying, numeric, numeric, numeric, numeric, integer, text) CASCADE;
+
 \echo '[F6-10] Fiscal / Auditoria...'
 \i 10_fiscal.sql
 
@@ -738,6 +744,56 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 
 \echo '--- Shipping Portal (logistics.Shipping*) ---'
 \i includes/sp/usp_shipping.sql
+
+-- ====================================================================
+-- FASE 8b: Nuclear cleanup — eliminar sobrecargas duplicadas
+-- Igual que run-functions.sql: borra todos los overloads de usp_* que
+-- tengan >1 version, para que el estado final sea limpio.
+-- ====================================================================
+\echo '[CLEANUP] Eliminando sobrecargas duplicadas usp_*...'
+DO $cleanup$
+DECLARE
+  _func_name TEXT;
+  _oid OID;
+  _dropped INT := 0;
+BEGIN
+  FOR _func_name IN
+    SELECT p.proname
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname LIKE 'usp_%'
+    GROUP BY p.proname
+    HAVING COUNT(*) > 1
+  LOOP
+    FOR _oid IN
+      SELECT p.oid
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = _func_name
+    LOOP
+      EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+      _dropped := _dropped + 1;
+    END LOOP;
+    RAISE NOTICE 'Dropped all overloads of: %', _func_name;
+  END LOOP;
+  IF _dropped > 0 THEN
+    RAISE NOTICE 'Nuclear cleanup: % functions dropped', _dropped;
+  ELSE
+    RAISE NOTICE 'No duplicate overloads found';
+  END IF;
+END $cleanup$;
+
+-- Re-cargar funciones con tipos correctos (después de limpiar overloads)
+\echo '[RELOAD] Re-cargando funciones PG con tipos correctos...'
+\i includes/sp/usp_ops.sql
+\i includes/sp/usp_inv.sql
+\i includes/sp/usp_inv_integracion.sql
+\i includes/sp/usp_logistics.sql
+\i includes/sp/usp_shipping.sql
+\i includes/sp/usp_crm.sql
+\i includes/sp/usp_fleet.sql
+\i includes/sp/usp_mfg.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion
