@@ -208,11 +208,14 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           NOTIFY_API_KEY: ${{ secrets.NOTIFY_API_KEY }}
+          CF_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CF_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY
+          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY,CF_API_KEY,CF_ZONE_ID,CF_EMAIL
           script: |
             set -e
             NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
@@ -270,6 +273,17 @@ jobs:
                 echo 'KAFKA_BROKERS=172.18.0.1:9092' >> "$ENV_API"
                 echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
               fi
+            fi
+
+            # ── Cloudflare DNS (tenant provisioning) ──
+            if [ -f "$ENV_API" ] && [ -n "$CF_API_KEY" ]; then
+              grep -q '^CLOUDFLARE_API_KEY=' "$ENV_API" \
+                && sed -i "s|^CLOUDFLARE_API_KEY=.*|CLOUDFLARE_API_KEY=$CF_API_KEY|" "$ENV_API" \
+                || echo "CLOUDFLARE_API_KEY=$CF_API_KEY" >> "$ENV_API"
+              grep -q '^CLOUDFLARE_ZONE_ID=' "$ENV_API" \
+                || echo "CLOUDFLARE_ZONE_ID=$CF_ZONE_ID" >> "$ENV_API"
+              grep -q '^CLOUDFLARE_EMAIL=' "$ENV_API" \
+                || echo "CLOUDFLARE_EMAIL=$CF_EMAIL" >> "$ENV_API"
             fi
 
             # ── Deploy container ──

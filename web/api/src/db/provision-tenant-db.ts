@@ -8,6 +8,7 @@ import { execSync } from "node:child_process";
 import { env } from "../config/env.js";
 import { getMasterPool, getTenantPool } from "./pg-pool-manager.js";
 import { invalidateTenantCache } from "./tenant-resolver.js";
+import { obs } from "../modules/integrations/observability.js";
 
 export interface ProvisionResult {
   ok: boolean;
@@ -31,6 +32,8 @@ export async function provisionTenantDatabase(
     database: "postgres", // Conectar a BD sistema para CREATE DATABASE
   });
 
+  obs.audit("tenant.db.provision.start", { module: "provision-db", companyId, companyCode, dbName });
+
   try {
     await adminClient.connect();
 
@@ -41,6 +44,9 @@ export async function provisionTenantDatabase(
     );
     if (exists.rows.length === 0) {
       await adminClient.query(`CREATE DATABASE "${dbName}" OWNER zentto_app`);
+      obs.log("info", `[provision] BD creada: ${dbName}`, { companyId });
+    } else {
+      obs.log("info", `[provision] BD ya existe: ${dbName}`, { companyId });
     }
     await adminClient.end();
 
@@ -49,6 +55,7 @@ export async function provisionTenantDatabase(
     await tenantPool.query("CREATE EXTENSION IF NOT EXISTS pg_trgm");
     await tenantPool.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
     await tenantPool.query("CREATE EXTENSION IF NOT EXISTS btree_gin");
+    obs.log("info", `[provision] Extensiones activadas en ${dbName}`, { companyId });
 
     // 3. Ejecutar goose migrations
     const gooseBin = process.env.GOOSE_BIN || "goose";
@@ -60,10 +67,12 @@ export async function provisionTenantDatabase(
     const pgPassword = env.pg?.password || process.env.PG_PASSWORD || "";
     const dbUrl = `postgres://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${dbName}?sslmode=disable`;
 
+    obs.log("info", `[provision] Iniciando goose migrations en ${dbName}`, { companyId, migrationsDir });
     execSync(`${gooseBin} -dir "${migrationsDir}" postgres "${dbUrl}" up`, {
       timeout: 300_000, // 5 min max
       stdio: "inherit",
     });
+    obs.audit("tenant.db.migrations.ok", { module: "provision-db", companyId, dbName });
 
     // 4. Ejecutar seeds config + starter (via psql)
     const seedsDir = process.env.SEEDS_DIR || "/opt/zentto/sqlweb-pg";
@@ -76,11 +85,10 @@ export async function provisionTenantDatabase(
         `PGPASSWORD="${pgPassword}" psql -U "${pgUser}" -h "${pgHost}" -p ${pgPort} -d "${dbName}" -v ON_ERROR_STOP=0 -f "${seedsDir}/run-seeds-starter.sql"`,
         { timeout: 120_000, stdio: "inherit", cwd: seedsDir },
       );
+      obs.audit("tenant.db.seeds.ok", { module: "provision-db", companyId, dbName });
     } catch (seedErr: any) {
-      console.warn(
-        `[provision] Seeds warning for ${dbName}:`,
-        seedErr.message,
-      );
+      console.warn(`[provision] Seeds warning for ${dbName}:`, seedErr.message);
+      obs.error(`tenant.db.seeds.warning: ${seedErr.message}`, { companyId, dbName });
       // No fallar por seeds — la BD ya tiene el schema
     }
 
@@ -90,19 +98,17 @@ export async function provisionTenantDatabase(
       `SELECT * FROM usp_sys_tenantdb_register($1, $2, $3)`,
       [companyId, companyCode, dbName],
     );
+    obs.audit("tenant.db.registered", { module: "provision-db", companyId, companyCode, dbName });
 
     // 6. Invalidar cache
     invalidateTenantCache(companyId);
 
-    console.log(
-      `[provision] BD ${dbName} creada para CompanyId=${companyId}`,
-    );
+    obs.audit("tenant.db.provision.complete", { module: "provision-db", companyId, dbName });
+    console.log(`[provision] BD ${dbName} creada para CompanyId=${companyId}`);
     return { ok: true, dbName };
   } catch (err: any) {
-    console.error(
-      `[provision] Error creando BD para ${companyCode}:`,
-      err.message,
-    );
+    console.error(`[provision] Error creando BD para ${companyCode}:`, err.message);
+    obs.error(`tenant.db.provision.error: ${err.message}`, { module: "provision-db", companyId, companyCode, dbName });
     try {
       await adminClient.end();
     } catch {

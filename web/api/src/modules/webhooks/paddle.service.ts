@@ -2,6 +2,9 @@ import crypto from "node:crypto";
 import { randomBytes } from "node:crypto";
 import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
 import { handleWebhookEvent } from "../billing/billing.service.js";
+import { provisionTenantDatabase } from "../../db/provision-tenant-db.js";
+import { createSubdomainDns } from "../../lib/cloudflare.client.js";
+import { obs } from "../integrations/observability.js";
 
 export function verifyPaddleSignature(rawBody: Buffer, signatureHeader: string): boolean {
   const secret = process.env.PADDLE_WEBHOOK_SECRET ?? "";
@@ -68,6 +71,16 @@ export async function handlePaddleEvent(
   const adminUserCode = "ADMIN";
   const tempPassword = randomBytes(8).toString("hex");
 
+  obs.audit("tenant.provision.start", {
+    module: "webhooks",
+    entity: "Company",
+    companyCode,
+    ownerEmail: customerEmail,
+    plan,
+    subdomain: chosenSubdomain || null,
+    paddleSubscriptionId: subscriptionId,
+  });
+
   const result = await provisionTenant({
     companyCode,
     legalName: chosenCompanyName,
@@ -80,29 +93,102 @@ export async function handlePaddleEvent(
     paddleSubscriptionId: subscriptionId,
   });
 
-  if (result.ok) {
-    // Actualizar subdomain si el usuario eligió uno personalizado
-    if (chosenSubdomain) {
-      const { callSp } = await import("../../db/query.js");
-      await callSp("usp_Cfg_Tenant_SetSubdomain", {
-        CompanyId: result.companyId,
-        Subdomain: chosenSubdomain,
-      }).catch(() => {});
-    }
-
-    // Registrar suscripcion en tabla sys.Subscription (no bloquea provision)
-    handleWebhookEvent({
-      event_type: "subscription.created",
-      event_id: (event["event_id"] as string) ?? "",
-      occurred_at: (event["occurred_at"] as string) ?? new Date().toISOString(),
-      data: { ...data, custom_data: { companyId: String(result.companyId) } },
-    }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
-
-    const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
-    console.log(`[paddle] Tenant provisionado OK — companyId=${result.companyId}, email=${customerEmail}, subdomain=${chosenSubdomain || "(ninguno)"}`);
-    sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl, adminUserCode)
-      .catch((err) => console.error("[paddle] Error enviando welcome email:", err));
+  if (!result.ok) {
+    obs.error(`tenant.provision.failed: ${result.mensaje}`, {
+      module: "webhooks",
+      companyCode,
+      ownerEmail: customerEmail,
+    });
+    return { handled: true, companyId: 0 };
   }
+
+  obs.audit("tenant.provision.ok", {
+    module: "webhooks",
+    entity: "Company",
+    entityId: result.companyId,
+    companyCode,
+    ownerEmail: customerEmail,
+    plan,
+  });
+
+  // Actualizar subdomain si el usuario eligió uno personalizado
+  if (chosenSubdomain) {
+    const { callSp } = await import("../../db/query.js");
+    await callSp("usp_Cfg_Tenant_SetSubdomain", {
+      CompanyId: result.companyId,
+      Subdomain: chosenSubdomain,
+    }).catch(() => {});
+  }
+
+  // Registrar suscripcion en tabla sys.Subscription (no bloquea provision)
+  handleWebhookEvent({
+    event_type: "subscription.created",
+    event_id: (event["event_id"] as string) ?? "",
+    occurred_at: (event["occurred_at"] as string) ?? new Date().toISOString(),
+    data: { ...data, custom_data: { companyId: String(result.companyId) } },
+  }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
+
+  const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
+
+  // Crear DNS en Cloudflare (no bloquea — si falla se puede crear manualmente)
+  if (chosenSubdomain) {
+    createSubdomainDns(chosenSubdomain)
+      .then((dns) => {
+        if (dns.ok) {
+          obs.audit("tenant.dns.created", {
+            module: "webhooks",
+            companyId: result.companyId,
+            subdomain: chosenSubdomain,
+            url: tenantUrl,
+          });
+        } else {
+          obs.error(`tenant.dns.failed: ${dns.error}`, {
+            module: "webhooks",
+            companyId: result.companyId,
+            subdomain: chosenSubdomain,
+          });
+        }
+      })
+      .catch((err) => console.error("[paddle] Error DNS Cloudflare:", err));
+  }
+
+  // Provisionar BD del tenant (no bloquea — proceso largo ~2 min)
+  provisionTenantDatabase(result.companyId, companyCode)
+    .then((db) => {
+      if (db.ok) {
+        obs.audit("tenant.db.provisioned", {
+          module: "webhooks",
+          companyId: result.companyId,
+          dbName: db.dbName,
+        });
+      } else {
+        obs.error(`tenant.db.provision.failed: ${db.error}`, {
+          module: "webhooks",
+          companyId: result.companyId,
+          companyCode,
+        });
+      }
+    })
+    .catch((err) => console.error("[paddle] Error provision BD:", err));
+
+  // Enviar email de bienvenida
+  console.log(`[paddle] Tenant provisionado OK — companyId=${result.companyId}, email=${customerEmail}, subdomain=${chosenSubdomain || "(ninguno)"}`);
+  sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl, adminUserCode)
+    .then(() => {
+      obs.audit("tenant.welcome_email.sent", {
+        module: "webhooks",
+        companyId: result.companyId,
+        ownerEmail: customerEmail,
+      });
+    })
+    .catch((err) => {
+      console.error("[paddle] Error enviando welcome email:", err);
+      obs.error(`tenant.welcome_email.failed: ${err.message}`, {
+        module: "webhooks",
+        companyId: result.companyId,
+        ownerEmail: customerEmail,
+      });
+    });
 
   return { handled: true, companyId: result.companyId };
 }
