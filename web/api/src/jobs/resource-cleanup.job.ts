@@ -58,11 +58,13 @@ async function runJob(): Promise<void> {
     }
 
     // 2. Scan de nuevos candidatos para limpieza
+    let totalPending = 0;
     try {
       const scanRows = await callSp<CleanupScanRow>("usp_Sys_Cleanup_Scan", {});
       const scanRow = scanRows[0];
       newCandidates = scanRow?.NewCandidates ?? 0;
-      obs.log('info', `[resource-job] Scan completo: ${newCandidates} nuevos candidatos, ${scanRow?.TotalPending ?? 0} pendientes`, { module: 'resource-job' });
+      totalPending  = scanRow?.TotalPending  ?? 0;
+      obs.log('info', `[resource-job] Scan completo: ${newCandidates} nuevos candidatos, ${totalPending} pendientes`, { module: 'resource-job' });
     } catch (scanErr: unknown) {
       const msg = scanErr instanceof Error ? scanErr.message : 'scan_error';
       obs.error(`[resource-job] Scan falló (continuando): ${msg}`, { module: 'resource-job' });
@@ -105,7 +107,20 @@ async function runJob(): Promise<void> {
       obs.error(`[resource-job] Notificaciones fallaron (continuando): ${msg}`, { module: 'resource-job' });
     }
 
-    // 4. Loguear resultado final
+    // 4. Publicar evento diario de métricas de recursos → Kafka → Kibana/Elasticsearch
+    // Esto permite gráficas de evolución de almacenamiento a lo largo del tiempo
+    obs.event('resource.audit.daily', {
+      tenantsAudited,
+      totalSizeMB,
+      newCandidates,
+      recordedAt: new Date().toISOString(),
+    });
+
+    // Alertar en backoffice si se detectaron nuevos candidatos para limpieza
+    if (newCandidates > 0) {
+      obs.event('resource.cleanup.new_candidates', { newCandidates, totalPending });
+    }
+
     obs.audit('resource.cleanup.job.run', {
       module: 'resource-job',
       tenantsAudited,

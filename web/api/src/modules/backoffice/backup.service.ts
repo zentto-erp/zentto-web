@@ -127,15 +127,18 @@ export async function createTenantBackup(
     obs.audit("backup.start", { module: "backup", companyId, dbName, backupId });
 
     // 3. pg_dump → archivo local
+    const pgDumpStart = Date.now();
     execSync(
       `PGPASSWORD="${pgPassword}" pg_dump -h ${pgHost} -p ${pgPort} -U ${pgUser} -Fc -f "${filePath}" "${dbName}"`,
       { timeout: 30 * 60 * 1000, stdio: ["pipe", "pipe", "pipe"] }
     );
+    const pgDumpMs = Date.now() - pgDumpStart;
+    obs.perf("backup.pg_dump", pgDumpMs, { module: "backup", companyId, dbName, backupId });
 
     const stats         = fs.statSync(filePath);
     const fileSizeBytes = stats.size;
 
-    obs.log("info", `[backup] pg_dump completado: ${fileName} (${(fileSizeBytes / 1048576).toFixed(1)} MB)`, {
+    obs.log("info", `[backup] pg_dump completado: ${fileName} (${(fileSizeBytes / 1048576).toFixed(1)} MB) en ${(pgDumpMs / 1000).toFixed(1)}s`, {
       module: "backup", companyId, backupId,
     });
 
@@ -177,11 +180,19 @@ export async function createTenantBackup(
     });
 
     obs.audit("backup.complete", { module: "backup", companyId, dbName, backupId, fileSizeBytes, storageStatus });
+    obs.event("backup.complete", { companyId, dbName, backupId, fileSizeMB: +(fileSizeBytes / 1048576).toFixed(1), storageStatus });
+
+    // Alertar si el Object Storage estaba configurado pero el upload falló
+    if (storageStatus === "UPLOAD_FAILED") {
+      obs.event("backup.storage.offline", { companyId, dbName, backupId });
+    }
+
     return { ok: true, backupId, message: `backup_created: ${fileName} [${storageStatus}]` };
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "pg_dump_failed";
     obs.error(`backup.failed: ${msg}`, { module: "backup", companyId, dbName, backupId });
+    obs.event("backup.failed", { companyId, dbName, backupId, error: msg.substring(0, 200) });
 
     // Limpiar archivo parcial si existe
     try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch { /* ignorar */ }
@@ -292,11 +303,13 @@ export async function restoreTenantBackup(
     );
 
     obs.audit("restore.complete", { module: "backup", companyId, backupId, dbName: backup.DbName });
+    obs.event("restore.complete", { companyId, backupId, dbName: backup.DbName, fileName: backup.FileName });
     return { ok: true, message: `restored: ${backup.FileName} → ${backup.DbName}` };
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "pg_restore_failed";
     obs.error(`restore.failed: ${msg}`, { module: "backup", companyId, backupId });
+    obs.event("restore.failed", { companyId, backupId, dbName: backup.DbName, error: msg.substring(0, 200) });
     return { ok: false, message: msg };
   } finally {
     // Limpiar archivo temporal de descarga

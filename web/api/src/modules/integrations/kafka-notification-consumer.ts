@@ -166,6 +166,74 @@ const EVENT_NOTIFICATION_MAP: Record<string, NotificationConfig> = {
     mensaje: (data) => `Login fallido desde IP ${data.ip || 'desconocida'}`,
     ruta: null,
   },
+
+  // --- BACKUPS ---
+  'backup.complete': {
+    tipo: 'SUCCESS',
+    titulo: 'Respaldo completado',
+    mensaje: (data) =>
+      `BD ${data.dbName || ''} respaldada (${data.storageStatus === 'UPLOADED' ? 'Object Storage ✓' : 'local'})`,
+    ruta: '/backoffice',
+  },
+  'backup.failed': {
+    tipo: 'ERROR',
+    titulo: 'Error en respaldo',
+    mensaje: (data) => `Falló el respaldo de ${data.dbName || ''}: ${data.error || 'error desconocido'}`,
+    ruta: '/backoffice',
+    crearTarea: true,
+    tarea: {
+      titulo: (data) => `Revisar respaldo fallido: ${data.dbName || 'BD desconocida'}`,
+      color: '#d32f2f',
+    },
+  },
+  'restore.complete': {
+    tipo: 'SUCCESS',
+    titulo: 'Restauración completada',
+    mensaje: (data) => `BD ${data.dbName || ''} restaurada exitosamente`,
+    ruta: '/backoffice',
+  },
+  'restore.failed': {
+    tipo: 'ERROR',
+    titulo: 'Error en restauración',
+    mensaje: (data) => `Falló la restauración de ${data.dbName || ''}: ${data.error || 'error desconocido'}`,
+    ruta: '/backoffice',
+    crearTarea: true,
+    tarea: {
+      titulo: (data) => `Revisar restauración fallida: ${data.dbName || 'BD desconocida'}`,
+      color: '#b71c1c',
+    },
+  },
+
+  // --- RECURSOS / LIMPIEZA ---
+  'resource.cleanup.new_candidates': {
+    tipo: 'WARNING',
+    titulo: 'Nuevos tenants para limpieza',
+    mensaje: (data) =>
+      `${data.newCandidates} tenant(s) detectados para limpieza (${data.totalPending} pendientes total)`,
+    ruta: '/backoffice',
+    crearTarea: true,
+    tarea: {
+      titulo: (data) => `Revisar cola de limpieza (${data.totalPending} pendientes)`,
+      color: '#f57c00',
+    },
+  },
+  'resource.drop_db.complete': {
+    tipo: 'INFO',
+    titulo: 'Base de datos eliminada',
+    mensaje: (data) => `BD del tenant ${data.companyCode || ''} eliminada del servidor`,
+    ruta: '/backoffice',
+  },
+  'backup.storage.offline': {
+    tipo: 'WARNING',
+    titulo: 'Object Storage no disponible',
+    mensaje: () => `Hetzner Object Storage no responde — backups quedan solo en disco local`,
+    ruta: '/backoffice',
+    crearTarea: true,
+    tarea: {
+      titulo: () => 'Verificar configuración de Hetzner Object Storage',
+      color: '#e65100',
+    },
+  },
 };
 
 // ── Consumer logic ───────────────────────────────────────────────────────────
