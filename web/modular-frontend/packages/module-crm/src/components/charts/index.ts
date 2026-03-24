@@ -3,3 +3,7 @@ export { default as FunnelChart } from "./FunnelChart";
 export { default as WinLossChart } from "./WinLossChart";
 export { default as VelocityChart } from "./VelocityChart";
 export { default as ActivityReportChart } from "./ActivityReportChart";
+export { default as SalesByPeriodChart } from "./SalesByPeriodChart";
+export { default as LeadAgingChart } from "./LeadAgingChart";
+export { default as ConversionBySourceChart } from "./ConversionBySourceChart";
+export { default as TopPerformersChart } from "./TopPerformersChart";

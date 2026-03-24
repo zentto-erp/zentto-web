@@ -88,5 +88,21 @@ export type {
 export { default as AutomationRulesPage } from "./components/AutomationRulesPage";
 export { StaleLeadsAlert } from "./components/StaleLeadsAlert";
 
+// ─── Reports ────────────────────────────────────────────────
+export {
+  useSalesByPeriod,
+  useLeadAging,
+  useConversionBySource,
+  useTopPerformers,
+} from "./hooks/useCRMReports";
+export type {
+  SalesByPeriodRow,
+  LeadAgingRow,
+  ConversionBySourceRow,
+  TopPerformerRow,
+} from "./hooks/useCRMReports";
+export { default as CRMReportsPage } from "./components/CRMReportsPage";
+export { default as CRMSettingsPage } from "./components/CRMSettingsPage";
+
 // ─── Pages ───────────────────────────────────────────────────
 export { default as CRMHome } from "./pages/CRMHome";

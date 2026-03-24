@@ -9,6 +9,7 @@ import { callCenterRouter } from "./callcenter.routes.js";
 import { crmAnalyticsRouter } from "./analytics.routes.js";
 import { crmScoringRouter } from "./scoring.routes.js";
 import { crmAutomationRouter } from "./automation.routes.js";
+import { crmReportsRouter } from "./reports.routes.js";
 
 export const crmRouter = Router();
 
@@ -17,6 +18,7 @@ crmRouter.use("/", callCenterRouter);
 crmRouter.use("/analytics", crmAnalyticsRouter);
 crmRouter.use("/", crmScoringRouter);
 crmRouter.use("/", crmAutomationRouter);
+crmRouter.use("/reports", crmReportsRouter);
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 

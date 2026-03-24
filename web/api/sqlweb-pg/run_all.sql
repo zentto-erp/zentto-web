@@ -499,6 +499,7 @@
 \i includes/sp/usp_crm_analytics.sql
 \i includes/sp/usp_crm_scoring.sql
 \i includes/sp/usp_crm_automation.sql
+\i includes/sp/usp_crm_reports.sql
 
 \echo '--- Funciones Manufactura ---'
 \i includes/sp/usp_mfg.sql
