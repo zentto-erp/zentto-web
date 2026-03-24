@@ -668,10 +668,16 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i includes/sp/usp_sys_Lead_Upsert.sql
 
 -- ====================================================================
--- FASE 8: Migraciones post-despliegue
--- Aplican correcciones incrementales sobre los SPs ya creados.
--- Cada migración es idempotente (ON CONFLICT DO NOTHING).
+-- FASE 8: Bootstrap marker + Migraciones post-despliegue
+-- La tabla _migrations debe existir ANTES de cargar las migraciones.
 -- ====================================================================
+CREATE TABLE IF NOT EXISTS public._migrations (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMP DEFAULT NOW() AT TIME ZONE 'UTC'
+);
+INSERT INTO public._migrations (name) VALUES ('run_all.sql')
+  ON CONFLICT (name) DO NOTHING;
 \echo ''
 \echo '--- Migraciones post-despliegue ---'
 \echo '  [001] POS BIGINT overload fixes'
@@ -796,18 +802,7 @@ END $cleanup$;
 \i includes/sp/usp_mfg.sql
 
 -- ====================================================================
--- FASE 9: Bootstrap marker (requerido por SP contract tests en CI)
--- ====================================================================
-CREATE TABLE IF NOT EXISTS public._migrations (
-  id         SERIAL PRIMARY KEY,
-  name       VARCHAR(255) NOT NULL UNIQUE,
-  applied_at TIMESTAMP DEFAULT NOW() AT TIME ZONE 'UTC'
-);
-INSERT INTO public._migrations (name) VALUES ('run_all.sql')
-  ON CONFLICT (name) DO NOTHING;
-
--- ====================================================================
--- FASE 10: Verificacion
+-- FASE 9: Verificacion
 -- ====================================================================
 \echo ''
 \echo '╔══════════════════════════════════════════════════════╗'
