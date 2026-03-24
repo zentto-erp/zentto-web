@@ -154,6 +154,7 @@ export default function UsuariosPage() {
 
       <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         <ZenttoDataGrid
+            gridId="config-usuarios-list"
           rows={rows}
           columns={columns}
           loading={isLoading}
