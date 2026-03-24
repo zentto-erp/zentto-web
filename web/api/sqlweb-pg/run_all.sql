@@ -796,7 +796,18 @@ END $cleanup$;
 \i includes/sp/usp_mfg.sql
 
 -- ====================================================================
--- FASE 9: Verificacion
+-- FASE 9: Bootstrap marker (requerido por SP contract tests en CI)
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public._migrations (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMP DEFAULT NOW() AT TIME ZONE 'UTC'
+);
+INSERT INTO public._migrations (name) VALUES ('run_all.sql')
+  ON CONFLICT (name) DO NOTHING;
+
+-- ====================================================================
+-- FASE 10: Verificacion
 -- ====================================================================
 \echo ''
 \echo '╔══════════════════════════════════════════════════════╗'
