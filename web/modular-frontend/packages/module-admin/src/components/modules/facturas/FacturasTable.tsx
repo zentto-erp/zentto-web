@@ -1,50 +1,40 @@
 // components/modules/facturas/FacturasTable.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
-  CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
   InputAdornment,
   Typography,
-  Tooltip,
 } from "@mui/material";
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material";
+import {
+  ZenttoDataGrid,
+  type ZenttoColDef,
+  buildCrudActionsColumn,
+  ConfirmDialog,
+} from "@zentto/shared-ui";
 import { useFacturasList, useDeleteFactura } from "../../../hooks/useFacturas";
-import { formatCurrency, formatDate } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
+import { toDateOnly } from "@zentto/shared-api";
 import { debounce } from "lodash";
 
 export default function FacturasTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [anularOpen, setAnularOpen] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<string | null>(null);
 
   const { data: facturas, isLoading } = useFacturasList({
     search,
     page: page + 1,
-    limit: rowsPerPage,
+    limit: pageSize,
   });
 
   const { mutate: deleteFactura, isPending: isDeleting } = useDeleteFactura();
@@ -62,55 +52,118 @@ export default function FacturasTable() {
     debouncedSearch(e.target.value);
   };
 
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
-  const handleDeleteClick = (numero: string) => {
+  const handleAnularClick = (numero: string) => {
     setSelectedFactura(numero);
-    setDeleteDialogOpen(true);
+    setAnularOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmAnular = () => {
     if (selectedFactura) {
       deleteFactura(selectedFactura, {
         onSuccess: () => {
-          setDeleteDialogOpen(false);
+          setAnularOpen(false);
           setSelectedFactura(null);
         },
         onError: (err) => {
-          console.error("Error deleting:", err);
-          alert("Error al eliminar la factura");
-        }
+          console.error("Error anulando:", err);
+        },
       });
     }
   };
 
-  const getStatusColor = (estado: string): "success" | "warning" | "error" | "info" | "default" => {
-    const colorMap: Record<string, "success" | "warning" | "error" | "info" | "default"> = {
-      "Pagada": "success",
-      "Pendiente": "warning",
-      "Cancelada": "error",
-      "Anulada": "error",
-      "Crédito": "info",
-    };
-    return colorMap[estado] || "default";
-  };
+  const columns = useMemo<ZenttoColDef[]>(
+    () => [
+      {
+        field: "numeroFactura",
+        headerName: "Numero",
+        width: 130,
+        sortable: true,
+      },
+      {
+        field: "nombreCliente",
+        headerName: "Cliente",
+        flex: 1,
+        minWidth: 180,
+        sortable: true,
+        mobileHide: true,
+      },
+      {
+        field: "fecha",
+        headerName: "Fecha",
+        width: 120,
+        sortable: true,
+        valueFormatter: (value: string) =>
+          value ? toDateOnly(value, timeZone) : "",
+      },
+      {
+        field: "tipoDoc",
+        headerName: "Tipo",
+        width: 110,
+        tabletHide: true,
+        statusColors: {
+          FACT: "primary",
+          PRESUP: "info",
+          PEDIDO: "warning",
+        },
+        statusVariant: "outlined",
+      },
+      {
+        field: "totalFactura",
+        headerName: "Total",
+        width: 140,
+        type: "number",
+        currency: true,
+        aggregation: "sum",
+      },
+      {
+        field: "estado",
+        headerName: "Estado",
+        width: 120,
+        statusColors: {
+          Pagada: "success",
+          Pendiente: "warning",
+          Anulada: "error",
+          Cancelada: "default",
+        },
+        statusVariant: "outlined",
+      },
+      buildCrudActionsColumn({
+        onView: (row) =>
+          router.push(`/facturas/${row.numeroFactura}`),
+        onDelete: (row) => handleAnularClick(row.numeroFactura),
+      }),
+    ],
+    [timeZone, router]
+  );
+
+  const rows = useMemo(
+    () =>
+      (facturas?.data || []).map((f: any, idx: number) => ({
+        id: f.numeroFactura || idx,
+        ...f,
+      })),
+    [facturas?.data]
+  );
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Facturas</Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h5" fontWeight={600}>
+          Facturas
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => router.push("/facturas/new")}
+          size="large"
         >
           Nueva Factura
         </Button>
@@ -118,11 +171,10 @@ export default function FacturasTable() {
 
       {/* Search */}
       <TextField
-        placeholder="Buscar por número, cliente o referencia..."
+        placeholder="Buscar por numero, cliente o referencia..."
         defaultValue=""
         onChange={handleSearchChange}
         fullWidth
-       
         sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (
@@ -133,118 +185,45 @@ export default function FacturasTable() {
         }}
       />
 
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Número</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Cliente</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Monto
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 600 }}>
-                Acciones
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={40} />
-                </TableCell>
-              </TableRow>
-            ) : !facturas?.data || facturas.data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No hay facturas disponibles
-                </TableCell>
-              </TableRow>
-            ) : (
-              facturas.data.map((factura) => (
-                <TableRow key={factura.numeroFactura} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{factura.numeroFactura}</TableCell>
-                  <TableCell>{factura.nombreCliente}</TableCell>
-                  <TableCell>{formatDate(factura.fecha, { timeZone })}</TableCell>
-                  <TableCell align="right">{formatCurrency(factura.totalFactura)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={factura.estado}
-                      size="small"
-                      color={getStatusColor(factura.estado)}
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Ver detalle de factura">
-                      <IconButton
-                        size="small"
-                        onClick={() => router.push(`/facturas/${factura.numeroFactura}`)}
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Editar factura">
-                      <IconButton
-                        size="small"
-                        onClick={() => router.push(`/facturas/${factura.numeroFactura}/edit`)}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar factura">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteClick(factura.numeroFactura)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Pagination */}
-      {facturas && facturas.total > 0 && (
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={facturas.total}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="Filas por página:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+      {/* ZenttoDataGrid */}
+      <Box sx={{ flex: 1, minHeight: 400 }}>
+        <ZenttoDataGrid
+          columns={columns}
+          rows={rows}
+          loading={isLoading}
+          enableClipboard
+          enableHeaderFilters
+          showTotals
+          paginationMode="server"
+          rowCount={facturas?.total ?? 0}
+          serverRowCount={facturas?.total ?? 0}
+          paginationModel={{ page, pageSize }}
+          onPaginationModelChange={(model) => {
+            setPage(model.page);
+            setPageSize(model.pageSize);
+          }}
+          pageSizeOptions={[5, 10, 25, 50]}
+          density="comfortable"
+          exportFilename="facturas"
+          gridId="facturas-table"
+          sx={{ height: "100%" }}
         />
-      )}
+      </Box>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Eliminar Factura</DialogTitle>
-        <DialogContent>
-          ¿Estás seguro de que deseas eliminar esta factura? Esta acción no puede deshacerse.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Eliminando..." : "Eliminar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Anular Confirmation Dialog */}
+      <ConfirmDialog
+        open={anularOpen}
+        title="Anular Factura"
+        message={`Esta seguro de que desea anular la factura ${selectedFactura || ""}? Esta accion no puede deshacerse.`}
+        confirmLabel={isDeleting ? "Anulando..." : "Anular"}
+        variant="danger"
+        onConfirm={handleConfirmAnular}
+        onClose={() => {
+          setAnularOpen(false);
+          setSelectedFactura(null);
+        }}
+        loading={isDeleting}
+      />
     </Box>
   );
 }

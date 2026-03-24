@@ -1,13 +1,7 @@
 // components/modules/clientes/ClientesTable.tsx
 /**
- * EJEMPLO PRÁCTICO #1 - TABLA DE CLIENTES
- * Template reutilizable para cualquier módulo de listado
- * 
- * Este archivo muestra cómo:
- * 1. Usar el hook genérico useCrudGeneric
- * 2. Adaptar el componente DataGrid
- * 3. Implementar actions (Ver, Editar, Eliminar)
- * 4. Manejar filtros y búsqueda
+ * Tabla de Clientes con ZenttoDataGrid
+ * Incluye: clipboard, header filters, totales, acciones CRUD
  */
 
 'use client';
@@ -21,20 +15,19 @@ import {
   Stack,
   Paper,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import DataGrid, { Column, Action } from '../../common/DataGrid';
-import { DeleteDialog, ConfirmDialog } from '../../common/Dialogs';
+import {
+  ZenttoDataGrid,
+  type ZenttoColDef,
+  buildCrudActionsColumn,
+  DeleteDialog,
+} from '@zentto/shared-ui';
 import { useCrudGeneric } from '../../../hooks/useCrudGeneric';
 import { Cliente } from '@zentto/shared-api/types';
 
 export default function ClientesTable() {
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const crud = useCrudGeneric<Cliente>('clientes');
   const { data, isLoading } = crud.list();
 
@@ -47,65 +40,95 @@ export default function ClientesTable() {
   const { mutate: deleteCliente, isPending: isDeleting } = crud.delete('');
 
   // Filtrado local
-  const filteredData = (data?.items || data?.data || []).filter(
-    (client: Cliente) =>
-      client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.rif.includes(searchTerm)
+  const filteredData = useMemo(() => {
+    const items = data?.items || data?.data || [];
+    if (!searchTerm) return items;
+    const term = searchTerm.toLowerCase();
+    return items.filter(
+      (client: Cliente) =>
+        client.nombre.toLowerCase().includes(term) ||
+        client.rif.includes(searchTerm)
+    );
+  }, [data, searchTerm]);
+
+  // Columnas ZenttoDataGrid
+  const columns = useMemo<ZenttoColDef[]>(
+    () => [
+      {
+        field: 'codigo',
+        headerName: 'Codigo',
+        width: 100,
+        sortable: true,
+      },
+      {
+        field: 'nombre',
+        headerName: 'Nombre',
+        flex: 1,
+        minWidth: 200,
+        sortable: true,
+      },
+      {
+        field: 'rif',
+        headerName: 'RIF',
+        width: 130,
+        sortable: true,
+        mobileHide: true,
+      },
+      {
+        field: 'email',
+        headerName: 'Email',
+        width: 200,
+        mobileHide: true,
+        tabletHide: true,
+      },
+      {
+        field: 'telefono',
+        headerName: 'Telefono',
+        width: 140,
+        mobileHide: true,
+        tabletHide: true,
+      },
+      {
+        field: 'saldo',
+        headerName: 'Saldo',
+        width: 140,
+        type: 'number',
+        currency: true,
+        aggregation: 'sum',
+        mobileHide: true,
+      },
+      {
+        field: 'estado',
+        headerName: 'Estado',
+        width: 110,
+        statusColors: {
+          Activo: 'success',
+          Inactivo: 'error',
+          Suspendido: 'warning',
+        },
+        statusVariant: 'outlined',
+      },
+      buildCrudActionsColumn({
+        onView: (row) => router.push(`/clientes/${row.codigo}`),
+        onEdit: (row) => router.push(`/clientes/${row.codigo}/edit`),
+        onDelete: (row) => {
+          setSelectedClient(row);
+          setDeleteOpen(true);
+        },
+      }),
+    ],
+    [router]
   );
 
-  // Columnas — se filtran según el breakpoint para responsividad en móvil
-  const allColumns: Column<Cliente>[] = [
-    { accessor: 'codigo', header: 'Código', sortable: true, width: '80px' },
-    { accessor: 'nombre', header: 'Nombre', sortable: true },
-    { accessor: 'rif', header: 'RIF', sortable: true, width: '100px' },
-    { accessor: 'email', header: 'Email', type: 'text' },
-    {
-      accessor: 'saldo',
-      header: 'Saldo',
-      type: 'currency',
-      width: '120px',
-    },
-    {
-      accessor: 'estado',
-      header: 'Estado',
-      type: 'status',
-      width: '100px',
-    },
-  ];
-
-  // Móvil: solo código y nombre. Tablet: agrega rif y estado. Desktop: todas.
-  const mobileFields: (keyof Cliente)[] = ['codigo', 'nombre'];
-  const tabletFields: (keyof Cliente)[] = ['codigo', 'nombre', 'rif', 'estado'];
-
-  const columns = useMemo<Column<Cliente>[]>(() => {
-    if (isMobile) return allColumns.filter((c) => mobileFields.includes(c.accessor));
-    if (isTablet) return allColumns.filter((c) => tabletFields.includes(c.accessor));
-    return allColumns;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, isTablet]);
-
-  // Actions
-  const actions: Action<Cliente>[] = [
-    {
-      id: 'view',
-      label: 'Ver',
-      onClick: (row) => router.push(`/clientes/${row.codigo}`),
-    },
-    {
-      id: 'edit',
-      label: 'Editar',
-      onClick: (row) => router.push(`/clientes/${row.codigo}/edit`),
-    },
-    {
-      id: 'delete',
-      label: 'Eliminar',
-      color: 'error',
-      onClick: (row) => {
-        setSelectedClient(row);
-        setDeleteOpen(true);
-      },
-    },
-  ];
+  // Rows con id
+  const rows = useMemo(
+    () =>
+      filteredData.map((client: Cliente, idx: number) => ({
+        id: client.codigo || idx,
+        ...client,
+      })),
+    [filteredData]
+  );
 
   const handleDeleteConfirm = () => {
     if (selectedClient) {
@@ -129,7 +152,9 @@ export default function ClientesTable() {
           mb: 3,
         }}
       >
-        <Typography variant="h5" fontWeight={600}>Gestión de Clientes</Typography>
+        <Typography variant="h5" fontWeight={600}>
+          Gestion de Clientes
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -152,29 +177,35 @@ export default function ClientesTable() {
         </Stack>
       </Paper>
 
-      {/* Data Grid */}
-      <DataGrid<Cliente>
-        columns={columns}
-        data={filteredData}
-        totalRecords={data?.total || 0}
-        isLoading={isLoading}
-        actions={actions}
-        title={`${filteredData.length} clientes`}
-        emptyText="No hay clientes registrados"
-      />
+      {/* ZenttoDataGrid */}
+      <Box sx={{ flex: 1, minHeight: 400 }}>
+        <ZenttoDataGrid
+          columns={columns}
+          rows={rows}
+          loading={isLoading}
+          enableClipboard
+          enableHeaderFilters
+          showTotals
+          density="comfortable"
+          exportFilename="clientes"
+          gridId="clientes-table"
+          toolbarTitle={`${filteredData.length} clientes`}
+          pageSizeOptions={[10, 25, 50, 100]}
+          sx={{ height: '100%' }}
+        />
+      </Box>
 
       {/* Delete Dialog */}
       <DeleteDialog
         open={deleteOpen}
         itemName={selectedClient?.nombre || ''}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => {
+        onClose={() => {
           setDeleteOpen(false);
           setSelectedClient(null);
         }}
-        isLoading={isDeleting}
+        loading={isDeleting}
       />
     </Box>
   );
 }
-

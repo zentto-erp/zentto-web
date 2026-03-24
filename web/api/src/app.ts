@@ -69,6 +69,7 @@ import { logisticaRouter } from "./modules/logistica/routes.js";
 import { crmRouter } from "./modules/crm/routes.js";
 import { manufacturaRouter } from "./modules/manufactura/routes.js";
 import { comprasAnalyticsRouter } from "./modules/compras/analytics.routes.js";
+import { ventasAnalyticsRouter } from "./modules/ventas/analytics.routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
@@ -362,6 +363,7 @@ export async function createApp() {
   app.use("/v1/documentos-venta", documentosVentaRouter);
   app.use("/v1/documentos-compra", documentosCompraRouter);
   app.use("/v1/compras/analytics", comprasAnalyticsRouter);
+  app.use("/v1/ventas/analytics", ventasAnalyticsRouter);
 
   // Pagos y Cobros
   app.use("/v1/abonos", abonosRouter);
@@ -452,6 +454,7 @@ export async function createApp() {
   app.use("/api/v1/documentos-venta", documentosVentaRouter);
   app.use("/api/v1/documentos-compra", documentosCompraRouter);
   app.use("/api/v1/compras/analytics", comprasAnalyticsRouter);
+  app.use("/api/v1/ventas/analytics", ventasAnalyticsRouter);
   app.use("/api/v1/abonos", abonosRouter);
   app.use("/api/v1/pagos", pagosRouter);
   app.use("/api/v1/abonospagos", abonosPagosRouter);

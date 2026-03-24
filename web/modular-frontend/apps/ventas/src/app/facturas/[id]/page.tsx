@@ -1,7 +1,11 @@
-'use client';
-import { useParams } from 'next/navigation';
-import { FacturaForm } from '@zentto/module-admin';
-export default function Page() {
-    const { id } = useParams();
-    return <FacturaForm numeroFactura={id as string} />;
+"use client";
+
+import { useParams } from "next/navigation";
+import { FacturaDetail } from "@zentto/module-admin";
+
+export default function FacturaDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  if (!id) return null;
+  return <FacturaDetail numeroFactura={id} />;
 }

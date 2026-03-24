@@ -214,6 +214,14 @@ export function useUpdateFactura(numeroFactura: string) {
   });
 }
 
+export function useDetalleFactura(numeroFactura: string) {
+  return useQuery<unknown[]>({
+    queryKey: [QUERY_KEY, "detalle", numeroFactura],
+    queryFn: () => apiGet(`${API_BASE}/${TIPO_OPERACION}/${encodeURIComponent(numeroFactura)}/detalle`),
+    enabled: !!numeroFactura
+  });
+}
+
 export function useDeleteFactura() {
   const queryClient = useQueryClient();
   return useMutation({

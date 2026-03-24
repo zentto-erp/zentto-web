@@ -504,6 +504,9 @@
 \echo '--- Funciones Compras Analytics ---'
 \i includes/sp/usp_purchases_analytics.sql
 
+\echo '--- Funciones Ventas Analytics ---'
+\i includes/sp/usp_sales_analytics.sql
+
 \echo '--- Funciones Manufactura ---'
 \i includes/sp/usp_mfg.sql
 

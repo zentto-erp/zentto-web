@@ -35,7 +35,11 @@ import {
 } from "@mui/icons-material";
 import { useClientesList } from "../../../hooks/useClientes";
 import { toDateOnly } from "@zentto/shared-api";
-import { DatePicker } from "@zentto/shared-ui";
+import {
+  ZenttoDataGrid,
+  type ZenttoColDef,
+  DatePicker,
+} from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
@@ -84,6 +88,50 @@ export default function CxcMasterPage() {
     setTabValue(0);
   }, []);
 
+  // ─── Columnas de la tabla de clientes ─────────────────────
+  const clienteColumns = useMemo<ZenttoColDef[]>(
+    () => [
+      { field: "codigo", headerName: "Codigo", width: 90 },
+      { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 160 },
+      { field: "rif", headerName: "RIF", width: 120, mobileHide: true },
+      { field: "telefono", headerName: "Telefono", width: 130, mobileHide: true, tabletHide: true },
+      {
+        field: "saldo",
+        headerName: "Saldo",
+        width: 120,
+        type: "number",
+        currency: true,
+        aggregation: "sum",
+        valueGetter: (_value: any, row: any) => Number(row.saldo || row.SALDO_TOT || 0),
+      },
+      {
+        field: "estado",
+        headerName: "Estado",
+        width: 100,
+        statusColors: {
+          Activo: "success",
+          Inactivo: "error",
+        },
+        statusVariant: "outlined",
+      },
+    ],
+    []
+  );
+
+  const clienteRows = useMemo(
+    () =>
+      clientes.map((c: ClienteRow, idx: number) => ({
+        id: c.codigo || c.CODIGO || idx,
+        codigo: c.codigo || c.CODIGO || "",
+        nombre: c.nombre || c.NOMBRE || "",
+        rif: c.rif || c.RIF || "",
+        telefono: c.telefono || c.TELEFONO || "",
+        saldo: Number(c.saldo || c.SALDO_TOT || 0),
+        estado: c.estado || "Activo",
+      })),
+    [clientes]
+  );
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, minHeight: 0 }}>
       {/* ── Seccion superior: Lista de Clientes ──────────────── */}
@@ -94,7 +142,6 @@ export default function CxcMasterPage() {
           </Typography>
           <TextField
             placeholder="Buscar cliente..."
-           
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} /> }}
@@ -107,67 +154,30 @@ export default function CxcMasterPage() {
           </Tooltip>
         </Stack>
 
-        <Box sx={{ maxHeight: 280, overflow: "auto" }}>
-          {clientesQuery.isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-              <CircularProgress size={28} />
-            </Box>
-          ) : (
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Codigo</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Nombre</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>RIF</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Telefono</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }} align="right">Saldo</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Estado</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {clientes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 3, color: "text.secondary" }}>
-                      No se encontraron clientes
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  clientes.map((c) => {
-                    const cod = c.codigo || c.CODIGO || "";
-                    const isSelected = cod === selectedCod;
-                    return (
-                      <TableRow
-                        key={cod}
-                        hover
-                        selected={isSelected}
-                        onClick={() => handleSelectCliente(c)}
-                        sx={{ cursor: "pointer", "&.Mui-selected": { bgcolor: "primary.50" } }}
-                      >
-                        <TableCell sx={{ fontSize: "0.82rem" }}>{cod}</TableCell>
-                        <TableCell sx={{ fontSize: "0.82rem", fontWeight: isSelected ? 700 : 400 }}>
-                          {c.nombre || c.NOMBRE}
-                        </TableCell>
-                        <TableCell sx={{ fontSize: "0.82rem" }}>{c.rif || c.RIF || ""}</TableCell>
-                        <TableCell sx={{ fontSize: "0.82rem" }}>{c.telefono || c.TELEFONO || ""}</TableCell>
-                        <TableCell sx={{ fontSize: "0.82rem" }} align="right">
-                          {Number(c.saldo || c.SALDO_TOT || 0).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={c.estado || "Activo"}
-                            size="small"
-                            color={c.estado === "Inactivo" ? "error" : "success"}
-                            variant="outlined"
-                            sx={{ fontSize: "0.72rem" }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          )}
+        <Box sx={{ height: 280 }}>
+          <ZenttoDataGrid
+            columns={clienteColumns}
+            rows={clienteRows}
+            loading={clientesQuery.isLoading}
+            density="compact"
+            enableClipboard
+            hideToolbar
+            onRowClick={(params) => {
+              const cli = clientes.find(
+                (c: ClienteRow) => (c.codigo || c.CODIGO) === params.row.codigo
+              );
+              if (cli) handleSelectCliente(cli);
+            }}
+            getRowClassName={(params) =>
+              params.row.codigo === selectedCod ? "Mui-selected" : ""
+            }
+            gridId="cxc-clientes"
+            sx={{
+              height: "100%",
+              "& .Mui-selected": { bgcolor: "primary.50" },
+              cursor: "pointer",
+            }}
+          />
         </Box>
       </Paper>
 
@@ -270,6 +280,83 @@ function EstadoCuentaTab({
   isLoading: boolean;
   timeZone: string;
 }) {
+  const totalPendiente = useMemo(
+    () => documentos.reduce((acc, d) => acc + Number(d.pendiente || 0), 0),
+    [documentos]
+  );
+  const totalDocumentos = useMemo(
+    () => documentos.reduce((acc, d) => acc + Number(d.total || 0), 0),
+    [documentos]
+  );
+
+  const columns = useMemo(
+    (): ZenttoColDef[] => [
+      {
+        field: "tipoDoc",
+        headerName: "Tipo",
+        width: 100,
+        statusColors: {
+          FACT: "primary",
+          NC: "info",
+          ND: "warning",
+        },
+        statusVariant: "outlined",
+      },
+      {
+        field: "numDoc",
+        headerName: "Documento",
+        width: 150,
+        sortable: true,
+      },
+      {
+        field: "fecha",
+        headerName: "Fecha",
+        width: 120,
+        sortable: true,
+        valueFormatter: (value: string) =>
+          value ? toDateOnly(value, timeZone) : "",
+      },
+      {
+        field: "total",
+        headerName: "Total",
+        width: 130,
+        type: "number",
+        currency: true,
+        aggregation: "sum",
+      },
+      {
+        field: "pendiente",
+        headerName: "Pendiente",
+        width: 130,
+        type: "number",
+        currency: true,
+        aggregation: "sum",
+      },
+      {
+        field: "estadoCalc",
+        headerName: "Estado",
+        width: 110,
+        statusColors: {
+          Pendiente: "warning",
+          Cobrado: "success",
+        },
+      },
+    ],
+    [timeZone]
+  );
+
+  const rows = useMemo(
+    () =>
+      documentos.map((d, i) => ({
+        id: `${d.tipoDoc}-${d.numDoc}-${i}`,
+        ...d,
+        total: Number(d.total || 0),
+        pendiente: Number(d.pendiente || 0),
+        estadoCalc: Number(d.pendiente) > 0 ? "Pendiente" : "Cobrado",
+      })),
+    [documentos]
+  );
+
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
@@ -282,9 +369,6 @@ function EstadoCuentaTab({
     return <Alert severity="info">No hay documentos pendientes para este cliente.</Alert>;
   }
 
-  const totalPendiente = documentos.reduce((acc, d) => acc + Number(d.pendiente || 0), 0);
-  const totalDocumentos = documentos.reduce((acc, d) => acc + Number(d.total || 0), 0);
-
   return (
     <Box>
       <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
@@ -293,46 +377,27 @@ function EstadoCuentaTab({
         <Chip label={`Pendiente: ${totalPendiente.toFixed(2)}`} color="warning" />
       </Stack>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-            <TableCell sx={{ fontWeight: 700 }}>Tipo</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Documento</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
-            <TableCell sx={{ fontWeight: 700 }} align="right">Total</TableCell>
-            <TableCell sx={{ fontWeight: 700 }} align="right">Pendiente</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Estado</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {documentos.map((d, i) => (
-            <TableRow key={`${d.tipoDoc}-${d.numDoc}-${i}`} hover>
-              <TableCell>
-                <Chip label={d.tipoDoc} size="small" variant="outlined" sx={{ fontSize: "0.75rem" }} />
-              </TableCell>
-              <TableCell sx={{ fontFamily: "monospace" }}>{d.numDoc}</TableCell>
-              <TableCell>{d.fecha ? toDateOnly(d.fecha as string, timeZone) : ""}</TableCell>
-              <TableCell align="right">{Number(d.total || 0).toFixed(2)}</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, color: Number(d.pendiente) > 0 ? "error.main" : "success.main" }}>
-                {Number(d.pendiente || 0).toFixed(2)}
-              </TableCell>
-              <TableCell>
-                <Chip
-                  label={Number(d.pendiente) > 0 ? "Pendiente" : "Cobrado"}
-                  size="small"
-                  color={Number(d.pendiente) > 0 ? "warning" : "success"}
-                  sx={{ fontSize: "0.72rem" }}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Box sx={{ height: 400 }}>
+        <ZenttoDataGrid
+          columns={columns}
+          rows={rows}
+          enableClipboard
+          enableHeaderFilters
+          showTotals
+          density="compact"
+          exportFilename="estado-cuenta"
+          gridId="cxc-estado-cuenta"
+          sx={{ height: "100%" }}
+        />
+      </Box>
     </Box>
   );
 }
 
 // ─── Tab 2: Aplicar Cobros ────────────────────────────────────
+// NOTA: Las tablas de documentos pendientes y formas de pago se mantienen
+// como Table HTML porque son formularios de edicion inline (checkboxes,
+// inputs de monto) — no son listados de solo lectura.
 
 function AplicarCobrosTab({
   codCliente,
@@ -482,7 +547,7 @@ function AplicarCobrosTab({
         </Grid>
       </Paper>
 
-      {/* Documentos pendientes */}
+      {/* Documentos pendientes — formulario inline, se mantiene Table nativo */}
       <Typography variant="subtitle2" sx={{ mb: 1 }}>
         Documentos Pendientes ({rows.filter((r) => r.checked).length} seleccionados)
       </Typography>
@@ -536,7 +601,7 @@ function AplicarCobrosTab({
         </TableBody>
       </Table>
 
-      {/* Formas de pago */}
+      {/* Formas de pago — formulario inline, se mantiene Table nativo */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="subtitle2">Formas de Cobro</Typography>
         <Stack direction="row" spacing={1}>
