@@ -5,25 +5,22 @@ import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  Chip,
-  IconButton,
   InputAdornment,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Typography,
-  Tooltip,
 } from "@mui/material";
-import { Add, Search, Visibility } from "@mui/icons-material";
+import { Add, Search } from "@mui/icons-material";
+import {
+  ZenttoDataGrid,
+  type ZenttoColDef,
+  buildCrudActionsColumn,
+  ConfirmDialog,
+  DatePicker,
+} from "@zentto/shared-ui";
 import { useComprasList } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly, formatDate } from "@zentto/shared-api";
-import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 
 export default function ComprasTable() {
@@ -43,21 +40,89 @@ export default function ComprasTable() {
   const [search, setSearch] = useState("");
   const [fechaDesde, setFechaDesde] = useState(firstDayOfCurrentMonth());
   const [fechaHasta, setFechaHasta] = useState(lastDayOfCurrentMonth());
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 50 });
+
+  // Anular dialog
+  const [anularOpen, setAnularOpen] = useState(false);
+  const [anularRow, setAnularRow] = useState<Record<string, unknown> | null>(null);
 
   const filter = useMemo(
     () => ({
       search: search.trim() || undefined,
       fechaDesde,
       fechaHasta,
-      page: page + 1,
-      limit: rowsPerPage
+      page: paginationModel.page + 1,
+      limit: paginationModel.pageSize,
     }),
-    [search, fechaDesde, fechaHasta, page, rowsPerPage]
+    [search, fechaDesde, fechaHasta, paginationModel]
   );
 
   const { data, isLoading } = useComprasList(filter);
+
+  const rows = (data?.rows ?? []) as Record<string, unknown>[];
+  const total = data?.total ?? 0;
+
+  const columns: ZenttoColDef[] = [
+    { field: "documentNumber", headerName: "Numero", flex: 0.8, minWidth: 110 },
+    { field: "supplierName", headerName: "Proveedor", flex: 1.5, minWidth: 180,
+      valueGetter: (_value: unknown, row: Record<string, unknown>) =>
+        row.supplierName || row.supplierCode || "",
+    },
+    {
+      field: "issueDate",
+      headerName: "Fecha",
+      flex: 1,
+      minWidth: 120,
+      valueFormatter: (value: unknown) =>
+        value ? formatDate(String(value), { timeZone }) : "",
+    },
+    {
+      field: "documentType",
+      headerName: "Tipo",
+      width: 120,
+      statusColors: {
+        CONTADO: "success",
+        CREDITO: "warning",
+      },
+    },
+    {
+      field: "status",
+      headerName: "Estado",
+      width: 130,
+      statusColors: {
+        DRAFT: "default",
+        EMITIDA: "info",
+        ANULADA: "error",
+        RECIBIDA: "success",
+        PARCIAL: "warning",
+      },
+    },
+    {
+      field: "totalAmount",
+      headerName: "Total",
+      flex: 0.8,
+      minWidth: 120,
+      type: "number",
+      currency: true,
+      aggregation: "sum",
+    },
+    buildCrudActionsColumn<Record<string, unknown>>({
+      onView: (row) =>
+        router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}`),
+      onEdit: (row) =>
+        router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}/edit`),
+      onDelete: (row) => {
+        setAnularRow(row);
+        setAnularOpen(true);
+      },
+    }, { headerName: "Acciones" }),
+  ];
+
+  const handleAnularConfirm = () => {
+    // TODO: integrar mutacion de anulacion cuando el endpoint exista
+    setAnularOpen(false);
+    setAnularRow(null);
+  };
 
   return (
     <Box>
@@ -73,95 +138,72 @@ export default function ComprasTable() {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr 1fr" } }}>
           <TextField
-           
             label="Buscar"
             placeholder="Numero, proveedor, rif"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(0);
+              setPaginationModel((p) => ({ ...p, page: 0 }));
             }}
+            size="small"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <Search fontSize="small" />
                 </InputAdornment>
-              )
+              ),
             }}
           />
           <DatePicker
             label="Desde"
             value={fechaDesde ? dayjs(fechaDesde) : null}
-            onChange={(v) => { setFechaDesde(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            onChange={(v) => {
+              setFechaDesde(v ? v.format("YYYY-MM-DD") : "");
+              setPaginationModel((p) => ({ ...p, page: 0 }));
+            }}
+            slotProps={{ textField: { size: "small", fullWidth: true } }}
           />
           <DatePicker
             label="Hasta"
             value={fechaHasta ? dayjs(fechaHasta) : null}
-            onChange={(v) => { setFechaHasta(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
-            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            onChange={(v) => {
+              setFechaHasta(v ? v.format("YYYY-MM-DD") : "");
+              setPaginationModel((p) => ({ ...p, page: 0 }));
+            }}
+            slotProps={{ textField: { size: "small", fullWidth: true } }}
           />
         </Box>
       </Paper>
 
-      <Paper>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Numero</TableCell>
-              <TableCell>Proveedor</TableCell>
-              <TableCell>Fecha</TableCell>
-              <TableCell>Tipo</TableCell>
-              <TableCell align="right">Total</TableCell>
-              <TableCell align="center">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={6}>Cargando...</TableCell>
-              </TableRow>
-            )}
-            {!isLoading && (data?.rows?.length ?? 0) === 0 && (
-              <TableRow>
-                <TableCell colSpan={6}>Sin compras para el rango seleccionado.</TableCell>
-              </TableRow>
-            )}
-            {!isLoading &&
-              (data?.rows ?? []).map((row) => (
-                <TableRow key={String(row.documentNumber)}>
-                  <TableCell>{row.documentNumber}</TableCell>
-                  <TableCell>{row.supplierName || row.supplierCode}</TableCell>
-                  <TableCell>{row.issueDate ? formatDate(row.issueDate, { timeZone }) : ""}</TableCell>
-                  <TableCell>
-                    <Chip size="small" label={row.documentType || "COMPRA"} />
-                  </TableCell>
-                  <TableCell align="right">{Number(row.totalAmount || 0).toFixed(2)}</TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Ver detalle de compra">
-                      <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}`)}>
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
+      <ZenttoDataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.documentNumber ?? row.id ?? Math.random()}
+        rowCount={total}
+        loading={isLoading}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        pageSizeOptions={[25, 50, 100]}
+        disableRowSelectionOnClick
+        autoHeight
+        enableClipboard
+        enableHeaderFilters
+        showTotals
+        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={["documentNumber", "supplierName"]}
+        smExtraFields={["totalAmount", "status"]}
+      />
 
-        <TablePagination
-          component="div"
-          count={data?.total ?? 0}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(Number(e.target.value));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[25, 50, 100]}
-        />
-      </Paper>
+      <ConfirmDialog
+        open={anularOpen}
+        onClose={() => { setAnularOpen(false); setAnularRow(null); }}
+        onConfirm={handleAnularConfirm}
+        title="Anular Compra"
+        message={`Estas seguro de que deseas anular la compra ${anularRow?.documentNumber ?? ""}? Esta accion no se puede deshacer.`}
+        confirmLabel="Anular"
+        variant="danger"
+      />
     </Box>
   );
 }

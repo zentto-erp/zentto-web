@@ -501,6 +501,9 @@
 \i includes/sp/usp_crm_automation.sql
 \i includes/sp/usp_crm_reports.sql
 
+\echo '--- Funciones Compras Analytics ---'
+\i includes/sp/usp_purchases_analytics.sql
+
 \echo '--- Funciones Manufactura ---'
 \i includes/sp/usp_mfg.sql
 

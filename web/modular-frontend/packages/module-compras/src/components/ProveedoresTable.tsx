@@ -7,50 +7,45 @@ import {
   Box,
   Button,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Pagination,
-  Paper,
-  Toolbar,
   Typography,
-  Tooltip,
 } from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Add as AddIcon } from "@mui/icons-material";
+import { Add as AddIcon } from "@mui/icons-material";
+import {
+  ZenttoDataGrid,
+  type ZenttoColDef,
+  buildCrudActionsColumn,
+  DeleteDialog,
+} from "@zentto/shared-ui";
 import { useProveedoresList, useDeleteProveedor } from "../hooks/useProveedores";
 import { Proveedor, ProveedorFilter } from "@zentto/shared-api/types";
 
 export default function ProveedoresTable() {
   const router = useRouter();
-  const [filter, setFilter] = useState<ProveedorFilter>({ page: 1, limit: 10 });
+  const [filter, setFilter] = useState<ProveedorFilter>({ page: 1, limit: 25 });
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
 
   // Queries
-  const { data, isLoading } = useProveedoresList({ ...filter, search: searchTerm });
+  const { data, isLoading } = useProveedoresList({
+    ...filter,
+    search: searchTerm,
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
+  });
   const { mutate: deleteProveedor, isPending: isDeleting } = useDeleteProveedor();
+
+  const rows = (data?.items ?? []) as unknown as Record<string, unknown>[];
+  const total = data?.total ?? 0;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setFilter({ ...filter, page: 1 });
+    setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  const handlePageChange = (_: unknown, page: number) => {
-    setFilter({ ...filter, page });
-  };
-
-  const handleDeleteClick = (proveedor: Proveedor) => {
-    setSelectedProveedor(proveedor);
+  const handleDeleteClick = (row: Record<string, unknown>) => {
+    setSelectedProveedor(row as unknown as Proveedor);
     setDeleteOpen(true);
   };
 
@@ -60,10 +55,43 @@ export default function ProveedoresTable() {
         onSuccess: () => {
           setDeleteOpen(false);
           setSelectedProveedor(null);
-        }
+        },
       });
     }
   };
+
+  const columns: ZenttoColDef[] = [
+    { field: "codigo", headerName: "Codigo", flex: 0.7, minWidth: 100 },
+    { field: "nombre", headerName: "Nombre", flex: 1.5, minWidth: 180 },
+    { field: "rif", headerName: "RIF", flex: 1, minWidth: 120 },
+    { field: "email", headerName: "Email", flex: 1.2, minWidth: 160 },
+    { field: "telefono", headerName: "Telefono", flex: 0.9, minWidth: 120 },
+    {
+      field: "saldo",
+      headerName: "Saldo",
+      flex: 0.8,
+      minWidth: 120,
+      type: "number",
+      currency: true,
+      aggregation: "sum",
+    },
+    {
+      field: "estado",
+      headerName: "Estado",
+      width: 120,
+      statusColors: {
+        Activo: "success",
+        ACTIVE: "success",
+        Inactivo: "error",
+        INACTIVE: "error",
+      },
+    },
+    buildCrudActionsColumn<Record<string, unknown>>({
+      onView: (row) => router.push(`/proveedores/${row.codigo}`),
+      onEdit: (row) => router.push(`/proveedores/${row.codigo}/edit`),
+      onDelete: (row) => handleDeleteClick(row),
+    }),
+  ];
 
   return (
     <Box sx={{ p: 2 }}>
@@ -82,159 +110,45 @@ export default function ProveedoresTable() {
       </Box>
 
       {/* Search */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <TextField
-          placeholder="Buscar por nombre o RIF..."
-          value={searchTerm}
-          onChange={handleSearch}
-          fullWidth
-         
-          variant="outlined"
-        />
-      </Paper>
+      <TextField
+        placeholder="Buscar por nombre o RIF..."
+        value={searchTerm}
+        onChange={handleSearch}
+        fullWidth
+        size="small"
+        variant="outlined"
+        sx={{ mb: 2 }}
+      />
 
-      {/* Table Loading */}
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Paper>
-          <Toolbar sx={{ backgroundColor: "#f5f5f5" }}>
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              {data?.total || 0} proveedores
-            </Typography>
-          </Toolbar>
-
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f9f9f9" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Nombre</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>RIF</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600 }} align="right">
-                  Saldo
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                <TableCell sx={{ fontWeight: 600 }} align="center">
-                  Acciones
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(data?.items || []).length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                    No hay proveedores registrados
-                  </TableCell>
-                </TableRow>
-              ) : (
-                (data?.items || []).map((proveedor) => (
-                  <TableRow key={proveedor.codigo} hover>
-                    <TableCell>{proveedor.codigo}</TableCell>
-                    <TableCell>{proveedor.nombre}</TableCell>
-                    <TableCell>{proveedor.rif}</TableCell>
-                    <TableCell>{proveedor.email}</TableCell>
-                    <TableCell align="right">
-                      ${proveedor.saldo?.toFixed(2) || "0.00"}
-                    </TableCell>
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: "inline-block",
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                          backgroundColor:
-                            proveedor.estado === "Activo" ? "#d4edda" : "#f8d7da",
-                          color:
-                            proveedor.estado === "Activo" ? "#155724" : "#721c24",
-                          fontSize: "0.85rem"
-                        }}
-                      >
-                        {proveedor.estado}
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="Ver proveedor">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() =>
-                            router.push(`/proveedores/${proveedor.codigo}`)
-                          }
-                        >
-                          <ViewIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Editar proveedor">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() =>
-                            router.push(`/proveedores/${proveedor.codigo}/edit`)
-                          }
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar proveedor">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteClick(proveedor)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {/* Pagination */}
-          {data?.totalPages && data.totalPages > 1 && (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-              <Pagination
-                count={data.totalPages}
-                page={filter.page || 1}
-                onChange={handlePageChange}
-                color="primary"
-              />
-            </Box>
-          )}
-        </Paper>
-      )}
+      {/* DataGrid */}
+      <ZenttoDataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.codigo ?? row.id ?? Math.random()}
+        rowCount={total}
+        loading={isLoading}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        pageSizeOptions={[10, 25, 50, 100]}
+        disableRowSelectionOnClick
+        autoHeight
+        enableClipboard
+        enableHeaderFilters
+        showTotals
+        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={["codigo", "nombre"]}
+        smExtraFields={["rif", "estado"]}
+      />
 
       {/* Delete Dialog */}
-      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
-        <DialogTitle>Eliminar Proveedor</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Estas seguro que deseas eliminar a <strong>{selectedProveedor?.nombre}</strong>?
-            Esta accion no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setDeleteOpen(false)}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog
+        open={deleteOpen}
+        onClose={() => { setDeleteOpen(false); setSelectedProveedor(null); }}
+        onConfirm={handleDeleteConfirm}
+        itemName={selectedProveedor ? `el proveedor ${selectedProveedor.nombre}` : "este proveedor"}
+        loading={isDeleting}
+      />
     </Box>
   );
 }

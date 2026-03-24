@@ -1,242 +1,573 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Card,
   CardContent,
-  CardActionArea,
   Typography,
-  IconButton,
   Skeleton,
-  Tooltip,
+  Alert,
+  Chip,
+  Paper,
+  Tabs,
+  Tab,
+  ToggleButtonGroup,
+  ToggleButton,
+  Button,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import { alpha } from "@mui/material/styles";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import PaymentIcon from "@mui/icons-material/Payment";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import PeopleIcon from "@mui/icons-material/People";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import { BarChart } from "@mui/x-charts/BarChart";
+import { LineChart } from "@mui/x-charts/LineChart";
 import { useRouter } from "next/navigation";
-import { useComprasList } from "../hooks/useCompras";
-import { useProveedoresList } from "../hooks/useProveedores";
-import { useCuentasPorPagarList } from "../hooks/useCuentasPorPagar";
+import { formatCurrency } from "@zentto/shared-api";
 import { brandColors } from "@zentto/shared-ui";
+import {
+  usePurchaseKPIs,
+  usePurchasesByMonth,
+  usePurchasesBySupplier,
+  useAPAging,
+  usePaymentSchedule,
+} from "../hooks/useComprasAnalytics";
+
+/* ─── Helpers ──────────────────────────────────────────────── */
+
+function calcDateRange(range: string): { from?: string; to?: string } {
+  const now = new Date();
+  const to = now.toISOString().slice(0, 10);
+  let from: string;
+
+  switch (range) {
+    case "7d":
+      from = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10);
+      break;
+    case "30d":
+      from = new Date(now.getTime() - 30 * 86400000).toISOString().slice(0, 10);
+      break;
+    case "90d":
+      from = new Date(now.getTime() - 90 * 86400000).toISOString().slice(0, 10);
+      break;
+    case "ytd": {
+      from = `${now.getFullYear()}-01-01`;
+      break;
+    }
+    default:
+      from = new Date(now.getTime() - 30 * 86400000).toISOString().slice(0, 10);
+  }
+
+  return { from, to };
+}
+
+function pctChange(current: number, previous: number): { value: number; positive: boolean } {
+  if (previous === 0) return { value: current > 0 ? 100 : 0, positive: current >= 0 };
+  const pct = ((current - previous) / previous) * 100;
+  return { value: Math.abs(Math.round(pct)), positive: pct >= 0 };
+}
+
+const AGING_COLORS: Record<string, string> = {
+  "0-30": "#4caf50",
+  "31-60": "#ff9800",
+  "61-90": "#f57c00",
+  "91-120": "#e65100",
+  "120+": "#d32f2f",
+};
+
+/* ─── KPI Card ─────────────────────────────────────────────── */
+
+interface KPIProps {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  color: string;
+  loading?: boolean;
+  trend?: { value: number; positive: boolean } | null;
+}
+
+function KPICard({ title, value, subtitle, icon, color, loading, trend }: KPIProps) {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        height: "100%",
+        borderRadius: 2,
+        border: "1px solid",
+        borderColor: "divider",
+        transition: "box-shadow 0.2s",
+        "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)" },
+      }}
+    >
+      <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
+            {title}
+          </Typography>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 1.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: alpha(color, 0.1),
+              color: color,
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+        {loading ? (
+          <Skeleton variant="text" width={100} sx={{ fontSize: "1.8rem" }} />
+        ) : (
+          <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2, mb: 0.5 }}>
+            {value}
+          </Typography>
+        )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {trend && trend.value > 0 && (
+            <Chip
+              size="small"
+              icon={trend.positive ? <TrendingUpIcon sx={{ fontSize: 14 }} /> : <TrendingDownIcon sx={{ fontSize: 14 }} />}
+              label={`${trend.value}%`}
+              sx={{
+                height: 22,
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                bgcolor: alpha(trend.positive ? "#4caf50" : "#f44336", 0.1),
+                color: trend.positive ? "#2e7d32" : "#d32f2f",
+                "& .MuiChip-icon": { color: "inherit" },
+              }}
+            />
+          )}
+          {subtitle && (
+            <Typography variant="caption" color="text.secondary">
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Component ────────────────────────────────────────────── */
 
 export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
-  const compras = useComprasList({ limit: 1 });
-  const proveedores = useProveedoresList({ limit: 1 });
-  const cxp = useCuentasPorPagarList({ limit: 1 });
 
-  const totalCompras = compras.data?.total ?? "---";
-  const totalProveedores = proveedores.data?.total ?? "---";
-  const totalCxp = cxp.data?.total ?? "---";
+  const [range, setRange] = useState("30d");
+  const [chartTab, setChartTab] = useState(0);
 
-  const statsCards = [
-    {
-      title: "Compras del Mes",
-      value: String(totalCompras),
-      subtitle: "Documentos",
-      loading: compras.isLoading,
-      color: brandColors.statBlue,
-      chartType: "line" as const,
-    },
-    {
-      title: "Proveedores Activos",
-      value: String(totalProveedores),
-      subtitle: "Directorio",
-      loading: proveedores.isLoading,
-      color: brandColors.statTeal,
-      chartType: "bar" as const,
-    },
-    {
-      title: "CxP Pendiente",
-      value: String(totalCxp),
-      subtitle: "Cuentas",
-      loading: cxp.isLoading,
-      color: brandColors.statOrange,
-      chartType: "bar" as const,
-    },
-    {
-      title: "Ultimo Pago",
-      value: "---",
-      subtitle: "Aplicado",
-      loading: false,
-      color: brandColors.statRed,
-      chartType: "line" as const,
-    },
-  ];
+  const { from, to } = useMemo(() => calcDateRange(range), [range]);
 
+  // Queries
+  const kpis = usePurchaseKPIs(from, to);
+  const byMonth = usePurchasesByMonth(12);
+  const bySupplier = usePurchasesBySupplier(10, from, to);
+  const aging = useAPAging();
+  const schedule = usePaymentSchedule(3);
+
+  const k = kpis.data;
+  const isLoading = kpis.isLoading;
+
+  const comprasTrend = k ? pctChange(k.ComprasMes, k.CompraMesAnterior) : null;
+
+  /* ─── Shortcuts ──── */
   const shortcuts = [
-    {
-      title: "Compras",
-      description: "Lista de Compras",
-      icon: <ShoppingCartIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/compras`,
-      bg: brandColors.shortcutGreen,
-    },
-    {
-      title: "Nueva Compra",
-      description: "Maestro-Detalle",
-      icon: <AddShoppingCartIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/compras/new`,
-      bg: brandColors.shortcutDark,
-    },
-    {
-      title: "Proveedores",
-      description: "Directorio",
-      icon: <LocalShippingIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/proveedores`,
-      bg: brandColors.shortcutTeal,
-    },
-    {
-      title: "Nuevo Proveedor",
-      description: "Registro",
-      icon: <PersonAddIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/proveedores/new`,
-      bg: brandColors.shortcutSlate,
-    },
-    {
-      title: "CxP Estado de Cuenta",
-      description: "Saldos y Pagos",
-      icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/cxp`,
-      bg: brandColors.success,
-    },
-    {
-      title: "Cuentas por Pagar",
-      description: "Listado CxP",
-      icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/cuentas-por-pagar`,
-      bg: brandColors.shortcutOrange,
-    },
+    { label: "Nueva Compra", icon: <AddShoppingCartIcon fontSize="small" />, href: `${bp}/compras/new`, color: brandColors.success },
+    { label: "Proveedores", icon: <LocalShippingIcon fontSize="small" />, href: `${bp}/proveedores`, color: brandColors.teal },
+    { label: "CxP Estado", icon: <AccountBalanceIcon fontSize="small" />, href: `${bp}/cxp`, color: brandColors.statBlue },
+    { label: "Pagos", icon: <PaymentIcon fontSize="small" />, href: `${bp}/cuentas-por-pagar`, color: brandColors.accent },
   ];
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard de Compras / Proveedores / CxP
-      </Typography>
-
-      {/* CORE-UI STYLE STATS CARDS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {statsCards.map((s, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
+      {/* ── Header ──────────────────────────────────────────── */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 3, gap: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
+            Compras
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Dashboard de compras, proveedores y cuentas por pagar
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={range}
+            onChange={(_, v) => v && setRange(v)}
+            sx={{ height: 32 }}
+          >
+            <ToggleButton value="7d">7d</ToggleButton>
+            <ToggleButton value="30d">30d</ToggleButton>
+            <ToggleButton value="90d">90d</ToggleButton>
+            <ToggleButton value="ytd">YTD</ToggleButton>
+          </ToggleButtonGroup>
+          {shortcuts.map((s) => (
+            <Button
+              key={s.label}
+              size="small"
+              variant="outlined"
+              startIcon={s.icon}
+              onClick={() => router.push(s.href)}
               sx={{
-                height: "100%",
-                bgcolor: s.color,
-                color: "white",
-                borderRadius: 2,
-                position: "relative",
-                overflow: "hidden",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                height: 32,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                borderColor: alpha(s.color, 0.4),
+                color: s.color,
+                "&:hover": { borderColor: s.color, bgcolor: alpha(s.color, 0.04) },
               }}
             >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                        {s.value}
-                      </Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>
-                      {s.title}
+              {s.label}
+            </Button>
+          ))}
+        </Box>
+      </Box>
+
+      {/* ── KPI Cards ───────────────────────────────────────── */}
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <KPICard
+            title="Compras del Mes"
+            value={isLoading ? "..." : String(k?.ComprasMes ?? 0)}
+            subtitle="vs mes anterior"
+            icon={<ShoppingCartIcon fontSize="small" />}
+            color="#1976d2"
+            loading={isLoading}
+            trend={comprasTrend}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <KPICard
+            title="Monto Total"
+            value={isLoading ? "..." : formatCurrency(k?.MontoTotal ?? 0)}
+            subtitle={`${k?.TotalCompras ?? 0} documentos`}
+            icon={<AttachMoneyIcon fontSize="small" />}
+            color="#2e7d32"
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <KPICard
+            title="Proveedores Activos"
+            value={isLoading ? "..." : String(k?.ProveedoresActivos ?? 0)}
+            subtitle={k?.TopProveedor ? `Top: ${k.TopProveedor}` : undefined}
+            icon={<PeopleIcon fontSize="small" />}
+            color={brandColors.teal}
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <KPICard
+            title="CxP Pendiente"
+            value={isLoading ? "..." : formatCurrency(k?.CxPPendiente ?? 0)}
+            subtitle="saldo total"
+            icon={<ReceiptLongIcon fontSize="small" />}
+            color="#ed6c02"
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <KPICard
+            title="CxP Vencida"
+            value={isLoading ? "..." : formatCurrency(k?.CxPVencida ?? 0)}
+            subtitle="requiere atencion"
+            icon={<WarningAmberIcon fontSize="small" />}
+            color="#d32f2f"
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <KPICard
+            title="Promedio por Compra"
+            value={isLoading ? "..." : formatCurrency(k?.PromedioCompra ?? 0)}
+            subtitle={k?.DiasPromPago ? `~${k.DiasPromPago} dias prom. pago` : undefined}
+            icon={<CalendarMonthIcon fontSize="small" />}
+            color="#7b1fa2"
+            loading={isLoading}
+          />
+        </Grid>
+      </Grid>
+
+      {/* ── Charts Tabs ─────────────────────────────────────── */}
+      <Paper elevation={0} sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider", mb: 3 }}>
+        <Tabs
+          value={chartTab}
+          onChange={(_, v) => setChartTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            px: 2,
+            "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.85rem" },
+          }}
+        >
+          <Tab label="Compras por Mes" />
+          <Tab label="Top Proveedores" />
+          <Tab label="Aging CxP" />
+          <Tab label="Proyeccion Pagos" />
+        </Tabs>
+
+        <Box sx={{ p: 3 }}>
+          {/* Tab 0: Compras por Mes */}
+          {chartTab === 0 && (
+            <Box>
+              {byMonth.isLoading ? (
+                <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />
+              ) : !byMonth.data || byMonth.data.length === 0 ? (
+                <Alert severity="info">Sin datos de compras mensuales</Alert>
+              ) : (
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, md: 7 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                      Compras por mes
                     </Typography>
+                    <Box sx={{ width: "100%", height: 350 }}>
+                      <BarChart
+                        height={330}
+                        xAxis={[{ data: byMonth.data.map((d) => d.Month), scaleType: "band", label: "Mes" }]}
+                        yAxis={[{ label: "Monto ($)" }]}
+                        series={[
+                          {
+                            data: byMonth.data.map((d) => d.Total),
+                            label: "Total compras",
+                            color: "#1976d2",
+                          },
+                        ]}
+                      />
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 5 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                      Acumulado
+                    </Typography>
+                    <Box sx={{ width: "100%", height: 350 }}>
+                      <LineChart
+                        height={330}
+                        xAxis={[{ data: byMonth.data.map((d) => d.Month), scaleType: "band", label: "Mes" }]}
+                        yAxis={[{ label: "Acumulado ($)" }]}
+                        series={[
+                          {
+                            data: byMonth.data.map((d) => d.Accumulated),
+                            label: "Acumulado",
+                            color: "#1565c0",
+                            area: true,
+                          },
+                        ]}
+                      />
+                    </Box>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+          )}
+
+          {/* Tab 1: Top Proveedores */}
+          {chartTab === 1 && (
+            <Box>
+              {bySupplier.isLoading ? (
+                <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />
+              ) : !bySupplier.data || bySupplier.data.length === 0 ? (
+                <Alert severity="info">Sin datos de proveedores</Alert>
+              ) : (
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Top 10 proveedores por monto
+                  </Typography>
+                  <Box sx={{ width: "100%", height: 400 }}>
+                    <BarChart
+                      height={380}
+                      layout="horizontal"
+                      yAxis={[{
+                        data: bySupplier.data.map((d) => d.SupplierName.length > 20 ? d.SupplierName.slice(0, 20) + "..." : d.SupplierName),
+                        scaleType: "band",
+                      }]}
+                      xAxis={[{ label: "Monto ($)" }]}
+                      series={[
+                        {
+                          data: bySupplier.data.map((d) => d.Total),
+                          label: "Total",
+                          color: brandColors.teal,
+                        },
+                      ]}
+                    />
                   </Box>
-                  <Tooltip title="Mas opciones">
-                    <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                      <MoreVertIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                </>
+              )}
+            </Box>
+          )}
 
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* CORE-UI WIDGETS (SOCIAL-LIKE SHORTCUTS) */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-              <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
-                  {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
-                </Box>
-                <CardContent sx={{ textAlign: "center", py: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0 }}>
-                    {sc.title}
+          {/* Tab 2: Aging CxP */}
+          {chartTab === 2 && (
+            <Box>
+              {aging.isLoading ? (
+                <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />
+              ) : !aging.data || aging.data.length === 0 ? (
+                <Alert severity="info">Sin datos de aging</Alert>
+              ) : (
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Aging de Cuentas por Pagar (dias vencidos)
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, fontSize: "0.75rem", letterSpacing: 1 }}>
-                    {sc.description}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  <Box sx={{ width: "100%", height: 350 }}>
+                    <BarChart
+                      height={330}
+                      layout="horizontal"
+                      yAxis={[{
+                        data: aging.data.map((d) => `${d.Bucket} dias`),
+                        scaleType: "band",
+                      }]}
+                      xAxis={[{ label: "Monto ($)" }]}
+                      series={[
+                        {
+                          data: aging.data.map((d) => d.Total),
+                          label: "Pendiente",
+                          color: "#ff9800",
+                        },
+                      ]}
+                      slotProps={{
+                        bar: {
+                          rx: 4,
+                          ry: 4,
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Grid container spacing={1} sx={{ mt: 2 }}>
+                    {aging.data.map((d) => (
+                      <Grid key={d.Bucket} size={{ xs: 6, sm: 4, md: 2.4 }}>
+                        <Box
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 1.5,
+                            bgcolor: alpha(AGING_COLORS[d.Bucket] || "#999", 0.08),
+                            borderLeft: `4px solid ${AGING_COLORS[d.Bucket] || "#999"}`,
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                            {d.Bucket} dias
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {formatCurrency(d.Total)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {d.Count} doc. ({d.Percentage}%)
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </>
+              )}
+            </Box>
+          )}
 
-      {/* Large Bottom Card */}
-      <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            Indicadores de Compras y Pagos
+          {/* Tab 3: Proyeccion Pagos */}
+          {chartTab === 3 && (
+            <Box>
+              {schedule.isLoading ? (
+                <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />
+              ) : !schedule.data || schedule.data.length === 0 ? (
+                <Alert severity="info">Sin proyeccion de pagos</Alert>
+              ) : (
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Proyeccion de pagos proximos 3 meses
+                  </Typography>
+                  <Box sx={{ width: "100%", height: 350 }}>
+                    <BarChart
+                      height={330}
+                      xAxis={[{
+                        data: schedule.data.map((d) => d.Month),
+                        scaleType: "band",
+                        label: "Mes",
+                      }]}
+                      yAxis={[{ label: "Monto a pagar ($)" }]}
+                      series={[
+                        {
+                          data: schedule.data.map((d) => d.DueAmount),
+                          label: "Monto vencimiento",
+                          color: "#e65100",
+                        },
+                      ]}
+                    />
+                  </Box>
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    {schedule.data.map((d) => (
+                      <Grid key={d.Month} size={{ xs: 12, sm: 4 }}>
+                        <Box
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            bgcolor: alpha("#e65100", 0.04),
+                            border: "1px solid",
+                            borderColor: alpha("#e65100", 0.15),
+                            textAlign: "center",
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: "uppercase" }}>
+                            {d.Month}
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: "#e65100" }}>
+                            {formatCurrency(d.DueAmount)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {d.DocumentCount} documentos
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </>
+              )}
+            </Box>
+          )}
+        </Box>
+      </Paper>
+
+      {/* ── Footer: CxP Vencida Alert ───────────────────────── */}
+      {k && k.CxPVencida > 0 && (
+        <Alert
+          severity="warning"
+          variant="outlined"
+          icon={<WarningAmberIcon />}
+          action={
+            <Button
+              size="small"
+              color="warning"
+              onClick={() => router.push(`${bp}/cuentas-por-pagar`)}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
+              Ver CxP
+            </Button>
+          }
+          sx={{ borderRadius: 2 }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Hay {formatCurrency(k.CxPVencida)} en cuentas por pagar vencidas que requieren atencion inmediata.
           </Typography>
-
-          <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Monto Compras</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>---</Typography>
-              </Box>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Pagos CxP</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>---</Typography>
-              </Box>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
-                <Typography variant="body2" color="text.secondary">Saldo Pendiente</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>---</Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 12, md: 8 }} sx={{ display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#f8f9fa", borderRadius: 2, minHeight: 200 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TrendingUpIcon /> Resumen de compras y pagos se actualizara con datos reales
-              </Typography>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+        </Alert>
+      )}
     </Box>
   );
 }

@@ -6,27 +6,17 @@ import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
-  CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
   InputAdornment,
+  TextField,
   Typography,
-  Tooltip,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material";
+import {
+  ZenttoDataGrid,
+  type ZenttoColDef,
+  buildCrudActionsColumn,
+  DeleteDialog,
+} from "@zentto/shared-ui";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
 import { formatCurrency, formatDate } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -35,16 +25,15 @@ import { debounce } from "lodash";
 export default function CuentasPorPagarTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [search, setSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCuenta, setSelectedCuenta] = useState<string | null>(null);
+  const [selectedCuenta, setSelectedCuenta] = useState<Record<string, unknown> | null>(null);
 
   const { data: cuentas, isLoading } = useCuentasPorPagarList({
     search,
-    page: page + 1,
-    limit: rowsPerPage,
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
   });
 
   const { mutate: deleteCuenta, isPending: isDeleting } = useDeleteCuentaPorPagar();
@@ -52,7 +41,7 @@ export default function CuentasPorPagarTable() {
   const debouncedSearch = useCallback(
     debounce((value: string) => {
       setSearch(value);
-      setPage(0);
+      setPaginationModel((p) => ({ ...p, page: 0 }));
     }, 500),
     []
   );
@@ -61,49 +50,107 @@ export default function CuentasPorPagarTable() {
     debouncedSearch(e.target.value);
   };
 
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setSelectedCuenta(id);
+  const handleDeleteClick = (row: Record<string, unknown>) => {
+    setSelectedCuenta(row);
     setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (selectedCuenta) {
-      deleteCuenta(selectedCuenta, {
+      deleteCuenta(String(selectedCuenta.id), {
         onSuccess: () => {
           setDeleteDialogOpen(false);
           setSelectedCuenta(null);
         },
         onError: (err) => {
           console.error("Error deleting:", err);
-          alert("Error al eliminar la cuenta");
-        }
+        },
       });
     }
   };
 
-  const getStatusColor = (estado: string): "success" | "warning" | "error" | "default" => {
-    const colorMap: Record<string, "success" | "warning" | "error" | "default"> = {
-      "Pagada": "success",
-      "Pendiente": "warning",
-      "Vencida": "error",
-      "Parcial": "warning",
-    };
-    return colorMap[estado] || "default";
-  };
+  const rows = (cuentas?.data ?? []) as Record<string, unknown>[];
+  const total = cuentas?.total ?? 0;
+
+  const columns: ZenttoColDef[] = [
+    { field: "nombreProveedor", headerName: "Proveedor", flex: 1.5, minWidth: 180 },
+    { field: "numeroReferencia", headerName: "Num Ref", flex: 0.8, minWidth: 110 },
+    {
+      field: "fechaCreacion",
+      headerName: "Fecha",
+      flex: 1,
+      minWidth: 120,
+      valueFormatter: (value: unknown) =>
+        value ? formatDate(String(value), { timeZone }) : "",
+    },
+    {
+      field: "fechaVencimiento",
+      headerName: "Vencimiento",
+      flex: 1,
+      minWidth: 120,
+      valueFormatter: (value: unknown) =>
+        value ? formatDate(String(value), { timeZone }) : "",
+    },
+    {
+      field: "montoTotal",
+      headerName: "Monto",
+      flex: 0.8,
+      minWidth: 120,
+      type: "number",
+      currency: true,
+    },
+    {
+      field: "saldo",
+      headerName: "Saldo",
+      flex: 0.8,
+      minWidth: 120,
+      type: "number",
+      currency: true,
+      aggregation: "sum",
+    },
+    {
+      field: "diasVencidos",
+      headerName: "Dias Vencidos",
+      width: 130,
+      type: "number",
+      renderCell: (params) => {
+        const row = params.row as Record<string, unknown>;
+        const vencimiento = row.fechaVencimiento ? new Date(String(row.fechaVencimiento)) : null;
+        const estado = String(row.estado ?? "");
+        if (!vencimiento || estado === "Pagada") return "-";
+        const hoy = new Date();
+        const diff = Math.floor((hoy.getTime() - vencimiento.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff <= 0) return "-";
+        return (
+          <Typography variant="body2" sx={{ color: "error.main", fontWeight: 600 }}>
+            {diff}
+          </Typography>
+        );
+      },
+    },
+    {
+      field: "estado",
+      headerName: "Estado",
+      width: 130,
+      statusColors: {
+        Pagada: "success",
+        Pendiente: "warning",
+        Vencida: "error",
+        Parcial: "info",
+      },
+    },
+    buildCrudActionsColumn<Record<string, unknown>>({
+      onView: (row) => router.push(`/cuentas-por-pagar/${row.id}`),
+      onDelete: (row) => handleDeleteClick(row),
+    }),
+  ];
 
   return (
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Cuentas por Pagar</Typography>
+        <Typography variant="h5" fontWeight={600}>
+          Cuentas por Pagar
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -118,7 +165,7 @@ export default function CuentasPorPagarTable() {
         defaultValue=""
         onChange={handleSearchChange}
         fullWidth
-       
+        size="small"
         sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (
@@ -129,115 +176,33 @@ export default function CuentasPorPagarTable() {
         }}
       />
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Proveedor</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Numero Ref.</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Vencimiento</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Monto
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Saldo
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 600 }}>
-                Acciones
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={40} />
-                </TableCell>
-              </TableRow>
-            ) : !cuentas?.data || cuentas.data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No hay cuentas por pagar
-                </TableCell>
-              </TableRow>
-            ) : (
-              cuentas.data.map((cuenta) => (
-                <TableRow key={cuenta.id} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{cuenta.nombreProveedor}</TableCell>
-                  <TableCell>{cuenta.numeroReferencia}</TableCell>
-                  <TableCell>{formatDate(cuenta.fechaCreacion, { timeZone })}</TableCell>
-                  <TableCell>{formatDate(cuenta.fechaVencimiento, { timeZone })}</TableCell>
-                  <TableCell align="right">{formatCurrency(cuenta.montoTotal)}</TableCell>
-                  <TableCell align="right" sx={{ color: cuenta.saldo > 0 ? "error.main" : "success.main" }}>
-                    {formatCurrency(cuenta.saldo)}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={cuenta.estado}
-                      size="small"
-                      color={getStatusColor(cuenta.estado)}
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Ver cuenta por pagar">
-                      <IconButton
-                        size="small"
-                        onClick={() => router.push(`/cuentas-por-pagar/${cuenta.id}`)}
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar cuenta por pagar">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteClick(cuenta.id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <ZenttoDataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id ?? row.numeroReferencia ?? Math.random()}
+        rowCount={total}
+        loading={isLoading}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        pageSizeOptions={[10, 25, 50, 100]}
+        disableRowSelectionOnClick
+        autoHeight
+        enableClipboard
+        enableHeaderFilters
+        showTotals
+        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
+        mobileVisibleFields={["nombreProveedor", "saldo"]}
+        smExtraFields={["estado", "fechaVencimiento"]}
+      />
 
-      {cuentas && cuentas.total > 0 && (
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={cuentas.total}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="Filas por pagina:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
-      )}
-
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Eliminar Cuenta</DialogTitle>
-        <DialogContent>
-          Estas seguro de que deseas eliminar esta cuenta por pagar?
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Eliminando..." : "Eliminar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => { setDeleteDialogOpen(false); setSelectedCuenta(null); }}
+        onConfirm={handleConfirmDelete}
+        itemName={selectedCuenta ? `la cuenta ${selectedCuenta.numeroReferencia ?? ""}` : "esta cuenta por pagar"}
+        loading={isDeleting}
+      />
     </Box>
   );
 }
