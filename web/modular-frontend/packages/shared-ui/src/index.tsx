@@ -69,6 +69,15 @@ export type { CrudActionHandlers } from './components/dialogs';
 export { FormGrid, FormField } from './components/FormGrid';
 export type { FormGridProps, FormFieldProps } from './components/FormGrid';
 
+// ─── ZenttoFilterPanel — panel de filtros reutilizable para tablas ───
+export { ZenttoFilterPanel } from './components/ZenttoFilterPanel';
+export type {
+  ZenttoFilterPanelProps,
+  FilterFieldDef,
+  FilterFieldType,
+  FilterSelectOption,
+} from './components/ZenttoFilterPanel';
+
 // Db Mode Toggle
 export { DbModeToggle } from './components/DbModeToggle';
 

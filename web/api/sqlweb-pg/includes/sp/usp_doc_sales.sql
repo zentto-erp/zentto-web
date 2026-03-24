@@ -20,6 +20,7 @@
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP) CASCADE;
 DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_list(
     p_tipo_operacion  VARCHAR    DEFAULT NULL,
     p_page            INT        DEFAULT 1,
@@ -27,7 +28,8 @@ CREATE OR REPLACE FUNCTION usp_doc_salesdocument_list(
     p_search          VARCHAR    DEFAULT NULL,
     p_codigo          VARCHAR    DEFAULT NULL,
     p_from_date       TIMESTAMP  DEFAULT NULL,
-    p_to_date         TIMESTAMP  DEFAULT NULL
+    p_to_date         TIMESTAMP  DEFAULT NULL,
+    p_estado          VARCHAR    DEFAULT NULL
 )
 RETURNS TABLE(
     "SalesDocumentId"       bigint,
@@ -94,7 +96,13 @@ BEGIN
            ))
       AND (p_codigo    IS NULL OR sd_c."CustomerCode" = p_codigo)
       AND (p_from_date IS NULL OR sd_c."IssueDate" >= p_from_date)
-      AND (p_to_date   IS NULL OR sd_c."IssueDate" <  (p_to_date + INTERVAL '1 day'));
+      AND (p_to_date   IS NULL OR sd_c."IssueDate" <  (p_to_date + INTERVAL '1 day'))
+      AND (p_estado IS NULL OR
+        CASE
+          WHEN sd_c."IsVoided" = TRUE THEN 'Anulada'
+          WHEN sd_c."IsCanceled" = 'S' THEN 'Pagada'
+          ELSE 'Emitida'
+        END = p_estado);
 
     RETURN QUERY
     SELECT
@@ -155,6 +163,12 @@ BEGIN
       AND (p_codigo    IS NULL OR sd."CustomerCode" = p_codigo)
       AND (p_from_date IS NULL OR sd."IssueDate" >= p_from_date)
       AND (p_to_date   IS NULL OR sd."IssueDate" <  (p_to_date + INTERVAL '1 day'))
+      AND (p_estado IS NULL OR
+        CASE
+          WHEN sd."IsVoided" = TRUE THEN 'Anulada'
+          WHEN sd."IsCanceled" = 'S' THEN 'Pagada'
+          ELSE 'Emitida'
+        END = p_estado)
     ORDER BY sd."IssueDate" DESC
     LIMIT v_limit OFFSET (v_page - 1) * v_limit;
 END;

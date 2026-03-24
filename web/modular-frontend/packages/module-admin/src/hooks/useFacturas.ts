@@ -39,6 +39,8 @@ type FacturasFilter = {
   limit?: number;
   cliente?: string;
   estado?: string;
+  from?: string;
+  to?: string;
 };
 
 type FacturaDetalleInput = {
@@ -154,6 +156,8 @@ export function useFacturasList(filter?: FacturasFilter) {
       if (filter?.limit) params.append("limit", String(filter.limit));
       if (filter?.cliente) params.append("codigo", filter.cliente);
       if (filter?.estado) params.append("estado", filter.estado);
+      if (filter?.from) params.append("from", filter.from);
+      if (filter?.to) params.append("to", filter.to);
 
       const resp = await apiGet(`${API_BASE}?${params.toString()}`);
       const rows = Array.isArray(resp?.rows) ? (resp.rows as LegacyFacturaListRow[]) : [];

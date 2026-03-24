@@ -31,6 +31,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_Doc_SalesDocument_List
     @Codigo         NVARCHAR(60)  = NULL,
     @FromDate       DATE          = NULL,
     @ToDate         DATE          = NULL,
+    @Estado         NVARCHAR(20)  = NULL,
     @Page           INT           = 1,
     @Limit          INT           = 50,
     @TotalCount     INT           OUTPUT
@@ -55,7 +56,13 @@ BEGIN
           ))
       AND (@Codigo IS NULL OR CustomerCode = @Codigo)
       AND (@FromDate IS NULL OR DocumentDate >= @FromDate)
-      AND (@ToDate IS NULL OR DocumentDate < DATEADD(DAY, 1, @ToDate));
+      AND (@ToDate IS NULL OR DocumentDate < DATEADD(DAY, 1, @ToDate))
+      AND (@Estado IS NULL OR
+        CASE
+          WHEN IsVoided = 1 THEN 'Anulada'
+          WHEN IsPaid = 1 THEN 'Pagada'
+          ELSE 'Emitida'
+        END = @Estado);
 
     -- Obtener pagina de resultados
     SELECT *
@@ -70,6 +77,12 @@ BEGIN
       AND (@Codigo IS NULL OR CustomerCode = @Codigo)
       AND (@FromDate IS NULL OR DocumentDate >= @FromDate)
       AND (@ToDate IS NULL OR DocumentDate < DATEADD(DAY, 1, @ToDate))
+      AND (@Estado IS NULL OR
+        CASE
+          WHEN IsVoided = 1 THEN 'Anulada'
+          WHEN IsPaid = 1 THEN 'Pagada'
+          ELSE 'Emitida'
+        END = @Estado)
     ORDER BY DocumentDate DESC, DocumentNumber DESC
     OFFSET (@Page - 1) * @Limit ROWS
     FETCH NEXT @Limit ROWS ONLY;

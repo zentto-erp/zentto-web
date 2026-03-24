@@ -5,12 +5,34 @@
 -- ============================================================
 
 -- =============================================================================
+-- 0. Nuclear cleanup de sobrecargas (DROP por OID — elimina TODAS las firmas)
+-- =============================================================================
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN
+    SELECT oid::regprocedure AS sig FROM pg_proc
+    WHERE proname IN (
+      'usp_doc_purchasedocument_list',
+      'usp_doc_purchasedocument_get',
+      'usp_doc_purchasedocument_getdetail',
+      'usp_doc_purchasedocument_getpayments',
+      'usp_doc_purchasedocument_getindicadores',
+      'usp_doc_purchasedocument_void',
+      'usp_doc_purchasedocument_receiveorder',
+      'usp_doc_purchasedocument_upsert',
+      'usp_doc_purchasedocument_convertorder'
+    )
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE';
+  END LOOP;
+END $$;
+
+-- =============================================================================
 -- 1. usp_Doc_PurchaseDocument_List
 -- Lista paginada de documentos de compra con filtros por tipo, busqueda,
 -- codigo de proveedor, y rango de fechas.
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_List;
-DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_List(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_List(
     p_tipo_operacion  VARCHAR(20)  DEFAULT 'COMPRA',
     p_search          VARCHAR(100) DEFAULT NULL,

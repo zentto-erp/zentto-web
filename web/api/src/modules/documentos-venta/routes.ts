@@ -20,6 +20,7 @@ const listSchema = z.object({
   codigo: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  estado: z.string().optional(),
   page: z.string().optional(),
   limit: z.string().optional()
 });
