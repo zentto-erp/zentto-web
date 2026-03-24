@@ -73,8 +73,14 @@ END $cleanup$;
 \echo '[07] usp_doc_sales.sql'
 \i includes/sp/usp_doc_sales.sql
 
+\echo '[07b] usp_sales_analytics.sql'
+\i includes/sp/usp_sales_analytics.sql
+
 \echo '[08] usp_doc_purchase.sql'
 \i includes/sp/usp_doc_purchase.sql
+
+\echo '[08b] usp_purchases_analytics.sql'
+\i includes/sp/usp_purchases_analytics.sql
 
 \echo '[09] usp_ar.sql'
 \i includes/sp/usp_ar.sql
@@ -408,6 +414,18 @@ END $cleanup$;
 
 \echo '[112] sp_restaurante_compra_xml.sql'
 \i includes/sp/sp_restaurante_compra_xml.sql
+
+\echo '[113] sp_crud_clientes.sql'
+\i includes/sp/sp_crud_clientes.sql
+
+\echo '[114] sp_CerrarMesInventario.sql'
+\i includes/sp/sp_CerrarMesInventario.sql
+
+\echo '[115] sp_MovUnidades.sql'
+\i includes/sp/sp_MovUnidades.sql
+
+\echo '[116] sp_MovUnidadesMes.sql'
+\i includes/sp/sp_MovUnidadesMes.sql
 
 \echo ''
 \echo '============================================================'

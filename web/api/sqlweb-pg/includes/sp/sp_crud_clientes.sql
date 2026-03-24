@@ -5,8 +5,20 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
-DROP FUNCTION IF EXISTS usp_clientes_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
+-- Nuclear drop: eliminar TODAS las sobrecargas
+DO $do$
+DECLARE _oid OID;
+BEGIN
+  FOR _oid IN
+    SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'usp_clientes_list'
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+  END LOOP;
+END $do$;
+
 CREATE OR REPLACE FUNCTION usp_clientes_list(
+    p_company_id INT         DEFAULT 1,
     p_search   VARCHAR(100) DEFAULT NULL,
     p_estado   VARCHAR(20)  DEFAULT NULL,
     p_vendedor VARCHAR(60)  DEFAULT NULL,
@@ -63,7 +75,8 @@ BEGIN
     -- Conteo total
     SELECT COUNT(1) INTO v_total
     FROM master."Customer" c
-    WHERE COALESCE(c."IsDeleted", FALSE) = FALSE
+    WHERE c."CompanyId" = p_company_id
+      AND COALESCE(c."IsDeleted", FALSE) = FALSE
       AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",''::VARCHAR) ILIKE v_search));
 
     -- Resultados paginados
@@ -96,7 +109,8 @@ BEGIN
         COALESCE(c."CreditLimit",0::NUMERIC)::DOUBLE PRECISION    AS "Credito",
         v_total                                          AS "TotalCount"
     FROM master."Customer" c
-    WHERE COALESCE(c."IsDeleted", FALSE) = FALSE
+    WHERE c."CompanyId" = p_company_id
+      AND COALESCE(c."IsDeleted", FALSE) = FALSE
       AND (v_search IS NULL OR (c."CustomerCode" ILIKE v_search OR c."CustomerName" ILIKE v_search OR COALESCE(c."FiscalId",''::VARCHAR) ILIKE v_search))
     ORDER BY c."CustomerCode"
     LIMIT v_limit OFFSET v_offset;
