@@ -1,6 +1,25 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Box,
   Paper,
@@ -10,31 +29,34 @@ import {
   Chip,
   Button,
   IconButton,
-  Menu,
-  MenuItem,
   TextField,
   FormControl,
   InputLabel,
   Select,
+  MenuItem,
   Skeleton,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
   Tooltip,
   Badge,
+  Avatar,
+  alpha,
+  LinearProgress,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import BusinessIcon from "@mui/icons-material/Business";
 import PersonIcon from "@mui/icons-material/Person";
+import PhoneIcon from "@mui/icons-material/Phone";
+import EmailIcon from "@mui/icons-material/Email";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { FormDialog, DeleteDialog } from "@zentto/shared-ui";
 import {
   usePipelinesList,
   usePipelineStages,
@@ -48,19 +70,266 @@ import {
   type LeadFilter,
 } from "../hooks/useCRM";
 
-const priorityColor: Record<string, "error" | "warning" | "info" | "default"> = {
-  HIGH: "error",
-  MEDIUM: "warning",
-  LOW: "info",
-  NONE: "default",
+// ─── Priority config ────────────────────────────────────────────────────────
+
+const PRIORITY: Record<string, { color: "error" | "warning" | "info" | "default"; label: string; order: number }> = {
+  URGENT: { color: "error", label: "Urgente", order: 0 },
+  HIGH: { color: "error", label: "Alta", order: 1 },
+  MEDIUM: { color: "warning", label: "Media", order: 2 },
+  LOW: { color: "info", label: "Baja", order: 3 },
 };
 
-const priorityLabel: Record<string, string> = {
-  HIGH: "Alta",
-  MEDIUM: "Media",
-  LOW: "Baja",
-  NONE: "Sin prioridad",
+const SOURCE_ICONS: Record<string, string> = {
+  WEB: "🌐",
+  REFERRAL: "🤝",
+  COLD_CALL: "📞",
+  EVENT: "🎪",
+  SOCIAL: "📱",
 };
+
+// ─── Draggable Lead Card ────────────────────────────────────────────────────
+
+interface LeadCardProps {
+  lead: Lead;
+  onWin: (lead: Lead) => void;
+  onLose: (lead: Lead) => void;
+  isDragging?: boolean;
+}
+
+function SortableLeadCard({ lead, onWin, onLose }: LeadCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `lead-${lead.LeadId}`,
+    data: { type: "lead", lead },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <LeadCardContent lead={lead} onWin={onWin} onLose={onLose} dragListeners={listeners} />
+    </div>
+  );
+}
+
+function LeadCardContent({
+  lead,
+  onWin,
+  onLose,
+  dragListeners,
+  overlay,
+}: LeadCardProps & { dragListeners?: any; overlay?: boolean }) {
+  const theme = useTheme();
+  const priority = PRIORITY[lead.Priority] ?? PRIORITY.MEDIUM;
+  const sourceIcon = SOURCE_ICONS[lead.Source] ?? "📋";
+
+  return (
+    <Card
+      sx={{
+        mb: 1,
+        borderRadius: 2,
+        borderLeft: `3px solid ${(theme.palette as any)[priority.color]?.main ?? theme.palette.grey[400]}`,
+        boxShadow: overlay ? "0 8px 24px rgba(0,0,0,0.2)" : "0 1px 3px rgba(0,0,0,0.08)",
+        "&:hover": { boxShadow: "0 3px 12px rgba(0,0,0,0.12)" },
+        transition: "box-shadow 0.2s, transform 0.15s",
+        transform: overlay ? "rotate(2deg) scale(1.02)" : "none",
+        cursor: "grab",
+        bgcolor: "background.paper",
+      }}
+    >
+      <CardContent sx={{ p: 1.5, pb: "10px !important" }}>
+        {/* Drag handle + Lead Code + Priority */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.75 }}>
+          <Box {...dragListeners} sx={{ cursor: "grab", color: "text.disabled", display: "flex" }}>
+            <DragIndicatorIcon sx={{ fontSize: 16 }} />
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, fontFamily: "monospace", fontSize: "0.7rem" }}>
+            {lead.LeadCode}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Chip
+            label={priority.label}
+            size="small"
+            color={priority.color}
+            sx={{ height: 18, fontSize: "0.65rem", fontWeight: 700 }}
+          />
+        </Box>
+
+        {/* Contact name */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5 }}>
+          <Avatar sx={{ width: 24, height: 24, fontSize: "0.7rem", bgcolor: "primary.main" }}>
+            {lead.ContactName?.charAt(0)?.toUpperCase() ?? "?"}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2, fontSize: "0.8125rem" }} noWrap>
+              {lead.ContactName}
+            </Typography>
+            {lead.CompanyName && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", lineHeight: 1.1 }} noWrap>
+                {lead.CompanyName}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* Value + Source */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.75 }}>
+          {lead.EstimatedValue > 0 ? (
+            <Typography variant="body2" sx={{ fontWeight: 800, color: "success.main", fontSize: "0.85rem" }}>
+              {formatCurrency(lead.EstimatedValue)}
+            </Typography>
+          ) : (
+            <Typography variant="caption" color="text.disabled">Sin valor</Typography>
+          )}
+          <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+            {lead.Source && (
+              <Tooltip title={lead.Source}>
+                <Typography sx={{ fontSize: "0.85rem", lineHeight: 1 }}>{sourceIcon}</Typography>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
+
+        {/* Quick actions */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.25, mt: 0.75, pt: 0.5, borderTop: "1px solid", borderColor: "divider" }}>
+          <Tooltip title="Ganado">
+            <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); onWin(lead); }}
+              sx={{ width: 26, height: 26 }}>
+              <EmojiEventsIcon sx={{ fontSize: 15 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Perdido">
+            <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); onLose(lead); }}
+              sx={{ width: 26, height: 26 }}>
+              <ThumbDownIcon sx={{ fontSize: 15 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Droppable Stage Column ─────────────────────────────────────────────────
+
+interface StageColumnProps {
+  stage: PipelineStage;
+  leads: Lead[];
+  totalValue: number;
+  onWin: (lead: Lead) => void;
+  onLose: (lead: Lead) => void;
+}
+
+function StageColumn({ stage, leads, totalValue, onWin, onLose }: StageColumnProps) {
+  const theme = useTheme();
+  const { setNodeRef, isOver } = useDroppable({
+    id: `stage-${stage.StageId}`,
+    data: { type: "stage", stage },
+  });
+
+  const sortableIds = leads.map((l) => `lead-${l.LeadId}`);
+
+  return (
+    <Paper
+      ref={setNodeRef}
+      sx={{
+        minWidth: 290,
+        maxWidth: 330,
+        width: 290,
+        flexShrink: 0,
+        borderRadius: 3,
+        borderTop: `4px solid ${stage.Color || theme.palette.primary.main}`,
+        bgcolor: isOver
+          ? alpha(stage.Color || theme.palette.primary.main, 0.06)
+          : stage.IsClosed
+          ? alpha(theme.palette.grey[500], 0.04)
+          : "background.paper",
+        display: "flex",
+        flexDirection: "column",
+        transition: "background-color 0.2s",
+        overflow: "hidden",
+      }}
+    >
+      {/* Column Header */}
+      <Box sx={{ p: 1.75, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.85rem" }}>
+            {stage.Name}
+          </Typography>
+          <Badge
+            badgeContent={leads.length}
+            color="primary"
+            sx={{ "& .MuiBadge-badge": { fontSize: "0.7rem", height: 18, minWidth: 18 } }}
+          />
+        </Box>
+        <Box sx={{ display: "flex", gap: 1, mt: 0.5, alignItems: "center" }}>
+          {totalValue > 0 && (
+            <Typography variant="caption" color="success.main" fontWeight={700} sx={{ fontSize: "0.75rem" }}>
+              {formatCurrency(totalValue)}
+            </Typography>
+          )}
+          {stage.Probability > 0 && (
+            <Chip
+              label={`${stage.Probability}%`}
+              size="small"
+              variant="outlined"
+              sx={{ height: 18, fontSize: "0.6rem", fontWeight: 700 }}
+            />
+          )}
+        </Box>
+        {/* Mini progress bar showing probability */}
+        {stage.Probability > 0 && (
+          <LinearProgress
+            variant="determinate"
+            value={stage.Probability}
+            sx={{ mt: 1, height: 3, borderRadius: 2, bgcolor: "grey.200" }}
+          />
+        )}
+      </Box>
+
+      {/* Cards area */}
+      <Box
+        sx={{
+          p: 1,
+          flex: 1,
+          overflowY: "auto",
+          minHeight: 100,
+          maxHeight: "calc(100vh - 320px)",
+          "&::-webkit-scrollbar": { width: 4 },
+          "&::-webkit-scrollbar-thumb": { bgcolor: "grey.300", borderRadius: 2 },
+        }}
+      >
+        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+          {leads.length === 0 ? (
+            <Box
+              sx={{
+                p: 3,
+                textAlign: "center",
+                border: "2px dashed",
+                borderColor: isOver ? "primary.main" : "grey.200",
+                borderRadius: 2,
+                transition: "border-color 0.2s",
+              }}
+            >
+              <Typography variant="caption" color={isOver ? "primary.main" : "text.disabled"}>
+                {isOver ? "Soltar aqui" : "Arrastra leads aqui"}
+              </Typography>
+            </Box>
+          ) : (
+            leads.map((lead) => (
+              <SortableLeadCard key={lead.LeadId} lead={lead} onWin={onWin} onLose={onLose} />
+            ))
+          )}
+        </SortableContext>
+      </Box>
+    </Paper>
+  );
+}
+
+// ─── Main Pipeline Kanban ───────────────────────────────────────────────────
 
 export default function PipelineKanban() {
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | undefined>();
@@ -68,11 +337,11 @@ export default function PipelineKanban() {
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
-  const [moveAnchor, setMoveAnchor] = useState<{ el: HTMLElement; lead: Lead } | null>(null);
   const [loseDialog, setLoseDialog] = useState<Lead | null>(null);
   const [loseReason, setLoseReason] = useState("");
+  const [activeDragLead, setActiveDragLead] = useState<Lead | null>(null);
 
-  // ─── Form state para nuevo lead ───────────────────────────
+  // Form state for new lead
   const [newLead, setNewLead] = useState({
     contactName: "",
     companyName: "",
@@ -80,7 +349,7 @@ export default function PipelineKanban() {
     phone: "",
     estimatedValue: "",
     priority: "MEDIUM",
-    source: "",
+    source: "WEB",
     notes: "",
   });
 
@@ -91,7 +360,8 @@ export default function PipelineKanban() {
   const activePipelineId = selectedPipelineId ?? (pipelines.length > 0 ? pipelines[0]?.PipelineId : undefined);
 
   const { data: stagesData, isLoading: loadingStages } = usePipelineStages(activePipelineId);
-  const stages: PipelineStage[] = stagesData?.data ?? stagesData?.rows ?? stagesData ?? [];
+  const stages: PipelineStage[] = (stagesData?.data ?? stagesData?.rows ?? stagesData ?? [])
+    .sort((a: PipelineStage, b: PipelineStage) => a.SortOrder - b.SortOrder);
 
   const filter: LeadFilter = {
     pipelineId: activePipelineId,
@@ -108,7 +378,7 @@ export default function PipelineKanban() {
   const winLead = useWinLead();
   const loseLead = useLoseLead();
 
-  // ─── Leads agrupados por stage ────────────────────────────
+  // ─── Leads grouped by stage ───────────────────────────────
   const leadsByStage = useMemo(() => {
     const map: Record<number, Lead[]> = {};
     for (const s of stages) map[s.StageId] = [];
@@ -119,7 +389,50 @@ export default function PipelineKanban() {
     return map;
   }, [leads, stages]);
 
-  // ─── Handlers ─────────────────────────────────────────────
+  // ─── DnD sensors ──────────────────────────────────────────
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  // ─── DnD handlers ─────────────────────────────────────────
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event;
+    const lead = active.data.current?.lead as Lead | undefined;
+    if (lead) setActiveDragLead(lead);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDragLead(null);
+      const { active, over } = event;
+      if (!over) return;
+
+      const activeLead = active.data.current?.lead as Lead | undefined;
+      if (!activeLead) return;
+
+      // Determine target stage
+      let targetStageId: number | null = null;
+
+      if (over.data.current?.type === "stage") {
+        targetStageId = over.data.current.stage.StageId;
+      } else if (over.data.current?.type === "lead") {
+        // Dropped on another lead card — use that lead's stage
+        targetStageId = over.data.current.lead.StageId;
+      }
+
+      // If the stage actually changed, call the API
+      if (targetStageId && targetStageId !== activeLead.StageId) {
+        moveStage.mutate({
+          leadId: activeLead.LeadId,
+          newStageId: targetStageId,
+        });
+      }
+    },
+    [moveStage]
+  );
+
+  // ─── CRUD handlers ────────────────────────────────────────
   const handleCreateLead = () => {
     if (!activePipelineId || !stages.length) return;
     createLead.mutate(
@@ -132,20 +445,13 @@ export default function PipelineKanban() {
       {
         onSuccess: () => {
           setNewLeadOpen(false);
-          setNewLead({ contactName: "", companyName: "", email: "", phone: "", estimatedValue: "", priority: "MEDIUM", source: "", notes: "" });
+          setNewLead({ contactName: "", companyName: "", email: "", phone: "", estimatedValue: "", priority: "MEDIUM", source: "WEB", notes: "" });
         },
       }
     );
   };
 
-  const handleMove = (stageId: number) => {
-    if (!moveAnchor) return;
-    moveStage.mutate({ leadId: moveAnchor.lead.LeadId, stageId });
-    setMoveAnchor(null);
-  };
-
-  const handleWin = (lead: Lead) => winLead.mutate(lead.LeadId);
-
+  const handleWin = (lead: Lead) => winLead.mutate({ id: lead.LeadId });
   const handleLose = () => {
     if (!loseDialog) return;
     loseLead.mutate({ id: loseDialog.LeadId, reason: loseReason });
@@ -155,53 +461,61 @@ export default function PipelineKanban() {
 
   const isLoading = loadingPipelines || loadingStages || loadingLeads;
 
+  // ─── Summary stats ────────────────────────────────────────
+  const totalLeads = leads.filter((l) => l.Status === "OPEN").length;
+  const totalValue = leads.filter((l) => l.Status === "OPEN").reduce((s, l) => s + (l.EstimatedValue ?? 0), 0);
+
   return (
     <Box>
       {/* ─── Header ──────────────────────────────────────────── */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
-          Pipeline CRM
-        </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            Pipeline
+          </Typography>
+          {!isLoading && (
+            <Typography variant="caption" color="text.secondary">
+              {totalLeads} leads abiertos &middot; {formatCurrency(totalValue)} en pipeline
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           {pipelines.length > 1 && (
-            <FormControl sx={{ minWidth: 180 }}>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
               <InputLabel>Pipeline</InputLabel>
-              <Select
-                value={activePipelineId ?? ""}
-                label="Pipeline"
-                onChange={(e) => setSelectedPipelineId(Number(e.target.value))}
-              >
+              <Select value={activePipelineId ?? ""} label="Pipeline" onChange={(e) => setSelectedPipelineId(Number(e.target.value))}>
                 {pipelines.map((p: any) => (
                   <MenuItem key={p.PipelineId} value={p.PipelineId}>{p.Name}</MenuItem>
                 ))}
               </Select>
             </FormControl>
           )}
-          <Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
-            <IconButton onClick={() => setShowFilters(!showFilters)} color={showFilters ? "primary" : "default"}>
+          <Tooltip title={showFilters ? "Ocultar filtros" : "Filtros"}>
+            <IconButton onClick={() => setShowFilters(!showFilters)} color={showFilters ? "primary" : "default"} size="small">
               <FilterListIcon />
             </IconButton>
           </Tooltip>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setNewLeadOpen(true)}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setNewLeadOpen(true)} size="small">
             Nuevo Lead
           </Button>
         </Box>
       </Box>
 
-      {/* ─── Filtros ─────────────────────────────────────────── */}
+      {/* ─── Filters ─────────────────────────────────────────── */}
       {showFilters && (
         <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-          <Stack direction="row" spacing={2}>
-            <FormControl sx={{ minWidth: 140 }}>
+          <Stack direction="row" spacing={2} flexWrap="wrap">
+            <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel>Prioridad</InputLabel>
               <Select value={filterPriority} label="Prioridad" onChange={(e) => setFilterPriority(e.target.value)}>
                 <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="URGENT">Urgente</MenuItem>
                 <MenuItem value="HIGH">Alta</MenuItem>
                 <MenuItem value="MEDIUM">Media</MenuItem>
                 <MenuItem value="LOW">Baja</MenuItem>
               </Select>
             </FormControl>
-            <FormControl sx={{ minWidth: 140 }}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel>Estado</InputLabel>
               <Select value={filterStatus} label="Estado" onChange={(e) => setFilterStatus(e.target.value)}>
                 <MenuItem value="">Todos</MenuItem>
@@ -214,293 +528,170 @@ export default function PipelineKanban() {
         </Paper>
       )}
 
-      {/* ─── Kanban Board ────────────────────────────────────── */}
+      {/* ─── Kanban Board with DnD ───────────────────────────── */}
       {isLoading ? (
         <Box sx={{ display: "flex", gap: 2, overflow: "hidden" }}>
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rectangular" width={280} height={400} sx={{ borderRadius: 2, flexShrink: 0 }} />
+            <Skeleton key={i} variant="rectangular" width={290} height={450} sx={{ borderRadius: 3, flexShrink: 0 }} />
           ))}
         </Box>
       ) : stages.length === 0 ? (
-        <Alert severity="info">
-          No hay etapas configuradas para este pipeline. Configure las etapas desde la administración de CRM.
+        <Alert severity="info" sx={{ borderRadius: 2 }}>
+          No hay etapas configuradas para este pipeline. Configure las etapas desde la administracion de CRM.
         </Alert>
       ) : (
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            overflowX: "auto",
-            pb: 2,
-            minHeight: 400,
-            "&::-webkit-scrollbar": { height: 8 },
-            "&::-webkit-scrollbar-thumb": { bgcolor: "grey.300", borderRadius: 4 },
-          }}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
         >
-          {stages
-            .sort((a, b) => a.SortOrder - b.SortOrder)
-            .map((stage) => {
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              overflowX: "auto",
+              pb: 2,
+              minHeight: 450,
+              "&::-webkit-scrollbar": { height: 6 },
+              "&::-webkit-scrollbar-thumb": { bgcolor: "grey.300", borderRadius: 3 },
+            }}
+          >
+            {stages.map((stage) => {
               const stageLeads = leadsByStage[stage.StageId] ?? [];
               const stageTotal = stageLeads.reduce((sum, l) => sum + (l.EstimatedValue ?? 0), 0);
-
               return (
-                <Paper
+                <StageColumn
                   key={stage.StageId}
-                  sx={{
-                    minWidth: 280,
-                    maxWidth: 320,
-                    flexShrink: 0,
-                    borderRadius: 2,
-                    borderTop: `4px solid ${stage.Color || brandColors.statBlue}`,
-                    bgcolor: stage.IsClosed ? "grey.50" : "background.paper",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  {/* Column Header */}
-                  <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        {stage.Name}
-                      </Typography>
-                      <Badge badgeContent={stageLeads.length} color="primary" />
-                    </Box>
-                    {stageTotal > 0 && (
-                      <Typography variant="caption" color="text.secondary">
-                        {formatCurrency(stageTotal)}
-                      </Typography>
-                    )}
-                    {stage.Probability > 0 && (
-                      <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                        ({stage.Probability}%)
-                      </Typography>
-                    )}
-                  </Box>
-
-                  {/* Cards */}
-                  <Box sx={{ p: 1, flex: 1, overflowY: "auto", maxHeight: 600 }}>
-                    {stageLeads.length === 0 ? (
-                      <Box sx={{ p: 2, textAlign: "center" }}>
-                        <Typography variant="caption" color="text.disabled">
-                          Sin leads
-                        </Typography>
-                      </Box>
-                    ) : (
-                      stageLeads.map((lead) => (
-                        <Card
-                          key={lead.LeadId}
-                          sx={{
-                            mb: 1,
-                            borderRadius: 1.5,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                            "&:hover": { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" },
-                            transition: "box-shadow 0.2s",
-                          }}
-                        >
-                          <CardContent sx={{ p: 1.5, pb: "12px !important" }}>
-                            {/* Lead Code + Priority */}
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                                {lead.LeadCode}
-                              </Typography>
-                              <Chip
-                                label={priorityLabel[lead.Priority] ?? lead.Priority}
-                                size="small"
-                                color={priorityColor[lead.Priority] ?? "default"}
-                                sx={{ height: 20, fontSize: "0.7rem" }}
-                              />
-                            </Box>
-
-                            {/* Contact */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                              <PersonIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-                              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                                {lead.ContactName}
-                              </Typography>
-                            </Box>
-
-                            {/* Company */}
-                            {lead.CompanyName && (
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                                <BusinessIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-                                <Typography variant="caption" color="text.secondary">
-                                  {lead.CompanyName}
-                                </Typography>
-                              </Box>
-                            )}
-
-                            {/* Value */}
-                            {lead.EstimatedValue > 0 && (
-                              <Typography variant="body2" sx={{ fontWeight: 700, color: brandColors.success, mb: 0.5 }}>
-                                {formatCurrency(lead.EstimatedValue)}
-                              </Typography>
-                            )}
-
-                            {/* Source chip */}
-                            {lead.Source && (
-                              <Chip
-                                label={lead.Source}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 18, fontSize: "0.65rem", mr: 0.5 }}
-                              />
-                            )}
-
-                            {/* Actions */}
-                            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5, mt: 1 }}>
-                              <Tooltip title="Mover a otra etapa">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => setMoveAnchor({ el: e.currentTarget, lead })}
-                                >
-                                  <ArrowForwardIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Marcar como ganado">
-                                <IconButton size="small" color="success" onClick={() => handleWin(lead)}>
-                                  <EmojiEventsIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Marcar como perdido">
-                                <IconButton size="small" color="error" onClick={() => setLoseDialog(lead)}>
-                                  <ThumbDownIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </Box>
-                </Paper>
+                  stage={stage}
+                  leads={stageLeads}
+                  totalValue={stageTotal}
+                  onWin={handleWin}
+                  onLose={(l) => setLoseDialog(l)}
+                />
               );
             })}
-        </Box>
+          </Box>
+
+          {/* Drag overlay — shows a floating card while dragging */}
+          <DragOverlay>
+            {activeDragLead ? (
+              <Box sx={{ width: 280 }}>
+                <LeadCardContent
+                  lead={activeDragLead}
+                  onWin={() => {}}
+                  onLose={() => {}}
+                  overlay
+                />
+              </Box>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
-      {/* ─── Move Menu ───────────────────────────────────────── */}
-      <Menu
-        anchorEl={moveAnchor?.el}
-        open={!!moveAnchor}
-        onClose={() => setMoveAnchor(null)}
-      >
-        {stages
-          .filter((s) => s.StageId !== moveAnchor?.lead.StageId)
-          .sort((a, b) => a.SortOrder - b.SortOrder)
-          .map((s) => (
-            <MenuItem key={s.StageId} onClick={() => handleMove(s.StageId)}>
-              <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: s.Color || brandColors.statBlue, mr: 1 }} />
-              {s.Name}
-            </MenuItem>
-          ))}
-      </Menu>
-
       {/* ─── Lose Dialog ─────────────────────────────────────── */}
-      <Dialog open={!!loseDialog} onClose={() => setLoseDialog(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Marcar lead como perdido</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Lead: <strong>{loseDialog?.LeadCode}</strong> - {loseDialog?.ContactName}
-          </Typography>
-          <TextField
-            label="Motivo de la pérdida"
-            fullWidth
-            multiline
-            rows={3}
-            value={loseReason}
-            onChange={(e) => setLoseReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLoseDialog(null)}>Cancelar</Button>
-          <Button variant="contained" color="error" onClick={handleLose} disabled={!loseReason.trim()}>
-            Confirmar pérdida
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <FormDialog
+        open={!!loseDialog}
+        onClose={() => { setLoseDialog(null); setLoseReason(""); }}
+        onSave={handleLose}
+        title="Marcar lead como perdido"
+        subtitle={loseDialog ? `${loseDialog.LeadCode} - ${loseDialog.ContactName}` : ""}
+        mode="edit"
+        saveLabel="Confirmar perdida"
+        disableSave={!loseReason.trim()}
+        loading={loseLead.isPending}
+      >
+        <TextField
+          label="Motivo de la perdida"
+          fullWidth
+          multiline
+          rows={3}
+          value={loseReason}
+          onChange={(e) => setLoseReason(e.target.value)}
+          placeholder="Precio, competencia, timing, no responde..."
+        />
+      </FormDialog>
 
       {/* ─── New Lead Dialog ─────────────────────────────────── */}
-      <Dialog open={newLeadOpen} onClose={() => setNewLeadOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nuevo Lead</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+      <FormDialog
+        open={newLeadOpen}
+        onClose={() => setNewLeadOpen(false)}
+        onSave={handleCreateLead}
+        title="Nuevo Lead"
+        subtitle="Agregar prospecto al pipeline"
+        mode="create"
+        saveLabel="Crear Lead"
+        disableSave={!newLead.contactName.trim()}
+        loading={createLead.isPending}
+      >
+        <Stack spacing={2}>
+          <TextField
+            label="Nombre de contacto"
+            fullWidth
+            required
+            value={newLead.contactName}
+            onChange={(e) => setNewLead({ ...newLead, contactName: e.target.value })}
+          />
+          <TextField
+            label="Empresa"
+            fullWidth
+            value={newLead.companyName}
+            onChange={(e) => setNewLead({ ...newLead, companyName: e.target.value })}
+          />
+          <Stack direction="row" spacing={2}>
             <TextField
-              label="Nombre de contacto"
+              label="Email"
               fullWidth
-              required
-              value={newLead.contactName}
-              onChange={(e) => setNewLead({ ...newLead, contactName: e.target.value })}
+              type="email"
+              value={newLead.email}
+              onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
             />
             <TextField
-              label="Empresa"
+              label="Telefono"
               fullWidth
-              value={newLead.companyName}
-              onChange={(e) => setNewLead({ ...newLead, companyName: e.target.value })}
-            />
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Email"
-                fullWidth
-                type="email"
-                value={newLead.email}
-                onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-              />
-              <TextField
-                label="Teléfono"
-                fullWidth
-                value={newLead.phone}
-                onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
-              />
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Valor estimado"
-                fullWidth
-                type="number"
-                value={newLead.estimatedValue}
-                onChange={(e) => setNewLead({ ...newLead, estimatedValue: e.target.value })}
-              />
-              <FormControl fullWidth>
-                <InputLabel>Prioridad</InputLabel>
-                <Select
-                  value={newLead.priority}
-                  label="Prioridad"
-                  onChange={(e) => setNewLead({ ...newLead, priority: e.target.value })}
-                >
-                  <MenuItem value="HIGH">Alta</MenuItem>
-                  <MenuItem value="MEDIUM">Media</MenuItem>
-                  <MenuItem value="LOW">Baja</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-            <TextField
-              label="Origen"
-              fullWidth
-              placeholder="Web, referido, llamada..."
-              value={newLead.source}
-              onChange={(e) => setNewLead({ ...newLead, source: e.target.value })}
-            />
-            <TextField
-              label="Notas"
-              fullWidth
-              multiline
-              rows={2}
-              value={newLead.notes}
-              onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
+              value={newLead.phone}
+              onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
             />
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setNewLeadOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleCreateLead}
-            disabled={!newLead.contactName.trim() || createLead.isPending}
-          >
-            {createLead.isPending ? "Creando..." : "Crear Lead"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Valor estimado"
+              fullWidth
+              type="number"
+              value={newLead.estimatedValue}
+              onChange={(e) => setNewLead({ ...newLead, estimatedValue: e.target.value })}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Prioridad</InputLabel>
+              <Select value={newLead.priority} label="Prioridad" onChange={(e) => setNewLead({ ...newLead, priority: e.target.value })}>
+                <MenuItem value="URGENT">Urgente</MenuItem>
+                <MenuItem value="HIGH">Alta</MenuItem>
+                <MenuItem value="MEDIUM">Media</MenuItem>
+                <MenuItem value="LOW">Baja</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+          <FormControl fullWidth>
+            <InputLabel>Origen</InputLabel>
+            <Select value={newLead.source} label="Origen" onChange={(e) => setNewLead({ ...newLead, source: e.target.value })}>
+              <MenuItem value="WEB">Web</MenuItem>
+              <MenuItem value="REFERRAL">Referido</MenuItem>
+              <MenuItem value="COLD_CALL">Llamada en frio</MenuItem>
+              <MenuItem value="EVENT">Evento</MenuItem>
+              <MenuItem value="SOCIAL">Redes sociales</MenuItem>
+              <MenuItem value="OTHER">Otro</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Notas"
+            fullWidth
+            multiline
+            rows={2}
+            value={newLead.notes}
+            onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
+          />
+        </Stack>
+      </FormDialog>
     </Box>
   );
 }

@@ -160,8 +160,11 @@ export function useUpdateLead() {
 export function useMoveLeadStage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: { leadId: number; stageId: number }) =>
-      apiPost(`${BASE}/leads/${d.leadId}/mover`, d),
+    mutationFn: (d: { leadId: number; newStageId: number; notes?: string }) =>
+      apiPost(`${BASE}/leads/${d.leadId}/cambiar-etapa`, {
+        newStageId: d.newStageId,
+        notes: d.notes,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
   });
 }
@@ -169,7 +172,11 @@ export function useMoveLeadStage() {
 export function useWinLead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => apiPost(`${BASE}/leads/${id}/ganar`, {}),
+    mutationFn: (d: { id: number; customerId?: number }) =>
+      apiPost(`${BASE}/leads/${d.id}/cerrar`, {
+        isWon: true,
+        customerId: d.customerId,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
   });
 }
@@ -178,8 +185,18 @@ export function useLoseLead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (d: { id: number; reason: string }) =>
-      apiPost(`${BASE}/leads/${d.id}/perder`, d),
+      apiPost(`${BASE}/leads/${d.id}/cerrar`, {
+        isWon: false,
+        lostReason: d.reason,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
+  });
+}
+
+export function useCRMDashboard(pipelineId?: number) {
+  return useQuery({
+    queryKey: [QK_LEADS, "dashboard", pipelineId],
+    queryFn: () => apiGet(`${BASE}/dashboard`, pipelineId ? { pipeline: pipelineId } : {}),
   });
 }
 
