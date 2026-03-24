@@ -218,12 +218,22 @@ describe('SP Contracts — funciones de infraestructura', () => {
     'usp_cfg_fiscal_getconfig',
     'usp_pos_waitticket_create',
     'usp_pos_saleticket_create',
-    // Módulo shipping (agregado en 00020_shipping_module)
+    // Módulo shipping (migración 00020)
     'usp_shipping_customer_register',
     'usp_shipping_customer_login',
     'usp_shipping_shipment_create',
     'usp_shipping_shipment_list',
     'usp_shipping_track',
+    // Sistema de respaldos de tenants (migraciones 00029/00030)
+    'usp_sys_backup_create',
+    'usp_sys_backup_complete',
+    'usp_sys_backup_fail',
+    'usp_sys_backup_list',
+    // Resource management + cleanup (migración 00028)
+    'usp_sys_resource_audit',
+    'usp_sys_cleanup_scan',
+    'usp_sys_cleanup_list',
+    'usp_sys_cleanup_process',
   ];
 
   for (const fn of requiredFunctions) {
@@ -592,6 +602,9 @@ describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
     // Shipping dashboard y customs
     'usp_shipping_dashboard',
     'usp_shipping_customs_upsert',
+    // Backup helpers
+    'usp_sys_backup_tenantinfo',
+    'usp_sys_backup_latest_per_tenant',
   ];
 
   for (const fn of optionalModuleFunctions) {
@@ -616,10 +629,40 @@ describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
-// Test 9: Reporte de inconsistencias TIMESTAMPTZ (informativo, siempre pasa)
+// Test 9: Tablas del esquema sys — deben existir tras las migraciones
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — reporte de inconsistencias TIMESTAMPTZ (informativo)', () => {
+describe('SP Contracts — tablas sys de gestión de tenants', () => {
+  const requiredSysTables = [
+    { schema: 'sys', table: 'TenantBackup' },
+    { schema: 'sys', table: 'TenantResourceLog' },
+    { schema: 'sys', table: 'CleanupQueue' },
+    { schema: 'sys', table: 'License' },
+    { schema: 'sys', table: 'Company' },
+  ];
+
+  for (const { schema, table } of requiredSysTables) {
+    it(`tabla ${schema}."${table}" debe existir`, async () => {
+      const res = await pool.query<{ exists: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM information_schema.tables
+           WHERE table_schema = $1 AND table_name = $2
+         ) AS exists`,
+        [schema, table]
+      );
+      expect(
+        res.rows[0]?.exists,
+        `La tabla ${schema}."${table}" no existe — revisar migraciones goose`
+      ).toBe(true);
+    });
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Test 10: Reporte de inconsistencias TIMESTAMPTZ (informativo, siempre pasa)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('SP Contracts — reporte TIMESTAMPTZ (informativo)', () => {
   it('imprime funciones con timestamp with time zone como reporte informativo', async () => {
     const res = await pool.query<{ proname: string; args: string; ret: string }>(
       `SELECT p.proname,
