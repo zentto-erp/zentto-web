@@ -42,13 +42,23 @@ export default function BancosHome() {
     .slice(0, 10);
   const primeraCuenta: string | undefined = cuentasData[0]?.NumeroCuenta ?? cuentasData[0]?.Nro_Cta;
   const movimientosMes = useMovimientosCuenta(
-    primeraCuenta ? { nroCta: primeraCuenta, desde: mesDesde, hasta: mesHasta, limit: 1 } : undefined
+    primeraCuenta ? { nroCta: primeraCuenta, desde: mesDesde, hasta: mesHasta, limit: 500 } : undefined
   );
+  const movimientosRows: any[] = movimientosMes.data?.rows ?? [];
   const totalMovimientosMes = !cuentas.isLoading && cuentasData.length === 0
     ? "0"
     : movimientosMes.data?.total != null
     ? String(movimientosMes.data.total)
     : "—";
+  const depositos = movimientosRows
+    .filter((m) => m.Tipo === "DEP")
+    .reduce((s, m) => s + (Number(m.Monto) || 0), 0);
+  const chequesEmitidos = movimientosRows
+    .filter((m) => m.Tipo === "PCH")
+    .reduce((s, m) => s + (Number(m.Monto) || 0), 0);
+  const notasCredito = movimientosRows
+    .filter((m) => m.Tipo === "NCR")
+    .reduce((s, m) => s + (Number(m.Monto) || 0), 0);
 
   const statsCards = [
     {
@@ -188,15 +198,33 @@ export default function BancosHome() {
             </Typography>
             <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Depósitos del mes</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+              {movimientosMes.isLoading ? (
+                <Skeleton variant="text" width={120} />
+              ) : (
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {movimientosRows.length > 0 ? formatCurrency(depositos) : "—"}
+                </Typography>
+              )}
             </Box>
             <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Cheques emitidos</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+              {movimientosMes.isLoading ? (
+                <Skeleton variant="text" width={120} />
+              ) : (
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {movimientosRows.length > 0 ? formatCurrency(chequesEmitidos) : "—"}
+                </Typography>
+              )}
             </Box>
             <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
               <Typography variant="body2" color="text.secondary">Notas de crédito</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+              {movimientosMes.isLoading ? (
+                <Skeleton variant="text" width={120} />
+              ) : (
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {movimientosRows.length > 0 ? formatCurrency(notasCredito) : "—"}
+                </Typography>
+              )}
             </Box>
           </Paper>
         </Grid>

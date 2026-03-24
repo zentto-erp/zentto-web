@@ -42,6 +42,16 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
     ? formatCurrency(ultimaNomina.totalAsignaciones)
     : "—";
 
+  const salarioBase = ultimaNomina?.totalAsignaciones != null
+    ? formatCurrency(ultimaNomina.totalAsignaciones)
+    : "—";
+  const impuestosYss = ultimaNomina?.totalDeducciones != null
+    ? formatCurrency(ultimaNomina.totalDeducciones)
+    : "—";
+  const netoNomina = ultimaNomina?.totalNeto != null
+    ? formatCurrency(ultimaNomina.totalNeto)
+    : "—";
+
   const statsCards = [
     {
       title: "Nómina Mensual",
@@ -233,22 +243,74 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
               <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Salarios Base</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+                <Typography variant="body2" color="text.secondary">Total Asignaciones</Typography>
+                {nominas.isLoading ? (
+                  <Skeleton variant="text" width={120} />
+                ) : (
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>{salarioBase}</Typography>
+                )}
               </Box>
               <Box sx={{ borderLeft: `4px solid ${brandColors.statRed}`, pl: 2, mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Impuestos y SS</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+                <Typography variant="body2" color="text.secondary">Total Deducciones</Typography>
+                {nominas.isLoading ? (
+                  <Skeleton variant="text" width={120} />
+                ) : (
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>{impuestosYss}</Typography>
+                )}
               </Box>
               <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
-                <Typography variant="body2" color="text.secondary">Bonos Aprobados</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>—</Typography>
+                <Typography variant="body2" color="text.secondary">Neto a Pagar</Typography>
+                {nominas.isLoading ? (
+                  <Skeleton variant="text" width={120} />
+                ) : (
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>{netoNomina}</Typography>
+                )}
               </Box>
             </Grid>
-            <Grid size={{ xs: 12, md: 8 }} sx={{ display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#f8f9fa", borderRadius: 2, minHeight: 200 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TrendingUpIcon /> Resumen de nómina se actualizará con datos reales
-              </Typography>
+            <Grid size={{ xs: 12, md: 8 }} sx={{ bgcolor: "#f8f9fa", borderRadius: 2, p: 3, minHeight: 200 }}>
+              {nominas.isLoading ? (
+                <Skeleton variant="rectangular" height={160} />
+              ) : ultimaNomina ? (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                    <TrendingUpIcon fontSize="small" /> Última nómina procesada
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    {ultimaNomina.nomina ?? ultimaNomina.Nomina ?? "—"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {ultimaNomina.fechaInicio
+                      ? `${ultimaNomina.fechaInicio} — ${ultimaNomina.fechaHasta ?? ""}`
+                      : ""}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Asignaciones</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {formatCurrency(ultimaNomina.totalAsignaciones ?? 0)}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Deducciones</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {formatCurrency(ultimaNomina.totalDeducciones ?? 0)}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Neto</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700, color: "success.main" }}>
+                        {formatCurrency(ultimaNomina.totalNeto ?? 0)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 160 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <TrendingUpIcon /> No hay nóminas procesadas
+                  </Typography>
+                </Box>
+              )}
             </Grid>
           </Grid>
         </CardContent>
