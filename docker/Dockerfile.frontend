@@ -25,7 +25,7 @@ COPY web/modular-frontend/ .
 # Instalar dependencias
 RUN npm ci
 
-# Build de las 15 apps
+# Build de las 16 apps
 RUN npm run build:all
 
 # ── Stage 2: runtime con PM2 ─────────────────────────────────────────────────
@@ -45,6 +45,6 @@ COPY --from=builder /app/package-lock.json ./
 # PM2 config
 COPY docker/pm2.config.cjs /app/pm2.config.cjs
 
-EXPOSE 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 3011 3012 3013 3014
+EXPOSE 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 3011 3012 3013 3014 3015
 
 CMD ["pm2-runtime", "/app/pm2.config.cjs"]

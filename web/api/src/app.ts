@@ -66,6 +66,7 @@ import { flotaRouter } from "./modules/flota/routes.js";
 import { permisosRouter } from "./modules/permisos/routes.js";
 import { inventarioAvanzadoRouter } from "./modules/inventario-avanzado/routes.js";
 import { logisticaRouter } from "./modules/logistica/routes.js";
+import { shippingRouter } from "./modules/shipping/routes.js";
 import { crmRouter } from "./modules/crm/routes.js";
 import { manufacturaRouter } from "./modules/manufactura/routes.js";
 import { comprasAnalyticsRouter } from "./modules/compras/analytics.routes.js";
@@ -223,6 +224,9 @@ export async function createApp() {
 
   // Ecommerce storefront — público (sin JWT)
   app.use("/store", storeRouter);
+
+  // Shipping portal — público (auth propio del cliente shipping)
+  app.use("/shipping", shippingRouter);
 
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);

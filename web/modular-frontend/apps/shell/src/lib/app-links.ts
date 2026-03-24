@@ -9,6 +9,7 @@ const DEV_APP_ORIGINS: Record<string, string> = {
   restaurante: process.env.NEXT_PUBLIC_APP_URL_RESTAURANTE || 'http://localhost:3008',
   ecommerce: process.env.NEXT_PUBLIC_APP_URL_ECOMMERCE || 'http://localhost:3009',
   auditoria: process.env.NEXT_PUBLIC_APP_URL_AUDITORIA || 'http://localhost:3010',
+  shipping: process.env.NEXT_PUBLIC_APP_URL_SHIPPING || 'http://localhost:3015',
 };
 
 const SHELL_LOCAL_PATHS = new Set([

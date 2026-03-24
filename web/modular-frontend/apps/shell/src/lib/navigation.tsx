@@ -208,6 +208,20 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         return nav;
     }
 
+    // App: Shipping (portal de paquetería)
+    if (isApp('/shipping')) {
+        nav.push({ kind: 'header', title: 'ZENTTO SHIPPING' });
+        nav.push({ kind: 'page', segment: 'shipping', title: 'Inicio', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'shipping/dashboard', title: 'Dashboard', icon: <AssessmentIcon /> });
+        nav.push({ kind: 'header', title: 'ENVÍOS' });
+        nav.push({ kind: 'page', segment: 'shipping/envios/nuevo', title: 'Nuevo Envío', icon: <AddCircleOutlineIcon /> });
+        nav.push({ kind: 'page', segment: 'shipping/envios', title: 'Mis Envíos', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'page', segment: 'shipping/rastreo', title: 'Rastrear', icon: <HistoryIcon /> });
+        nav.push({ kind: 'header', title: 'CUENTA' });
+        nav.push({ kind: 'page', segment: 'shipping/perfil', title: 'Mi Perfil', icon: <ManageAccountsIcon /> });
+        return nav;
+    }
+
     // App: Ventas y CxC
     const hasVentas = has(modulos, 'facturas') || has(modulos, 'abonos') || has(modulos, 'cxc') || has(modulos, 'clientes');
     if (hasVentas && isApp('/ventas')) {

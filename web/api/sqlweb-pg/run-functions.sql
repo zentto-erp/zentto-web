@@ -142,6 +142,9 @@ END $cleanup$;
 \echo '[27b] usp_logistics_analytics.sql'
 \i includes/sp/usp_logistics_analytics.sql
 
+\echo '[27c] usp_shipping.sql'
+\i includes/sp/usp_shipping.sql
+
 \echo '[28] usp_crm.sql'
 \i includes/sp/usp_crm.sql
 

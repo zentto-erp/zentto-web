@@ -9,7 +9,7 @@
   "scripts": {
     "dev:setup": "npm run env:sync && npm run dev:all",
     "env:sync": "node scripts/sync-env-local.mjs",
-    "build:all": "npm run build:shell && npm run build:contabilidad && npm run build:nomina && npm run build:pos && npm run build:bancos && npm run build:inventario && npm run build:ventas && npm run build:compras && npm run build:restaurant && npm run build:ecommerce && npm run build:auditoria && npm run build:logistica && npm run build:crm && npm run build:manufactura && npm run build:flota",
+    "build:all": "npm run build:shell && npm run build:contabilidad && npm run build:nomina && npm run build:pos && npm run build:bancos && npm run build:inventario && npm run build:ventas && npm run build:compras && npm run build:restaurant && npm run build:ecommerce && npm run build:auditoria && npm run build:logistica && npm run build:crm && npm run build:manufactura && npm run build:flota && npm run build:shipping",
     "start:all": "npx concurrently \"npm run start:shell\" \"npm run start:contabilidad\" \"npm run start:nomina\" \"npm run start:pos\" \"npm run start:bancos\" \"npm run start:inventario\" \"npm run start:ventas\" \"npm run start:compras\" \"npm run start:restaurant\" \"npm run start:ecommerce\" \"npm run start:auditoria\"",
     "dev:all": "npx concurrently \"npm run dev:shell\" \"npm run dev:contabilidad\" \"npm run dev:nomina\" \"npm run dev:pos\" \"npm run dev:bancos\" \"npm run dev:inventario\" \"npm run dev:ventas\" \"npm run dev:compras\" \"npm run dev:restaurant\" \"npm run dev:ecommerce\" \"npm run dev:auditoria\"",
     "dev:all:3011": "npx concurrently \"npm run dev:shell:3011\" \"npm run dev:contabilidad\" \"npm run dev:nomina\" \"npm run dev:pos\" \"npm run dev:bancos\" \"npm run dev:inventario\" \"npm run dev:ventas\" \"npm run dev:compras\" \"npm run dev:restaurant\" \"npm run dev:ecommerce\" \"npm run dev:auditoria\"",
@@ -58,7 +58,10 @@
     "start:manufactura": "npm --workspace @zentto/manufactura run start",
     "dev:flota": "npm --workspace @zentto/flota run dev",
     "build:flota": "npm --workspace @zentto/flota run build",
-    "start:flota": "npm --workspace @zentto/flota run start"
+    "start:flota": "npm --workspace @zentto/flota run start",
+    "dev:shipping": "npm --workspace @zentto/app-shipping run dev",
+    "build:shipping": "npm --workspace @zentto/app-shipping run build",
+    "start:shipping": "npm --workspace @zentto/app-shipping run start"
   },
   "overrides": {
     "title": "4.0.1",

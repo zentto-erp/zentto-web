@@ -246,6 +246,19 @@ const CATALOG: StoreApp[] = [
         version: '1.0.0',
         author: 'Zentto'
     },
+    {
+        id: 'shipping',
+        name: 'Zentto Shipping',
+        description: 'Portal de paquetería: envía, rastrea y gestiona paquetes con múltiples carriers.',
+        fullDescription: 'Plataforma completa de envíos para clientes finales. Registro de clientes, cotización multi-carrier (Zoom, MRW, Liberty Express), generación de guías, rastreo en tiempo real con timeline, gestión de aduanas para envíos internacionales, y notificaciones automáticas en cada cambio de estado.',
+        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#1565C0',
+        category: 'Operaciones',
+        path: '/shipping',
+        features: ['Envíos nacionales e internacionales', 'Cotización multi-carrier', 'Rastreo en tiempo real', 'Gestión de aduanas', 'Notificaciones automáticas', 'Portal público de rastreo', 'Zoom / MRW / Liberty Express'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
 ];
 
 export default function AppsStorePage() {

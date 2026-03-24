@@ -1,0 +1,23 @@
+{
+  "name": "@zentto/app-shipping",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3015",
+    "build": "next build",
+    "start": "next start -p 3015"
+  },
+  "dependencies": {
+    "@emotion/cache": "*",
+    "@emotion/react": "*",
+    "@emotion/styled": "*",
+    "@mui/material": "*",
+    "@mui/material-nextjs": "*",
+    "@tanstack/react-query": "*",
+    "@zentto/shared-ui": "workspace:*",
+    "@zentto/module-shipping": "workspace:*",
+    "next": "*",
+    "react": "*",
+    "react-dom": "*"
+  }
+}
