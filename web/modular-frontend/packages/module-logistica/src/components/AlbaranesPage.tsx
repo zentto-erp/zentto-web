@@ -333,6 +333,7 @@ export default function AlbaranesPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="logistica-albaranes-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.DeliveryId ?? row.Id ?? row.DeliveryNumber ?? Math.random()}

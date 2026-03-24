@@ -163,6 +163,7 @@ export default function AuditoriaReportesPage() {
           <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
             {tab === 0 && (
               <ZenttoDataGrid
+            gridId="auditoria-reportes-modulo"
                 rows={moduleRows}
                 columns={moduleColumns}
                 disableRowSelectionOnClick
@@ -174,6 +175,7 @@ export default function AuditoriaReportesPage() {
             )}
             {tab === 1 && (
               <ZenttoDataGrid
+                gridId="auditoria-reportes-usuario"
                 rows={userRows}
                 columns={userColumns}
                 disableRowSelectionOnClick
@@ -185,6 +187,7 @@ export default function AuditoriaReportesPage() {
             )}
             {tab === 2 && (
               <ZenttoDataGrid
+                gridId="auditoria-reportes-fiscal"
                 rows={fiscalQuery.data?.data ?? []}
                 columns={fiscalColumns}
                 getRowId={(r) => r.FiscalRecordId}

@@ -643,6 +643,7 @@ export default function ArticulosTable() {
 
       {/* ===== DATA GRID ===== */}
       <ZenttoDataGrid
+        gridId="ventas-articulos-list"
         rows={rows}
         columns={columns}
         serverRowCount={totalRows}

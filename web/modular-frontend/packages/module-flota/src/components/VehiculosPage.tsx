@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  AppBar,
   Box,
   Button,
   Chip,
@@ -13,14 +14,19 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Toolbar,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   useVehiclesList,
   useCreateVehicle,
@@ -68,6 +74,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function VehiculosPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [filter, setFilter] = useState<VehicleFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -156,7 +165,7 @@ export default function VehiculosPage() {
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Editar vehículo">
+          <Tooltip title="Editar vehiculo">
             <IconButton
               size="small"
               onClick={() => openEditDialog(params.row)}
@@ -244,10 +253,18 @@ export default function VehiculosPage() {
 
   const isPending = createVehicle.isPending || updateVehicle.isPending;
 
+  const dialogTitle = editMode ? "Editar Vehiculo" : "Nuevo Vehiculo";
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: "space-between",
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 2, mb: 3,
+      }}>
         <Typography variant="h5" fontWeight={600}>
           Vehiculos
         </Typography>
@@ -264,32 +281,35 @@ export default function VehiculosPage() {
       </Box>
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-         
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="ACTIVE">Activo</MenuItem>
-          <MenuItem value="MAINTENANCE">Mantenimiento</MenuItem>
-          <MenuItem value="INACTIVE">Inactivo</MenuItem>
-        </TextField>
-        <TextField
-          label="Buscar"
-          value={filter.search ?? ""}
-          onChange={handleSearchFilter}
-         
-          placeholder="Placa, marca, modelo..."
-          sx={{ minWidth: 220 }}
-        />
-      </Stack>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="ACTIVE">Activo</MenuItem>
+            <MenuItem value="MAINTENANCE">Mantenimiento</MenuItem>
+            <MenuItem value="INACTIVE">Inactivo</MenuItem>
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            label="Buscar"
+            value={filter.search ?? ""}
+            onChange={handleSearchFilter}
+            fullWidth
+            placeholder="Placa, marca, modelo..."
+          />
+        </Grid>
+      </Grid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="flota-vehiculos-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.VehicleId ?? row.Id ?? Math.random()}
@@ -309,20 +329,51 @@ export default function VehiculosPage() {
       />
 
       {/* Dialog: Crear/Editar Vehiculo */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editMode ? "Editar Vehiculo" : "Nuevo Vehiculo"}</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "md"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">{dialogTitle}</Typography>
+              <Button
+                autoFocus
+                color="inherit"
+                onClick={handleSubmit}
+                disabled={isPending || !vehiclePlate || !brand || !model || !year || !vehicleType || !fuelType}
+              >
+                {isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Placa" value={vehiclePlate} onChange={(e) => setLicensePlate(e.target.value)} fullWidth required />
-            <Stack direction="row" spacing={2}>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField label="Placa" value={vehiclePlate} onChange={(e) => setLicensePlate(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField label="Marca" value={brand} onChange={(e) => setBrand(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField label="Modelo" value={model} onChange={(e) => setModel(e.target.value)} fullWidth required />
-            </Stack>
-            <Stack direction="row" spacing={2}>
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField label="Ano" type="number" value={year} onChange={(e) => setYear(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField label="Color" value={color} onChange={(e) => setColor(e.target.value)} fullWidth />
-            </Stack>
-            <Stack direction="row" spacing={2}>
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField
                 select
                 label="Tipo Vehiculo"
@@ -339,6 +390,8 @@ export default function VehiculosPage() {
                 <MenuItem value="MOTORCYCLE">Moto</MenuItem>
                 <MenuItem value="OTHER">Otro</MenuItem>
               </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField
                 select
                 label="Tipo Combustible"
@@ -353,56 +406,118 @@ export default function VehiculosPage() {
                 <MenuItem value="HYBRID">Hibrido</MenuItem>
                 <MenuItem value="GAS">Gas</MenuItem>
               </TextField>
-            </Stack>
-            <TextField label="Kilometraje Actual" type="number" value={currentMileage} onChange={(e) => setCurrentOdometer(e.target.value)} fullWidth required />
-            <TextField label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} fullWidth />
-            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
-          </Stack>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Kilometraje Actual" type="number" value={currentMileage} onChange={(e) => setCurrentOdometer(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} fullWidth />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={isPending || !vehiclePlate || !brand || !model || !year || !vehicleType || !fuelType}
-          >
-            {isPending ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={isPending || !vehiclePlate || !brand || !model || !year || !vehicleType || !fuelType}
+            >
+              {isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Dialog: Detalle */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Detalle de Vehiculo</DialogTitle>
+      <Dialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDetailOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Detalle de Vehiculo</Typography>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Detalle de Vehiculo</DialogTitle>
+        )}
         <DialogContent>
           {selectedRow && (
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              <Typography><strong>Placa:</strong> {String(selectedRow.LicensePlate ?? "")}</Typography>
-              <Typography><strong>Marca:</strong> {String(selectedRow.Brand ?? "")}</Typography>
-              <Typography><strong>Modelo:</strong> {String(selectedRow.Model ?? "")}</Typography>
-              <Typography><strong>Ano:</strong> {String(selectedRow.Year ?? "")}</Typography>
-              <Typography><strong>Tipo:</strong> {String(selectedRow.VehicleType ?? "")}</Typography>
-              <Typography><strong>Combustible:</strong> {String(selectedRow.FuelType ?? "")}</Typography>
-              <Typography><strong>Kilometraje:</strong> {Number(selectedRow.CurrentOdometer ?? 0).toLocaleString("es")} km</Typography>
-              <Typography><strong>Color:</strong> {String(selectedRow.Color ?? "--")}</Typography>
-              <Typography><strong>VIN:</strong> {String(selectedRow.VinNumber ?? "--")}</Typography>
-              <Typography><strong>Conductor:</strong> {String(selectedRow.DefaultDriverId ?? "--")}</Typography>
-              <Typography>
-                <strong>Estado:</strong>{" "}
-                <Chip
-                  label={statusLabels[String(selectedRow.Status)] ?? String(selectedRow.Status)}
-                  size="small"
-                  color={statusColors[String(selectedRow.Status)] ?? "default"}
-                  variant="outlined"
-                />
-              </Typography>
-              <Typography><strong>Notas:</strong> {String(selectedRow.Notes ?? "--")}</Typography>
-            </Stack>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Placa</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.LicensePlate ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Marca</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Brand ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Modelo</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Model ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Typography variant="caption" color="text.secondary">Ano</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Year ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Typography variant="caption" color="text.secondary">Tipo</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.VehicleType ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Combustible</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.FuelType ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Kilometraje</Typography>
+                <Typography variant="body1" fontWeight={500}>{Number(selectedRow.CurrentOdometer ?? 0).toLocaleString("es")} km</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Typography variant="caption" color="text.secondary">Color</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Color ?? "--")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">VIN</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.VinNumber ?? "--")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Conductor</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.DefaultDriverId ?? "--")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Estado</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={statusLabels[String(selectedRow.Status)] ?? String(selectedRow.Status)}
+                    size="small"
+                    color={statusColors[String(selectedRow.Status)] ?? "default"}
+                    variant="outlined"
+                  />
+                </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Notas</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Notes ?? "--")}</Typography>
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailOpen(false)}>Cerrar</Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDetailOpen(false)}>Cerrar</Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );

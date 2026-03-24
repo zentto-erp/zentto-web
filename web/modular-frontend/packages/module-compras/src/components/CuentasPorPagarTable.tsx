@@ -177,6 +177,7 @@ export default function CuentasPorPagarTable() {
       />
 
       <ZenttoDataGrid
+        gridId="compras-cuentas-por-pagar-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.id ?? row.numeroReferencia ?? Math.random()}

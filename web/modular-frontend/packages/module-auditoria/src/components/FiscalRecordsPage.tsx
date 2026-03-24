@@ -97,6 +97,7 @@ export default function FiscalRecordsPage() {
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="auditoria-fiscal-records-list"
             rows={rows}
             columns={columns}
             loading={isLoading}

@@ -268,6 +268,7 @@ export default function ConciliacionBancariaPage() {
       {/* DataGrid principal */}
       <Paper sx={{ p: 0 }}>
         <ZenttoDataGrid
+            gridId="bancos-conciliacion-list"
           rows={rows}
           columns={columns}
           loading={isLoading}

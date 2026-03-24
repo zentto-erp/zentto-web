@@ -522,6 +522,7 @@ export default function AsientosRecurrentesPage() {
       {/* Grid */}
       <Paper sx={{ borderRadius: 2 }}>
         <ZenttoDataGrid
+            gridId="contabilidad-asientos-recurrentes-list"
           rows={templates}
           columns={columns}
           getRowId={(r) => r.RecurringEntryId}

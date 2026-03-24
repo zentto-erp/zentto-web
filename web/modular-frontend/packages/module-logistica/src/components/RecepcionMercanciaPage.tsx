@@ -249,6 +249,7 @@ export default function RecepcionMercanciaPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="logistica-recepcion-mercancia-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.ReceiptId ?? row.Id ?? row.ReceiptNumber ?? Math.random()}

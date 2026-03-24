@@ -210,6 +210,7 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
 
       {/* Grid */}
       <ZenttoDataGrid
+        gridId="manufactura-routing-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.RoutingId ?? row.Id ?? row.OperationNumber ?? Math.random()}

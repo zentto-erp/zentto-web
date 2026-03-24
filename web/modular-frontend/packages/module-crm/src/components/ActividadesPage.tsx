@@ -202,6 +202,7 @@ export default function ActividadesPage() {
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>
         <ZenttoDataGrid
+        gridId="crm-actividades-list"
           rows={rows}
           columns={columns}
           getRowId={(r) => r.ActivityId}

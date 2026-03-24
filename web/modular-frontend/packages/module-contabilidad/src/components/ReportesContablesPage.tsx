@@ -161,6 +161,7 @@ export default function ReportesContablesPage() {
             <Alert severity="error">Error al cargar libro diario: {String(libroDiario.error)}</Alert>
           ) : (
             <ZenttoDataGrid
+            gridId="contabilidad-reportes-contables-diario"
               rows={(libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroDiarioCols}
               getRowId={(r) => r._id}
@@ -186,6 +187,7 @@ export default function ReportesContablesPage() {
             <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
           ) : (
             <ZenttoDataGrid
+              gridId="contabilidad-reportes-contables-mayor"
               rows={(libroMayor.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroMayorCols}
               getRowId={(r) => r._id}
@@ -207,6 +209,7 @@ export default function ReportesContablesPage() {
             <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
           ) : (
             <ZenttoDataGrid
+              gridId="contabilidad-reportes-contables-balance"
               rows={(balance.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={balanceCols}
               getRowId={(r) => r._id}

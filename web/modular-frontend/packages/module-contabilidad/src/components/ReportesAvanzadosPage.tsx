@@ -550,6 +550,7 @@ export default function ReportesAvanzadosPage() {
         <TabPanel value={tab} index={0}>
           {!run ? renderNotRun() : libroDiario.isLoading ? renderLoading() : libroDiario.error ? renderError(libroDiario.error) : (
             <ZenttoDataGrid
+            gridId="contabilidad-reportes-libro-diario"
               rows={(libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroDiarioCols}
               getRowId={(r) => r._id}
@@ -565,6 +566,7 @@ export default function ReportesAvanzadosPage() {
         <TabPanel value={tab} index={1}>
           {!run ? renderNotRun() : libroMayor.isLoading ? renderLoading() : (
             <ZenttoDataGrid
+            gridId="contabilidad-reportes-libro-mayor"
               rows={(libroMayor.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroMayorCols}
               getRowId={(r) => r._id}
@@ -580,6 +582,7 @@ export default function ReportesAvanzadosPage() {
         <TabPanel value={tab} index={2}>
           {!run ? renderNotRun() : balance.isLoading ? renderLoading() : (
             <ZenttoDataGrid
+            gridId="contabilidad-reportes-balance"
               rows={(balance.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={balanceCols}
               getRowId={(r) => r._id}
@@ -891,6 +894,7 @@ export default function ReportesAvanzadosPage() {
               {agingSubTab === 0 && (
                 agingCxC.isLoading ? renderLoading() : agingCxC.error ? renderError(agingCxC.error) : (
                   <ZenttoDataGrid
+                gridId="contabilidad-reportes-aging-cxc"
                     rows={((agingCxC.data?.data ?? agingCxC.data?.rows ?? []) as AgingBucket[]).map(
                       (r, i) => ({ ...r, _id: i })
                     )}
@@ -907,6 +911,7 @@ export default function ReportesAvanzadosPage() {
               {agingSubTab === 1 && (
                 agingCxP.isLoading ? renderLoading() : agingCxP.error ? renderError(agingCxP.error) : (
                   <ZenttoDataGrid
+                gridId="contabilidad-reportes-aging-cxp"
                     rows={((agingCxP.data?.data ?? agingCxP.data?.rows ?? []) as AgingBucket[]).map(
                       (r, i) => ({ ...r, _id: i })
                     )}
@@ -1021,6 +1026,7 @@ export default function ReportesAvanzadosPage() {
                     </Grid>
 
                     <ZenttoDataGrid
+                      gridId="contabilidad-reportes-impuestos"
                       rows={rows}
                       columns={taxCols}
                       getRowId={(r) => r._id}

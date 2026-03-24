@@ -233,6 +233,7 @@ export default function RutasProduccionPage() {
       {/* Grid */}
       {selectedBomId ? (
         <ZenttoDataGrid
+        gridId="manufactura-rutas-produccion-list"
           rows={rows}
           columns={columns}
           getRowId={(row) =>

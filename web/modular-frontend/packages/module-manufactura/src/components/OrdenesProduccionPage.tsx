@@ -373,6 +373,7 @@ export default function OrdenesProduccionPage() {
 
       {/* DataGrid con master-detail */}
       <ZenttoDataGrid
+        gridId="manufactura-ordenes-produccion-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.WorkOrderId ?? row.Id ?? row.WorkOrderNumber ?? Math.random()}

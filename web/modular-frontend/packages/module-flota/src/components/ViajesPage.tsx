@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  AppBar,
   Box,
   Button,
   Chip,
@@ -13,15 +14,20 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Toolbar,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   useTripsList,
   useCreateTrip,
@@ -42,6 +48,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function ViajesPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [filter, setFilter] = useState<TripFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -217,10 +226,19 @@ export default function ViajesPage() {
     );
   };
 
+  const canCreate = !createTrip.isPending && !!vehicleId && !!origin && !!destination && !!departureDate && !!startMileage;
+  const canComplete = !completeTrip.isPending && !!endMileage && !!arrivalDate;
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: "space-between",
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 2, mb: 3,
+      }}>
         <Typography variant="h5" fontWeight={600}>
           Viajes
         </Typography>
@@ -230,14 +248,13 @@ export default function ViajesPage() {
       </Box>
 
       {/* Filter */}
-      <FormGrid spacing={2} sx={{ mb: 2 }}>
-        <FormField xs={12} sm={4}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <TextField
             select
             label="Estado"
             value={filter.status ?? ""}
             onChange={handleStatusFilter}
-           
             fullWidth
           >
             <MenuItem value="">Todos</MenuItem>
@@ -245,27 +262,28 @@ export default function ViajesPage() {
             <MenuItem value="IN_TRANSIT">En Transito</MenuItem>
             <MenuItem value="COMPLETED">Completado</MenuItem>
           </TextField>
-        </FormField>
-        <FormField xs={12} sm={4}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
           <DatePicker
             label="Desde"
             value={filter.fechaDesde ? dayjs(filter.fechaDesde) : null}
             onChange={(v) => setFilter((f) => ({ ...f, fechaDesde: v ? v.format('YYYY-MM-DD') : undefined }))}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-        </FormField>
-        <FormField xs={12} sm={4}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
           <DatePicker
             label="Hasta"
             value={filter.fechaHasta ? dayjs(filter.fechaHasta) : null}
             onChange={(v) => setFilter((f) => ({ ...f, fechaHasta: v ? v.format('YYYY-MM-DD') : undefined }))}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-        </FormField>
-      </FormGrid>
+        </Grid>
+      </Grid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="flota-viajes-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.TripId ?? row.Id ?? Math.random()}
@@ -283,92 +301,189 @@ export default function ViajesPage() {
       />
 
       {/* Dialog: Nuevo Viaje */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nuevo Viaje</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "md"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Nuevo Viaje</Typography>
+              <Button autoFocus color="inherit" onClick={handleCreate} disabled={!canCreate}>
+                {createTrip.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Nuevo Viaje</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
-            <FormGrid spacing={2}>
-              <FormField xs={12} sm={6}>
-                <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} fullWidth required />
-              </FormField>
-              <FormField xs={12} sm={6}>
-                <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} fullWidth required />
-              </FormField>
-            </FormGrid>
-            <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartedAt(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} fullWidth required />
-            <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartedAt(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Origen" value={origin} onChange={(e) => setOrigin(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleCreate}
-            disabled={createTrip.isPending || !vehicleId || !origin || !destination || !departureDate || !startMileage}
-          >
-            {createTrip.isPending ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button variant="contained" onClick={handleCreate} disabled={!canCreate}>
+              {createTrip.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Dialog: Completar Viaje */}
-      <Dialog open={completeOpen} onClose={() => setCompleteOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Completar Viaje</DialogTitle>
+      <Dialog
+        open={completeOpen}
+        onClose={() => setCompleteOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "xs"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setCompleteOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Completar Viaje</Typography>
+              <Button autoFocus color="inherit" onClick={handleComplete} disabled={!canComplete}>
+                {completeTrip.isPending ? "Completando..." : "Completar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Completar Viaje</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Viaje: {String(selectedRow?.TripNumber ?? "")} — {String(selectedRow?.Origin ?? "")} a {String(selectedRow?.Destination ?? "")}
-            </Typography>
-            <TextField label="Kilometraje Final" type="number" value={endMileage} onChange={(e) => setEndMileage(e.target.value)} fullWidth required />
-            <DatePicker label="Fecha Llegada" value={arrivalDate ? dayjs(arrivalDate) : null} onChange={(v) => setArrivedAt(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Combustible Usado (L)" type="number" value={fuelUsed} onChange={(e) => setFuelUsed(e.target.value)} fullWidth />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                Viaje: {String(selectedRow?.TripNumber ?? "")} — {String(selectedRow?.Origin ?? "")} a {String(selectedRow?.Destination ?? "")}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Kilometraje Final" type="number" value={endMileage} onChange={(e) => setEndMileage(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12}>
+              <DatePicker label="Fecha Llegada" value={arrivalDate ? dayjs(arrivalDate) : null} onChange={(v) => setArrivedAt(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Combustible Usado (L)" type="number" value={fuelUsed} onChange={(e) => setFuelUsed(e.target.value)} fullWidth />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCompleteOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleComplete}
-            disabled={completeTrip.isPending || !endMileage || !arrivalDate}
-          >
-            {completeTrip.isPending ? "Completando..." : "Completar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setCompleteOpen(false)}>Cancelar</Button>
+            <Button variant="contained" color="success" onClick={handleComplete} disabled={!canComplete}>
+              {completeTrip.isPending ? "Completando..." : "Completar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Dialog: Detalle */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Detalle de Viaje</DialogTitle>
+      <Dialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDetailOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Detalle de Viaje</Typography>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Detalle de Viaje</DialogTitle>
+        )}
         <DialogContent>
           {selectedRow && (
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              <Typography><strong>N. Viaje:</strong> {String(selectedRow.TripNumber ?? "")}</Typography>
-              <Typography><strong>Vehiculo:</strong> {String(selectedRow.LicensePlate ?? "")}</Typography>
-              <Typography><strong>Conductor:</strong> {String(selectedRow.DriverId ?? "--")}</Typography>
-              <Typography><strong>Origen:</strong> {String(selectedRow.Origin ?? "")}</Typography>
-              <Typography><strong>Destino:</strong> {String(selectedRow.Destination ?? "")}</Typography>
-              <Typography><strong>Fecha Salida:</strong> {String(selectedRow.DepartedAt ?? "").slice(0, 10)}</Typography>
-              <Typography><strong>Fecha Llegada:</strong> {String(selectedRow.ArrivedAt ?? "--").slice(0, 10)}</Typography>
-              <Typography><strong>Distancia:</strong> {Number(selectedRow.DistanceKm ?? 0) > 0 ? Number(selectedRow.DistanceKm).toLocaleString("es") + " km" : "--"}</Typography>
-              <Typography>
-                <strong>Estado:</strong>{" "}
-                <Chip
-                  label={statusLabels[String(selectedRow.Status)] ?? String(selectedRow.Status)}
-                  size="small"
-                  color={statusColors[String(selectedRow.Status)] ?? "default"}
-                  variant="outlined"
-                />
-              </Typography>
-              <Typography><strong>Notas:</strong> {String(selectedRow.Notes ?? "--")}</Typography>
-            </Stack>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">N. Viaje</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.TripNumber ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Vehiculo</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.LicensePlate ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Conductor</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.DriverId ?? "--")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Origen</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Origin ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Destino</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Destination ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Fecha Salida</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.DepartedAt ?? "").slice(0, 10)}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Fecha Llegada</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.ArrivedAt ?? "--").slice(0, 10)}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Distancia</Typography>
+                <Typography variant="body1" fontWeight={500}>{Number(selectedRow.DistanceKm ?? 0) > 0 ? Number(selectedRow.DistanceKm).toLocaleString("es") + " km" : "--"}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Estado</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={statusLabels[String(selectedRow.Status)] ?? String(selectedRow.Status)}
+                    size="small"
+                    color={statusColors[String(selectedRow.Status)] ?? "default"}
+                    variant="outlined"
+                  />
+                </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Notas</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Notes ?? "--")}</Typography>
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailOpen(false)}>Cerrar</Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDetailOpen(false)}>Cerrar</Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );

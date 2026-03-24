@@ -398,6 +398,7 @@ export default function NuevoAsientoPage() {
 
           <Box sx={{ height: 300, mb: 2 }}>
             <ZenttoDataGrid
+            gridId="contabilidad-asiento-lineas"
               rows={lineas}
               columns={columns}
               editMode="cell"

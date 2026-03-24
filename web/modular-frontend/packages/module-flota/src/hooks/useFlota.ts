@@ -9,6 +9,8 @@ const QK_FUEL = "fleet-fuel";
 const QK_MAINTENANCE = "fleet-maintenance";
 const QK_TRIPS = "fleet-trips";
 const QK_DASHBOARD = "fleet-dashboard";
+const QK_ALERTS = "fleet-alerts";
+const QK_REPORT_FUEL = "fleet-report-fuel";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -221,11 +223,139 @@ export function useCompleteTrip() {
   });
 }
 
+// ── Alertas ─────────────────────────────────────────────────
+
+export interface FleetAlertItem {
+  AlertType: string;
+  ItemId: number;
+  VehicleId: number;
+  LicensePlate: string;
+  Brand: string;
+  Model: string;
+  DocumentType?: string;
+  DocumentNumber?: string;
+  MaintenanceTypeName?: string;
+  OrderNumber?: string;
+  ExpiryDate?: string;
+  ScheduledDate?: string;
+  DaysOverdue?: number;
+  DaysUntilExpiry?: number;
+}
+
+export interface FleetAlertsResponse {
+  expired: FleetAlertItem[];
+  expiringSoon: FleetAlertItem[];
+  maintenanceOverdue: FleetAlertItem[];
+  summary: {
+    expiredDocsCount: number;
+    expiringSoonDocsCount: number;
+    overdueMaintenanceCount: number;
+  };
+}
+
+export function useFleetAlerts() {
+  return useQuery<FleetAlertsResponse>({
+    queryKey: [QK_ALERTS],
+    queryFn: () => apiGet(`${BASE}/alertas`),
+  });
+}
+
+// ── Reportes ────────────────────────────────────────────────
+
+export interface FuelMonthlyRow {
+  VehicleId: number;
+  LicensePlate: string;
+  Brand: string;
+  Model: string;
+  TotalLiters: number;
+  TotalCost: number;
+  AvgCostPerLiter: number;
+}
+
+export interface FuelMonthlyResponse {
+  rows: FuelMonthlyRow[];
+  year: number;
+  month: number;
+}
+
+export function useFuelMonthlyReport(year: number, month: number) {
+  return useQuery<FuelMonthlyResponse>({
+    queryKey: [QK_REPORT_FUEL, year, month],
+    queryFn: () => apiGet(`${BASE}/reportes/combustible-mensual?year=${year}&month=${month}`),
+    enabled: year > 0 && month > 0,
+  });
+}
+
 // ── Dashboard ───────────────────────────────────────────────
 
 export function useFlotaDashboard() {
   return useQuery<FlotaDashboard>({
     queryKey: [QK_DASHBOARD],
     queryFn: () => apiGet(`${BASE}/dashboard`),
+  });
+}
+
+// ── Analytics ──────────────────────────────────────────────
+
+export interface FuelCostByVehicleRow {
+  VehicleId: number;
+  LicensePlate: string;
+  BrandModel: string;
+  TotalCost: number;
+}
+
+export interface KmByMonthRow {
+  Month: string;
+  MonthLabel: string;
+  TotalKm: number;
+}
+
+export interface NextMaintenanceRow {
+  MaintenanceOrderId: number;
+  OrderNumber: string;
+  LicensePlate: string;
+  BrandModel: string;
+  MaintenanceType: string;
+  ScheduledDate: string;
+  EstimatedCost: number;
+  Status: string;
+}
+
+export interface FlotaTrends {
+  FuelCostThisMonth: number;
+  FuelCostLastMonth: number;
+  KmThisMonth: number;
+  KmLastMonth: number;
+  TripsThisMonth: number;
+  TripsLastMonth: number;
+}
+
+const QK_ANALYTICS = "fleet-analytics";
+
+export function useFuelCostByVehicle() {
+  return useQuery<FuelCostByVehicleRow[]>({
+    queryKey: [QK_ANALYTICS, "fuel-by-vehicle"],
+    queryFn: () => apiGet(`${BASE}/analytics/fuel-by-vehicle`),
+  });
+}
+
+export function useKmByMonth() {
+  return useQuery<KmByMonthRow[]>({
+    queryKey: [QK_ANALYTICS, "km-by-month"],
+    queryFn: () => apiGet(`${BASE}/analytics/km-by-month`),
+  });
+}
+
+export function useNextMaintenance() {
+  return useQuery<NextMaintenanceRow[]>({
+    queryKey: [QK_ANALYTICS, "next-maintenance"],
+    queryFn: () => apiGet(`${BASE}/analytics/next-maintenance`),
+  });
+}
+
+export function useFlotaTrends() {
+  return useQuery<FlotaTrends>({
+    queryKey: [QK_ANALYTICS, "trends"],
+    queryFn: () => apiGet(`${BASE}/analytics/trends`),
   });
 }

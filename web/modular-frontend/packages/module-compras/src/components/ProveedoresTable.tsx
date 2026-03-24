@@ -122,6 +122,7 @@ export default function ProveedoresTable() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="compras-proveedores-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.codigo ?? row.id ?? Math.random()}

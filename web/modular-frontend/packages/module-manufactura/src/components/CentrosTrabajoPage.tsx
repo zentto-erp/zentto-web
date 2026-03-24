@@ -189,6 +189,7 @@ export default function CentrosTrabajoPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="manufactura-centros-trabajo-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.WorkCenterId ?? row.Id ?? row.WorkCenterCode ?? Math.random()}

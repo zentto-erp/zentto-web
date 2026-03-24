@@ -682,6 +682,7 @@ export default function PresupuestosPage() {
 
       <Paper sx={{ borderRadius: 2 }}>
         <ZenttoDataGrid
+            gridId="contabilidad-presupuestos-list"
           rows={presupuestos}
           columns={columns}
           getRowId={(r) => r.BudgetId ?? r.id ?? r._id}

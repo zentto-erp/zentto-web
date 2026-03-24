@@ -2,95 +2,203 @@
 
 import React from "react";
 import {
+  Alert,
+  AlertTitle,
   Box,
   Card,
   CardActionArea,
   CardContent,
-  IconButton,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Chip,
+  Paper,
+  Skeleton,
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { alpha } from "@mui/material/styles";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import LocalGasStationIcon from "@mui/icons-material/LocalGasStation";
 import BuildIcon from "@mui/icons-material/Build";
 import RouteIcon from "@mui/icons-material/Route";
 import SpeedIcon from "@mui/icons-material/Speed";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { BarChart } from "@mui/x-charts/BarChart";
+import { LineChart } from "@mui/x-charts/LineChart";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@zentto/shared-api";
-import { useFlotaDashboard, useVehiclesList, useTripsList } from "../hooks/useFlota";
-import { brandColors } from "@zentto/shared-ui";
+import {
+  useFlotaDashboard,
+  useFleetAlerts,
+  useFuelCostByVehicle,
+  useKmByMonth,
+  useNextMaintenance,
+  useFlotaTrends,
+} from "../hooks/useFlota";
+import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 
-const vehicleStatusLabels: Record<string, string> = {
-  ACTIVE: "Activo",
-  MAINTENANCE: "Mantenimiento",
-  INACTIVE: "Inactivo",
-};
+/* ─── Helpers ─────────────────────────────────────────────── */
 
-const vehicleStatusColors: Record<string, "success" | "warning" | "default"> = {
-  ACTIVE: "success",
-  MAINTENANCE: "warning",
-  INACTIVE: "default",
-};
+function pctChange(current: number, previous: number): number | null {
+  if (previous === 0) return current > 0 ? 100 : null;
+  return ((current - previous) / previous) * 100;
+}
 
-const tripStatusLabels: Record<string, string> = {
-  PLANNED: "Planificado",
-  IN_TRANSIT: "En Transito",
-  COMPLETED: "Completado",
-};
+/* ─── KPI Card ─────────────────────────────────────────────── */
 
-const tripStatusColors: Record<string, "info" | "warning" | "success" | "default"> = {
-  PLANNED: "info",
-  IN_TRANSIT: "warning",
-  COMPLETED: "success",
-};
+interface KPICardProps {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  color: string;
+  change?: number | null;
+  loading?: boolean;
+}
+
+function KPICard({ title, value, subtitle, icon, color, change, loading }: KPICardProps) {
+  return (
+    <Card
+      sx={{
+        height: "100%",
+        borderRadius: 2,
+        border: `1px solid ${alpha(color, 0.2)}`,
+        boxShadow: `0 2px 8px ${alpha(color, 0.08)}`,
+      }}
+    >
+      <CardContent sx={{ pb: "12px !important", pt: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}
+            >
+              {title}
+            </Typography>
+            {loading ? (
+              <Skeleton variant="text" width={80} height={36} sx={{ mt: 0.5 }} />
+            ) : (
+              <Typography variant="h5" sx={{ fontWeight: 700, color, mt: 0.5, lineHeight: 1.1 }}>
+                {value}
+              </Typography>
+            )}
+            {subtitle && !loading && (
+              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.3, display: "block" }}>
+                {subtitle}
+              </Typography>
+            )}
+            {change !== undefined && change !== null && !loading && (
+              <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                {change >= 0 ? (
+                  <TrendingUpIcon sx={{ fontSize: 14, color: "success.main", mr: 0.3 }} />
+                ) : (
+                  <TrendingDownIcon sx={{ fontSize: 14, color: "error.main", mr: 0.3 }} />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{ color: change >= 0 ? "success.main" : "error.main", fontWeight: 600 }}
+                >
+                  {change >= 0 ? "+" : ""}{change.toFixed(1)}% vs mes anterior
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          <Box
+            sx={{
+              bgcolor: alpha(color, 0.1),
+              borderRadius: 1.5,
+              p: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color,
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Maintenance Table Columns ──────────────────────────── */
+
+const maintenanceCols: ZenttoColDef[] = [
+  { field: "OrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 90 },
+  { field: "LicensePlate", headerName: "Placa", flex: 0.7, minWidth: 80 },
+  { field: "MaintenanceType", headerName: "Tipo", flex: 1, minWidth: 120, mobileHide: true },
+  {
+    field: "ScheduledDate",
+    headerName: "Fecha",
+    width: 100,
+    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+  },
+  {
+    field: "EstimatedCost",
+    headerName: "Costo Est.",
+    width: 100,
+    type: "number",
+    valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
+    mobileHide: true,
+  },
+];
+
+/* ─── Main Component ──────────────────────────────────────── */
 
 export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
-  const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
-  const { data: lastVehicles } = useVehiclesList({ limit: 5 });
-  const { data: lastTrips } = useTripsList({ limit: 5 });
 
-  const statsCards = [
+  // Data hooks
+  const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
+  const { data: alerts } = useFleetAlerts();
+  const { data: fuelByVehicleRaw, isLoading: loadingFuel } = useFuelCostByVehicle();
+  const { data: kmByMonthRaw, isLoading: loadingKm } = useKmByMonth();
+  const { data: nextMaintRaw, isLoading: loadingMaint } = useNextMaintenance();
+  const { data: trends, isLoading: loadingTrends } = useFlotaTrends();
+
+  // Normalize
+  const fuelByVehicle = Array.isArray(fuelByVehicleRaw) ? fuelByVehicleRaw : [];
+  const kmByMonth = Array.isArray(kmByMonthRaw) ? kmByMonthRaw : [];
+  const nextMaint = Array.isArray(nextMaintRaw) ? nextMaintRaw : [];
+
+  // Alert summary
+  const summary = alerts?.summary;
+  const hasAlerts = summary && (summary.expiredDocsCount > 0 || summary.expiringSoonDocsCount > 0 || summary.overdueMaintenanceCount > 0);
+
+  // Trends
+  const fuelChange = trends ? pctChange(trends.FuelCostThisMonth, trends.FuelCostLastMonth) : null;
+  const kmChange = trends ? pctChange(trends.KmThisMonth, trends.KmLastMonth) : null;
+
+  const db = dashboard as Record<string, unknown> | undefined;
+  const kpiCards = [
     {
       title: "Vehiculos Activos",
-      value: dashboard ? String(dashboard.VehiculosActivos) : "\u2014",
-      subtitle: "En operacion",
-      loading: dashLoading,
-      color: brandColors.statBlue,
-      chartType: "bar" as const,
+      value: String(db?.VehiculosActivos ?? db?.TotalActiveVehicles ?? 0),
+      icon: <DirectionsCarIcon />,
+      color: "#1976d2",
     },
     {
       title: "Km Total Mes",
-      value: dashboard ? Number(dashboard.KmTotalMes).toLocaleString("es") : "\u2014",
-      subtitle: "Kilometros recorridos",
-      loading: dashLoading,
-      color: brandColors.statTeal,
-      chartType: "line" as const,
+      value: db ? Number(db.KmTotalMes ?? trends?.KmThisMonth ?? 0).toLocaleString("es") : "\u2014",
+      icon: <SpeedIcon />,
+      color: "#00897b",
+      change: kmChange,
     },
     {
       title: "Costo Combustible Mes",
-      value: dashboard ? formatCurrency(dashboard.CostoCombustibleMes) : "\u2014",
-      subtitle: "Gasto acumulado",
-      loading: dashLoading,
-      color: brandColors.statRed,
-      chartType: "bar" as const,
+      value: db ? formatCurrency(Number(db.CostoCombustibleMes ?? db.FuelCostThisMonth ?? 0)) : "\u2014",
+      icon: <LocalGasStationIcon />,
+      color: "#f44336",
+      change: fuelChange,
     },
     {
       title: "Mant. Pendientes",
-      value: dashboard ? String(dashboard.MantenimientosPendientes) : "\u2014",
-      subtitle: "Ordenes abiertas",
-      loading: dashLoading,
-      color: brandColors.statOrange,
-      chartType: "line" as const,
+      value: String(db?.MantenimientosPendientes ?? db?.MaintenancePending ?? 0),
+      icon: <BuildIcon />,
+      color: "#ff9800",
     },
   ];
 
@@ -101,8 +209,7 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
     { title: "Viajes", description: "Control de rutas", icon: <RouteIcon sx={{ fontSize: 32 }} />, href: `${bp}/viajes`, bg: brandColors.shortcutSlate },
   ];
 
-  const vehicleRows = (lastVehicles?.rows ?? []) as Record<string, unknown>[];
-  const tripRows = (lastTrips?.rows ?? []) as Record<string, unknown>[];
+  const maintRows = nextMaint.map((m, i) => ({ id: m.MaintenanceOrderId ?? i, ...m }));
 
   return (
     <Box>
@@ -110,53 +217,81 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
         Dashboard de Flota
       </Typography>
 
-      {/* STATS CARDS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {statsCards.map((s, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%", bgcolor: s.color, color: "white", borderRadius: 2,
-                position: "relative", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>{s.value}</Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
+      {/* ─── ALERTAS ────────────────────────────────────────── */}
+      {hasAlerts && (
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {(summary.expiredDocsCount > 0) && (
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Alert severity="error" icon={<ErrorOutlineIcon />} sx={{ borderRadius: 2 }}>
+                <AlertTitle sx={{ fontWeight: 700 }}>Documentos Vencidos</AlertTitle>
+                {summary.expiredDocsCount} documento{summary.expiredDocsCount > 1 ? "s" : ""} vencido{summary.expiredDocsCount > 1 ? "s" : ""}
+                {alerts.expired.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    {alerts.expired.slice(0, 3).map((a, i) => (
+                      <Typography key={i} variant="caption" display="block" sx={{ opacity: 0.85 }}>
+                        {a.LicensePlate} - {a.DocumentType} ({a.DaysOverdue}d vencido)
+                      </Typography>
+                    ))}
                   </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+                )}
+              </Alert>
+            </Grid>
+          )}
+          {(summary.expiringSoonDocsCount > 0) && (
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ borderRadius: 2 }}>
+                <AlertTitle sx={{ fontWeight: 700 }}>Documentos por Vencer</AlertTitle>
+                {summary.expiringSoonDocsCount} por vencer (30 dias)
+                {alerts.expiringSoon.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    {alerts.expiringSoon.slice(0, 3).map((a, i) => (
+                      <Typography key={i} variant="caption" display="block" sx={{ opacity: 0.85 }}>
+                        {a.LicensePlate} - {a.DocumentType} ({a.DaysUntilExpiry}d restantes)
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </Alert>
+            </Grid>
+          )}
+          {(summary.overdueMaintenanceCount > 0) && (
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Alert severity="error" icon={<BuildIcon />} sx={{ borderRadius: 2 }}>
+                <AlertTitle sx={{ fontWeight: 700 }}>Mantenimientos Vencidos</AlertTitle>
+                {summary.overdueMaintenanceCount} atrasado{summary.overdueMaintenanceCount > 1 ? "s" : ""}
+                {alerts.maintenanceOverdue.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    {alerts.maintenanceOverdue.slice(0, 3).map((a, i) => (
+                      <Typography key={i} variant="caption" display="block" sx={{ opacity: 0.85 }}>
+                        {a.LicensePlate} - {a.MaintenanceTypeName} ({a.DaysOverdue}d atrasado)
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
+      )}
+
+      {/* ─── KPI CARDS ──────────────────────────────────────── */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {kpiCards.map((kpi, idx) => (
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <KPICard
+              title={kpi.title}
+              value={kpi.value}
+              icon={kpi.icon}
+              color={kpi.color}
+              change={kpi.change}
+              loading={dashLoading || loadingTrends}
+            />
           </Grid>
         ))}
       </Grid>
 
-      {/* SHORTCUTS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* ─── SHORTCUTS ──────────────────────────────────────── */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
           <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
@@ -177,93 +312,87 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
         ))}
       </Grid>
 
-      {/* ULTIMOS VEHICULOS + ULTIMOS VIAJES */}
-      <Grid container spacing={3}>
+      {/* ─── CHARTS ─────────────────────────────────────────── */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Bar Chart: Costo combustible por vehiculo */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Vehiculos Recientes</Typography>
-              {vehicleRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Placa</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Marca/Modelo</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Km</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {vehicleRows.map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(r.VehiclePlate ?? "")}</TableCell>
-                        <TableCell>{String(r.Brand ?? "")} {String(r.Model ?? "")}</TableCell>
-                        <TableCell>{Number(r.CurrentMileage ?? 0).toLocaleString("es")}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={vehicleStatusLabels[String(r.Status)] ?? String(r.Status)}
-                            size="small"
-                            color={vehicleStatusColors[String(r.Status)] ?? "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <DirectionsCarIcon /> No hay vehiculos registrados aun
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper sx={{ borderRadius: 2, p: 2, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Costo Combustible por Vehiculo (Top 5)</Typography>
+            {loadingFuel ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : fuelByVehicle.length > 0 ? (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <BarChart
+                  height={280}
+                  layout="horizontal"
+                  yAxis={[{ data: fuelByVehicle.map(v => v.LicensePlate), scaleType: "band" }]}
+                  xAxis={[{ valueFormatter: (v: number) => formatCurrency(v) }]}
+                  series={[{
+                    data: fuelByVehicle.map(v => Number(v.TotalCost)),
+                    label: "Costo",
+                    color: "#f44336",
+                    valueFormatter: (v) => formatCurrency(v ?? 0),
+                  }]}
+                />
+              </Box>
+            ) : (
+              <Alert severity="info">Sin datos de combustible este mes</Alert>
+            )}
+          </Paper>
         </Grid>
+
+        {/* Line Chart: Km por mes */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimos Viajes</Typography>
-              {tripRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>N. Viaje</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Ruta</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {tripRows.map((t, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(t.TripNumber ?? "")}</TableCell>
-                        <TableCell>{String(t.Origin ?? "")} - {String(t.Destination ?? "")}</TableCell>
-                        <TableCell>{String(t.DepartureDate ?? "").slice(0, 10)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={tripStatusLabels[String(t.Status)] ?? String(t.Status)}
-                            size="small"
-                            color={tripStatusColors[String(t.Status)] ?? "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <RouteIcon /> No hay viajes registrados aun
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper sx={{ borderRadius: 2, p: 2, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Km Recorridos por Mes</Typography>
+            {loadingKm ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : kmByMonth.length > 0 ? (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <LineChart
+                  height={280}
+                  xAxis={[{ data: kmByMonth.map(k => k.MonthLabel), scaleType: "band" }]}
+                  series={[{
+                    data: kmByMonth.map(k => Number(k.TotalKm)),
+                    label: "Km",
+                    color: "#00897b",
+                    area: true,
+                  }]}
+                />
+              </Box>
+            ) : (
+              <Alert severity="info">Sin datos de kilometraje</Alert>
+            )}
+          </Paper>
         </Grid>
       </Grid>
+
+      {/* ─── NEXT MAINTENANCE TABLE ─────────────────────────── */}
+      <Paper sx={{ borderRadius: 2, p: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Proximos Mantenimientos</Typography>
+        {loadingMaint ? (
+          <Skeleton variant="rectangular" height={250} />
+        ) : maintRows.length > 0 ? (
+          <ZenttoDataGrid
+            rows={maintRows}
+            columns={maintenanceCols}
+            serverRowCount={maintRows.length}
+            autoHeight
+            hideFooter
+            disableRowSelectionOnClick
+            density="compact"
+            sx={{ border: 0 }}
+            mobileVisibleFields={["OrderNumber", "LicensePlate", "ScheduledDate"]}
+            smExtraFields={["MaintenanceType"]}
+          />
+        ) : (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <BuildIcon /> No hay mantenimientos pendientes
+            </Typography>
+          </Box>
+        )}
+      </Paper>
     </Box>
   );
 }

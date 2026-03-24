@@ -113,6 +113,7 @@ export default function VacacionesPage() {
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid
+            gridId="nomina-vacaciones-list"
           rows={rows}
           columns={columns}
           loading={isLoading}

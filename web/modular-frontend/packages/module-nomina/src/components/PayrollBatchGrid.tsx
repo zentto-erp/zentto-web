@@ -270,6 +270,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       {/* Grid */}
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, borderRadius: 2, overflow: "hidden" }}>
         <ZenttoDataGrid
+            gridId="nomina-payroll-batch-list"
           rows={rows}
           columns={columns as ZenttoColDef[]}
           loading={grid.isLoading}

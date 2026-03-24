@@ -171,6 +171,7 @@ export default function CategoriasActivosPage() {
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="contabilidad-categorias-activos-list"
             rows={rows}
             columns={columns}
             loading={isLoading}

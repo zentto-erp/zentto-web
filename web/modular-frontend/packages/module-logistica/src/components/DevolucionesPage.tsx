@@ -223,6 +223,7 @@ export default function DevolucionesPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="logistica-devoluciones-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.ReturnId ?? row.Id ?? row.ReturnNumber ?? Math.random()}

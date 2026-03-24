@@ -163,6 +163,7 @@ export default function CajaAhorroPage() {
         </Stack>
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="nomina-caja-ahorro-list"
             rows={savingsRows}
             columns={savingsColumns}
             loading={savingsLoading}
@@ -189,6 +190,7 @@ export default function CajaAhorroPage() {
         </Stack>
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="nomina-caja-ahorro-prestamos"
             rows={loanRows}
             columns={loanColumns}
             loading={loansLoading}

@@ -84,6 +84,7 @@ export default function ConceptosRetencionPage() {
       </Stack>
 
       <ZenttoDataGrid
+        gridId="contabilidad-conceptos-retencion-list"
         rows={rows}
         columns={columns}
         loading={isLoading}

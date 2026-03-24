@@ -230,6 +230,7 @@ export default function CajaChicaPage() {
               Cajas Chicas
             </Typography>
             <ZenttoDataGrid
+            gridId="bancos-caja-chica-list"
               rows={boxes}
               columns={colsBoxes}
               loading={boxesQuery.isLoading}
@@ -337,6 +338,7 @@ export default function CajaChicaPage() {
                   Gastos de la Sesión
                 </Typography>
                 <ZenttoDataGrid
+            gridId="bancos-caja-chica-gastos"
                   rows={expenses}
                   columns={colsExpenses}
                   loading={expensesQuery.isLoading}

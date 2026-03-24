@@ -299,6 +299,7 @@ export default function PatrimonioPage() {
             }}
           >
             <ZenttoDataGrid
+            gridId="contabilidad-patrimonio-list"
               rows={rows}
               columns={columns}
               loading={isLoading}

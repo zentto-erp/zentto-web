@@ -253,6 +253,7 @@ export default function SaludOcupacionalPage() {
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid
+            gridId="nomina-salud-ocupacional-list"
           rows={rows}
           columns={columns}
           loading={isLoading}

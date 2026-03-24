@@ -366,6 +366,7 @@ export default function CRMSettingsPage() {
               <Typography color="text.secondary">Cargando...</Typography>
             ) : (
               <ZenttoDataGrid
+            gridId="crm-settings-stages"
                 rows={stages}
                 columns={stageColumns}
                 getRowId={(row: any) => row.StageId}

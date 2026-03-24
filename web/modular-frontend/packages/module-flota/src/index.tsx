@@ -20,6 +20,8 @@ export {
   useCreateTrip,
   useCompleteTrip,
   useFlotaDashboard,
+  useFleetAlerts,
+  useFuelMonthlyReport,
 } from "./hooks/useFlota";
 
 export type {
@@ -32,6 +34,10 @@ export type {
   TripFilter,
   TripListResponse,
   FlotaDashboard,
+  FleetAlertItem,
+  FleetAlertsResponse,
+  FuelMonthlyRow,
+  FuelMonthlyResponse,
 } from "./hooks/useFlota";
 
 // -- Components ───────────────────────────────────────────────
@@ -42,3 +48,4 @@ export { default as ViajesPage } from "./components/ViajesPage";
 
 // -- Pages ────────────────────────────────────────────────────
 export { default as FlotaHome } from "./pages/FlotaHome";
+export { default as ReportesPage } from "./pages/ReportesPage";

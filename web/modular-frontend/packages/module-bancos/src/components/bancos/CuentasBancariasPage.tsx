@@ -151,6 +151,7 @@ export default function CuentasBancariasPage() {
               Cuentas
             </Typography>
             <ZenttoDataGrid
+            gridId="bancos-cuentas-list"
               rows={cuentas}
               columns={colsCuentas}
               loading={loadingCtas}
@@ -214,6 +215,7 @@ export default function CuentasBancariasPage() {
             </Stack>
 
             <ZenttoDataGrid
+            gridId="bancos-cuentas-movimientos"
               rows={movs}
               columns={colsMovimientos}
               loading={loadingMovs}

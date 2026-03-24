@@ -197,6 +197,7 @@ export default function ConductoresPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="logistica-conductores-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.DriverId ?? row.Id ?? row.DriverCode ?? Math.random()}

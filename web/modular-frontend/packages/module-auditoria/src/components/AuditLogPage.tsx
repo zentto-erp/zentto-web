@@ -161,6 +161,7 @@ export default function AuditLogPage() {
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="auditoria-audit-log-list"
             rows={rows}
             columns={columns}
             loading={isLoading}

@@ -56,6 +56,7 @@ export default function UnidadTributariaPage() {
       </Stack>
 
       <ZenttoDataGrid
+        gridId="contabilidad-unidad-tributaria-list"
         rows={rows}
         columns={columns}
         loading={isLoading}

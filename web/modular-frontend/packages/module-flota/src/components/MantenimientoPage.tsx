@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  AppBar,
   Box,
   Button,
   Chip,
@@ -13,9 +14,13 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Toolbar,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
@@ -23,6 +28,7 @@ import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency } from "@zentto/shared-api";
 import {
   useMaintenanceOrdersList,
@@ -47,6 +53,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function MantenimientoPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [filter, setFilter] = useState<MaintenanceFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -216,10 +225,19 @@ export default function MantenimientoPage() {
     );
   };
 
+  const canCreate = !createOrder.isPending && !!vehicleId && !!maintenanceTypeId && !!scheduledDate && !!description;
+  const canComplete = !completeOrder.isPending && !!actualCost && !!completedDate;
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: "space-between",
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 2, mb: 3,
+      }}>
         <Typography variant="h5" fontWeight={600}>
           Ordenes de Mantenimiento
         </Typography>
@@ -229,25 +247,27 @@ export default function MantenimientoPage() {
       </Box>
 
       {/* Filter */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-         
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="SCHEDULED">Programado</MenuItem>
-          <MenuItem value="IN_PROGRESS">En Progreso</MenuItem>
-          <MenuItem value="COMPLETED">Completado</MenuItem>
-          <MenuItem value="CANCELLED">Cancelado</MenuItem>
-        </TextField>
-      </Stack>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="SCHEDULED">Programado</MenuItem>
+            <MenuItem value="IN_PROGRESS">En Progreso</MenuItem>
+            <MenuItem value="COMPLETED">Completado</MenuItem>
+            <MenuItem value="CANCELLED">Cancelado</MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="flota-mantenimiento-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.MaintenanceOrderId ?? row.Id ?? Math.random()}
@@ -265,83 +285,178 @@ export default function MantenimientoPage() {
       />
 
       {/* Dialog: Nueva Orden */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nueva Orden de Mantenimiento</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "md"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Nueva Orden de Mantenimiento</Typography>
+              <Button autoFocus color="inherit" onClick={handleCreate} disabled={!canCreate}>
+                {createOrder.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Nueva Orden de Mantenimiento</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
-            <TextField label="Tipo Mantenimiento (ID)" type="number" value={maintenanceTypeId} onChange={(e) => setMaintenanceTypeId(e.target.value)} fullWidth required />
-            <TextField label="Kilometraje al Servicio" type="number" value={mileageAtService} onChange={(e) => setMileageAtService(e.target.value)} fullWidth required />
-            <DatePicker label="Fecha Programada" value={scheduledDate ? dayjs(scheduledDate) : null} onChange={(v) => setScheduledDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-            <TextField label="Costo Estimado" type="number" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} fullWidth required />
-            <TextField label="Descripcion" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth required multiline rows={3} />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Vehiculo (ID)" type="number" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Tipo Mantenimiento (ID)" type="number" value={maintenanceTypeId} onChange={(e) => setMaintenanceTypeId(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Kilometraje al Servicio" type="number" value={mileageAtService} onChange={(e) => setMileageAtService(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <DatePicker label="Fecha Programada" value={scheduledDate ? dayjs(scheduledDate) : null} onChange={(v) => setScheduledDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField label="Costo Estimado" type="number" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Descripcion" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth required multiline rows={3} />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleCreate}
-            disabled={createOrder.isPending || !vehicleId || !maintenanceTypeId || !scheduledDate || !description}
-          >
-            {createOrder.isPending ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button variant="contained" onClick={handleCreate} disabled={!canCreate}>
+              {createOrder.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Dialog: Completar Orden */}
-      <Dialog open={completeOpen} onClose={() => setCompleteOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Completar Mantenimiento</DialogTitle>
+      <Dialog
+        open={completeOpen}
+        onClose={() => setCompleteOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "xs"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setCompleteOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Completar Mantenimiento</Typography>
+              <Button autoFocus color="inherit" onClick={handleComplete} disabled={!canComplete}>
+                {completeOrder.isPending ? "Completando..." : "Completar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Completar Mantenimiento</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Orden: {String(selectedRow?.OrderNumber ?? "")}
-            </Typography>
-            <TextField label="Costo Real" type="number" value={actualCost} onChange={(e) => setActualCost(e.target.value)} fullWidth required />
-            <DatePicker label="Fecha Completado" value={completedDate ? dayjs(completedDate) : null} onChange={(v) => setCompletedDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                Orden: {String(selectedRow?.OrderNumber ?? "")}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Costo Real" type="number" value={actualCost} onChange={(e) => setActualCost(e.target.value)} fullWidth required />
+            </Grid>
+            <Grid item xs={12}>
+              <DatePicker label="Fecha Completado" value={completedDate ? dayjs(completedDate) : null} onChange={(v) => setCompletedDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCompleteOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleComplete}
-            disabled={completeOrder.isPending || !actualCost || !completedDate}
-          >
-            {completeOrder.isPending ? "Completando..." : "Completar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setCompleteOpen(false)}>Cancelar</Button>
+            <Button variant="contained" color="success" onClick={handleComplete} disabled={!canComplete}>
+              {completeOrder.isPending ? "Completando..." : "Completar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Dialog: Detalle */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Detalle de Mantenimiento</DialogTitle>
+      <Dialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDetailOpen(false)} aria-label="cerrar">
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">Detalle de Mantenimiento</Typography>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Detalle de Mantenimiento</DialogTitle>
+        )}
         <DialogContent>
           {selectedRow && (
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              <Typography><strong>N. Orden:</strong> {String(selectedRow.OrderNumber ?? "")}</Typography>
-              <Typography><strong>Vehiculo:</strong> {String(selectedRow.LicensePlate ?? "")}</Typography>
-              <Typography><strong>Tipo:</strong> {String(selectedRow.MaintenanceType ?? "")}</Typography>
-              <Typography><strong>Descripcion:</strong> {String(selectedRow.Description ?? "")}</Typography>
-              <Typography><strong>Fecha Programada:</strong> {String(selectedRow.ScheduledDate ?? "").slice(0, 10)}</Typography>
-              <Typography><strong>Costo Estimado:</strong> {formatCurrency(Number(selectedRow.EstimatedCost ?? 0))}</Typography>
-              <Typography><strong>Costo Real:</strong> {formatCurrency(Number(selectedRow.ActualCost ?? 0))}</Typography>
-              <Typography>
-                <strong>Estado:</strong>{" "}
-                <Chip
-                  label={statusLabels[String(selectedRow.Status)] ?? String(selectedRow.Status)}
-                  size="small"
-                  color={statusColors[String(selectedRow.Status)] ?? "default"}
-                  variant="outlined"
-                />
-              </Typography>
-            </Stack>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">N. Orden</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.OrderNumber ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Vehiculo</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.LicensePlate ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Tipo</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.MaintenanceType ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Fecha Programada</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.ScheduledDate ?? "").slice(0, 10)}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Descripcion</Typography>
+                <Typography variant="body1" fontWeight={500}>{String(selectedRow.Description ?? "")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Costo Estimado</Typography>
+                <Typography variant="body1" fontWeight={500}>{formatCurrency(Number(selectedRow.EstimatedCost ?? 0))}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Costo Real</Typography>
+                <Typography variant="body1" fontWeight={500}>{formatCurrency(Number(selectedRow.ActualCost ?? 0))}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Estado</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={statusLabels[String(selectedRow.Status)] ?? String(selectedRow.Status)}
+                    size="small"
+                    color={statusColors[String(selectedRow.Status)] ?? "default"}
+                    variant="outlined"
+                  />
+                </Box>
+              </Grid>
+            </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailOpen(false)}>Cerrar</Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDetailOpen(false)}>Cerrar</Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );

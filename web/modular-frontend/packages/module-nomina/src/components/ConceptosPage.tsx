@@ -157,6 +157,7 @@ export default function ConceptosPage() {
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
         <ZenttoDataGrid
+            gridId="nomina-conceptos-list"
           rows={rows}
           columns={columns}
           loading={isLoading}

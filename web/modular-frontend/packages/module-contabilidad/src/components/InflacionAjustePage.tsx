@@ -232,6 +232,7 @@ export default function InflacionAjustePage() {
             </Stack>
             <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2 }}>
               <ZenttoDataGrid
+            gridId="contabilidad-inflacion-indices"
                 rows={indicesRows}
                 columns={indicesColumns}
                 loading={indicesQuery.isLoading}
@@ -271,6 +272,7 @@ export default function InflacionAjustePage() {
             )}
             <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2 }}>
               <ZenttoDataGrid
+            gridId="contabilidad-inflacion-clasificacion"
                 rows={clasificacionRows}
                 columns={clasificacionColumns}
                 loading={clasificacionQuery.isLoading}
@@ -344,6 +346,7 @@ export default function InflacionAjustePage() {
             <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2 }}>
               {calcPreviewRows.length > 0 ? (
                 <ZenttoDataGrid
+            gridId="contabilidad-inflacion-calculo"
                   rows={calcPreviewRows}
                   columns={calcPreviewColumns}
                   pageSizeOptions={[25, 50]}
@@ -367,6 +370,7 @@ export default function InflacionAjustePage() {
           <TabPanel value={tab} index={3}>
             <Box sx={{ flex: 1, minHeight: 0, p: 2 }}>
               <ZenttoDataGrid
+            gridId="contabilidad-inflacion-historial"
                 rows={historialRows}
                 columns={historialColumns}
                 loading={historialQuery.isLoading}

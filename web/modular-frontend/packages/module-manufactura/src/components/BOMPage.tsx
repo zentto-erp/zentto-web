@@ -256,6 +256,7 @@ export default function BOMPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="manufactura-bom-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.BOMId ?? row.Id ?? row.BOMCode ?? Math.random()}

@@ -238,6 +238,7 @@ export default function LeadsPage() {
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>
         <ZenttoDataGrid
+        gridId="crm-leads-list"
           rows={rows}
           columns={columns}
           getRowId={(r) => r.LeadId}

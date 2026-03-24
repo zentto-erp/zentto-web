@@ -176,6 +176,7 @@ export default function ComprasTable() {
       </Paper>
 
       <ZenttoDataGrid
+        gridId="compras-compras-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.documentNumber ?? row.id ?? Math.random()}

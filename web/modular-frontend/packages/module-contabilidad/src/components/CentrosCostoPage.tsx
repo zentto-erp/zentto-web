@@ -337,6 +337,7 @@ function PnLByCostCenterTab() {
     <Box>
       {filters}
       <ZenttoDataGrid
+        gridId="contabilidad-centros-costo-pnl"
         rows={rows}
         columns={columns}
         getRowId={(r) => r._id}
@@ -409,6 +410,7 @@ function PivotTab() {
     <Box>
       {filters}
       <ZenttoDataGrid
+        gridId="contabilidad-centros-costo-pivot"
         rows={pivotRows}
         columns={pivotColumns}
         getRowId={(r) => r._id}

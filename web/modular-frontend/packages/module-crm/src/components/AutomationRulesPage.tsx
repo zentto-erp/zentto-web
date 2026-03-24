@@ -458,6 +458,7 @@ export default function AutomationRulesPage() {
       </Box>
 
       <ZenttoDataGrid
+        gridId="crm-automation-rules-list"
         rows={rules}
         columns={columns}
         loading={isLoading}

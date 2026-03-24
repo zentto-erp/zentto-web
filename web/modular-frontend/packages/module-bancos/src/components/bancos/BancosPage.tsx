@@ -161,6 +161,7 @@ export default function BancosPage() {
 
       {/* Grid */}
       <ZenttoDataGrid
+        gridId="bancos-bancos-list"
         rows={rows}
         columns={columns}
         loading={isLoading}

@@ -56,6 +56,7 @@ export default function PlanCuentasPage() {
           </Box>
         ) : (
           <ZenttoDataGrid
+            gridId="contabilidad-plan-cuentas-list"
             rows={rows}
             columns={columns}
             pageSizeOptions={[25, 50, 100]}

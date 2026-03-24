@@ -219,6 +219,7 @@ export default function ObligacionesPage() {
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="nomina-obligaciones-list"
             rows={oblRows}
             columns={oblColumns}
             loading={oblLoading}
@@ -264,6 +265,7 @@ export default function ObligacionesPage() {
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="nomina-obligaciones-filing"
             rows={filRows}
             columns={filColumns}
             loading={filLoading}

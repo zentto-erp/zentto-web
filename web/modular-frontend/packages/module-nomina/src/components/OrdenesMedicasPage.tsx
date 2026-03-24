@@ -188,6 +188,7 @@ export default function OrdenesMedicasPage() {
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
         <ZenttoDataGrid
+            gridId="nomina-ordenes-medicas-list"
           rows={rows}
           columns={columns}
           loading={isLoading}

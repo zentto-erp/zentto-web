@@ -186,6 +186,7 @@ export default function LibroFiscalPage() {
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="contabilidad-libro-fiscal-list"
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -215,6 +216,7 @@ export default function LibroFiscalPage() {
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <ZenttoDataGrid
+              gridId="contabilidad-libro-fiscal-resumen"
               rows={resumenRows.map((r: any, idx: number) => ({ ...r, _id: idx }))}
               columns={[
                 { field: "TaxRate", headerName: "Tasa (%)", width: 100, renderCell: (p: any) => `${p.value}%` },

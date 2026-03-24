@@ -183,6 +183,7 @@ export default function TransportistasPage() {
 
       {/* DataGrid */}
       <ZenttoDataGrid
+        gridId="logistica-transportistas-list"
         rows={rows}
         columns={columns}
         getRowId={(row) => row.CarrierId ?? row.Id ?? row.CarrierCode ?? Math.random()}

@@ -228,6 +228,7 @@ export default function DeclaracionesPage() {
         {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
           <ZenttoDataGrid
+            gridId="contabilidad-declaraciones-list"
             rows={rows}
             columns={columns}
             loading={isLoading}
