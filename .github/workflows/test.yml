@@ -18,7 +18,7 @@ concurrency:
 jobs:
   type-check:
     name: TypeScript Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +38,7 @@ jobs:
 
   schema-contracts:
     name: SP Contract Tests (PostgreSQL)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: type-check
     # Bloqueante — un fallo aquí detiene el deploy
     # continue-on-error eliminado intencionalmente
@@ -110,7 +110,7 @@ jobs:
 
   smoke-tests:
     name: API Smoke Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     continue-on-error: true
     # Los smoke tests requieren la API corriendo — se ejecutan en staging
     # Por ahora solo validan sintaxis y tipos

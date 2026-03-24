@@ -30,7 +30,7 @@ jobs:
   # ── Gate 1: TypeScript debe compilar sin errores ─────────────
   type-check:
     name: TypeScript Check (bloqueante)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +51,7 @@ jobs:
   # ── Gate 2: SP Contract Tests (PostgreSQL) ──────────────────
   schema-tests:
     name: SP Contract Tests (bloqueante)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: type-check
 
     services:
@@ -114,7 +114,7 @@ jobs:
   build:
     name: Build & Push API
     needs: schema-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -138,7 +138,7 @@ jobs:
   migrate-pg:
     name: Run PostgreSQL migrations (goose)
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -177,7 +177,7 @@ jobs:
   deploy:
     name: Deploy API to server
     needs: migrate-pg
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: read
