@@ -74,7 +74,7 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
     <SessionProvider>
       <QueryProvider>
         <AuthProvider>
-          <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+          <AppRouterCacheProvider>
             <ThemeProvider theme={sharedTheme} defaultMode="system">
               <CssBaseline />
               <LocalizationProviderWrapper>
