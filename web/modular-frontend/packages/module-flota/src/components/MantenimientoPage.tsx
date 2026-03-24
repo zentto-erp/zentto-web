@@ -80,8 +80,8 @@ export default function MantenimientoPage() {
 
   const columns: GridColDef[] = [
     { field: "OrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 110 },
-    { field: "VehiclePlate", headerName: "Placa Vehiculo", flex: 1, minWidth: 110 },
-    { field: "MaintenanceCategory", headerName: "Tipo", width: 120 },
+    { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 1, minWidth: 110 },
+    { field: "MaintenanceType", headerName: "Tipo", width: 120 },
     { field: "Description", headerName: "Descripcion", flex: 1.5, minWidth: 160 },
     {
       field: "ScheduledDate",
@@ -260,7 +260,7 @@ export default function MantenimientoPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['OrderNumber', 'VehiclePlate']}
+        mobileVisibleFields={['OrderNumber', 'LicensePlate']}
         smExtraFields={['Status', 'ScheduledDate']}
       />
 
@@ -321,8 +321,8 @@ export default function MantenimientoPage() {
           {selectedRow && (
             <Stack spacing={1} sx={{ mt: 1 }}>
               <Typography><strong>N. Orden:</strong> {String(selectedRow.OrderNumber ?? "")}</Typography>
-              <Typography><strong>Vehiculo:</strong> {String(selectedRow.VehiclePlate ?? "")}</Typography>
-              <Typography><strong>Tipo:</strong> {String(selectedRow.MaintenanceCategory ?? "")}</Typography>
+              <Typography><strong>Vehiculo:</strong> {String(selectedRow.LicensePlate ?? "")}</Typography>
+              <Typography><strong>Tipo:</strong> {String(selectedRow.MaintenanceType ?? "")}</Typography>
               <Typography><strong>Descripcion:</strong> {String(selectedRow.Description ?? "")}</Typography>
               <Typography><strong>Fecha Programada:</strong> {String(selectedRow.ScheduledDate ?? "").slice(0, 10)}</Typography>
               <Typography><strong>Costo Estimado:</strong> {formatCurrency(Number(selectedRow.EstimatedCost ?? 0))}</Typography>

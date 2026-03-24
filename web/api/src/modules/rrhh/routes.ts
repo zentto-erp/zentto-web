@@ -8,62 +8,6 @@ import { z } from "zod";
 import * as svc from "./service.js";
 import { emitRRHHAccountingEntry } from "./rrhh-contabilidad.service.js";
 
-/** Map PascalCase API row → camelCase frontend row using explicit field map */
-function mapRow(row: any, fieldMap: Record<string, string>): any {
-  const out: any = {};
-  for (const [camel, pascal] of Object.entries(fieldMap)) {
-    out[camel] = row[pascal] ?? null;
-  }
-  return out;
-}
-function mapRows(rows: any[], fieldMap: Record<string, string>): any[] {
-  return (rows || []).map(r => mapRow(r, fieldMap));
-}
-
-// ─── Field maps: camelCase (frontend) → PascalCase (PG) ─────────────────
-const occHealthFields: Record<string, string> = {
-  id: "OccupationalHealthId", date: "OccurrenceDate", type: "RecordType",
-  employeeCode: "EmployeeCode", employeeName: "EmployeeName",
-  severity: "Severity", daysLost: "DaysLost", status: "Status",
-  description: "Description", correctiveActions: "CorrectiveAction",
-  location: "Location", rootCause: "RootCause", notes: "Notes",
-};
-const medExamFields: Record<string, string> = {
-  id: "MedicalExamId", employeeCode: "EmployeeCode", employeeName: "EmployeeName",
-  type: "ExamType", examDate: "ExamDate", nextDueDate: "NextDueDate",
-  result: "Result", provider: "ClinicName", notes: "Notes",
-};
-const medOrderFields: Record<string, string> = {
-  id: "MedicalOrderId", employeeCode: "EmployeeCode", employeeName: "EmployeeName",
-  type: "OrderType", date: "OrderDate", diagnosis: "Diagnosis",
-  cost: "EstimatedCost", status: "Status", description: "Prescriptions",
-  physicianName: "PhysicianName", notes: "Notes",
-};
-const trainingFields: Record<string, string> = {
-  id: "TrainingRecordId", employeeCode: "EmployeeCode", employeeName: "EmployeeName",
-  title: "Title", type: "TrainingType", provider: "Provider",
-  hours: "DurationHours", startDate: "StartDate", endDate: "EndDate",
-  result: "Result", regulatory: "IsRegulatory", certificateUrl: "CertificateUrl",
-  notes: "Notes",
-};
-const committeeFields: Record<string, string> = {
-  id: "SafetyCommitteeId", name: "CommitteeName", type: "CountryCode",
-  startDate: "FormationDate", endDate: "MeetingFrequency",
-  memberCount: "ActiveMemberCount", active: "IsActive",
-  totalMeetings: "TotalMeetings",
-};
-const obligationFields: Record<string, string> = {
-  id: "LegalObligationId", countryCode: "CountryCode", code: "Code",
-  name: "Name", employeeRate: "EmployeeRate", employerRate: "EmployerRate",
-  frequency: "FilingFrequency", entity: "InstitutionName",
-  description: "Notes", isActive: "IsActive",
-};
-const savingsFields: Record<string, string> = {
-  id: "SavingsFundId", employeeCode: "EmployeeCode", employeeName: "EmployeeName",
-  contributionPct: "EmployeeContribution", employerMatchPct: "EmployerMatch",
-  balance: "CurrentBalance", status: "Status", enrollmentDate: "EnrollmentDate",
-};
-
 const router = Router();
 
 // ─── Helper ────────────────────────────────────────────────
@@ -255,7 +199,7 @@ router.get("/caja-ahorro", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, savingsFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -445,7 +389,7 @@ router.get("/obligaciones", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, obligationFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -603,7 +547,7 @@ router.get("/salud-ocupacional", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, occHealthFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -628,7 +572,7 @@ router.get("/salud-ocupacional/:id", async (req: Request, res: Response) => {
   try {
     const result = await svc.getOccHealthRecord(Number(req.params.id));
     if (!result) return res.status(404).json({ error: "not_found" });
-    res.json(mapRow(result, occHealthFields));
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -675,7 +619,7 @@ router.get("/examenes-medicos", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, medExamFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -728,7 +672,7 @@ router.get("/ordenes-medicas", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, medOrderFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -784,7 +728,7 @@ router.get("/capacitacion", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, trainingFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -846,7 +790,7 @@ router.get("/comites", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json({ ...result, rows: mapRows(result.rows, committeeFields) });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

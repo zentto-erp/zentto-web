@@ -80,30 +80,30 @@ export default function ExamenesMedicosPage() {
 
   const handleEdit = (row: Record<string, any>) => {
     setForm({
-      id: row.id,
-      employeeCode: row.employeeCode ?? "",
-      type: row.type ?? "",
-      examDate: row.examDate ?? "",
-      nextDueDate: row.nextDueDate ?? "",
-      result: row.result ?? "",
-      provider: row.provider ?? "",
-      notes: row.notes ?? "",
+      id: row.MedicalExamId,
+      employeeCode: row.EmployeeCode ?? "",
+      type: row.ExamType ?? "",
+      examDate: row.ExamDate ?? "",
+      nextDueDate: row.NextDueDate ?? "",
+      result: row.Result ?? "",
+      provider: row.ClinicName ?? "",
+      notes: row.Notes ?? "",
     });
     setEditMode(true);
     setDialogOpen(true);
   };
 
   const handleDelete = async (row: Record<string, any>) => {
-    const id = row.id;
+    const id = row.MedicalExamId;
     if (!id) return;
-    if (!window.confirm(`¿Eliminar el examen médico de "${row.employeeName ?? row.employeeCode}"?`)) return;
+    if (!window.confirm(`¿Eliminar el examen médico de "${row.EmployeeName ?? row.EmployeeCode}"?`)) return;
     await deleteMutation.mutateAsync(id);
   };
 
   const columns: GridColDef[] = [
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
+    { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     {
-      field: "type",
+      field: "ExamType",
       headerName: "Tipo Examen",
       width: 140,
       renderCell: (p) => (
@@ -115,10 +115,10 @@ export default function ExamenesMedicosPage() {
         />
       ),
     },
-    { field: "examDate", headerName: "Fecha", width: 120 },
-    { field: "result", headerName: "Resultado", width: 130 },
+    { field: "ExamDate", headerName: "Fecha", width: 120 },
+    { field: "Result", headerName: "Resultado", width: 130 },
     {
-      field: "nextDueDate",
+      field: "NextDueDate",
       headerName: "Próximo Vencimiento",
       width: 180,
       renderCell: (p) =>
@@ -133,7 +133,7 @@ export default function ExamenesMedicosPage() {
           <Typography variant="body2" color="text.secondary">—</Typography>
         ),
     },
-    { field: "provider", headerName: "Proveedor", width: 150 },
+    { field: "ClinicName", headerName: "Proveedor", width: 150 },
     {
       field: "actions",
       headerName: "Acciones",
@@ -216,10 +216,10 @@ export default function ExamenesMedicosPage() {
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? `${r.employeeCode}-${r.examDate}`}
-          getRowClassName={(params) => isOverdue(params.row.nextDueDate) ? "row-overdue" : ""}
-          mobileVisibleFields={['employeeName', 'type']}
-          smExtraFields={['examDate', 'nextDueDate']}
+          getRowId={(r) => r.MedicalExamId ?? `${r.EmployeeCode}-${r.ExamDate}`}
+          getRowClassName={(params) => isOverdue(params.row.NextDueDate) ? "row-overdue" : ""}
+          mobileVisibleFields={['EmployeeName', 'ExamType']}
+          smExtraFields={['ExamDate', 'NextDueDate']}
           sx={{
             "& .row-overdue": {
               backgroundColor: "rgba(211, 47, 47, 0.04)",

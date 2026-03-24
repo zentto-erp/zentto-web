@@ -88,14 +88,17 @@ type FacturaByIdResponse = {
   estado: string;
 };
 
-function normalizeFacturaRow(row: LegacyFacturaListRow): FacturaListItem {
-  const anulado = Number(row.ANULADA ?? 0) !== 0;
+function normalizeFacturaRow(row: LegacyFacturaListRow & Record<string, unknown>): FacturaListItem {
+  // PG PascalCase fields take priority, then legacy SQL Server names
+  const anulado = row.IsVoided != null
+    ? Boolean(row.IsVoided)
+    : Number(row.ANULADA ?? 0) !== 0;
   return {
-    numeroFactura: String(row.NUM_FACT ?? ""),
-    codigoCliente: String(row.CODIGO ?? ""),
-    nombreCliente: String(row.NOMBRE ?? ""),
-    fecha: row.FECHA ? String(row.FECHA).slice(0, 10) : "",
-    totalFactura: Number(row.TOTAL ?? 0),
+    numeroFactura: String(row.DocumentNumber ?? row.NUM_FACT ?? ""),
+    codigoCliente: String(row.CustomerCode ?? row.CODIGO ?? ""),
+    nombreCliente: String(row.CustomerName ?? row.NOMBRE ?? ""),
+    fecha: (row.DocumentDate ?? row.FECHA) ? String(row.DocumentDate ?? row.FECHA).slice(0, 10) : "",
+    totalFactura: Number(row.TotalAmount ?? row.TOTAL ?? 0),
     estado: anulado ? "Anulada" : String(row.PAGO ?? "Emitida")
   };
 }

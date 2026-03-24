@@ -57,13 +57,13 @@ export default function CajaAhorroPage() {
   const loanRows = loanData?.data ?? loanData?.rows ?? [];
 
   const savingsColumns: GridColDef[] = [
-    { field: "employeeCode", headerName: "Código", width: 100 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "contributionPct", headerName: "% Aporte", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "employerMatchPct", headerName: "% Patronal", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "balance", headerName: "Saldo", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
+    { field: "EmployeeCode", headerName: "Código", width: 100 },
+    { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
+    { field: "EmployeeContribution", headerName: "% Aporte", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
+    { field: "EmployerMatch", headerName: "% Patronal", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
+    { field: "CurrentBalance", headerName: "Saldo", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
     {
-      field: "status",
+      field: "Status",
       headerName: "Estado",
       width: 110,
       renderCell: (p) => (
@@ -169,9 +169,9 @@ export default function CajaAhorroPage() {
             loading={savingsLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
-            getRowId={(r) => r.id ?? r.employeeCode}
-            mobileVisibleFields={['employeeCode', 'employeeName']}
-            smExtraFields={['balance', 'status']}
+            getRowId={(r) => r.SavingsFundId ?? r.EmployeeCode}
+            mobileVisibleFields={['EmployeeCode', 'EmployeeName']}
+            smExtraFields={['CurrentBalance', 'Status']}
           />
         </Paper>
       </TabPanel>

@@ -51,16 +51,16 @@ export default function CombustiblePage() {
 
   const columns: GridColDef[] = [
     {
-      field: "LogDate",
+      field: "FuelDate",
       headerName: "Fecha",
       flex: 1,
       minWidth: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
-    { field: "VehiclePlate", headerName: "Placa Vehiculo", flex: 1, minWidth: 110 },
+    { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 1, minWidth: 110 },
     { field: "FuelType", headerName: "Tipo Combustible", flex: 1, minWidth: 120 },
     {
-      field: "Liters",
+      field: "Quantity",
       headerName: "Litros",
       width: 90,
       valueFormatter: (value: unknown) => Number(value ?? 0).toFixed(2),
@@ -72,7 +72,7 @@ export default function CombustiblePage() {
       valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
     },
     {
-      field: "Mileage",
+      field: "OdometerReading",
       headerName: "Kilometraje",
       width: 110,
       valueFormatter: (value: unknown) => Number(value ?? 0).toLocaleString("es") + " km",
@@ -160,8 +160,8 @@ export default function CombustiblePage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['VehiclePlate', 'LogDate']}
-        smExtraFields={['TotalCost', 'Liters']}
+        mobileVisibleFields={['LicensePlate', 'FuelDate']}
+        smExtraFields={['TotalCost', 'Quantity']}
       />
 
       {/* Dialog: Registrar Carga */}

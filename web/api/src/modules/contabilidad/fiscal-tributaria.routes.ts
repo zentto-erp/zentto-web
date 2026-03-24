@@ -52,27 +52,35 @@ fiscalTributariaRouter.post("/libros/generar", async (req, res) => {
 });
 
 fiscalTributariaRouter.get("/libros", async (req, res) => {
-  const bookType = req.query.bookType as string;
-  const periodCode = req.query.periodCode as string;
-  const countryCode = req.query.countryCode as string;
-  if (!bookType || !periodCode || !countryCode) {
-    return res.status(400).json({ error: "bookType, periodCode, countryCode required" });
+  try {
+    const bookType = req.query.bookType as string;
+    const periodCode = req.query.periodCode as string;
+    const countryCode = req.query.countryCode as string;
+    if (!bookType || !periodCode || !countryCode) {
+      return res.status(400).json({ error: "bookType, periodCode, countryCode required" });
+    }
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 100;
+    const data = await listTaxBook({ bookType, periodCode, countryCode, page, limit });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 100;
-  const data = await listTaxBook({ bookType, periodCode, countryCode, page, limit });
-  return res.json(data);
 });
 
 fiscalTributariaRouter.get("/libros/resumen", async (req, res) => {
-  const bookType = req.query.bookType as string;
-  const periodCode = req.query.periodCode as string;
-  const countryCode = req.query.countryCode as string;
-  if (!bookType || !periodCode || !countryCode) {
-    return res.status(400).json({ error: "bookType, periodCode, countryCode required" });
+  try {
+    const bookType = req.query.bookType as string;
+    const periodCode = req.query.periodCode as string;
+    const countryCode = req.query.countryCode as string;
+    if (!bookType || !periodCode || !countryCode) {
+      return res.status(400).json({ error: "bookType, periodCode, countryCode required" });
+    }
+    const rows = await taxBookSummary(bookType, periodCode, countryCode);
+    return res.json({ rows });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-  const rows = await taxBookSummary(bookType, periodCode, countryCode);
-  return res.json({ rows });
 });
 
 fiscalTributariaRouter.get("/libros/exportar", async (req, res) => {

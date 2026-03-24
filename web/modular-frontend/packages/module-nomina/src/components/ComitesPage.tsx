@@ -88,9 +88,9 @@ export default function ComitesPage() {
   const meetings = meetingsQuery.data?.data ?? meetingsQuery.data?.rows ?? meetingsQuery.data ?? [];
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Nombre", flex: 1, minWidth: 200 },
+    { field: "CommitteeName", headerName: "Nombre", flex: 1, minWidth: 200 },
     {
-      field: "type",
+      field: "MeetingFrequency",
       headerName: "Tipo",
       width: 180,
       renderCell: (p) => (
@@ -102,16 +102,15 @@ export default function ComitesPage() {
         />
       ),
     },
-    { field: "startDate", headerName: "Fecha Inicio", width: 120 },
-    { field: "endDate", headerName: "Fecha Fin", width: 120 },
+    { field: "FormationDate", headerName: "Fecha Inicio", width: 120 },
     {
-      field: "memberCount",
+      field: "ActiveMemberCount",
       headerName: "Miembros",
       width: 100,
       type: "number",
     },
     {
-      field: "active",
+      field: "IsActive",
       headerName: "Estado",
       width: 110,
       renderCell: (p) => (
@@ -132,7 +131,7 @@ export default function ComitesPage() {
           <IconButton
             size="small"
             onClick={() => {
-              setDetailId(p.row.id);
+              setDetailId(p.row.SafetyCommitteeId);
               setDetailData(p.row);
               setDetailTab(0);
             }}
@@ -214,9 +213,9 @@ export default function ComitesPage() {
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? r.name}
-          mobileVisibleFields={['name', 'active']}
-          smExtraFields={['type', 'memberCount']}
+          getRowId={(r) => r.SafetyCommitteeId ?? r.CommitteeName}
+          mobileVisibleFields={['CommitteeName', 'IsActive']}
+          smExtraFields={['MeetingFrequency', 'ActiveMemberCount']}
         />
       </Paper>
 
@@ -282,11 +281,11 @@ export default function ComitesPage() {
       >
         <DialogTitle>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">{(detailData as Record<string, string>)?.name ?? "Comité"}</Typography>
+            <Typography variant="h6">{(detailData as Record<string, string>)?.CommitteeName ?? "Comité"}</Typography>
             <Chip
-              label={(detailData as Record<string, unknown>)?.active === false ? "Inactivo" : "Activo"}
+              label={(detailData as Record<string, unknown>)?.IsActive === false ? "Inactivo" : "Activo"}
               size="small"
-              color={(detailData as Record<string, unknown>)?.active === false ? "default" : "success"}
+              color={(detailData as Record<string, unknown>)?.IsActive === false ? "default" : "success"}
             />
           </Stack>
         </DialogTitle>

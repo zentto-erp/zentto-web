@@ -69,13 +69,13 @@ export default function ObligacionesPage() {
   const filRows = filData?.data ?? filData?.rows ?? [];
 
   const oblColumns: GridColDef[] = [
-    { field: "countryCode", headerName: "País", width: 80 },
-    { field: "code", headerName: "Código", width: 120 },
-    { field: "name", headerName: "Nombre", flex: 1, minWidth: 200 },
-    { field: "employeeRate", headerName: "% Empleado", width: 120, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "employerRate", headerName: "% Patronal", width: 120, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "frequency", headerName: "Frecuencia", width: 120 },
-    { field: "entity", headerName: "Entidad", width: 150 },
+    { field: "CountryCode", headerName: "País", width: 80 },
+    { field: "Code", headerName: "Código", width: 120 },
+    { field: "Name", headerName: "Nombre", flex: 1, minWidth: 200 },
+    { field: "EmployeeRate", headerName: "% Empleado", width: 120, renderCell: (p) => `${p.value ?? 0}%` },
+    { field: "EmployerRate", headerName: "% Patronal", width: 120, renderCell: (p) => `${p.value ?? 0}%` },
+    { field: "FilingFrequency", headerName: "Frecuencia", width: 120 },
+    { field: "InstitutionName", headerName: "Entidad", width: 150 },
   ];
 
   const filColumns: GridColDef[] = [
@@ -225,9 +225,9 @@ export default function ObligacionesPage() {
             loading={oblLoading}
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
-            getRowId={(r) => r.id ?? r.code}
-            mobileVisibleFields={['code', 'name']}
-            smExtraFields={['frequency', 'countryCode']}
+            getRowId={(r) => r.LegalObligationId ?? r.Code}
+            mobileVisibleFields={['Code', 'Name']}
+            smExtraFields={['FilingFrequency', 'CountryCode']}
           />
         </Paper>
       </TabPanel>

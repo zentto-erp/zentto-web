@@ -30,11 +30,11 @@ import {
 
 function VehiculoDetailPanel({ row }: { row: Record<string, unknown> }) {
   const fields = [
-    { label: 'VIN / Chasis', value: row.VIN },
+    { label: 'VIN / Chasis', value: row.VinNumber },
     { label: 'Color', value: row.Color },
     { label: 'Combustible', value: row.FuelType },
-    { label: 'Kilometraje', value: row.CurrentMileage != null ? `${Number(row.CurrentMileage).toLocaleString('es')} km` : null },
-    { label: 'Conductor asignado', value: row.AssignedDriverName },
+    { label: 'Kilometraje', value: row.CurrentOdometer != null ? `${Number(row.CurrentOdometer).toLocaleString('es')} km` : null },
+    { label: 'Conductor asignado', value: row.DefaultDriverId },
     { label: 'Notas', value: row.Notes },
   ].filter(f => f.value != null && f.value !== '');
 
@@ -76,13 +76,13 @@ export default function VehiculosPage() {
   const [editMode, setEditMode] = useState(false);
 
   // Form state
-  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [vehiclePlate, setLicensePlate] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [vehicleType, setVehicleType] = useState("");
   const [fuelType, setFuelType] = useState("");
-  const [currentMileage, setCurrentMileage] = useState("");
+  const [currentMileage, setCurrentOdometer] = useState("");
   const [color, setColor] = useState("");
   const [vin, setVin] = useState("");
   const [notes, setNotes] = useState("");
@@ -99,7 +99,7 @@ export default function VehiculosPage() {
   const total = data?.total ?? 0;
 
   const columns: GridColDef[] = [
-    { field: "VehiclePlate", headerName: "Placa", flex: 0.8, minWidth: 100 },
+    { field: "LicensePlate", headerName: "Placa", flex: 0.8, minWidth: 100 },
     { field: "Brand", headerName: "Marca", flex: 1, minWidth: 100 },
     { field: "Model", headerName: "Modelo", flex: 1, minWidth: 100 },
     { field: "Year", headerName: "Ano", width: 70 },
@@ -127,9 +127,9 @@ export default function VehiculosPage() {
         );
       },
     },
-    { field: "AssignedDriverName", headerName: "Conductor", flex: 1, minWidth: 120 },
+    { field: "DefaultDriverId", headerName: "Conductor", flex: 1, minWidth: 120 },
     {
-      field: "CurrentMileage",
+      field: "CurrentOdometer",
       headerName: "Kilometraje",
       width: 110,
       valueFormatter: (value: unknown) => {
@@ -170,13 +170,13 @@ export default function VehiculosPage() {
   ];
 
   const resetForm = () => {
-    setVehiclePlate("");
+    setLicensePlate("");
     setBrand("");
     setModel("");
     setYear("");
     setVehicleType("");
     setFuelType("");
-    setCurrentMileage("");
+    setCurrentOdometer("");
     setColor("");
     setVin("");
     setNotes("");
@@ -186,15 +186,15 @@ export default function VehiculosPage() {
 
   const openEditDialog = (row: Record<string, unknown>) => {
     setSelectedRow(row);
-    setVehiclePlate(String(row.VehiclePlate ?? ""));
+    setLicensePlate(String(row.LicensePlate ?? ""));
     setBrand(String(row.Brand ?? ""));
     setModel(String(row.Model ?? ""));
     setYear(String(row.Year ?? ""));
     setVehicleType(String(row.VehicleType ?? ""));
     setFuelType(String(row.FuelType ?? ""));
-    setCurrentMileage(String(row.CurrentMileage ?? ""));
+    setCurrentOdometer(String(row.CurrentOdometer ?? ""));
     setColor(String(row.Color ?? ""));
-    setVin(String(row.VIN ?? ""));
+    setVin(String(row.VinNumber ?? ""));
     setNotes(String(row.Notes ?? ""));
     setEditMode(true);
     setDialogOpen(true);
@@ -302,7 +302,7 @@ export default function VehiculosPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['VehiclePlate', 'Brand']}
+        mobileVisibleFields={['LicensePlate', 'Brand']}
         smExtraFields={['VehicleType', 'Status']}
         getDetailContent={(row: any) => <VehiculoDetailPanel row={row} />}
         detailPanelHeight={120}
@@ -313,7 +313,7 @@ export default function VehiculosPage() {
         <DialogTitle>{editMode ? "Editar Vehiculo" : "Nuevo Vehiculo"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Placa" value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} fullWidth required />
+            <TextField label="Placa" value={vehiclePlate} onChange={(e) => setLicensePlate(e.target.value)} fullWidth required />
             <Stack direction="row" spacing={2}>
               <TextField label="Marca" value={brand} onChange={(e) => setBrand(e.target.value)} fullWidth required />
               <TextField label="Modelo" value={model} onChange={(e) => setModel(e.target.value)} fullWidth required />
@@ -354,7 +354,7 @@ export default function VehiculosPage() {
                 <MenuItem value="GAS">Gas</MenuItem>
               </TextField>
             </Stack>
-            <TextField label="Kilometraje Actual" type="number" value={currentMileage} onChange={(e) => setCurrentMileage(e.target.value)} fullWidth required />
+            <TextField label="Kilometraje Actual" type="number" value={currentMileage} onChange={(e) => setCurrentOdometer(e.target.value)} fullWidth required />
             <TextField label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} fullWidth />
             <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
           </Stack>
@@ -377,16 +377,16 @@ export default function VehiculosPage() {
         <DialogContent>
           {selectedRow && (
             <Stack spacing={1} sx={{ mt: 1 }}>
-              <Typography><strong>Placa:</strong> {String(selectedRow.VehiclePlate ?? "")}</Typography>
+              <Typography><strong>Placa:</strong> {String(selectedRow.LicensePlate ?? "")}</Typography>
               <Typography><strong>Marca:</strong> {String(selectedRow.Brand ?? "")}</Typography>
               <Typography><strong>Modelo:</strong> {String(selectedRow.Model ?? "")}</Typography>
               <Typography><strong>Ano:</strong> {String(selectedRow.Year ?? "")}</Typography>
               <Typography><strong>Tipo:</strong> {String(selectedRow.VehicleType ?? "")}</Typography>
               <Typography><strong>Combustible:</strong> {String(selectedRow.FuelType ?? "")}</Typography>
-              <Typography><strong>Kilometraje:</strong> {Number(selectedRow.CurrentMileage ?? 0).toLocaleString("es")} km</Typography>
+              <Typography><strong>Kilometraje:</strong> {Number(selectedRow.CurrentOdometer ?? 0).toLocaleString("es")} km</Typography>
               <Typography><strong>Color:</strong> {String(selectedRow.Color ?? "--")}</Typography>
-              <Typography><strong>VIN:</strong> {String(selectedRow.VIN ?? "--")}</Typography>
-              <Typography><strong>Conductor:</strong> {String(selectedRow.AssignedDriverName ?? "--")}</Typography>
+              <Typography><strong>VIN:</strong> {String(selectedRow.VinNumber ?? "--")}</Typography>
+              <Typography><strong>Conductor:</strong> {String(selectedRow.DefaultDriverId ?? "--")}</Typography>
               <Typography>
                 <strong>Estado:</strong>{" "}
                 <Chip

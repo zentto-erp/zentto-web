@@ -53,13 +53,13 @@ export default function ViajesPage() {
   const [vehicleId, setVehicleId] = useState("");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [departureDate, setDepartureDate] = useState("");
+  const [departureDate, setDepartedAt] = useState("");
   const [startMileage, setStartMileage] = useState("");
   const [notes, setNotes] = useState("");
 
   // Form state - completar
   const [endMileage, setEndMileage] = useState("");
-  const [arrivalDate, setArrivalDate] = useState("");
+  const [arrivalDate, setArrivedAt] = useState("");
   const [fuelUsed, setFuelUsed] = useState("");
 
   const { data, isLoading } = useTripsList({
@@ -75,19 +75,19 @@ export default function ViajesPage() {
 
   const columns: GridColDef[] = [
     { field: "TripNumber", headerName: "N. Viaje", flex: 0.8, minWidth: 100 },
-    { field: "VehiclePlate", headerName: "Placa Vehiculo", flex: 0.8, minWidth: 110 },
-    { field: "DriverName", headerName: "Conductor", flex: 1, minWidth: 120 },
+    { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 0.8, minWidth: 110 },
+    { field: "DriverId", headerName: "Conductor", flex: 1, minWidth: 120 },
     { field: "Origin", headerName: "Origen", flex: 1, minWidth: 120 },
     { field: "Destination", headerName: "Destino", flex: 1, minWidth: 120 },
     {
-      field: "DepartureDate",
+      field: "DepartedAt",
       headerName: "Fecha Salida",
       flex: 0.8,
       minWidth: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
-      field: "ArrivalDate",
+      field: "ArrivedAt",
       headerName: "Fecha Llegada",
       flex: 0.8,
       minWidth: 110,
@@ -113,7 +113,7 @@ export default function ViajesPage() {
       },
     },
     {
-      field: "Distance",
+      field: "DistanceKm",
       headerName: "Distancia",
       width: 100,
       valueFormatter: (value: unknown) => {
@@ -150,7 +150,7 @@ export default function ViajesPage() {
                   onClick={() => {
                     setSelectedRow(params.row);
                     setEndMileage("");
-                    setArrivalDate("");
+                    setArrivedAt("");
                     setFuelUsed("");
                     setCompleteOpen(true);
                   }}
@@ -174,7 +174,7 @@ export default function ViajesPage() {
     setVehicleId("");
     setOrigin("");
     setDestination("");
-    setDepartureDate("");
+    setDepartedAt("");
     setStartMileage("");
     setNotes("");
   };
@@ -278,8 +278,8 @@ export default function ViajesPage() {
         disableRowSelectionOnClick
         autoHeight
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['TripNumber', 'VehiclePlate']}
-        smExtraFields={['Status', 'DepartureDate']}
+        mobileVisibleFields={['TripNumber', 'LicensePlate']}
+        smExtraFields={['Status', 'DepartedAt']}
       />
 
       {/* Dialog: Nuevo Viaje */}
@@ -296,7 +296,7 @@ export default function ViajesPage() {
                 <TextField label="Destino" value={destination} onChange={(e) => setDestination(e.target.value)} fullWidth required />
               </FormField>
             </FormGrid>
-            <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartureDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
+            <DatePicker label="Fecha Salida" value={departureDate ? dayjs(departureDate) : null} onChange={(v) => setDepartedAt(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Kilometraje Inicio" type="number" value={startMileage} onChange={(e) => setStartMileage(e.target.value)} fullWidth required />
             <TextField label="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={2} />
           </Stack>
@@ -322,7 +322,7 @@ export default function ViajesPage() {
               Viaje: {String(selectedRow?.TripNumber ?? "")} — {String(selectedRow?.Origin ?? "")} a {String(selectedRow?.Destination ?? "")}
             </Typography>
             <TextField label="Kilometraje Final" type="number" value={endMileage} onChange={(e) => setEndMileage(e.target.value)} fullWidth required />
-            <DatePicker label="Fecha Llegada" value={arrivalDate ? dayjs(arrivalDate) : null} onChange={(v) => setArrivalDate(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
+            <DatePicker label="Fecha Llegada" value={arrivalDate ? dayjs(arrivalDate) : null} onChange={(v) => setArrivedAt(v ? v.format('YYYY-MM-DD') : '')} slotProps={{ textField: { size: 'small', fullWidth: true, required: true } }} />
             <TextField label="Combustible Usado (L)" type="number" value={fuelUsed} onChange={(e) => setFuelUsed(e.target.value)} fullWidth />
           </Stack>
         </DialogContent>
@@ -346,13 +346,13 @@ export default function ViajesPage() {
           {selectedRow && (
             <Stack spacing={1} sx={{ mt: 1 }}>
               <Typography><strong>N. Viaje:</strong> {String(selectedRow.TripNumber ?? "")}</Typography>
-              <Typography><strong>Vehiculo:</strong> {String(selectedRow.VehiclePlate ?? "")}</Typography>
-              <Typography><strong>Conductor:</strong> {String(selectedRow.DriverName ?? "--")}</Typography>
+              <Typography><strong>Vehiculo:</strong> {String(selectedRow.LicensePlate ?? "")}</Typography>
+              <Typography><strong>Conductor:</strong> {String(selectedRow.DriverId ?? "--")}</Typography>
               <Typography><strong>Origen:</strong> {String(selectedRow.Origin ?? "")}</Typography>
               <Typography><strong>Destino:</strong> {String(selectedRow.Destination ?? "")}</Typography>
-              <Typography><strong>Fecha Salida:</strong> {String(selectedRow.DepartureDate ?? "").slice(0, 10)}</Typography>
-              <Typography><strong>Fecha Llegada:</strong> {String(selectedRow.ArrivalDate ?? "--").slice(0, 10)}</Typography>
-              <Typography><strong>Distancia:</strong> {Number(selectedRow.Distance ?? 0) > 0 ? Number(selectedRow.Distance).toLocaleString("es") + " km" : "--"}</Typography>
+              <Typography><strong>Fecha Salida:</strong> {String(selectedRow.DepartedAt ?? "").slice(0, 10)}</Typography>
+              <Typography><strong>Fecha Llegada:</strong> {String(selectedRow.ArrivedAt ?? "--").slice(0, 10)}</Typography>
+              <Typography><strong>Distancia:</strong> {Number(selectedRow.DistanceKm ?? 0) > 0 ? Number(selectedRow.DistanceKm).toLocaleString("es") + " km" : "--"}</Typography>
               <Typography>
                 <strong>Estado:</strong>{" "}
                 <Chip

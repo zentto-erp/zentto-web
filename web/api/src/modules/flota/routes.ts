@@ -10,10 +10,50 @@ import { emitFuelAccountingEntry, emitMaintenanceAccountingEntry } from "./fleet
 
 export const flotaRouter = Router();
 
-// ─── Helper ────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────
 function getUserId(req: Request): number {
   return (req as any).user?.userId ?? (req as any).user?.id ?? 0;
 }
+function mapRow(row: any, fm: Record<string, string>): any {
+  const out: any = {};
+  for (const [target, source] of Object.entries(fm)) out[target] = row[source] ?? null;
+  return out;
+}
+function mapRows(rows: any[], fm: Record<string, string>): any[] {
+  return (rows || []).map(r => mapRow(r, fm));
+}
+
+// Field maps: frontend field → PG column
+const vehicleMap: Record<string, string> = {
+  VehicleId: "VehicleId", VehiclePlate: "LicensePlate", VIN: "VinNumber",
+  Brand: "Brand", Model: "Model", Year: "Year", Color: "Color",
+  VehicleType: "VehicleType", FuelType: "FuelType",
+  CurrentMileage: "CurrentOdometer", AssignedDriverName: "DefaultDriverId",
+  Status: "Status", IsActive: "IsActive", InsuranceExpiry: "InsuranceExpiry",
+  Notes: "Notes", CreatedAt: "CreatedAt",
+};
+const fuelMap: Record<string, string> = {
+  FuelLogId: "FuelLogId", VehicleId: "VehicleId", LogDate: "FuelDate",
+  VehiclePlate: "LicensePlate", FuelType: "FuelType", Liters: "Quantity",
+  UnitPrice: "UnitPrice", TotalCost: "TotalCost", CurrencyCode: "CurrencyCode",
+  Mileage: "OdometerReading", IsFullTank: "IsFullTank",
+  StationName: "StationName", DriverId: "DriverId", Notes: "Notes",
+};
+const maintMap: Record<string, string> = {
+  MaintenanceOrderId: "MaintenanceOrderId", OrderNumber: "OrderNumber",
+  VehicleId: "VehicleId", VehiclePlate: "LicensePlate",
+  MaintenanceCategory: "MaintenanceType", Description: "Description",
+  ScheduledDate: "ScheduledDate", CompletedDate: "CompletedDate",
+  Status: "Status", EstimatedCost: "EstimatedCost", ActualCost: "ActualCost",
+  Notes: "Notes",
+};
+const tripMap: Record<string, string> = {
+  TripId: "TripId", TripNumber: "TripNumber", VehicleId: "VehicleId",
+  VehiclePlate: "LicensePlate", DriverId: "DriverId", DriverName: "DriverId",
+  Origin: "Origin", Destination: "Destination",
+  DepartureDate: "DepartedAt", ArrivalDate: "ArrivedAt",
+  Distance: "DistanceKm", Status: "Status", Notes: "Notes",
+};
 
 // ═══════════════════════════════════════════════════════════════
 // VEHICULOS
@@ -29,7 +69,7 @@ flotaRouter.get("/vehiculos", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json(result);
+    res.json({ ...result, rows: mapRows(result.rows, vehicleMap) });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -97,7 +137,7 @@ flotaRouter.get("/combustible", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json(result);
+    res.json({ ...result, rows: mapRows(result.rows, fuelMap) });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -194,7 +234,7 @@ flotaRouter.get("/mantenimientos", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json(result);
+    res.json({ ...result, rows: mapRows(result.rows, maintMap) });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -308,7 +348,7 @@ flotaRouter.get("/viajes", async (req: Request, res: Response) => {
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
-    res.json(result);
+    res.json({ ...result, rows: mapRows(result.rows, tripMap) });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

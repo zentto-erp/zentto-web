@@ -78,9 +78,9 @@ export default function SaludOcupacionalPage() {
   const rows = data?.data ?? data?.rows ?? [];
 
   const columns: GridColDef[] = [
-    { field: "date", headerName: "Fecha", width: 110 },
+    { field: "OccurrenceDate", headerName: "Fecha", width: 110 },
     {
-      field: "type",
+      field: "RecordType",
       headerName: "Tipo",
       width: 140,
       renderCell: (p) => (
@@ -99,9 +99,9 @@ export default function SaludOcupacionalPage() {
         />
       ),
     },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
+    { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     {
-      field: "severity",
+      field: "Severity",
       headerName: "Severidad",
       width: 120,
       renderCell: (p) => (
@@ -112,9 +112,9 @@ export default function SaludOcupacionalPage() {
         />
       ),
     },
-    { field: "daysLost", headerName: "Días Perdidos", width: 120, type: "number" },
+    { field: "DaysLost", headerName: "Días Perdidos", width: 120, type: "number" },
     {
-      field: "status",
+      field: "Status",
       headerName: "Estado",
       width: 140,
       renderCell: (p) => (
@@ -133,7 +133,7 @@ export default function SaludOcupacionalPage() {
       renderCell: (p) => (
         <Stack direction="row" spacing={0.5}>
           <Tooltip title="Ver detalle">
-            <IconButton size="small" onClick={() => setDetailId(p.row.id)}>
+            <IconButton size="small" onClick={() => setDetailId(p.row.OccupationalHealthId)}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -142,15 +142,15 @@ export default function SaludOcupacionalPage() {
               size="small"
               onClick={() => {
                 setForm({
-                  id: p.row.id,
-                  employeeCode: p.row.employeeCode ?? "",
-                  type: p.row.type ?? "",
-                  date: p.row.date ?? "",
-                  severity: p.row.severity ?? "LEVE",
-                  daysLost: p.row.daysLost ?? 0,
-                  description: p.row.description ?? "",
-                  status: p.row.status ?? "OPEN",
-                  correctiveActions: p.row.correctiveActions ?? "",
+                  id: p.row.OccupationalHealthId,
+                  employeeCode: p.row.EmployeeCode ?? "",
+                  type: p.row.RecordType ?? "",
+                  date: p.row.OccurrenceDate ?? "",
+                  severity: p.row.Severity ?? "LEVE",
+                  daysLost: p.row.DaysLost ?? 0,
+                  description: p.row.Description ?? "",
+                  status: p.row.Status ?? "OPEN",
+                  correctiveActions: p.row.CorrectiveAction ?? "",
                 });
                 setEditMode(true);
                 setDialogOpen(true);
@@ -256,9 +256,9 @@ export default function SaludOcupacionalPage() {
           loading={isLoading}
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? `${r.employeeCode}-${r.date}`}
-          mobileVisibleFields={['employeeName', 'type']}
-          smExtraFields={['severity', 'status']}
+          getRowId={(r) => r.OccupationalHealthId ?? `${r.EmployeeCode}-${r.OccurrenceDate}`}
+          mobileVisibleFields={['EmployeeName', 'RecordType']}
+          smExtraFields={['Severity', 'Status']}
         />
       </Paper>
 
@@ -362,14 +362,14 @@ export default function SaludOcupacionalPage() {
             <CircularProgress />
           ) : (
             <Stack spacing={1.5} mt={1}>
-              <Typography variant="body2"><strong>Empleado:</strong> {detail.data?.employeeName ?? detail.data?.employeeCode}</Typography>
-              <Typography variant="body2"><strong>Tipo:</strong> {detail.data?.type}</Typography>
-              <Typography variant="body2"><strong>Fecha:</strong> {detail.data?.date}</Typography>
-              <Typography variant="body2"><strong>Severidad:</strong> {detail.data?.severity}</Typography>
-              <Typography variant="body2"><strong>Días Perdidos:</strong> {detail.data?.daysLost ?? 0}</Typography>
-              <Typography variant="body2"><strong>Estado:</strong> {STATUS_LABELS[detail.data?.status] || detail.data?.status}</Typography>
-              <Typography variant="body2"><strong>Descripción:</strong> {detail.data?.description}</Typography>
-              <Typography variant="body2"><strong>Acciones Correctivas:</strong> {detail.data?.correctiveActions || "—"}</Typography>
+              <Typography variant="body2"><strong>Empleado:</strong> {detail.data?.EmployeeName ?? detail.data?.EmployeeCode}</Typography>
+              <Typography variant="body2"><strong>Tipo:</strong> {detail.data?.RecordType}</Typography>
+              <Typography variant="body2"><strong>Fecha:</strong> {detail.data?.OccurrenceDate}</Typography>
+              <Typography variant="body2"><strong>Severidad:</strong> {detail.data?.Severity}</Typography>
+              <Typography variant="body2"><strong>Días Perdidos:</strong> {detail.data?.DaysLost ?? 0}</Typography>
+              <Typography variant="body2"><strong>Estado:</strong> {STATUS_LABELS[detail.data?.Status] || detail.data?.Status}</Typography>
+              <Typography variant="body2"><strong>Descripción:</strong> {detail.data?.Description}</Typography>
+              <Typography variant="body2"><strong>Acciones Correctivas:</strong> {detail.data?.CorrectiveAction || "—"}</Typography>
             </Stack>
           )}
         </DialogContent>
