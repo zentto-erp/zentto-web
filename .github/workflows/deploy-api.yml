@@ -25,12 +25,33 @@ permissions:
 
 env:
   IMAGE: ghcr.io/zentto-erp/zentto-web/api:latest
+  REPO: zentto-erp/zentto-web
 
 jobs:
+  # ── Step 0: Hacer repo público para usar minutos gratuitos ───
+  set-public:
+    name: Make repo public (free minutes)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Make repo public
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":false}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠ No se pudo hacer el repo público (status $STATUS) — continuando de todas formas"
+          else
+            echo "✓ Repo es ahora público"
+          fi
+
   # ── Gate 1: TypeScript debe compilar sin errores ─────────────
   type-check:
     name: TypeScript Check (bloqueante)
     runs-on: ubuntu-22.04
+    needs: set-public
     steps:
       - uses: actions/checkout@v4
 
@@ -210,81 +231,54 @@ jobs:
             # ── Firewall: Docker (172.18.x) → PostgreSQL ──
             if ! ufw status | grep -q '172.18.0.0/16.*5432'; then
               ufw allow from 172.18.0.0/16 to any port 5432 comment 'Docker zentto-net to PostgreSQL'
-              echo "✓ UFW rule added: Docker→PG"
             fi
             if ! iptables -L DOCKER-USER -n 2>/dev/null | grep -q '172.18.0.0/16.*5432'; then
               iptables -I DOCKER-USER -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT
-              echo "✓ iptables DOCKER-USER rule added"
             fi
-            # Persist iptables rule across reboots
             if ! grep -q 'Docker PostgreSQL zentto' /etc/ufw/after.rules 2>/dev/null; then
               sed -i '/^COMMIT$/i -A DOCKER-USER -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT # Docker PostgreSQL zentto' /etc/ufw/after.rules
-              echo "✓ iptables rule persisted in ufw/after.rules"
             fi
 
-            # ── Firewall: Docker (172.18.x) → Kafka (9092) + Elasticsearch (9200) ──
+            # ── Firewall: Kafka + Elasticsearch ──
             if ! ufw status | grep -q '172.18.0.0/16.*9092'; then
               ufw allow from 172.18.0.0/16 to any port 9092 comment 'Docker zentto-net to Kafka'
-              echo "✓ UFW rule added: Docker→Kafka"
             fi
             if ! ufw status | grep -q '172.18.0.0/16.*9200'; then
               ufw allow from 172.18.0.0/16 to any port 9200 comment 'Docker zentto-net to Elasticsearch'
-              echo "✓ UFW rule added: Docker→ES"
             fi
 
-            # ── pg_hba.conf: allow Docker network ──
+            # ── pg_hba.conf ──
             PG_HBA=$(find /etc/postgresql -name pg_hba.conf 2>/dev/null | head -1)
             if [ -n "$PG_HBA" ] && ! grep -q '172.18.0.0/16' "$PG_HBA"; then
               echo 'host    zentto_prod    zentto_app    172.18.0.0/16    scram-sha-256' >> "$PG_HBA"
               systemctl reload postgresql
-              echo "✓ pg_hba.conf updated for Docker network"
             fi
 
-            # ── Nginx CORS for api.zentto.net ──
-            NGINX_CONF="/etc/nginx/sites-available/zentto"
-            if [ -f "$NGINX_CONF" ] && ! grep -q 'Access-Control-Allow-Origin' "$NGINX_CONF"; then
-              echo "⚠ Nginx CORS missing — update /etc/nginx/sites-available/zentto manually"
-              echo "  See: nginx/zentto.conf in repo for reference config with CORS"
-            fi
-
-            # ── Mail config (Zentto Notify webhook) ──
+            # ── Mail + Observabilidad ──
             ENV_API="/opt/zentto/.env.api"
             if [ -f "$ENV_API" ]; then
-              # Ensure mail webhook is configured
               if ! grep -q '^AUTH_MAIL_WEBHOOK_URL=' "$ENV_API"; then
                 echo '' >> "$ENV_API"
-                echo '# Mail delivery via Zentto Notify' >> "$ENV_API"
                 echo 'AUTH_MAIL_WEBHOOK_URL=https://notify.zentto.net/api/email/send' >> "$ENV_API"
                 echo "AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY" >> "$ENV_API"
                 echo 'MAIL_FROM=Zentto <no-reply@zentto.net>' >> "$ENV_API"
-                echo "✓ Mail webhook configured in .env.api"
               else
-                # Update token if it changed
                 sed -i "s|^AUTH_MAIL_WEBHOOK_TOKEN=.*|AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY|" "$ENV_API"
-                echo "✓ Mail webhook token updated"
               fi
-              # Ensure STORE_URL is set for ecommerce emails
               if ! grep -q '^STORE_URL=' "$ENV_API"; then
                 echo 'STORE_URL=https://app.zentto.net' >> "$ENV_API"
-                echo "✓ STORE_URL added"
               fi
-              # Observabilidad: Kafka + Elasticsearch (forzar valores correctos)
               if grep -q '^KAFKA_ENABLED=' "$ENV_API"; then
                 sed -i "s|^KAFKA_ENABLED=.*|KAFKA_ENABLED=true|" "$ENV_API"
                 sed -i "s|^KAFKA_BROKERS=.*|KAFKA_BROKERS=172.18.0.1:9092|" "$ENV_API"
-                if grep -q '^ELASTICSEARCH_HOST=' "$ENV_API"; then
-                  sed -i "s|^ELASTICSEARCH_HOST=.*|ELASTICSEARCH_HOST=http://172.18.0.1:9200|" "$ENV_API"
-                else
-                  echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
-                fi
-                echo "✓ Observabilidad Kafka+ES actualizada en .env.api"
+                grep -q '^ELASTICSEARCH_HOST=' "$ENV_API" \
+                  && sed -i "s|^ELASTICSEARCH_HOST=.*|ELASTICSEARCH_HOST=http://172.18.0.1:9200|" "$ENV_API" \
+                  || echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
               else
                 echo '' >> "$ENV_API"
-                echo '# Observabilidad (Kafka + Elasticsearch via Docker gateway)' >> "$ENV_API"
                 echo 'KAFKA_ENABLED=true' >> "$ENV_API"
                 echo 'KAFKA_BROKERS=172.18.0.1:9092' >> "$ENV_API"
                 echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
-                echo "✓ Observabilidad Kafka+ES configurada en .env.api"
               fi
             fi
 
@@ -292,8 +286,29 @@ jobs:
             cd /opt/zentto
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull api
-            # Remover contenedor existente si fue creado fuera de compose
             docker rm -f zentto-api 2>/dev/null || true
             docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps api
             docker image prune -f
             echo "✓ API desplegada: $(date -u)"
+
+  # ── Step final: SIEMPRE volver a privado ─────────────────────
+  set-private:
+    name: Restore repo to private
+    runs-on: ubuntu-22.04
+    needs: deploy
+    if: always()
+    steps:
+      - name: Make repo private
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":true}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✓ Repo restaurado a privado"
+          else
+            echo "⚠ No se pudo restaurar privado (status $STATUS) — verificar manualmente"
+            exit 1
+          fi

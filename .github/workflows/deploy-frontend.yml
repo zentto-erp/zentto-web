@@ -22,11 +22,33 @@ permissions:
 
 env:
   IMAGE: ghcr.io/zentto-erp/zentto-web/frontend:latest
+  REPO: zentto-erp/zentto-web
 
 jobs:
+  # ── Step 0: Hacer repo público para usar minutos gratuitos ───
+  set-public:
+    name: Make repo public (free minutes)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Make repo public
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":false}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠ No se pudo hacer el repo público (status $STATUS) — continuando de todas formas"
+          else
+            echo "✓ Repo es ahora público"
+          fi
+
+  # ── Build & Push Docker image ───────────────────────────────
   build:
     name: Build & Push Frontend
-    runs-on: ubuntu-latest
+    needs: set-public
+    runs-on: ubuntu-22.04
     steps:
       - name: Free disk space
         run: |
@@ -64,7 +86,7 @@ jobs:
   deploy:
     name: Deploy Frontend to server
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: read
@@ -92,28 +114,43 @@ jobs:
           script: |
             set -e
             cd /opt/zentto
-            # Garantizar .env.frontend con AUTH_SECRET desde GitHub Secrets
             ENV_FE="/opt/zentto/.env.frontend"
-            if [ ! -f "$ENV_FE" ]; then
-              touch "$ENV_FE"
-              chmod 600 "$ENV_FE"
-            fi
+            if [ ! -f "$ENV_FE" ]; then touch "$ENV_FE" && chmod 600 "$ENV_FE"; fi
             if [ -n "$AUTH_SECRET" ]; then
-              if grep -q '^AUTH_SECRET=' "$ENV_FE"; then
-                sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=$AUTH_SECRET|" "$ENV_FE"
-              else
-                echo "AUTH_SECRET=$AUTH_SECRET" >> "$ENV_FE"
-              fi
-              echo "✓ AUTH_SECRET sincronizado en .env.frontend"
+              grep -q '^AUTH_SECRET=' "$ENV_FE" \
+                && sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=$AUTH_SECRET|" "$ENV_FE" \
+                || echo "AUTH_SECRET=$AUTH_SECRET" >> "$ENV_FE"
+              echo "✓ AUTH_SECRET sincronizado"
             fi
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull frontend
             docker compose -f docker-compose.prod.yml up -d --no-deps frontend
             docker image prune -f
-            # Actualizar Nginx config si cambió
             if [ -f /opt/zentto/nginx/zentto.conf ]; then
               cp /opt/zentto/nginx/zentto.conf /etc/nginx/sites-available/zentto.conf 2>/dev/null || true
               nginx -t && systemctl reload nginx 2>/dev/null || true
               echo "✓ Nginx config actualizada"
             fi
             echo "✓ Frontend desplegado: $(date -u)"
+
+  # ── Step final: SIEMPRE volver a privado ─────────────────────
+  set-private:
+    name: Restore repo to private
+    runs-on: ubuntu-22.04
+    needs: deploy
+    if: always()
+    steps:
+      - name: Make repo private
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":true}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✓ Repo restaurado a privado"
+          else
+            echo "⚠ No se pudo restaurar privado (status $STATUS) — verificar manualmente"
+            exit 1
+          fi
