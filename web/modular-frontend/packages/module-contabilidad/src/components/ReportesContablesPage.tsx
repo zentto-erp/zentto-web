@@ -165,6 +165,7 @@ export default function ReportesContablesPage() {
               rows={(libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroDiarioCols}
               getRowId={(r) => r._id}
+              enableHeaderFilters
               disableRowSelectionOnClick
               initialState={{ sorting: { sortModel: [{ field: "fecha", sort: "asc" }] } }}
               sx={{
@@ -191,6 +192,7 @@ export default function ReportesContablesPage() {
               rows={(libroMayor.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroMayorCols}
               getRowId={(r) => r._id}
+              enableHeaderFilters
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
               mobileVisibleFields={['codCuenta', 'saldo']}
@@ -213,6 +215,7 @@ export default function ReportesContablesPage() {
               rows={(balance.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={balanceCols}
               getRowId={(r) => r._id}
+              enableHeaderFilters
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
               mobileVisibleFields={['codCuenta', 'saldo']}

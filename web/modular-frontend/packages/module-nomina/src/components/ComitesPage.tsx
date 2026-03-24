@@ -215,6 +215,7 @@ export default function ComitesPage() {
           disableRowSelectionOnClick
           getRowId={(r) => r.SafetyCommitteeId ?? r.CommitteeName}
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['CommitteeName', 'IsActive']}
           smExtraFields={['MeetingFrequency', 'ActiveMemberCount']}
         />

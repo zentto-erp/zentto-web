@@ -527,6 +527,7 @@ export default function AsientosRecurrentesPage() {
           columns={columns}
           getRowId={(r) => r.RecurringEntryId}
           loading={isLoading}
+          enableHeaderFilters
           autoHeight
           disableRowSelectionOnClick
           initialState={{

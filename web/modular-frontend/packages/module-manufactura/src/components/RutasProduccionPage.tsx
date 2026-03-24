@@ -236,6 +236,7 @@ export default function RutasProduccionPage() {
         gridId="manufactura-rutas-produccion-list"
           rows={rows}
           columns={columns}
+          enableHeaderFilters
           getRowId={(row) =>
             row.RoutingId ?? row.Id ?? row.OperationNumber ?? Math.random()
           }

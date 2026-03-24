@@ -315,6 +315,7 @@ export default function VehiculosPage() {
         getRowId={(row) => row.VehicleId ?? row.Id ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

@@ -101,6 +101,7 @@ export default function FiscalRecordsPage() {
             rows={rows}
             columns={columns}
             loading={isLoading}
+            enableHeaderFilters
             rowCount={total}
             pageSizeOptions={[25, 50]}
             paginationMode="server"

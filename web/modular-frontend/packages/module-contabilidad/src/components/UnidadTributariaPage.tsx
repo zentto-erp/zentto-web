@@ -60,6 +60,7 @@ export default function UnidadTributariaPage() {
         rows={rows}
         columns={columns}
         loading={isLoading}
+        enableHeaderFilters
         getRowId={(r) => r.TaxUnitId ?? `${r.CountryCode}-${r.TaxYear}`}
         autoHeight
         onRowClick={(p) => {

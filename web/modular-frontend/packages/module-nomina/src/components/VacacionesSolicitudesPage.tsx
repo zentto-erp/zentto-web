@@ -213,6 +213,7 @@ export default function VacacionesSolicitudesPage() {
           getRowId={(r) => r.RequestId ?? r.requestId ?? Math.random()}
           enableGrouping
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['EmployeeCode', 'EmployeeName']}
           smExtraFields={['StartDate', 'Status']}
         />

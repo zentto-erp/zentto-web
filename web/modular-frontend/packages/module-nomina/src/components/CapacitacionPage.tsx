@@ -203,6 +203,7 @@ export default function CapacitacionPage() {
           getRowId={(r) => r.TrainingRecordId ?? `${r.EmployeeCode}-${r.Title}-${r.StartDate}`}
           enableGrouping
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['Title', 'EmployeeName']}
           smExtraFields={['TrainingType', 'StartDate']}
         />

@@ -219,6 +219,7 @@ export default function CuentasBancariasPage() {
               rows={movs}
               columns={colsMovimientos}
               loading={loadingMovs}
+              enableHeaderFilters
               rowCount={movsData?.total ?? movs.length}
               pageSizeOptions={[25, 50, 100]}
               paginationModel={{ page: page - 1, pageSize: limit }}

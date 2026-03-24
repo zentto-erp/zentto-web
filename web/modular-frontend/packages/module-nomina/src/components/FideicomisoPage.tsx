@@ -145,6 +145,7 @@ export default function FideicomisoPage() {
           showTotals
           totalsLabel="Total"
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['employeeCode', 'employeeName']}
           smExtraFields={['balance', 'quarter']}
         />

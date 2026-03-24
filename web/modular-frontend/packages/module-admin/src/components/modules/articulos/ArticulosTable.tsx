@@ -70,7 +70,8 @@ function FilterSelect({
       label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      sx={{ minWidth: 140, flex: 1 }}
+      size="small"
+      sx={{ minWidth: 130, flex: 1 }}
     >
       <MenuItem value="">
         <em>Todos</em>
@@ -438,7 +439,7 @@ export default function ArticulosTable() {
 
       {/* ===== PANEL DE FILTROS COLAPSABLE ===== */}
       <Collapse in={showFilters}>
-        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+        <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, position: 'relative', zIndex: 10 }}>
           {/* Fila 1: Selectores principales */}
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
             Filtros básicos
@@ -495,7 +496,8 @@ export default function ArticulosTable() {
               label="Estado"
               value={filterEstado}
               onChange={(e) => onFilterChange(setFilterEstado)(e.target.value)}
-              sx={{ minWidth: 140, flex: 1 }}
+              size="small"
+              sx={{ minWidth: 130, flex: 1 }}
             >
               <MenuItem value="todos">Todos</MenuItem>
               <MenuItem value="activo">Activo</MenuItem>
@@ -510,122 +512,111 @@ export default function ArticulosTable() {
             size="small"
             onClick={() => setShowAdvanced(!showAdvanced)}
             endIcon={showAdvanced ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            sx={{ mb: 1 }}
+            sx={{ mb: 0.5 }}
           >
             Filtros avanzados
           </Button>
 
-          <Collapse in={showAdvanced}>
-            <Stack spacing={2} sx={{ mt: 1 }}>
+          <Collapse in={showAdvanced} unmountOnExit>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 1 }} alignItems="flex-start">
               {/* Rango de precios */}
-              <Box>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={precioRangeActive}
-                        onChange={(e) => {
-                          setPrecioRangeActive(e.target.checked);
-                          if (e.target.checked && precioRange[0] === 0 && precioRange[1] === 0) {
-                            setPrecioRange([precioMin, precioMax]);
-                          }
-                          setPaginationModel((p) => ({ ...p, page: 0 }));
-                        }}
-                        size="small"
-                      />
-                    }
-                    label={
-                      <Typography variant="body2">
-                        Rango de precio:{" "}
-                        {precioRangeActive
-                          ? `${formatCurrency(precioRange[0])} — ${formatCurrency(precioRange[1])}`
-                          : "Desactivado"}
-                      </Typography>
-                    }
-                  />
-                </Stack>
-                {precioRangeActive && (
-                  <Box sx={{ px: 2 }}>
-                    <Slider
-                      value={precioRange}
-                      onChange={(_, v) => setPrecioRange(v as [number, number])}
-                      onChangeCommitted={() => setPaginationModel((p) => ({ ...p, page: 0 }))}
-                      min={precioMin}
-                      max={precioMax}
-                      step={Math.max(1, Math.round((precioMax - precioMin) / 100))}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(v) => formatCurrency(v)}
-                      sx={{ maxWidth: 400 }}
+              <Box sx={{ flex: 1, minWidth: 200, maxWidth: 350 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={precioRangeActive}
+                      onChange={(e) => {
+                        setPrecioRangeActive(e.target.checked);
+                        if (e.target.checked && precioRange[0] === 0 && precioRange[1] === 0) {
+                          setPrecioRange([precioMin, precioMax]);
+                        }
+                        setPaginationModel((p) => ({ ...p, page: 0 }));
+                      }}
+                      size="small"
                     />
-                  </Box>
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Precio:{" "}
+                      {precioRangeActive
+                        ? `${formatCurrency(precioRange[0])} — ${formatCurrency(precioRange[1])}`
+                        : "Off"}
+                    </Typography>
+                  }
+                />
+                {precioRangeActive && (
+                  <Slider
+                    value={precioRange}
+                    onChange={(_, v) => setPrecioRange(v as [number, number])}
+                    onChangeCommitted={() => setPaginationModel((p) => ({ ...p, page: 0 }))}
+                    min={precioMin}
+                    max={precioMax}
+                    step={Math.max(1, Math.round((precioMax - precioMin) / 100))}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(v) => formatCurrency(v)}
+                    size="small"
+                    sx={{ mx: 1 }}
+                  />
                 )}
               </Box>
 
               {/* Rango de stock */}
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ maxWidth: 400 }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 200 }}>
                 <TextField
-                  label="Stock mínimo"
+                  label="Stock mín"
                   type="number"
+                  size="small"
                   value={stockMin}
                   onChange={(e) => onFilterChange(setStockMin)(e.target.value)}
-                  sx={{ flex: 1 }}
+                  sx={{ width: 100 }}
                 />
                 <Typography variant="body2" color="text.secondary">—</Typography>
                 <TextField
-                  label="Stock máximo"
+                  label="Stock máx"
                   type="number"
+                  size="small"
                   value={stockMax}
                   onChange={(e) => onFilterChange(setStockMax)(e.target.value)}
-                  sx={{ flex: 1 }}
+                  sx={{ width: 100 }}
                 />
               </Stack>
 
               {/* Búsqueda con comodines */}
-              <TextField
-                label="Búsqueda con comodines"
-                placeholder="Ej: ACEI*MOTOR, ???-001, *FILTRO*"
-                value={wildcardText}
-                onChange={handleWildcardChange}
-               
-                sx={{ maxWidth: 400 }}
-                helperText="Usa * para cualquier texto, ? para un solo carácter"
-                InputProps={{
-                  endAdornment: wildcardText ? (
-                    <InputAdornment position="end">
-                      <Tooltip title="Limpiar busqueda wildcard">
+              <Box sx={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
+                <TextField
+                  label="Comodines"
+                  placeholder="ACEI*MOTOR, *FILTRO*"
+                  value={wildcardText}
+                  onChange={handleWildcardChange}
+                  size="small"
+                  fullWidth
+                  helperText="* = cualquier texto, ? = 1 carácter"
+                  InputProps={{
+                    endAdornment: wildcardText ? (
+                      <InputAdornment position="end">
                         <IconButton size="small" onClick={() => { setWildcardText(""); setDebouncedWildcard(""); }}>
                           <ClearIcon fontSize="small" />
                         </IconButton>
-                      </Tooltip>
-                    </InputAdornment>
-                  ) : null,
-                }}
-              />
+                      </InputAdornment>
+                    ) : null,
+                  }}
+                />
+              </Box>
 
               {/* Servicio */}
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography variant="body2">Servicio:</Typography>
-                <Button
-                  variant={filterServicio === undefined ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => onFilterChange(setFilterServicio)(undefined)}
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={filterServicio === true ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => onFilterChange(setFilterServicio)(true)}
-                >
-                  Sí
-                </Button>
-                <Button
-                  variant={filterServicio === false ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => onFilterChange(setFilterServicio)(false)}
-                >
-                  No
-                </Button>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="body2" sx={{ mr: 0.5 }}>Servicio:</Typography>
+                {([undefined, true, false] as const).map((val) => (
+                  <Button
+                    key={String(val)}
+                    variant={filterServicio === val ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => onFilterChange(setFilterServicio)(val as any)}
+                    sx={{ minWidth: 40, px: 1 }}
+                  >
+                    {val === undefined ? "Todos" : val ? "Sí" : "No"}
+                  </Button>
+                ))}
               </Stack>
             </Stack>
           </Collapse>

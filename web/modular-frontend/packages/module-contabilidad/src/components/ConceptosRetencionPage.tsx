@@ -88,6 +88,7 @@ export default function ConceptosRetencionPage() {
         rows={rows}
         columns={columns}
         loading={isLoading}
+        enableHeaderFilters
         getRowId={(r) => r.ConceptId ?? r.ConceptCode}
         autoHeight
         onRowClick={(p) => handleEdit(p.row)}

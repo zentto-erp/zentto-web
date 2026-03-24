@@ -195,6 +195,7 @@ export default function AsientosListPage() {
             rows={rows}
             columns={columns}
             loading={isLoading}
+            enableHeaderFilters
             pageSizeOptions={[25, 50]}
             paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
             onPaginationModelChange={(m) =>

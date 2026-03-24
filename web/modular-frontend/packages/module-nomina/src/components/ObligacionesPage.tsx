@@ -228,6 +228,7 @@ export default function ObligacionesPage() {
             getRowId={(r) => r.LegalObligationId ?? r.Code}
             enableGrouping
             enableClipboard
+            enableHeaderFilters
             mobileVisibleFields={['Code', 'Name']}
             smExtraFields={['FilingFrequency', 'CountryCode']}
           />
@@ -276,6 +277,7 @@ export default function ObligacionesPage() {
             totalsLabel="Total"
             enableGrouping
             enableClipboard
+            enableHeaderFilters
             mobileVisibleFields={['period', 'obligationName']}
             smExtraFields={['totalAmount', 'status']}
           />

@@ -189,6 +189,7 @@ export default function TransportistasPage() {
         getRowId={(row) => row.CarrierId ?? row.Id ?? row.CarrierCode ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

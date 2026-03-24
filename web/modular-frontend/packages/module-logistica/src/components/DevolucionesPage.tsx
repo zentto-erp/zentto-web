@@ -229,6 +229,7 @@ export default function DevolucionesPage() {
         getRowId={(row) => row.ReturnId ?? row.Id ?? row.ReturnNumber ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

@@ -339,6 +339,7 @@ export default function AlbaranesPage() {
         getRowId={(row) => row.DeliveryId ?? row.Id ?? row.DeliveryNumber ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

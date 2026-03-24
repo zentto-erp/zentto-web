@@ -262,6 +262,7 @@ export default function BOMPage() {
         getRowId={(row) => row.BOMId ?? row.Id ?? row.BOMCode ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

@@ -165,6 +165,7 @@ export default function BancosPage() {
         rows={rows}
         columns={columns}
         loading={isLoading}
+        enableHeaderFilters
         rowCount={data?.total ?? rows.length}
         pageSizeOptions={[25, 50, 100]}
         paginationModel={{ page: page - 1, pageSize: limit }}

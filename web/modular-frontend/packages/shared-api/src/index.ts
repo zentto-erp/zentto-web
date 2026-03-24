@@ -71,3 +71,15 @@ export {
   useSaveModuleSettings, useSettingModules,
 } from './useSettings';
 export type { SettingsModule, AllSettings, SettingMeta } from './useSettings';
+
+// Notification Center hooks
+export {
+  useNotificationsList, useMarkNotificationsRead,
+  useTasksList, useToggleTask,
+  useMessagesList, useMarkMessageRead,
+} from './useNotifications';
+export type {
+  NotificationItem, NotificationFilters,
+  TaskItem, TaskFilters,
+  MessageItem, MessageFilters,
+} from './useNotifications';

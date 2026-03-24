@@ -126,6 +126,7 @@ export default function ReportesPage() {
             rows={rows}
             columns={columns}
             loading={isLoading}
+            enableHeaderFilters
             serverRowCount={rows.length}
             autoHeight
             disableRowSelectionOnClick

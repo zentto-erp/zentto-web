@@ -255,6 +255,7 @@ export default function RecepcionMercanciaPage() {
         getRowId={(row) => row.ReceiptId ?? row.Id ?? row.ReceiptNumber ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

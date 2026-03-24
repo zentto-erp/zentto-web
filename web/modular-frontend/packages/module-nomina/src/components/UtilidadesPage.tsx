@@ -144,6 +144,7 @@ export default function UtilidadesPage() {
           showTotals
           totalsLabel="Total"
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['fiscalYear', 'totalAmount']}
           smExtraFields={['status', 'totalEmployees']}
         />

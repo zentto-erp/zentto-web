@@ -165,6 +165,7 @@ export default function AuditLogPage() {
             rows={rows}
             columns={columns}
             loading={isLoading}
+            enableHeaderFilters
             rowCount={total}
             pageSizeOptions={[25, 50, 100]}
             paginationMode="server"

@@ -221,6 +221,7 @@ export default function ExamenesMedicosPage() {
           getRowClassName={(params) => isOverdue(params.row.NextDueDate) ? "row-overdue" : ""}
           enableGrouping
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['EmployeeName', 'ExamType']}
           smExtraFields={['ExamDate', 'NextDueDate']}
           sx={{

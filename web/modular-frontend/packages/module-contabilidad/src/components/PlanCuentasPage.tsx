@@ -66,6 +66,7 @@ export default function PlanCuentasPage() {
             smExtraFields={['tipo']}
             enableGrouping
             enableClipboard
+            enableHeaderFilters
           />
         )}
       </Paper>

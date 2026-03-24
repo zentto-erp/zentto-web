@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useModuleSettings } from './useSettings';
 import { usePosStore } from './usePosStore';
 import { settingsToLocalizacion } from './localizacion';
@@ -17,23 +17,23 @@ import type { SettingsModule } from './useSettings';
 export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
   const { data, isLoading, error } = useModuleSettings(mod, companyId);
   const setLocalizacion = usePosStore((s) => s.setLocalizacion);
-  const hydrated = useRef(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const bcvFetched = useRef(false);
 
   // 1. Hydrate from DB settings
   useEffect(() => {
-    if (!data || isLoading || error || hydrated.current) return;
+    if (!data || isLoading || error || isHydrated) return;
 
     const pais = data['localizacion.pais'];
     if (pais !== undefined && pais !== null) {
       setLocalizacion(settingsToLocalizacion(data));
-      hydrated.current = true;
+      setIsHydrated(true);
     }
-  }, [data, isLoading, error, setLocalizacion]);
+  }, [data, isLoading, error, setLocalizacion, isHydrated]);
 
-  // 2. Auto-fetch BCV rate after hydration
+  // 2. Auto-fetch BCV rate after hydration (always, on every load)
   useEffect(() => {
-    if (!hydrated.current || bcvFetched.current) return;
+    if (!isHydrated || bcvFetched.current) return;
     bcvFetched.current = true;
 
     (async () => {
@@ -60,13 +60,13 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
         console.warn('[POS] No se pudo obtener tasa BCV al iniciar:', e);
       }
     })();
-  }, [hydrated.current, setLocalizacion]);
+  }, [isHydrated, setLocalizacion]);
 
   // Reset flags when company changes
   useEffect(() => {
-    hydrated.current = false;
+    setIsHydrated(false);
     bcvFetched.current = false;
   }, [companyId]);
 
-  return { isLoading, error, hydrated: hydrated.current };
+  return { isLoading, error, hydrated: isHydrated };
 }

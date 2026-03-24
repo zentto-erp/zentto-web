@@ -103,6 +103,7 @@ export default function ConstantesPage() {
           rows={rows}
           columns={columns}
           loading={isLoading}
+          enableHeaderFilters
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.codigo ?? Math.random()}

@@ -253,6 +253,7 @@ export default function NominasPage() {
             totalsLabel="Total"
             enableGrouping
             enableClipboard
+            enableHeaderFilters
             mobileVisibleFields={['cedula', 'nombreEmpleado']}
             smExtraFields={['totalNeto', 'cerrada']}
             getDetailContent={(row: any) => <NominaDetailPanel nomina={row.nomina} cedula={row.cedula} />}

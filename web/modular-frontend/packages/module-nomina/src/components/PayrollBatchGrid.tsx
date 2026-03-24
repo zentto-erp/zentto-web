@@ -274,6 +274,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
           rows={rows}
           columns={columns as ZenttoColDef[]}
           loading={grid.isLoading}
+          enableHeaderFilters
           pageSizeOptions={[25, 50, 100]}
           paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 50 }}
           onPaginationModelChange={(m) => setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))}

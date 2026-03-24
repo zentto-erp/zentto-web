@@ -303,6 +303,7 @@ export default function PatrimonioPage() {
               rows={rows}
               columns={columns}
               loading={isLoading}
+              enableHeaderFilters
               pageSizeOptions={[25, 50]}
               paginationModel={{ page: 0, pageSize: 25 }}
               disableRowSelectionOnClick

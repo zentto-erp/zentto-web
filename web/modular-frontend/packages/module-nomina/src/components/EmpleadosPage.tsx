@@ -252,6 +252,7 @@ export default function EmpleadosPage() {
           rows={rows}
           columns={columns}
           loading={isLoading}
+          enableHeaderFilters
           paginationMode="server"
           rowCount={totalCount}
           paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 50 }}

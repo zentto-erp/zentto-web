@@ -175,6 +175,7 @@ export default function CategoriasActivosPage() {
             rows={rows}
             columns={columns}
             loading={isLoading}
+            enableHeaderFilters
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(row) => row.CategoryId}

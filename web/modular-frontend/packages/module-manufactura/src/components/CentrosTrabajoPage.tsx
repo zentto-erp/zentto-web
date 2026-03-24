@@ -195,6 +195,7 @@ export default function CentrosTrabajoPage() {
         getRowId={(row) => row.WorkCenterId ?? row.Id ?? row.WorkCenterCode ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

@@ -262,6 +262,7 @@ export default function SaludOcupacionalPage() {
           getRowId={(r) => r.OccupationalHealthId ?? `${r.EmployeeCode}-${r.OccurrenceDate}`}
           enableGrouping
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['EmployeeName', 'RecordType']}
           smExtraFields={['Severity', 'Status']}
         />

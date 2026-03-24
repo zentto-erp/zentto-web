@@ -157,6 +157,7 @@ export default function LiquidacionesPage() {
           showTotals
           totalsLabel="Total"
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['cedula', 'nombre']}
           smExtraFields={['fechaRetiro', 'montoTotal']}
           getDetailContent={(row: any) => <LiquidacionDetailPanel liquidacionId={row.liquidacionId} />}

@@ -343,6 +343,7 @@ function PnLByCostCenterTab() {
         getRowId={(r) => r._id}
         autoHeight
         disableRowSelectionOnClick
+        enableHeaderFilters
         showTotals
         totalsLabel="Total"
         showExportExcel

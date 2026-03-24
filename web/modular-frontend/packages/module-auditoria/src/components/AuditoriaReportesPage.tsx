@@ -166,6 +166,7 @@ export default function AuditoriaReportesPage() {
             gridId="auditoria-reportes-modulo"
                 rows={moduleRows}
                 columns={moduleColumns}
+                enableHeaderFilters
                 disableRowSelectionOnClick
                 hideFooter={moduleRows.length <= 25}
                 sx={{ border: "none" }}
@@ -178,6 +179,7 @@ export default function AuditoriaReportesPage() {
                 gridId="auditoria-reportes-usuario"
                 rows={userRows}
                 columns={userColumns}
+                enableHeaderFilters
                 disableRowSelectionOnClick
                 hideFooter={userRows.length <= 25}
                 sx={{ border: "none" }}
@@ -190,6 +192,7 @@ export default function AuditoriaReportesPage() {
                 gridId="auditoria-reportes-fiscal"
                 rows={fiscalQuery.data?.data ?? []}
                 columns={fiscalColumns}
+                enableHeaderFilters
                 getRowId={(r) => r.FiscalRecordId}
                 disableRowSelectionOnClick
                 hideFooter={(fiscalQuery.data?.data ?? []).length <= 25}

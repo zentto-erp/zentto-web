@@ -203,6 +203,7 @@ export default function ConductoresPage() {
         getRowId={(row) => row.DriverId ?? row.Id ?? row.DriverCode ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

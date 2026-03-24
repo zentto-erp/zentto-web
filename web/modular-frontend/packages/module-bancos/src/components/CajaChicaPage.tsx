@@ -234,6 +234,7 @@ export default function CajaChicaPage() {
               rows={boxes}
               columns={colsBoxes}
               loading={boxesQuery.isLoading}
+              enableHeaderFilters
               onRowClick={(params) => setSelectedBoxId(Number(params.row.Id))}
               getRowId={(r) => r.Id ?? Math.random()}
               density="compact"

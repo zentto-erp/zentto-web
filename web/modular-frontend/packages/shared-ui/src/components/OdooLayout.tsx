@@ -334,7 +334,7 @@ export default function OdooLayout({
                     <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         {children}
                     </Box>
-                    <Box sx={{ pt: 4, pb: 1, display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ mt: 'auto', pt: 4, pb: 1, display: 'flex', justifyContent: 'center' }}>
                         <Copyright />
                     </Box>
                 </Box>

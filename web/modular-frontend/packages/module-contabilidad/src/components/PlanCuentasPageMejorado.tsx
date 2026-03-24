@@ -103,6 +103,7 @@ function MayorAnaliticoDialog({
         <ZenttoDataGrid
             gridId="contabilidad-plan-cuentas-mejorado"
           rows={(data?.rows ?? []).map((row: any, i: number) => ({ id: i, ...row }))}
+          enableHeaderFilters
           columns={[
             { field: 'fecha', headerName: 'Fecha', width: 110 },
             { field: 'concepto', headerName: 'Concepto', flex: 1 },

@@ -215,6 +215,7 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
         columns={columns}
         getRowId={(row) => row.RoutingId ?? row.Id ?? row.OperationNumber ?? Math.random()}
         loading={isLoading}
+        enableHeaderFilters
         disableRowSelectionOnClick
         autoHeight
         hideFooter={rows.length <= 10}

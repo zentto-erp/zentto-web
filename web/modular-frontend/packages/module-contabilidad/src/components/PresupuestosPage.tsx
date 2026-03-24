@@ -687,6 +687,7 @@ export default function PresupuestosPage() {
           columns={columns}
           getRowId={(r) => r.BudgetId ?? r.id ?? r._id}
           loading={isLoading}
+          enableHeaderFilters
           autoHeight
           disableRowSelectionOnClick
           initialState={{

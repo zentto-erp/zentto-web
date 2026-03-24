@@ -207,6 +207,7 @@ export default function ActividadesPage() {
           columns={columns}
           getRowId={(r) => r.ActivityId}
           loading={isLoading}
+          enableHeaderFilters
           paginationMode="server"
           rowCount={totalCount}
           pageSizeOptions={[10, 25, 50]}

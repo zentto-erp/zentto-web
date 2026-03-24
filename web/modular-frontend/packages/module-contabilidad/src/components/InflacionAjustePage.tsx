@@ -236,6 +236,7 @@ export default function InflacionAjustePage() {
                 rows={indicesRows}
                 columns={indicesColumns}
                 loading={indicesQuery.isLoading}
+                enableHeaderFilters
                 pageSizeOptions={[12, 25]}
                 disableRowSelectionOnClick
                 getRowId={(row) => row.InflationIndexId ?? row.PeriodCode ?? row.id}
@@ -276,6 +277,7 @@ export default function InflacionAjustePage() {
                 rows={clasificacionRows}
                 columns={clasificacionColumns}
                 loading={clasificacionQuery.isLoading}
+                enableHeaderFilters
                 pageSizeOptions={[25, 50]}
                 disableRowSelectionOnClick
                 getRowId={(row) => row.AccountMonetaryClassId ?? row.AccountId ?? row.id}
@@ -374,6 +376,7 @@ export default function InflacionAjustePage() {
                 rows={historialRows}
                 columns={historialColumns}
                 loading={historialQuery.isLoading}
+                enableHeaderFilters
                 pageSizeOptions={[25, 50]}
                 disableRowSelectionOnClick
                 getRowId={(row) => row.InflationAdjustmentId ?? row.id}

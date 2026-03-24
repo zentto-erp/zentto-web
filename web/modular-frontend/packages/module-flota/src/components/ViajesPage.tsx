@@ -289,6 +289,7 @@ export default function ViajesPage() {
         getRowId={(row) => row.TripId ?? row.Id ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

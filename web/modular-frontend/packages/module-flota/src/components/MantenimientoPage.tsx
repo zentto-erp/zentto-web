@@ -273,6 +273,7 @@ export default function MantenimientoPage() {
         getRowId={(row) => row.MaintenanceOrderId ?? row.Id ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

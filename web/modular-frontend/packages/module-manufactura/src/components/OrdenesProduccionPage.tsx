@@ -379,6 +379,7 @@ export default function OrdenesProduccionPage() {
         getRowId={(row) => row.WorkOrderId ?? row.Id ?? row.WorkOrderNumber ?? Math.random()}
         rowCount={total}
         loading={isLoading}
+        enableHeaderFilters
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

@@ -272,6 +272,7 @@ export default function ConciliacionBancariaPage() {
           rows={rows}
           columns={columns}
           loading={isLoading}
+          enableHeaderFilters
           rowCount={listData?.total ?? rows.length}
           pageSizeOptions={[25, 50, 100]}
           paginationModel={{ page: page - 1, pageSize: limit }}

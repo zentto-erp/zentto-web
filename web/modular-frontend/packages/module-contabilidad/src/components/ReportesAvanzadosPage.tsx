@@ -554,6 +554,7 @@ export default function ReportesAvanzadosPage() {
               rows={(libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroDiarioCols}
               getRowId={(r) => r._id}
+              enableHeaderFilters
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
               mobileVisibleFields={['fecha', 'concepto']}
@@ -570,6 +571,7 @@ export default function ReportesAvanzadosPage() {
               rows={(libroMayor.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={libroMayorCols}
               getRowId={(r) => r._id}
+              enableHeaderFilters
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
               mobileVisibleFields={['codCuenta', 'saldo']}
@@ -586,6 +588,7 @@ export default function ReportesAvanzadosPage() {
               rows={(balance.data?.rows ?? []).map((r: any, i: number) => ({ ...r, _id: i }))}
               columns={balanceCols}
               getRowId={(r) => r._id}
+              enableHeaderFilters
               disableRowSelectionOnClick
               sx={{ flex: 1 }}
               mobileVisibleFields={['codCuenta', 'saldo']}
@@ -901,6 +904,7 @@ export default function ReportesAvanzadosPage() {
                     columns={agingCols}
                     getRowId={(r) => r._id}
                     autoHeight
+                    enableHeaderFilters
                     disableRowSelectionOnClick
                     mobileVisibleFields={['entity', 'entityName']}
                     smExtraFields={['current', 'bucket30']}
@@ -918,6 +922,7 @@ export default function ReportesAvanzadosPage() {
                     columns={agingCols}
                     getRowId={(r) => r._id}
                     autoHeight
+                    enableHeaderFilters
                     disableRowSelectionOnClick
                     mobileVisibleFields={['entity', 'entityName']}
                     smExtraFields={['current', 'bucket30']}
@@ -1031,6 +1036,7 @@ export default function ReportesAvanzadosPage() {
                       columns={taxCols}
                       getRowId={(r) => r._id}
                       autoHeight
+                      enableHeaderFilters
                       disableRowSelectionOnClick
                       mobileVisibleFields={['taxType', 'taxName']}
                       smExtraFields={['taxableBase', 'taxAmount']}

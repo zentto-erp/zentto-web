@@ -3,6 +3,7 @@ import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
     List, ListItem, ListItemText, Checkbox, LinearProgress, Tooltip
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -18,6 +19,7 @@ type Task = {
 };
 
 export default function TasksMenu() {
+    const router = useRouter();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
 
@@ -108,7 +110,12 @@ export default function TasksMenu() {
                 </List>
                 <Divider />
                 <Box sx={{ p: 1, textAlign: 'center' }}>
-                    <Button fullWidth size="small" sx={{ textTransform: 'none' }}>
+                    <Button
+                        fullWidth
+                        size="small"
+                        sx={{ textTransform: 'none' }}
+                        onClick={() => { handleClose(); router.push('/notificaciones?tab=tareas'); }}
+                    >
                         Ver todas las tareas
                     </Button>
                 </Box>

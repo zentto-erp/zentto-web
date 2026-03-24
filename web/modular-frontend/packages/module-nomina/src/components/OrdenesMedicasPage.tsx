@@ -197,6 +197,7 @@ export default function OrdenesMedicasPage() {
           getRowId={(r) => r.MedicalOrderId ?? `${r.EmployeeCode}-${r.OrderDate}-${r.OrderType}`}
           enableGrouping
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['EmployeeName', 'OrderType']}
           smExtraFields={['Status', 'OrderDate']}
         />

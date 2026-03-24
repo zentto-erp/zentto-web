@@ -588,6 +588,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
                 columns={columnsWithActions}
                 loading={listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending}
                 getRowId={getRowId}
+                enableHeaderFilters
                 paginationMode="server"
                 rowCount={total}
                 paginationModel={paginationModel}

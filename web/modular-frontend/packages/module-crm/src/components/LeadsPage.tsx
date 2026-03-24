@@ -243,6 +243,7 @@ export default function LeadsPage() {
           columns={columns}
           getRowId={(r) => r.LeadId}
           loading={isLoading}
+          enableHeaderFilters
           paginationMode="server"
           rowCount={totalCount}
           pageSizeOptions={[10, 25, 50]}

@@ -173,6 +173,7 @@ export default function CajaAhorroPage() {
             showTotals
             totalsLabel="Total"
             enableClipboard
+            enableHeaderFilters
             mobileVisibleFields={['EmployeeCode', 'EmployeeName']}
             smExtraFields={['CurrentBalance', 'Status']}
           />
@@ -200,6 +201,7 @@ export default function CajaAhorroPage() {
             showTotals
             totalsLabel="Total"
             enableClipboard
+            enableHeaderFilters
             mobileVisibleFields={['employeeCode', 'employeeName']}
             smExtraFields={['amount', 'status']}
           />

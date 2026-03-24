@@ -3,6 +3,7 @@ import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
     List, ListItem, ListItemAvatar, ListItemText, Avatar, Tooltip
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -21,6 +22,7 @@ type Notification = {
 };
 
 export default function NotificationsMenu() {
+    const router = useRouter();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -163,7 +165,12 @@ export default function NotificationsMenu() {
                 </List>
                 <Divider />
                 <Box sx={{ p: 1, textAlign: 'center' }}>
-                    <Button fullWidth size="small" sx={{ textTransform: 'none' }}>
+                    <Button
+                        fullWidth
+                        size="small"
+                        sx={{ textTransform: 'none' }}
+                        onClick={() => { handleClose(); router.push('/notificaciones'); }}
+                    >
                         Ver todas las notificaciones
                     </Button>
                 </Box>

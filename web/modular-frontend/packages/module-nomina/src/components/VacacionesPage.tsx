@@ -123,6 +123,7 @@ export default function VacacionesPage() {
           showTotals
           totalsLabel="Total"
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['cedula', 'nombreEmpleado']}
           smExtraFields={['inicio', 'total']}
         />

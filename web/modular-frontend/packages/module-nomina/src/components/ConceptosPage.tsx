@@ -166,6 +166,7 @@ export default function ConceptosPage() {
           getRowId={(r) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`}
           enableGrouping
           enableClipboard
+          enableHeaderFilters
           mobileVisibleFields={['codigo', 'nombre']}
           smExtraFields={['tipo', 'clase']}
         />

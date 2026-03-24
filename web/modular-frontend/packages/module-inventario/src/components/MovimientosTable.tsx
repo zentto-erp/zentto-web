@@ -262,6 +262,7 @@ export default function MovimientosTable() {
             rows={movGridRows}
             columns={movColumns as ZenttoColDef[]}
             loading={isLoading}
+            enableHeaderFilters
             exportFilename="movimientos-inventario"
             showTotals
             defaultCurrency="VES"

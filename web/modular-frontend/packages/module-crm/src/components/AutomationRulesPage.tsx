@@ -466,6 +466,7 @@ export default function AutomationRulesPage() {
         onRowClick={(params: any) => handleRowClick(params.row)}
         enableClipboard
         enableGrouping
+        enableHeaderFilters
         autoHeight
         sx={{ minHeight: 300 }}
       />
