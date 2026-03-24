@@ -316,6 +316,9 @@ END $cleanup$;
 \echo '[78] sp_documentos_unificado_tx.sql'
 \i includes/sp/sp_documentos_unificado_tx.sql
 
+\echo '[BYOC] Funciones de deploy en entorno propio...'
+\i includes/sp/usp_byoc.sql
+
 \echo '[79] sp_anular_factura_tx.sql'
 \i includes/sp/sp_anular_factura_tx.sql
 

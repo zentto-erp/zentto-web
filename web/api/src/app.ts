@@ -78,6 +78,7 @@ import devicesRouter from "./modules/devices/routes.js";
 import zohoRouter from "./modules/integrations/zoho.routes.js";
 import { supportRouter } from "./modules/integrations/support.routes.js";
 import { analyticsRouter } from "./modules/integrations/analytics.routes.js";
+import byocRouter from "./modules/byoc/byoc.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -444,6 +445,9 @@ export async function createApp() {
   app.use("/v1/integrations/zoho", zohoRouter);
   app.use("/v1/support", supportRouter);
   app.use("/v1/analytics", analyticsRouter);
+
+  // BYOC — Bring Your Own Cloud
+  app.use("/v1/byoc", byocRouter);
 
   // Billing SaaS (Paddle)
   app.use("/v1/billing", billingRouter);

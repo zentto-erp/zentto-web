@@ -5,6 +5,7 @@ import { handleWebhookEvent } from "../billing/billing.service.js";
 import { provisionTenantDatabase } from "../../db/provision-tenant-db.js";
 import { createSubdomainDns } from "../../lib/cloudflare.client.js";
 import { obs } from "../integrations/observability.js";
+import { callSp } from "../../db/query.js";
 
 export function verifyPaddleSignature(rawBody: Buffer, signatureHeader: string): boolean {
   const secret = process.env.PADDLE_WEBHOOK_SECRET ?? "";
@@ -113,7 +114,6 @@ export async function handlePaddleEvent(
 
   // Actualizar subdomain si el usuario eligió uno personalizado
   if (chosenSubdomain) {
-    const { callSp } = await import("../../db/query.js");
     await callSp("usp_Cfg_Tenant_SetSubdomain", {
       CompanyId: result.companyId,
       Subdomain: chosenSubdomain,
@@ -150,6 +150,47 @@ export async function handlePaddleEvent(
         }
       })
       .catch((err) => console.error("[paddle] Error DNS Cloudflare:", err));
+  }
+
+  // Flujo BYOC: en lugar de provisionar BD, generar token de onboarding
+  const isByoc = customData?.["deployType"] === "byoc";
+
+  if (isByoc) {
+    // Generar token de onboarding y enviar email con link de setup
+    createOnboardingToken(result.companyId)
+      .then((token) => {
+        const onboardingUrl = `https://app.zentto.net/onboarding/${token}`;
+        obs.audit("tenant.byoc.onboarding_token.created", {
+          module: "webhooks",
+          companyId: result.companyId,
+          onboardingUrl,
+        });
+
+        // Email de bienvenida BYOC — incluye link de onboarding
+        const byocHtml = buildByocWelcomeHtml(chosenCompanyName, onboardingUrl);
+        const notifyUrl = process.env.NOTIFY_BASE_URL ?? "https://notify.zentto.net";
+        const notifyKey = process.env.NOTIFY_API_KEY;
+        if (notifyKey) {
+          fetch(`${notifyUrl}/api/email/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-API-Key": notifyKey },
+            body: JSON.stringify({
+              to: customerEmail,
+              subject: `Zentto BYOC — Configura tu servidor para ${chosenCompanyName}`,
+              html: byocHtml,
+              from: "Zentto <no-reply@zentto.net>",
+            }),
+          }).catch((err) => console.error("[paddle] Error enviando email BYOC:", err));
+        }
+      })
+      .catch((err) => {
+        obs.error(`tenant.byoc.onboarding_token.failed: ${err.message}`, {
+          module: "webhooks",
+          companyId: result.companyId,
+        });
+      });
+
+    return { handled: true, companyId: result.companyId };
   }
 
   // Provisionar BD del tenant (no bloquea — proceso largo ~2 min)
@@ -191,4 +232,50 @@ export async function handlePaddleEvent(
     });
 
   return { handled: true, companyId: result.companyId };
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding token para flujo BYOC
+// ---------------------------------------------------------------------------
+
+async function createOnboardingToken(companyId: number): Promise<string> {
+  const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+
+  await callSp("usp_Sys_OnboardingToken_Create", {
+    CompanyId: companyId,
+    Token: token,
+    ExpiresAt: expiresAt.toISOString(),
+  });
+
+  return token;
+}
+
+function buildByocWelcomeHtml(legalName: string, onboardingUrl: string): string {
+  return `
+  <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:620px;margin:0 auto;background:#f8f9fa;padding:0">
+    <div style="background:#1a1a2e;padding:32px 40px;text-align:center">
+      <div style="background:#ff9900;color:#fff;font-weight:900;font-size:22px;display:inline-block;padding:12px 22px;border-radius:10px;letter-spacing:2px">DB</div>
+      <div style="color:#fff;font-size:28px;font-weight:700;margin:10px 0 4px;letter-spacing:3px">ZENTTO</div>
+      <div style="color:#aaa;font-size:13px">BYOC — Bring Your Own Cloud</div>
+    </div>
+    <div style="background:#fff;padding:40px">
+      <h2 style="color:#1a1a2e;margin:0 0 8px">Tu cuenta esta lista, <span style="color:#ff9900">${legalName}</span></h2>
+      <p style="color:#555;margin:0 0 28px;line-height:1.6">
+        Suscripcion activada correctamente. Ahora debes configurar tu servidor propio para desplegar Zentto.
+      </p>
+      <div style="text-align:center;margin-bottom:36px">
+        <a href="${onboardingUrl}" style="background:#ff9900;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block;letter-spacing:1px">
+          Configurar mi servidor &rarr;
+        </a>
+      </div>
+      <div style="background:#fff8e1;border-left:4px solid #ff9900;padding:14px 18px;border-radius:0 6px 6px 0">
+        <strong style="color:#333">Este enlace expira en 7 dias.</strong>
+        <div style="color:#666;font-size:13px;margin-top:4px">Si necesitas uno nuevo, contacta <a href="mailto:soporte@zentto.net" style="color:#ff9900">soporte@zentto.net</a>.</div>
+      </div>
+    </div>
+    <div style="padding:20px 40px;text-align:center;background:#f8f9fa">
+      <p style="color:#999;font-size:12px;margin:0">© ${new Date().getFullYear()} Zentto. Todos los derechos reservados.</p>
+    </div>
+  </div>`;
 }
