@@ -496,6 +496,7 @@
 
 \echo '--- Funciones CRM ---'
 \i includes/sp/usp_crm.sql
+\i includes/sp/usp_crm_analytics.sql
 
 \echo '--- Funciones Manufactura ---'
 \i includes/sp/usp_mfg.sql
