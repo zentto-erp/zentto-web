@@ -90,6 +90,8 @@ export default function AppSelectorPage() {
   allApps.push({ id: 'manufactura', name: isSmall ? 'Manuf.' : 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
   allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
 
+  allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/shipping', bgColor: '#1565C0' });
+
   // Siempre agregar App Store y Settings al final
   allApps.push({ id: 'apps', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });
   if (isAdmin) {
