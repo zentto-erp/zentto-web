@@ -105,8 +105,7 @@ interface BackupRow {
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
-const SESSION_KEY = "master_key";
-const MASTER_KEY_ENV = process.env.NEXT_PUBLIC_MASTER_KEY ?? "";
+const SESSION_KEY = "bo_session_token"; // session token JWT (no la master key)
 
 const PLAN_OPTIONS = ["FREE", "STARTER", "PRO", "ENTERPRISE"];
 
@@ -127,34 +126,34 @@ const STATUS_COLORS: Record<
   RUNNING: "info",
 };
 
-// ─── Hook para Master Key ─────────────────────────────────────────────────────
+// ─── Hook para Session Token (JWT emitido tras 2FA) ──────────────────────────
 
-function useMasterKey() {
-  const [key, setKey] = useState<string>(() => {
+function useSessionToken() {
+  const [token, setToken] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return sessionStorage.getItem(SESSION_KEY) ?? MASTER_KEY_ENV;
+      return sessionStorage.getItem(SESSION_KEY) ?? "";
     }
-    return MASTER_KEY_ENV;
+    return "";
   });
 
-  const save = useCallback((k: string) => {
-    sessionStorage.setItem(SESSION_KEY, k);
-    setKey(k);
+  const save = useCallback((t: string) => {
+    sessionStorage.setItem(SESSION_KEY, t);
+    setToken(t);
   }, []);
 
   const clear = useCallback(() => {
     sessionStorage.removeItem(SESSION_KEY);
-    setKey("");
+    setToken("");
   }, []);
 
-  return { key, save, clear, isSet: !!key };
+  return { token, save, clear, isSet: !!token };
 }
 
-// ─── Fetcher con Master Key ───────────────────────────────────────────────────
+// ─── Fetcher con Session Token ────────────────────────────────────────────────
 
 async function apiFetch<T>(
   path: string,
-  masterKey: string,
+  sessionToken: string,
   options: RequestInit = {}
 ): Promise<T> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "/api";
@@ -162,7 +161,7 @@ async function apiFetch<T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "X-Master-Key": masterKey,
+      "X-Backoffice-Token": sessionToken,
       ...(options.headers ?? {}),
     },
   });
@@ -173,18 +172,66 @@ async function apiFetch<T>(
   return res.json() as Promise<T>;
 }
 
-// ─── Modal de autenticacion ───────────────────────────────────────────────────
+// ─── Modal de autenticacion 2FA ───────────────────────────────────────────────
 
-function AuthModal({ onAuth }: { onAuth: (key: string) => void }) {
-  const [value, setValue] = useState("");
+function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
+  const [step, setStep] = useState<"key" | "otp">("key");
+  const [masterKey, setMasterKey] = useState("");
+  const [otp, setOtp] = useState("");
+  const [maskedEmail, setMaskedEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = () => {
-    if (!value.trim()) {
-      setError("Ingresa la Master Key");
-      return;
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+
+  // Paso 1: validar master key y enviar OTP
+  const handleRequestOtp = async () => {
+    if (!masterKey.trim()) { setError("Ingresa la Master Key"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${base}/v1/backoffice/auth/request-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterKey: masterKey.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 429) setError("Demasiados intentos. Espera 15 minutos.");
+        else setError("Master Key incorrecta.");
+        return;
+      }
+      setMaskedEmail(data.maskedEmail ?? "");
+      setStep("otp");
+    } catch {
+      setError("Error de conexion. Verifica la API.");
+    } finally {
+      setLoading(false);
     }
-    onAuth(value.trim());
+  };
+
+  // Paso 2: verificar OTP y obtener session token
+  const handleVerifyOtp = async () => {
+    if (!otp.trim()) { setError("Ingresa el codigo OTP"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${base}/v1/backoffice/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterKey: masterKey.trim(), code: otp.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError("Codigo incorrecto o expirado.");
+        return;
+      }
+      onAuth(data.token);
+    } catch {
+      setError("Error de conexion. Verifica la API.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -192,32 +239,66 @@ function AuthModal({ onAuth }: { onAuth: (key: string) => void }) {
       <DialogTitle>
         <Stack direction="row" alignItems="center" gap={1}>
           <LockIcon color="warning" />
-          Backoffice — Autenticacion
+          Backoffice — {step === "key" ? "Autenticacion" : "Verificacion 2FA"}
         </Stack>
       </DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          Esta seccion es exclusiva para administradores del sistema. Ingresa la
-          Master Key para continuar.
-        </Typography>
-        <TextField
-          label="Master Key"
-          type="password"
-          fullWidth
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setError("");
-          }}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          error={!!error}
-          helperText={error}
-          autoFocus
-        />
+        {step === "key" ? (
+          <>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Seccion exclusiva para administradores. Ingresa la Master Key para
+              recibir un codigo de verificacion por email.
+            </Typography>
+            <TextField
+              label="Master Key"
+              type="password"
+              fullWidth
+              value={masterKey}
+              onChange={(e) => { setMasterKey(e.target.value); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleRequestOtp()}
+              error={!!error}
+              helperText={error}
+              autoFocus
+              disabled={loading}
+            />
+          </>
+        ) : (
+          <>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Se ha enviado un codigo de 6 digitos a{" "}
+              <strong>{maskedEmail}</strong> via Zentto Notify.
+              Expira en 5 minutos.
+            </Typography>
+            <TextField
+              label="Codigo OTP"
+              type="text"
+              fullWidth
+              value={otp}
+              onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+              error={!!error}
+              helperText={error || "Revisa tu email"}
+              autoFocus
+              disabled={loading}
+              inputProps={{ maxLength: 6, style: { letterSpacing: "0.4em", fontSize: "1.4rem", textAlign: "center" } }}
+            />
+            <Button
+              size="small"
+              sx={{ mt: 1 }}
+              onClick={() => { setStep("key"); setOtp(""); setError(""); }}
+            >
+              Volver
+            </Button>
+          </>
+        )}
       </DialogContent>
       <DialogActions>
-        <Button variant="contained" onClick={handleSubmit}>
-          Ingresar
+        <Button
+          variant="contained"
+          onClick={step === "key" ? handleRequestOtp : handleVerifyOtp}
+          disabled={loading}
+        >
+          {loading ? "Procesando..." : step === "key" ? "Enviar codigo" : "Verificar"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -1004,7 +1085,7 @@ function RespaldosTab({ masterKey }: { masterKey: string }) {
 
 export default function BackofficePage() {
   const { user } = useAuth();
-  const { key, save, isSet } = useMasterKey();
+  const { token, save, clear, isSet } = useSessionToken();
   const [tab, setTab] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
@@ -1021,15 +1102,18 @@ export default function BackofficePage() {
     try {
       const res = await apiFetch<DashboardData>(
         "/v1/backoffice/dashboard",
-        key
+        token
       );
       setDashboard(res);
-    } catch {
-      // silencioso — puede fallar si la key aun no es valida
+    } catch (e: unknown) {
+      // Si el token expiró, limpiar sesión y volver al login
+      if (e instanceof Error && e.message.startsWith("401")) {
+        clear();
+      }
     } finally {
       setDashLoading(false);
     }
-  }, [isSet, key]);
+  }, [isSet, token, clear]);
 
   useEffect(() => {
     loadDashboard();
@@ -1074,6 +1158,11 @@ export default function BackofficePage() {
             <RefreshIcon />
           </IconButton>
         </Tooltip>
+        <Tooltip title="Cerrar sesion backoffice">
+          <IconButton onClick={clear} color="warning">
+            <LockIcon />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
       <DashboardCards data={dashboard} loading={dashLoading} />
@@ -1087,10 +1176,10 @@ export default function BackofficePage() {
         </Tabs>
       </Box>
 
-      {tab === 0 && <TenantsTab masterKey={key} />}
-      {tab === 1 && <RecursosTab masterKey={key} />}
-      {tab === 2 && <CleanupTab masterKey={key} />}
-      {tab === 3 && <RespaldosTab masterKey={key} />}
+      {tab === 0 && <TenantsTab masterKey={token} />}
+      {tab === 1 && <RecursosTab masterKey={token} />}
+      {tab === 2 && <CleanupTab masterKey={token} />}
+      {tab === 3 && <RespaldosTab masterKey={token} />}
     </Box>
   );
 }

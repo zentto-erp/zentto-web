@@ -81,6 +81,7 @@ import { analyticsRouter } from "./modules/integrations/analytics.routes.js";
 import byocRouter from "./modules/byoc/byoc.routes.js";
 import licenseRouter from "./modules/license/license.routes.js";
 import backofficeRouter from "./modules/backoffice/backoffice.routes.js";
+import backofficeAuthRouter from "./modules/backoffice/backoffice-auth.routes.js";
 import { startResourceCleanupJob } from "./jobs/resource-cleanup.job.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
@@ -239,6 +240,7 @@ export async function createApp() {
   app.use("/v1/license", licenseRouter);
 
   // Backoffice Zentto — protegido por Master-Key, sin JWT
+  app.use("/v1/backoffice/auth", backofficeAuthRouter); // sin master-key (es el endpoint de login)
   app.use("/v1/backoffice", backofficeRouter);
 
   // Paddle client token — público para inicializar checkout en frontend
