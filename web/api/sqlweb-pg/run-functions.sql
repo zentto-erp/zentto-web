@@ -323,6 +323,9 @@ END $cleanup$;
 \i includes/sp/usp_cfg_plan_modules.sql
 \i includes/sp/usp_sys_license.sql
 \i includes/sp/usp_sys_backoffice.sql
+\i includes/sp/usp_sys_resource.sql
+\echo '[BACKUP] usp_sys_backup.sql'
+\i includes/sp/usp_sys_backup.sql
 
 \echo '[79] sp_anular_factura_tx.sql'
 \i includes/sp/sp_anular_factura_tx.sql

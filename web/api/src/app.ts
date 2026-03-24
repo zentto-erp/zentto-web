@@ -81,6 +81,7 @@ import { analyticsRouter } from "./modules/integrations/analytics.routes.js";
 import byocRouter from "./modules/byoc/byoc.routes.js";
 import licenseRouter from "./modules/license/license.routes.js";
 import backofficeRouter from "./modules/backoffice/backoffice.routes.js";
+import { startResourceCleanupJob } from "./jobs/resource-cleanup.job.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -525,6 +526,11 @@ export async function createApp() {
   app.use("/api/v1/flota", flotaRouter);
 
   await loadAddons(app);
+
+  // ── Jobs periódicos — solo en producción/desarrollo, nunca en tests ──
+  if (process.env.NODE_ENV !== 'test') {
+    startResourceCleanupJob();
+  }
 
   // ── Global error handler — NUNCA retornar 502, siempre JSON ──
   app.use((err: any, _req: any, res: any, _next: any) => {

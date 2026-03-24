@@ -7,12 +7,22 @@
  * GET    /v1/backoffice/tenants/:companyId              Detalle de un tenant
  * GET    /v1/backoffice/revenue                         Métricas de revenue
  * POST   /v1/backoffice/tenants/:companyId/apply-plan   Aplica módulos del plan
+ * GET    /v1/backoffice/resources                       Uso de recursos de todos los tenants
+ * GET    /v1/backoffice/cleanup                         Cola de limpieza (tenants para eliminar)
+ * POST   /v1/backoffice/cleanup/scan                    Ejecuta scan automático de candidatos
+ * POST   /v1/backoffice/cleanup/:queueId/action         Acción sobre un item (CANCEL|NOTIFY|CONFIRM_DELETE)
+ * GET    /v1/backoffice/dashboard                       Métricas generales del servidor
+ * GET    /v1/backoffice/backups                         Último backup por tenant (todos)
+ * GET    /v1/backoffice/tenants/:companyId/backups      Historial de backups de un tenant
+ * POST   /v1/backoffice/tenants/:companyId/backup       Lanza backup manual (async 202)
  */
 import { Router } from "express";
 import { z } from "zod";
 import { requireMasterKey } from "../../middleware/master-key.js";
 import { callSp } from "../../db/query.js";
 import { applyPlanModules, getLicenseByCompany } from "../license/license.service.js";
+import { dropTenantDatabase } from "./resource.service.js";
+import { createTenantBackup, listTenantBackups, getLatestBackupsPerTenant } from "./backup.service.js";
 import { obs } from "../integrations/observability.js";
 
 const backofficeRouter = Router();
@@ -79,6 +89,47 @@ interface RevenueRow {
   LicenseType: string;
   TenantCount: number;
   EstimatedMRR: number;
+}
+
+interface CleanupRow {
+  QueueId: number;
+  CompanyId: number;
+  CompanyCode: string;
+  LegalName: string;
+  Reason: string;
+  FlaggedAt: string;
+  DeleteAfter: string;
+  Status: string;
+  DbSizeMB: number | null;
+  LastLoginAt: string | null;
+  DaysUntilDelete: number | null;
+}
+
+interface CleanupScanRow {
+  NewCandidates: number;
+  TotalPending: number;
+}
+
+interface CleanupProcessRow {
+  ok: boolean;
+  mensaje?: string;
+}
+
+interface ResourceRow extends CleanupRow {
+  // CleanupRow ya incluye los campos de recursos
+}
+
+interface DashboardTenantRow {
+  TenantCount: number;
+  TrialCount: number;
+}
+
+interface DashboardCleanupRow {
+  CleanupPending: number;
+}
+
+interface DashboardResourceRow {
+  TotalDbSizeMB: number;
 }
 
 // ── GET /tenants ──────────────────────────────────────────────────────────────
@@ -195,6 +246,234 @@ backofficeRouter.post("/tenants/:companyId/apply-plan", async (req, res) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'internal_error';
     obs.error(`backoffice.apply_plan.failed: ${msg}`, { module: 'backoffice', companyId });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /resources ─────────────────────────────────────────────────────────
+
+backofficeRouter.get("/resources", async (req, res) => {
+  const status = typeof req.query.status === "string" ? req.query.status : null;
+  try {
+    const rows = await callSp<CleanupRow>(
+      "usp_Sys_Cleanup_List",
+      { Status: status }
+    );
+
+    // Agrupar por tenant para el resumen de recursos
+    const byTenant = new Map<number, ResourceRow>();
+    for (const row of rows) {
+      if (!byTenant.has(row.CompanyId)) {
+        byTenant.set(row.CompanyId, { ...row });
+      }
+    }
+
+    res.json({ ok: true, data: Array.from(byTenant.values()) });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    obs.error(`backoffice.resources.list.failed: ${msg}`, { module: 'backoffice' });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /cleanup ───────────────────────────────────────────────────────────
+
+backofficeRouter.get("/cleanup", async (req, res) => {
+  const status = typeof req.query.status === "string" ? req.query.status : null;
+  try {
+    const rows = await callSp<CleanupRow>(
+      "usp_Sys_Cleanup_List",
+      { Status: status }
+    );
+    res.json({ ok: true, data: rows });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    obs.error(`backoffice.cleanup.list.failed: ${msg}`, { module: 'backoffice' });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── POST /cleanup/scan ─────────────────────────────────────────────────────
+
+backofficeRouter.post("/cleanup/scan", async (_req, res) => {
+  try {
+    const rows = await callSp<CleanupScanRow>(
+      "usp_Sys_Cleanup_Scan",
+      {}
+    );
+    const row = rows[0];
+    obs.audit('backoffice.cleanup.scan', { module: 'backoffice', newCandidates: row?.NewCandidates ?? 0 });
+    res.json({ ok: true, newCandidates: row?.NewCandidates ?? 0, totalPending: row?.TotalPending ?? 0 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    obs.error(`backoffice.cleanup.scan.failed: ${msg}`, { module: 'backoffice' });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── POST /cleanup/:queueId/action ──────────────────────────────────────────
+
+const cleanupActionSchema = z.object({
+  action: z.enum(['CANCEL', 'NOTIFY', 'CONFIRM_DELETE']),
+});
+
+backofficeRouter.post("/cleanup/:queueId/action", async (req, res) => {
+  const queueId = Number(req.params.queueId);
+  if (!queueId || isNaN(queueId)) {
+    res.status(400).json({ error: 'invalid_queue_id' });
+    return;
+  }
+
+  const parsed = cleanupActionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'validation_error', issues: parsed.error.flatten() });
+    return;
+  }
+
+  const { action } = parsed.data;
+
+  try {
+    const rows = await callSp<CleanupProcessRow>(
+      "usp_Sys_Cleanup_Process",
+      { QueueId: queueId, Action: action }
+    );
+
+    const row = rows[0];
+    if (!row?.ok) {
+      res.status(400).json({ error: row?.mensaje ?? 'cleanup_process_failed' });
+      return;
+    }
+
+    // Si la acción es eliminar, también eliminar la BD del tenant
+    if (action === 'CONFIRM_DELETE') {
+      // Obtener companyId y companyCode del registro procesado
+      const cleanupRows = await callSp<CleanupRow>(
+        "usp_Sys_Cleanup_List",
+        { Status: 'CONFIRMED' }
+      );
+      const target = cleanupRows.find(r => r.QueueId === queueId);
+      if (target) {
+        const dropResult = await dropTenantDatabase(target.CompanyId, target.CompanyCode);
+        if (!dropResult.ok) {
+          obs.error(`backoffice.cleanup.drop_db.failed: ${dropResult.message}`, { module: 'backoffice', queueId, companyId: target.CompanyId });
+          // Continuamos — el registro ya fue marcado, loguear el error pero no fallar el endpoint
+        } else {
+          obs.audit('backoffice.cleanup.db_dropped', { module: 'backoffice', companyId: target.CompanyId, companyCode: target.CompanyCode });
+        }
+      }
+    }
+
+    obs.audit(`backoffice.cleanup.action.${action.toLowerCase()}`, { module: 'backoffice', queueId });
+    res.json({ ok: true, message: row.mensaje ?? 'ok' });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    obs.error(`backoffice.cleanup.action.failed: ${msg}`, { module: 'backoffice', queueId, action });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /dashboard ─────────────────────────────────────────────────────────
+
+backofficeRouter.get("/dashboard", async (_req, res) => {
+  try {
+    const [tenantRows, cleanupRows, resourceRows, revenueRows] = await Promise.all([
+      callSp<DashboardTenantRow>("usp_Sys_Backoffice_TenantList", { Page: 1, PageSize: 1, Status: null, Plan: null, Search: null }),
+      callSp<DashboardCleanupRow>("usp_Sys_Cleanup_List", { Status: 'PENDING' }),
+      callSp<DashboardResourceRow>("usp_Sys_Cleanup_List", { Status: null }),
+      callSp<RevenueRow>("usp_Sys_Backoffice_RevenueMetrics", {}),
+    ]);
+
+    const tenantCount = (tenantRows[0] as any)?.TotalCount ?? 0;
+    const trialCount = tenantRows.reduce((sum, r) => sum + (r.TrialCount ?? 0), 0);
+    const cleanupPending = cleanupRows.length;
+    const totalDbSizeMB = (resourceRows as any[]).reduce((sum, r) => sum + (Number(r.DbSizeMB) || 0), 0);
+    const estimatedMRR = revenueRows.reduce((sum, r) => sum + (r.EstimatedMRR ?? 0), 0);
+
+    res.json({
+      ok: true,
+      data: {
+        tenantCount,
+        trialCount,
+        cleanupPending,
+        totalDbSizeMB,
+        estimatedMRR,
+      },
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    obs.error(`backoffice.dashboard.failed: ${msg}`, { module: 'backoffice' });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /backups ───────────────────────────────────────────────────────────
+// Devuelve el último backup de cada tenant (para el dashboard de backoffice).
+
+backofficeRouter.get("/backups", async (_req, res) => {
+  try {
+    const rows = await getLatestBackupsPerTenant();
+    res.json({ ok: true, data: rows });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    obs.error(`backoffice.backups.latest.failed: ${msg}`, { module: "backup" });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /tenants/:companyId/backups ────────────────────────────────────────
+// Historial completo de backups de un tenant específico.
+
+backofficeRouter.get("/tenants/:companyId/backups", async (req, res) => {
+  const companyId = Number(req.params.companyId);
+  if (!companyId || isNaN(companyId)) {
+    res.status(400).json({ error: "invalid_company_id" });
+    return;
+  }
+  try {
+    const rows = await listTenantBackups(companyId);
+    res.json({ ok: true, data: rows });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    obs.error(`backoffice.backups.list.failed: ${msg}`, { module: "backup", companyId });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── POST /tenants/:companyId/backup ────────────────────────────────────────
+// Lanza un backup manual en background. Retorna 202 inmediatamente.
+
+backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
+  const companyId = Number(req.params.companyId);
+  if (!companyId || isNaN(companyId)) {
+    res.status(400).json({ error: "invalid_company_id" });
+    return;
+  }
+
+  try {
+    const tenantRows = await callSp<{ CompanyCode: string; DbName: string }>(
+      "usp_Sys_Backup_TenantInfo",
+      { CompanyId: companyId }
+    );
+    const tenant = tenantRows[0];
+    if (!tenant) {
+      res.status(404).json({ error: "tenant_not_found" });
+      return;
+    }
+
+    // Responder inmediatamente — el backup corre en background
+    res.status(202).json({ ok: true, message: "backup_queued" });
+
+    setImmediate(async () => {
+      await createTenantBackup(
+        companyId,
+        tenant.CompanyCode,
+        tenant.DbName,
+        "backoffice-manual"
+      );
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    obs.error(`backoffice.backup.trigger.failed: ${msg}`, { module: "backup", companyId });
     res.status(500).json({ error: msg });
   }
 });
