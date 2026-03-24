@@ -590,7 +590,7 @@ export async function insertCuentaBancaria(data: {
     AccountNumber: data.AccountNumber,
     AccountName: data.AccountName,
     CurrencyCode: data.CurrencyCode,
-    UserId: scope.userId ?? null,
+    UserId: scope.systemUserId ?? null,
   });
   return rows[0] ?? { ok: false, mensaje: "Sin respuesta" };
 }
@@ -611,7 +611,7 @@ export async function updateCuentaBancaria(id: number, data: {
     AccountName: data.AccountName,
     CurrencyCode: data.CurrencyCode,
     IsActive: data.IsActive ?? true,
-    UserId: scope.userId ?? null,
+    UserId: scope.systemUserId ?? null,
   });
   return rows[0] ?? { ok: false, mensaje: "Sin respuesta" };
 }
