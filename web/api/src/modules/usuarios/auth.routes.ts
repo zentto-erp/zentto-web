@@ -12,6 +12,7 @@ import {
   resendVerificationSchema,
   SYSTEM_MODULES,
 } from "./types.js";
+import { getPlanModules } from "../license/license.types.js";
 import {
   authenticateUsuario,
   extractPermisos,
@@ -334,7 +335,9 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   if (isAdmin) {
     allowedModules = [...SYSTEM_MODULES];
   } else if (modulosAcceso.length === 0) {
-    allowedModules = ["dashboard", "facturas", "clientes", "inventario", "articulos"];
+    // Sin módulos configurados → usar plan STARTER como fallback seguro
+    // (no FREE, para no romper tenants activos sin plan configurado)
+    allowedModules = getPlanModules('STARTER');
   } else {
     allowedModules = modulosAcceso
       .filter((m) => m.permitido)

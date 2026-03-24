@@ -27,12 +27,23 @@ export async function provisionTenant(
   });
 
   const row = rows[0];
-  return {
+  const result: TenantProvisionResult = {
     ok:        Boolean(row?.ok ?? false),
     mensaje:   String(row?.mensaje ?? "UNKNOWN_ERROR"),
     companyId: Number(row?.NewCompanyId ?? row?.CompanyId ?? 0),
     userId:    Number(row?.NewUserId ?? row?.UserId ?? 0),
   };
+
+  // Aplicar módulos del plan al tenant recién creado
+  if (result.ok && result.companyId) {
+    const { applyPlanModules } = await import("../license/license.service.js");
+    await applyPlanModules(result.companyId, input.plan).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[provision] No se pudieron aplicar módulos del plan:", msg);
+    });
+  }
+
+  return result;
 }
 
 export async function getTenantInfo(companyId: number): Promise<TenantInfo | null> {

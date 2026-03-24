@@ -79,6 +79,8 @@ import zohoRouter from "./modules/integrations/zoho.routes.js";
 import { supportRouter } from "./modules/integrations/support.routes.js";
 import { analyticsRouter } from "./modules/integrations/analytics.routes.js";
 import byocRouter from "./modules/byoc/byoc.routes.js";
+import licenseRouter from "./modules/license/license.routes.js";
+import backofficeRouter from "./modules/backoffice/backoffice.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -231,6 +233,12 @@ export async function createApp() {
 
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);
+
+  // Licencias — /validate es público (BYOC servers); resto protegido por Master-Key, sin JWT
+  app.use("/v1/license", licenseRouter);
+
+  // Backoffice Zentto — protegido por Master-Key, sin JWT
+  app.use("/v1/backoffice", backofficeRouter);
 
   // Paddle client token — público para inicializar checkout en frontend
   app.get("/v1/billing/config", (_req, res) => {
