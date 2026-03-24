@@ -15,7 +15,7 @@ import {
   Chip,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { toDateOnly, formatDateTime } from "@zentto/shared-api";
@@ -72,7 +72,7 @@ export default function AuditoriaReportesPage() {
     .map(([user, v], i) => ({ id: i, userName: user, ...v }))
     .sort((a, b) => b.total - a.total);
 
-  const moduleColumns: GridColDef[] = [
+  const moduleColumns: ZenttoColDef[] = [
     { field: "moduleName", headerName: "Módulo", flex: 1, minWidth: 150 },
     { field: "total", headerName: "Total", width: 100, type: "number" },
     { field: "creates", headerName: "Creaciones", width: 110, type: "number" },
@@ -80,7 +80,7 @@ export default function AuditoriaReportesPage() {
     { field: "deletes", headerName: "Eliminaciones", width: 120, type: "number" },
   ];
 
-  const userColumns: GridColDef[] = [
+  const userColumns: ZenttoColDef[] = [
     { field: "userName", headerName: "Usuario", flex: 1, minWidth: 150 },
     { field: "total", headerName: "Total", width: 100, type: "number" },
     { field: "creates", headerName: "Creaciones", width: 110, type: "number" },
@@ -88,7 +88,7 @@ export default function AuditoriaReportesPage() {
     { field: "deletes", headerName: "Eliminaciones", width: 120, type: "number" },
   ];
 
-  const fiscalColumns: GridColDef[] = [
+  const fiscalColumns: ZenttoColDef[] = [
     { field: "FiscalRecordId", headerName: "ID", width: 70 },
     {
       field: "CreatedAt",

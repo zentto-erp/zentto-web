@@ -36,13 +36,34 @@ export { default as AcceptedMethodsManager } from './components/AcceptedMethodsM
 export { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 // ─── ZenttoDataGrid — componente unificado que reemplaza DataGrid en todo el proyecto ───
-// Incluye: responsive, master-detail, pivot, aggregation, column pinning, export
+// Incluye: responsive, master-detail, pivot, aggregation, column pinning, export,
+// row grouping, tree data, header filters, clipboard, cell selection, lazy loading,
+// column groups, row pinning, row reordering
 export { ZenttoDataGrid } from './components/ZenttoDataGrid';
-export type { ZenttoDataGridProps, ZenttoColDef, PivotConfig, AggregationType } from './components/ZenttoDataGrid/types';
+export type {
+  ZenttoDataGridProps,
+  ZenttoColDef,
+  PivotConfig,
+  AggregationType,
+  RowGroupingConfig,
+  TreeDataConfig,
+  ColumnGroup,
+  HeaderFilter,
+  CellRange,
+  GridRow,
+} from './components/ZenttoDataGrid/types';
 
 // ResponsiveDataGrid → alias de ZenttoDataGrid para compatibilidad
 export { ZenttoDataGrid as ResponsiveDataGrid } from './components/ZenttoDataGrid';
 export type { ZenttoDataGridProps as ResponsiveDataGridProps } from './components/ZenttoDataGrid/types';
+
+// ─── Dialogs genéricos — CRUD, confirmación, formularios ───
+export { ConfirmDialog, DeleteDialog } from './components/dialogs';
+export type { ConfirmDialogProps, DeleteDialogProps } from './components/dialogs';
+export { FormDialog } from './components/dialogs';
+export type { FormDialogProps } from './components/dialogs';
+export { CrudActions, buildCrudActionsColumn } from './components/dialogs';
+export type { CrudActionHandlers } from './components/dialogs';
 
 // Form layout — Grid wrapper para formularios consistentes
 export { FormGrid, FormField } from './components/FormGrid';

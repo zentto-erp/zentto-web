@@ -19,7 +19,6 @@ import {
   FormControlLabel,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ContextActionHeader } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -119,7 +118,7 @@ export default function NominasPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "nomina", headerName: "Nómina", width: 120 },
     { field: "cedula", headerName: "Cédula", width: 120 },
     { field: "nombreEmpleado", headerName: "Empleado", flex: 1, minWidth: 200 },
@@ -130,18 +129,24 @@ export default function NominasPage() {
       headerName: "Asignaciones",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "totalDeducciones",
       headerName: "Deducciones",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "totalNeto",
       headerName: "Neto",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "cerrada",
@@ -243,6 +248,10 @@ export default function NominasPage() {
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => `${r.nomina}-${r.cedula}-${r.fechaInicio ?? Math.random()}`}
+            showTotals
+            totalsLabel="Total"
+            enableGrouping
+            enableClipboard
             mobileVisibleFields={['cedula', 'nombreEmpleado']}
             smExtraFields={['totalNeto', 'cerrada']}
             getDetailContent={(row: any) => <NominaDetailPanel nomina={row.nomina} cedula={row.cedula} />}

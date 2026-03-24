@@ -16,8 +16,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useRouter } from "next/navigation";
@@ -57,19 +56,21 @@ export default function VacacionesPage() {
     };
   });
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "vacacion", headerName: "ID", width: 160 },
     { field: "cedula", headerName: "Cédula", width: 120 },
     { field: "nombreEmpleado", headerName: "Empleado", flex: 1 },
     { field: "inicio", headerName: "Inicio", width: 110 },
     { field: "hasta", headerName: "Hasta", width: 110 },
     { field: "reintegro", headerName: "Reintegro", width: 110 },
-    { field: "dias", headerName: "Días", width: 80, type: "number" },
+    { field: "dias", headerName: "Días", width: 80, type: "number", aggregation: 'sum' },
     {
       field: "total",
       headerName: "Monto",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "acciones",
@@ -118,6 +119,9 @@ export default function VacacionesPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r._id}
+          showTotals
+          totalsLabel="Total"
+          enableClipboard
           mobileVisibleFields={['cedula', 'nombreEmpleado']}
           smExtraFields={['inicio', 'total']}
         />

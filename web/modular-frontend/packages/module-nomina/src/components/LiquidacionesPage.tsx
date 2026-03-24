@@ -16,7 +16,6 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -91,7 +90,7 @@ export default function LiquidacionesPage() {
 
   const rows = Array.isArray(data) ? data : data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "liquidacionId", headerName: "ID", width: 100 },
     { field: "cedula", headerName: "Cédula", width: 120 },
     { field: "nombre", headerName: "Empleado", flex: 1 },
@@ -102,6 +101,8 @@ export default function LiquidacionesPage() {
       headerName: "Total",
       width: 140,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "acciones",
@@ -152,6 +153,9 @@ export default function LiquidacionesPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.liquidacionId ?? r.id ?? Math.random()}
+          showTotals
+          totalsLabel="Total"
+          enableClipboard
           mobileVisibleFields={['cedula', 'nombre']}
           smExtraFields={['fechaRetiro', 'montoTotal']}
           getDetailContent={(row: any) => <LiquidacionDetailPanel liquidacionId={row.liquidacionId} />}

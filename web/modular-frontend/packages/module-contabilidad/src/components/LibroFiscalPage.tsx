@@ -14,18 +14,12 @@ import {
   InputLabel,
   FormControl,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Divider,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { formatCurrency, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useGenerarLibroFiscal,
   useLibroFiscal,
@@ -61,7 +55,7 @@ export default function LibroFiscalPage() {
   const rows = libroData?.rows ?? [];
   const resumenRows = resumenData?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "EntryDate", headerName: "Fecha", width: 110 },
     { field: "DocumentNumber", headerName: "N. Documento", width: 140 },
     {
@@ -76,12 +70,18 @@ export default function LibroFiscalPage() {
       field: "TaxableBase",
       headerName: "Base imponible",
       width: 130,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "ExemptAmount",
       headerName: "Exento",
       width: 110,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
@@ -94,18 +94,27 @@ export default function LibroFiscalPage() {
       field: "TaxAmount",
       headerName: "Impuesto",
       width: 120,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "WithholdingAmount",
       headerName: "Retencion",
       width: 120,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "TotalAmount",
       headerName: "Total",
       width: 130,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
   ];
@@ -192,6 +201,9 @@ export default function LibroFiscalPage() {
             sx={{ border: "none" }}
             mobileVisibleFields={['EntryDate', 'ThirdPartyName']}
             smExtraFields={['TaxableBase', 'TaxAmount']}
+            showTotals
+            enableClipboard
+            enableHeaderFilters
           />
         </Paper>
 
@@ -202,28 +214,24 @@ export default function LibroFiscalPage() {
               Resumen por tasa impositiva
             </Typography>
             <Divider sx={{ mb: 2 }} />
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Tasa (%)</TableCell>
-                  <TableCell align="right">Base Imponible</TableCell>
-                  <TableCell align="right">Impuesto</TableCell>
-                  <TableCell align="right">Retenciones</TableCell>
-                  <TableCell align="right">Registros</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {resumenRows.map((r: any, idx: number) => (
-                  <TableRow key={idx}>
-                    <TableCell>{r.TaxRate}%</TableCell>
-                    <TableCell align="right">{formatCurrency(r.TaxableBase)}</TableCell>
-                    <TableCell align="right">{formatCurrency(r.TaxAmount)}</TableCell>
-                    <TableCell align="right">{formatCurrency(r.WithholdingAmount)}</TableCell>
-                    <TableCell align="right">{r.EntryCount}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ZenttoDataGrid
+              rows={resumenRows.map((r: any, idx: number) => ({ ...r, _id: idx }))}
+              columns={[
+                { field: "TaxRate", headerName: "Tasa (%)", width: 100, renderCell: (p: any) => `${p.value}%` },
+                { field: "TaxableBase", headerName: "Base Imponible", width: 160, type: "number", aggregation: "sum", currency: "VES", renderCell: (p: any) => formatCurrency(p.value) },
+                { field: "TaxAmount", headerName: "Impuesto", width: 160, type: "number", aggregation: "sum", currency: "VES", renderCell: (p: any) => formatCurrency(p.value) },
+                { field: "WithholdingAmount", headerName: "Retenciones", width: 160, type: "number", aggregation: "sum", currency: "VES", renderCell: (p: any) => formatCurrency(p.value) },
+                { field: "EntryCount", headerName: "Registros", width: 110, type: "number", aggregation: "sum" },
+              ] as ZenttoColDef[]}
+              getRowId={(r: any) => r._id}
+              autoHeight
+              hideFooter
+              density="compact"
+              disableRowSelectionOnClick
+              showTotals
+              totalsLabel="Total"
+              enableClipboard
+            />
           </Paper>
         )}
       </Box>

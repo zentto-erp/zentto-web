@@ -5,7 +5,6 @@ import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import PrintIcon from "@mui/icons-material/Print";
 import Grid from "@mui/material/Grid2";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -13,7 +12,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/es";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
 
 const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "default"> = {
@@ -24,7 +23,7 @@ const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "def
   IDB: "default",
 };
 
-const colsCuentas: GridColDef[] = [
+const colsCuentas: ZenttoColDef[] = [
   { field: "Nro_Cta", headerName: "Nro Cuenta", width: 150 },
   {
     field: "BancoNombre",
@@ -38,6 +37,8 @@ const colsCuentas: GridColDef[] = [
     width: 140,
     align: "right",
     headerAlign: "right",
+    currency: true,
+    aggregation: "sum",
     renderCell: (p) => {
       const val = Number(p.value ?? 0);
       return (
@@ -56,7 +57,7 @@ export default function CuentasBancariasPage() {
   const router = useRouter();
   const { timeZone } = useTimezone();
 
-  const colsMovimientos: GridColDef[] = [
+  const colsMovimientos: ZenttoColDef[] = [
     {
       field: "Fecha",
       headerName: "Fecha",
@@ -83,6 +84,8 @@ export default function CuentasBancariasPage() {
       width: 140,
       align: "right",
       headerAlign: "right",
+      currency: true,
+      aggregation: "sum",
       renderCell: (p) => formatCurrency(Number(p.value ?? 0)),
     },
   ];
@@ -156,6 +159,8 @@ export default function CuentasBancariasPage() {
               density="compact"
               hideFooter
               disableRowSelectionOnClick
+              showTotals
+              enableClipboard
               sx={{
                 minHeight: 400,
                 "& .MuiDataGrid-row.Mui-selected": { bgcolor: "action.selected" },
@@ -220,6 +225,8 @@ export default function CuentasBancariasPage() {
               disableRowSelectionOnClick
               getRowId={(r) => r.id ?? r.ID ?? Math.random()}
               density="compact"
+              showTotals
+              enableClipboard
               sx={{ minHeight: 400 }}
               mobileVisibleFields={['Fecha', 'Monto']}
               smExtraFields={['Tipo', 'Beneficiario']}

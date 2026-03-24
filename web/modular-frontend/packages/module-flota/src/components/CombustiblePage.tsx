@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
@@ -49,7 +49,7 @@ export default function CombustiblePage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     {
       field: "FuelDate",
       headerName: "Fecha",

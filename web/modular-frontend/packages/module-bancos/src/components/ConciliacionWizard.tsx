@@ -22,7 +22,7 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
+import type { ZenttoColDef } from "@zentto/shared-ui";
 import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -234,7 +234,7 @@ export default function ConciliacionWizard() {
 
   // ─── Columnas de grids ────────────────────────────────────────
 
-  const colsExtracto: GridColDef[] = [
+  const colsExtracto: ZenttoColDef[] = [
     { field: "fecha", headerName: "Fecha", width: 120, editable: true },
     { field: "descripcion", headerName: "Descripción", flex: 1, editable: true },
     { field: "referencia", headerName: "Referencia", width: 130, editable: true },
@@ -256,7 +256,7 @@ export default function ConciliacionWizard() {
     },
   ];
 
-  const colsSistema: GridColDef[] = [
+  const colsSistema: ZenttoColDef[] = [
     { field: "Fecha", headerName: "Fecha", width: 110 },
     { field: "Concepto", headerName: "Concepto", flex: 1 },
     {
@@ -391,7 +391,7 @@ export default function ConciliacionWizard() {
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <EditableDataGrid
                   rows={movimientosExtracto}
-                  columns={colsExtracto}
+                  columns={colsExtracto as any}
                   onSave={(row) => {
                     setMovimientosExtracto((prev) => {
                       const exists = prev.find((r) => r.id === row.id);
@@ -522,7 +522,7 @@ export default function ConciliacionWizard() {
                       width: 130,
                       editable: true,
                       type: "number",
-                      renderCell: (p) => formatCurrency(p.value),
+                      renderCell: (p: any) => formatCurrency(p.value),
                     },
                     {
                       field: "haber",
@@ -530,9 +530,9 @@ export default function ConciliacionWizard() {
                       width: 130,
                       editable: true,
                       type: "number",
-                      renderCell: (p) => formatCurrency(p.value),
+                      renderCell: (p: any) => formatCurrency(p.value),
                     },
-                  ]}
+                  ] as any}
                   onSave={(row) => console.log("Guardar ajuste:", row)}
                   onDelete={(id) => console.log("Eliminar ajuste:", id)}
                   height={280}

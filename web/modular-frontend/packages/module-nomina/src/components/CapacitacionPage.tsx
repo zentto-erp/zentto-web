@@ -22,8 +22,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -84,7 +83,7 @@ export default function CapacitacionPage() {
     await deleteMutation.mutateAsync(id);
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "Title", headerName: "Título", flex: 1, minWidth: 200 },
     { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 180 },
     {
@@ -94,6 +93,7 @@ export default function CapacitacionPage() {
       renderCell: (p) => (
         <Chip label={p.value || "—"} size="small" variant="outlined" color="primary" />
       ),
+      statusColors: { 'INDUCCION': 'info', 'TECNICA': 'success', 'SEGURIDAD': 'warning', 'LIDERAZGO': 'info', 'CUMPLIMIENTO': 'warning' },
     },
     { field: "Provider", headerName: "Proveedor", width: 150 },
     { field: "DurationHours", headerName: "Horas", width: 80, type: "number" },
@@ -114,6 +114,7 @@ export default function CapacitacionPage() {
             }
           />
         ) : null,
+      statusColors: { 'APROBADO': 'success', 'REPROBADO': 'error' },
     },
     {
       field: "IsRegulatory",
@@ -199,6 +200,8 @@ export default function CapacitacionPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.TrainingRecordId ?? `${r.EmployeeCode}-${r.Title}-${r.StartDate}`}
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['Title', 'EmployeeName']}
           smExtraFields={['TrainingType', 'StartDate']}
         />

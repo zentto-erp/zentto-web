@@ -23,14 +23,13 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, useToast, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useCajaChicaBoxes,
   useCreateCajaChicaBox,
@@ -51,7 +50,7 @@ const CATEGORIAS = [
   { value: "OTROS", label: "Otros" },
 ];
 
-const colsBoxes: GridColDef[] = [
+const colsBoxes: ZenttoColDef[] = [
   { field: "Name", headerName: "Nombre", flex: 1, minWidth: 140 },
   {
     field: "CurrentBalance",
@@ -59,6 +58,8 @@ const colsBoxes: GridColDef[] = [
     width: 130,
     align: "right",
     headerAlign: "right",
+    currency: true,
+    aggregation: "sum",
     renderCell: (p) => formatCurrency(Number(p.value ?? 0)),
   },
   {
@@ -72,7 +73,7 @@ const colsBoxes: GridColDef[] = [
   { field: "Responsible", headerName: "Responsable", width: 130 },
 ];
 
-const colsExpenses: GridColDef[] = [
+const colsExpenses: ZenttoColDef[] = [
   {
     field: "CreatedAt",
     headerName: "Fecha",
@@ -100,6 +101,8 @@ const colsExpenses: GridColDef[] = [
     width: 120,
     align: "right",
     headerAlign: "right",
+    currency: true,
+    aggregation: "sum",
     renderCell: (p) => formatCurrency(Number(p.value ?? 0)),
   },
   { field: "ReceiptNumber", headerName: "Recibo", width: 100 },
@@ -235,6 +238,9 @@ export default function CajaChicaPage() {
               density="compact"
               hideFooter
               disableRowSelectionOnClick
+              showTotals
+              enableGrouping
+              enableClipboard
               sx={{ minHeight: 350 }}
               mobileVisibleFields={['Name', 'CurrentBalance']}
               smExtraFields={['Status']}
@@ -338,6 +344,9 @@ export default function CajaChicaPage() {
                   density="compact"
                   hideFooter
                   disableRowSelectionOnClick
+                  showTotals
+                  enableGrouping
+                  enableClipboard
                   sx={{ minHeight: 300 }}
                   mobileVisibleFields={['CreatedAt', 'Amount']}
                   smExtraFields={['Category', 'Description']}

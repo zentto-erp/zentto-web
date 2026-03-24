@@ -23,8 +23,7 @@ import {
   Typography,
   Collapse,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import { useLookup } from "@zentto/shared-api";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -89,7 +88,7 @@ export default function ConceptosPage() {
     await deleteMutation.mutateAsync(codigo);
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "codigo", headerName: "Código", width: 100 },
     { field: "codigoNomina", headerName: "Cód. Nómina", width: 120 },
     { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200 },
@@ -164,6 +163,8 @@ export default function ConceptosPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`}
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['codigo', 'nombre']}
           smExtraFields={['tipo', 'clase']}
         />

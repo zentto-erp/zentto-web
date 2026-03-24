@@ -16,8 +16,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
@@ -65,16 +64,18 @@ export default function ReportesContablesPage() {
     window.print();
   };
 
-  const fmtCol = (field: string, header: string, width = 140): GridColDef => ({
+  const fmtCol = (field: string, header: string, width = 140): ZenttoColDef => ({
     field,
     headerName: header,
     width,
     type: "number",
+    aggregation: "sum",
+    currency: "VES",
     renderCell: (p) => (p.value != null ? formatCurrency(p.value) : "-"),
   });
 
   // Libro Diario columns
-  const libroDiarioCols: GridColDef[] = [
+  const libroDiarioCols: ZenttoColDef[] = [
     { field: "fecha", headerName: "Fecha", width: 100 },
     { field: "numeroAsiento", headerName: "N\u00B0 Asiento", width: 150 },
     { field: "tipoAsiento", headerName: "Tipo", width: 90 },
@@ -86,7 +87,7 @@ export default function ReportesContablesPage() {
   ];
 
   // Libro Mayor columns
-  const libroMayorCols: GridColDef[] = [
+  const libroMayorCols: ZenttoColDef[] = [
     { field: "codCuenta", headerName: "Cuenta", width: 120 },
     { field: "descripcion", headerName: "Descripci\u00F3n", flex: 1 },
     fmtCol("debe", "Debe"),
@@ -95,7 +96,7 @@ export default function ReportesContablesPage() {
   ];
 
   // Balance Comprobacion columns
-  const balanceCols: GridColDef[] = [
+  const balanceCols: ZenttoColDef[] = [
     { field: "codCuenta", headerName: "Cuenta", width: 120 },
     { field: "descripcion", headerName: "Descripci\u00F3n", flex: 1 },
     fmtCol("totalDebe", "Debe"),
@@ -171,6 +172,8 @@ export default function ReportesContablesPage() {
               }}
               mobileVisibleFields={['fecha', 'concepto']}
               smExtraFields={['codCuenta', 'debe']}
+              showTotals
+              enableClipboard
             />
           )}
         </TabPanel>
@@ -190,6 +193,8 @@ export default function ReportesContablesPage() {
               sx={{ flex: 1 }}
               mobileVisibleFields={['codCuenta', 'saldo']}
               smExtraFields={['descripcion', 'debe']}
+              showTotals
+              enableClipboard
             />
           )}
         </TabPanel>
@@ -209,6 +214,8 @@ export default function ReportesContablesPage() {
               sx={{ flex: 1 }}
               mobileVisibleFields={['codCuenta', 'saldo']}
               smExtraFields={['descripcion', 'totalDebe']}
+              showTotals
+              enableClipboard
             />
           )}
         </TabPanel>

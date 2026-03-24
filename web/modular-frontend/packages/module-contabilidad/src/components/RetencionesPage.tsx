@@ -23,10 +23,9 @@ import {
   Tooltip,
   CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency, useCountries, useLookup } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useRetencionesList,
   useGenerarRetencion,
@@ -57,7 +56,7 @@ function ComprobantesTab() {
 
   const rows = data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "VoucherNumber", headerName: "N. Comprobante", width: 150 },
     { field: "VoucherDate", headerName: "Fecha", width: 110 },
     {
@@ -72,6 +71,9 @@ function ComprobantesTab() {
       field: "TaxableBase",
       headerName: "Base imponible",
       width: 130,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
@@ -84,12 +86,16 @@ function ComprobantesTab() {
       field: "WithholdingAmount",
       headerName: "Monto retenido",
       width: 140,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "Status",
       headerName: "Estado",
       width: 120,
+      statusColors: { APPLIED: "success", VOIDED: "error", PENDING: "default" },
       renderCell: (p) => (
         <Chip
           label={p.value}
@@ -172,6 +178,9 @@ function ComprobantesTab() {
             sx={{ border: "none" }}
             mobileVisibleFields={['VoucherDate', 'ThirdPartyName']}
             smExtraFields={['WithholdingType', 'WithholdingAmount']}
+            showTotals
+            enableClipboard
+            enableHeaderFilters
           />
         </Paper>
       </Box>

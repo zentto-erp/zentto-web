@@ -24,8 +24,7 @@ import {
   Skeleton,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -234,7 +233,7 @@ function PresupuestoDetailView({
   };
 
   // Budget lines columns
-  const lineColumns: GridColDef[] = [
+  const lineColumns: ZenttoColDef[] = [
     { field: "accountCode", headerName: "Cuenta", width: 120, cellClassName: () => "monospace-cell" },
     { field: "accountName", headerName: "Descripcion", width: 180 },
     ...MONTHS.map((label, idx) => ({
@@ -360,7 +359,7 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
     return items.map((r: any, i: number) => ({ ...r, _id: i }));
   }, [data]);
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "accountCode", headerName: "Cuenta", width: 120, cellClassName: () => "monospace-cell" },
     { field: "accountName", headerName: "Descripcion", flex: 1, minWidth: 180 },
     {
@@ -368,6 +367,8 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
       headerName: "Presupuesto",
       width: 140,
       type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value ?? 0),
     },
     {
@@ -375,6 +376,8 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
       headerName: "Real",
       width: 140,
       type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value ?? 0),
     },
     {
@@ -382,6 +385,8 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
       headerName: "Varianza",
       width: 140,
       type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => (
         <Typography
           variant="body2"
@@ -512,6 +517,7 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
               sx={{ "& .monospace-cell": { fontFamily: "monospace" } }}
               mobileVisibleFields={['accountCode', 'variance']}
               smExtraFields={['accountName', 'variancePercent']}
+              enableClipboard
             />
           </Paper>
         </>
@@ -551,7 +557,7 @@ export default function PresupuestosPage() {
     );
   }
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "name", headerName: "Nombre", flex: 1, minWidth: 200 },
     { field: "fiscalYear", headerName: "Año", width: 80 },
@@ -584,6 +590,8 @@ export default function PresupuestosPage() {
       headerName: "Total",
       width: 140,
       type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => (
         <Typography variant="body2" fontWeight={600}>
           {formatCurrency(p.value ?? 0)}
@@ -687,6 +695,7 @@ export default function PresupuestosPage() {
           sx={{ border: 0 }}
           mobileVisibleFields={['name', 'fiscalYear']}
           smExtraFields={['status', 'total']}
+          enableClipboard
         />
       </Paper>
 

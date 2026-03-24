@@ -23,12 +23,11 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivosFijosList,
@@ -95,7 +94,7 @@ export default function ActivosFijosListPage() {
   const rows = data?.rows ?? [];
   const categorias: any[] = categoriasData?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "AssetCode", headerName: "Código", width: 110 },
     { field: "Description", headerName: "Descripción", flex: 1, minWidth: 200 },
     {
@@ -109,18 +108,25 @@ export default function ActivosFijosListPage() {
       field: "AcquisitionCost",
       headerName: "Costo adq.",
       width: 140,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "BookValue",
       headerName: "Valor en Libros",
       width: 140,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "Status",
       headerName: "Estado",
       width: 150,
+      statusColors: { ACTIVE: "success", DISPOSED: "error", FULLY_DEPRECIATED: "warning" },
       renderCell: (p) => (
         <Chip label={p.value} size="small" color={statusColor(p.value) as any} />
       ),
@@ -249,6 +255,10 @@ export default function ActivosFijosListPage() {
             sx={{ border: "none" }}
             mobileVisibleFields={['Description', 'Status']}
             smExtraFields={['AcquisitionCost', 'CategoryName']}
+            showTotals
+            enableGrouping
+            enablePivot
+            enableClipboard
           />
         </Paper>
       </Box>

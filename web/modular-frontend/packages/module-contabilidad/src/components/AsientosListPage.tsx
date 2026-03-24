@@ -19,7 +19,6 @@ import {
   Alert,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
 import BlockIcon from "@mui/icons-material/Block";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { formatCurrency } from "@zentto/shared-api";
@@ -98,7 +97,7 @@ export default function AsientosListPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "fecha", headerName: "Fecha", width: 110 },
     { field: "tipoAsiento", headerName: "Tipo", width: 100 },
@@ -108,18 +107,25 @@ export default function AsientosListPage() {
       field: "totalDebe",
       headerName: "Debe",
       width: 130,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "totalHaber",
       headerName: "Haber",
       width: 130,
+      type: "number",
+      aggregation: "sum",
+      currency: "VES",
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "estado",
       headerName: "Estado",
       width: 110,
+      statusColors: { APROBADO: "success", ANULADO: "error", BORRADOR: "default" },
       renderCell: (p) => (
         <Chip
           label={p.value}
@@ -206,6 +212,10 @@ export default function AsientosListPage() {
             smExtraFields={['estado', 'totalDebe']}
             getDetailContent={(row: any) => <AsientoDetailPanel asientoId={row.asientoId ?? row.id} />}
             detailPanelHeight="auto"
+            showTotals
+            enableGrouping
+            enablePivot
+            enableClipboard
           />
         </Paper>
       </Box>

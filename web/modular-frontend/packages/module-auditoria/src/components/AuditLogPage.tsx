@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -46,7 +46,7 @@ export default function AuditLogPage() {
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "AuditLogId", headerName: "ID", width: 70 },
     {
       field: "CreatedAt",

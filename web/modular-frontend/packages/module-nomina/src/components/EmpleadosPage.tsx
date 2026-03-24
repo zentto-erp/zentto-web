@@ -22,8 +22,7 @@ import {
   CircularProgress,
   Menu,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -132,7 +131,7 @@ export default function EmpleadosPage() {
     );
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "cedula", headerName: "Cédula", width: 130, valueGetter: (_v, row) => norm(row, "CEDULA", "cedula", "EmployeeCode") },
     { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200, valueGetter: (_v, row) => norm(row, "NOMBRE", "nombre", "EmployeeName") },
     { field: "cargo", headerName: "Cargo", width: 150, valueGetter: (_v, row) => norm(row, "CARGO", "cargo", "Position") },
@@ -142,6 +141,8 @@ export default function EmpleadosPage() {
       field: "sueldo", headerName: "Sueldo", width: 130, type: "number",
       valueGetter: (_v, row) => Number(norm(row, "SUELDO", "sueldo", "Salary")) || 0,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "status", headerName: "Status", width: 110,
@@ -151,6 +152,7 @@ export default function EmpleadosPage() {
         const active = v === "ACTIVO" || v === "A" || v === "1" || v === "TRUE";
         return <Chip label={active ? "Activo" : "Inactivo"} color={active ? "success" : "default"} size="small" />;
       },
+      statusColors: { 'Activo': 'success', 'Inactivo': 'default' },
     },
     {
       field: "acciones", headerName: "", width: 120, sortable: false,
@@ -256,6 +258,10 @@ export default function EmpleadosPage() {
           pageSizeOptions={[25, 50, 100]}
           disableRowSelectionOnClick
           getRowId={(r) => r.CEDULA ?? r.cedula ?? r.EmployeeCode ?? Math.random()}
+          showTotals
+          totalsLabel="Total"
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['cedula', 'nombre']}
           smExtraFields={['cargo', 'grupo']}
         />

@@ -189,7 +189,7 @@ export default function MovimientosTable() {
                 String(p.row.codigo) === selectedProductCode ? "Mui-selected" : ""
               }
               sx={{ cursor: "pointer" }}
-              noRowsMessage="Escriba para buscar artículos..."
+              localeText={{ noRowsLabel: "Escriba para buscar artículos..." }}
             />
           </Paper>
         </Grid>
@@ -260,7 +260,7 @@ export default function MovimientosTable() {
           <ZenttoDataGrid
             gridId="inventario-movimientos"
             rows={movGridRows}
-            columns={movColumns}
+            columns={movColumns as ZenttoColDef[]}
             loading={isLoading}
             exportFilename="movimientos-inventario"
             showTotals
@@ -275,19 +275,19 @@ export default function MovimientosTable() {
             getDetailContent={(row) => (
               <Box sx={{ px: 3, py: 2, bgcolor: "background.default" }}>
                 <Stack direction="row" spacing={4}>
-                  {row._lote && (
+                  {!!row._lote && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">Lote / Serie</Typography>
                       <Typography variant="body2" fontWeight={600}>{String(row._lote)}</Typography>
                     </Box>
                   )}
-                  {row._usuario && (
+                  {!!row._usuario && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">Registrado por</Typography>
                       <Typography variant="body2" fontWeight={600}>{String(row._usuario)}</Typography>
                     </Box>
                   )}
-                  {row._fechaCreacion && (
+                  {!!row._fechaCreacion && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">Fecha registro</Typography>
                       <Typography variant="body2" fontWeight={600}>{String(row._fechaCreacion)}</Typography>

@@ -17,8 +17,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -45,7 +44,7 @@ export default function UtilidadesPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const summaryRows = summary.data?.employees ?? summary.data?.data ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "fiscalYear", headerName: "Año Fiscal", width: 120 },
     { field: "daysGranted", headerName: "Días Otorgados", width: 140 },
     { field: "totalEmployees", headerName: "Total Empleados", width: 140 },
@@ -54,6 +53,8 @@ export default function UtilidadesPage() {
       headerName: "Monto Total",
       width: 150,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "status",
@@ -69,6 +70,7 @@ export default function UtilidadesPage() {
           }
         />
       ),
+      statusColors: { 'APROBADO': 'success', 'PROCESADO': 'info', 'PENDIENTE': 'warning' },
     },
     {
       field: "actions",
@@ -98,7 +100,7 @@ export default function UtilidadesPage() {
     },
   ];
 
-  const summaryColumns: GridColDef[] = [
+  const summaryColumns: ZenttoColDef[] = [
     { field: "employeeCode", headerName: "Código", width: 100 },
     { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     { field: "daysWorked", headerName: "Días Trabajados", width: 140 },
@@ -138,6 +140,9 @@ export default function UtilidadesPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.id ?? r.fiscalYear}
+          showTotals
+          totalsLabel="Total"
+          enableClipboard
           mobileVisibleFields={['fiscalYear', 'totalAmount']}
           smExtraFields={['status', 'totalEmployees']}
         />

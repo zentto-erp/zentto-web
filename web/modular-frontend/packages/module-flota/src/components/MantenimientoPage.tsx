@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -78,7 +78,7 @@ export default function MantenimientoPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "OrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 110 },
     { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 1, minWidth: 110 },
     { field: "MaintenanceType", headerName: "Tipo", width: 120 },

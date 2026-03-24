@@ -3,126 +3,248 @@ import type { GridColDef, DataGridProps, GridRowId, GridRowsProp } from '@mui/x-
 export type GridRow = Record<string, unknown>;
 export type AggregationType = 'sum' | 'avg' | 'count' | 'min' | 'max';
 
-/** Extiende GridColDef con features de ZenttoDataGrid */
-export interface ZenttoColDef extends GridColDef {
-  /** Ocultar en móvil (xs). Columna se muestra solo en md+ */
+// ─── Column Definition ─────────────────────────────────────────────────────
+// NOTE: GridColDef in MUI X v7 is a union type (GridSingleSelectColDef | etc.)
+// Using `extends` on a union breaks object-literal checks for `field`, `type`, etc.
+// Solution: intersection type `GridColDef & { ... }` preserves all GridColDef variants.
+
+export type ZenttoColDef = GridColDef & {
+  /** Ocultar en movil (xs). Columna se muestra solo en md+ */
   mobileHide?: boolean;
   /** Ocultar en tablet (sm). Solo visible en md+ */
   tabletHide?: boolean;
-  /** Función de agregación para la fila de totales */
+  /** Funcion de agregacion para la fila de totales */
   aggregation?: AggregationType;
   /**
-   * Código ISO 4217 de moneda para auto-formatear con Intl.NumberFormat.
-   * Ej: 'VES', 'USD', 'EUR'. Requiere que la columna sea numérica.
+   * Codigo ISO 4217 de moneda para auto-formatear con Intl.NumberFormat.
+   * Ej: 'VES', 'USD', 'EUR'. Requiere que la columna sea numerica.
    * Si se pasa `true`, usa el `defaultCurrency` del grid.
    */
   currency?: string | true;
-}
+  /**
+   * Column group ID — agrupa este header bajo un grupo padre.
+   * Ej: columnGroupId: 'financial' agrupa bajo "Datos Financieros".
+   */
+  columnGroupId?: string;
+  /**
+   * Enable inline header filter for this column.
+   */
+  headerFilter?: boolean;
 
-/** Configuración para modo pivot */
+  // ─── Column Templates (Rich Rendering) ──────────────────────────────
+  // These allow rich cell content without writing custom renderCell.
+
+  /**
+   * Render as avatar + text cell.
+   * - `avatarField`: field name containing the image URL
+   * - `subtitleField`: optional field for subtitle text below the main value
+   * - `avatarVariant`: 'circular' | 'rounded' | 'square'. Default: 'circular'
+   */
+  avatarField?: string;
+  subtitleField?: string;
+  avatarVariant?: 'circular' | 'rounded' | 'square';
+
+  /**
+   * Render as image/thumbnail cell.
+   * - `imageField`: field name containing the image URL (defaults to current field)
+   * - `imageWidth`: width in px. Default: 40
+   * - `imageHeight`: height in px. Default: 40
+   */
+  imageField?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+
+  /**
+   * Render as status badge/chip.
+   * - `statusColors`: map of value -> color
+   *   Ej: { 'Active': 'success', 'Pending': 'warning', 'Inactive': 'error' }
+   * - `statusVariant`: 'filled' | 'outlined'. Default: 'filled'
+   */
+  statusColors?: Record<string, 'success' | 'error' | 'warning' | 'info' | 'default' | 'primary' | 'secondary' | string>;
+  statusVariant?: 'filled' | 'outlined';
+
+  /**
+   * Render as country flag + name.
+   * - `flagField`: field name containing the country code (ISO 3166-1 alpha-2)
+   *   Uses emoji flags. If omitted, uses the column's own field value.
+   */
+  flagField?: string;
+
+  /**
+   * Render as progress bar.
+   * - `progressMax`: max value for the bar. Default: 100
+   * - `progressColor`: color of the bar. Default: 'primary'
+   */
+  progressMax?: number;
+  progressColor?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info';
+
+  /**
+   * Render as rating stars.
+   * - `ratingMax`: max number of stars. Default: 5
+   */
+  ratingMax?: number;
+
+  /**
+   * Render as link/URL.
+   * - `linkField`: field containing the URL. If omitted, uses column value.
+   * - `linkTarget`: '_blank' | '_self'. Default: '_blank'
+   */
+  linkField?: string;
+  linkTarget?: '_blank' | '_self';
+
+  /**
+   * Allow groupable in toolbar grouping selector.
+   * Set to false to exclude from grouping dropdown. Default: true.
+   */
+  groupable?: boolean;
+};
+
+// ─── Pivot Config ───────────────────────────────────────────────────────────
+
 export interface PivotConfig {
-  /** Campo que define las filas (eje Y) */
   rowField: string;
-  /** Campo cuyos valores únicos se convierten en columnas (eje X) */
   columnField: string;
-  /** Campo con los valores de las celdas */
   valueField: string;
-  /** Función de agregación cuando hay múltiples valores por celda. Default: sum */
   aggregation?: AggregationType;
-  /** Formateador para los valores numéricos del pivot */
   valueFormatter?: (value: number) => string;
-  /** Cabecera del primer campo (el rowField) */
   rowFieldHeader?: string;
+  showGrandTotals?: boolean;
+  showRowTotals?: boolean;
 }
 
-/** Props del ZenttoDataGrid */
+// ─── Column Group ───────────────────────────────────────────────────────────
+
+export interface ColumnGroup {
+  groupId: string;
+  headerName: string;
+  children: string[];
+}
+
+// ─── Row Grouping Config ────────────────────────────────────────────────────
+
+export interface RowGroupingConfig {
+  field: string;
+  showSubtotals?: boolean;
+  sortGroups?: 'asc' | 'desc' | null;
+}
+
+// ─── Tree Data Config ───────────────────────────────────────────────────────
+
+export interface TreeDataConfig {
+  getTreeDataPath: (row: GridRow) => string[];
+  defaultExpandLevel?: number;
+}
+
+// ─── Header Filter ──────────────────────────────────────────────────────────
+
+export type HeaderFilterValue = string | number | boolean | null;
+export type HeaderFilterOperator = 'contains' | 'equals' | 'startsWith' | 'endsWith' | '>' | '<' | '>=' | '<=';
+
+export interface HeaderFilter {
+  field: string;
+  value: HeaderFilterValue;
+  operator: HeaderFilterOperator;
+}
+
+// ─── Cell Selection ─────────────────────────────────────────────────────────
+
+export interface CellRange {
+  startRow: number;
+  endRow: number;
+  startCol: number;
+  endCol: number;
+}
+
+// ─── ZenttoDataGridProps ────────────────────────────────────────────────────
+
 export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   columns: ZenttoColDef[];
 
   // ─── Responsive ───────────────────────────────────────────────
-  /** Campos visibles en xs (<600px). Auto-detecta los 2 primeros si no se proveen */
   mobileVisibleFields?: string[];
-  /** Campos adicionales visibles en sm (600–900px) además de mobileVisibleFields */
   smExtraFields?: string[];
-  /** Mostrar Drawer inferior con detalle completo al tocar una fila en móvil. Default: true */
   mobileDetailDrawer?: boolean;
 
   // ─── Master-Detail ────────────────────────────────────────────
-  /** Función que retorna el contenido expandible de cada fila */
   getDetailContent?: (row: GridRow) => React.ReactNode;
-  /** Altura del panel de detalle en px, o 'auto'. Default: 'auto' */
   detailPanelHeight?: number | 'auto';
-  /**
-   * Para exportación JSON anidada: retorna el array de datos raw del detalle de una fila.
-   * Independiente de getDetailContent (que retorna JSX).
-   * Ej: (row) => row.lineas as Record<string, unknown>[]
-   */
   getDetailExportData?: (row: GridRow) => Record<string, unknown>[];
-  /** Nombre del campo anidado en el JSON exportado. Default: 'detalles' */
   detailExportKey?: string;
 
   // ─── Pivot ────────────────────────────────────────────────────
-  /** Configuración para transformar los datos en tabla pivot */
   pivotConfig?: PivotConfig;
+  enablePivot?: boolean;
 
   // ─── Aggregation ──────────────────────────────────────────────
-  /** Mostrar fila de totales/agregados al final según las columnas con `aggregation` */
   showTotals?: boolean;
-  /** Label de la fila de totales. Default: 'Total' */
   totalsLabel?: string;
 
   // ─── Column Pinning ───────────────────────────────────────────
-  /** Columnas fijas (sticky) a izquierda/derecha. Community no tiene nativo — simulado con CSS */
   pinnedColumns?: { left?: string[]; right?: string[] };
 
+  // ─── Column Groups ────────────────────────────────────────────
+  columnGroups?: ColumnGroup[];
+
+  // ─── Row Grouping ─────────────────────────────────────────────
+  enableGrouping?: boolean;
+  rowGroupingConfig?: RowGroupingConfig;
+
+  // ─── Tree Data ────────────────────────────────────────────────
+  treeDataConfig?: TreeDataConfig;
+
+  // ─── Row Pinning ──────────────────────────────────────────────
+  pinnedRowsTop?: GridRowId[];
+  pinnedRowsBottom?: GridRowId[];
+
+  // ─── Row Reordering ───────────────────────────────────────────
+  onRowReorder?: (params: { oldIndex: number; newIndex: number; row: GridRow }) => void;
+
+  // ─── Header Filters ───────────────────────────────────────────
+  enableHeaderFilters?: boolean;
+
+  // ─── Clipboard ────────────────────────────────────────────────
+  enableClipboard?: boolean;
+
+  // ─── Cell Selection ───────────────────────────────────────────
+  enableCellSelection?: boolean;
+
+  // ─── Lazy Loading / Infinite Scroll ───────────────────────────
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
+  serverRowCount?: number;
+
   // ─── Export ───────────────────────────────────────────────────
-  /** Nombre base del archivo exportado. Default: 'zentto-export' */
   exportFilename?: string;
-  /** Mostrar botón Exportar CSV */
   showExportCsv?: boolean;
-  /** Mostrar botón Exportar Excel (.xls) */
   showExportExcel?: boolean;
-  /** Mostrar botón Exportar JSON (legible por IA/Claude) */
   showExportJson?: boolean;
-  /** Mostrar botón Exportar Markdown (tabla renderizable por IA/Claude) */
   showExportMarkdown?: boolean;
 
   // ─── Fechas y Monedas ─────────────────────────────────────────
-  /**
-   * Locale BCP-47 para formatear columnas date/dateTime y moneda automáticamente.
-   * Ej: 'es-VE', 'es-ES', 'es-CO', 'en-US'.
-   * Default: navigator.language del navegador (refleja configuración regional del usuario).
-   * Pasar explícitamente cuando se quiere forzar el locale del país de la empresa.
-   */
   dateLocale?: string;
-  /**
-   * Código ISO 4217 de moneda por defecto para columnas con `currency: true`.
-   * Ej: 'VES', 'USD', 'EUR', 'COP', 'MXN'.
-   */
   defaultCurrency?: string;
 
   // ─── Layout Persistente ───────────────────────────────────────
-  /**
-   * Identificador único de la tabla para persistir el layout en IndexedDB.
-   * Ej: 'empleados-grid', 'vacaciones-grid', 'centros-costo-grid'.
-   * Si se omite, no se persiste nada.
-   */
   gridId?: string;
 
   // ─── Toolbar ──────────────────────────────────────────────────
-  /** Título en el toolbar */
   toolbarTitle?: string;
-  /** Nodos adicionales en el toolbar (botones custom, etc.) */
   toolbarActions?: React.ReactNode;
-  /** Ocultar completamente el toolbar. Default: false */
   hideToolbar?: boolean;
   hideColumnsButton?: boolean;
   hideDensityButton?: boolean;
   hideQuickFilter?: boolean;
 }
 
-// Marcadores internos para filas especiales
+// ─── Internal Markers ───────────────────────────────────────────────────────
+
 export const DETAIL_ROW_KEY = '__zentto_detail__';
 export const TOTALS_ROW_KEY = '__zentto_totals__';
+export const GROUP_ROW_KEY = '__zentto_group__';
+export const TREE_NODE_KEY = '__zentto_tree_node__';
+
 export const EXPAND_COL_FIELD = '__zentto_expand__';
 export const MOBILE_DETAIL_COL_FIELD = '__zentto_mobile__';
+export const GROUP_EXPAND_COL_FIELD = '__zentto_group_expand__';
+export const TREE_EXPAND_COL_FIELD = '__zentto_tree_expand__';
+export const REORDER_COL_FIELD = '__zentto_reorder__';

@@ -27,8 +27,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -87,7 +86,7 @@ export default function ComitesPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const meetings = meetingsQuery.data?.data ?? meetingsQuery.data?.rows ?? meetingsQuery.data ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "CommitteeName", headerName: "Nombre", flex: 1, minWidth: 200 },
     {
       field: "MeetingFrequency",
@@ -214,6 +213,7 @@ export default function ComitesPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.SafetyCommitteeId ?? r.CommitteeName}
+          enableClipboard
           mobileVisibleFields={['CommitteeName', 'IsActive']}
           smExtraFields={['MeetingFrequency', 'ActiveMemberCount']}
         />

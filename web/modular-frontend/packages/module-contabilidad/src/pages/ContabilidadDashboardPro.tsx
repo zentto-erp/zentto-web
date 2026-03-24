@@ -608,7 +608,7 @@ export default function ContabilidadDashboardPro() {
                 }}
               >
                 <Box sx={{ color: action.color, mb: 1 }}>
-                  {React.cloneElement(action.icon as React.ReactElement, { sx: { fontSize: 36 } })}
+                  {React.cloneElement(action.icon as React.ReactElement<any>, { sx: { fontSize: 36 } })}
                 </Box>
                 <Typography variant="body2" fontWeight={600} textAlign="center">
                   {action.label}

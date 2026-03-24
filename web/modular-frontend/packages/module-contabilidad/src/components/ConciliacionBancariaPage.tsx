@@ -12,8 +12,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -59,7 +58,7 @@ function parseCSVLines(csvText: string): any[] {
 
 // ─── Accounting entries columns ──────────────────────────────
 
-const entryCols: GridColDef[] = [
+const entryCols: ZenttoColDef[] = [
   { field: "EntryDate", headerName: "Fecha", width: 100, valueGetter: (v: any) => v?.slice?.(0, 10) ?? v },
   { field: "EntryNumber", headerName: "N Asiento", width: 120 },
   { field: "Concept", headerName: "Concepto", flex: 1, minWidth: 180 },

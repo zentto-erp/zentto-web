@@ -14,11 +14,10 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useToast, ZenttoDataGrid } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useBancosList,
   useCreateBanco,
@@ -56,7 +55,7 @@ export default function BancosPage() {
   const rows = (data?.rows ?? data?.items ?? []) as Record<string, any>[];
 
   /* ── columns ── */
-  const columns = useMemo<GridColDef[]>(
+  const columns = useMemo<ZenttoColDef[]>(
     () => [
       { field: "Nombre", headerName: "Nombre", flex: 1, minWidth: 180 },
       { field: "Contacto", headerName: "Contacto", width: 160 },
@@ -175,6 +174,7 @@ export default function BancosPage() {
         paginationMode="server"
         disableRowSelectionOnClick
         getRowId={(r) => r.Nombre ?? r.NOMBRE ?? Math.random()}
+        enableClipboard
         sx={{ minHeight: 400 }}
         mobileVisibleFields={['Nombre', 'Telefonos']}
         smExtraFields={['Contacto']}

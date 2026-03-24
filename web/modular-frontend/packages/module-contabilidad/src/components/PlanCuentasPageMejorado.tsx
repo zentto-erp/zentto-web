@@ -21,7 +21,6 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
@@ -38,7 +37,7 @@ import {
   useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
-import { ContextActionHeader, DatePicker, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -119,11 +118,11 @@ function MayorAnaliticoDialog({
               valueFormatter: (v: any) => v != null ? Number(v).toFixed(2) : '',
               cellClassName: 'font-semibold',
             },
-          ]}
+          ] as ZenttoColDef[]}
           loading={isLoading}
           autoHeight
           hideFooter={(data?.rows?.length ?? 0) <= 100}
-          noRowsMessage="No hay movimientos para esta cuenta en el período seleccionado"
+          localeText={{ noRowsLabel: "No hay movimientos para esta cuenta en el período seleccionado" }}
         />
       </DialogContent>
       <DialogActions>
@@ -221,7 +220,7 @@ export default function PlanCuentasPageMejorado() {
   };
 
   // Columnas
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     {
       field: "codCuenta",
       headerName: "Código",

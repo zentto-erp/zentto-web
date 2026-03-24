@@ -350,6 +350,8 @@ function PnLByCostCenterTab() {
         toolbarTitle="P&L por Centro de Costo"
         mobileVisibleFields={["costCenterName", "resultado"]}
         smExtraFields={["ingresos", "gastos"]}
+        enableClipboard
+        enableGrouping
       />
     </Box>
   );

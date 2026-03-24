@@ -20,8 +20,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -54,7 +53,7 @@ export default function OrdenesMedicasPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     {
       field: "OrderType",
@@ -79,7 +78,7 @@ export default function OrdenesMedicasPage() {
     },
     { field: "OrderDate", headerName: "Fecha", width: 110 },
     { field: "Diagnosis", headerName: "Diagnóstico", width: 200 },
-    { field: "EstimatedCost", headerName: "Costo", width: 120, renderCell: (p) => formatCurrency(p.value ?? 0) },
+    { field: "EstimatedCost", headerName: "Costo", width: 120, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
     {
       field: "Status",
       headerName: "Estado",
@@ -195,6 +194,8 @@ export default function OrdenesMedicasPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.MedicalOrderId ?? `${r.EmployeeCode}-${r.OrderDate}-${r.OrderType}`}
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['EmployeeName', 'OrderType']}
           smExtraFields={['Status', 'OrderDate']}
         />

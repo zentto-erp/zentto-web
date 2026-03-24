@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -115,7 +115,7 @@ export default function OrdenesProduccionPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "WorkOrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 120 },
     { field: "ProductName", headerName: "Producto", flex: 1.5, minWidth: 180 },
     { field: "BOMCode", headerName: "BOM", flex: 0.8, minWidth: 100 },

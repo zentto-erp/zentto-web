@@ -7,7 +7,7 @@ import {
   FormControl, InputLabel, Select, MenuItem, Alert, Tooltip,
   InputAdornment, Switch, FormControlLabel,
 } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRenderCellParams } from "@mui/x-data-grid";
+// GridRenderCellParams removed — using `any` to avoid duplicate @mui/x-data-grid version mismatch
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -15,7 +15,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors, ZenttoDataGrid } from "@zentto/shared-ui";
+import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useBatchGrid,
   useBatchBulkUpdate,
@@ -56,7 +56,7 @@ function PayrollDetailPanel({ row }: { row: Record<string, unknown> }) {
           {String(row.department ?? '—')}
         </Typography>
       </Box>
-      {row.lineCount && (
+      {!!row.lineCount && (
         <Box>
           <Typography variant="caption" color="text.secondary"
             sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
@@ -107,12 +107,12 @@ export default function PayrollBatchGrid({ batchId }: Props) {
     setBulkOpen(false);
   }, [batchId, bulkData, bulkUpdate]);
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     {
       field: "employeeCode",
       headerName: "Cédula",
       width: 110,
-      renderCell: (p: GridRenderCellParams) => (
+      renderCell: (p: any) => (
         <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "monospace" }}>
           {p.value}
         </Typography>
@@ -123,7 +123,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       headerName: "Empleado",
       flex: 1,
       minWidth: 200,
-      renderCell: (p: GridRenderCellParams) => (
+      renderCell: (p: any) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>{p.value}</Typography>
           {p.row.isModified && (
@@ -142,7 +142,9 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       field: "sueldoBase",
       headerName: "Sueldo Base",
       width: 130,
-      renderCell: (p: GridRenderCellParams) => (
+      currency: true,
+      aggregation: 'sum',
+      renderCell: (p: any) => (
         <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
           {formatCurrency(p.value ?? 0)}
         </Typography>
@@ -152,7 +154,9 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       field: "totalAsignaciones",
       headerName: "Asignaciones",
       width: 130,
-      renderCell: (p: GridRenderCellParams) => (
+      currency: true,
+      aggregation: 'sum',
+      renderCell: (p: any) => (
         <Typography variant="body2" sx={{ color: brandColors.success, fontWeight: 600, fontFamily: "monospace" }}>
           {formatCurrency(p.value ?? 0)}
         </Typography>
@@ -162,7 +166,9 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       field: "totalDeducciones",
       headerName: "Deducciones",
       width: 130,
-      renderCell: (p: GridRenderCellParams) => (
+      currency: true,
+      aggregation: 'sum',
+      renderCell: (p: any) => (
         <Typography variant="body2" sx={{ color: brandColors.danger, fontWeight: 600, fontFamily: "monospace" }}>
           {formatCurrency(p.value ?? 0)}
         </Typography>
@@ -172,7 +178,9 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       field: "totalNeto",
       headerName: "Neto a Pagar",
       width: 140,
-      renderCell: (p: GridRenderCellParams) => (
+      currency: true,
+      aggregation: 'sum',
+      renderCell: (p: any) => (
         <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
           {formatCurrency(p.value ?? 0)}
         </Typography>
@@ -183,7 +191,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       headerName: "Conceptos",
       width: 90,
       align: "center",
-      renderCell: (p: GridRenderCellParams) => (
+      renderCell: (p: any) => (
         <Chip label={p.value ?? 0} size="small" variant="outlined" />
       ),
     },
@@ -192,7 +200,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       headerName: "",
       width: 60,
       sortable: false,
-      renderCell: (p: GridRenderCellParams) => (
+      renderCell: (p: any) => (
         <Tooltip title="Editar detalle del empleado">
           <IconButton
             size="small"
@@ -263,7 +271,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, borderRadius: 2, overflow: "hidden" }}>
         <ZenttoDataGrid
           rows={rows}
-          columns={columns}
+          columns={columns as ZenttoColDef[]}
           loading={grid.isLoading}
           pageSizeOptions={[25, 50, 100]}
           paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 50 }}
@@ -273,6 +281,10 @@ export default function PayrollBatchGrid({ batchId }: Props) {
           disableRowSelectionOnClick
           getRowId={(r) => r.employeeCode || r.employeeId || Math.random()}
           onRowClick={(p) => setSelectedEmployee(p.row.employeeCode)}
+          showTotals
+          totalsLabel="LOTE"
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['employeeCode', 'employeeName']}
           smExtraFields={['totalNeto', 'department']}
           getDetailContent={(row: any) => <PayrollDetailPanel row={row} />}

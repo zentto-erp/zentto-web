@@ -36,6 +36,7 @@ import {
   GridToolbarQuickFilter,
 } from '@mui/x-data-grid';
 import { ZenttoDataGrid } from '@zentto/shared-ui';
+import type { ZenttoColDef } from '@zentto/shared-ui';
 import { ContextActionHeader } from '@zentto/shared-ui';
 
 export type CatalogField = {
@@ -492,10 +493,10 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     [getRowId, updateMutation]
   );
 
-  const columnsWithActions = useMemo(() => {
-    if (normalizedColumns.some((col) => col.field === 'actions')) return normalizedColumns;
+  const columnsWithActions: ZenttoColDef[] = useMemo(() => {
+    if (normalizedColumns.some((col) => col.field === 'actions')) return normalizedColumns as ZenttoColDef[];
 
-    const actionsColumn: GridColDef = {
+    const actionsColumn: ZenttoColDef = {
       field: 'actions',
       type: 'actions',
       headerName: 'Acciones',
@@ -537,7 +538,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
       },
     };
 
-    return [...normalizedColumns, actionsColumn];
+    return [...normalizedColumns, actionsColumn] as ZenttoColDef[];
   }, [normalizedColumns, handleCancelClick, handleDeleteClick, handleEditClick, handleSaveClick, rowModesModel]);
 
   const paginationModel: GridPaginationModel = {
@@ -600,7 +601,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
                 editMode="row"
                 rowModesModel={rowModesModel}
                 onRowModesModelChange={setRowModesModel}
-                onRowEditStop={handleRowEditStop}
+                onRowEditStop={handleRowEditStop as any}
                 processRowUpdate={processRowUpdate}
                 onProcessRowUpdateError={(error) => {
                   console.error('Error al actualizar fila', error);

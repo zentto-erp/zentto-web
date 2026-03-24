@@ -23,8 +23,7 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, type ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -360,7 +359,7 @@ export default function AsientosRecurrentesPage() {
     }
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "id", headerName: "ID", width: 60 },
     { field: "name", headerName: "Nombre", flex: 1, minWidth: 200 },
     {

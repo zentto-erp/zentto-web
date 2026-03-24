@@ -50,7 +50,7 @@ import { useTimezone } from "@zentto/shared-auth";
 import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
 import { EditableDataGrid } from "@zentto/module-contabilidad";
-import type { GridColDef } from "@mui/x-data-grid";
+import type { ZenttoColDef } from "@zentto/shared-ui";
 
 import {
   useConceptosList,
@@ -263,7 +263,7 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
 
   // ─── Columnas conceptos ───────────────────────────────────────
 
-  const colsConceptos: GridColDef[] = [
+  const colsConceptos: ZenttoColDef[] = [
     {
       field: "tipo",
       headerName: "Tipo",

@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -73,7 +73,7 @@ export default function ViajesPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "TripNumber", headerName: "N. Viaje", flex: 0.8, minWidth: 100 },
     { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 0.8, minWidth: 110 },
     { field: "DriverId", headerName: "Conductor", flex: 1, minWidth: 120 },

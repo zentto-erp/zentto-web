@@ -21,8 +21,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -77,7 +76,7 @@ export default function SaludOcupacionalPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "OccurrenceDate", headerName: "Fecha", width: 110 },
     {
       field: "RecordType",
@@ -98,6 +97,7 @@ export default function SaludOcupacionalPage() {
           }
         />
       ),
+      statusColors: { 'ACCIDENTE': 'error', 'INCIDENTE': 'warning', 'ENFERMEDAD': 'info' },
     },
     { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     {
@@ -111,6 +111,7 @@ export default function SaludOcupacionalPage() {
           color={SEVERITY_COLORS[p.value] || "default"}
         />
       ),
+      statusColors: { 'LEVE': 'success', 'MODERADO': 'warning', 'GRAVE': 'error', 'FATAL': 'error' },
     },
     { field: "DaysLost", headerName: "Días Perdidos", width: 120, type: "number" },
     {
@@ -124,6 +125,7 @@ export default function SaludOcupacionalPage() {
           color={STATUS_COLORS[p.value] || "default"}
         />
       ),
+      statusColors: { 'OPEN': 'warning', 'REPORTED': 'info', 'INVESTIGATING': 'info', 'CLOSED': 'default' },
     },
     {
       field: "actions",
@@ -257,6 +259,8 @@ export default function SaludOcupacionalPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.OccupationalHealthId ?? `${r.EmployeeCode}-${r.OccurrenceDate}`}
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['EmployeeName', 'RecordType']}
           smExtraFields={['Severity', 'Status']}
         />

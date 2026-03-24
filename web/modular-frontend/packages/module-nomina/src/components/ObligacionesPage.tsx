@@ -22,8 +22,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
@@ -68,7 +67,7 @@ export default function ObligacionesPage() {
   const oblRows = oblData?.data ?? oblData?.rows ?? [];
   const filRows = filData?.data ?? filData?.rows ?? [];
 
-  const oblColumns: GridColDef[] = [
+  const oblColumns: ZenttoColDef[] = [
     { field: "CountryCode", headerName: "País", width: 80 },
     { field: "Code", headerName: "Código", width: 120 },
     { field: "Name", headerName: "Nombre", flex: 1, minWidth: 200 },
@@ -78,12 +77,12 @@ export default function ObligacionesPage() {
     { field: "InstitutionName", headerName: "Entidad", width: 150 },
   ];
 
-  const filColumns: GridColDef[] = [
+  const filColumns: ZenttoColDef[] = [
     { field: "period", headerName: "Período", width: 150 },
     { field: "obligationName", headerName: "Obligación", flex: 1, minWidth: 200 },
-    { field: "employeeAmount", headerName: "Monto Empleado", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
-    { field: "employerAmount", headerName: "Monto Patronal", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
-    { field: "totalAmount", headerName: "Total", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
+    { field: "employeeAmount", headerName: "Monto Empleado", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
+    { field: "employerAmount", headerName: "Monto Patronal", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
+    { field: "totalAmount", headerName: "Total", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
     {
       field: "status",
       headerName: "Estado",
@@ -226,6 +225,8 @@ export default function ObligacionesPage() {
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.LegalObligationId ?? r.Code}
+            enableGrouping
+            enableClipboard
             mobileVisibleFields={['Code', 'Name']}
             smExtraFields={['FilingFrequency', 'CountryCode']}
           />
@@ -269,6 +270,10 @@ export default function ObligacionesPage() {
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.id ?? `${r.obligationCode}-${r.period}`}
+            showTotals
+            totalsLabel="Total"
+            enableGrouping
+            enableClipboard
             mobileVisibleFields={['period', 'obligationName']}
             smExtraFields={['totalAmount', 'status']}
           />

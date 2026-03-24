@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import {
@@ -63,7 +63,7 @@ export default function TransportistasPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "CarrierCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
     { field: "CarrierName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
     { field: "FiscalId", headerName: "RIF / NIF", flex: 1, minWidth: 120 },

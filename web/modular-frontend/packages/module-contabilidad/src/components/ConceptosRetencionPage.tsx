@@ -5,13 +5,12 @@ import {
   Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
   DialogTitle, DialogContent, DialogActions, Alert,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
 
-const columns: GridColDef[] = [
+const columns: ZenttoColDef[] = [
   { field: "ConceptCode", headerName: "Codigo", width: 140 },
   { field: "Description", headerName: "Descripcion", flex: 1, minWidth: 200 },
   { field: "SupplierType", headerName: "Tipo Persona", width: 130 },
@@ -96,6 +95,8 @@ export default function ConceptosRetencionPage() {
         pageSizeOptions={[25, 50]}
         mobileVisibleFields={['Description', 'RetentionType']}
         smExtraFields={['Rate', 'CountryCode']}
+        enableGrouping
+        enableClipboard
       />
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

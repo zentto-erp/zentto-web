@@ -11,9 +11,8 @@ import {
   Alert,
   InputAdornment,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
 import SearchIcon from "@mui/icons-material/Search";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import { usePlanCuentas } from "../hooks/useContabilidad";
 
 export default function PlanCuentasPage() {
@@ -22,7 +21,7 @@ export default function PlanCuentasPage() {
 
   const rows = data?.data ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "codCuenta", headerName: "Código", width: 150 },
     { field: "descripcion", headerName: "Descripción", flex: 1, minWidth: 250 },
     { field: "tipo", headerName: "Tipo", width: 120 },
@@ -64,6 +63,8 @@ export default function PlanCuentasPage() {
             getRowId={(r) => r.codCuenta ?? r.cod_cuenta ?? r.COD_CUENTA ?? Math.random()}
             mobileVisibleFields={['codCuenta', 'descripcion']}
             smExtraFields={['tipo']}
+            enableGrouping
+            enableClipboard
           />
         )}
       </Paper>

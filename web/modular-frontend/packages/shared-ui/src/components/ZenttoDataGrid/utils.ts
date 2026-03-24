@@ -4,19 +4,44 @@ import type {
   ZenttoColDef,
   PivotConfig,
   AggregationType,
+  RowGroupingConfig,
+  TreeDataConfig,
+  HeaderFilter,
+  HeaderFilterOperator,
+  ColumnGroup,
 } from './types';
-import { DETAIL_ROW_KEY, TOTALS_ROW_KEY } from './types';
+import {
+  DETAIL_ROW_KEY,
+  TOTALS_ROW_KEY,
+  GROUP_ROW_KEY,
+} from './types';
 
 // ─── Row ID ───────────────────────────────────────────────────────────────────
 
 export function resolveId(row: GridRow, getRowId?: (r: GridRow) => GridRowId): GridRowId {
   if (getRowId) {
     const id = getRowId(row);
-    // Si getRowId retorna undefined/null (ej: fila pivot no tiene el campo del user),
-    // fallback a los campos estándar. Esto permite usar pivotConfig con getRowId definido.
     if (id != null && id !== '') return id;
   }
   return String(row.id ?? row.Id ?? row.Codigo ?? row.codigo ?? crypto.randomUUID());
+}
+
+// ─── Aggregation ──────────────────────────────────────────────────────────────
+
+export function computeAgg(values: number[], type: AggregationType): number {
+  if (!values.length) return 0;
+  switch (type) {
+    case 'sum':
+      return values.reduce((a, b) => a + b, 0);
+    case 'avg':
+      return values.reduce((a, b) => a + b, 0) / values.length;
+    case 'count':
+      return values.length;
+    case 'min':
+      return Math.min(...values);
+    case 'max':
+      return Math.max(...values);
+  }
 }
 
 // ─── Master-Detail ────────────────────────────────────────────────────────────
@@ -29,7 +54,7 @@ export function injectDetailRows(
 ): GridRowsProp {
   if (!getDetailContent) return rows;
 
-  const result: GridRowsProp = [];
+  const result: any[] = [];
   for (const row of rows) {
     result.push(row);
     const id = getRowIdFn(row as GridRow);
@@ -45,18 +70,7 @@ export function injectDetailRows(
   return result;
 }
 
-// ─── Aggregation / Totals ─────────────────────────────────────────────────────
-
-function computeAgg(values: number[], type: AggregationType): number {
-  if (!values.length) return 0;
-  switch (type) {
-    case 'sum': return values.reduce((a, b) => a + b, 0);
-    case 'avg': return values.reduce((a, b) => a + b, 0) / values.length;
-    case 'count': return values.length;
-    case 'min': return Math.min(...values);
-    case 'max': return Math.max(...values);
-  }
-}
+// ─── Totals ───────────────────────────────────────────────────────────────────
 
 export function computeTotals(
   rows: GridRowsProp,
@@ -68,9 +82,8 @@ export function computeTotals(
     [TOTALS_ROW_KEY]: true,
   };
 
-  // Primer campo de texto → label de totales
   const firstTextField = columns.find(
-    c => !c.field.startsWith('__') && c.type !== 'number' && c.type !== 'actions'
+    (c) => !c.field.startsWith('__') && c.type !== 'number' && c.type !== 'actions'
   );
   if (firstTextField) {
     totals[firstTextField.field] = label;
@@ -79,9 +92,9 @@ export function computeTotals(
   for (const col of columns) {
     if (!col.aggregation) continue;
     const values = (rows as GridRow[])
-      .filter(r => !r[DETAIL_ROW_KEY] && !r[TOTALS_ROW_KEY])
-      .map(r => Number(r[col.field] ?? 0))
-      .filter(v => !isNaN(v));
+      .filter((r) => !r[DETAIL_ROW_KEY] && !r[TOTALS_ROW_KEY] && !r[GROUP_ROW_KEY])
+      .map((r) => Number(r[col.field] ?? 0))
+      .filter((v) => !isNaN(v));
     totals[col.field] = computeAgg(values, col.aggregation);
   }
 
@@ -101,35 +114,75 @@ export function applyPivot(
     aggregation = 'sum',
     valueFormatter,
     rowFieldHeader,
+    showGrandTotals = true,
+    showRowTotals = true,
   } = config;
 
   const dataRows = rows as GridRow[];
 
-  // Valores únicos para columnas (ordenados)
-  const uniqueColValues = [...new Set(dataRows.map(r => String(r[columnField])))].sort();
+  // Unique column values (sorted)
+  const uniqueColValues = Array.from(new Set(dataRows.map((r) => String(r[columnField] ?? '')))).sort();
 
-  // Agrupar por rowField
+  // Group by rowField
   const groups = new Map<string, GridRow[]>();
   for (const row of dataRows) {
-    const key = String(row[rowField]);
+    const key = String(row[rowField] ?? '');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(row);
   }
 
-  // Construir filas pivot
+  // Build pivot rows
   const pivotRows: GridRow[] = [];
   let idx = 0;
-  for (const [rowKey, rowGroup] of groups) {
+  const groupEntries = Array.from(groups.entries());
+  for (let ge = 0; ge < groupEntries.length; ge++) {
+    const [rowKey, rowGroup] = groupEntries[ge];
     const pivotRow: GridRow = { id: `__pivot__${idx++}`, [rowField]: rowKey };
+
+    let rowTotal = 0;
     for (const colVal of uniqueColValues) {
-      const matching = rowGroup.filter(r => String(r[columnField]) === colVal);
-      const values = matching.map(r => Number(r[valueField] ?? 0));
-      pivotRow[colVal] = computeAgg(values, aggregation);
+      const matching = rowGroup.filter((r: GridRow) => String(r[columnField] ?? '') === colVal);
+      const values = matching.map((r: GridRow) => Number(r[valueField] ?? 0));
+      const aggValue = computeAgg(values, aggregation);
+      pivotRow[colVal] = aggValue;
+      rowTotal += aggValue;
     }
+
+    // Row total
+    if (showRowTotals) {
+      pivotRow['__pivot_row_total__'] = rowTotal;
+    }
+
     pivotRows.push(pivotRow);
   }
 
-  // Construir columnas pivot
+  // Grand totals row
+  if (showGrandTotals && pivotRows.length > 0) {
+    const grandTotals: GridRow = {
+      id: '__pivot_grand_totals__',
+      [TOTALS_ROW_KEY]: true,
+      [rowField]: 'TOTAL',
+    };
+    let grandTotal = 0;
+    for (const colVal of uniqueColValues) {
+      const values = pivotRows
+        .filter((r) => !r[TOTALS_ROW_KEY])
+        .map((r) => Number(r[colVal] ?? 0));
+      const colTotal = values.reduce((a, b) => a + b, 0);
+      grandTotals[colVal] = colTotal;
+      grandTotal += colTotal;
+    }
+    if (showRowTotals) {
+      grandTotals['__pivot_row_total__'] = grandTotal;
+    }
+    pivotRows.push(grandTotals);
+  }
+
+  // Build pivot columns
+  const fmtOpts = valueFormatter
+    ? { valueFormatter: (v: unknown) => valueFormatter(Number(v ?? 0)) }
+    : {};
+
   const pivotCols: ZenttoColDef[] = [
     {
       field: rowField,
@@ -137,18 +190,271 @@ export function applyPivot(
       flex: 1,
       minWidth: 150,
     },
-    ...uniqueColValues.map(val => ({
+    ...uniqueColValues.map((val) => ({
       field: val,
       headerName: val,
       width: 120,
       type: 'number' as const,
-      ...(valueFormatter
-        ? { valueFormatter: (v: unknown) => valueFormatter(Number(v ?? 0)) }
-        : {}),
+      align: 'right' as const,
+      headerAlign: 'right' as const,
+      ...fmtOpts,
     })),
   ];
 
+  // Row total column
+  if (showRowTotals) {
+    pivotCols.push({
+      field: '__pivot_row_total__',
+      headerName: 'Total',
+      width: 130,
+      type: 'number' as const,
+      align: 'right' as const,
+      headerAlign: 'right' as const,
+      ...fmtOpts,
+    });
+  }
+
   return { rows: pivotRows, columns: pivotCols };
+}
+
+// ─── Row Grouping ─────────────────────────────────────────────────────────────
+
+export function applyRowGrouping(
+  rows: GridRowsProp,
+  config: RowGroupingConfig,
+  columns: ZenttoColDef[],
+  expandedGroups: Set<string>,
+  getRowIdFn: (row: GridRow) => GridRowId
+): GridRowsProp {
+  const { field, showSubtotals = true, sortGroups = 'asc' } = config;
+  const dataRows = rows as GridRow[];
+
+  // Group rows by field value
+  const groups = new Map<string, GridRow[]>();
+  for (const row of dataRows) {
+    const key = String(row[field] ?? 'Sin grupo');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(row);
+  }
+
+  // Sort group keys
+  let groupKeys = Array.from(groups.keys());
+  if (sortGroups === 'asc') groupKeys.sort();
+  else if (sortGroups === 'desc') groupKeys.sort().reverse();
+
+  const result: GridRow[] = [];
+
+  for (let gi = 0; gi < groupKeys.length; gi++) {
+    const groupKey = groupKeys[gi];
+    const groupRows = groups.get(groupKey)!;
+    const isExpanded = expandedGroups.has(groupKey);
+
+    // Build group header row with subtotals
+    const groupHeader: GridRow = {
+      id: `__group__${groupKey}`,
+      [GROUP_ROW_KEY]: true,
+      __groupKey: groupKey,
+      __groupField: field,
+      __groupCount: groupRows.length,
+      __groupExpanded: isExpanded,
+    };
+
+    // Compute subtotals for columns with aggregation
+    if (showSubtotals) {
+      for (const col of columns) {
+        if (!col.aggregation) continue;
+        const values = groupRows
+          .map((r) => Number(r[col.field] ?? 0))
+          .filter((v) => !isNaN(v));
+        groupHeader[col.field] = computeAgg(values, col.aggregation);
+      }
+    }
+
+    // Set the display value for the grouped field
+    const headerCol = columns.find((c) => c.field === field);
+    groupHeader[field] = `${headerCol?.headerName ?? field}: ${groupKey} (${groupRows.length})`;
+
+    result.push(groupHeader);
+
+    // Add child rows only if expanded
+    if (isExpanded) {
+      for (const row of groupRows) {
+        result.push(row);
+      }
+    }
+  }
+
+  return result;
+}
+
+// ─── Tree Data ────────────────────────────────────────────────────────────────
+
+interface TreeNode {
+  path: string[];
+  row?: GridRow;
+  children: Map<string, TreeNode>;
+  level: number;
+}
+
+export function applyTreeData(
+  rows: GridRowsProp,
+  config: TreeDataConfig,
+  expandedTreeNodes: Set<string>,
+  getRowIdFn: (row: GridRow) => GridRowId
+): GridRowsProp {
+  const { getTreeDataPath, defaultExpandLevel = 0 } = config;
+
+  // Build tree structure
+  const root: TreeNode = { path: [], children: new Map(), level: -1 };
+
+  for (const row of rows as GridRow[]) {
+    const path = getTreeDataPath(row);
+    let current = root;
+
+    for (let i = 0; i < path.length; i++) {
+      const segment = path[i];
+      if (!current.children.has(segment)) {
+        current.children.set(segment, {
+          path: path.slice(0, i + 1),
+          children: new Map(),
+          level: i,
+        });
+      }
+      current = current.children.get(segment)!;
+    }
+    current.row = row;
+  }
+
+  // Flatten tree into rows with indentation info
+  const result: GridRow[] = [];
+
+  function flattenNode(node: TreeNode, parentExpanded: boolean) {
+    const entries = Array.from(node.children.entries());
+    for (let ei = 0; ei < entries.length; ei++) {
+      const [key, child] = entries[ei];
+      const nodeId = child.path.join('/');
+      const hasChildren = child.children.size > 0;
+
+      // Determine if this node should be expanded
+      const isAutoExpanded =
+        defaultExpandLevel === -1 || child.level < defaultExpandLevel;
+      const isExpanded = expandedTreeNodes.has(nodeId) || isAutoExpanded;
+
+      if (!parentExpanded && node.level >= 0) continue;
+
+      const treeRow: GridRow = {
+        ...(child.row ?? {}),
+        id: child.row ? getRowIdFn(child.row) : `__tree_${nodeId}`,
+        __treeLevel: child.level,
+        __treeNodeId: nodeId,
+        __treeHasChildren: hasChildren,
+        __treeExpanded: isExpanded,
+        __treeLabel: key,
+      };
+
+      result.push(treeRow);
+
+      if (hasChildren && isExpanded) {
+        flattenNode(child, true);
+      }
+    }
+  }
+
+  flattenNode(root, true);
+  return result;
+}
+
+// ─── Header Filters ───────────────────────────────────────────────────────────
+
+export function applyHeaderFilters(
+  rows: GridRowsProp,
+  filters: HeaderFilter[]
+): GridRowsProp {
+  if (!filters.length) return rows;
+
+  return (rows as GridRow[]).filter((row) => {
+    // Row must pass ALL filters (AND logic)
+    return filters.every((filter) => {
+      if (filter.value == null || filter.value === '') return true;
+      const cellValue = row[filter.field];
+      if (cellValue == null) return false;
+
+      const strCell = String(cellValue).toLowerCase();
+      const strFilter = String(filter.value).toLowerCase();
+      const numCell = Number(cellValue);
+      const numFilter = Number(filter.value);
+
+      switch (filter.operator) {
+        case 'contains':
+          return strCell.includes(strFilter);
+        case 'equals':
+          return strCell === strFilter;
+        case 'startsWith':
+          return strCell.startsWith(strFilter);
+        case 'endsWith':
+          return strCell.endsWith(strFilter);
+        case '>':
+          return !isNaN(numCell) && !isNaN(numFilter) && numCell > numFilter;
+        case '<':
+          return !isNaN(numCell) && !isNaN(numFilter) && numCell < numFilter;
+        case '>=':
+          return !isNaN(numCell) && !isNaN(numFilter) && numCell >= numFilter;
+        case '<=':
+          return !isNaN(numCell) && !isNaN(numFilter) && numCell <= numFilter;
+        default:
+          return true;
+      }
+    });
+  });
+}
+
+// ─── Clipboard ────────────────────────────────────────────────────────────────
+
+export function copyRowsToClipboard(
+  rows: GridRow[],
+  columns: ZenttoColDef[]
+): void {
+  const exportCols = columns.filter(
+    (c) =>
+      !c.field.startsWith('__') && c.type !== 'actions' && c.field !== 'actions'
+  );
+
+  const headers = exportCols.map((c) => c.headerName ?? c.field);
+  const dataLines = rows.map((row) =>
+    exportCols.map((col) => formatCellForExport(row, col)).join('\t')
+  );
+
+  const text = [headers.join('\t'), ...dataLines].join('\n');
+
+  navigator.clipboard?.writeText(text).catch(() => {
+    // Fallback: create a temporary textarea
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+// ─── Column Groups (header grouping) ─────────────────────────────────────────
+
+export function buildColumnGroupingSx(groups: ColumnGroup[]): Record<string, any> {
+  if (!groups.length) return {};
+
+  // Generate CSS for grouped header borders
+  const sx: Record<string, any> = {};
+  for (const group of groups) {
+    for (const field of group.children) {
+      sx[`& .MuiDataGrid-columnHeader[data-field="${field}"]`] = {
+        borderTop: '2px solid',
+        borderColor: 'divider',
+      };
+    }
+  }
+  return sx;
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────────
@@ -166,10 +472,8 @@ function downloadBlob(blob: Blob, filename: string) {
 
 function getExportableColumns(columns: ZenttoColDef[]) {
   return columns.filter(
-    c =>
-      !c.field.startsWith('__') &&
-      c.type !== 'actions' &&
-      c.field !== 'actions'
+    (c) =>
+      !c.field.startsWith('__') && c.type !== 'actions' && c.field !== 'actions'
   );
 }
 
@@ -178,7 +482,12 @@ function formatCellForExport(row: GridRow, col: ZenttoColDef): string {
   if (val == null || val === '') return '';
   if (col.valueFormatter && typeof col.valueFormatter === 'function') {
     try {
-      const formatted = col.valueFormatter(val as never, row as never, col, {} as never);
+      const formatted = col.valueFormatter(
+        val as never,
+        row as never,
+        col,
+        {} as never
+      );
       return formatted != null ? String(formatted) : String(val);
     } catch {
       return String(val);
@@ -187,18 +496,24 @@ function formatCellForExport(row: GridRow, col: ZenttoColDef): string {
   return String(val);
 }
 
-export function exportToCsv(rows: GridRowsProp, columns: ZenttoColDef[], filename: string) {
+export function exportToCsv(
+  rows: GridRowsProp,
+  columns: ZenttoColDef[],
+  filename: string
+) {
   const exportCols = getExportableColumns(columns);
-  const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY]);
+  const exportRows = (rows as GridRow[]).filter((r) => !r[DETAIL_ROW_KEY]);
 
-  const headers = exportCols.map(c => c.headerName ?? c.field);
-  const csvRows = exportRows.map(row =>
-    exportCols.map(col => {
-      const str = formatCellForExport(row, col);
-      return str.includes(',') || str.includes('"') || str.includes('\n')
-        ? `"${str.replace(/"/g, '""')}"`
-        : str;
-    }).join(',')
+  const headers = exportCols.map((c) => c.headerName ?? c.field);
+  const csvRows = exportRows.map((row) =>
+    exportCols
+      .map((col) => {
+        const str = formatCellForExport(row, col);
+        return str.includes(',') || str.includes('"') || str.includes('\n')
+          ? `"${str.replace(/"/g, '""')}"`
+          : str;
+      })
+      .join(',')
   );
 
   const content = '\uFEFF' + [headers.join(','), ...csvRows].join('\r\n');
@@ -206,21 +521,32 @@ export function exportToCsv(rows: GridRowsProp, columns: ZenttoColDef[], filenam
   downloadBlob(blob, `${filename}.csv`);
 }
 
-export function exportToExcel(rows: GridRowsProp, columns: ZenttoColDef[], filename: string) {
+export function exportToExcel(
+  rows: GridRowsProp,
+  columns: ZenttoColDef[],
+  filename: string
+) {
   const exportCols = getExportableColumns(columns);
-  const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY]);
+  const exportRows = (rows as GridRow[]).filter((r) => !r[DETAIL_ROW_KEY]);
 
   const headerRow = exportCols
-    .map(c => `<th style="background:#1976d2;color:#fff;font-weight:bold;">${c.headerName ?? c.field}</th>`)
+    .map(
+      (c) =>
+        `<th style="background:#1976d2;color:#fff;font-weight:bold;">${c.headerName ?? c.field}</th>`
+    )
     .join('');
 
   const dataRows = exportRows
-    .map(row => {
+    .map((row) => {
       const isTotals = row[TOTALS_ROW_KEY];
+      const isGroup = row[GROUP_ROW_KEY];
       const cells = exportCols
-        .map(col => {
+        .map((col) => {
           const str = formatCellForExport(row, col);
-          const style = isTotals ? 'font-weight:bold;background:#f5f5f5;' : '';
+          const style =
+            isTotals || isGroup
+              ? 'font-weight:bold;background:#f5f5f5;'
+              : '';
           return `<td style="${style}">${str}</td>`;
         })
         .join('');
@@ -239,7 +565,9 @@ export function exportToExcel(rows: GridRowsProp, columns: ZenttoColDef[], filen
 </body>
 </html>`;
 
-  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const blob = new Blob([html], {
+    type: 'application/vnd.ms-excel;charset=utf-8;',
+  });
   downloadBlob(blob, `${filename}.xls`);
 }
 
@@ -247,16 +575,16 @@ export function exportToJson(
   rows: GridRowsProp,
   columns: ZenttoColDef[],
   filename: string,
-  /** Opcional: provee datos raw del detalle de una fila para exportación anidada */
   getDetailExportData?: (row: GridRow) => Record<string, unknown>[],
-  /** Nombre del campo anidado. Default: 'detalles' */
-  detailExportKey = 'detalles',
+  detailExportKey = 'detalles'
 ) {
   const exportCols = getExportableColumns(columns);
-  const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY] && !r[TOTALS_ROW_KEY]);
-  const data = exportRows.map(row => {
+  const exportRows = (rows as GridRow[]).filter(
+    (r) => !r[DETAIL_ROW_KEY] && !r[TOTALS_ROW_KEY] && !r[GROUP_ROW_KEY]
+  );
+  const data = exportRows.map((row) => {
     const obj: Record<string, unknown> = {};
-    exportCols.forEach(col => {
+    exportCols.forEach((col) => {
       obj[col.headerName ?? col.field] = row[col.field] ?? null;
     });
     if (getDetailExportData) {
@@ -264,22 +592,30 @@ export function exportToJson(
     }
     return obj;
   });
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: 'application/json',
+  });
   downloadBlob(blob, `${filename}.json`);
 }
 
-export function exportToMarkdown(rows: GridRowsProp, columns: ZenttoColDef[], filename: string) {
+export function exportToMarkdown(
+  rows: GridRowsProp,
+  columns: ZenttoColDef[],
+  filename: string
+) {
   const exportCols = getExportableColumns(columns);
-  const exportRows = (rows as GridRow[]).filter(r => !r[DETAIL_ROW_KEY]);
-  const headers = exportCols.map(c => c.headerName ?? c.field);
+  const exportRows = (rows as GridRow[]).filter((r) => !r[DETAIL_ROW_KEY]);
+  const headers = exportCols.map((c) => c.headerName ?? c.field);
   const separator = exportCols.map(() => '---');
-  const dataRows = exportRows.map(row =>
-    exportCols.map(col => formatCellForExport(row, col).replace(/\|/g, '\\|'))
+  const dataRows = exportRows.map((row) =>
+    exportCols.map((col) =>
+      formatCellForExport(row, col).replace(/\|/g, '\\|')
+    )
   );
   const lines = [
     `| ${headers.join(' | ')} |`,
     `| ${separator.join(' | ')} |`,
-    ...dataRows.map(r => `| ${r.join(' | ')} |`),
+    ...dataRows.map((r) => `| ${r.join(' | ')} |`),
   ];
   const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
   downloadBlob(blob, `${filename}.md`);
@@ -293,7 +629,7 @@ export function applyColumnPinning(
 ): ZenttoColDef[] {
   if (!pinned) return columns;
 
-  return columns.map(col => {
+  return columns.map((col) => {
     const isLeft = pinned.left?.includes(col.field);
     const isRight = pinned.right?.includes(col.field);
     if (!isLeft && !isRight) return col;
@@ -307,7 +643,7 @@ export function applyColumnPinning(
   });
 }
 
-/** sx styles para columnas pinadas */
+/** sx styles for pinned columns */
 export const pinningSx = {
   '& .zentto-pin-left': {
     position: 'sticky !important',

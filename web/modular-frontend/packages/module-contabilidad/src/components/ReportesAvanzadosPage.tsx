@@ -26,8 +26,7 @@ import {
   LinearProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, DatePicker, FormGrid, FormField, type ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -139,7 +138,7 @@ function DrillDownDialog({
     return items.map((r: any, i: number) => ({ ...r, _id: i }));
   }, [data]);
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "fecha", headerName: "Fecha", width: 100 },
     { field: "numeroAsiento", headerName: "N Asiento", width: 120 },
     { field: "tipoAsiento", headerName: "Tipo", width: 90 },
@@ -312,7 +311,7 @@ export default function ReportesAvanzadosPage() {
 
   const handlePrint = () => window.print();
 
-  const fmtCol = (field: string, header: string, width = 140): GridColDef => ({
+  const fmtCol = (field: string, header: string, width = 140): ZenttoColDef => ({
     field,
     headerName: header,
     width,
@@ -321,7 +320,7 @@ export default function ReportesAvanzadosPage() {
   });
 
   // ─── Libro Diario ───────────────────────────────────────
-  const libroDiarioCols: GridColDef[] = [
+  const libroDiarioCols: ZenttoColDef[] = [
     { field: "fecha", headerName: "Fecha", width: 100 },
     { field: "numeroAsiento", headerName: "N Asiento", width: 130 },
     { field: "tipoAsiento", headerName: "Tipo", width: 90 },
@@ -333,7 +332,7 @@ export default function ReportesAvanzadosPage() {
   ];
 
   // ─── Libro Mayor ────────────────────────────────────────
-  const libroMayorCols: GridColDef[] = [
+  const libroMayorCols: ZenttoColDef[] = [
     {
       field: "codCuenta",
       headerName: "Cuenta",
@@ -368,7 +367,7 @@ export default function ReportesAvanzadosPage() {
   ];
 
   // ─── Balance Comprobacion ───────────────────────────────
-  const balanceCols: GridColDef[] = [
+  const balanceCols: ZenttoColDef[] = [
     {
       field: "codCuenta",
       headerName: "Cuenta",
@@ -400,7 +399,7 @@ export default function ReportesAvanzadosPage() {
   ];
 
   // ─── Aging columns ─────────────────────────────────────
-  const agingCols: GridColDef[] = [
+  const agingCols: ZenttoColDef[] = [
     { field: "entity", headerName: "Codigo", width: 120 },
     { field: "entityName", headerName: "Nombre", flex: 1, minWidth: 180 },
     fmtCol("current", "Corriente", 120),
@@ -422,7 +421,7 @@ export default function ReportesAvanzadosPage() {
   ];
 
   // ─── Tax columns ───────────────────────────────────────
-  const taxCols: GridColDef[] = [
+  const taxCols: ZenttoColDef[] = [
     { field: "taxType", headerName: "Tipo", width: 100 },
     { field: "taxName", headerName: "Impuesto", flex: 1, minWidth: 200 },
     fmtCol("base", "Base imponible", 150),

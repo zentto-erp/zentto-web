@@ -13,8 +13,6 @@ import {
   GridRowsProp,
   GridRowModesModel,
   GridRowModes,
-  GridColDef,
-  GridEventListener,
   GridRowId,
   GridRowModel,
   GridRowEditStopReasons,
@@ -22,7 +20,7 @@ import {
   GridActionsCellItem,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import { Button } from "@mui/material";
 
 // Función para generar IDs únicos (reemplaza @mui/x-data-grid-generator)
@@ -32,7 +30,7 @@ const randomId = () => Math.random().toString(36).substring(2, 15);
 
 export interface EditableDataGridProps<T extends { id?: string | number }> {
   rows: T[];
-  columns: GridColDef[];
+  columns: ZenttoColDef[];
   onSave: (row: T) => Promise<void> | void;
   onDelete: (id: GridRowId) => Promise<void> | void;
   onCancel?: (id: GridRowId) => void;
@@ -182,11 +180,11 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
     setRows(initialRows);
   }, [initialRows]);
 
-  const handleRowEditStop: GridEventListener<"rowEditStop"> = (params, event) => {
+  const handleRowEditStop = ((params: any, event: any) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true;
     }
-  };
+  }) as any;
 
   const actionHandlers = React.useMemo<ActionHandlers>(
     () => ({
@@ -234,7 +232,7 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
   }, []);
 
   // Agregar columna de acciones si no existe
-  const columnsWithActions: GridColDef[] = React.useMemo(() => {
+  const columnsWithActions: ZenttoColDef[] = React.useMemo(() => {
     const hasActions = columns.some((c) => c.field === "actions");
     if (hasActions) return columns;
 
@@ -295,7 +293,7 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
 
           return actions;
         },
-      } as GridColDef,
+      } as ZenttoColDef,
     ];
   }, [columns, rowModesModel, actionHandlers, extraActions]);
 
@@ -323,41 +321,42 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
       }}
     >
       <ZenttoDataGrid
-        rows={rows as any}
-        columns={columnsWithActions}
-        editMode="row"
-        rowModesModel={rowModesModel}
-        onRowModesModelChange={setRowModesModel}
-        onRowEditStop={handleRowEditStop}
-        // @ts-ignore — generic T constraint mismatch with GridRowModel
-        processRowUpdate={processRowUpdate}
-        onProcessRowUpdateError={handleProcessRowUpdateError}
-        loading={loading}
-        onRowClick={handleRowClick}
-        getRowId={getRowId || ((row: any) => row.id)}
-        showToolbar={!hideAddButton}
-        slots={{ toolbar: EditToolbar as GridSlots["toolbar"] }}
-        slotProps={{
-          toolbar: {
-            setRows,
-            setRowModesModel,
-            defaultNewRow,
-            title,
-            addButtonText,
-          } as any,
-        }}
-        initialState={{
-          pagination: { paginationModel: { pageSize: 25 } },
-          filter: {
-            filterModel: {
-              items: [],
+        {...({
+          rows: rows as any,
+          columns: columnsWithActions,
+          editMode: "row",
+          rowModesModel,
+          onRowModesModelChange: setRowModesModel as any,
+          onRowEditStop: handleRowEditStop as any,
+          processRowUpdate,
+          onProcessRowUpdateError: handleProcessRowUpdateError,
+          loading,
+          onRowClick: handleRowClick,
+          getRowId: getRowId || ((row: any) => row.id),
+          showToolbar: !hideAddButton,
+          slots: { toolbar: EditToolbar as any },
+          slotProps: {
+            toolbar: {
+              setRows,
+              setRowModesModel,
+              defaultNewRow,
+              title,
+              addButtonText,
+            } as any,
+          },
+          initialState: {
+            pagination: { paginationModel: { pageSize: 25 } },
+            filter: {
+              filterModel: {
+                items: [],
+              },
             },
           },
-        }}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick={!onRowClick}
-        filterMode="client"
-        hideToolbar
+          pageSizeOptions: [10, 25, 50, 100],
+          disableRowSelectionOnClick: !onRowClick,
+          filterMode: "client",
+          hideToolbar: true,
+        } as any)}
       />
     </Box>
   );

@@ -1,8 +1,7 @@
 "use client";
 
 import { Box, Paper, Typography, IconButton, Tooltip, Stack } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowSelectionModel } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import LinkIcon from "@mui/icons-material/Link";
 import { formatCurrency } from "@zentto/shared-api";
 
@@ -15,7 +14,7 @@ interface ExtractoPendienteGridProps {
   isConciliando?: boolean;
 }
 
-const columns: GridColDef[] = [
+const columns: ZenttoColDef[] = [
   { field: "Fecha", headerName: "Fecha", width: 100 },
   { field: "Descripcion", headerName: "Descripcion", flex: 1, minWidth: 180 },
   { field: "Referencia", headerName: "Referencia", width: 120 },
@@ -24,6 +23,8 @@ const columns: GridColDef[] = [
     headerName: "Monto",
     width: 130,
     type: "number",
+    currency: true,
+    aggregation: "sum",
     renderCell: (p) => formatCurrency(p.value ?? 0),
   },
   { field: "Tipo", headerName: "Tipo", width: 100 },
@@ -76,10 +77,12 @@ export default function ExtractoPendienteGrid({
           getRowId={(r) => r.ID ?? r.id ?? Math.random()}
           autoHeight
           disableMultipleRowSelection
-          onRowSelectionModelChange={(model: GridRowSelectionModel) => {
+          onRowSelectionModelChange={(model: any, _details: any) => {
             const ids = Array.isArray(model) ? model : Array.from(model as any);
             onSelectionChange?.(ids[0] as number ?? null);
           }}
+          showTotals
+          enableClipboard
           sx={{
             border: 0,
             "& .MuiDataGrid-row": { cursor: "pointer" },

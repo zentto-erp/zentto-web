@@ -19,38 +19,79 @@ const EMPTY_STATE: GridLayoutState = {
  * useGridLayout
  *
  * Carga y persiste el layout de una tabla por gridId en IndexedDB.
- * Retorna columnas reordenadas/redimensionadas y callbacks para conectar
- * a los eventos del DataGrid.
  *
- * @param gridId  Identificador único de la tabla. Si es undefined, no persiste.
- * @param columns Columnas originales definidas por el desarrollador.
+ * FIX: La version anterior tenia un bug donde:
+ *   1. El estado se inicializaba como EMPTY_STATE
+ *   2. El useEffect cargaba desde IndexedDB (async)
+ *   3. Pero ANTES de que el useEffect terminara, el componente
+ *      renderizaba con EMPTY_STATE y el DataGrid tomaba esos valores
+ *   4. Cuando el useEffect terminaba y seteaba el estado real,
+ *      el DataGrid ya habia sobreescrito la visibilidad con valores vacios
+ *
+ * Solucion: Usar un flag `loaded` que bloquea el render del DataGrid
+ * hasta que el layout se haya cargado desde IndexedDB. El componente
+ * padre puede usar `layout.loaded` para mostrar un skeleton o esperar.
  */
 export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[]) {
   const [state, setState] = useState<GridLayoutState>(EMPTY_STATE);
-  const [loaded, setLoaded] = useState(!gridId); // si no hay gridId, ya está "cargado"
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [loaded, setLoaded] = useState(!gridId); // sin gridId = ya cargado
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const mountedRef = useRef(true);
 
-  // ── Carga inicial desde IndexedDB ──────────────────────────────────────────
+  // Track mounted state to avoid setState after unmount
   useEffect(() => {
-    if (!gridId) return;
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // ── Load from IndexedDB ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!gridId) {
+      setLoaded(true);
+      return;
+    }
+
     let cancelled = false;
-    getLayout(gridId).then((saved) => {
-      if (!cancelled && saved) setState(saved);
-      if (!cancelled) setLoaded(true);
-    }).catch(() => {
-      if (!cancelled) setLoaded(true);
-    });
-    return () => { cancelled = true; };
+
+    // Reset loaded state when gridId changes (e.g., navigating between pages)
+    setLoaded(false);
+
+    getLayout(gridId)
+      .then((saved) => {
+        if (cancelled || !mountedRef.current) return;
+        if (saved) {
+          setState(saved);
+        } else {
+          setState(EMPTY_STATE);
+        }
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled || !mountedRef.current) return;
+        setState(EMPTY_STATE);
+        setLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [gridId]);
 
-  // ── Persistencia con debounce ─────────────────────────────────────────────
-  const persist = useCallback((newState: GridLayoutState) => {
-    if (!gridId) return;
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveLayout(gridId, newState), 400);
-  }, [gridId]);
+  // ── Persist with debounce ─────────────────────────────────────────────────
+  const persist = useCallback(
+    (newState: GridLayoutState) => {
+      if (!gridId) return;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        if (mountedRef.current) {
+          saveLayout(gridId, newState);
+        }
+      }, 400);
+    },
+    [gridId]
+  );
 
-  // ── Columnas reordenadas según el orden guardado ───────────────────────────
+  // ── Columns reordered by saved order ──────────────────────────────────────
   const orderedColumns = useMemo(() => {
     if (!state.columnOrder.length) return columns;
     const orderMap = new Map(state.columnOrder.map((f, i) => [f, i]));
@@ -61,7 +102,7 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     });
   }, [columns, state.columnOrder]);
 
-  // ── Columnas con anchos guardados (elimina flex para respetar el ancho) ────
+  // ── Columns with saved widths ─────────────────────────────────────────────
   const processedColumns = useMemo(() => {
     if (!Object.keys(state.columnWidths).length) return orderedColumns;
     return orderedColumns.map((col) => {
@@ -70,7 +111,7 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     });
   }, [orderedColumns, state.columnWidths]);
 
-  // ── Handlers para conectar a DataGrid ────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const onColumnVisibilityModelChange = useCallback(
     (model: GridColumnVisibilityModel) => {
@@ -83,7 +124,6 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     [persist]
   );
 
-  /** Llamar con apiRef.current.getAllColumns().map(c => c.field) tras onColumnOrderChange */
   const onColumnOrderChange = useCallback(
     (orderedFields: string[]) => {
       setState((prev) => {
@@ -95,7 +135,6 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     [persist]
   );
 
-  /** Llamar con { field, width } desde onColumnWidthChange */
   const onColumnWidthChange = useCallback(
     (field: string, width: number) => {
       setState((prev) => {
@@ -121,22 +160,22 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     [persist]
   );
 
-  // ── Reset ──────────────────────────────────────────────────────────────────
+  // ── Reset ─────────────────────────────────────────────────────────────────
   const resetLayout = useCallback(() => {
     setState(EMPTY_STATE);
     if (gridId) clearLayout(gridId);
   }, [gridId]);
 
   return {
-    /** true cuando el layout inicial fue cargado desde IndexedDB */
+    /** true when the initial layout has been loaded from IndexedDB */
     loaded,
-    /** Columnas con orden y anchos del layout guardado */
+    /** Columns with saved order and widths */
     processedColumns,
-    /** Model de visibilidad a pasar a columnVisibilityModel */
+    /** Visibility model to pass to columnVisibilityModel */
     columnVisibilityModel: state.columnVisibility,
-    /** Densidad guardada */
+    /** Saved density */
     density: state.density,
-    /** true si hay alguna personalización guardada */
+    /** true if there's any saved customization */
     hasCustomLayout:
       !!gridId &&
       (state.columnOrder.length > 0 ||

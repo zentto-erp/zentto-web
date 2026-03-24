@@ -25,7 +25,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader, ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivitiesList,
@@ -71,7 +71,7 @@ export default function ActividadesPage() {
   const rows: Activity[] = data?.data ?? data?.rows ?? [];
   const totalCount = data?.totalCount ?? data?.TotalCount ?? rows.length;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     {
       field: "Subject",
       headerName: "Asunto",

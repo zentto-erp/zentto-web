@@ -22,13 +22,12 @@ import {
   Tooltip,
   CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import SendIcon from "@mui/icons-material/Send";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useDeclaracionesList,
   useCalcularDeclaracion,
@@ -85,7 +84,7 @@ export default function DeclaracionesPage() {
 
   const rows = data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     {
       field: "DeclarationType",
       headerName: "Tipo",

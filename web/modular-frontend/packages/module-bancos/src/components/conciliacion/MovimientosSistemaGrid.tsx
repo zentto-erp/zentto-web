@@ -1,8 +1,7 @@
 "use client";
 
 import { Box, Paper, Typography, CircularProgress, Chip } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowSelectionModel } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingIcon from "@mui/icons-material/Pending";
@@ -15,7 +14,7 @@ interface MovimientosSistemaGridProps {
   onSelectionChange?: (id: number | null) => void;
 }
 
-const columns: GridColDef[] = [
+const columns: ZenttoColDef[] = [
   { field: "Fecha", headerName: "Fecha", width: 100 },
   { field: "Tipo", headerName: "Tipo", width: 80 },
   { field: "Nro_Ref", headerName: "Referencia", width: 120 },
@@ -25,6 +24,8 @@ const columns: GridColDef[] = [
     headerName: "Monto",
     width: 130,
     type: "number",
+    currency: true,
+    aggregation: "sum",
     renderCell: (p) => (
       <Typography
         variant="body2"
@@ -39,6 +40,10 @@ const columns: GridColDef[] = [
     field: "Estado",
     headerName: "Estado",
     width: 120,
+    statusColors: {
+      CONCILIADO: "success",
+      PENDIENTE: "warning",
+    },
     renderCell: (p) => (
       <Chip
         icon={p.value === "CONCILIADO" ? <CheckCircleIcon /> : <PendingIcon />}
@@ -91,10 +96,12 @@ export default function MovimientosSistemaGrid({
           getRowId={(r) => r.ID ?? r.id ?? Math.random()}
           autoHeight
           disableMultipleRowSelection
-          onRowSelectionModelChange={(model: GridRowSelectionModel) => {
+          onRowSelectionModelChange={(model: any, _details: any) => {
             const ids = Array.isArray(model) ? model : Array.from(model as any);
             onSelectionChange?.(ids[0] as number ?? null);
           }}
+          showTotals
+          enableClipboard
           sx={{
             border: 0,
             "& .MuiDataGrid-row": { cursor: "pointer" },

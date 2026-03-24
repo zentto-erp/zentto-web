@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -137,7 +137,7 @@ export default function AlbaranesPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "DeliveryNumber", headerName: "N. Albaran", flex: 1, minWidth: 130 },
     { field: "SalesDocumentNumber", headerName: "N. Doc. Venta", flex: 1, minWidth: 130 },
     { field: "CustomerName", headerName: "Cliente", flex: 1.5, minWidth: 180 },

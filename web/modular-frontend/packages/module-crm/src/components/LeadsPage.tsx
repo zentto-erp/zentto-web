@@ -21,7 +21,7 @@ import {
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useLeadsList,
   usePipelinesList,
@@ -84,7 +84,7 @@ export default function LeadsPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const totalCount = data?.totalCount ?? data?.TotalCount ?? rows.length;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "LeadCode", headerName: "Código", width: 110 },
     { field: "ContactName", headerName: "Contacto", flex: 1, minWidth: 160 },
     { field: "CompanyName", headerName: "Empresa", width: 160 },

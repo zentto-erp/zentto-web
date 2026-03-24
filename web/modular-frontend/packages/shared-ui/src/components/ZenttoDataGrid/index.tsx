@@ -20,18 +20,37 @@ import {
   IconButton,
   Tooltip,
   alpha,
+  TextField,
+  CircularProgress,
+  Skeleton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Chip,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloseIcon from '@mui/icons-material/Close';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 
 import { ZenttoToolbar } from './ZenttoToolbar';
+import { PivotPanel } from './PivotPanel';
+import { DetailPanelWrapper } from './DetailPanelWrapper';
+import { applyColumnTemplates } from './columnTemplates';
 import { useGridLayout } from './useGridLayout';
 import {
   resolveId,
   injectDetailRows,
   computeTotals,
   applyPivot,
+  applyRowGrouping,
+  applyTreeData,
+  applyHeaderFilters,
+  copyRowsToClipboard,
   exportToCsv,
   exportToExcel,
   exportToJson,
@@ -43,52 +62,97 @@ import {
   GridRow,
   ZenttoDataGridProps,
   ZenttoColDef,
+  PivotConfig,
+  HeaderFilter,
   DETAIL_ROW_KEY,
   TOTALS_ROW_KEY,
+  GROUP_ROW_KEY,
   EXPAND_COL_FIELD,
   MOBILE_DETAIL_COL_FIELD,
 } from './types';
 
-// ─── Estilos globales del componente ─────────────────────────────────────────
+// ─── Estilos base — mejorados para look profesional tipo AG Grid ────────────
 
 const baseGridSx = {
-  border: 'none',
-  borderRadius: 0,
-  // Header elegante — usa background.default para adaptarse a dark mode
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 1,
+  bgcolor: 'background.paper',
+
+  // ── Header: fondo solido, tipografia clara ────────────────────────────
   '& .MuiDataGrid-columnHeaders': {
-    bgcolor: 'background.default',
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.05) : '#f8f9fa',
     borderBottom: '2px solid',
     borderColor: 'divider',
-    fontSize: '0.8rem',
+    fontSize: '0.8125rem',
     fontWeight: 700,
-    color: 'text.secondary',
+    color: 'text.primary',
+    letterSpacing: '0.01em',
+    minHeight: '42px !important',
+    maxHeight: '42px !important',
   },
   '& .MuiDataGrid-columnHeader': {
     '&:focus, &:focus-within': { outline: 'none' },
+    '&:not(:last-of-type)': {
+      borderRight: '1px solid',
+      borderColor: (theme: any) =>
+        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+    },
   },
-  // Filas
+  '& .MuiDataGrid-columnHeaderTitle': {
+    fontWeight: 700,
+  },
+  '& .MuiDataGrid-columnSeparator': {
+    color: (theme: any) =>
+      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+  },
+
+  // ── Column Group Headers ──────────────────────────────────────────────
+  '& .zentto-column-group-header': {
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.primary.main, 0.06),
+    borderBottom: '2px solid',
+    borderColor: 'primary.main',
+    fontWeight: 800,
+    fontSize: '0.75rem',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.05em',
+    color: 'primary.main',
+  },
+
+  // ── Rows: borders visibles, font legible ──────────────────────────────
   '& .MuiDataGrid-row': {
-    transition: 'background-color 0.15s',
+    transition: 'background-color 0.12s',
+    borderBottom: '1px solid',
+    borderColor: (theme: any) =>
+      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
     '&:hover': {
-      bgcolor: 'action.hover',
+      bgcolor: (theme: any) =>
+        theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
     },
     '&.Mui-selected': {
-      bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.06),
+      bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.08),
       '&:hover': {
-        bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.1),
+        bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.12),
       },
     },
+    // Zebra striping (alternating rows)
+    '&:nth-of-type(even)': {
+      bgcolor: (theme: any) =>
+        theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.02) : 'rgba(0,0,0,0.015)',
+    },
   },
-  // Fila EXPANDIDA → borde izquierdo acento + fondo sutil
+
+  // ── Expanded row → accent border + highlight ──────────────────────────
   '& .zentto-row-expanded': {
-    bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.04),
+    bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.06),
     borderLeft: '3px solid',
     borderColor: 'primary.main',
     '&:hover': {
-      bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.07),
+      bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.1),
     },
   },
-  // Fila de DETALLE → sin hover, fondo sólido (no transparent)
+
+  // ── Detail panel row → solid bg, no hover effect ──────────────────────
   '& .zentto-row-detail': {
     bgcolor: 'background.paper',
     borderLeft: '3px solid',
@@ -101,56 +165,113 @@ const baseGridSx = {
       bgcolor: 'background.paper !important',
     },
   },
-  // Fila de TOTALES → bold + fondo adaptado a dark mode
+
+  // ── Totals row → bold + distinct background ──────────────────────────
   '& .zentto-row-totals': {
-    bgcolor: 'action.selected',
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.08) : '#f0f0f0',
     fontWeight: 700,
     borderTop: '2px solid',
     borderColor: 'divider',
+    '& .MuiDataGrid-cell': {
+      fontWeight: 700,
+    },
   },
-  // Celdas — un punto menos que el header
+
+  // ── Group header row → colored accent ─────────────────────────────────
+  '& .zentto-row-group': {
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04),
+    fontWeight: 700,
+    borderBottom: '1px solid',
+    borderColor: 'primary.light',
+    '& .MuiDataGrid-cell': {
+      fontWeight: 700,
+    },
+    '&:hover': {
+      bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.12),
+    },
+  },
+
+  // ── Cells: legible font, consistent borders ───────────────────────────
   '& .MuiDataGrid-cell': {
-    fontSize: '0.75rem',
-    borderColor: 'divider',
+    fontSize: '0.8125rem',
+    lineHeight: 1.5,
+    borderColor: (theme: any) =>
+      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
     '&:focus, &:focus-within': { outline: 'none' },
+    // Vertical border between cells
+    '&:not(:last-of-type)': {
+      borderRight: '1px solid',
+      borderColor: (theme: any) =>
+        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+    },
   },
-  // Columna de expand — sin padding
+
+  // ── Expand column — no padding ────────────────────────────────────────
   [`& .MuiDataGrid-cell[data-field="${EXPAND_COL_FIELD}"]`]: {
     padding: '0 !important',
     overflow: 'hidden',
   },
-  // Footer
+
+  // ── Footer ────────────────────────────────────────────────────────────
   '& .MuiDataGrid-footerContainer': {
-    borderTop: '1px solid',
+    borderTop: '2px solid',
     borderColor: 'divider',
-    minHeight: 48,
+    minHeight: 44,
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.03) : '#fafafa',
+    fontSize: '0.8125rem',
   },
-  // Quitar sombra de columna virtual
+
+  // ── Virtual scroller ──────────────────────────────────────────────────
   '& .MuiDataGrid-virtualScrollerContent': {
     minHeight: 1,
   },
+
+  // ── Header filter row ─────────────────────────────────────────────────
+  '& .zentto-header-filter-row': {
+    bgcolor: (theme: any) => theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.03) : '#fafbfc',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    minHeight: 36,
+    display: 'flex',
+    alignItems: 'center',
+  },
+
+  // ── Row number column ─────────────────────────────────────────────────
+  '& .zentto-row-number-cell': {
+    color: 'text.secondary',
+    fontSize: '0.75rem',
+    justifyContent: 'center',
+  },
+
+  // ── Drag handle column ────────────────────────────────────────────────
+  '& .zentto-drag-handle': {
+    cursor: 'grab',
+    color: 'text.disabled',
+    '&:hover': { color: 'text.secondary' },
+    '&:active': { cursor: 'grabbing' },
+  },
 } as const;
 
-// ─── Columna de expand/collapse ───────────────────────────────────────────────
+// ─── Column: expand/collapse for master-detail ──────────────────────────────
 
 function buildExpandColumn(
   expandedIds: Set<GridRowId>,
   onToggle: (id: GridRowId) => void,
   totalColumns: number,
-  detailPanelHeight: number | 'auto'
+  detailPanelHeight: number | 'auto',
+  apiRef: React.MutableRefObject<any>
 ): ZenttoColDef {
-  return {
+  return ({
     field: EXPAND_COL_FIELD,
     headerName: '',
-    width: 48,
-    minWidth: 48,
-    maxWidth: 48,
+    width: 44,
+    minWidth: 44,
+    maxWidth: 44,
     sortable: false,
     filterable: false,
     disableColumnMenu: true,
     hideable: false,
     resizable: false,
-    // colSpan: en filas de detalle ocupa TODAS las columnas
     colSpan: (_value: unknown, row: GridRow) => {
       if (row[DETAIL_ROW_KEY]) return totalColumns;
       return 1;
@@ -158,41 +279,39 @@ function buildExpandColumn(
     renderCell: (params) => {
       const row = params.row as GridRow;
 
-      // ── Fila de DETALLE ──────────────────────────────────────────────────
+      // ── Detail panel row ──────────────────────────────────────────────
       if (row[DETAIL_ROW_KEY]) {
         return (
-          <Box
-            sx={{
-              width: '100%',
-              minHeight: typeof detailPanelHeight === 'number' ? detailPanelHeight : undefined,
-              display: 'flex',
-              flexDirection: 'column',
-              bgcolor: 'background.paper',
-              // Animación de entrada
-              animation: 'zenttoDetailIn 0.22s ease',
-              '@keyframes zenttoDetailIn': {
-                from: { opacity: 0, transform: 'translateY(-4px)' },
-                to: { opacity: 1, transform: 'translateY(0)' },
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                flex: 1,
-                pl: 2,
-                pr: 2,
-                py: 1.5,
-                bgcolor: 'background.paper',
-              }}
-            >
-              {row.__content as React.ReactNode}
-            </Box>
-          </Box>
+          <DetailPanelWrapper apiRef={apiRef} height={detailPanelHeight}>
+            {row.__content as React.ReactNode}
+          </DetailPanelWrapper>
         );
       }
 
-      // ── Fila NORMAL → botón de expand ───────────────────────────────────
+      // ── Group header row — expand/collapse ────────────────────────────
+      if (row[GROUP_ROW_KEY]) {
+        const isExpanded = row.__groupExpanded as boolean;
+        return (
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle(params.id);
+            }}
+            sx={{ width: 28, height: 28, color: 'primary.main' }}
+          >
+            <ChevronRightIcon
+              fontSize="small"
+              sx={{
+                transition: 'transform 0.2s',
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              }}
+            />
+          </IconButton>
+        );
+      }
+
+      // ── Normal row → expand button ────────────────────────────────────
       const isExpanded = expandedIds.has(params.id);
       return (
         <Tooltip title={isExpanded ? 'Colapsar' : 'Ver detalle'} placement="right">
@@ -203,8 +322,8 @@ function buildExpandColumn(
               onToggle(params.id);
             }}
             sx={{
-              width: 30,
-              height: 30,
+              width: 28,
+              height: 28,
               color: isExpanded ? 'primary.main' : 'text.secondary',
               transition: 'color 0.15s',
             }}
@@ -212,7 +331,7 @@ function buildExpandColumn(
             <ChevronRightIcon
               fontSize="small"
               sx={{
-                transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
               }}
             />
@@ -220,13 +339,13 @@ function buildExpandColumn(
         </Tooltip>
       );
     },
-  };
+  }) as ZenttoColDef;
 }
 
-// ─── Columna de info móvil ────────────────────────────────────────────────────
+// ─── Column: mobile info button ─────────────────────────────────────────────
 
 function buildMobileDetailColumn(onOpen: (row: GridRow) => void): ZenttoColDef {
-  return {
+  return ({
     field: MOBILE_DETAIL_COL_FIELD,
     headerName: '',
     width: 44,
@@ -239,7 +358,7 @@ function buildMobileDetailColumn(onOpen: (row: GridRow) => void): ZenttoColDef {
     resizable: false,
     renderCell: (params) => {
       const row = params.row as GridRow;
-      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY]) return null;
+      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY] || row[GROUP_ROW_KEY]) return null;
       return (
         <Tooltip title="Ver detalle del registro">
           <IconButton
@@ -255,10 +374,135 @@ function buildMobileDetailColumn(onOpen: (row: GridRow) => void): ZenttoColDef {
         </Tooltip>
       );
     },
-  };
+  }) as ZenttoColDef;
 }
 
-// ─── ZenttoDataGrid ───────────────────────────────────────────────────────────
+// ─── Column: row number ─────────────────────────────────────────────────────
+
+function buildRowNumberColumn(): ZenttoColDef {
+  return ({
+    field: '__zentto_row_num__',
+    headerName: '#',
+    width: 50,
+    minWidth: 50,
+    maxWidth: 60,
+    sortable: false,
+    filterable: false,
+    disableColumnMenu: true,
+    hideable: false,
+    resizable: false,
+    cellClassName: 'zentto-row-number-cell',
+    renderCell: (params) => {
+      const row = params.row as GridRow;
+      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY] || row[GROUP_ROW_KEY]) return null;
+      // Use the row index from the API (1-based)
+      const api = params.api;
+      const allIds = api.getSortedRowIds?.() ?? [];
+      const idx = allIds.indexOf(params.id);
+      return idx >= 0 ? idx + 1 : '';
+    },
+  }) as ZenttoColDef;
+}
+
+// ─── Column: drag handle for row reordering ─────────────────────────────────
+
+function buildDragHandleColumn(): ZenttoColDef {
+  return ({
+    field: '__zentto_drag__',
+    headerName: '',
+    width: 36,
+    minWidth: 36,
+    maxWidth: 36,
+    sortable: false,
+    filterable: false,
+    disableColumnMenu: true,
+    hideable: false,
+    resizable: false,
+    renderCell: (params) => {
+      const row = params.row as GridRow;
+      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY] || row[GROUP_ROW_KEY]) return null;
+      return (
+        <Box className="zentto-drag-handle" sx={{ display: 'flex', alignItems: 'center' }}>
+          <DragIndicatorIcon fontSize="small" />
+        </Box>
+      );
+    },
+  }) as ZenttoColDef;
+}
+
+// ─── Mobile actions menu (collapses action buttons into MoreVert menu) ───────
+
+function MobileActionsCell({ actions }: { actions: React.ReactNode }) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  return (
+    <>
+      <IconButton
+        size="small"
+        onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); }}
+        sx={{ color: 'text.secondary' }}
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setAnchorEl(null)}
+        onClick={() => setAnchorEl(null)}
+        slotProps={{ paper: { sx: { minWidth: 160 } } }}
+      >
+        {/* Render each action button as a menu item */}
+        <Box sx={{ px: 1, py: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {actions}
+        </Box>
+      </Menu>
+    </>
+  );
+}
+
+/**
+ * Wraps action columns for mobile: if there are multiple action buttons,
+ * collapses them into a single MoreVert (⋮) menu to save horizontal space.
+ */
+function buildMobileActionColumn(
+  originalActionCols: ZenttoColDef[]
+): ZenttoColDef {
+  return ({
+    field: '__zentto_mobile_actions__',
+    headerName: '',
+    width: 44,
+    minWidth: 44,
+    maxWidth: 44,
+    sortable: false,
+    filterable: false,
+    disableColumnMenu: true,
+    hideable: false,
+    resizable: false,
+    type: 'actions',
+    renderCell: (params) => {
+      const row = params.row as GridRow;
+      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY] || row[GROUP_ROW_KEY]) return null;
+
+      // Render each original action column's cell and collect results
+      const actionElements: React.ReactNode[] = [];
+      for (const col of originalActionCols) {
+        if (col.renderCell) {
+          const el = col.renderCell(params as any);
+          if (el) actionElements.push(el);
+        }
+      }
+
+      if (actionElements.length === 0) return null;
+      if (actionElements.length === 1) return actionElements[0]; // Single action: show directly
+
+      // Multiple actions: collapse into menu
+      return <MobileActionsCell actions={<>{actionElements}</>} />;
+    },
+  }) as ZenttoColDef;
+}
+
+// ─── ZenttoDataGrid ─────────────────────────────────────────────────────────
 
 export function ZenttoDataGrid({
   columns,
@@ -273,13 +517,36 @@ export function ZenttoDataGrid({
   getDetailExportData,
   detailExportKey = 'detalles',
   // Pivot
-  pivotConfig,
+  pivotConfig: externalPivotConfig,
+  enablePivot = false,
   // Aggregation
   showTotals = false,
   totalsLabel = 'Total',
   // Pinned columns
   pinnedColumns,
-  // Fechas y monedas
+  // Column groups
+  columnGroups,
+  // Row grouping
+  enableGrouping = false,
+  rowGroupingConfig,
+  // Tree data
+  treeDataConfig,
+  // Row pinning
+  pinnedRowsTop,
+  pinnedRowsBottom,
+  // Row reordering
+  onRowReorder,
+  // Header filters
+  enableHeaderFilters = false,
+  // Clipboard
+  enableClipboard = false,
+  // Cell selection
+  enableCellSelection = false,
+  // Lazy loading
+  onLoadMore,
+  loadingMore = false,
+  serverRowCount,
+  // Dates and currencies
   dateLocale,
   defaultCurrency,
   // Export
@@ -288,7 +555,7 @@ export function ZenttoDataGrid({
   showExportExcel = true,
   showExportJson = true,
   showExportMarkdown = false,
-  // Layout persistente
+  // Layout
   gridId,
   // Toolbar
   toolbarTitle,
@@ -312,32 +579,32 @@ export function ZenttoDataGrid({
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isSmall = isMobile || isTablet;
 
-  // ── Estado ──────────────────────────────────────────────────────────────────
+  // ── State ─────────────────────────────────────────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<GridRowId>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedTreeNodes, setExpandedTreeNodes] = useState<Set<string>>(new Set());
   const [mobileDrawerRow, setMobileDrawerRow] = useState<GridRow | null>(null);
+  const [headerFilters, setHeaderFilters] = useState<HeaderFilter[]>([]);
+  const [headerFiltersVisible, setHeaderFiltersVisible] = useState(false);
+  const [pivotDialogOpen, setPivotDialogOpen] = useState(false);
+  const [dynamicPivotConfig, setDynamicPivotConfig] = useState<PivotConfig | null>(null);
+  const [groupByField, setGroupByField] = useState<string | null>(
+    rowGroupingConfig?.field ?? null
+  );
   const apiRef = useGridApiRef();
   const lastExpandedId = useRef<GridRowId | null>(null);
 
-  // ── Resolver ID ─────────────────────────────────────────────────────────────
+  // Active pivot config: external prop takes priority, then dynamic (interactive)
+  const activePivotConfig = externalPivotConfig ?? dynamicPivotConfig;
+
+  // ── Resolve ID ────────────────────────────────────────────────────────────
   const getRowIdFn = useCallback(
     (row: GridRow) => resolveId(row, getRowId as ((r: GridRow) => GridRowId) | undefined),
     [getRowId]
   );
 
-  // ── Toggle expand ───────────────────────────────────────────────────────────
+  // ── Toggle master-detail expand (CLEAN — no pre-scroll hack) ──────────────
   const toggleExpand = useCallback((id: GridRowId) => {
-    // Scroll el padre cerca del top ANTES de inyectar el detalle.
-    // Esto garantiza que la fila de detalle (inyectada justo debajo) quede dentro
-    // del viewport de virtualización y MUI la pueda medir correctamente.
-    // Sin esto, filas al fondo del DataGrid no se miden (altura=0 permanente).
-    try {
-      const allIds = apiRef.current?.getSortedRowIds?.() ?? [];
-      const rowIndex = allIds.findIndex(rid => rid === id);
-      if (rowIndex >= 0) {
-        apiRef.current?.scrollToIndexes?.({ rowIndex: Math.max(0, rowIndex - 3) });
-      }
-    } catch { /* noop */ }
-
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -351,93 +618,132 @@ export function ZenttoDataGrid({
     });
   }, []);
 
-  // ── Fix render + scroll del panel de detalle ─────────────────────────────
-  // Problema 1: getRowHeight:'auto' mide asíncronamente → height=0 en primera expansión.
-  // Problema 2: scrollToIndexes mueve al TOP de la fila, pero el panel puede ser alto.
-  // Problema 3: el id del panel era calculado incorrectamente (formato no coincidía).
-  //
-  // Solución:
-  //   - resetRowHeights() fuerza nueva medición (inmediato + tras doble rAF)
-  //   - getRowElement(detailRowId) + scrollIntoView({ block:'nearest' }) mueve el
-  //     panel al viewport sin pasarse del top ni cortar el bottom
+  // ── Toggle group expand ───────────────────────────────────────────────────
+  const toggleGroup = useCallback((groupKey: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
+      return next;
+    });
+  }, []);
+
+  // ── Toggle tree node expand ───────────────────────────────────────────────
+  const toggleTreeNode = useCallback((nodeId: string) => {
+    setExpandedTreeNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) next.delete(nodeId);
+      else next.add(nodeId);
+      return next;
+    });
+  }, []);
+
+  // ── Post-expand scroll — smooth, SINGLE scroll via ResizeObserver ─────────
+  // The DetailPanelWrapper handles resetRowHeights via ResizeObserver.
+  // We only need a simple delayed scroll to bring the detail panel into view.
   useEffect(() => {
     if (!getDetailContent || !lastExpandedId.current) return;
     const expandedId = lastExpandedId.current;
-    // CORRECTO: injectDetailRows crea las filas con id `__detail__${id}`
     const detailRowId = `__detail__${String(expandedId)}`;
 
-    const reset = () => {
-      try { apiRef.current?.resetRowHeights?.(); } catch { /* noop */ }
-    };
+    const timer = setTimeout(() => {
+      try {
+        const el = (apiRef.current as any)?.getRowElement?.(detailRowId);
+        if (el) {
+          el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      } catch { /* noop */ }
+    }, 200); // wait for ResizeObserver to fire first
 
-    // Reset inmediato
-    reset();
-
-    // Doble rAF para esperar que el DOM haya pintado con la nueva altura
-    const t1 = setTimeout(() => {
-      reset();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          reset();
-          try {
-            // Intentar scroll via DOM element (más preciso que scrollToIndexes)
-            const el = (apiRef.current as any)?.getRowElement?.(detailRowId);
-            if (el) {
-              el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            } else {
-              // Fallback: scroll al índice del padre + 1
-              const parentIdx = apiRef.current?.getRowIndexRelativeToVisibleRows?.(expandedId);
-              if (parentIdx != null && parentIdx >= 0) {
-                apiRef.current?.scrollToIndexes?.({ rowIndex: parentIdx + 1 });
-              }
-            }
-          } catch { /* noop */ }
-        });
-      });
-    }, 80);
-
-    return () => clearTimeout(t1);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedIds, getDetailContent]);
 
-  // ── Pivot: transforma rows y columns ────────────────────────────────────────
-  const { rows: pivotedRows, columns: pivotedColumns } = useMemo(() => {
-    if (pivotConfig) return applyPivot(rows, pivotConfig);
-    return { rows, columns };
-  }, [rows, columns, pivotConfig]);
-
-  // ── Master-detail: inyectar filas de detalle ─────────────────────────────────
-  const processedRows = useMemo(
-    () => injectDetailRows(pivotedRows, expandedIds, getDetailContent, getRowIdFn),
-    [pivotedRows, expandedIds, getDetailContent, getRowIdFn]
+  // ── Header filter change ──────────────────────────────────────────────────
+  const handleHeaderFilterChange = useCallback(
+    (field: string, value: string) => {
+      setHeaderFilters((prev) => {
+        const existing = prev.filter((f) => f.field !== field);
+        if (!value) return existing;
+        return [...existing, { field, value, operator: 'contains' as const }];
+      });
+    },
+    []
   );
 
-  // ── Totales ──────────────────────────────────────────────────────────────────
-  const hasTotals = showTotals && pivotedColumns.some((c) => c.aggregation);
+  // ── Apply header filters to rows ──────────────────────────────────────────
+  const filteredRows = useMemo(() => {
+    return applyHeaderFilters(rows, headerFilters);
+  }, [rows, headerFilters]);
+
+  // ── Pivot: transform rows and columns ─────────────────────────────────────
+  const { rows: pivotedRows, columns: pivotedColumns } = useMemo(() => {
+    if (activePivotConfig) return applyPivot(filteredRows, activePivotConfig);
+    return { rows: filteredRows, columns };
+  }, [filteredRows, columns, activePivotConfig]);
+
+  // ── Row Grouping ──────────────────────────────────────────────────────────
+  const groupedRows = useMemo(() => {
+    if (!groupByField || activePivotConfig) return pivotedRows;
+    return applyRowGrouping(
+      pivotedRows,
+      {
+        field: groupByField,
+        showSubtotals: true,
+        sortGroups: rowGroupingConfig?.sortGroups ?? 'asc',
+      },
+      pivotedColumns as ZenttoColDef[],
+      expandedGroups,
+      getRowIdFn
+    );
+  }, [pivotedRows, groupByField, activePivotConfig, pivotedColumns, expandedGroups, getRowIdFn, rowGroupingConfig]);
+
+  // ── Tree Data ─────────────────────────────────────────────────────────────
+  const treeRows = useMemo(() => {
+    if (!treeDataConfig || activePivotConfig || groupByField) return groupedRows;
+    return applyTreeData(groupedRows, treeDataConfig, expandedTreeNodes, getRowIdFn);
+  }, [groupedRows, treeDataConfig, activePivotConfig, groupByField, expandedTreeNodes, getRowIdFn]);
+
+  // ── Master-detail: inject detail rows ─────────────────────────────────────
+  const processedRows = useMemo(
+    () => injectDetailRows(treeRows, expandedIds, getDetailContent, getRowIdFn),
+    [treeRows, expandedIds, getDetailContent, getRowIdFn]
+  );
+
+  // ── Totals ────────────────────────────────────────────────────────────────
+  const hasTotals = showTotals && pivotedColumns.some((c) => (c as ZenttoColDef).aggregation);
   const totalsRow = useMemo(
     () => (hasTotals ? computeTotals(pivotedRows, pivotedColumns as ZenttoColDef[], totalsLabel) : null),
     [hasTotals, pivotedRows, pivotedColumns, totalsLabel]
   );
 
-  // ── Normalizar columnas de fecha / moneda (debe ir ANTES de dataColumns) ─────
-  const resolvedDateLocale = dateLocale
-    ?? (typeof navigator !== 'undefined' ? navigator.language : 'es');
+  // ── Normalize date/currency columns ───────────────────────────────────────
+  const resolvedDateLocale = dateLocale ?? (typeof navigator !== 'undefined' ? navigator.language : 'es');
 
   const normalizedColumns = useMemo(() => {
-    return (pivotedColumns as ZenttoColDef[]).map((col) => {
+    // First apply column templates (rich rendering: avatar, status, flag, etc.)
+    const templated = applyColumnTemplates(pivotedColumns as ZenttoColDef[]);
+
+    return templated.map((col) => {
       let result = col;
 
-      // ── Auto-formato de fechas ────────────────────────────────────────────
-      if ((col.type === 'date' || col.type === 'dateTime') && !col.valueFormatter) {
-        const isDateTime = col.type === 'dateTime';
+      // Access type/valueFormatter safely using 'in' to avoid union type issues
+      const colType = 'type' in col ? (col as any).type : undefined;
+      const colVF = 'valueFormatter' in col ? (col as any).valueFormatter : undefined;
+
+      // Auto-format dates
+      if ((colType === 'date' || colType === 'dateTime') && !colVF) {
+        const isDateTime = colType === 'dateTime';
         result = {
           ...result,
-          valueGetter: col.valueGetter ?? ((value: unknown) => {
-            if (value == null || value === '') return null;
-            if (value instanceof Date) return value;
-            const d = new Date(value as string);
-            return isNaN(d.getTime()) ? null : d;
-          }),
+          valueGetter:
+            col.valueGetter ??
+            ((value: unknown) => {
+              if (value == null || value === '') return null;
+              if (value instanceof Date) return value;
+              const d = new Date(value as string);
+              return isNaN(d.getTime()) ? null : d;
+            }),
           valueFormatter: (value: unknown) => {
             if (value == null) return '';
             const d = value instanceof Date ? value : new Date(String(value));
@@ -450,13 +756,13 @@ export function ZenttoDataGrid({
         } as ZenttoColDef;
       }
 
-      // ── Auto-formato de moneda ────────────────────────────────────────────
-      if (col.currency && !col.valueFormatter) {
+      // Auto-format currency
+      if (col.currency && !colVF) {
         const currencyCode = col.currency === true ? (defaultCurrency ?? 'USD') : col.currency;
         result = {
           ...result,
-          align: result.align ?? 'right',
-          headerAlign: result.headerAlign ?? 'right',
+          align: (result as any).align ?? 'right',
+          headerAlign: (result as any).headerAlign ?? 'right',
           valueFormatter: (value: unknown) => {
             if (value == null || value === '') return '';
             const num = Number(value);
@@ -480,27 +786,79 @@ export function ZenttoDataGrid({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pivotedColumns, resolvedDateLocale, defaultCurrency]);
 
-  // ── Layout persistente (orden, anchos, visibilidad, densidad) ─────────────────
+  // ── Layout persistence (order, widths, visibility, density) ───────────────
   const layout = useGridLayout(gridId, normalizedColumns);
 
-  // ── Columnas responsive (visibilidad) ────────────────────────────────────────
+  // ── Responsive columns (visibility) ───────────────────────────────────────
   const dataColumns = useMemo(
     () =>
       layout.processedColumns.filter(
-        (c) =>
-          c.field !== 'actions' &&
-          c.type !== 'actions' &&
-          !c.field.startsWith('__')
+        (c) => c.field !== 'actions' && c.type !== 'actions' && !c.field.startsWith('__')
       ),
     [layout.processedColumns]
   );
 
+  // ── Smart mobile field selection ──────────────────────────────────────────
+  // Priority: ID/code → name/description → amount/total → status
+  // This ensures mobile shows the most meaningful data, not just the first 2 columns.
   const effectiveMobileFields = useMemo(() => {
     if (mobileVisibleFields) return mobileVisibleFields;
-    return dataColumns
-      .filter((c) => !c.mobileHide)
-      .slice(0, 2)
-      .map((c) => c.field);
+
+    const candidates = dataColumns.filter((c) => !c.mobileHide);
+    if (candidates.length <= 3) return candidates.map((c) => c.field);
+
+    const selected: string[] = [];
+    const fieldLower = (c: ZenttoColDef) => (c.field + ' ' + (c.headerName ?? '')).toLowerCase();
+
+    // 1. Find ID/code column (short identifier)
+    const idCol = candidates.find((c) => {
+      const fl = fieldLower(c);
+      return fl.includes('codigo') || fl.includes('code') || fl.includes('id') ||
+             fl.includes('numero') || fl.includes('number') || fl.includes('ref');
+    });
+    if (idCol) selected.push(idCol.field);
+
+    // 2. Find name/description column (main text)
+    const nameCol = candidates.find((c) => {
+      if (selected.includes(c.field)) return false;
+      const fl = fieldLower(c);
+      return fl.includes('nombre') || fl.includes('name') || fl.includes('descrip') ||
+             fl.includes('articulo') || fl.includes('title') || fl.includes('producto') ||
+             fl.includes('concepto') || fl.includes('razon') || fl.includes('cliente') ||
+             fl.includes('proveedor') || fl.includes('empleado');
+    });
+    if (nameCol) selected.push(nameCol.field);
+
+    // 3. Find amount/total column (monetary value)
+    const amountCol = candidates.find((c) => {
+      if (selected.includes(c.field)) return false;
+      const fl = fieldLower(c);
+      return c.currency || fl.includes('monto') || fl.includes('total') ||
+             fl.includes('precio') || fl.includes('amount') || fl.includes('saldo') ||
+             fl.includes('balance') || fl.includes('costo') || fl.includes('valor');
+    });
+    if (amountCol) selected.push(amountCol.field);
+
+    // 4. Find status column
+    const statusCol = candidates.find((c) => {
+      if (selected.includes(c.field)) return false;
+      const fl = fieldLower(c);
+      return c.statusColors || fl.includes('estado') || fl.includes('status') ||
+             fl.includes('activo') || fl.includes('tipo');
+    });
+    if (statusCol) selected.push(statusCol.field);
+
+    // Fallback: if we found < 2, fill with first available columns
+    if (selected.length < 2) {
+      for (const c of candidates) {
+        if (!selected.includes(c.field)) {
+          selected.push(c.field);
+          if (selected.length >= 3) break;
+        }
+      }
+    }
+
+    return selected;
   }, [mobileVisibleFields, dataColumns]);
 
   const effectiveSmFields = useMemo(() => {
@@ -515,19 +873,30 @@ export function ZenttoDataGrid({
 
   const responsiveVisibilityModel = useMemo<GridColumnVisibilityModel>(() => {
     if (!isSmall) {
-      // Desktop: preferencias del usuario del layout + overrides del desarrollador
       return { ...layout.columnVisibilityModel, ...(externalVisibilityModel ?? {}) };
     }
-    // Móvil/Tablet: control responsivo (anula preferencias de layout)
     const visible = isMobile ? effectiveMobileFields : effectiveSmFields;
     const model: GridColumnVisibilityModel = {};
     dataColumns.forEach((col) => {
       model[col.field] = visible.includes(col.field);
     });
-    return { ...model, ...(externalVisibilityModel ?? {}) };
-  }, [isSmall, isMobile, effectiveMobileFields, effectiveSmFields, dataColumns, externalVisibilityModel, layout.columnVisibilityModel]);
 
-  // ── Handler visibilidad unificado (layout + external callback) ────────────────
+    // In mobile: hide original action columns if they've been collapsed into the ⋮ menu
+    const actionColCount = layout.processedColumns.filter(
+      (c) => c.field === 'actions' || (c as any).type === 'actions'
+    ).length;
+    if (isSmall && actionColCount > 1) {
+      layout.processedColumns.forEach((c) => {
+        if (c.field === 'actions' || (c as any).type === 'actions') {
+          model[c.field] = false; // hide original action columns
+        }
+      });
+    }
+
+    return { ...model, ...(externalVisibilityModel ?? {}) };
+  }, [isSmall, isMobile, effectiveMobileFields, effectiveSmFields, dataColumns, externalVisibilityModel, layout.columnVisibilityModel, layout.processedColumns]);
+
+  // ── Visibility change handler ─────────────────────────────────────────────
   const handleColumnVisibilityChange = useCallback(
     (model: GridColumnVisibilityModel, details: any) => {
       if (!isSmall) layout.onColumnVisibilityModelChange(model);
@@ -536,40 +905,56 @@ export function ZenttoDataGrid({
     [isSmall, layout, onColumnVisibilityModelChange]
   );
 
-  // ── Construir columnas finales ────────────────────────────────────────────────
+  // ── Build final columns ───────────────────────────────────────────────────
   const finalColumns = useMemo<ZenttoColDef[]>(() => {
     let cols = layout.processedColumns;
 
-    // Aplicar column pinning CSS
+    // Apply column pinning CSS
     if (pinnedColumns) cols = applyColumnPinning(cols, pinnedColumns);
 
-    // Separar acciones
+    // Separate action columns
     const actionCols = cols.filter((c) => c.field === 'actions' || c.type === 'actions');
     const dataCols = cols.filter((c) => c.field !== 'actions' && c.type !== 'actions');
 
     const result: ZenttoColDef[] = [];
 
-    // 1. Columna de expand (master-detail) — solo si hay getDetailContent
-    if (getDetailContent) {
-      const totalCols = dataCols.length + actionCols.length + 1; // +1 por sí misma
-      result.push(buildExpandColumn(expandedIds, toggleExpand, totalCols, detailPanelHeight));
+    // 1. Row number column (hidden on mobile to save space)
+    if (!isSmall) {
+      result.push(buildRowNumberColumn());
     }
 
-    // 2. Columnas de datos
+    // 2. Drag handle column (hidden on mobile — no drag on touch)
+    if (onRowReorder && !isSmall) {
+      result.push(buildDragHandleColumn());
+    }
+
+    // 3. Expand column (master-detail or row grouping)
+    if (getDetailContent || groupByField) {
+      const totalCols = dataCols.length + actionCols.length + 2; // +row num +expand
+      result.push(buildExpandColumn(expandedIds, toggleExpand, totalCols, detailPanelHeight, apiRef));
+    }
+
+    // 4. Data columns
     result.push(...dataCols);
 
-    // 3. Columna de info móvil (responsive drawer) — solo si no hay master-detail
+    // 5. Mobile detail column (responsive drawer) — only if no master-detail
     if (!getDetailContent && mobileDetailDrawer && isSmall) {
       result.push(buildMobileDetailColumn(setMobileDrawerRow));
     }
 
-    // 4. Columnas de acciones al final
-    result.push(...actionCols);
+    // 6. Action columns — in mobile, collapse multiple actions into a single ⋮ menu
+    if (isSmall && actionCols.length > 1) {
+      // Multiple action columns → collapse into one compact menu
+      result.push(buildMobileActionColumn(actionCols));
+    } else {
+      // Desktop or single action → show normally
+      result.push(...actionCols);
+    }
 
     return result;
-  }, [layout.processedColumns, getDetailContent, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall]);
+  }, [layout.processedColumns, getDetailContent, groupByField, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall, onRowReorder, apiRef]);
 
-  // ── Export ───────────────────────────────────────────────────────────────────
+  // ── Export handlers ───────────────────────────────────────────────────────
   const handleExportCsv = useCallback(() => {
     exportToCsv(processedRows, finalColumns, exportFilename);
   }, [processedRows, finalColumns, exportFilename]);
@@ -586,42 +971,112 @@ export function ZenttoDataGrid({
     exportToMarkdown(processedRows, finalColumns, exportFilename);
   }, [processedRows, finalColumns, exportFilename]);
 
-  // ── getRowHeight ──────────────────────────────────────────────────────────────
+  // ── Clipboard ─────────────────────────────────────────────────────────────
+  const handleCopyAll = useCallback(() => {
+    const dataRows = (processedRows as GridRow[]).filter(
+      (r) => !r[DETAIL_ROW_KEY] && !r[GROUP_ROW_KEY]
+    );
+    copyRowsToClipboard(dataRows, finalColumns);
+  }, [processedRows, finalColumns]);
+
+  // Ctrl+C keyboard handler
+  useEffect(() => {
+    if (!enableClipboard) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        // Only if focus is within the grid
+        const gridEl = apiRef.current?.rootElementRef?.current;
+        if (gridEl?.contains(document.activeElement)) {
+          handleCopyAll();
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [enableClipboard, handleCopyAll, apiRef]);
+
+  // ── Infinite scroll / lazy loading ────────────────────────────────────────
+  useEffect(() => {
+    if (!onLoadMore) return;
+    const handleScroll = () => {
+      try {
+        const scrollEl = apiRef.current?.rootElementRef?.current?.querySelector(
+          '.MuiDataGrid-virtualScroller'
+        );
+        if (!scrollEl) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollEl;
+        if (scrollHeight - scrollTop - clientHeight < 200 && !loadingMore) {
+          onLoadMore();
+        }
+      } catch { /* noop */ }
+    };
+
+    const scrollEl = apiRef.current?.rootElementRef?.current?.querySelector(
+      '.MuiDataGrid-virtualScroller'
+    );
+    if (scrollEl) {
+      scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+      return () => scrollEl.removeEventListener('scroll', handleScroll);
+    }
+  }, [onLoadMore, loadingMore, apiRef]);
+
+  // ── getRowHeight ──────────────────────────────────────────────────────────
   const resolvedGetRowHeight = useCallback(
     (params: any) => {
       const row = params.model as GridRow;
       if (row[DETAIL_ROW_KEY]) {
         return typeof detailPanelHeight === 'number' ? detailPanelHeight : 'auto';
       }
+      if (row[GROUP_ROW_KEY]) return 40;
       return getRowHeight ? getRowHeight(params) : null;
     },
     [detailPanelHeight, getRowHeight]
   );
 
-  // ── getRowClassName ───────────────────────────────────────────────────────────
+  // ── getEstimatedRowHeight — prevents height=0 flash for detail rows ───────
+  const resolvedGetEstimatedRowHeight = useCallback(
+    (params: any) => {
+      const row = params.model as GridRow;
+      if (row?.[DETAIL_ROW_KEY]) {
+        return typeof detailPanelHeight === 'number' ? detailPanelHeight : 200;
+      }
+      return undefined;
+    },
+    [detailPanelHeight]
+  );
+
+  // ── getRowClassName ───────────────────────────────────────────────────────
   const resolvedGetRowClassName = useCallback(
     (params: any) => {
       const row = params.row as GridRow;
       const external = getRowClassName ? getRowClassName(params) : '';
       if (row[DETAIL_ROW_KEY]) return `${external} zentto-row-detail`.trim();
       if (row[TOTALS_ROW_KEY]) return `${external} zentto-row-totals`.trim();
+      if (row[GROUP_ROW_KEY]) return `${external} zentto-row-group`.trim();
       if (expandedIds.has(params.id)) return `${external} zentto-row-expanded`.trim();
       return external;
     },
     [getRowClassName, expandedIds]
   );
 
-  // ── isRowSelectable ───────────────────────────────────────────────────────────
+  // ── isRowSelectable ───────────────────────────────────────────────────────
   const resolvedIsRowSelectable = useCallback(
     (params: any) => {
       const row = params.row as GridRow;
-      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY]) return false;
+      if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY] || row[GROUP_ROW_KEY]) return false;
       return isRowSelectable ? isRowSelectable(params) : true;
     },
     [isRowSelectable]
   );
 
-  // ── sx final ─────────────────────────────────────────────────────────────────
+  // ── Groupable fields for toolbar dropdown ─────────────────────────────────
+  const groupableFields = useMemo(() => {
+    return dataColumns
+      .filter((c) => c.type !== 'number' || c.groupable !== false)
+      .map((c) => ({ field: c.field, headerName: (c.headerName ?? c.field) as string }));
+  }, [dataColumns]);
+
+  // ── Final sx ──────────────────────────────────────────────────────────────
   const finalSx = useMemo(
     () => ({
       ...baseGridSx,
@@ -631,9 +1086,85 @@ export function ZenttoDataGrid({
     [pinnedColumns, sx]
   );
 
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Pinned rows (top/bottom) ──────────────────────────────────────────────
+  const resolvedPinnedRows = useMemo(() => {
+    const result: { top?: any[]; bottom?: any[] } = {};
+
+    if (pinnedRowsTop?.length) {
+      result.top = (processedRows as GridRow[]).filter((r) =>
+        pinnedRowsTop.includes(getRowIdFn(r))
+      );
+    }
+
+    const bottomRows: any[] = [];
+    if (pinnedRowsBottom?.length) {
+      bottomRows.push(
+        ...(processedRows as GridRow[]).filter((r) =>
+          pinnedRowsBottom.includes(getRowIdFn(r))
+        )
+      );
+    }
+    if (hasTotals && totalsRow) {
+      bottomRows.push(totalsRow);
+    }
+    if (bottomRows.length) result.bottom = bottomRows;
+
+    return Object.keys(result).length ? result : undefined;
+  }, [pinnedRowsTop, pinnedRowsBottom, processedRows, getRowIdFn, hasTotals, totalsRow]);
+
+  // ── Wait for layout to load before rendering (fixes IndexedDB race) ───────
+  if (!layout.loaded) {
+    return (
+      <Box sx={{ width: '100%', p: 2 }}>
+        <Stack spacing={1}>
+          <Skeleton variant="rectangular" height={42} />
+          <Skeleton variant="rectangular" height={300} />
+        </Stack>
+      </Box>
+    );
+  }
+
+  // ── Row count for toolbar ─────────────────────────────────────────────────
+  const displayRowCount = (processedRows as GridRow[]).filter(
+    (r) => !r[DETAIL_ROW_KEY] && !r[GROUP_ROW_KEY] && !r[TOTALS_ROW_KEY]
+  ).length;
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
+      {/* Header filter row (inline filters below headers) */}
+      {enableHeaderFilters && headerFiltersVisible && (
+        <Box
+          className="zentto-header-filter-row"
+          sx={{
+            display: 'flex',
+            gap: 0.5,
+            px: 1,
+            py: 0.5,
+            bgcolor: (t: any) => t.palette.mode === 'dark' ? alpha(t.palette.common.white, 0.03) : '#fafbfc',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            overflowX: 'auto',
+          }}
+        >
+          {dataColumns.map((col) => (
+            <TextField
+              key={col.field}
+              placeholder={`${col.headerName ?? col.field}...`}
+              size="small"
+              variant="outlined"
+              onChange={(e) => handleHeaderFilterChange(col.field, e.target.value)}
+              sx={{
+                minWidth: 100,
+                flex: 1,
+                '& .MuiInputBase-root': { fontSize: '0.75rem', height: 28 },
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+              }}
+            />
+          ))}
+        </Box>
+      )}
+
       <DataGrid
         {...props}
         apiRef={apiRef}
@@ -646,13 +1177,17 @@ export function ZenttoDataGrid({
         onColumnVisibilityModelChange={handleColumnVisibilityChange}
         onColumnOrderChange={() => {
           const cols = apiRef.current?.getAllColumns?.();
-          if (cols) layout.onColumnOrderChange(cols.map(c => c.field).filter(f => !f.startsWith('__')));
+          if (cols) layout.onColumnOrderChange(cols.map((c) => c.field).filter((f) => !f.startsWith('__')));
         }}
         onColumnWidthChange={(params) => layout.onColumnWidthChange(params.colDef.field, params.width)}
-        getRowHeight={getDetailContent ? resolvedGetRowHeight : getRowHeight ?? (() => null)}
+        getRowHeight={getDetailContent || groupByField ? resolvedGetRowHeight : getRowHeight ?? (() => null)}
+        // Note: getEstimatedRowHeight is not in Community Edition.
+        // The DetailPanelWrapper's ResizeObserver handles height measurement instead.
+        {...(getDetailContent ? { getEstimatedRowHeight: resolvedGetEstimatedRowHeight } as any : {})}
         getRowClassName={resolvedGetRowClassName}
         isRowSelectable={resolvedIsRowSelectable}
-        pinnedRows={hasTotals && totalsRow ? { bottom: [totalsRow as any] } : undefined}
+        pinnedRows={resolvedPinnedRows}
+        rowCount={serverRowCount}
         slots={
           hideToolbar
             ? props.slots
@@ -682,102 +1217,343 @@ export function ZenttoDataGrid({
                   hideColumnsButton,
                   hideDensityButton,
                   hideQuickFilter,
+                  // Pivot
+                  enablePivot,
+                  isPivotActive: !!activePivotConfig,
+                  onOpenPivot: () => setPivotDialogOpen(true),
+                  // Row Grouping
+                  enableGrouping,
+                  groupByField,
+                  groupableFields,
+                  onGroupByChange: (field: string | null) => {
+                    setGroupByField(field);
+                    setExpandedGroups(new Set());
+                  },
+                  // Header Filters
+                  enableHeaderFilters,
+                  headerFiltersVisible,
+                  onToggleHeaderFilters: () => setHeaderFiltersVisible((v) => !v),
+                  // Clipboard
+                  enableClipboard,
+                  onCopyAll: handleCopyAll,
+                  // Row count
+                  rowCount: displayRowCount,
                 } as any,
               }
         }
         sx={finalSx}
         disableRowSelectionOnClick
+        // Handle row clicks:
+        // - Group headers: toggle expand
+        // - Mobile: open detail drawer on tap (feels like native app)
+        // - Desktop: pass through to user handler
+        onRowClick={(params, event, details) => {
+          const row = params.row as GridRow;
+          if (row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY]) return;
+          if (row[GROUP_ROW_KEY]) {
+            toggleGroup(row.__groupKey as string);
+            return;
+          }
+          // Mobile: open bottom sheet detail on any row tap
+          if (isSmall && mobileDetailDrawer && !getDetailContent) {
+            setMobileDrawerRow(row);
+            return;
+          }
+          (props.onRowClick as any)?.(params, event, details);
+        }}
       />
 
-      {/* ── Mobile Detail Drawer ─────────────────────────────────────────────── */}
-      {mobileDetailDrawer && !getDetailContent && (
+      {/* Loading more indicator (infinite scroll) */}
+      {loadingMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+          <CircularProgress size={24} />
+        </Box>
+      )}
+
+      {/* Pivot Panel Dialog */}
+      {enablePivot && (
+        <PivotPanel
+          open={pivotDialogOpen}
+          onClose={() => setPivotDialogOpen(false)}
+          columns={columns}
+          currentConfig={activePivotConfig ?? null}
+          onApply={(config) => setDynamicPivotConfig(config)}
+          onClear={() => setDynamicPivotConfig(null)}
+        />
+      )}
+
+      {/* ── Mobile Detail Drawer (Bottom Sheet) ──────────────────────────── */}
+      {/* Redesigned as a modern card-like experience.                       */}
+      {/* Layout:                                                            */}
+      {/*   1. Drag handle + close button                                    */}
+      {/*   2. Hero: primary field (name/description) large + ID/code small  */}
+      {/*   3. Key metrics row: amount, status, date in a compact grid       */}
+      {/*   4. All fields in a clean 2-column grid                           */}
+      {/*   5. Action buttons at the bottom                                  */}
+      {mobileDetailDrawer && (
         <Drawer
           anchor="bottom"
           open={Boolean(mobileDrawerRow)}
           onClose={() => setMobileDrawerRow(null)}
           PaperProps={{
             sx: {
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              maxHeight: '80vh',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              maxHeight: '85vh',
+              bgcolor: 'background.default',
             },
           }}
         >
-          <Box sx={{ p: 2.5, overflowY: 'auto' }}>
-            {/* Handle */}
-            <Box
-              sx={{
-                width: 36,
-                height: 4,
-                bgcolor: 'grey.300',
-                borderRadius: 2,
-                mx: 'auto',
-                mb: 2.5,
-              }}
-            />
+          {mobileDrawerRow && (() => {
+            // Classify columns for smart layout
+            const allCols = (pivotedColumns as ZenttoColDef[]).filter(
+              (c) => c.field !== 'actions' && (c as any).type !== 'actions' && !c.field.startsWith('__')
+            );
+            const actionCols = (pivotedColumns as ZenttoColDef[]).filter(
+              (c) => c.field === 'actions' || (c as any).type === 'actions'
+            );
+            const fl = (c: ZenttoColDef) => (c.field + ' ' + (c.headerName ?? '')).toLowerCase();
 
-            {/* Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ flex: 1, fontSize: '1.05rem' }}>
-                Detalle del registro
-              </Typography>
-              <Tooltip title="Cerrar">
-                <IconButton size="small" onClick={() => setMobileDrawerRow(null)}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
+            // Find hero fields
+            const nameCol = allCols.find((c) => {
+              const f = fl(c);
+              return f.includes('nombre') || f.includes('name') || f.includes('descrip') ||
+                     f.includes('articulo') || f.includes('title') || f.includes('concepto') ||
+                     f.includes('razon') || f.includes('cliente') || f.includes('empleado');
+            });
+            const idCol = allCols.find((c) => {
+              const f = fl(c);
+              return f.includes('codigo') || f.includes('code') || (f.includes('id') && !f.includes('descrip')) ||
+                     f.includes('numero') || f.includes('number') || f.includes('ref');
+            });
 
-            <Divider sx={{ mb: 2 }} />
+            // Find key metric fields
+            const amountCol = allCols.find((c) => {
+              const f = fl(c);
+              return c.currency || f.includes('monto') || f.includes('total') ||
+                     f.includes('precio') || f.includes('amount') || f.includes('saldo');
+            });
+            const statusCol = allCols.find((c) => c.statusColors || fl(c).includes('estado') || fl(c).includes('status'));
+            const dateCol = allCols.find((c) => (c as any).type === 'date' || (c as any).type === 'dateTime');
 
-            {/* Campos */}
-            <Stack spacing={2} sx={{ pb: 3 }}>
-              {mobileDrawerRow &&
-                (pivotedColumns as ZenttoColDef[])
-                  .filter(
-                    (c) =>
-                      c.field !== 'actions' &&
-                      c.type !== 'actions' &&
-                      !c.field.startsWith('__')
-                  )
-                  .map((col) => {
-                    const val = mobileDrawerRow[col.field];
-                    let display = '-';
-                    if (col.valueFormatter && typeof col.valueFormatter === 'function') {
-                      try {
-                        const f = col.valueFormatter(val as never, mobileDrawerRow as never, col, {} as never);
-                        display = f != null ? String(f) : val != null ? String(val) : '-';
-                      } catch {
-                        display = val != null ? String(val) : '-';
-                      }
-                    } else if (val != null && val !== '') {
-                      display = typeof val === 'boolean' ? (val ? 'Sí' : 'No') : String(val);
-                    }
+            const heroFields = new Set([nameCol?.field, idCol?.field].filter(Boolean));
+            const metricFields = new Set([amountCol?.field, statusCol?.field, dateCol?.field].filter(Boolean));
+            const restCols = allCols.filter((c) => !heroFields.has(c.field) && !metricFields.has(c.field));
 
-                    return (
-                      <Box key={col.field}>
+            // Format a cell value
+            const fmt = (col: ZenttoColDef): string => {
+              const val = mobileDrawerRow[col.field];
+              if (col.valueFormatter && typeof col.valueFormatter === 'function') {
+                try {
+                  const f = (col.valueFormatter as Function)(val, mobileDrawerRow, col, {});
+                  return f != null ? String(f) : val != null ? String(val) : '-';
+                } catch { return val != null ? String(val) : '-'; }
+              }
+              if (val == null || val === '') return '-';
+              if (typeof val === 'boolean') return val ? 'Si' : 'No';
+              return String(val);
+            };
+
+            return (
+              <Box sx={{ overflowY: 'auto', pb: 2 }}>
+                {/* Drag handle */}
+                <Box sx={{ pt: 1.5, pb: 1, display: 'flex', justifyContent: 'center' }}>
+                  <Box sx={{ width: 40, height: 4, bgcolor: 'grey.400', borderRadius: 2 }} />
+                </Box>
+
+                {/* Hero section */}
+                <Box sx={{ px: 2.5, pb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      {idCol && (
                         <Typography
                           variant="caption"
-                          color="text.secondary"
-                          sx={{
-                            fontSize: '0.68rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.07em',
-                            fontWeight: 600,
-                            display: 'block',
-                            mb: 0.25,
-                          }}
+                          color="primary.main"
+                          fontWeight={700}
+                          sx={{ fontSize: '0.7rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}
                         >
-                          {col.headerName ?? col.field}
+                          {fmt(idCol)}
                         </Typography>
-                        <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-word' }}>
-                          {display}
+                      )}
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        sx={{ fontSize: '1.1rem', lineHeight: 1.3, mt: 0.25, wordBreak: 'break-word' }}
+                      >
+                        {nameCol ? fmt(nameCol) : (idCol ? fmt(idCol) : 'Detalle')}
+                      </Typography>
+                    </Box>
+                    <IconButton size="small" onClick={() => setMobileDrawerRow(null)} sx={{ ml: 1 }}>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+
+                {/* Key metrics — compact cards in a row */}
+                {(amountCol || statusCol || dateCol) && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: 1,
+                      px: 2.5,
+                      pb: 2,
+                      overflowX: 'auto',
+                      '&::-webkit-scrollbar': { display: 'none' },
+                    }}
+                  >
+                    {amountCol && (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 90,
+                          bgcolor: 'background.paper',
+                          borderRadius: 2,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 600 }}>
+                          {amountCol.headerName ?? amountCol.field}
+                        </Typography>
+                        <Typography variant="body1" fontWeight={700} color="primary.main" sx={{ fontSize: '1rem', mt: 0.25 }}>
+                          {fmt(amountCol)}
                         </Typography>
                       </Box>
-                    );
-                  })}
-            </Stack>
-          </Box>
+                    )}
+                    {statusCol && (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 80,
+                          bgcolor: 'background.paper',
+                          borderRadius: 2,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 600, mb: 0.5 }}>
+                          {statusCol.headerName ?? statusCol.field}
+                        </Typography>
+                        {statusCol.statusColors ? (() => {
+                          const val = String(mobileDrawerRow[statusCol.field] ?? '');
+                          const color = statusCol.statusColors?.[val] ?? 'default';
+                          const isStd = ['default','primary','secondary','error','info','success','warning'].includes(color);
+                          return <Chip label={val || '-'} size="small" color={isStd ? color as any : 'default'} sx={{ fontWeight: 600, fontSize: '0.7rem' }} />;
+                        })() : (
+                          <Typography variant="body2" fontWeight={600}>{fmt(statusCol)}</Typography>
+                        )}
+                      </Box>
+                    )}
+                    {dateCol && (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 80,
+                          bgcolor: 'background.paper',
+                          borderRadius: 2,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 600 }}>
+                          {dateCol.headerName ?? dateCol.field}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25 }}>
+                          {fmt(dateCol)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+
+                {/* Divider */}
+                <Divider sx={{ mx: 2.5 }} />
+
+                {/* All other fields — 2-column grid layout */}
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: restCols.length > 4 ? '1fr 1fr' : '1fr',
+                    gap: 0,
+                    px: 2.5,
+                    py: 1.5,
+                  }}
+                >
+                  {restCols.map((col, i) => (
+                    <Box
+                      key={col.field}
+                      sx={{
+                        py: 1.25,
+                        px: 0.5,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        // Alternate background for readability
+                        bgcolor: i % 2 === 0 ? 'transparent' : (t: any) =>
+                          t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          fontSize: '0.65rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          fontWeight: 600,
+                          display: 'block',
+                          mb: 0.25,
+                        }}
+                      >
+                        {col.headerName ?? col.field}
+                      </Typography>
+                      {col.statusColors ? (() => {
+                        const val = String(mobileDrawerRow[col.field] ?? '');
+                        const color = col.statusColors?.[val] ?? 'default';
+                        const isStd = ['default','primary','secondary','error','info','success','warning'].includes(color);
+                        return <Chip label={val || '-'} size="small" color={isStd ? color as any : 'default'} sx={{ fontWeight: 600, fontSize: '0.7rem' }} />;
+                      })() : (
+                        <Typography variant="body2" fontWeight={500} sx={{ wordBreak: 'break-word', fontSize: '0.85rem' }}>
+                          {fmt(col)}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+
+                {/* Action buttons — full width at bottom */}
+                {actionCols.length > 0 && (
+                  <Box sx={{ px: 2.5, pt: 2, pb: 1, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {/* Re-render the action columns' cells for this row */}
+                    {actionCols.map((col) => {
+                      if (!col.renderCell) return null;
+                      const mockParams = {
+                        row: mobileDrawerRow,
+                        id: getRowIdFn(mobileDrawerRow),
+                        field: col.field,
+                        value: mobileDrawerRow[col.field],
+                        api: apiRef.current,
+                        colDef: col,
+                        hasFocus: false,
+                        tabIndex: -1,
+                        cellMode: 'view' as const,
+                        isEditable: false,
+                        rowNode: { id: getRowIdFn(mobileDrawerRow), type: 'leaf' as const, depth: 0, parent: null, children: [] as any },
+                        formattedValue: mobileDrawerRow[col.field],
+                      };
+                      return <Box key={col.field}>{col.renderCell(mockParams as any)}</Box>;
+                    })}
+                  </Box>
+                )}
+              </Box>
+            );
+          })()}
         </Drawer>
       )}
     </>

@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -89,7 +89,7 @@ export default function RecepcionMercanciaPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "ReceiptNumber", headerName: "N. Recepcion", flex: 1, minWidth: 130 },
     { field: "PurchaseDocumentNumber", headerName: "N. Orden Compra", flex: 1, minWidth: 140 },
     { field: "SupplierName", headerName: "Proveedor", flex: 1.5, minWidth: 180 },

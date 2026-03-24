@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
@@ -85,7 +85,7 @@ export default function BOMPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "BOMCode", headerName: "Codigo BOM", flex: 0.8, minWidth: 120 },
     { field: "BOMName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
     { field: "ProductName", headerName: "Producto", flex: 1.2, minWidth: 150 },

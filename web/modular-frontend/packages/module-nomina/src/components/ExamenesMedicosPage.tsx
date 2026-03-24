@@ -20,8 +20,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -100,7 +99,7 @@ export default function ExamenesMedicosPage() {
     await deleteMutation.mutateAsync(id);
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     {
       field: "ExamType",
@@ -114,6 +113,7 @@ export default function ExamenesMedicosPage() {
           color="primary"
         />
       ),
+      statusColors: { 'PREEMPLEO': 'info', 'PERIODICO': 'success', 'EGRESO': 'warning', 'ESPECIAL': 'error' },
     },
     { field: "ExamDate", headerName: "Fecha", width: 120 },
     { field: "Result", headerName: "Resultado", width: 130 },
@@ -218,6 +218,8 @@ export default function ExamenesMedicosPage() {
           disableRowSelectionOnClick
           getRowId={(r) => r.MedicalExamId ?? `${r.EmployeeCode}-${r.ExamDate}`}
           getRowClassName={(params) => isOverdue(params.row.NextDueDate) ? "row-overdue" : ""}
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['EmployeeName', 'ExamType']}
           smExtraFields={['ExamDate', 'NextDueDate']}
           sx={{

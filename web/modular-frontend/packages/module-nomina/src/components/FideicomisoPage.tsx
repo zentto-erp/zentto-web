@@ -19,8 +19,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -43,7 +42,7 @@ export default function FideicomisoPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const summaryData = summaryQuery.data;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "employeeCode", headerName: "Código", width: 100 },
     { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     { field: "quarter", headerName: "Trimestre", width: 100 },
@@ -52,18 +51,24 @@ export default function FideicomisoPage() {
       headerName: "Depósito",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "interest",
       headerName: "Intereses",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
     {
       field: "balance",
       headerName: "Saldo",
       width: 130,
       renderCell: (p) => formatCurrency(p.value ?? 0),
+      currency: true,
+      aggregation: 'sum',
     },
   ];
 
@@ -136,6 +141,9 @@ export default function FideicomisoPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.id ?? `${r.employeeCode}-${r.quarter}`}
+          showTotals
+          totalsLabel="Total"
+          enableClipboard
           mobileVisibleFields={['employeeCode', 'employeeName']}
           smExtraFields={['balance', 'quarter']}
         />

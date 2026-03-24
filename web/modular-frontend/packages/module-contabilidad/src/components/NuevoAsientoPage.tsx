@@ -22,11 +22,10 @@ import {
   Chip,
 } from "@mui/material";
 import {
-  GridColDef,
   GridRowModel,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
-import { ZenttoDataGrid, FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import { ZenttoDataGrid, FormGrid, FormField, DatePicker, type ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/DeleteOutlined";
@@ -203,7 +202,7 @@ export default function NuevoAsientoPage() {
   };
 
   // Columnas del grid de detalle
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     {
       field: "codCuenta",
       headerName: "Cuenta",
@@ -211,11 +210,11 @@ export default function NuevoAsientoPage() {
       editable: true,
       type: "singleSelect",
       valueOptions: cuentas.map((c: any) => c.codCuenta),
-      renderCell: (params: GridRenderCellParams) => (
+      renderCell: ((params: GridRenderCellParams) => (
         <Box sx={{ fontFamily: "monospace", fontWeight: 500 }}>
           {params.value}
         </Box>
-      ),
+      )) as any,
     },
     {
       field: "descripcion",

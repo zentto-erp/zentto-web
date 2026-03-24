@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -98,7 +98,7 @@ export default function VehiculosPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "LicensePlate", headerName: "Placa", flex: 0.8, minWidth: 100 },
     { field: "Brand", headerName: "Marca", flex: 1, minWidth: 100 },
     { field: "Model", headerName: "Modelo", flex: 1, minWidth: 100 },

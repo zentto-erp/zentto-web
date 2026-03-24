@@ -21,8 +21,7 @@ import {
   Alert,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -90,7 +89,7 @@ export default function VacacionesSolicitudesPage() {
     showSuccess("Pago de vacaciones generado exitosamente");
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "RequestId", headerName: "ID", width: 70 },
     { field: "EmployeeCode", headerName: "Cédula", width: 120 },
     { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 180 },
@@ -111,6 +110,7 @@ export default function VacacionesSolicitudesPage() {
           color={statusColors[p.value as string] || "default"}
         />
       ),
+      statusColors: { 'PENDIENTE': 'warning', 'APROBADA': 'success', 'RECHAZADA': 'error', 'PROCESADA': 'info', 'CANCELADA': 'default' },
     },
     {
       field: "acciones", headerName: "Acciones", width: 200, sortable: false,
@@ -210,6 +210,8 @@ export default function VacacionesSolicitudesPage() {
           pageSizeOptions={[25, 50]}
           disableRowSelectionOnClick
           getRowId={(r) => r.RequestId ?? r.requestId ?? Math.random()}
+          enableGrouping
+          enableClipboard
           mobileVisibleFields={['EmployeeCode', 'EmployeeName']}
           smExtraFields={['StartDate', 'Status']}
         />

@@ -14,8 +14,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -56,7 +55,7 @@ export default function ConstantesPage() {
     await deleteMutation.mutateAsync(codigo);
   };
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "codigo", headerName: "Código", width: 150 },
     { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200 },
     { field: "valor", headerName: "Valor", width: 150, type: "number" },

@@ -22,7 +22,6 @@ import {
   Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LockIcon from "@mui/icons-material/Lock";
@@ -30,7 +29,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useRouter } from "next/navigation";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { useToast, ZenttoDataGrid } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useCerrarConciliacion,
   useConciliacionDetalle,
@@ -139,7 +138,7 @@ export default function ConciliacionBancariaPage() {
 
   // ─── Columnas DataGrid principal ────────────────────────
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "ID", headerName: "ID", width: 70 },
     { field: "Nro_Cta", headerName: "Cuenta", width: 160 },
     {
@@ -207,7 +206,7 @@ export default function ConciliacionBancariaPage() {
 
   // ─── Columnas del detalle ───────────────────────────────
 
-  const colsMovSistema: GridColDef[] = [
+  const colsMovSistema: ZenttoColDef[] = [
     { field: "Fecha", headerName: "Fecha", width: 110, renderCell: (p) => toDateOnly(p.value as string, timeZone) },
     { field: "Tipo", headerName: "Tipo", width: 80 },
     { field: "Concepto", headerName: "Concepto", flex: 1, minWidth: 150 },
@@ -218,7 +217,7 @@ export default function ConciliacionBancariaPage() {
     },
   ];
 
-  const colsExtracto: GridColDef[] = [
+  const colsExtracto: ZenttoColDef[] = [
     { field: "Fecha", headerName: "Fecha", width: 110, renderCell: (p) => toDateOnly(p.value as string, timeZone) },
     { field: "Descripcion", headerName: "Descripción", flex: 1, minWidth: 150 },
     { field: "Referencia", headerName: "Ref", width: 120 },

@@ -5,14 +5,14 @@ import {
   Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
   DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import type { ZenttoColDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
 
-const columns: GridColDef[] = [
+const columns: ZenttoColDef[] = [
   { field: "CountryCode", headerName: "Pais", width: 80 },
   { field: "TaxYear", headerName: "Ano", width: 80 },
   { field: "UnitValue", headerName: "Valor UT", width: 120, type: "number" },

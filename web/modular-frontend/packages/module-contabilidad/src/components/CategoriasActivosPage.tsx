@@ -22,10 +22,9 @@ import {
   CircularProgress,
   Autocomplete,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
-import { ContextActionHeader, ZenttoDataGrid } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useCategoriasList,
   useUpsertCategoria,
@@ -91,7 +90,7 @@ export default function CategoriasActivosPage() {
 
   const rows = data?.rows ?? [];
 
-  const columns: GridColDef[] = [
+  const columns: ZenttoColDef[] = [
     { field: "CategoryCode", headerName: "Codigo", width: 120 },
     { field: "CategoryName", headerName: "Nombre", flex: 1, minWidth: 200 },
     {

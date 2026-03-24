@@ -18,8 +18,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { type GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { formatCurrency } from "@zentto/shared-api";
@@ -56,12 +55,12 @@ export default function CajaAhorroPage() {
   const savingsRows = savingsData?.data ?? savingsData?.rows ?? [];
   const loanRows = loanData?.data ?? loanData?.rows ?? [];
 
-  const savingsColumns: GridColDef[] = [
+  const savingsColumns: ZenttoColDef[] = [
     { field: "EmployeeCode", headerName: "Código", width: 100 },
     { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
     { field: "EmployeeContribution", headerName: "% Aporte", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
     { field: "EmployerMatch", headerName: "% Patronal", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "CurrentBalance", headerName: "Saldo", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
+    { field: "CurrentBalance", headerName: "Saldo", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
     {
       field: "Status",
       headerName: "Estado",
@@ -76,12 +75,12 @@ export default function CajaAhorroPage() {
     },
   ];
 
-  const loanColumns: GridColDef[] = [
+  const loanColumns: ZenttoColDef[] = [
     { field: "employeeCode", headerName: "Código", width: 100 },
     { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "amount", headerName: "Monto", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
+    { field: "amount", headerName: "Monto", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
     { field: "installments", headerName: "Cuotas", width: 90 },
-    { field: "outstanding", headerName: "Saldo Pendiente", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
+    { field: "outstanding", headerName: "Saldo Pendiente", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0), currency: true, aggregation: 'sum' },
     {
       field: "status",
       headerName: "Estado",
@@ -170,6 +169,9 @@ export default function CajaAhorroPage() {
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.SavingsFundId ?? r.EmployeeCode}
+            showTotals
+            totalsLabel="Total"
+            enableClipboard
             mobileVisibleFields={['EmployeeCode', 'EmployeeName']}
             smExtraFields={['CurrentBalance', 'Status']}
           />
@@ -193,6 +195,9 @@ export default function CajaAhorroPage() {
             pageSizeOptions={[25, 50]}
             disableRowSelectionOnClick
             getRowId={(r) => r.id ?? `${r.employeeCode}-${r.amount}`}
+            showTotals
+            totalsLabel="Total"
+            enableClipboard
             mobileVisibleFields={['employeeCode', 'employeeName']}
             smExtraFields={['amount', 'status']}
           />
