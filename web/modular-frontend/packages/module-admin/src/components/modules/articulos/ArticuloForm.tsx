@@ -49,7 +49,6 @@ interface FormState {
   barra: string;
   referencia: string;
   nParte: string;
-  porcentaje: number;
   servicio: boolean;
   descripcion: string;
 }
@@ -58,7 +57,7 @@ const INITIAL_FORM: FormState = {
   nombre: "", categoria: "", marca: "", tipo: "", linea: "",
   clase: "", unidad: "", precioVenta: 0, precioCompra: 0, stock: 0,
   minimo: 0, maximo: 0, ubicacion: "", barra: "", referencia: "", nParte: "",
-  porcentaje: 0, servicio: false, descripcion: "",
+  servicio: false, descripcion: "",
 };
 
 export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
@@ -113,9 +112,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
         barra: articulo.barra || "",
         referencia: articulo.referencia || "",
         nParte: articulo.nParte || "",
-        porcentaje: (articulo.precioCompra && articulo.precioVenta && articulo.precioCompra > 0)
-          ? Math.round(((articulo.precioVenta - articulo.precioCompra) / articulo.precioCompra) * 10000) / 100
-          : 0,
         servicio: articulo.servicio || false,
         descripcion: (articulo as any).descripcion || "",
       });
@@ -164,7 +160,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
         Barra: formData.barra,
         Referencia: formData.referencia,
         N_PARTE: formData.nParte,
-        PORCENTAJE: formData.porcentaje,
         Servicio: formData.servicio,
         Descripcion: formData.descripcion,
       };

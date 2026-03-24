@@ -331,7 +331,7 @@ export default function OdooLayout({
 
                 {/* Page Content */}
                 <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'auto', bgcolor: 'background.default', p: { xs: 2, md: 3 } }}>
-                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         {children}
                     </Box>
                     <Box sx={{ pt: 4, pb: 1, display: 'flex', justifyContent: 'center' }}>

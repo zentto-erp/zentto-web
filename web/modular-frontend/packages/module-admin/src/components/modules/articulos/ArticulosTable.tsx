@@ -47,7 +47,8 @@ import {
   ViewColumn as ViewColumnIcon,
 } from "@mui/icons-material";
 import { useArticulosList, useDeleteArticulo, useArticuloFilterOptions } from "../../../hooks/useArticulos";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, apiGet } from "@zentto/shared-api";
+import { useQuery } from "@tanstack/react-query";
 import { debounce } from "lodash";
 import type { ArticuloFilter } from "@zentto/shared-api/types";
 
@@ -91,7 +92,7 @@ export default function ArticulosTable() {
   // ========== Estado del DataGrid ==========
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: 25,
+    pageSize: 20,
   });
   const [sortModel, setSortModel] = useState<GridSortModel>([
     { field: "codigo", sort: "asc" },
@@ -162,7 +163,7 @@ export default function ArticulosTable() {
     precioVenta: "PRECIO_VENTA",
     precioCompra: "PRECIO_COMPRA",
     stock: "EXISTENCIA",
-    estado: "Eliminado",
+    estado: "IsActive",
     categoria: "Categoria",
     marca: "Marca",
     tipo: "Tipo",
@@ -175,6 +176,7 @@ export default function ArticulosTable() {
   // ========== Contar filtros activos ==========
   const activeFilterCount = useMemo(() => {
     let c = 0;
+    if (debouncedSearch) c++;
     if (filterLinea) c++;
     if (filterCategoria) c++;
     if (filterMarca) c++;
@@ -189,7 +191,7 @@ export default function ArticulosTable() {
     if (filterServicio !== undefined) c++;
     if (debouncedWildcard) c++;
     return c;
-  }, [filterLinea, filterCategoria, filterMarca, filterTipo, filterClase, filterUnidad, filterUbicacion, filterEstado, precioRangeActive, stockMin, stockMax, filterServicio, debouncedWildcard]);
+  }, [debouncedSearch, filterLinea, filterCategoria, filterMarca, filterTipo, filterClase, filterUnidad, filterUbicacion, filterEstado, precioRangeActive, stockMin, stockMax, filterServicio, debouncedWildcard]);
 
   // ========== Limpiar todos los filtros ==========
   const clearAllFilters = () => {
@@ -247,19 +249,23 @@ export default function ArticulosTable() {
 
   // ========== Queries ==========
   const { data: articulosData, isLoading, isFetching } = useArticulosList(filter);
+  const { data: tasaData } = useQuery({
+    queryKey: ["config-tasas"],
+    queryFn: () => apiGet("/v1/config/tasas") as Promise<{ USD?: number }>,
+    staleTime: 10 * 60 * 1000,
+  });
+  const tasaCambio = tasaData?.USD || 1;
   const { data: filterOptions } = useArticuloFilterOptions();
   const { mutate: deleteArticulo, isPending: isDeleting } = useDeleteArticulo();
 
   // ========== Columnas del DataGrid ==========
   const columns: GridColDef[] = useMemo(
     () => {
+      // Compacta: Código, Artículo, Categoría, Precio Compra, Precio Venta, Stock, Estado
       const base: GridColDef[] = [
         { field: "codigo", headerName: "Código", width: 120, sortable: true },
-        { field: "descripcion", headerName: "Artículo", flex: 1, minWidth: 250, sortable: true },
+        { field: "descripcion", headerName: "Artículo", flex: 1, minWidth: 200, sortable: true },
         { field: "categoria", headerName: "Categoría", width: 110, sortable: true },
-        { field: "stock", headerName: "Stock", width: 80, sortable: true, align: "right", headerAlign: "right",
-          renderCell: (params: GridRenderCellParams) => params.value?.toLocaleString("es-VE") ?? "0",
-        },
         {
           field: "precioCompra", headerName: "Costo", width: 110, sortable: true, align: "right", headerAlign: "right",
           renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
@@ -267,6 +273,16 @@ export default function ArticulosTable() {
         {
           field: "precioVenta", headerName: "Precio", width: 110, sortable: true, align: "right", headerAlign: "right",
           renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
+        },
+        {
+          field: "precioUsd", headerName: "Precio ($)", width: 100, sortable: false, align: "right", headerAlign: "right",
+          renderCell: (params: GridRenderCellParams) => {
+            const venta = params.row.precioVenta ?? 0;
+            return tasaCambio > 1 && venta > 0 ? `$ ${(venta / tasaCambio).toFixed(2)}` : "—";
+          },
+        },
+        { field: "stock", headerName: "Stock", width: 80, sortable: true, align: "right", headerAlign: "right",
+          renderCell: (params: GridRenderCellParams) => params.value?.toLocaleString("es-VE") ?? "0",
         },
         {
           field: "estado", headerName: "Estado", width: 100, sortable: true,
@@ -278,22 +294,23 @@ export default function ArticulosTable() {
         },
       ];
 
+      // Extendida: sigue orden del formulario — Referencia, Marca, Línea, Clase, Unidad, Tipo, Mínimo, Máximo, Cód. Barras, N° Parte, Ubicación
       const extended: GridColDef[] = [
+        { field: "referencia", headerName: "Referencia", width: 120, sortable: true },
+        { field: "marca", headerName: "Marca", width: 110, sortable: true },
         {
           field: "linea", headerName: "Línea", width: 100, sortable: true,
           renderCell: (params: GridRenderCellParams) =>
             params.value ? <Chip label={params.value} size="small" variant="outlined" color="info" /> : "—",
         },
-        { field: "marca", headerName: "Marca", width: 110, sortable: true },
-        { field: "tipo", headerName: "Tipo", width: 100, sortable: true },
         { field: "clase", headerName: "Clase", width: 100, sortable: true },
         { field: "unidad", headerName: "Unidad", width: 80, sortable: true },
-        { field: "ubicacion", headerName: "Ubicación", width: 100, sortable: true },
+        { field: "tipo", headerName: "Tipo", width: 100, sortable: true },
         { field: "minimo", headerName: "Mínimo", width: 80, sortable: true, align: "right", headerAlign: "right" },
         { field: "maximo", headerName: "Máximo", width: 80, sortable: true, align: "right", headerAlign: "right" },
-        { field: "referencia", headerName: "Referencia", width: 120, sortable: true },
         { field: "barra", headerName: "Cód. Barras", width: 120, sortable: true },
         { field: "nParte", headerName: "N° Parte", width: 110, sortable: true },
+        { field: "ubicacion", headerName: "Ubicación", width: 100, sortable: true },
       ];
 
       const actions: GridColDef = {
@@ -343,7 +360,7 @@ export default function ArticulosTable() {
 
   // ========== RENDER ==========
   return (
-    <Box sx={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <Box sx={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0, height: "100%" }}>
       {/* ===== BARRA SUPERIOR: Búsqueda + Botones ===== */}
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <TextField
@@ -616,7 +633,7 @@ export default function ArticulosTable() {
       </Collapse>
 
       {/* ===== RESUMEN — solo si hay búsqueda o filtros activos ===== */}
-      {(debouncedSearch || activeFilterCount > 0) && (
+      {activeFilterCount > 0 && (
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
             {totalRows.toLocaleString("es-VE")} artículo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
@@ -636,7 +653,7 @@ export default function ArticulosTable() {
         onPaginationModelChange={setPaginationModel}
         sortModel={sortModel}
         onSortModelChange={setSortModel}
-        pageSizeOptions={[10, 25, 50, 100]}
+        pageSizeOptions={[10, 20, 50, 100]}
         disableRowSelectionOnClick
         disableColumnFilter
         disableVirtualization
@@ -658,7 +675,7 @@ export default function ArticulosTable() {
         mobileVisibleFields={["codigo", "descripcion"]}
         sx={{
           flex: 1,
-          minHeight: 0,
+          minHeight: 400,
           // Escalar texto con densidad
           '&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell, &.MuiDataGrid-root--densityCompact .MuiDataGrid-columnHeaderTitle': {
             fontSize: '0.8rem',
@@ -672,12 +689,28 @@ export default function ArticulosTable() {
           "& .MuiDataGrid-row:hover": {
             backgroundColor: "action.hover",
           },
+          "& .MuiDataGrid-columnHeaders": {
+            position: "sticky !important",
+            top: "0 !important",
+            zIndex: "5 !important",
+            backgroundColor: "var(--mui-palette-background-paper, #fff) !important",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          },
+          "& .MuiDataGrid-footerContainer": {
+            overflow: "hidden",
+          },
           '& .MuiDataGrid-cell[data-field="actions"], & .MuiDataGrid-columnHeader[data-field="actions"]': {
             position: "sticky !important",
             right: "0 !important",
-            zIndex: "4 !important",
+            zIndex: "6 !important",
             backgroundColor: "var(--mui-palette-background-paper, #fff) !important",
             boxShadow: "-4px 0 8px rgba(0,0,0,0.08)",
+          },
+          "& .MuiDataGrid-columnSeparator": {
+            zIndex: "0 !important",
+          },
+          '& .MuiDataGrid-columnHeader[data-field="actions"] .MuiDataGrid-columnSeparator': {
+            display: "none",
           },
         }}
         localeText={{
