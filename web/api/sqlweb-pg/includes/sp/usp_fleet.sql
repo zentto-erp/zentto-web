@@ -677,7 +677,7 @@ CREATE OR REPLACE FUNCTION usp_fleet_maintenanceorder_create(
     p_maintenance_type_id INT DEFAULT NULL,
     p_mileage_at_service  NUMERIC(12,2) DEFAULT 0,
     p_scheduled_date      TIMESTAMP DEFAULT NULL,
-    p_supplier_id         INT DEFAULT NULL,
+    p_supplier_id         BIGINT DEFAULT NULL,
     p_estimated_cost      NUMERIC(18,2) DEFAULT 0,
     p_description         VARCHAR(500) DEFAULT NULL,
     p_lines_json          VARCHAR DEFAULT NULL,

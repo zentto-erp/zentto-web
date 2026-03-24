@@ -96,7 +96,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_mfg_bom_create(INT, INT, VARCHAR, VARCHAR, NUMERIC, TEXT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
     p_company_id          INT,
-    p_product_id          INT,
+    p_product_id          BIGINT,
     p_bom_code            VARCHAR(30),
     p_bom_name            VARCHAR(200),
     p_output_quantity     NUMERIC(18,4) DEFAULT 1,
@@ -503,7 +503,7 @@ CREATE OR REPLACE FUNCTION usp_mfg_workorder_create(
     p_company_id           INT,
     p_branch_id            INT,
     p_bom_id               INT,
-    p_product_id           INT,
+    p_product_id           BIGINT,
     p_planned_quantity     NUMERIC(18,4),
     p_planned_start        TIMESTAMP DEFAULT NULL,
     p_planned_end          TIMESTAMP DEFAULT NULL,
@@ -654,7 +654,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_mfg_workorder_consumematerial(INT, INT, NUMERIC, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_consumematerial(
     p_work_order_id  INT,
-    p_product_id     INT DEFAULT NULL,
+    p_product_id     BIGINT DEFAULT NULL,
     p_quantity       NUMERIC(18,4) DEFAULT 0,
     p_lot_number     VARCHAR(50) DEFAULT NULL,
     p_warehouse_id   INT DEFAULT NULL,

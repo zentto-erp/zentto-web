@@ -2280,7 +2280,8 @@ END; $function$
 
 -- usp_bank_statementline_insert
 DROP FUNCTION IF EXISTS public.usp_bank_statementline_insert(bigint, timestamp with time zone, character varying, character varying, character varying, numeric, numeric, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_bank_statementline_insert(p_reconciliation_id bigint, p_statement_date timestamp with time zone, p_description_text character varying DEFAULT NULL::character varying, p_reference_no character varying DEFAULT NULL::character varying, p_entry_type character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT NULL::numeric, p_balance numeric DEFAULT NULL::numeric, p_created_by_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_bank_statementline_insert(bigint, timestamp, character varying, character varying, character varying, numeric, numeric, integer) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_bank_statementline_insert(p_reconciliation_id bigint, p_statement_date timestamp, p_description_text character varying DEFAULT NULL::character varying, p_reference_no character varying DEFAULT NULL::character varying, p_entry_type character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT NULL::numeric, p_balance numeric DEFAULT NULL::numeric, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

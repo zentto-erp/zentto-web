@@ -731,9 +731,13 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \echo ''
 \echo '--- Inventario Avanzado (inv.*) ---'
 \i includes/sp/usp_inv.sql
+\i includes/sp/usp_inv_integracion.sql
 
 \echo '--- Logistica (logistics.*) ---'
 \i includes/sp/usp_logistics.sql
+
+\echo '--- Shipping Portal (logistics.Shipping*) ---'
+\i includes/sp/usp_shipping.sql
 
 -- ====================================================================
 -- FASE 9: Verificacion

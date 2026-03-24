@@ -9,10 +9,10 @@
 -- ────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION usp_inv_serial_reserveforsale(
   p_company_id            INT,
-  p_product_id            INT,
+  p_product_id            BIGINT,
   p_serial_number         VARCHAR(100),
   p_sales_document_number VARCHAR(50),
-  p_customer_id           INT DEFAULT NULL,
+  p_customer_id           BIGINT DEFAULT NULL,
   p_user_id               VARCHAR(50) DEFAULT 'API'
 )
 RETURNS TABLE("ok" INT, "SerialId" INT, "reason" VARCHAR) AS $$
@@ -52,7 +52,7 @@ $$ LANGUAGE plpgsql;
 -- ────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION usp_inv_lot_validateforsale(
   p_company_id INT,
-  p_product_id INT,
+  p_product_id BIGINT,
   p_lot_id     INT DEFAULT NULL,
   p_quantity   NUMERIC(18,4) DEFAULT 0
 )

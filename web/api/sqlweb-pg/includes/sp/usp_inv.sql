@@ -491,7 +491,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Lot_List(INT, INT, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Lot_List(
     p_company_id INT,
-    p_product_id INT          DEFAULT NULL,
+    p_product_id BIGINT       DEFAULT NULL,
     p_status     VARCHAR(20)  DEFAULT NULL,
     p_page       INT          DEFAULT 1,
     p_limit      INT          DEFAULT 50
@@ -499,7 +499,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Lot_List(
 RETURNS TABLE (
     "LotId"                 INT,
     "CompanyId"             INT,
-    "ProductId"             INT,
+    "ProductId"             BIGINT,
     "LotNumber"             VARCHAR,
     "ManufactureDate"       DATE,
     "ExpiryDate"            DATE,
@@ -546,7 +546,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Lot_Get(
 RETURNS TABLE (
     "LotId"                 INT,
     "CompanyId"             INT,
-    "ProductId"             INT,
+    "ProductId"             BIGINT,
     "LotNumber"             VARCHAR,
     "ManufactureDate"       DATE,
     "ExpiryDate"            DATE,
@@ -575,7 +575,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Lot_Create(INT, INT, VARCHAR, DATE, DATE, VARCHAR, VARCHAR, DECIMAL, DECIMAL, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Lot_Create(
     p_company_id              INT,
-    p_product_id              INT,
+    p_product_id              BIGINT,
     p_lot_number              VARCHAR(50),
     p_manufacture_date        DATE            DEFAULT NULL,
     p_expiry_date             DATE            DEFAULT NULL,
@@ -616,7 +616,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Serial_List(INT, INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Serial_List(
     p_company_id    INT,
-    p_product_id    INT             DEFAULT NULL,
+    p_product_id    BIGINT          DEFAULT NULL,
     p_status        VARCHAR(20)     DEFAULT NULL,
     p_search        VARCHAR(100)    DEFAULT NULL,
     p_page          INT             DEFAULT 1,
@@ -625,7 +625,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Serial_List(
 RETURNS TABLE (
     "SerialId"              INT,
     "CompanyId"             INT,
-    "ProductId"             INT,
+    "ProductId"             BIGINT,
     "SerialNumber"          VARCHAR,
     "LotId"                 INT,
     "WarehouseId"           INT,
@@ -633,7 +633,7 @@ RETURNS TABLE (
     "Status"                VARCHAR,
     "PurchaseDocumentNumber" VARCHAR,
     "SalesDocumentNumber"   VARCHAR,
-    "CustomerId"            INT,
+    "CustomerId"            BIGINT,
     "UnitCost"              DECIMAL,
     "CreatedAt"             TIMESTAMP,
     "UpdatedAt"             TIMESTAMP,
@@ -682,7 +682,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Serial_Get(
 RETURNS TABLE (
     "SerialId"              INT,
     "CompanyId"             INT,
-    "ProductId"             INT,
+    "ProductId"             BIGINT,
     "SerialNumber"          VARCHAR,
     "LotId"                 INT,
     "WarehouseId"           INT,
@@ -690,7 +690,7 @@ RETURNS TABLE (
     "Status"                VARCHAR,
     "PurchaseDocumentNumber" VARCHAR,
     "SalesDocumentNumber"   VARCHAR,
-    "CustomerId"            INT,
+    "CustomerId"            BIGINT,
     "UnitCost"              DECIMAL,
     "CreatedAt"             TIMESTAMP,
     "UpdatedAt"             TIMESTAMP,
@@ -719,7 +719,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Serial_Register(INT, INT, VARCHAR, INT, INT, INT, VARCHAR, DECIMAL, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Serial_Register(
     p_company_id              INT,
-    p_product_id              INT,
+    p_product_id              BIGINT,
     p_serial_number           VARCHAR(100),
     p_lot_id                  INT             DEFAULT NULL,
     p_warehouse_id            INT             DEFAULT NULL,
@@ -759,7 +759,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Serial_UpdateStatus(
     p_serial_id              INT,
     p_status                 VARCHAR(20),
     p_sales_document_number  VARCHAR(30)    DEFAULT NULL,
-    p_customer_id            INT            DEFAULT NULL,
+    p_customer_id            BIGINT         DEFAULT NULL,
     p_user_id                INT            DEFAULT NULL
 )
 RETURNS TABLE ("ok" INT, "mensaje" VARCHAR)
@@ -789,12 +789,12 @@ DROP FUNCTION IF EXISTS usp_Inv_BinStock_List(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_BinStock_List(
     p_company_id    INT,
     p_warehouse_id  INT     DEFAULT NULL,
-    p_product_id    INT     DEFAULT NULL
+    p_product_id    BIGINT  DEFAULT NULL
 )
 RETURNS TABLE (
     "ProductBinStockId" INT,
     "CompanyId"         INT,
-    "ProductId"         INT,
+    "ProductId"         BIGINT,
     "WarehouseId"       INT,
     "ZoneId"            INT,
     "BinId"             INT,
@@ -838,12 +838,12 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Valuation_GetMethod(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Valuation_GetMethod(
     p_company_id INT,
-    p_product_id INT
+    p_product_id BIGINT
 )
 RETURNS TABLE (
     "ValuationMethodId" INT,
     "CompanyId"         INT,
-    "ProductId"         INT,
+    "ProductId"         BIGINT,
     "Method"            VARCHAR,
     "StandardCost"      DECIMAL,
     "UpdatedAt"         TIMESTAMP
@@ -863,7 +863,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Valuation_SetMethod(INT, INT, VARCHAR, DECIMAL, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Valuation_SetMethod(
     p_company_id    INT,
-    p_product_id    INT,
+    p_product_id    BIGINT,
     p_method        VARCHAR(20),
     p_standard_cost DECIMAL(18,4)   DEFAULT NULL,
     p_user_id       INT             DEFAULT NULL
@@ -893,7 +893,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Inv_Movement_List(INT, INT, INT, VARCHAR, DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Movement_List(
     p_company_id      INT,
-    p_product_id      INT           DEFAULT NULL,
+    p_product_id      BIGINT        DEFAULT NULL,
     p_warehouse_id    INT           DEFAULT NULL,
     p_movement_type   VARCHAR(30)   DEFAULT NULL,
     p_fecha_desde     DATE          DEFAULT NULL,
@@ -902,10 +902,10 @@ CREATE OR REPLACE FUNCTION usp_Inv_Movement_List(
     p_limit           INT           DEFAULT 50
 )
 RETURNS TABLE (
-    "MovementId"            INT,
+    "MovementId"            BIGINT,
     "CompanyId"             INT,
     "BranchId"              INT,
-    "ProductId"             INT,
+    "ProductId"             BIGINT,
     "LotId"                 INT,
     "SerialId"              INT,
     "FromWarehouseId"       INT,
@@ -965,7 +965,7 @@ DROP FUNCTION IF EXISTS usp_Inv_Movement_Create(INT, INT, INT, INT, INT, INT, IN
 CREATE OR REPLACE FUNCTION usp_Inv_Movement_Create(
     p_company_id              INT,
     p_branch_id               INT,
-    p_product_id              INT,
+    p_product_id              BIGINT,
     p_lot_id                  INT             DEFAULT NULL,
     p_serial_id               INT             DEFAULT NULL,
     p_from_warehouse_id       INT             DEFAULT NULL,
@@ -980,7 +980,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Movement_Create(
     p_notes                   VARCHAR(500)    DEFAULT NULL,
     p_user_id                 INT             DEFAULT NULL
 )
-RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "MovementId" INT)
+RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "MovementId" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id INT;

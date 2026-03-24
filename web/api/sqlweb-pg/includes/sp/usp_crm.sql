@@ -454,7 +454,7 @@ CREATE OR REPLACE FUNCTION usp_crm_lead_close(
     p_lead_id     INT,
     p_is_won      BOOLEAN,
     p_lost_reason VARCHAR(500) DEFAULT NULL,
-    p_customer_id INT DEFAULT NULL,
+    p_customer_id BIGINT DEFAULT NULL,
     p_user_id     INT DEFAULT NULL
 )
 RETURNS TABLE("ok" INT, "mensaje" VARCHAR)
@@ -508,7 +508,7 @@ DROP FUNCTION IF EXISTS usp_crm_activity_list(INT, INT, INT, BOOLEAN, TIMESTAMP,
 CREATE OR REPLACE FUNCTION usp_crm_activity_list(
     p_company_id   INT,
     p_lead_id      INT DEFAULT NULL,
-    p_customer_id  INT DEFAULT NULL,
+    p_customer_id  BIGINT DEFAULT NULL,
     p_is_completed BOOLEAN DEFAULT NULL,
     p_due_before   TIMESTAMP DEFAULT NULL,
     p_page         INT DEFAULT 1,
@@ -570,7 +570,7 @@ DROP FUNCTION IF EXISTS usp_crm_activity_create(INT, INT, INT, VARCHAR, VARCHAR,
 CREATE OR REPLACE FUNCTION usp_crm_activity_create(
     p_company_id         INT,
     p_lead_id            INT DEFAULT NULL,
-    p_customer_id        INT DEFAULT NULL,
+    p_customer_id        BIGINT DEFAULT NULL,
     p_activity_type      VARCHAR(30) DEFAULT NULL,
     p_subject            VARCHAR(200) DEFAULT NULL,
     p_description        TEXT DEFAULT NULL,
