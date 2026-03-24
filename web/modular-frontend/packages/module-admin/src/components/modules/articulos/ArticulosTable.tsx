@@ -337,7 +337,7 @@ export default function ArticulosTable() {
 
       return extendedView ? [...base, ...extended, actions] : [...base, actions];
     },
-    [router, basePath, extendedView]
+    [router, basePath, extendedView, tasaCambio]
   );
 
   // ========== Filas mapeadas ==========
