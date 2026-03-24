@@ -634,11 +634,12 @@ describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
 
 describe('SP Contracts — tablas sys de gestión de tenants', () => {
   const requiredSysTables = [
+    { schema: 'sys', table: 'TenantDatabase' },
+    { schema: 'sys', table: 'License' },
     { schema: 'sys', table: 'TenantBackup' },
     { schema: 'sys', table: 'TenantResourceLog' },
     { schema: 'sys', table: 'CleanupQueue' },
-    { schema: 'sys', table: 'License' },
-    { schema: 'sys', table: 'Company' },
+    { schema: 'cfg', table: 'Company' },
   ];
 
   for (const { schema, table } of requiredSysTables) {

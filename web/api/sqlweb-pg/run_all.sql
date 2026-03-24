@@ -588,6 +588,9 @@ DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_insert(integer, integer, c
 \echo '[F6-12] Sistema...'
 \i 12_sys.sql
 
+\echo '[F6-12b] sys schema + tablas de gestion de tenants...'
+\i 19_sys_tenant_mgmt.sql
+
 \echo '[F6-13] Otros...'
 \i 13_otros.sql
 
@@ -676,6 +679,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i includes/sp/ddl_sys_Lead.sql
 \echo 'Creando funcion usp_sys_lead_upsert...'
 \i includes/sp/usp_sys_Lead_Upsert.sql
+\i includes/sp/usp_sys_backup.sql
+\i includes/sp/usp_sys_resource.sql
 
 -- ====================================================================
 -- FASE 8: Migraciones post-despliegue
