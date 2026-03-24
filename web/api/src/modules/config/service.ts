@@ -84,7 +84,7 @@ export async function saveTasasToDB(tasas: TasasBCV): Promise<boolean> {
 async function getLatestRateFromDB(): Promise<TasasBCV | null> {
     try {
         const result = await callSp('usp_Cfg_ExchangeRate_GetLatest', {});
-        const rows = Array.isArray(result) ? result : [];
+        const rows = Array.isArray(result) ? result as { CurrencyCode: string; RateToBase: number; RateDate: string }[] : [];
         if (rows.length === 0) return null;
 
         let USD = 0, EUR = 0, fecha = '';
