@@ -7,6 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
 import { QueryProvider } from '@zentto/shared-api';
+import CssBaseline from '@mui/material/CssBaseline';
 import {
   LoadingFallback,
   ToastProvider,
@@ -75,6 +76,7 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <AppRouterCacheProvider options={{ enableCssLayer: true }}>
             <ThemeProvider theme={sharedTheme} defaultMode="system">
+              <CssBaseline />
               <LocalizationProviderWrapper>
                 <TenantGuard>
                   <AppContent>{children}</AppContent>

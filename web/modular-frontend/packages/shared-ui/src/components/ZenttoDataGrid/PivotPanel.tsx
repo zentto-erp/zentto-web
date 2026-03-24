@@ -204,18 +204,18 @@ export function PivotPanel({
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 Vista previa de la estructura:
               </Typography>
-              <Typography variant="body2" sx={{ mt: 0.5 }}>
+              <Box component="div" sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, typography: 'body2' }}>
                 Filas: valores unicos de{' '}
                 <Chip label={columns.find((c) => c.field === rowField)?.headerName ?? rowField} size="small" color="primary" />
-              </Typography>
-              <Typography variant="body2">
+              </Box>
+              <Box component="div" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, typography: 'body2' }}>
                 Columnas: valores unicos de{' '}
                 <Chip label={columns.find((c) => c.field === columnField)?.headerName ?? columnField} size="small" color="secondary" />
-              </Typography>
-              <Typography variant="body2">
+              </Box>
+              <Box component="div" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, typography: 'body2' }}>
                 Celdas: {AGG_LABELS[aggregation]} de{' '}
                 <Chip label={columns.find((c) => c.field === valueField)?.headerName ?? valueField} size="small" color="success" />
-              </Typography>
+              </Box>
             </Box>
           )}
         </Stack>
