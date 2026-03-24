@@ -133,7 +133,7 @@ shippingRouter.post("/webhooks/carrier/:carrierCode", async (req, res) => {
     if (!trackResult.shipment) return res.status(404).json({ error: "shipment_not_found" });
 
     await updateShipmentStatus(
-      trackResult.shipment.ShipmentId,
+      (trackResult.shipment as any).ShipmentId,
       status,
       description,
       {

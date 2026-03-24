@@ -43,11 +43,11 @@ export interface QuoteRequest {
   destCountryCode: string;
   packages: Array<{
     weight: number;
-    weightUnit: string;
+    weightUnit?: string;
     length?: number;
     width?: number;
     height?: number;
-    dimensionUnit: string;
+    dimensionUnit?: string;
     declaredValue?: number;
   }>;
   serviceType?: string;

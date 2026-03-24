@@ -3,7 +3,7 @@ import { z } from "zod";
 import { spawn } from "node:child_process";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { sendFiscalCommand, isAgentConnected, listConnectedAgents } from "./fiscal-relay.js";
-import { obs } from "../../integrations/observability.js";
+import { obs } from "../integrations/observability.js";
 import {
     listProductosPOS,
     getProductoByCodigo,

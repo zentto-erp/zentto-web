@@ -15,7 +15,7 @@ import {
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
-import { obs } from "../../integrations/observability.js";
+import { obs } from "../integrations/observability.js";
 
 export const inventarioRouter = Router();
 

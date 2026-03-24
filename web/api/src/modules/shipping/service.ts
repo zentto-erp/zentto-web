@@ -112,7 +112,7 @@ export async function loginCustomer(email: string, password: string) {
 }
 
 export async function getCustomerProfile(customerId: number) {
-  const rows = await callSp("usp_Shipping_Customer_Profile", {
+  const rows = await callSp<ShippingCustomerRow>("usp_Shipping_Customer_Profile", {
     ShippingCustomerId: customerId,
   });
   return rows[0] || null;
@@ -220,8 +220,8 @@ export async function createShipment(customerId: number, data: any) {
     { Resultado: "int", Mensaje: "string" }
   );
 
-  const shipmentId = output.Resultado;
-  const shipmentNumber = output.Mensaje;
+  const shipmentId = output.Resultado as number;
+  const shipmentNumber = output.Mensaje as string;
 
   if (!shipmentId || shipmentId <= 0) {
     return { ok: false, error: output.Mensaje || "Error al crear envío" };
@@ -355,9 +355,17 @@ export async function updateShipmentStatus(
 
 // ─── Public Tracking ─────────────────────────────────────────
 
+interface ShipmentTrackRow {
+  ShipmentId: number;
+  CarrierCode: string | null;
+  TrackingNumber: string | null;
+  Status: string;
+  ShipmentNumber: string;
+}
+
 export async function trackPublic(trackingNumber: string) {
   // 1. Buscar en nuestra BD
-  const [shipment] = await callSp("usp_Shipping_Track", { TrackingNumber: trackingNumber });
+  const [shipment] = await callSp<ShipmentTrackRow>("usp_Shipping_Track", { TrackingNumber: trackingNumber });
   const storedEvents = await callSp("usp_Shipping_Track_Events", { TrackingNumber: trackingNumber }).catch(() => []);
 
   // 2. Si el envío tiene un carrier conocido (ZOOM, MRW, LIBERTY), consultar su API

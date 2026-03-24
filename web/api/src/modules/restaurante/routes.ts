@@ -3,7 +3,7 @@ import { z } from "zod";
 import { listMesas, abrirPedido, agregarItemPedido, enviarComanda, cerrarPedido, getPedidoByMesa, contabilizarPedidoExistente, cancelarItemPedido } from "./service.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
-import { obs } from "../../integrations/observability.js";
+import { obs } from "../integrations/observability.js";
 
 export const restauranteRouter = Router();
 

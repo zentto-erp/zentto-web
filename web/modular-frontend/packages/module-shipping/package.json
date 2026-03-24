@@ -8,8 +8,8 @@
     "@mui/icons-material": "*",
     "@mui/material": "*",
     "@tanstack/react-query": "*",
-    "@zentto/shared-auth": "workspace:*",
-    "@zentto/shared-ui": "workspace:*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-ui": "*",
     "react": "*",
     "zustand": "*"
   }

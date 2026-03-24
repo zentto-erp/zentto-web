@@ -14,8 +14,8 @@
     "@mui/material": "*",
     "@mui/material-nextjs": "*",
     "@tanstack/react-query": "*",
-    "@zentto/shared-ui": "workspace:*",
-    "@zentto/module-shipping": "workspace:*",
+    "@zentto/shared-ui": "*",
+    "@zentto/module-shipping": "*",
     "next": "*",
     "react": "*",
     "react-dom": "*"

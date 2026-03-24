@@ -3,7 +3,7 @@
  * Prefijo: /v1/inventario-avanzado
  */
 import { Router } from "express";
-import { obs } from "../../integrations/observability.js";
+import { obs } from "../integrations/observability.js";
 import {
   listWarehouses,
   getWarehouse,
