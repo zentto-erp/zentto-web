@@ -10,6 +10,16 @@
 \echo '╚══════════════════════════════════════════════════════╝'
 \echo ''
 
+-- Bootstrap: crear tabla _migrations antes que cualquier otra cosa
+-- (requerida por los scripts de migrations/ y por SP contract tests)
+CREATE TABLE IF NOT EXISTS public._migrations (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMP DEFAULT NOW() AT TIME ZONE 'UTC'
+);
+INSERT INTO public._migrations (name) VALUES ('run_all.sql')
+  ON CONFLICT (name) DO NOTHING;
+
 -- ====================================================================
 -- FASE 1: Base de datos (ejecutar manualmente la primera vez)
 -- psql -U postgres -f 00_create_database.sql
@@ -668,16 +678,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 \i includes/sp/usp_sys_Lead_Upsert.sql
 
 -- ====================================================================
--- FASE 8: Bootstrap marker + Migraciones post-despliegue
--- La tabla _migrations debe existir ANTES de cargar las migraciones.
+-- FASE 8: Migraciones post-despliegue
 -- ====================================================================
-CREATE TABLE IF NOT EXISTS public._migrations (
-  id         SERIAL PRIMARY KEY,
-  name       VARCHAR(255) NOT NULL UNIQUE,
-  applied_at TIMESTAMP DEFAULT NOW() AT TIME ZONE 'UTC'
-);
-INSERT INTO public._migrations (name) VALUES ('run_all.sql')
-  ON CONFLICT (name) DO NOTHING;
 \echo ''
 \echo '--- Migraciones post-despliegue ---'
 \echo '  [001] POS BIGINT overload fixes'
