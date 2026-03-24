@@ -24,6 +24,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import {
@@ -172,82 +173,126 @@ async function apiFetch<T>(
   return res.json() as Promise<T>;
 }
 
-// ─── Modal de autenticacion 2FA ───────────────────────────────────────────────
+// ─── Modal de autenticacion 2FA — TOTP (Google Authenticator) ────────────────
+
+type AuthStep = "key" | "totp" | "setup_qr" | "setup_confirm";
 
 function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
-  const [step, setStep] = useState<"key" | "otp">("key");
+  const [step, setStep] = useState<AuthStep>("key");
   const [masterKey, setMasterKey] = useState("");
-  const [otp, setOtp] = useState("");
-  const [maskedEmail, setMaskedEmail] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [setupSecret, setSetupSecret] = useState("");
+  const [setupQr, setSetupQr] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
-  // Paso 1: validar master key y enviar OTP
-  const handleRequestOtp = async () => {
+  // Paso 1 → verificar Master Key, luego ver si hay TOTP configurado
+  const handleMasterKey = async () => {
     if (!masterKey.trim()) { setError("Ingresa la Master Key"); return; }
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
-      const res = await fetch(`${base}/v1/backoffice/auth/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ masterKey: masterKey.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 429) setError("Demasiados intentos. Espera 15 minutos.");
-        else setError("Master Key incorrecta.");
-        return;
+      // Verificar status del TOTP
+      const statusRes = await fetch(`${base}/v1/backoffice/auth/status`);
+      const status = await statusRes.json();
+
+      if (!status.setupDone) {
+        // Primera vez → iniciar setup TOTP
+        const setupRes = await fetch(`${base}/v1/backoffice/auth/setup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ masterKey: masterKey.trim() }),
+        });
+        const setup = await setupRes.json();
+        if (!setupRes.ok) {
+          setError(setupRes.status === 401 ? "Master Key incorrecta." : setup.error ?? "Error.");
+          return;
+        }
+        setSetupSecret(setup.secret);
+        setSetupQr(setup.qrDataUrl);
+        setStep("setup_qr");
+      } else {
+        // TOTP ya configurado → pedir código
+        setStep("totp");
       }
-      setMaskedEmail(data.maskedEmail ?? "");
-      setStep("otp");
     } catch {
-      setError("Error de conexion. Verifica la API.");
+      setError("Error de conexion con la API.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Paso 2: verificar OTP y obtener session token
-  const handleVerifyOtp = async () => {
-    if (!otp.trim()) { setError("Ingresa el codigo OTP"); return; }
-    setLoading(true);
-    setError("");
+  // Paso 2a (setup) → confirmar primer código TOTP
+  const handleSetupConfirm = async () => {
+    if (totpCode.length !== 6) { setError("El codigo debe tener 6 digitos"); return; }
+    setLoading(true); setError("");
     try {
-      const res = await fetch(`${base}/v1/backoffice/auth/verify-otp`, {
+      const res = await fetch(`${base}/v1/backoffice/auth/setup/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ masterKey: masterKey.trim(), code: otp.trim() }),
+        body: JSON.stringify({ masterKey: masterKey.trim(), code: totpCode, secret: setupSecret }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError("Codigo incorrecto o expirado.");
+        setError("Codigo incorrecto. Verifica que la app este sincronizada.");
+        return;
+      }
+      // Setup confirmado → mostrar instrucción de guardar en env y continuar
+      setStep("setup_confirm");
+      // Intentar login inmediatamente tras el setup
+      await handleLogin(data.secret);
+    } catch {
+      setError("Error de conexion.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Paso 2b (login normal) → verificar código TOTP
+  const handleLogin = async (secretOverride?: string) => {
+    const code = secretOverride ? totpCode : totpCode;
+    if (code.length !== 6) { setError("El codigo debe tener 6 digitos"); return; }
+    setLoading(true); setError("");
+    try {
+      const res = await fetch(`${base}/v1/backoffice/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterKey: masterKey.trim(), totpCode: code }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 429) setError("Demasiados intentos. Espera 15 minutos.");
+        else if (res.status === 428) { setStep("setup_qr"); return; }
+        else setError("Codigo incorrecto o expirado. Los codigos rotan cada 30s.");
         return;
       }
       onAuth(data.token);
     } catch {
-      setError("Error de conexion. Verifica la API.");
+      setError("Error de conexion.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open maxWidth="xs" fullWidth>
+    <Dialog open maxWidth="xs" fullWidth disableEscapeKeyDown>
       <DialogTitle>
         <Stack direction="row" alignItems="center" gap={1}>
           <LockIcon color="warning" />
-          Backoffice — {step === "key" ? "Autenticacion" : "Verificacion 2FA"}
+          Backoffice{" "}
+          {step === "key" && "— Acceso"}
+          {step === "totp" && "— Verificacion 2FA"}
+          {(step === "setup_qr" || step === "setup_confirm") && "— Configurar 2FA"}
         </Stack>
       </DialogTitle>
+
       <DialogContent>
-        {step === "key" ? (
+        {/* ── Paso 1: Master Key ── */}
+        {step === "key" && (
           <>
             <Typography variant="body2" color="text.secondary" mb={2}>
-              Seccion exclusiva para administradores. Ingresa la Master Key para
-              recibir un codigo de verificacion por email.
+              Seccion exclusiva para administradores del sistema Zentto.
             </Typography>
             <TextField
               label="Master Key"
@@ -255,50 +300,91 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
               fullWidth
               value={masterKey}
               onChange={(e) => { setMasterKey(e.target.value); setError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && handleRequestOtp()}
+              onKeyDown={(e) => e.key === "Enter" && handleMasterKey()}
               error={!!error}
               helperText={error}
               autoFocus
               disabled={loading}
             />
           </>
-        ) : (
+        )}
+
+        {/* ── Paso 2a: Setup QR ── */}
+        {step === "setup_qr" && (
           <>
-            <Typography variant="body2" color="text.secondary" mb={2}>
-              Se ha enviado un codigo de 6 digitos a{" "}
-              <strong>{maskedEmail}</strong> via Zentto Notify.
-              Expira en 5 minutos.
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Primera configuracion de 2FA. Escanea el QR con Google Authenticator.
+            </Alert>
+            {setupQr && (
+              <Box textAlign="center" mb={2}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={setupQr} alt="QR TOTP" width={200} height={200} style={{ borderRadius: 8 }} />
+              </Box>
+            )}
+            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+              Si no puedes escanear, ingresa este codigo manualmente en la app:
+            </Typography>
+            <Typography
+              variant="body2"
+              fontFamily="monospace"
+              sx={{ bgcolor: "action.hover", p: 1, borderRadius: 1, wordBreak: "break-all", mb: 2 }}
+            >
+              {setupSecret}
             </Typography>
             <TextField
-              label="Codigo OTP"
+              label="Codigo de confirmacion (6 digitos)"
               type="text"
               fullWidth
-              value={otp}
-              onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+              value={totpCode}
+              onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleSetupConfirm()}
               error={!!error}
-              helperText={error || "Revisa tu email"}
+              helperText={error || "Ingresa el codigo que muestra tu app para confirmar"}
               autoFocus
               disabled={loading}
-              inputProps={{ maxLength: 6, style: { letterSpacing: "0.4em", fontSize: "1.4rem", textAlign: "center" } }}
+              inputProps={{ maxLength: 6, style: { letterSpacing: "0.5em", fontSize: "1.4rem", textAlign: "center" } }}
             />
-            <Button
-              size="small"
-              sx={{ mt: 1 }}
-              onClick={() => { setStep("key"); setOtp(""); setError(""); }}
-            >
+          </>
+        )}
+
+        {/* ── Paso 2b: Login TOTP ── */}
+        {step === "totp" && (
+          <>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Abre <strong>Google Authenticator</strong> (o Authy / Bitwarden) e ingresa el
+              codigo de 6 digitos de <strong>Zentto Backoffice</strong>.
+            </Typography>
+            <TextField
+              label="Codigo TOTP"
+              type="text"
+              fullWidth
+              value={totpCode}
+              onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && totpCode.length === 6 && handleLogin()}
+              error={!!error}
+              helperText={error || "El codigo rota cada 30 segundos"}
+              autoFocus
+              disabled={loading}
+              inputProps={{ maxLength: 6, style: { letterSpacing: "0.5em", fontSize: "1.4rem", textAlign: "center" } }}
+            />
+            <Button size="small" sx={{ mt: 1 }} onClick={() => { setStep("key"); setTotpCode(""); setError(""); }}>
               Volver
             </Button>
           </>
         )}
       </DialogContent>
+
       <DialogActions>
         <Button
           variant="contained"
-          onClick={step === "key" ? handleRequestOtp : handleVerifyOtp}
           disabled={loading}
+          onClick={() => {
+            if (step === "key") handleMasterKey();
+            else if (step === "setup_qr") handleSetupConfirm();
+            else if (step === "totp") handleLogin();
+          }}
         >
-          {loading ? "Procesando..." : step === "key" ? "Enviar codigo" : "Verificar"}
+          {loading ? "Verificando..." : step === "key" ? "Continuar" : step === "setup_qr" ? "Activar 2FA" : "Ingresar"}
         </Button>
       </DialogActions>
     </Dialog>
