@@ -61,6 +61,11 @@ DROP FUNCTION IF EXISTS usp_mfg_workorder_consumematerial CASCADE;
 DROP FUNCTION IF EXISTS usp_inv_serial_reserveforsale CASCADE;
 DROP FUNCTION IF EXISTS usp_inv_lot_validateforsale CASCADE;
 
+-- ── usp_inv_movement_list: renombrar versión ops (VARCHAR search) → usp_movinvent_list ─────
+-- Evita conflicto con usp_inv.sql que tiene usp_inv_movement_list(p_company_id, p_product_id, ...)
+DROP FUNCTION IF EXISTS usp_inv_movement_list(VARCHAR, VARCHAR, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_movinvent_list(VARCHAR, VARCHAR, INT, INT) CASCADE;
+
 -- Re-create from updated SP files (ejecutado por goose-deploy-all.sh via run-functions.sql)
 -- Las funciones se recargan automáticamente con run-functions.sql en el deploy
 

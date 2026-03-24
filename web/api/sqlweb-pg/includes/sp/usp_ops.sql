@@ -1209,9 +1209,10 @@ END; $$;
 --  SECCION 5: MOVIMIENTO INVENTARIO
 -- =============================================================================
 
--- usp_Inv_Movement_List
+-- usp_Movinvent_List (legacy master.InventoryMovement — renombrado para evitar conflicto con usp_inv_movement_list de inv.StockMovement)
+DROP FUNCTION IF EXISTS usp_movinvent_list(VARCHAR(200), VARCHAR(50), INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_inv_movement_list(VARCHAR(200), VARCHAR(50), INT, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_inv_movement_list(
+CREATE OR REPLACE FUNCTION usp_movinvent_list(
     p_search VARCHAR(200) DEFAULT NULL,
     p_tipo   VARCHAR(50) DEFAULT NULL,
     p_offset INT DEFAULT 0,

@@ -1458,10 +1458,10 @@ GO
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
---  usp_Inv_Movement_List
+--  usp_Movinvent_List (legacy master.InventoryMovement)
 --  Lista movimientos de inventario paginados.
 -- -----------------------------------------------------------------------------
-CREATE OR ALTER PROCEDURE dbo.usp_Inv_Movement_List
+CREATE OR ALTER PROCEDURE dbo.usp_Movinvent_List
     @Search     NVARCHAR(200) = NULL,
     @Tipo       NVARCHAR(50)  = NULL,
     @Offset     INT = 0,

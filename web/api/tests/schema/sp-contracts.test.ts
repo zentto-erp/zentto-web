@@ -56,21 +56,25 @@ interface FuncMeta {
 
 async function getAllFunctionNames(): Promise<string[]> {
   const res = await pool.query<{ proname: string }>(
-    `SELECT DISTINCT proname FROM pg_proc
-     WHERE proname LIKE 'usp_%'
-     ORDER BY proname`
+    `SELECT DISTINCT p.proname FROM pg_proc p
+     JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE p.proname LIKE 'usp_%'
+       AND n.nspname = 'public'
+     ORDER BY p.proname`
   );
   return res.rows.map(r => r.proname);
 }
 
 async function getFunctionsWithOverloads(): Promise<FuncOverload[]> {
   const res = await pool.query<{ proname: string; count: string }>(
-    `SELECT proname, COUNT(*) AS count
-     FROM pg_proc
-     WHERE proname LIKE 'usp_%'
-     GROUP BY proname
+    `SELECT p.proname, COUNT(*) AS count
+     FROM pg_proc p
+     JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE p.proname LIKE 'usp_%'
+       AND n.nspname = 'public'
+     GROUP BY p.proname
      HAVING COUNT(*) > 1
-     ORDER BY proname`
+     ORDER BY p.proname`
   );
   return res.rows.map(r => ({ proname: r.proname, count: Number(r.count) }));
 }
