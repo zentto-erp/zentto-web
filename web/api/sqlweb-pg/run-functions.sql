@@ -133,6 +133,9 @@ END $cleanup$;
 \echo '[27] usp_logistics.sql'
 \i includes/sp/usp_logistics.sql
 
+\echo '[27b] usp_logistics_analytics.sql'
+\i includes/sp/usp_logistics_analytics.sql
+
 \echo '[28] usp_crm.sql'
 \i includes/sp/usp_crm.sql
 
@@ -154,8 +157,14 @@ END $cleanup$;
 \echo '[30] usp_mfg.sql'
 \i includes/sp/usp_mfg.sql
 
+\echo '[30b] usp_mfg_analytics.sql'
+\i includes/sp/usp_mfg_analytics.sql
+
 \echo '[31] usp_fleet.sql'
 \i includes/sp/usp_fleet.sql
+
+\echo '[31b] usp_fleet_analytics.sql'
+\i includes/sp/usp_fleet_analytics.sql
 
 \echo '[32] usp_rbac.sql'
 \i includes/sp/usp_rbac.sql
