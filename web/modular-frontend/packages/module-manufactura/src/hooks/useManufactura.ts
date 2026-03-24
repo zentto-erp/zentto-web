@@ -7,6 +7,7 @@ const BASE = "/api/v1/manufactura";
 const QK_BOM = "mfg-bom";
 const QK_WORK_CENTERS = "mfg-work-centers";
 const QK_ORDERS = "mfg-orders";
+const QK_ROUTING = "mfg-routing";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -187,25 +188,142 @@ export function useCancelWorkOrder() {
   });
 }
 
+// ── Routing ─────────────────────────────────────────────────
+
+export interface RoutingRow {
+  RoutingId: number;
+  BOMId: number;
+  OperationNumber: number;
+  OperationName: string;
+  WorkCenterId: number;
+  WorkCenterName?: string;
+  SetupTime: number;
+  RunTime: number;
+  Description?: string | null;
+}
+
+export function useRoutingList(bomId?: number) {
+  return useQuery<RoutingRow[]>({
+    queryKey: [QK_ROUTING, bomId],
+    queryFn: () => apiGet(`${BASE}/bom/${bomId}/rutas`),
+    enabled: !!bomId,
+  });
+}
+
+export function useUpsertRouting(bomId?: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: Record<string, unknown>) =>
+      apiPost(`${BASE}/bom/${bomId}/rutas`, d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QK_ROUTING, bomId] });
+    },
+  });
+}
+
+// ── Consume Material ─────────────────────────────────────────
+
+export interface ConsumeMaterialPayload {
+  productId: number;
+  quantity: number;
+  lotNumber?: string | null;
+  warehouseId?: number | null;
+}
+
+export function useConsumeMaterial(workOrderId?: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: ConsumeMaterialPayload) =>
+      apiPost(`${BASE}/ordenes/${workOrderId}/consumir`, d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QK_ORDERS] });
+      qc.invalidateQueries({ queryKey: [QK_ORDERS, "detail", workOrderId] });
+    },
+  });
+}
+
+// ── Report Output ────────────────────────────────────────────
+
+export interface ReportOutputPayload {
+  quantity: number;
+  lotNumber?: string | null;
+  warehouseId?: number | null;
+}
+
+export function useReportOutput(workOrderId?: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: ReportOutputPayload) =>
+      apiPost(`${BASE}/ordenes/${workOrderId}/reportar-salida`, d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QK_ORDERS] });
+      qc.invalidateQueries({ queryKey: [QK_ORDERS, "detail", workOrderId] });
+    },
+  });
+}
+
 // ── Dashboard ────────────────────────────────────────────────
 
+export interface ManufacturaAnalyticsDashboard extends ManufacturaDashboard {
+  CompletadasEsteMes: number;
+  CompletadasMesAnterior: number;
+  OrdenesATiempo: number;
+  OrdenesTotalesMes: number;
+}
+
 export function useManufacturaDashboard() {
-  return useQuery<ManufacturaDashboard>({
+  return useQuery<ManufacturaAnalyticsDashboard>({
     queryKey: ["manufactura", "dashboard"],
-    queryFn: async () => {
-      // Aggregate from existing endpoints
-      const [boms, centers, orders] = await Promise.all([
-        apiGet(`${BASE}/bom?limit=1&status=ACTIVE`) as Promise<BOMListResponse>,
-        apiGet(`${BASE}/centros-trabajo?limit=1`) as Promise<WorkCenterListResponse>,
-        apiGet(`${BASE}/ordenes?limit=1&status=IN_PROGRESS`) as Promise<WorkOrderListResponse>,
-      ]);
-      const completed = (await apiGet(`${BASE}/ordenes?limit=1&status=COMPLETED`)) as WorkOrderListResponse;
-      return {
-        BOMsActivos: boms?.total ?? 0,
-        CentrosTrabajo: centers?.total ?? 0,
-        OrdenesEnProceso: orders?.total ?? 0,
-        OrdenesCompletadas: completed?.total ?? 0,
-      };
-    },
+    queryFn: () => apiGet(`${BASE}/dashboard`),
+  });
+}
+
+// ── Analytics ──────────────────────────────────────────────
+
+export interface ProductionByProductRow {
+  ProductId: number;
+  ProductName: string;
+  TotalQuantity: number;
+  OrderCount: number;
+}
+
+export interface OrdersByStatusRow {
+  Status: string;
+  StatusLabel: string;
+  Count: number;
+}
+
+export interface RecentOrderRow {
+  WorkOrderId: number;
+  WorkOrderNumber: string;
+  ProductName: string;
+  PlannedQuantity: number;
+  ProducedQuantity: number;
+  Status: string;
+  StatusLabel: string;
+  PlannedStart: string;
+  PlannedEnd: string;
+}
+
+const QK_MFG_ANALYTICS = "mfg-analytics";
+
+export function useProductionByProduct() {
+  return useQuery<ProductionByProductRow[]>({
+    queryKey: [QK_MFG_ANALYTICS, "production-by-product"],
+    queryFn: () => apiGet(`${BASE}/analytics/production-by-product`),
+  });
+}
+
+export function useOrdersByStatus() {
+  return useQuery<OrdersByStatusRow[]>({
+    queryKey: [QK_MFG_ANALYTICS, "orders-by-status"],
+    queryFn: () => apiGet(`${BASE}/analytics/orders-by-status`),
+  });
+}
+
+export function useRecentOrders() {
+  return useQuery<RecentOrderRow[]>({
+    queryKey: [QK_MFG_ANALYTICS, "recent-orders"],
+    queryFn: () => apiGet(`${BASE}/analytics/recent-orders`),
   });
 }

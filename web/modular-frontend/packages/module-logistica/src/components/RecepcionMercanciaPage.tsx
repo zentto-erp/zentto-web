@@ -11,19 +11,21 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Stack,
   TextField,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { GridColDef } from "@mui/x-data-grid";
+import Grid from "@mui/material/Grid";
+
 import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { formatCurrency } from "@zentto/shared-api";
+
 import {
   useReceiptsList,
   useCreateReceipt,
@@ -66,6 +68,9 @@ const emptyLine = (): ReceiptLine => ({
 });
 
 export default function RecepcionMercanciaPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [filter, setFilter] = useState<ReceiptFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -126,7 +131,7 @@ export default function RecepcionMercanciaPage() {
       renderCell: (params) => {
         const status = String(params.row.Status ?? "");
         return (
-          <Stack direction="row" spacing={0.5}>
+          <Box sx={{ display: "flex", gap: 0.5 }}>
             <Tooltip title="Ver detalle">
               <IconButton
                 size="small"
@@ -152,7 +157,7 @@ export default function RecepcionMercanciaPage() {
                 </IconButton>
               </Tooltip>
             )}
-          </Stack>
+          </Box>
         );
       },
     },
@@ -201,32 +206,46 @@ export default function RecepcionMercanciaPage() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between",
+        alignItems: { xs: "stretch", sm: "center" },
+        gap: 2,
+        mb: 3,
+      }}>
         <Typography variant="h5" fontWeight={600}>
           Recepcion de Mercancia
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setDialogOpen(true)}
+          fullWidth={isMobile}
+          sx={{ maxWidth: { sm: "fit-content" } }}
+        >
           Nueva Recepcion
         </Button>
       </Box>
 
       {/* Filter */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-         
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="DRAFT">Borrador</MenuItem>
-          <MenuItem value="PARTIAL">Parcial</MenuItem>
-          <MenuItem value="COMPLETE">Completa</MenuItem>
-          <MenuItem value="VOIDED">Anulada</MenuItem>
-        </TextField>
-      </Stack>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="DRAFT">Borrador</MenuItem>
+            <MenuItem value="PARTIAL">Parcial</MenuItem>
+            <MenuItem value="COMPLETE">Completa</MenuItem>
+            <MenuItem value="VOIDED">Anulada</MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
@@ -241,81 +260,108 @@ export default function RecepcionMercanciaPage() {
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick
         autoHeight
+        enableClipboard
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
         mobileVisibleFields={['ReceiptNumber', 'SupplierName']}
         smExtraFields={['Status', 'ReceiptDate']}
       />
 
       {/* Dialog: Nueva Recepcion */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "md"}
+        fullWidth
+      >
         <DialogTitle>Nueva Recepcion de Mercancia</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Proveedor (ID)"
-              value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="Almacen (ID)"
-              value={warehouseId}
-              onChange={(e) => setWarehouseId(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="N. Orden de Compra"
-              value={purchaseOrderNumber}
-              onChange={(e) => setPurchaseOrderNumber(e.target.value)}
-              fullWidth
-            />
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                label="Proveedor (ID)"
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                label="Almacen (ID)"
+                value={warehouseId}
+                onChange={(e) => setWarehouseId(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                label="N. Orden de Compra"
+                value={purchaseOrderNumber}
+                onChange={(e) => setPurchaseOrderNumber(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+          </Grid>
 
-            <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 600 }}>
-              Lineas de Detalle
-            </Typography>
-            {lines.map((line, idx) => (
-              <Stack key={idx} direction="row" spacing={1} alignItems="center">
+          <Typography variant="subtitle2" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+            Lineas de Detalle
+          </Typography>
+          {lines.map((line, idx) => (
+            <Grid container spacing={1} key={idx} sx={{ mb: 1 }} alignItems="center">
+              <Grid item xs={12} sm={3}>
                 <TextField
                   label="Codigo Producto"
                   value={line.productCode}
                   onChange={(e) => handleLineChange(idx, "productCode", e.target.value)}
-                  sx={{ flex: 1 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={4} sm={1.5}>
                 <TextField
-                  label="Cant. Ordenada"
+                  label="Cant. Ord."
                   type="number"
                   value={line.orderedQty}
                   onChange={(e) => handleLineChange(idx, "orderedQty", Number(e.target.value))}
-                  sx={{ width: 110 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={4} sm={1.5}>
                 <TextField
-                  label="Cant. Recibida"
+                  label="Cant. Rec."
                   type="number"
                   value={line.receivedQty}
                   onChange={(e) => handleLineChange(idx, "receivedQty", Number(e.target.value))}
-                  sx={{ width: 110 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={4} sm={1.5}>
                 <TextField
                   label="Costo Unit."
                   type="number"
                   value={line.unitCost}
                   onChange={(e) => handleLineChange(idx, "unitCost", Number(e.target.value))}
-                  sx={{ width: 110 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={6} sm={1.5}>
                 <TextField
                   label="Lote"
                   value={line.lotNumber}
                   onChange={(e) => handleLineChange(idx, "lotNumber", e.target.value)}
-                  sx={{ width: 100 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={6} sm={2}>
                 <DatePicker
                   label="Vencimiento"
                   value={line.expirationDate ? dayjs(line.expirationDate) : null}
                   onChange={(v) => handleLineChange(idx, "expirationDate", v ? v.format('YYYY-MM-DD') : '')}
                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
+              </Grid>
+              <Grid item xs={12} sm={1} sx={{ display: "flex", justifyContent: { xs: "flex-end", sm: "center" } }}>
                 <Tooltip title="Eliminar linea">
                   <span>
                     <IconButton
@@ -328,12 +374,12 @@ export default function RecepcionMercanciaPage() {
                     </IconButton>
                   </span>
                 </Tooltip>
-              </Stack>
-            ))}
-            <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>
-              Agregar linea
-            </Button>
-          </Stack>
+              </Grid>
+            </Grid>
+          ))}
+          <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>
+            Agregar linea
+          </Button>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
@@ -348,11 +394,17 @@ export default function RecepcionMercanciaPage() {
       </Dialog>
 
       {/* Dialog: Detalle */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
         <DialogTitle>Detalle de Recepcion</DialogTitle>
         <DialogContent>
           {selectedRow && (
-            <Stack spacing={1} sx={{ mt: 1 }}>
+            <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
               <Typography><strong>N. Recepcion:</strong> {String(selectedRow.ReceiptNumber ?? "")}</Typography>
               <Typography><strong>Proveedor:</strong> {String(selectedRow.SupplierName ?? "")}</Typography>
               <Typography><strong>Almacen:</strong> {String(selectedRow.WarehouseName ?? "")}</Typography>
@@ -368,7 +420,7 @@ export default function RecepcionMercanciaPage() {
                 />
               </Typography>
               <Typography><strong>Notas:</strong> {String(selectedRow.Notes ?? "—")}</Typography>
-            </Stack>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>

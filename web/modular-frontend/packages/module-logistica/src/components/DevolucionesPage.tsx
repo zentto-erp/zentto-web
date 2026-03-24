@@ -11,12 +11,14 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Stack,
   TextField,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { GridColDef } from "@mui/x-data-grid";
+import Grid from "@mui/material/Grid";
+
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -62,6 +64,9 @@ const emptyLine = (): ReturnLine => ({
 });
 
 export default function DevolucionesPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [filter, setFilter] = useState<ReturnFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -173,34 +178,48 @@ export default function DevolucionesPage() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between",
+        alignItems: { xs: "stretch", sm: "center" },
+        gap: 2,
+        mb: 3,
+      }}>
         <Typography variant="h5" fontWeight={600}>
           Devoluciones
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setDialogOpen(true)}
+          fullWidth={isMobile}
+          sx={{ maxWidth: { sm: "fit-content" } }}
+        >
           Nueva Devolucion
         </Button>
       </Box>
 
       {/* Filter */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-         
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="DRAFT">Borrador</MenuItem>
-          <MenuItem value="PENDING">Pendiente</MenuItem>
-          <MenuItem value="APPROVED">Aprobada</MenuItem>
-          <MenuItem value="COMPLETE">Completa</MenuItem>
-          <MenuItem value="REJECTED">Rechazada</MenuItem>
-          <MenuItem value="VOIDED">Anulada</MenuItem>
-        </TextField>
-      </Stack>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="DRAFT">Borrador</MenuItem>
+            <MenuItem value="PENDING">Pendiente</MenuItem>
+            <MenuItem value="APPROVED">Aprobada</MenuItem>
+            <MenuItem value="COMPLETE">Completa</MenuItem>
+            <MenuItem value="REJECTED">Rechazada</MenuItem>
+            <MenuItem value="VOIDED">Anulada</MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
@@ -215,68 +234,91 @@ export default function DevolucionesPage() {
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick
         autoHeight
+        enableClipboard
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
         mobileVisibleFields={['ReturnNumber', 'SupplierName']}
         smExtraFields={['Status', 'ReturnDate']}
       />
 
       {/* Dialog: Nueva Devolucion */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "md"}
+        fullWidth
+      >
         <DialogTitle>Nueva Devolucion</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Proveedor (ID)"
-              value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="Motivo General"
-              value={returnReason}
-              onChange={(e) => setReturnReason(e.target.value)}
-              fullWidth
-              multiline
-              rows={2}
-            />
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Proveedor (ID)"
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Motivo General"
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                fullWidth
+                multiline
+                rows={2}
+              />
+            </Grid>
+          </Grid>
 
-            <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 600 }}>
-              Lineas de Detalle
-            </Typography>
-            {lines.map((line, idx) => (
-              <Stack key={idx} direction="row" spacing={1} alignItems="center">
+          <Typography variant="subtitle2" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+            Lineas de Detalle
+          </Typography>
+          {lines.map((line, idx) => (
+            <Grid container spacing={1} key={idx} sx={{ mb: 1 }} alignItems="center">
+              <Grid item xs={12} sm={3}>
                 <TextField
                   label="Codigo Producto"
                   value={line.productCode}
                   onChange={(e) => handleLineChange(idx, "productCode", e.target.value)}
-                  sx={{ flex: 1 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={4} sm={1.5}>
                 <TextField
                   label="Cantidad"
                   type="number"
                   value={line.quantity}
                   onChange={(e) => handleLineChange(idx, "quantity", Number(e.target.value))}
-                  sx={{ width: 100 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={4} sm={2}>
                 <TextField
                   label="Lote"
                   value={line.lotNumber}
                   onChange={(e) => handleLineChange(idx, "lotNumber", e.target.value)}
-                  sx={{ width: 100 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={4} sm={2}>
                 <TextField
                   label="Serial"
                   value={line.serialNumber}
                   onChange={(e) => handleLineChange(idx, "serialNumber", e.target.value)}
-                  sx={{ width: 120 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={12} sm={2.5}>
                 <TextField
                   label="Motivo"
                   value={line.reason}
                   onChange={(e) => handleLineChange(idx, "reason", e.target.value)}
-                  sx={{ flex: 1 }}
+                  fullWidth
                 />
+              </Grid>
+              <Grid item xs={12} sm={1} sx={{ display: "flex", justifyContent: { xs: "flex-end", sm: "center" } }}>
                 <Tooltip title="Eliminar linea">
                   <span>
                     <IconButton
@@ -289,12 +331,12 @@ export default function DevolucionesPage() {
                     </IconButton>
                   </span>
                 </Tooltip>
-              </Stack>
-            ))}
-            <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>
-              Agregar linea
-            </Button>
-          </Stack>
+              </Grid>
+            </Grid>
+          ))}
+          <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>
+            Agregar linea
+          </Button>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
@@ -309,11 +351,17 @@ export default function DevolucionesPage() {
       </Dialog>
 
       {/* Dialog: Detalle */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
         <DialogTitle>Detalle de Devolucion</DialogTitle>
         <DialogContent>
           {selectedRow && (
-            <Stack spacing={1} sx={{ mt: 1 }}>
+            <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
               <Typography><strong>N. Devolucion:</strong> {String(selectedRow.ReturnNumber ?? "")}</Typography>
               <Typography><strong>Proveedor:</strong> {String(selectedRow.SupplierName ?? "")}</Typography>
               <Typography><strong>Fecha:</strong> {String(selectedRow.ReturnDate ?? "").slice(0, 10)}</Typography>
@@ -327,7 +375,7 @@ export default function DevolucionesPage() {
                   variant="outlined"
                 />
               </Typography>
-            </Stack>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>

@@ -2,105 +2,285 @@
 
 import React from "react";
 import {
+  Alert,
   Box,
   Card,
   CardActionArea,
   CardContent,
-  IconButton,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Chip,
+  Paper,
+  Skeleton,
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { alpha } from "@mui/material/styles";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AssignmentReturnIcon from "@mui/icons-material/AssignmentReturn";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PeopleIcon from "@mui/icons-material/People";
 import DescriptionIcon from "@mui/icons-material/Description";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import { BarChart } from "@mui/x-charts/BarChart";
+import { PieChart } from "@mui/x-charts/PieChart";
 import { useRouter } from "next/navigation";
-import { useLogisticaDashboard, useReceiptsList, useDeliveryNotesList } from "../hooks/useLogistica";
-import { brandColors } from "@zentto/shared-ui";
+import {
+  useLogisticaDashboard,
+  useReceiptsByMonth,
+  useDeliveryByStatus,
+  useRecentActivity,
+  useLogisticaTrends,
+  useReceiptsList,
+  useDeliveryNotesList,
+} from "../hooks/useLogistica";
+import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { formatCurrency } from "@zentto/shared-api";
 
-const receiptStatusLabels: Record<string, string> = {
-  DRAFT: "Borrador",
-  PARTIAL: "Parcial",
-  COMPLETE: "Completa",
-  VOIDED: "Anulada",
+/* ─── Helpers ─────────────────────────────────────────────── */
+
+function pctChange(current: number, previous: number): number | null {
+  if (previous === 0) return current > 0 ? 100 : null;
+  return ((current - previous) / previous) * 100;
+}
+
+/* ─── KPI Card ─────────────────────────────────────────────── */
+
+interface KPICardProps {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  color: string;
+  change?: number | null;
+  loading?: boolean;
+}
+
+function KPICard({ title, value, icon, color, change, loading }: KPICardProps) {
+  return (
+    <Card
+      sx={{
+        height: "100%",
+        borderRadius: 2,
+        border: `1px solid ${alpha(color, 0.2)}`,
+        boxShadow: `0 2px 8px ${alpha(color, 0.08)}`,
+      }}
+    >
+      <CardContent sx={{ pb: "12px !important", pt: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}
+            >
+              {title}
+            </Typography>
+            {loading ? (
+              <Skeleton variant="text" width={80} height={36} sx={{ mt: 0.5 }} />
+            ) : (
+              <Typography variant="h5" sx={{ fontWeight: 700, color, mt: 0.5, lineHeight: 1.1 }}>
+                {value}
+              </Typography>
+            )}
+            {change !== undefined && change !== null && !loading && (
+              <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                {change >= 0 ? (
+                  <TrendingUpIcon sx={{ fontSize: 14, color: "success.main", mr: 0.3 }} />
+                ) : (
+                  <TrendingDownIcon sx={{ fontSize: 14, color: "error.main", mr: 0.3 }} />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{ color: change >= 0 ? "success.main" : "error.main", fontWeight: 600 }}
+                >
+                  {change >= 0 ? "+" : ""}{change.toFixed(1)}% vs mes anterior
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          <Box
+            sx={{
+              bgcolor: alpha(color, 0.1),
+              borderRadius: 1.5,
+              p: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color,
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Activity Table Columns ─────────────────────────────── */
+
+const activityCols: ZenttoColDef[] = [
+  {
+    field: "ActivityType",
+    headerName: "Tipo",
+    width: 100,
+    renderCell: (params) => (
+      <Chip
+        label={params.value === "RECEIPT" ? "Recepcion" : "Despacho"}
+        size="small"
+        color={params.value === "RECEIPT" ? "info" : "success"}
+        variant="outlined"
+      />
+    ),
+  },
+  { field: "DocNumber", headerName: "Documento", flex: 1, minWidth: 120 },
+  { field: "EntityName", headerName: "Entidad", flex: 1.2, minWidth: 130, mobileHide: true },
+  {
+    field: "ActivityDate",
+    headerName: "Fecha",
+    width: 100,
+    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+    mobileHide: true,
+  },
+  {
+    field: "StatusLabel",
+    headerName: "Estado",
+    width: 110,
+    renderCell: (params) => (
+      <Chip label={String(params.value)} size="small" variant="outlined" />
+    ),
+  },
+];
+
+/* ─── Quick Stats Columns ────────────────────────────────── */
+
+const recentReceiptCols: ZenttoColDef[] = [
+  { field: "ReceiptNumber", headerName: "N. Recepcion", flex: 1, minWidth: 120 },
+  { field: "SupplierName", headerName: "Proveedor", flex: 1.2, minWidth: 130 },
+  {
+    field: "ReceiptDate",
+    headerName: "Fecha",
+    width: 100,
+    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+  },
+  {
+    field: "Status",
+    headerName: "Estado",
+    width: 100,
+    renderCell: (params) => {
+      const s = String(params.value ?? "DRAFT");
+      const colors: Record<string, "default" | "warning" | "success" | "error"> = {
+        DRAFT: "default", PARTIAL: "warning", COMPLETE: "success", VOIDED: "error",
+      };
+      return <Chip label={s} size="small" color={colors[s] ?? "default"} variant="outlined" />;
+    },
+  },
+];
+
+const recentDeliveryCols: ZenttoColDef[] = [
+  { field: "DeliveryNumber", headerName: "N. Albaran", flex: 1, minWidth: 120 },
+  { field: "CustomerName", headerName: "Cliente", flex: 1.2, minWidth: 130 },
+  {
+    field: "DeliveryDate",
+    headerName: "Fecha",
+    width: 100,
+    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+  },
+  {
+    field: "Status",
+    headerName: "Estado",
+    width: 110,
+    renderCell: (params) => {
+      const s = String(params.value ?? "DRAFT");
+      const colors: Record<string, "default" | "warning" | "success" | "error" | "info"> = {
+        DRAFT: "default", CONFIRMED: "info", PICKING: "warning", PACKED: "warning",
+        DISPATCHED: "info", DELIVERED: "success", VOIDED: "error",
+      };
+      return <Chip label={s} size="small" color={colors[s] ?? "default"} variant="outlined" />;
+    },
+  },
+];
+
+/* ─── Colors for pie chart ────────────────────────────────── */
+
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: "#9e9e9e",
+  CONFIRMED: "#2196f3",
+  PICKING: "#ff9800",
+  PACKED: "#9c27b0",
+  DISPATCHED: "#1976d2",
+  DELIVERED: "#4caf50",
+  VOIDED: "#f44336",
 };
 
-const receiptStatusColors: Record<string, "default" | "warning" | "success" | "error"> = {
-  DRAFT: "default",
-  PARTIAL: "warning",
-  COMPLETE: "success",
-  VOIDED: "error",
-};
-
-const deliveryStatusLabels: Record<string, string> = {
-  DRAFT: "Borrador",
-  CONFIRMED: "Confirmado",
-  PICKING: "En Picking",
-  PACKED: "Empacado",
-  DISPATCHED: "Despachado",
-  DELIVERED: "Entregado",
-  VOIDED: "Anulado",
-};
-
-const deliveryStatusColors: Record<string, "default" | "warning" | "success" | "error" | "info" | "primary" | "secondary"> = {
-  DRAFT: "default",
-  CONFIRMED: "info",
-  PICKING: "warning",
-  PACKED: "secondary",
-  DISPATCHED: "primary",
-  DELIVERED: "success",
-  VOIDED: "error",
-};
+/* ─── Main Component ──────────────────────────────────────── */
 
 export default function LogisticaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
-  const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
-  const { data: lastReceipts } = useReceiptsList({ limit: 5 });
-  const { data: lastDeliveries } = useDeliveryNotesList({ limit: 5 });
 
-  const statsCards = [
+  // Data hooks
+  const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
+  const { data: receiptsMonthRaw, isLoading: loadingReceipts } = useReceiptsByMonth();
+  const { data: deliveryStatusRaw, isLoading: loadingDelivery } = useDeliveryByStatus();
+  const { data: activityRaw, isLoading: loadingActivity } = useRecentActivity();
+  const { data: trends, isLoading: loadingTrends } = useLogisticaTrends();
+  const { data: recentReceipts, isLoading: loadingRecentReceipts } = useReceiptsList({ page: 1, limit: 5 });
+  const { data: recentDeliveries, isLoading: loadingRecentDeliveries } = useDeliveryNotesList({ page: 1, limit: 5 });
+
+  // Normalize
+  const receiptsMonth = Array.isArray(receiptsMonthRaw) ? receiptsMonthRaw : [];
+  const deliveryStatus = Array.isArray(deliveryStatusRaw) ? deliveryStatusRaw : [];
+  const activity = Array.isArray(activityRaw) ? activityRaw : [];
+
+  // Trend calculations
+  const receiptChange = trends ? pctChange(trends.ReceiptsThisMonth, trends.ReceiptsLastMonth) : null;
+  const deliveryChange = trends ? pctChange(trends.DeliveriesThisMonth, trends.DeliveriesLastMonth) : null;
+
+  const d = dashboard as Record<string, unknown> | undefined;
+
+  // Entregas completadas del mes y valor de recepciones
+  const entregasCompletadasMes = trends?.DeliveriesThisMonth ?? 0;
+  const valorRecepcionesMes = Number(d?.ValorRecepcionesMes ?? d?.valorRecepcionesMes ?? 0);
+
+  const kpiCards = [
     {
       title: "Recepciones Pendientes",
-      value: dashboard ? String(dashboard.RecepcionesPendientes) : "\u2014",
-      subtitle: "Esperando completar",
-      loading: dashLoading,
-      color: brandColors.statBlue,
-      chartType: "bar" as const,
+      value: String(d?.RecepcionesPendientes ?? d?.recepcionesPendientes ?? 0),
+      icon: <ReceiptLongIcon />,
+      color: "#1976d2",
+      change: receiptChange,
     },
     {
       title: "Devoluciones en Proceso",
-      value: dashboard ? String(dashboard.DevolucionesEnProceso) : "\u2014",
-      subtitle: "En gestion",
-      loading: dashLoading,
-      color: brandColors.statRed,
-      chartType: "line" as const,
+      value: String(d?.DevolucionesEnProceso ?? d?.devolucionesEnProceso ?? 0),
+      icon: <AssignmentReturnIcon />,
+      color: "#f44336",
     },
     {
       title: "Albaranes en Transito",
-      value: dashboard ? String(dashboard.AlbaranesEnTransito) : "\u2014",
-      subtitle: "Despachados sin entregar",
-      loading: dashLoading,
-      color: brandColors.statTeal,
-      chartType: "bar" as const,
+      value: String(d?.AlbaranesEnTransito ?? d?.albaranesEnTransito ?? 0),
+      icon: <LocalShippingIcon />,
+      color: "#00897b",
+      change: deliveryChange,
+    },
+    {
+      title: "Entregas Completadas Mes",
+      value: String(entregasCompletadasMes),
+      icon: <CheckCircleIcon />,
+      color: "#4caf50",
     },
     {
       title: "Transportistas Activos",
-      value: dashboard ? String(dashboard.TransportistasActivos) : "\u2014",
-      subtitle: "Disponibles",
-      loading: dashLoading,
-      color: brandColors.statOrange,
-      chartType: "line" as const,
+      value: String(d?.TransportistasActivos ?? d?.transportistasActivos ?? 0),
+      icon: <PeopleIcon />,
+      color: "#ff9800",
+    },
+    {
+      title: "Valor Recepciones Mes",
+      value: formatCurrency(valorRecepcionesMes),
+      icon: <AttachMoneyIcon />,
+      color: "#7b1fa2",
     },
   ];
 
@@ -111,8 +291,25 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
     { title: "Transportistas", description: "Catalogo", icon: <LocalShippingIcon sx={{ fontSize: 32 }} />, href: `${bp}/transportistas`, bg: brandColors.shortcutSlate },
   ];
 
-  const receiptRows = (lastReceipts?.rows ?? []) as Record<string, unknown>[];
-  const deliveryRows = (lastDeliveries?.rows ?? []) as Record<string, unknown>[];
+  const activityRows = activity.map((a, i) => ({ id: a.ActivityId ?? i, ...a }));
+
+  // Pie chart data
+  const pieData = deliveryStatus.map((d, idx) => ({
+    id: idx,
+    value: d.Count,
+    label: d.StatusLabel,
+    color: STATUS_COLORS[d.Status] || "#9e9e9e",
+  }));
+
+  // Quick stats rows
+  const receiptRows = (recentReceipts?.rows ?? []).map((r, i) => ({
+    id: (r as Record<string, unknown>).ReceiptId ?? i,
+    ...(r as Record<string, unknown>),
+  }));
+  const deliveryRows = (recentDeliveries?.rows ?? []).map((r, i) => ({
+    id: (r as Record<string, unknown>).DeliveryId ?? i,
+    ...(r as Record<string, unknown>),
+  }));
 
   return (
     <Box>
@@ -120,53 +317,24 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
         Dashboard de Logistica
       </Typography>
 
-      {/* STATS CARDS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {statsCards.map((s, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%", bgcolor: s.color, color: "white", borderRadius: 2,
-                position: "relative", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>{s.value}</Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
-                  </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+      {/* ─── KPI CARDS ──────────────────────────────────────── */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {kpiCards.map((kpi, idx) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={idx}>
+            <KPICard
+              title={kpi.title}
+              value={kpi.value}
+              icon={kpi.icon}
+              color={kpi.color}
+              change={kpi.change}
+              loading={dashLoading || loadingTrends}
+            />
           </Grid>
         ))}
       </Grid>
 
-      {/* SHORTCUTS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* ─── SHORTCUTS ──────────────────────────────────────── */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
           <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
@@ -187,91 +355,177 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
         ))}
       </Grid>
 
-      {/* ULTIMAS RECEPCIONES + ULTIMOS ALBARANES */}
+      {/* ─── TREND MINI-CARDS ───────────────────────────────── */}
+      {trends && !loadingTrends && (
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {[
+            { label: "Recepciones este mes", current: trends.ReceiptsThisMonth, prev: trends.ReceiptsLastMonth },
+            { label: "Despachos este mes", current: trends.DeliveriesThisMonth, prev: trends.DeliveriesLastMonth },
+            { label: "Devoluciones este mes", current: trends.ReturnsThisMonth, prev: trends.ReturnsLastMonth },
+          ].map((t, idx) => {
+            const change = pctChange(t.current, t.prev);
+            return (
+              <Grid size={{ xs: 12, sm: 4 }} key={idx}>
+                <Paper sx={{ borderRadius: 2, p: 2 }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase" }}>
+                    {t.label}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, mt: 0.5 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{t.current}</Typography>
+                    {change !== null && (
+                      <Chip
+                        icon={change >= 0 ? <TrendingUpIcon sx={{ fontSize: 14 }} /> : <TrendingDownIcon sx={{ fontSize: 14 }} />}
+                        label={`${change >= 0 ? "+" : ""}${change.toFixed(0)}%`}
+                        size="small"
+                        color={change >= 0 ? "success" : "error"}
+                        variant="outlined"
+                        sx={{ height: 22, fontSize: "0.7rem" }}
+                      />
+                    )}
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Mes anterior: {t.prev}
+                  </Typography>
+                </Paper>
+              </Grid>
+            );
+          })}
+        </Grid>
+      )}
+
+      {/* ─── CHARTS ─────────────────────────────────────────── */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Bar Chart: Recepciones por mes */}
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Paper sx={{ borderRadius: 2, p: 2, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Recepciones por Mes</Typography>
+            {loadingReceipts ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : receiptsMonth.length > 0 ? (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <BarChart
+                  height={280}
+                  xAxis={[{ data: receiptsMonth.map(r => r.MonthLabel), scaleType: "band" }]}
+                  series={[{
+                    data: receiptsMonth.map(r => r.Total),
+                    label: "Recepciones",
+                    color: "#1976d2",
+                  }]}
+                />
+              </Box>
+            ) : (
+              <Alert severity="info">Sin datos de recepciones</Alert>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Pie Chart: Albaranes por estado */}
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Paper sx={{ borderRadius: 2, p: 2, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Albaranes por Estado</Typography>
+            {loadingDelivery ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : pieData.length > 0 ? (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <PieChart
+                  height={280}
+                  series={[{
+                    data: pieData,
+                    highlightScope: { fade: "global", highlight: "item" },
+                    innerRadius: 40,
+                    paddingAngle: 2,
+                    cornerRadius: 4,
+                  }]}
+                />
+              </Box>
+            ) : (
+              <Alert severity="info">Sin datos de albaranes</Alert>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* ─── RECENT ACTIVITY TABLE ──────────────────────────── */}
+      <Paper sx={{ borderRadius: 2, p: 2, mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Actividad Reciente</Typography>
+        {loadingActivity ? (
+          <Skeleton variant="rectangular" height={300} />
+        ) : activityRows.length > 0 ? (
+          <ZenttoDataGrid
+            rows={activityRows}
+            columns={activityCols}
+            serverRowCount={activityRows.length}
+            autoHeight
+            hideFooter
+            disableRowSelectionOnClick
+            density="compact"
+            enableClipboard
+            sx={{ border: 0 }}
+            mobileVisibleFields={["DocNumber", "StatusLabel"]}
+            smExtraFields={["ActivityType"]}
+          />
+        ) : (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <ReceiptLongIcon /> No hay actividad registrada aun
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+
+      {/* ─── QUICK STATS: Ultimas recepciones y entregas ────── */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimas Recepciones</Typography>
-              {receiptRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>N. Recepcion</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Proveedor</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {receiptRows.map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(r.ReceiptNumber ?? "")}</TableCell>
-                        <TableCell>{String(r.SupplierName ?? "")}</TableCell>
-                        <TableCell>{String(r.ReceiptDate ?? "").slice(0, 10)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={receiptStatusLabels[String(r.Status)] ?? String(r.Status)}
-                            size="small"
-                            color={receiptStatusColors[String(r.Status)] ?? "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <ReceiptLongIcon /> No hay recepciones registradas aun
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper sx={{ borderRadius: 2, p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimas 5 Recepciones</Typography>
+            {loadingRecentReceipts ? (
+              <Skeleton variant="rectangular" height={200} />
+            ) : receiptRows.length > 0 ? (
+              <ZenttoDataGrid
+                rows={receiptRows}
+                columns={recentReceiptCols}
+                serverRowCount={receiptRows.length}
+                autoHeight
+                hideFooter
+                disableRowSelectionOnClick
+                density="compact"
+                enableClipboard
+                sx={{ border: 0 }}
+                mobileVisibleFields={["ReceiptNumber", "Status"]}
+                smExtraFields={["SupplierName"]}
+              />
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
+                Sin recepciones recientes
+              </Typography>
+            )}
+          </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimos Albaranes</Typography>
-              {deliveryRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>N. Albaran</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Cliente</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {deliveryRows.map((d, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(d.DeliveryNumber ?? "")}</TableCell>
-                        <TableCell>{String(d.CustomerName ?? "")}</TableCell>
-                        <TableCell>{String(d.DeliveryDate ?? "").slice(0, 10)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={deliveryStatusLabels[String(d.Status)] ?? String(d.Status)}
-                            size="small"
-                            color={deliveryStatusColors[String(d.Status)] ?? "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LocalShippingIcon /> No hay albaranes registrados aun
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper sx={{ borderRadius: 2, p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimas 5 Entregas</Typography>
+            {loadingRecentDeliveries ? (
+              <Skeleton variant="rectangular" height={200} />
+            ) : deliveryRows.length > 0 ? (
+              <ZenttoDataGrid
+                rows={deliveryRows}
+                columns={recentDeliveryCols}
+                serverRowCount={deliveryRows.length}
+                autoHeight
+                hideFooter
+                disableRowSelectionOnClick
+                density="compact"
+                enableClipboard
+                sx={{ border: 0 }}
+                mobileVisibleFields={["DeliveryNumber", "Status"]}
+                smExtraFields={["CustomerName"]}
+              />
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
+                Sin entregas recientes
+              </Typography>
+            )}
+          </Paper>
         </Grid>
       </Grid>
     </Box>

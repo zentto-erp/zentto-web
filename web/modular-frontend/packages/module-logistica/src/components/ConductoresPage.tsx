@@ -15,64 +15,75 @@ import {
   useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import {
-  useCarriersList,
-  useCreateCarrier,
-  useUpdateCarrier,
-  type CarrierFilter,
+  useDriversList,
+  useCreateDriver,
+  useUpdateDriver,
+  type DriverFilter,
 } from "../hooks/useLogistica";
 
-interface CarrierFormData {
-  id?: number;
-  carrierCode: string;
-  carrierName: string;
-  fiscalId: string;
-  contactName: string;
+interface DriverFormData {
+  driverId?: number;
+  carrierId?: number;
+  driverCode: string;
+  driverName: string;
+  licenseNumber: string;
+  licenseExpiry: string;
   phone: string;
   isActive: boolean;
 }
 
-const emptyForm = (): CarrierFormData => ({
-  carrierCode: "",
-  carrierName: "",
-  fiscalId: "",
-  contactName: "",
+const emptyForm = (): DriverFormData => ({
+  driverCode: "",
+  driverName: "",
+  licenseNumber: "",
+  licenseExpiry: "",
   phone: "",
   isActive: true,
 });
 
-export default function TransportistasPage() {
+export default function ConductoresPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [filter, setFilter] = useState<CarrierFilter>({ page: 1, limit: 25 });
+  const [filter, setFilter] = useState<DriverFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<CarrierFormData>(emptyForm());
+  const [formData, setFormData] = useState<DriverFormData>(emptyForm());
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useCarriersList({
+  const { data, isLoading } = useDriversList({
     ...filter,
     search,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
-  const createCarrier = useCreateCarrier();
-  const updateCarrier = useUpdateCarrier();
+  const createDriver = useCreateDriver();
+  const updateDriver = useUpdateDriver();
 
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
   const columns: ZenttoColDef[] = [
-    { field: "CarrierCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
-    { field: "CarrierName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
-    { field: "FiscalId", headerName: "RIF / NIF", flex: 1, minWidth: 120 },
-    { field: "ContactName", headerName: "Contacto", flex: 1.2, minWidth: 140 },
+    { field: "DriverCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
+    { field: "DriverName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
+    { field: "CarrierName", headerName: "Transportista", flex: 1.2, minWidth: 140 },
+    { field: "LicenseNumber", headerName: "Licencia", flex: 1, minWidth: 120 },
+    {
+      field: "LicenseExpiry",
+      headerName: "Venc. Licencia",
+      flex: 1,
+      minWidth: 130,
+      renderCell: (params) => {
+        if (!params.value) return "-";
+        const d = new Date(params.value as string);
+        return d.toLocaleDateString("es");
+      },
+    },
     { field: "Phone", headerName: "Telefono", flex: 1, minWidth: 120 },
     {
       field: "IsActive",
@@ -99,11 +110,14 @@ export default function TransportistasPage() {
           startIcon={<EditIcon />}
           onClick={() => {
             setFormData({
-              id: Number(params.row.CarrierId ?? params.row.Id),
-              carrierCode: String(params.row.CarrierCode ?? ""),
-              carrierName: String(params.row.CarrierName ?? ""),
-              fiscalId: String(params.row.FiscalId ?? ""),
-              contactName: String(params.row.ContactName ?? ""),
+              driverId: Number(params.row.DriverId ?? params.row.Id),
+              carrierId: params.row.CarrierId ? Number(params.row.CarrierId) : undefined,
+              driverCode: String(params.row.DriverCode ?? ""),
+              driverName: String(params.row.DriverName ?? ""),
+              licenseNumber: String(params.row.LicenseNumber ?? ""),
+              licenseExpiry: params.row.LicenseExpiry
+                ? String(params.row.LicenseExpiry).slice(0, 10)
+                : "",
               phone: String(params.row.Phone ?? ""),
               isActive: Boolean(params.row.IsActive),
             });
@@ -117,7 +131,7 @@ export default function TransportistasPage() {
     },
   ];
 
-  const handleChange = (field: keyof CarrierFormData, value: string | boolean) => {
+  const handleChange = (field: keyof DriverFormData, value: string | boolean | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -128,7 +142,7 @@ export default function TransportistasPage() {
 
   const handleSubmit = () => {
     const payload: Record<string, unknown> = { ...formData };
-    const mutation = isEditing ? updateCarrier : createCarrier;
+    const mutation = isEditing ? updateDriver : createDriver;
 
     mutation.mutate(payload, {
       onSuccess: () => {
@@ -150,7 +164,7 @@ export default function TransportistasPage() {
         mb: 3,
       }}>
         <Typography variant="h5" fontWeight={600}>
-          Transportistas
+          Conductores
         </Typography>
         <Button
           variant="contained"
@@ -162,7 +176,7 @@ export default function TransportistasPage() {
           fullWidth={isMobile}
           sx={{ maxWidth: { sm: "fit-content" } }}
         >
-          Nuevo Transportista
+          Nuevo Conductor
         </Button>
       </Box>
 
@@ -170,7 +184,7 @@ export default function TransportistasPage() {
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
-            placeholder="Buscar por codigo, nombre, RIF..."
+            placeholder="Buscar por codigo, nombre, licencia..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -185,7 +199,7 @@ export default function TransportistasPage() {
       <ZenttoDataGrid
         rows={rows}
         columns={columns}
-        getRowId={(row) => row.CarrierId ?? row.Id ?? row.CarrierCode ?? Math.random()}
+        getRowId={(row) => row.DriverId ?? row.Id ?? row.DriverCode ?? Math.random()}
         rowCount={total}
         loading={isLoading}
         paginationMode="server"
@@ -196,8 +210,8 @@ export default function TransportistasPage() {
         autoHeight
         enableClipboard
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['CarrierCode', 'CarrierName']}
-        smExtraFields={['IsActive', 'Phone']}
+        mobileVisibleFields={["DriverCode", "DriverName"]}
+        smExtraFields={["IsActive", "CarrierName"]}
       />
 
       {/* Dialog: Crear/Editar */}
@@ -208,14 +222,14 @@ export default function TransportistasPage() {
         maxWidth={isMobile ? undefined : "sm"}
         fullWidth
       >
-        <DialogTitle>{isEditing ? "Editar Transportista" : "Nuevo Transportista"}</DialogTitle>
+        <DialogTitle>{isEditing ? "Editar Conductor" : "Nuevo Conductor"}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Codigo"
-                value={formData.carrierCode}
-                onChange={(e) => handleChange("carrierCode", e.target.value)}
+                value={formData.driverCode}
+                onChange={(e) => handleChange("driverCode", e.target.value)}
                 fullWidth
                 disabled={isEditing}
               />
@@ -223,25 +237,27 @@ export default function TransportistasPage() {
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Nombre"
-                value={formData.carrierName}
-                onChange={(e) => handleChange("carrierName", e.target.value)}
+                value={formData.driverName}
+                onChange={(e) => handleChange("driverName", e.target.value)}
                 fullWidth
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="RIF / NIF"
-                value={formData.fiscalId}
-                onChange={(e) => handleChange("fiscalId", e.target.value)}
+                label="Numero de Licencia"
+                value={formData.licenseNumber}
+                onChange={(e) => handleChange("licenseNumber", e.target.value)}
                 fullWidth
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Contacto"
-                value={formData.contactName}
-                onChange={(e) => handleChange("contactName", e.target.value)}
+                label="Vencimiento Licencia"
+                type="date"
+                value={formData.licenseExpiry}
+                onChange={(e) => handleChange("licenseExpiry", e.target.value)}
                 fullWidth
+                InputLabelProps={{ shrink: true }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -260,12 +276,12 @@ export default function TransportistasPage() {
             variant="contained"
             onClick={handleSubmit}
             disabled={
-              (isEditing ? updateCarrier.isPending : createCarrier.isPending) ||
-              !formData.carrierCode ||
-              !formData.carrierName
+              (isEditing ? updateDriver.isPending : createDriver.isPending) ||
+              !formData.driverCode ||
+              !formData.driverName
             }
           >
-            {(isEditing ? updateCarrier.isPending : createCarrier.isPending)
+            {(isEditing ? updateDriver.isPending : createDriver.isPending)
               ? "Guardando..."
               : "Guardar"}
           </Button>

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  AppBar,
   Box,
   Button,
   Chip,
@@ -9,17 +10,23 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Grid,
   IconButton,
   MenuItem,
   Stack,
+  Tab,
+  Tabs,
   TextField,
+  Toolbar,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -31,8 +38,25 @@ import {
   useCancelWorkOrder,
   type WorkOrderFilter,
 } from "../hooks/useManufactura";
+import OrdenDetalleDialog from "./OrdenDetalleDialog";
+import MaterialConsumptionPanel from "./MaterialConsumptionPanel";
+import OutputReportPanel from "./OutputReportPanel";
+import RoutingPage from "./RoutingPage";
+
+/* ─── Tab Panel helper ────────────────────────────────────── */
+
+function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
+  return value === index ? <Box sx={{ pt: 1 }}>{children}</Box> : null;
+}
+
+/* ─── Detail Panel with Tabs ──────────────────────────────── */
 
 function OrdenDetailPanel({ row }: { row: Record<string, unknown> }) {
+  const [tabIndex, setTabIndex] = useState(0);
+  const workOrderId = Number(row.WorkOrderId ?? row.Id ?? 0);
+  const bomId = Number(row.BOMId ?? 0);
+  const status = String(row.Status ?? "DRAFT");
+
   const priorityColor: Record<string, 'error' | 'warning' | 'success'> = {
     HIGH: 'error', MEDIUM: 'warning', LOW: 'success',
   };
@@ -46,40 +70,92 @@ function OrdenDetailPanel({ row }: { row: Record<string, unknown> }) {
   ].filter(f => f.value != null && f.value !== '');
 
   return (
-    <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
-      {fields.map(f => (
-        <Box key={f.label} sx={{ minWidth: 130 }}>
+    <Box sx={{ px: 2, py: 1 }}>
+      {/* Info summary */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center', mb: 1 }}>
+        {fields.map(f => (
+          <Box key={f.label} sx={{ minWidth: 130 }}>
+            <Typography variant="caption" color="text.secondary"
+              sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+              {f.label}
+            </Typography>
+            <Typography variant="body2" fontWeight={500} sx={{ mt: 0.25 }}>
+              {String(f.value)}
+            </Typography>
+          </Box>
+        ))}
+        <Box>
           <Typography variant="caption" color="text.secondary"
             sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
-            {f.label}
+            Prioridad
           </Typography>
-          <Typography variant="body2" fontWeight={500} sx={{ mt: 0.25 }}>
-            {String(f.value)}
-          </Typography>
+          <Chip
+            size="small"
+            label={String(row.Priority ?? '')}
+            color={priorityColor[String(row.Priority ?? '')] ?? 'default'}
+            sx={{ mt: 0.25 }}
+          />
         </Box>
-      ))}
-      <Box>
-        <Typography variant="caption" color="text.secondary"
-          sx={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
-          Prioridad
-        </Typography>
-        <Chip
-          size="small"
-          label={String(row.Priority ?? '')}
-          color={priorityColor[String(row.Priority ?? '')] ?? 'default'}
-          sx={{ mt: 0.25 }}
-        />
       </Box>
+
+      {/* Tabs */}
+      <Tabs
+        value={tabIndex}
+        onChange={(_, v) => setTabIndex(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 36 }}
+      >
+        <Tab label="Detalle" sx={{ minHeight: 36, py: 0.5 }} />
+        <Tab label="Consumo de Materiales" sx={{ minHeight: 36, py: 0.5 }} />
+        <Tab label="Reporte de Salida" sx={{ minHeight: 36, py: 0.5 }} />
+        {bomId > 0 && <Tab label="Routing" sx={{ minHeight: 36, py: 0.5 }} />}
+      </Tabs>
+
+      <TabPanel value={tabIndex} index={0}>
+        <Box sx={{ py: 1 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={6} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', display: 'block' }}>Estado</Typography>
+              <Chip label={status} size="small" color={
+                status === 'COMPLETED' ? 'success' : status === 'IN_PROGRESS' ? 'warning' : status === 'CANCELLED' ? 'error' : 'default'
+              } sx={{ mt: 0.25 }} />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', display: 'block' }}>Producida</Typography>
+              <Typography variant="body2" fontWeight={500}>{Number(row.ProducedQuantity ?? 0).toLocaleString('es')} uds</Typography>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', display: 'block' }}>Almacen</Typography>
+              <Typography variant="body2" fontWeight={500}>{String(row.WarehouseName ?? row.WarehouseId ?? '-')}</Typography>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', display: 'block' }}>Notas</Typography>
+              <Typography variant="body2" fontWeight={500}>{String(row.Notes ?? '-')}</Typography>
+            </Grid>
+          </Grid>
+        </Box>
+      </TabPanel>
+
+      <TabPanel value={tabIndex} index={1}>
+        {workOrderId > 0 && <MaterialConsumptionPanel workOrderId={workOrderId} />}
+      </TabPanel>
+
+      <TabPanel value={tabIndex} index={2}>
+        {workOrderId > 0 && <OutputReportPanel workOrderId={workOrderId} />}
+      </TabPanel>
+
+      {bomId > 0 && (
+        <TabPanel value={tabIndex} index={3}>
+          <RoutingPage bomId={bomId} />
+        </TabPanel>
+      )}
     </Box>
   );
 }
 
-const statusColors: Record<string, "default" | "info" | "success" | "error" | "warning"> = {
-  DRAFT: "default",
-  IN_PROGRESS: "info",
-  COMPLETED: "success",
-  CANCELLED: "error",
-};
+/* ─── Status Maps ──────────────────────────────────────────── */
 
 const statusLabels: Record<string, string> = {
   DRAFT: "Borrador",
@@ -88,10 +164,16 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelada",
 };
 
+/* ─── Main Component ──────────────────────────────────────── */
+
 export default function OrdenesProduccionPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [filter, setFilter] = useState<WorkOrderFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
 
   // Form state
   const [bomId, setBomId] = useState("");
@@ -124,35 +206,27 @@ export default function OrdenesProduccionPage() {
       headerName: "Cantidad",
       width: 100,
       type: "number",
+      aggregation: "sum",
     },
     {
       field: "Status",
       headerName: "Estado",
       width: 130,
-      renderCell: (params) => {
-        const status = String(params.value ?? "DRAFT");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        DRAFT: "default",
+        IN_PROGRESS: "warning",
+        COMPLETED: "success",
+        CANCELLED: "error",
       },
     },
     {
       field: "Priority",
       headerName: "Prioridad",
       width: 100,
-      renderCell: (params) => {
-        const p = String(params.value ?? "MEDIUM");
-        const colors: Record<string, "default" | "error" | "warning" | "info"> = {
-          HIGH: "error",
-          MEDIUM: "warning",
-          LOW: "info",
-        };
-        return <Chip label={p} size="small" color={colors[p] ?? "default"} variant="outlined" />;
+      statusColors: {
+        HIGH: "error",
+        MEDIUM: "warning",
+        LOW: "info",
       },
     },
     {
@@ -183,7 +257,7 @@ export default function OrdenesProduccionPage() {
                 <IconButton
                   size="small"
                   color="info"
-                  onClick={() => id && startOrder.mutate(id)}
+                  onClick={(e) => { e.stopPropagation(); id && startOrder.mutate(id); }}
                 >
                   <PlayArrowIcon fontSize="small" />
                 </IconButton>
@@ -194,7 +268,7 @@ export default function OrdenesProduccionPage() {
                 <IconButton
                   size="small"
                   color="success"
-                  onClick={() => id && completeOrder.mutate(id)}
+                  onClick={(e) => { e.stopPropagation(); id && completeOrder.mutate(id); }}
                 >
                   <CheckCircleIcon fontSize="small" />
                 </IconButton>
@@ -205,7 +279,7 @@ export default function OrdenesProduccionPage() {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => id && cancelOrder.mutate(id)}
+                  onClick={(e) => { e.stopPropagation(); id && cancelOrder.mutate(id); }}
                 >
                   <CancelIcon fontSize="small" />
                 </IconButton>
@@ -255,34 +329,49 @@ export default function OrdenesProduccionPage() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Typography variant="h5" fontWeight={600}>
           Ordenes de Produccion
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { resetForm(); setDialogOpen(true); }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => { resetForm(); setDialogOpen(true); }}
+          fullWidth={isMobile}
+        >
           Nueva Orden
         </Button>
       </Box>
 
       {/* Filter */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-         
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="DRAFT">Borrador</MenuItem>
-          <MenuItem value="IN_PROGRESS">En Proceso</MenuItem>
-          <MenuItem value="COMPLETED">Completada</MenuItem>
-          <MenuItem value="CANCELLED">Cancelada</MenuItem>
-        </TextField>
-      </Stack>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={4} md={3}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="DRAFT">Borrador</MenuItem>
+            <MenuItem value="IN_PROGRESS">En Proceso</MenuItem>
+            <MenuItem value="COMPLETED">Completada</MenuItem>
+            <MenuItem value="CANCELLED">Cancelada</MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
 
-      {/* DataGrid */}
+      {/* DataGrid con master-detail */}
       <ZenttoDataGrid
         rows={rows}
         columns={columns}
@@ -295,84 +384,141 @@ export default function OrdenesProduccionPage() {
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick
         autoHeight
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['WorkOrderNumber', 'Status']}
-        smExtraFields={['ProductName', 'PlannedStart']}
+        enableClipboard
+        enableGrouping
+        onRowClick={(params) => {
+          const id = Number(params.row.WorkOrderId ?? params.row.Id);
+          if (id) setDetailOrderId(id);
+        }}
+        sx={{ bgcolor: "background.paper", borderRadius: 2, "& .MuiDataGrid-row": { cursor: "pointer" } }}
+        mobileVisibleFields={["WorkOrderNumber", "Status"]}
+        smExtraFields={["ProductName", "PlannedStart"]}
         getDetailContent={(row: any) => <OrdenDetailPanel row={row} />}
-        detailPanelHeight={110}
+        detailPanelHeight="auto"
+      />
+
+      {/* Dialog: Detalle de Orden */}
+      <OrdenDetalleDialog
+        open={detailOrderId !== null}
+        onClose={() => setDetailOrderId(null)}
+        workOrderId={detailOrderId}
       />
 
       {/* Dialog: Crear Orden */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nueva Orden de Produccion</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: "relative" }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">
+                Nueva Orden de Produccion
+              </Typography>
+              <Button
+                color="inherit"
+                onClick={handleSubmit}
+                disabled={
+                  createOrder.isPending || !bomId || !productId || !plannedQuantity || !plannedStart || !plannedEnd
+                }
+              >
+                {createOrder.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Nueva Orden de Produccion</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="BOM (ID)"
-              value={bomId}
-              onChange={(e) => setBomId(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="Producto (ID)"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="Cantidad Planificada"
-              value={plannedQuantity}
-              onChange={(e) => setPlannedQuantity(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <DatePicker
-              label="Fecha Inicio"
-              value={plannedStart ? dayjs(plannedStart) : null}
-              onChange={(v) => setPlannedStart(v ? v.format('YYYY-MM-DD') : '')}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-            <DatePicker
-              label="Fecha Fin"
-              value={plannedEnd ? dayjs(plannedEnd) : null}
-              onChange={(v) => setPlannedEnd(v ? v.format('YYYY-MM-DD') : '')}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-            <TextField
-              select
-              label="Prioridad"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              fullWidth
-            >
-              <MenuItem value="LOW">Baja</MenuItem>
-              <MenuItem value="MEDIUM">Media</MenuItem>
-              <MenuItem value="HIGH">Alta</MenuItem>
-            </TextField>
-            <TextField
-              label="Notas"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              fullWidth
-              multiline
-              rows={2}
-            />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="BOM (ID)"
+                value={bomId}
+                onChange={(e) => setBomId(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Producto (ID)"
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Cantidad Planificada"
+                value={plannedQuantity}
+                onChange={(e) => setPlannedQuantity(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                label="Prioridad"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                fullWidth
+              >
+                <MenuItem value="LOW">Baja</MenuItem>
+                <MenuItem value="MEDIUM">Media</MenuItem>
+                <MenuItem value="HIGH">Alta</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <DatePicker
+                label="Fecha Inicio"
+                value={plannedStart ? dayjs(plannedStart) : null}
+                onChange={(v) => setPlannedStart(v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <DatePicker
+                label="Fecha Fin"
+                value={plannedEnd ? dayjs(plannedEnd) : null}
+                onChange={(v) => setPlannedEnd(v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Notas"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                fullWidth
+                multiline
+                rows={2}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={
-              createOrder.isPending || !bomId || !productId || !plannedQuantity || !plannedStart || !plannedEnd
-            }
-          >
-            {createOrder.isPending ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={
+                createOrder.isPending || !bomId || !productId || !plannedQuantity || !plannedStart || !plannedEnd
+              }
+            >
+              {createOrder.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );

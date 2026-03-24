@@ -231,11 +231,120 @@ export function useDeliverDeliveryNote() {
   });
 }
 
+// ── Conductores ────────────────────────────────────────────
+
+export interface DriverFilter {
+  carrierId?: number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface DriverListResponse {
+  rows: Record<string, unknown>[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+const QK_DRIVERS = "logistics-drivers";
+
+export function useDriversList(filter?: DriverFilter) {
+  return useQuery<DriverListResponse>({
+    queryKey: [QK_DRIVERS, filter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filter?.carrierId) params.append("carrierId", filter.carrierId.toString());
+      if (filter?.search) params.append("search", filter.search);
+      if (filter?.page) params.append("page", filter.page.toString());
+      if (filter?.limit) params.append("limit", filter.limit.toString());
+      return apiGet(`${BASE}/conductores?${params.toString()}`);
+    },
+  });
+}
+
+export function useCreateDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: Record<string, unknown>) => apiPost(`${BASE}/conductores`, d),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_DRIVERS] }),
+  });
+}
+
+export function useUpdateDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: Record<string, unknown>) => apiPost(`${BASE}/conductores`, d),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_DRIVERS] }),
+  });
+}
+
 // ── Dashboard ───────────────────────────────────────────────
 
 export function useLogisticaDashboard() {
   return useQuery<LogisticaDashboard>({
     queryKey: ["logistica", "dashboard"],
     queryFn: () => apiGet(`${BASE}/dashboard`),
+  });
+}
+
+// ── Analytics ──────────────────────────────────────────────
+
+export interface ReceiptsByMonthRow {
+  Month: string;
+  MonthLabel: string;
+  Total: number;
+}
+
+export interface DeliveryByStatusRow {
+  Status: string;
+  StatusLabel: string;
+  Count: number;
+}
+
+export interface RecentActivityRow {
+  ActivityId: number;
+  ActivityType: string;
+  DocNumber: string;
+  EntityName: string;
+  ActivityDate: string;
+  Status: string;
+  StatusLabel: string;
+}
+
+export interface LogisticaTrends {
+  ReceiptsThisMonth: number;
+  ReceiptsLastMonth: number;
+  DeliveriesThisMonth: number;
+  DeliveriesLastMonth: number;
+  ReturnsThisMonth: number;
+  ReturnsLastMonth: number;
+}
+
+export function useReceiptsByMonth() {
+  return useQuery<ReceiptsByMonthRow[]>({
+    queryKey: ["logistica", "analytics", "receipts-by-month"],
+    queryFn: () => apiGet(`${BASE}/analytics/receipts-by-month`),
+  });
+}
+
+export function useDeliveryByStatus() {
+  return useQuery<DeliveryByStatusRow[]>({
+    queryKey: ["logistica", "analytics", "delivery-by-status"],
+    queryFn: () => apiGet(`${BASE}/analytics/delivery-by-status`),
+  });
+}
+
+export function useRecentActivity() {
+  return useQuery<RecentActivityRow[]>({
+    queryKey: ["logistica", "analytics", "recent-activity"],
+    queryFn: () => apiGet(`${BASE}/analytics/recent-activity`),
+  });
+}
+
+export function useLogisticaTrends() {
+  return useQuery<LogisticaTrends>({
+    queryKey: ["logistica", "analytics", "trends"],
+    queryFn: () => apiGet(`${BASE}/analytics/trends`),
   });
 }

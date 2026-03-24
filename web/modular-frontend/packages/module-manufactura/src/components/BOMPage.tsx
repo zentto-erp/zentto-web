@@ -2,27 +2,30 @@
 
 import React, { useState } from "react";
 import {
+  AppBar,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Grid,
   IconButton,
   MenuItem,
   Stack,
   TextField,
+  Toolbar,
   Typography,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { formatCurrency } from "@zentto/shared-api";
 import {
   useBOMList,
   useCreateBOM,
@@ -39,12 +42,6 @@ interface BOMLine {
   unitCost: number;
 }
 
-const statusColors: Record<string, "default" | "success" | "error" | "warning"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  OBSOLETE: "error",
-};
-
 const statusLabels: Record<string, string> = {
   DRAFT: "Borrador",
   ACTIVE: "Activa",
@@ -60,6 +57,9 @@ const emptyLine = (): BOMLine => ({
 });
 
 export default function BOMPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [filter, setFilter] = useState<BOMFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -69,7 +69,7 @@ export default function BOMPage() {
   const [productId, setProductId] = useState("");
   const [bomCode, setBomCode] = useState("");
   const [bomName, setBomName] = useState("");
-  const [expectedQuantity, setExpectedQuantity] = useState("1");
+  const [outputQuantity, setOutputQuantity] = useState("1");
   const [lines, setLines] = useState<BOMLine[]>([emptyLine()]);
 
   const { data, isLoading } = useBOMList({
@@ -90,31 +90,27 @@ export default function BOMPage() {
     { field: "BOMName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
     { field: "ProductName", headerName: "Producto", flex: 1.2, minWidth: 150 },
     {
-      field: "ExpectedQuantity",
-      headerName: "Cant. Esperada",
+      field: "OutputQuantity",
+      headerName: "Cant. Producida",
       width: 130,
       type: "number",
+      aggregation: "sum",
     },
     {
       field: "TotalCost",
       headerName: "Costo Total",
       width: 130,
-      renderCell: (params) => formatCurrency(Number(params.value ?? 0)),
+      currency: true,
+      aggregation: "sum",
     },
     {
       field: "Status",
       headerName: "Estado",
       width: 120,
-      renderCell: (params) => {
-        const status = String(params.value ?? "DRAFT");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        DRAFT: "default",
+        ACTIVE: "success",
+        OBSOLETE: "error",
       },
     },
     {
@@ -176,7 +172,7 @@ export default function BOMPage() {
     setProductId("");
     setBomCode("");
     setBomName("");
-    setExpectedQuantity("1");
+    setOutputQuantity("1");
     setLines([emptyLine()]);
   };
 
@@ -186,7 +182,7 @@ export default function BOMPage() {
         productId: Number(productId),
         bomCode,
         bomName,
-        expectedQuantity: Number(expectedQuantity),
+        outputQuantity: Number(outputQuantity),
         lines: lines.map((l) => ({
           productId: Number(l.productId),
           quantity: l.quantity,
@@ -206,40 +202,57 @@ export default function BOMPage() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Typography variant="h5" fontWeight={600}>
           Lista de Materiales (BOM)
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { resetForm(); setDialogOpen(true); }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => { resetForm(); setDialogOpen(true); }}
+          fullWidth={isMobile}
+        >
           Nueva BOM
         </Button>
       </Box>
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          placeholder="Buscar por codigo, nombre..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPaginationModel((p) => ({ ...p, page: 0 }));
-          }}
-          sx={{ flex: 1 }}
-        />
-        <TextField
-          select
-          label="Estado"
-          value={filter.status ?? ""}
-          onChange={handleStatusFilter}
-         
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="DRAFT">Borrador</MenuItem>
-          <MenuItem value="ACTIVE">Activa</MenuItem>
-          <MenuItem value="OBSOLETE">Obsoleta</MenuItem>
-        </TextField>
-      </Stack>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={8} md={9}>
+          <TextField
+            placeholder="Buscar por codigo, nombre..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPaginationModel((p) => ({ ...p, page: 0 }));
+            }}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={4} md={3}>
+          <TextField
+            select
+            label="Estado"
+            value={filter.status ?? ""}
+            onChange={handleStatusFilter}
+            fullWidth
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="DRAFT">Borrador</MenuItem>
+            <MenuItem value="ACTIVE">Activa</MenuItem>
+            <MenuItem value="OBSOLETE">Obsoleta</MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
 
       {/* DataGrid */}
       <ZenttoDataGrid
@@ -254,81 +267,134 @@ export default function BOMPage() {
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick
         autoHeight
+        enableClipboard
+        enableGrouping
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['BOMName', 'Status']}
-        smExtraFields={['ProductName', 'TotalCost']}
+        mobileVisibleFields={["BOMName", "Status"]}
+        smExtraFields={["ProductName", "TotalCost"]}
       />
 
       {/* Dialog: Crear BOM */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Nueva Lista de Materiales</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "md"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: "relative" }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">
+                Nueva Lista de Materiales
+              </Typography>
+              <Button
+                color="inherit"
+                onClick={handleSubmit}
+                disabled={createBOM.isPending || !bomCode || !bomName || !productId}
+              >
+                {createBOM.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>Nueva Lista de Materiales</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Codigo BOM"
-              value={bomCode}
-              onChange={(e) => setBomCode(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Nombre BOM"
-              value={bomName}
-              onChange={(e) => setBomName(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Producto Terminado (ID)"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="Cantidad Esperada"
-              value={expectedQuantity}
-              onChange={(e) => setExpectedQuantity(e.target.value)}
-              type="number"
-              fullWidth
-            />
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Codigo BOM"
+                value={bomCode}
+                onChange={(e) => setBomCode(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Nombre BOM"
+                value={bomName}
+                onChange={(e) => setBomName(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Producto Terminado (ID)"
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Cantidad a Producir"
+                value={outputQuantity}
+                onChange={(e) => setOutputQuantity(e.target.value)}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+          </Grid>
 
-            <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 600 }}>
-              Componentes / Materiales
-            </Typography>
-            {lines.map((line, idx) => (
-              <Stack key={idx} direction="row" spacing={1} alignItems="center">
+          <Typography variant="subtitle2" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+            Componentes / Materiales
+          </Typography>
+          {lines.map((line, idx) => (
+            <Grid container spacing={1} key={idx} sx={{ mb: 1 }} alignItems="center">
+              <Grid item xs={6} sm={2}>
                 <TextField
                   label="Producto (ID)"
                   value={line.productId}
                   onChange={(e) => handleLineChange(idx, "productId", e.target.value)}
                   type="number"
-                  sx={{ width: 120 }}
+                  fullWidth
+                  size="small"
                 />
+              </Grid>
+              <Grid item xs={6} sm={3}>
                 <TextField
                   label="Nombre"
                   value={line.productName}
                   onChange={(e) => handleLineChange(idx, "productName", e.target.value)}
-                  sx={{ flex: 1 }}
+                  fullWidth
+                  size="small"
                 />
+              </Grid>
+              <Grid item xs={4} sm={2}>
                 <TextField
                   label="Cantidad"
                   type="number"
                   value={line.quantity}
                   onChange={(e) => handleLineChange(idx, "quantity", Number(e.target.value))}
-                  sx={{ width: 100 }}
+                  fullWidth
+                  size="small"
                 />
+              </Grid>
+              <Grid item xs={4} sm={2}>
                 <TextField
                   label="Unidad"
                   value={line.unitOfMeasure}
                   onChange={(e) => handleLineChange(idx, "unitOfMeasure", e.target.value)}
-                  sx={{ width: 100 }}
+                  fullWidth
+                  size="small"
                 />
+              </Grid>
+              <Grid item xs={3} sm={2}>
                 <TextField
                   label="Costo Unit."
                   type="number"
                   value={line.unitCost}
                   onChange={(e) => handleLineChange(idx, "unitCost", Number(e.target.value))}
-                  sx={{ width: 110 }}
+                  fullWidth
+                  size="small"
                 />
+              </Grid>
+              <Grid item xs={1} sm={1}>
                 <Tooltip title="Eliminar componente">
                   <span>
                     <IconButton
@@ -341,23 +407,25 @@ export default function BOMPage() {
                     </IconButton>
                   </span>
                 </Tooltip>
-              </Stack>
-            ))}
-            <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>
-              Agregar componente
-            </Button>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={createBOM.isPending || !bomCode || !bomName || !productId}
-          >
-            {createBOM.isPending ? "Guardando..." : "Guardar"}
+              </Grid>
+            </Grid>
+          ))}
+          <Button size="small" onClick={handleAddLine} startIcon={<AddIcon />}>
+            Agregar componente
           </Button>
-        </DialogActions>
+        </DialogContent>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={createBOM.isPending || !bomCode || !bomName || !productId}
+            >
+              {createBOM.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );

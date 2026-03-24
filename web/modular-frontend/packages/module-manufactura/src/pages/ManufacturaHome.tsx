@@ -2,110 +2,289 @@
 
 import React from "react";
 import {
+  Alert,
   Box,
   Card,
   CardActionArea,
   CardContent,
-  IconButton,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Chip,
+  Paper,
+  Skeleton,
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { alpha } from "@mui/material/styles";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
 import FactoryIcon from "@mui/icons-material/Factory";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import RouteIcon from "@mui/icons-material/Route";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import TimerIcon from "@mui/icons-material/Timer";
+import { BarChart } from "@mui/x-charts/BarChart";
+import { PieChart } from "@mui/x-charts/PieChart";
 import { useRouter } from "next/navigation";
 import {
   useManufacturaDashboard,
+  useProductionByProduct,
+  useOrdersByStatus,
+  useRecentOrders,
   useBOMList,
-  useWorkOrdersList,
 } from "../hooks/useManufactura";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 
-const orderStatusLabels: Record<string, string> = {
-  DRAFT: "Borrador",
-  IN_PROGRESS: "En Proceso",
-  COMPLETED: "Completada",
-  CANCELLED: "Cancelada",
+/* ─── Helpers ─────────────────────────────────────────────── */
+
+function pctChange(current: number, previous: number): number | null {
+  if (previous === 0) return current > 0 ? 100 : null;
+  return ((current - previous) / previous) * 100;
+}
+
+/* ─── KPI Card ─────────────────────────────────────────────── */
+
+interface KPICardProps {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  color: string;
+  change?: number | null;
+  loading?: boolean;
+}
+
+function KPICard({ title, value, subtitle, icon, color, change, loading }: KPICardProps) {
+  return (
+    <Card
+      sx={{
+        height: "100%",
+        borderRadius: 2,
+        border: `1px solid ${alpha(color, 0.2)}`,
+        boxShadow: `0 2px 8px ${alpha(color, 0.08)}`,
+      }}
+    >
+      <CardContent sx={{ pb: "12px !important", pt: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.7rem" }}
+            >
+              {title}
+            </Typography>
+            {loading ? (
+              <Skeleton variant="text" width={80} height={36} sx={{ mt: 0.5 }} />
+            ) : (
+              <Typography variant="h5" sx={{ fontWeight: 700, color, mt: 0.5, lineHeight: 1.1 }}>
+                {value}
+              </Typography>
+            )}
+            {subtitle && !loading && (
+              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.3, display: "block" }}>
+                {subtitle}
+              </Typography>
+            )}
+            {change !== undefined && change !== null && !loading && (
+              <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                {change >= 0 ? (
+                  <TrendingUpIcon sx={{ fontSize: 14, color: "success.main", mr: 0.3 }} />
+                ) : (
+                  <TrendingDownIcon sx={{ fontSize: 14, color: "error.main", mr: 0.3 }} />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{ color: change >= 0 ? "success.main" : "error.main", fontWeight: 600 }}
+                >
+                  {change >= 0 ? "+" : ""}{change.toFixed(1)}% vs mes anterior
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          <Box
+            sx={{
+              bgcolor: alpha(color, 0.1),
+              borderRadius: 1.5,
+              p: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color,
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Order Status Colors ─────────────────────────────────── */
+
+const ORDER_STATUS_COLORS: Record<string, string> = {
+  DRAFT: "#9e9e9e",
+  CONFIRMED: "#2196f3",
+  IN_PROGRESS: "#ff9800",
+  COMPLETED: "#4caf50",
+  CANCELLED: "#f44336",
 };
 
-const orderStatusColors: Record<string, "default" | "info" | "success" | "error"> = {
-  DRAFT: "default",
-  IN_PROGRESS: "info",
-  COMPLETED: "success",
-  CANCELLED: "error",
-};
+/* ─── Recent Orders Columns ──────────────────────────────── */
 
-const bomStatusLabels: Record<string, string> = {
-  DRAFT: "Borrador",
-  ACTIVE: "Activa",
-  OBSOLETE: "Obsoleta",
-};
+const recentOrderCols: ZenttoColDef[] = [
+  { field: "WorkOrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 100 },
+  { field: "ProductName", headerName: "Producto", flex: 1.2, minWidth: 130, mobileHide: true },
+  {
+    field: "PlannedQuantity",
+    headerName: "Planificada",
+    width: 90,
+    type: "number",
+    aggregation: "sum",
+    valueFormatter: (value: unknown) => Number(value ?? 0).toLocaleString("es"),
+    mobileHide: true,
+  },
+  {
+    field: "ProducedQuantity",
+    headerName: "Producida",
+    width: 90,
+    type: "number",
+    aggregation: "sum",
+    valueFormatter: (value: unknown) => Number(value ?? 0).toLocaleString("es"),
+    mobileHide: true,
+  },
+  {
+    field: "StatusLabel",
+    headerName: "Estado",
+    width: 120,
+    statusColors: {
+      Borrador: "default",
+      "En Proceso": "warning",
+      Completada: "success",
+      Cancelada: "error",
+    },
+  },
+];
 
-const bomStatusColors: Record<string, "default" | "success" | "error"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  OBSOLETE: "error",
-};
+/* ─── Recent BOMs Columns ────────────────────────────────── */
+
+const recentBomCols: ZenttoColDef[] = [
+  { field: "BOMCode", headerName: "Codigo", flex: 0.7, minWidth: 90 },
+  { field: "BOMName", headerName: "Nombre", flex: 1.3, minWidth: 140 },
+  { field: "ProductName", headerName: "Producto", flex: 1, minWidth: 120, mobileHide: true },
+  {
+    field: "TotalCost",
+    headerName: "Costo",
+    width: 100,
+    currency: true,
+    mobileHide: true,
+  },
+  {
+    field: "Status",
+    headerName: "Estado",
+    width: 100,
+    statusColors: {
+      DRAFT: "default",
+      ACTIVE: "success",
+      OBSOLETE: "error",
+    },
+  },
+];
+
+/* ─── Main Component ──────────────────────────────────────── */
 
 export default function ManufacturaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
-  const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
-  const { data: lastBOMs } = useBOMList({ limit: 5 });
-  const { data: lastOrders } = useWorkOrdersList({ limit: 5 });
 
-  const statsCards = [
+  // Data hooks
+  const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
+  const { data: prodByProductRaw, isLoading: loadingProd } = useProductionByProduct();
+  const { data: ordersByStatusRaw, isLoading: loadingStatus } = useOrdersByStatus();
+  const { data: recentOrdersRaw, isLoading: loadingRecent } = useRecentOrders();
+  const { data: bomData, isLoading: loadingBom } = useBOMList({ limit: 5, page: 1 });
+
+  // Normalize
+  const prodByProduct = Array.isArray(prodByProductRaw) ? prodByProductRaw : [];
+  const ordersByStatus = Array.isArray(ordersByStatusRaw) ? ordersByStatusRaw : [];
+  const recentOrders = Array.isArray(recentOrdersRaw) ? recentOrdersRaw : [];
+  const recentBoms = (bomData?.rows ?? []) as Record<string, unknown>[];
+
+  // Calculations
+  const completedChange = dashboard
+    ? pctChange(dashboard.CompletadasEsteMes ?? 0, dashboard.CompletadasMesAnterior ?? 0)
+    : null;
+
+  const efficiencyPct = dashboard && (dashboard.OrdenesTotalesMes ?? 0) > 0
+    ? ((dashboard.OrdenesATiempo ?? 0) / dashboard.OrdenesTotalesMes * 100).toFixed(1)
+    : null;
+
+  // Total produced this month (sum from ordersByStatus for COMPLETED)
+  const cancelledCount = ordersByStatus.find(s => s.Status === "CANCELLED")?.Count ?? 0;
+  const totalProduced = prodByProduct.reduce((acc, p) => acc + Number(p.TotalQuantity ?? 0), 0);
+
+  const kpiCards = [
     {
       title: "BOMs Activos",
-      value: dashboard ? String(dashboard.BOMsActivos) : "\u2014",
+      value: String(dashboard?.BOMsActivos ?? 0),
       subtitle: "Listas de materiales",
-      loading: dashLoading,
-      color: brandColors.statBlue,
-      chartType: "bar" as const,
+      icon: <AccountTreeIcon />,
+      color: "#1976d2",
     },
     {
       title: "Centros de Trabajo",
-      value: dashboard ? String(dashboard.CentrosTrabajo) : "\u2014",
-      subtitle: "Registrados",
-      loading: dashLoading,
-      color: brandColors.statTeal,
-      chartType: "line" as const,
+      value: String(dashboard?.CentrosTrabajo ?? 0),
+      icon: <FactoryIcon />,
+      color: "#00897b",
     },
     {
       title: "Ordenes en Proceso",
-      value: dashboard ? String(dashboard.OrdenesEnProceso) : "\u2014",
-      subtitle: "En produccion",
-      loading: dashLoading,
-      color: brandColors.statOrange,
-      chartType: "bar" as const,
+      value: String(dashboard?.OrdenesEnProceso ?? 0),
+      icon: <PrecisionManufacturingIcon />,
+      color: "#ff9800",
     },
     {
-      title: "Ordenes Completadas",
-      value: dashboard ? String(dashboard.OrdenesCompletadas) : "\u2014",
-      subtitle: "Finalizadas",
-      loading: dashLoading,
-      color: brandColors.statRed,
-      chartType: "line" as const,
+      title: "Completadas este Mes",
+      value: String(dashboard?.CompletadasEsteMes ?? dashboard?.OrdenesCompletadas ?? 0),
+      icon: <CheckCircleIcon />,
+      color: "#4caf50",
+      change: completedChange,
+    },
+    {
+      title: "Canceladas",
+      value: String(cancelledCount),
+      subtitle: "Ordenes canceladas",
+      icon: <CancelIcon />,
+      color: "#f44336",
+    },
+    {
+      title: "Produccion Total",
+      value: totalProduced.toLocaleString("es"),
+      subtitle: "Cantidad producida este mes",
+      icon: <InventoryIcon />,
+      color: "#7b1fa2",
     },
   ];
 
   const shortcuts = [
     { title: "BOM", description: "Lista de materiales", icon: <AccountTreeIcon sx={{ fontSize: 32 }} />, href: `${bp}/bom`, bg: brandColors.shortcutGreen },
     { title: "Centros de Trabajo", description: "Configuracion", icon: <FactoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/centros-trabajo`, bg: brandColors.shortcutDark },
+    { title: "Rutas", description: "Produccion", icon: <RouteIcon sx={{ fontSize: 32 }} />, href: `${bp}/rutas`, bg: brandColors.shortcutGreen },
     { title: "Ordenes", description: "Produccion", icon: <AssignmentIcon sx={{ fontSize: 32 }} />, href: `${bp}/ordenes`, bg: brandColors.shortcutNavy },
   ];
 
-  const bomRows = (lastBOMs?.rows ?? []) as Record<string, unknown>[];
-  const orderRows = (lastOrders?.rows ?? []) as Record<string, unknown>[];
+  const recentRows = recentOrders.map((o, i) => ({ id: o.WorkOrderId ?? i, ...o }));
+  const bomRows = recentBoms.map((b, i) => ({ id: (b.BOMId as number) ?? i, ...b }));
+
+  // Pie data
+  const pieData = ordersByStatus.map((d, idx) => ({
+    id: idx,
+    value: d.Count,
+    label: d.StatusLabel,
+    color: ORDER_STATUS_COLORS[d.Status] || "#9e9e9e",
+  }));
 
   return (
     <Box>
@@ -113,53 +292,70 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
         Dashboard de Manufactura
       </Typography>
 
-      {/* STATS CARDS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {statsCards.map((s, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%", bgcolor: s.color, color: "white", borderRadius: 2,
-                position: "relative", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>{s.value}</Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
-                  </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+      {/* ─── KPI CARDS (6) ────────────────────────────────── */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {kpiCards.map((kpi, idx) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={idx}>
+            <KPICard
+              title={kpi.title}
+              value={kpi.value}
+              subtitle={kpi.subtitle}
+              icon={kpi.icon}
+              color={kpi.color}
+              change={kpi.change}
+              loading={dashLoading}
+            />
           </Grid>
         ))}
       </Grid>
 
-      {/* SHORTCUTS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* ─── EFFICIENCY CARD ────────────────────────────────── */}
+      {efficiencyPct !== null && (
+        <Paper sx={{ borderRadius: 2, p: 2.5, mb: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase" }}
+              >
+                Eficiencia de Produccion
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                {efficiencyPct}%
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Ordenes completadas a tiempo vs total este mes
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                bgcolor: alpha("#4caf50", 0.1),
+                borderRadius: 2,
+                p: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TimerIcon sx={{ fontSize: 40, color: "#4caf50" }} />
+            </Box>
+          </Box>
+          <Box sx={{ mt: 1.5, height: 8, bgcolor: "grey.100", borderRadius: 4, overflow: "hidden" }}>
+            <Box
+              sx={{
+                height: "100%",
+                width: `${Math.min(parseFloat(efficiencyPct), 100)}%`,
+                bgcolor: parseFloat(efficiencyPct) >= 80 ? "#4caf50" : parseFloat(efficiencyPct) >= 50 ? "#ff9800" : "#f44336",
+                borderRadius: 4,
+                transition: "width 0.5s ease",
+              }}
+            />
+          </Box>
+        </Paper>
+      )}
+
+      {/* ─── SHORTCUTS ──────────────────────────────────────── */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
           <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
@@ -180,91 +376,117 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
         ))}
       </Grid>
 
-      {/* ULTIMAS BOMs + ULTIMAS ORDENES */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimas BOMs</Typography>
-              {bomRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Nombre</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Producto</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {bomRows.map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(r.BOMCode ?? "")}</TableCell>
-                        <TableCell>{String(r.BOMName ?? "")}</TableCell>
-                        <TableCell>{String(r.ProductName ?? "")}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={bomStatusLabels[String(r.Status)] ?? String(r.Status)}
-                            size="small"
-                            color={bomStatusColors[String(r.Status)] ?? "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccountTreeIcon /> No hay BOMs registradas aun
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+      {/* ─── CHARTS ─────────────────────────────────────────── */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Bar Chart: Produccion por producto */}
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Paper sx={{ borderRadius: 2, p: 2, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Produccion por Producto (Top 5)</Typography>
+            {loadingProd ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : prodByProduct.length > 0 ? (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <BarChart
+                  height={280}
+                  xAxis={[{ data: prodByProduct.map(p => p.ProductName), scaleType: "band" }]}
+                  series={[{
+                    data: prodByProduct.map(p => Number(p.TotalQuantity)),
+                    label: "Cantidad Producida",
+                    color: "#1976d2",
+                  }]}
+                />
+              </Box>
+            ) : (
+              <Alert severity="info">Sin datos de produccion este mes</Alert>
+            )}
+          </Paper>
         </Grid>
+
+        {/* Pie Chart: Ordenes por estado */}
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Paper sx={{ borderRadius: 2, p: 2, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Ordenes por Estado</Typography>
+            {loadingStatus ? (
+              <Skeleton variant="rectangular" height={300} />
+            ) : pieData.length > 0 ? (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <PieChart
+                  height={280}
+                  series={[{
+                    data: pieData,
+                    highlightScope: { fade: "global", highlight: "item" },
+                    innerRadius: 40,
+                    paddingAngle: 2,
+                    cornerRadius: 4,
+                  }]}
+                />
+              </Box>
+            ) : (
+              <Alert severity="info">Sin datos de ordenes</Alert>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* ─── QUICK STATS: Recent BOMs + Recent Orders ─────── */}
+      <Grid container spacing={3}>
+        {/* Ultimas 5 BOMs */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", height: "100%" }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimas Ordenes de Produccion</Typography>
-              {orderRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>N. Orden</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Producto</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Cantidad</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {orderRows.map((d, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(d.WorkOrderNumber ?? "")}</TableCell>
-                        <TableCell>{String(d.ProductName ?? "")}</TableCell>
-                        <TableCell>{String(d.PlannedQuantity ?? "")}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={orderStatusLabels[String(d.Status)] ?? String(d.Status)}
-                            size="small"
-                            color={orderStatusColors[String(d.Status)] ?? "default"}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <PrecisionManufacturingIcon /> No hay ordenes registradas aun
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
+          <Paper sx={{ borderRadius: 2, p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimas BOMs</Typography>
+            {loadingBom ? (
+              <Skeleton variant="rectangular" height={200} />
+            ) : bomRows.length > 0 ? (
+              <ZenttoDataGrid
+                rows={bomRows}
+                columns={recentBomCols}
+                getRowId={(row) => row.id}
+                serverRowCount={bomRows.length}
+                autoHeight
+                hideFooter
+                disableRowSelectionOnClick
+                density="compact"
+                sx={{ border: 0 }}
+                mobileVisibleFields={["BOMCode", "Status"]}
+                smExtraFields={["BOMName"]}
+              />
+            ) : (
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 100, bgcolor: "#f8f9fa", borderRadius: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No hay BOMs registradas aun
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Ultimas 5 Ordenes */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper sx={{ borderRadius: 2, p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ordenes Recientes</Typography>
+            {loadingRecent ? (
+              <Skeleton variant="rectangular" height={200} />
+            ) : recentRows.length > 0 ? (
+              <ZenttoDataGrid
+                rows={recentRows}
+                columns={recentOrderCols}
+                serverRowCount={recentRows.length}
+                autoHeight
+                hideFooter
+                disableRowSelectionOnClick
+                density="compact"
+                sx={{ border: 0 }}
+                mobileVisibleFields={["WorkOrderNumber", "StatusLabel"]}
+                smExtraFields={["ProductName"]}
+              />
+            ) : (
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 100, bgcolor: "#f8f9fa", borderRadius: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <PrecisionManufacturingIcon /> No hay ordenes registradas aun
+                </Typography>
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
     </Box>

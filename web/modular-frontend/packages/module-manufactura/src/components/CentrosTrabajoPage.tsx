@@ -2,22 +2,26 @@
 
 import React, { useState } from "react";
 import {
+  AppBar,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Stack,
+  Grid,
+  IconButton,
   Switch,
   FormControlLabel,
   TextField,
+  Toolbar,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import {
   useWorkCentersList,
@@ -44,6 +48,9 @@ const emptyForm = (): WorkCenterFormData => ({
 });
 
 export default function CentrosTrabajoPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<WorkCenterFormData>(emptyForm());
@@ -67,30 +74,25 @@ export default function CentrosTrabajoPage() {
       field: "CostPerHour",
       headerName: "Costo/Hora",
       width: 120,
-      type: "number",
-      valueFormatter: (value: unknown) => {
-        const n = Number(value ?? 0);
-        return n.toFixed(2);
-      },
+      currency: true,
+      aggregation: "sum",
     },
     {
       field: "Capacity",
       headerName: "Capacidad",
       width: 110,
       type: "number",
+      aggregation: "sum",
     },
     {
       field: "IsActive",
       headerName: "Activo",
       width: 90,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? "Si" : "No"}
-          size="small"
-          color={params.value ? "success" : "default"}
-          variant="outlined"
-        />
-      ),
+      statusColors: {
+        true: "success",
+        false: "default",
+      },
+      valueFormatter: (value: unknown) => value ? "Si" : "No",
     },
     {
       field: "actions",
@@ -142,10 +144,21 @@ export default function CentrosTrabajoPage() {
     );
   };
 
+  const dialogTitle = isEditing ? "Editar Centro de Trabajo" : "Nuevo Centro de Trabajo";
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Typography variant="h5" fontWeight={600}>
           Centros de Trabajo
         </Typography>
@@ -156,6 +169,7 @@ export default function CentrosTrabajoPage() {
             resetForm();
             setDialogOpen(true);
           }}
+          fullWidth={isMobile}
         >
           Nuevo Centro
         </Button>
@@ -186,68 +200,111 @@ export default function CentrosTrabajoPage() {
         pageSizeOptions={[10, 25, 50, 100]}
         disableRowSelectionOnClick
         autoHeight
+        enableClipboard
         sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['WorkCenterName', 'IsActive']}
-        smExtraFields={['CostPerHour', 'Capacity']}
+        mobileVisibleFields={["WorkCenterName", "IsActive"]}
+        smExtraFields={["CostPerHour", "Capacity"]}
       />
 
       {/* Dialog: Crear/Editar */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEditing ? "Editar Centro de Trabajo" : "Nuevo Centro de Trabajo"}</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: "relative" }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">
+                {dialogTitle}
+              </Typography>
+              <Button
+                color="inherit"
+                onClick={handleSubmit}
+                disabled={
+                  upsertWorkCenter.isPending ||
+                  !formData.workCenterCode ||
+                  !formData.workCenterName
+                }
+              >
+                {upsertWorkCenter.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        )}
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Codigo"
-              value={formData.workCenterCode}
-              onChange={(e) => handleChange("workCenterCode", e.target.value)}
-              fullWidth
-              disabled={isEditing}
-            />
-            <TextField
-              label="Nombre"
-              value={formData.workCenterName}
-              onChange={(e) => handleChange("workCenterName", e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Costo por Hora"
-              value={formData.costPerHour}
-              onChange={(e) => handleChange("costPerHour", Number(e.target.value))}
-              type="number"
-              fullWidth
-            />
-            <TextField
-              label="Capacidad"
-              value={formData.capacity}
-              onChange={(e) => handleChange("capacity", Number(e.target.value))}
-              type="number"
-              fullWidth
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.isActive}
-                  onChange={(e) => handleChange("isActive", e.target.checked)}
-                />
-              }
-              label="Activo"
-            />
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Codigo"
+                value={formData.workCenterCode}
+                onChange={(e) => handleChange("workCenterCode", e.target.value)}
+                fullWidth
+                disabled={isEditing}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Nombre"
+                value={formData.workCenterName}
+                onChange={(e) => handleChange("workCenterName", e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Costo por Hora"
+                value={formData.costPerHour}
+                onChange={(e) => handleChange("costPerHour", Number(e.target.value))}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Capacidad"
+                value={formData.capacity}
+                onChange={(e) => handleChange("capacity", Number(e.target.value))}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.isActive}
+                    onChange={(e) => handleChange("isActive", e.target.checked)}
+                  />
+                }
+                label="Activo"
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={
-              upsertWorkCenter.isPending ||
-              !formData.workCenterCode ||
-              !formData.workCenterName
-            }
-          >
-            {upsertWorkCenter.isPending ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogActions>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={
+                upsertWorkCenter.isPending ||
+                !formData.workCenterCode ||
+                !formData.workCenterName
+              }
+            >
+              {upsertWorkCenter.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );
