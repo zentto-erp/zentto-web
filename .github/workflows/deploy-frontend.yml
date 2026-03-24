@@ -15,6 +15,11 @@ concurrency:
   group: deploy-frontend
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
 env:
   IMAGE: ghcr.io/zentto-erp/zentto-web/frontend:latest
 
@@ -22,10 +27,6 @@ jobs:
   build:
     name: Build & Push Frontend
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      actions: write
     steps:
       - name: Free disk space
         run: |

@@ -18,6 +18,11 @@ concurrency:
   group: deploy-api
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
 env:
   IMAGE: ghcr.io/zentto-erp/zentto-web/api:latest
 
@@ -25,10 +30,6 @@ jobs:
   build:
     name: Build & Push API
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      actions: write
     steps:
       - uses: actions/checkout@v4
 
