@@ -645,7 +645,7 @@ export default function ArticulosTable() {
       <ZenttoDataGrid
         rows={rows}
         columns={columns}
-        rowCount={totalRows}
+        serverRowCount={totalRows}
         loading={isLoading}
         paginationMode="server"
         sortingMode="server"
