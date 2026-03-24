@@ -214,6 +214,12 @@ describe('SP Contracts — funciones de infraestructura', () => {
     'usp_cfg_fiscal_getconfig',
     'usp_pos_waitticket_create',
     'usp_pos_saleticket_create',
+    // Módulo shipping (agregado en 00020_shipping_module)
+    'usp_shipping_customer_register',
+    'usp_shipping_customer_login',
+    'usp_shipping_shipment_create',
+    'usp_shipping_shipment_list',
+    'usp_shipping_track',
   ];
 
   for (const fn of requiredFunctions) {
@@ -576,6 +582,12 @@ describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
     'usp_master_supplier_list',
     'usp_master_product_list',
     'usp_hr_payrollrun_list',
+    // Módulos con filtro de estado (migración 00021)
+    'usp_doc_salesdocument_list',
+    'usp_doc_purchasedocument_list',
+    // Shipping dashboard y customs
+    'usp_shipping_dashboard',
+    'usp_shipping_customs_upsert',
   ];
 
   for (const fn of optionalModuleFunctions) {

@@ -9,17 +9,39 @@ on:
     branches: [main]
     paths:
       - 'web/api/**'
+  workflow_dispatch:
 
 concurrency:
   group: test-api-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  type-check:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web/api
+        run: npm ci
+
+      - name: TypeScript build check
+        working-directory: web/api
+        run: npx tsc -p tsconfig.build.json --noEmit
+
   schema-contracts:
     name: SP Contract Tests (PostgreSQL)
     runs-on: ubuntu-latest
-    # ⚠️ NO bloqueante: los tests pueden fallar sin detener el deploy
-    continue-on-error: true
+    needs: type-check
+    # Bloqueante — un fallo aquí detiene el deploy
+    # continue-on-error eliminado intencionalmente
 
     services:
       postgres:
