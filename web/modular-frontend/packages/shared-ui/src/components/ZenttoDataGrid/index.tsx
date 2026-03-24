@@ -37,6 +37,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 
+import { toDateOnly, formatDateTime } from '@zentto/shared-api';
+import { useTimezone } from '@zentto/shared-auth';
 import { ZenttoToolbar } from './ZenttoToolbar';
 import { PivotPanel } from './PivotPanel';
 import { DetailPanelWrapper } from './DetailPanelWrapper';
@@ -579,6 +581,10 @@ export function ZenttoDataGrid({
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isSmall = isMobile || isTablet;
 
+  // Auto-format dates using company timezone
+  let tz = 'UTC';
+  try { tz = useTimezone().timeZone || 'UTC'; } catch { /* shared-auth not available */ }
+
   // ── State ─────────────────────────────────────────────────────────────────
   const [expandedIds, setExpandedIds] = useState<Set<GridRowId>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -789,6 +795,13 @@ export function ZenttoDataGrid({
   // ── Layout persistence (order, widths, visibility, density) ───────────────
   const layout = useGridLayout(gridId, normalizedColumns);
 
+  // Restore groupByField from persisted layout
+  useEffect(() => {
+    if (layout.loaded && layout.groupByField) {
+      setGroupByField(layout.groupByField);
+    }
+  }, [layout.loaded, layout.groupByField]);
+
   // ── Responsive columns (visibility) ───────────────────────────────────────
   const dataColumns = useMemo(
     () =>
@@ -934,8 +947,24 @@ export function ZenttoDataGrid({
       result.push(buildExpandColumn(expandedIds, toggleExpand, totalCols, detailPanelHeight, apiRef));
     }
 
-    // 4. Data columns
-    result.push(...dataCols);
+    // 4. Data columns — auto-format dates if no valueFormatter/renderCell
+    const DATE_FIELDS = /fecha|date|createdAt|updatedAt|created_at|updated_at|vencimiento|dueDate|issueDate|closeDate|startDate|endDate|expiry/i;
+    const DATETIME_FIELDS = /createdAt|updatedAt|created_at|updated_at|lastLogin|loginAt/i;
+    const autoFormattedCols = dataCols.map((col) => {
+      if (col.valueFormatter || col.renderCell) return col;
+      if (!DATE_FIELDS.test(col.field)) return col;
+      if (DATETIME_FIELDS.test(col.field)) {
+        return { ...col, valueFormatter: (value: any) => {
+          if (!value) return '';
+          try { return formatDateTime ? formatDateTime(value, { timeZone: tz }) : String(value); } catch { return String(value); }
+        }};
+      }
+      return { ...col, valueFormatter: (value: any) => {
+        if (!value) return '';
+        try { return toDateOnly ? toDateOnly(value, tz) : String(value); } catch { return String(value); }
+      }};
+    });
+    result.push(...autoFormattedCols);
 
     // 5. Mobile detail column (responsive drawer) — only if no master-detail
     if (!getDetailContent && mobileDetailDrawer && isSmall) {
@@ -952,7 +981,7 @@ export function ZenttoDataGrid({
     }
 
     return result;
-  }, [layout.processedColumns, getDetailContent, groupByField, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall, onRowReorder, apiRef]);
+  }, [layout.processedColumns, getDetailContent, groupByField, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall, onRowReorder, apiRef, tz]);
 
   // ── Export handlers ───────────────────────────────────────────────────────
   const handleExportCsv = useCallback(() => {
@@ -1228,6 +1257,7 @@ export function ZenttoDataGrid({
                   onGroupByChange: (field: string | null) => {
                     setGroupByField(field);
                     setExpandedGroups(new Set());
+                    layout.onGroupByFieldChange(field ?? undefined);
                   },
                   // Header Filters
                   enableHeaderFilters,

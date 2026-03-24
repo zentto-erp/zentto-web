@@ -21,7 +21,8 @@ import {
 } from "@mui/material";
 import BlockIcon from "@mui/icons-material/Block";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useTimezone } from "@zentto/shared-auth";
 import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
@@ -86,6 +87,7 @@ function AsientoDetailPanel({ asientoId }: { asientoId: number }) {
 
 export default function AsientosListPage() {
   const router = useRouter();
+  const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<AsientoFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [anularId, setAnularId] = useState<number | null>(null);
@@ -99,7 +101,8 @@ export default function AsientosListPage() {
 
   const columns: ZenttoColDef[] = [
     { field: "id", headerName: "ID", width: 70 },
-    { field: "fecha", headerName: "Fecha", width: 110 },
+    { field: "fecha", headerName: "Fecha", width: 120,
+      valueFormatter: (value: string) => value ? toDateOnly(value, timeZone) : "" },
     { field: "tipoAsiento", headerName: "Tipo", width: 100 },
     { field: "concepto", headerName: "Concepto", flex: 1, minWidth: 200 },
     { field: "referencia", headerName: "Ref.", width: 100 },
@@ -109,8 +112,7 @@ export default function AsientosListPage() {
       width: 130,
       type: "number",
       aggregation: "sum",
-      currency: "VES",
-      renderCell: (p) => formatCurrency(p.value),
+      currency: true,
     },
     {
       field: "totalHaber",
@@ -118,21 +120,13 @@ export default function AsientosListPage() {
       width: 130,
       type: "number",
       aggregation: "sum",
-      currency: "VES",
-      renderCell: (p) => formatCurrency(p.value),
+      currency: true,
     },
     {
       field: "estado",
       headerName: "Estado",
       width: 110,
-      statusColors: { APROBADO: "success", ANULADO: "error", BORRADOR: "default" },
-      renderCell: (p) => (
-        <Chip
-          label={p.value}
-          size="small"
-          color={p.value === "APROBADO" ? "success" : p.value === "ANULADO" ? "error" : "default"}
-        />
-      ),
+      statusColors: { APPROVED: "success", VOIDED: "error", DRAFT: "default", APROBADO: "success", ANULADO: "error", BORRADOR: "default" },
     },
     {
       field: "acciones",
@@ -195,8 +189,9 @@ export default function AsientosListPage() {
           </FormField>
         </FormGrid>
 
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 400, width: "100%", elevation: 0, border: '1px solid #E5E7EB', overflow: 'auto' }}>
           <ZenttoDataGrid
+            gridId="contabilidad-asientos-list"
             rows={rows}
             columns={columns}
             loading={isLoading}
@@ -207,7 +202,7 @@ export default function AsientosListPage() {
             }
             disableRowSelectionOnClick
             getRowId={(row) => row.asientoId ?? row.id ?? row.Id}
-            sx={{ border: 'none' }}
+            sx={{ border: 'none', minHeight: 400 }}
             mobileVisibleFields={['fecha', 'concepto']}
             smExtraFields={['estado', 'totalDebe']}
             getDetailContent={(row: any) => <AsientoDetailPanel asientoId={row.asientoId ?? row.id} />}

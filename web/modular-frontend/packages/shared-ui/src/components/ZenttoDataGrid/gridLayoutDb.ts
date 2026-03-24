@@ -23,6 +23,12 @@ export interface GridLayoutState {
   columnWidths: Record<string, number>;
   /** Densidad de la tabla */
   density: 'compact' | 'standard' | 'comfortable';
+  /** Campo de agrupación guardado */
+  groupByField?: string;
+  /** Modelo de ordenamiento */
+  sortModel?: Array<{ field: string; sort: 'asc' | 'desc' }>;
+  /** Tamaño de página */
+  pageSize?: number;
 }
 
 let _db: IDBDatabase | null = null;

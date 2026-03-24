@@ -160,6 +160,39 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     [persist]
   );
 
+  const onGroupByFieldChange = useCallback(
+    (groupByField: string | undefined) => {
+      setState((prev) => {
+        const next = { ...prev, groupByField };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const onSortModelChange = useCallback(
+    (sortModel: GridLayoutState['sortModel']) => {
+      setState((prev) => {
+        const next = { ...prev, sortModel };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const onPageSizeChange = useCallback(
+    (pageSize: number) => {
+      setState((prev) => {
+        const next = { ...prev, pageSize };
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
   // ── Reset ─────────────────────────────────────────────────────────────────
   const resetLayout = useCallback(() => {
     setState(EMPTY_STATE);
@@ -175,18 +208,29 @@ export function useGridLayout(gridId: string | undefined, columns: ZenttoColDef[
     columnVisibilityModel: state.columnVisibility,
     /** Saved density */
     density: state.density,
+    /** Saved groupByField */
+    groupByField: state.groupByField,
+    /** Saved sortModel */
+    sortModel: state.sortModel,
+    /** Saved pageSize */
+    pageSize: state.pageSize,
     /** true if there's any saved customization */
     hasCustomLayout:
       !!gridId &&
       (state.columnOrder.length > 0 ||
         Object.keys(state.columnWidths).length > 0 ||
         Object.keys(state.columnVisibility).length > 0 ||
-        state.density !== DEFAULT_DENSITY),
+        state.density !== DEFAULT_DENSITY ||
+        !!state.groupByField ||
+        (state.sortModel && state.sortModel.length > 0)),
     // handlers
     onColumnVisibilityModelChange,
     onColumnOrderChange,
     onColumnWidthChange,
     onDensityChange,
+    onGroupByFieldChange,
+    onSortModelChange,
+    onPageSizeChange,
     resetLayout,
   };
 }
