@@ -185,27 +185,15 @@ const baseThemeOptions = {
         },
       },
     },
-    // Inputs: size medium global — label flotante (centrado cuando vacío, sube al enfocar/llenar)
+    // Inputs: defaults funcionales — sin sobreescribir estilos de MUI
     MuiFormControl: {
       defaultProps: { size: 'medium', fullWidth: true },
     },
     MuiInputLabel: {
-      defaultProps: { size: 'medium', shrink: true },
-      styleOverrides: {
-        outlined: {
-          '&.MuiInputLabel-shrink': {
-            transform: 'translate(14px, -9px) scale(0.75)',
-          },
-        },
-      },
+      defaultProps: { size: 'medium' },
     },
     MuiSelect: {
       defaultProps: { size: 'medium' },
-      styleOverrides: {
-        select: {
-          padding: '14px 14px',
-        },
-      },
     },
     MuiTextField: {
       defaultProps: {
@@ -213,42 +201,11 @@ const baseThemeOptions = {
         size: 'medium',
         fullWidth: true,
       },
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 6,
-            '& fieldset': {
-              borderColor: 'var(--mui-palette-divider)',
-            },
-            '&:hover fieldset': {
-              borderColor: 'var(--mui-palette-text-secondary)',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: 'var(--mui-palette-primary-main)',
-              borderWidth: '1px',
-            },
-          },
-        },
-      },
     },
     MuiOutlinedInput: {
-      defaultProps: { notched: true },
       styleOverrides: {
-        root: {
-          borderRadius: 6,
-          backgroundColor: 'var(--mui-palette-background-paper, #ffffff)',
-          fontSize: '0.875rem',
-          '& .MuiOutlinedInput-notchedOutline legend': {
-            paddingRight: '6px',
-          },
-        },
         input: {
-          padding: '14px 14px',
-          fontSize: '0.875rem',
-          '&::placeholder': {
-            fontSize: '0.875rem',
-            opacity: 0.6,
-          },
+          // Ocultar spinners en inputs numéricos
           '&[type="number"]': {
             textAlign: 'left',
             MozAppearance: 'textfield',
@@ -266,14 +223,6 @@ const baseThemeOptions = {
     },
     MuiAutocomplete: {
       defaultProps: { size: 'medium', fullWidth: true },
-      styleOverrides: {
-        inputRoot: {
-          padding: '0 14px !important',
-          '& .MuiOutlinedInput-input': {
-            padding: '14px 0 !important',
-          },
-        },
-      },
     },
     MuiCheckbox: {
       defaultProps: { color: 'primary' },
