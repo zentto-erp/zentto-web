@@ -7,12 +7,14 @@ import { Router, Request, Response } from "express";
 import * as svc from "./service.js";
 import { callCenterRouter } from "./callcenter.routes.js";
 import { crmAnalyticsRouter } from "./analytics.routes.js";
+import { crmScoringRouter } from "./scoring.routes.js";
 
 export const crmRouter = Router();
 
 // ── Mount sub-routers ────────────────────────────────────────────────────────
 crmRouter.use("/", callCenterRouter);
 crmRouter.use("/analytics", crmAnalyticsRouter);
+crmRouter.use("/", crmScoringRouter);
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 
