@@ -18,6 +18,7 @@ services:
       - STORE_URL=https://app.zentto.net
     volumes:
       - api_storage:/app/storage/media
+      - /opt/zentto/backups:/backups/zentto   # respaldos pg_dump persistentes en host
     networks:
       - zentto-net
 

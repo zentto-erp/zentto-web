@@ -211,11 +211,17 @@ jobs:
           CF_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           CF_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          HETZNER_S3_ENDPOINT: ${{ secrets.HETZNER_S3_ENDPOINT }}
+          HETZNER_S3_BUCKET: ${{ secrets.HETZNER_S3_BUCKET }}
+          HETZNER_S3_ACCESS_KEY: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
+          HETZNER_S3_SECRET_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
+          HETZNER_S3_REGION: ${{ secrets.HETZNER_S3_REGION }}
+          MASTER_KEY: ${{ secrets.MASTER_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY,CF_API_KEY,CF_ZONE_ID,CF_EMAIL
+          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY,CF_API_KEY,CF_ZONE_ID,CF_EMAIL,HETZNER_S3_ENDPOINT,HETZNER_S3_BUCKET,HETZNER_S3_ACCESS_KEY,HETZNER_S3_SECRET_KEY,HETZNER_S3_REGION,MASTER_KEY
           script: |
             set -e
             NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
@@ -285,6 +291,38 @@ jobs:
               grep -q '^CLOUDFLARE_EMAIL=' "$ENV_API" \
                 || echo "CLOUDFLARE_EMAIL=$CF_EMAIL" >> "$ENV_API"
             fi
+
+            # ── Hetzner Object Storage (backups) ──
+            if [ -f "$ENV_API" ] && [ -n "$HETZNER_S3_ENDPOINT" ]; then
+              grep -q '^HETZNER_S3_ENDPOINT=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_ENDPOINT=.*|HETZNER_S3_ENDPOINT=$HETZNER_S3_ENDPOINT|" "$ENV_API" \
+                || echo "HETZNER_S3_ENDPOINT=$HETZNER_S3_ENDPOINT" >> "$ENV_API"
+              grep -q '^HETZNER_S3_BUCKET=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_BUCKET=.*|HETZNER_S3_BUCKET=$HETZNER_S3_BUCKET|" "$ENV_API" \
+                || echo "HETZNER_S3_BUCKET=$HETZNER_S3_BUCKET" >> "$ENV_API"
+              grep -q '^HETZNER_S3_ACCESS_KEY=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_ACCESS_KEY=.*|HETZNER_S3_ACCESS_KEY=$HETZNER_S3_ACCESS_KEY|" "$ENV_API" \
+                || echo "HETZNER_S3_ACCESS_KEY=$HETZNER_S3_ACCESS_KEY" >> "$ENV_API"
+              grep -q '^HETZNER_S3_SECRET_KEY=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_SECRET_KEY=.*|HETZNER_S3_SECRET_KEY=$HETZNER_S3_SECRET_KEY|" "$ENV_API" \
+                || echo "HETZNER_S3_SECRET_KEY=$HETZNER_S3_SECRET_KEY" >> "$ENV_API"
+              grep -q '^HETZNER_S3_REGION=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_REGION=.*|HETZNER_S3_REGION=$HETZNER_S3_REGION|" "$ENV_API" \
+                || echo "HETZNER_S3_REGION=$HETZNER_S3_REGION" >> "$ENV_API"
+              grep -q '^BACKUP_DIR=' "$ENV_API" \
+                || echo 'BACKUP_DIR=/backups/zentto' >> "$ENV_API"
+            fi
+
+            # ── Master Key (backoffice) ──
+            if [ -f "$ENV_API" ] && [ -n "$MASTER_KEY" ]; then
+              grep -q '^MASTER_KEY=' "$ENV_API" \
+                && sed -i "s|^MASTER_KEY=.*|MASTER_KEY=$MASTER_KEY|" "$ENV_API" \
+                || echo "MASTER_KEY=$MASTER_KEY" >> "$ENV_API"
+            fi
+
+            # ── Directorio de backups en host ──
+            mkdir -p /opt/zentto/backups
+            chmod 755 /opt/zentto/backups
 
             # ── Deploy container ──
             cd /opt/zentto
