@@ -3,6 +3,7 @@
  * Prefijo: /v1/inventario-avanzado
  */
 import { Router } from "express";
+import { obs } from "../../integrations/observability.js";
 import {
   listWarehouses,
   getWarehouse,
@@ -246,7 +247,31 @@ inventarioAvanzadoRouter.get("/movimientos", async (req, res) => {
 inventarioAvanzadoRouter.post("/movimientos", async (req, res) => {
   try {
     const result = await createMovement(req.body);
-    return res.status(result.ok ? 201 : 400).json(result);
+    res.status(result.ok ? 201 : 400).json(result);
+    if (result.ok) {
+      const movType = String(req.body.movementType || "");
+      try { obs.event('inventario.movimiento.created', {
+          entityId: (result as any).movementId,
+          movementType: movType,
+          productId: req.body.productId,
+          warehouseId: req.body.warehouseId,
+          userId: (req as any).user?.userId,
+          userName: (req as any).user?.userName,
+          companyId: (req as any).user?.companyId,
+          module: 'inventario',
+      }); } catch { /* never blocks */ }
+      if (movType === "AJUSTE") {
+          try { obs.audit('inventario.ajuste.aplicado', {
+              userId: (req as any).user?.userId,
+              userName: (req as any).user?.userName,
+              companyId: (req as any).user?.companyId,
+              module: 'inventario',
+              entity: 'MovimientoInventarioAvanzado',
+              entityId: req.body.productId,
+          }); } catch { /* never blocks */ }
+      }
+    }
+    return;
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

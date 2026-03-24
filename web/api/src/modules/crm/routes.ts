@@ -10,6 +10,7 @@ import { crmAnalyticsRouter } from "./analytics.routes.js";
 import { crmScoringRouter } from "./scoring.routes.js";
 import { crmAutomationRouter } from "./automation.routes.js";
 import { crmReportsRouter } from "./reports.routes.js";
+import { obs } from "../integrations/observability.js";
 
 export const crmRouter = Router();
 
@@ -49,6 +50,9 @@ crmRouter.post("/pipelines", async (req: Request, res: Response) => {
   try {
     const result = await svc.upsertPipeline({ ...req.body, userId: userId(req) });
     res.status(result.success ? 200 : 400).json(result);
+    if (result.success) {
+      try { obs.event('crm.pipeline.created', { entityId: result.id, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'crm' }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -113,6 +117,9 @@ crmRouter.post("/leads", async (req: Request, res: Response) => {
   try {
     const result = await svc.createLead({ ...req.body, userId: userId(req) });
     res.status(result.success ? 201 : 400).json(result);
+    if (result.success) {
+      try { obs.event('crm.lead.created', { entityId: result.id, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'crm' }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -149,6 +156,9 @@ crmRouter.post("/leads/:id/cerrar", async (req: Request, res: Response) => {
       userId: userId(req),
     });
     res.status(result.success ? 200 : 400).json(result);
+    if (result.success) {
+      try { obs.audit('crm.lead.converted', { userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'crm', entity: 'Lead', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -179,6 +189,9 @@ crmRouter.post("/actividades", async (req: Request, res: Response) => {
   try {
     const result = await svc.createActivity({ ...req.body, userId: userId(req) });
     res.status(result.success ? 201 : 400).json(result);
+    if (result.success) {
+      try { obs.event('crm.activity.created', { entityId: result.id, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'crm' }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

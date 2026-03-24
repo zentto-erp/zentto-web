@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { obs } from "../integrations/observability.js";
 import {
   anularDocumentoCompraTx,
   cerrarOrdenConCompraDocumentoTx,
@@ -150,6 +151,9 @@ documentosCompraRouter.post("/emitir-tx", async (req, res) => {
     }
 
     res.status(201).json({ ...data, contabilidad });
+    if (data.ok) {
+      try { obs.event('compras.documento.emitido', { entityId: data.numFact, tipoOperacion, numFact: data.numFact, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'compras' }); } catch { /* never blocks */ }
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -177,6 +181,9 @@ documentosCompraRouter.post("/anular-tx", async (req, res) => {
     }
 
     res.json({ ...data, contabilidad });
+    if (data.ok) {
+      try { obs.audit('compras.documento.anulado', { userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'compras', entity: 'DocumentoCompra', entityId: parsed.data.numFact, numFact: parsed.data.numFact, motivo: parsed.data.motivo }); } catch { /* never blocks */ }
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -217,6 +224,9 @@ documentosCompraRouter.post("/cerrar-orden-con-compra-tx", async (req, res) => {
     }
 
     res.status(201).json({ ...data, contabilidad });
+    if (data.ok) {
+      try { obs.audit('compras.orden.cerrada', { userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'compras', entity: 'OrdenCompra', entityId: parsed.data.numFactOrden, numFactOrden: parsed.data.numFactOrden, numFact: data.compraResult?.numFact }); } catch { /* never blocks */ }
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { obs } from "../integrations/observability.js";
 
 import {
   listPeriodos,
@@ -120,6 +121,14 @@ advancedRouter.post("/periodos/:periodo/cerrar", async (req, res) => {
     const user = (req as any).user?.username || "API";
     const result = await closePeriod(periodo, user);
     if (!result.success) return res.status(400).json(result);
+    try { obs.audit('contabilidad.mes.cerrado', {
+      userId: (req as any).user?.userId,
+      userName: (req as any).user?.userName,
+      companyId: (req as any).user?.companyId,
+      module: 'contabilidad',
+      entity: 'Periodo',
+      entityId: periodo
+    }); } catch { /* never blocks */ }
     return res.json(result);
   } catch (err: any) {
     return res.status(500).json({ error: String(err) });

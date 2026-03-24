@@ -8,6 +8,7 @@ import { conceptoLegalRouter } from "./conceptolegal.routes.js";
 import documentosRouter from "./documentos.routes.js";
 import { emitNominaAccountingEntry } from "./nomina-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
+import { obs } from "../integrations/observability.js";
 
 export const nominaRouter = Router();
 
@@ -145,6 +146,16 @@ nominaRouter.post("/procesar-empleado", async (req, res) => {
     }
 
     res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
+    if (result.success) {
+      try { obs.event('nomina.empleado.created', {
+        nomina: parsed.data.nomina,
+        cedula: parsed.data.cedula,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'nomina'
+      }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -175,6 +186,16 @@ nominaRouter.post("/procesar", async (req, res) => {
     }
 
     res.json(result);
+    try { obs.event('nomina.periodo.calculado', {
+      nomina: parsed.data.nomina,
+      fechaInicio: parsed.data.fechaInicio,
+      fechaHasta: parsed.data.fechaHasta,
+      procesados: result.procesados,
+      userId: (req as any).user?.userId,
+      userName: (req as any).user?.userName,
+      companyId: (req as any).user?.companyId,
+      module: 'nomina'
+    }); } catch { /* never blocks */ }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -217,6 +238,16 @@ nominaRouter.post("/cerrar", async (req, res) => {
       codUsuario,
     });
     res.status(result.success ? 200 : 400).json(result);
+    if (result.success) {
+      try { obs.audit('nomina.periodo.cerrado', {
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'nomina',
+        entity: 'Nomina',
+        entityId: parsed.data.nomina
+      }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -500,6 +531,16 @@ nominaRouter.post("/liquidacion/calcular", async (req, res) => {
     }
 
     res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
+    if (result.success) {
+      try { obs.audit('nomina.liquidacion.generada', {
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'nomina',
+        entity: 'Liquidacion',
+        entityId: parsed.data.liquidacionId
+      }); } catch { /* never blocks */ }
+    }
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

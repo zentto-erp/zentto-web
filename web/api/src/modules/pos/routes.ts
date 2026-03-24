@@ -3,6 +3,7 @@ import { z } from "zod";
 import { spawn } from "node:child_process";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { sendFiscalCommand, isAgentConnected, listConnectedAgents } from "./fiscal-relay.js";
+import { obs } from "../../integrations/observability.js";
 import {
     listProductosPOS,
     getProductoByCodigo,
@@ -505,7 +506,16 @@ posRouter.post("/supervision/authorize-void", async (req, res) => {
         return res.status(403).json(result);
     }
 
-    return res.json(result);
+    res.json(result);
+    try { obs.audit('pos.supervision.void_authorized', {
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'pos',
+        entity: 'PosLineVoid',
+        entityId: parsed.data.item.productoId,
+    }); } catch { /* never blocks */ }
+    return;
 });
 
 posRouter.get("/correlativos-fiscales", async (req, res) => {
@@ -519,6 +529,14 @@ posRouter.put("/correlativos-fiscales", async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     const data = await upsertCorrelativoFiscal(parsed.data);
     res.json(data);
+    try { obs.event('pos.caja.correlativo_updated', {
+        cajaId: parsed.data.cajaId,
+        serialFiscal: parsed.data.serialFiscal,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'pos',
+    }); } catch { /* never blocks */ }
 });
 
 posRouter.get("/reportes/resumen", async (req, res) => {
@@ -650,15 +668,30 @@ posRouter.post("/fiscal/agent/restart", async (req, res) => {
 posRouter.post("/fiscal/reporte/x", async (req, res) => {
     const parsed = fiscalActionSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/fiscal/reporte/x", parsed.data as Record<string, unknown>,
+    await proxyFiscalPost(res, "/api/fiscal/reporte/x", parsed.data as Record<string, unknown>,
         getRelayContext(req, parsed.data.cashRegisterId));
+    try { obs.event('pos.turno.opened', {
+        cashRegisterId: parsed.data.cashRegisterId,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'pos',
+    }); } catch { /* never blocks */ }
 });
 
 posRouter.post("/fiscal/reporte/z", async (req, res) => {
     const parsed = fiscalActionSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/fiscal/reporte/z", parsed.data as Record<string, unknown>,
+    await proxyFiscalPost(res, "/api/fiscal/reporte/z", parsed.data as Record<string, unknown>,
         getRelayContext(req, parsed.data.cashRegisterId));
+    try { obs.audit('pos.turno.closed', {
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'pos',
+        entity: 'PosReporteZ',
+        entityId: parsed.data.cashRegisterId,
+    }); } catch { /* never blocks */ }
 });
 
 posRouter.get("/fiscal/reporte/mensual", async (req, res) => {
@@ -691,6 +724,13 @@ posRouter.post("/fiscal/documento-no-fiscal", async (req, res) => {
 posRouter.post("/fiscal/print", async (req, res) => {
     const parsed = fiscalPrintSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
-    return proxyFiscalPost(res, "/api/print", parsed.data as Record<string, unknown>,
+    await proxyFiscalPost(res, "/api/print", parsed.data as Record<string, unknown>,
         getRelayContext(req, parsed.data.cashRegisterId));
+    try { obs.event('pos.venta.created', {
+        cashRegisterId: parsed.data.cashRegisterId,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'pos',
+    }); } catch { /* never blocks */ }
 });

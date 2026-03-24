@@ -3,6 +3,7 @@ import { z } from "zod";
 import { listMesas, abrirPedido, agregarItemPedido, enviarComanda, cerrarPedido, getPedidoByMesa, contabilizarPedidoExistente, cancelarItemPedido } from "./service.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
+import { obs } from "../../integrations/observability.js";
 
 export const restauranteRouter = Router();
 
@@ -43,6 +44,16 @@ restauranteRouter.post("/pedidos/abrir", async (req, res) => {
     try {
         const result = await abrirPedido(parsed.data.mesaId, parsed.data.clienteNombre, parsed.data.clienteRif, parsed.data.codUsuario);
         res.status(result.ok ? 201 : 400).json(result);
+        if (result.ok) {
+            try { obs.event('restaurante.orden.created', {
+                entityId: (result as any).pedidoId,
+                mesaId: parsed.data.mesaId,
+                userId: (req as any).user?.userId,
+                userName: (req as any).user?.userName,
+                companyId: (req as any).user?.companyId,
+                module: 'restaurante',
+            }); } catch { /* never blocks */ }
+        }
     } catch (err: any) {
         console.error("[restaurante] abrirPedido error:", err);
         res.status(500).json({ error: err?.message || "internal_error" });
@@ -115,6 +126,13 @@ restauranteRouter.post("/pedidos/:pedidoId/comanda", async (req, res) => {
     try {
         const result = await enviarComanda(pedidoId);
         res.json(result);
+        try { obs.event('restaurante.mesa.asignada', {
+            entityId: pedidoId,
+            userId: (req as any).user?.userId,
+            userName: (req as any).user?.userName,
+            companyId: (req as any).user?.companyId,
+            module: 'restaurante',
+        }); } catch { /* never blocks */ }
     } catch (err: any) {
         console.error("[restaurante] enviarComanda error:", err);
         res.status(500).json({ error: err?.message || "internal_error" });
@@ -159,6 +177,23 @@ restauranteRouter.post("/pedidos/:pedidoId/cerrar", async (req, res) => {
         }
 
         res.json(result);
+        if (result.ok) {
+            try { obs.audit('restaurante.orden.completada', {
+                userId: (req as any).user?.userId,
+                userName: (req as any).user?.userName,
+                companyId: (req as any).user?.companyId,
+                module: 'restaurante',
+                entity: 'Pedido',
+                entityId: pedidoId,
+            }); } catch { /* never blocks */ }
+            try { obs.event('restaurante.pago.registrado', {
+                entityId: pedidoId,
+                userId: (req as any).user?.userId,
+                userName: (req as any).user?.userName,
+                companyId: (req as any).user?.companyId,
+                module: 'restaurante',
+            }); } catch { /* never blocks */ }
+        }
     } catch (err: any) {
         console.error("[restaurante] cerrarPedido error:", err);
         res.status(500).json({ error: err?.message || "internal_error" });

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { obs } from "../integrations/observability.js";
 import {
   anularDocumentoVentaTx,
   emitirDocumentoVentaTx,
@@ -138,6 +139,9 @@ documentosVentaRouter.post("/emitir-tx", async (req, res) => {
     }
 
     res.status(201).json({ ...data, contabilidad });
+    if (data.ok) {
+      try { obs.event('ventas.documento.emitido', { entityId: data.numFact, tipoOperacion, numFact: data.numFact, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'ventas' }); } catch { /* never blocks */ }
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -165,6 +169,9 @@ documentosVentaRouter.post("/anular-tx", async (req, res) => {
     }
 
     res.json({ ...data, contabilidad });
+    if (data.ok) {
+      try { obs.audit('ventas.documento.anulado', { userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'ventas', entity: 'DocumentoVenta', entityId: parsed.data.numFact, numFact: parsed.data.numFact, motivo: parsed.data.motivo }); } catch { /* never blocks */ }
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }
@@ -205,6 +212,9 @@ documentosVentaRouter.post("/facturar-desde-pedido-tx", async (req, res) => {
     }
 
     res.status(201).json({ ...data, contabilidad });
+    if (data.ok) {
+      try { obs.event('ventas.pedido.facturado', { entityId: data.facturaResult?.numFact, numFactPedido: parsed.data.numFactPedido, numFact: data.facturaResult?.numFact, userId: (req as any).user?.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'ventas' }); } catch { /* never blocks */ }
+    }
   } catch (err) {
     res.status(400).json({ error: String(err) });
   }

@@ -15,6 +15,7 @@ import {
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
+import { obs } from "../../integrations/observability.js";
 
 export const inventarioRouter = Router();
 
@@ -168,6 +169,26 @@ inventarioRouter.post("/movimientos", async (req, res) => {
         data: { Producto: String(b.productCode || b.codigoArticulo || ""), Tipo: String(b.movementType || "ENTRADA"), Cantidad: String(b.quantity || b.cantidad || 0) },
       }).catch(() => {});
       res.status(201).json({ ok: true, message: result.message, contabilidad });
+      const movType = String(b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"));
+      try { obs.event('inventario.movimiento.created', {
+          productCode: b.productCode || b.codigoArticulo,
+          movementType: movType,
+          quantity: Math.abs(Number(b.quantity || b.cantidad || 0)),
+          userId: (req as any).user?.userId,
+          userName: (req as any).user?.userName,
+          companyId: (req as any).user?.companyId,
+          module: 'inventario',
+      }); } catch { /* never blocks */ }
+      if (movType === "AJUSTE") {
+          try { obs.audit('inventario.ajuste.aplicado', {
+              userId: (req as any).user?.userId,
+              userName: (req as any).user?.userName,
+              companyId: (req as any).user?.companyId,
+              module: 'inventario',
+              entity: 'MovimientoInventario',
+              entityId: b.productCode || b.codigoArticulo,
+          }); } catch { /* never blocks */ }
+      }
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }
@@ -193,6 +214,17 @@ inventarioRouter.post("/traslados", async (req, res) => {
     invalidateAndReload().catch(() => {});
     if (result.success) {
       res.status(201).json({ ok: true, message: result.message });
+      try { obs.event('inventario.movimiento.created', {
+          productCode: b.productCode,
+          movementType: 'TRASLADO',
+          quantity: Math.abs(Number(b.quantity || 0)),
+          warehouseFrom: b.warehouseFrom,
+          warehouseTo: b.warehouseTo,
+          userId: (req as any).user?.userId,
+          userName: (req as any).user?.userName,
+          companyId: (req as any).user?.companyId,
+          module: 'inventario',
+      }); } catch { /* never blocks */ }
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { emitBusinessNotification } from "../_shared/notify.js";
+import { obs } from "../integrations/observability.js";
 import { advancedRouter } from "./routes-advanced.js";
 import { legalRouter } from "./routes-legal.js";
 import { activosFijosRouter } from "./activos-fijos.routes.js";
@@ -150,6 +151,14 @@ contabilidadRouter.post("/asientos", async (req, res) => {
         subject: `Asiento contable ${result.numeroAsiento ?? ""} creado`,
         data: { Asiento: String(result.numeroAsiento ?? ""), Concepto: String(req.body.concepto ?? ""), Debe: String(req.body.totalDebe ?? "0"), Haber: String(req.body.totalHaber ?? "0") },
       }).catch(() => {});
+      try { obs.event('contabilidad.asiento.created', {
+        asientoId: result.asientoId,
+        numeroAsiento: result.numeroAsiento,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'contabilidad'
+      }); } catch { /* never blocks */ }
     }
     return res.status(201).json(result);
   } catch (err: any) { return res.status(500).json({ error: err.message }); }
@@ -168,6 +177,14 @@ contabilidadRouter.post("/asientos/:id/anular", async (req, res) => {
     const user = (req as any).user?.username || "API";
     const result = await anularAsiento(id, parsed.data.motivo, user);
     if (!result.ok) return res.status(400).json(result);
+    try { obs.audit('contabilidad.asiento.aprobado', {
+      userId: (req as any).user?.userId,
+      userName: (req as any).user?.userName,
+      companyId: (req as any).user?.companyId,
+      module: 'contabilidad',
+      entity: 'Asiento',
+      entityId: id
+    }); } catch { /* never blocks */ }
     return res.json(result);
   } catch (err: any) { return res.status(500).json({ error: err.message }); }
 });
