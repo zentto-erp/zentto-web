@@ -74,7 +74,9 @@ CREATE OR REPLACE FUNCTION usp_sys_backup_complete(
   p_backup_id        BIGINT,
   p_file_path        VARCHAR,
   p_file_name        VARCHAR,
-  p_file_size_bytes  BIGINT
+  p_file_size_bytes  BIGINT,
+  p_storage_key      VARCHAR DEFAULT NULL,
+  p_storage_status   VARCHAR DEFAULT NULL
 )
 RETURNS TABLE(
   "ok"      BOOLEAN,
@@ -89,7 +91,9 @@ BEGIN
     "FileName"      = p_file_name,
     "FileSizeBytes" = p_file_size_bytes,
     "FileSizeMB"    = ROUND(p_file_size_bytes::NUMERIC / 1048576.0, 2),
-    "CompletedAt"   = NOW() AT TIME ZONE 'UTC'
+    "CompletedAt"   = NOW() AT TIME ZONE 'UTC',
+    "StorageKey"    = p_storage_key,
+    "StorageStatus" = p_storage_status
   WHERE "BackupId" = p_backup_id;
 
   IF NOT FOUND THEN

@@ -19,6 +19,7 @@
     "test:contract": "vitest run tests/api/contract-endpoints.test.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1016.0",
     "@types/multer": "^2.0.0",
     "@types/pg": "^8.18.0",
     "bcrypt": "^6.0.0",

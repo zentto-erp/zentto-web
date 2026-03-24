@@ -22,7 +22,7 @@ import { requireMasterKey } from "../../middleware/master-key.js";
 import { callSp } from "../../db/query.js";
 import { applyPlanModules, getLicenseByCompany } from "../license/license.service.js";
 import { dropTenantDatabase } from "./resource.service.js";
-import { createTenantBackup, listTenantBackups, getLatestBackupsPerTenant } from "./backup.service.js";
+import { createTenantBackup, listTenantBackups, getLatestBackupsPerTenant, restoreTenantBackup, verifyStorageConnection } from "./backup.service.js";
 import { obs } from "../integrations/observability.js";
 
 const backofficeRouter = Router();
@@ -474,6 +474,41 @@ backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "internal_error";
     obs.error(`backoffice.backup.trigger.failed: ${msg}`, { module: "backup", companyId });
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /storage/status ────────────────────────────────────────────────────
+// Verifica la conexión con Hetzner Object Storage.
+
+backofficeRouter.get("/storage/status", async (_req, res) => {
+  const result = await verifyStorageConnection();
+  res.json({ ok: result.ok, message: result.message });
+});
+
+// ── POST /tenants/:companyId/restore/:backupId ─────────────────────────────
+// Restaura una BD de tenant desde un backup. OPERACIÓN DE ALTO RIESGO.
+// Solo procede si el tenant existe y el backupId pertenece a ese companyId.
+
+backofficeRouter.post("/tenants/:companyId/restore/:backupId", async (req, res) => {
+  const companyId = Number(req.params.companyId);
+  const backupId  = Number(req.params.backupId);
+
+  if (!companyId || isNaN(companyId) || !backupId || isNaN(backupId)) {
+    res.status(400).json({ error: "invalid_params" });
+    return;
+  }
+
+  try {
+    // La restauración es asíncrona — puede tomar varios minutos
+    res.status(202).json({ ok: true, message: "restore_queued" });
+
+    setImmediate(async () => {
+      await restoreTenantBackup(companyId, backupId);
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    obs.error(`backoffice.restore.trigger.failed: ${msg}`, { module: "backup", companyId, backupId });
     res.status(500).json({ error: msg });
   }
 });
