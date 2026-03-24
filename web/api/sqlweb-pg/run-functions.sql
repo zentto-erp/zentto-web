@@ -10,6 +10,48 @@
 \echo '============================================================'
 \echo ''
 
+-- ============================================================
+-- PASO 0: Eliminar sobrecargas duplicadas (nuclear cleanup)
+-- Si una función tiene >1 sobrecarga con mismo nombre, borra TODAS
+-- para que el CREATE OR REPLACE de abajo las recree limpiamente.
+-- Esto previene el error "function is not unique" en producción.
+-- ============================================================
+\echo '[00] Nuclear: eliminando sobrecargas duplicadas...'
+DO $cleanup$
+DECLARE
+  _func_name TEXT;
+  _oid OID;
+  _dropped INT := 0;
+BEGIN
+  -- Encontrar funciones con más de 1 sobrecarga en public
+  FOR _func_name IN
+    SELECT p.proname
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname LIKE 'usp_%'
+    GROUP BY p.proname
+    HAVING COUNT(*) > 1
+  LOOP
+    -- Borrar TODAS las sobrecargas de esta función
+    FOR _oid IN
+      SELECT p.oid
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = _func_name
+    LOOP
+      EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+      _dropped := _dropped + 1;
+    END LOOP;
+    RAISE NOTICE 'Dropped all overloads of: %', _func_name;
+  END LOOP;
+  IF _dropped > 0 THEN
+    RAISE NOTICE 'Total functions dropped: %', _dropped;
+  ELSE
+    RAISE NOTICE 'No duplicate overloads found — all clean';
+  END IF;
+END $cleanup$;
+
 \echo '[01] usp_sys.sql'
 \i includes/sp/usp_sys.sql
 
