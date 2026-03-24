@@ -111,16 +111,6 @@ jobs:
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -f sqlweb-pg/00_create_database.sql 2>/dev/null || true
           cd sqlweb-pg && psql -h 127.0.0.1 -U zentto_app -d zentto_test -f run_all.sql
 
-      - name: Run incremental migrations
-        working-directory: web/api
-        env:
-          PG_HOST: 127.0.0.1
-          PG_PORT: 5432
-          PG_DATABASE: zentto_test
-          PG_USER: zentto_app
-          PG_PASSWORD: test_password
-        run: npm run db:migrate:pg:incremental
-
       - name: Run SP contract tests
         working-directory: web/api
         env:
