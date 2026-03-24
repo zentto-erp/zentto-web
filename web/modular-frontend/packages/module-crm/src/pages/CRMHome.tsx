@@ -55,6 +55,7 @@ import {
   VelocityChart,
   ActivityReportChart,
 } from "../components/charts";
+import { StaleLeadsAlert } from "../components/StaleLeadsAlert";
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
@@ -488,6 +489,9 @@ export default function CRMHome() {
           </Grid>
         ))}
       </Grid>
+
+      {/* ─── STALE LEADS ALERT ──────────────────────────────── */}
+      <StaleLeadsAlert pipelineId={pipelineId} days={7} maxDisplay={5} />
 
       {/* ─── KPI CARDS (6) ───────────────────────────────────── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>

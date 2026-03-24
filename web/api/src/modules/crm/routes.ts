@@ -8,6 +8,7 @@ import * as svc from "./service.js";
 import { callCenterRouter } from "./callcenter.routes.js";
 import { crmAnalyticsRouter } from "./analytics.routes.js";
 import { crmScoringRouter } from "./scoring.routes.js";
+import { crmAutomationRouter } from "./automation.routes.js";
 
 export const crmRouter = Router();
 
@@ -15,6 +16,7 @@ export const crmRouter = Router();
 crmRouter.use("/", callCenterRouter);
 crmRouter.use("/analytics", crmAnalyticsRouter);
 crmRouter.use("/", crmScoringRouter);
+crmRouter.use("/", crmAutomationRouter);
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 

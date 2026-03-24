@@ -71,5 +71,22 @@ export { LeadTimeline } from "./components/LeadTimeline";
 export { LeadScoreBadge } from "./components/LeadScoreBadge";
 export { LeadActivityTimeline } from "./components/LeadActivityTimeline";
 
+// ─── Automation ─────────────────────────────────────────────
+export {
+  useAutomationRules,
+  useUpsertRule,
+  useDeleteRule,
+  useEvaluateRules,
+  useStaleLeads,
+  useAutomationLogs,
+} from "./hooks/useCRMAutomation";
+export type {
+  AutomationRule,
+  StaleLead,
+  AutomationLog,
+} from "./hooks/useCRMAutomation";
+export { default as AutomationRulesPage } from "./components/AutomationRulesPage";
+export { StaleLeadsAlert } from "./components/StaleLeadsAlert";
+
 // ─── Pages ───────────────────────────────────────────────────
 export { default as CRMHome } from "./pages/CRMHome";

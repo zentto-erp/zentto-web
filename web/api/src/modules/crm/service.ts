@@ -5,6 +5,7 @@
  */
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
+import { obs } from "../integrations/observability.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -201,7 +202,11 @@ export async function createLead(data: {
       LeadCode: sql.NVarChar(30),
     },
   );
-  return parseSpResult(output, ["LeadId", "LeadCode"]);
+  const result = parseSpResult(output, ["LeadId", "LeadCode"]);
+  if (result.success) {
+    try { obs?.event("crm.lead.created", { leadId: result.LeadId, pipeline: data.pipelineId }); } catch {}
+  }
+  return result;
 }
 
 export async function updateLead(
@@ -257,7 +262,11 @@ export async function changeLeadStage(
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
-  return parseSpResult(output);
+  const resultStage = parseSpResult(output);
+  if (resultStage.success) {
+    try { obs?.event("crm.lead.stage_changed", { leadId, newStageId: data.newStageId }); } catch {}
+  }
+  return resultStage;
 }
 
 export async function closeLead(
@@ -280,7 +289,11 @@ export async function closeLead(
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
-  return parseSpResult(output);
+  const resultClose = parseSpResult(output);
+  if (resultClose.success) {
+    try { obs?.event(data.isWon ? "crm.lead.won" : "crm.lead.lost", { leadId, isWon: data.isWon }); } catch {}
+  }
+  return resultClose;
 }
 
 // ── Activities ───────────────────────────────────────────────────────────────
@@ -353,7 +366,11 @@ export async function createActivity(data: {
       ActivityId: sql.Int,
     },
   );
-  return parseSpResult(output, ["ActivityId"]);
+  const resultAct = parseSpResult(output, ["ActivityId"]);
+  if (resultAct.success) {
+    try { obs?.event("crm.activity.created", { activityId: resultAct.ActivityId, type: data.activityType }); } catch {}
+  }
+  return resultAct;
 }
 
 export async function completeActivity(
@@ -365,7 +382,11 @@ export async function completeActivity(
     { ActivityId: activityId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
-  return parseSpResult(output);
+  const resultComplete = parseSpResult(output);
+  if (resultComplete.success) {
+    try { obs?.event("crm.activity.completed", { activityId }); } catch {}
+  }
+  return resultComplete;
 }
 
 export async function updateActivity(
