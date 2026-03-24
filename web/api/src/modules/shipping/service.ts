@@ -6,7 +6,7 @@ import { callSp, callSpOut } from "../../db/query.js";
 import { signJwt } from "../../auth/jwt.js";
 import { getActiveScope } from "../_shared/scope.js";
 import { emitBusinessNotification, syncContact, notifyEmail } from "../_shared/notify.js";
-import { getCarrierAdapter, getAllAdapters } from "./carriers/index.js";
+import { getCarrierAdapter, getAllAdapters, detectCarrierCandidates } from "./carriers/index.js";
 import type { CarrierConfig, QuoteRequest } from "./carriers/carrier.interface.js";
 import bcrypt from "bcryptjs";
 
@@ -356,9 +356,72 @@ export async function updateShipmentStatus(
 // ─── Public Tracking ─────────────────────────────────────────
 
 export async function trackPublic(trackingNumber: string) {
-  const shipment = await callSp("usp_Shipping_Track", { TrackingNumber: trackingNumber });
-  const events = await callSp("usp_Shipping_Track_Events", { TrackingNumber: trackingNumber }).catch(() => []);
-  return { shipment: shipment[0] || null, events };
+  // 1. Buscar en nuestra BD
+  const [shipment] = await callSp("usp_Shipping_Track", { TrackingNumber: trackingNumber });
+  const storedEvents = await callSp("usp_Shipping_Track_Events", { TrackingNumber: trackingNumber }).catch(() => []);
+
+  // 2. Si el envío tiene un carrier conocido (ZOOM, MRW, LIBERTY), consultar su API
+  if (shipment?.CarrierCode && shipment.CarrierCode !== "MANUAL") {
+    try {
+      const configs = await getCarrierConfigs();
+      const cfg = configs.find((c) => c.carrierCode === shipment.CarrierCode);
+      if (cfg) {
+        const adapter = getCarrierAdapter(cfg);
+        const trackNum = shipment.TrackingNumber || trackingNumber;
+        const carrierEvents = await adapter.track(trackNum);
+        if (carrierEvents.length > 0) {
+          // Persistir eventos nuevos del carrier en nuestra BD
+          for (const e of carrierEvents) {
+            await updateShipmentStatus(shipment.ShipmentId, e.status, e.description, {
+              location: e.location ?? undefined,
+              city: e.city ?? undefined,
+              countryCode: e.countryCode ?? undefined,
+              carrierEventCode: e.carrierEventCode ?? undefined,
+              source: "CARRIER_POLL",
+            }).catch(() => {});
+          }
+          // Devolver los eventos frescos del carrier
+          const refreshed = await callSp("usp_Shipping_Track_Events", { TrackingNumber: trackingNumber }).catch(() => storedEvents);
+          return { shipment, events: refreshed };
+        }
+      }
+    } catch { /* si el carrier falla, usar eventos locales */ }
+  }
+
+  // 3. Si NO está en nuestra BD, intentar rastrear directamente en los carriers conocidos
+  if (!shipment) {
+    const carrierEvents = await tryCarrierDirectTracking(trackingNumber);
+    if (carrierEvents.length > 0) {
+      // Devolvemos resultado "externo" sin shipment record
+      return {
+        shipment: { ShipmentNumber: trackingNumber, TrackingNumber: trackingNumber, Status: carrierEvents[0].status, external: true },
+        events: carrierEvents.map((e) => ({
+          Description: e.description,
+          EventAt: e.eventAt,
+          City: e.city,
+          Location: e.location,
+          CarrierEventCode: e.carrierEventCode,
+        })),
+      };
+    }
+    return { shipment: null, events: [] };
+  }
+
+  return { shipment, events: storedEvents };
+}
+
+/** Intenta rastrear en todos los carriers cuando el número no está en nuestra BD */
+async function tryCarrierDirectTracking(trackingNumber: string) {
+  try {
+    const configs = await getCarrierConfigs();
+    const candidates = detectCarrierCandidates(trackingNumber, configs);
+    for (const cfg of candidates) {
+      const adapter = getCarrierAdapter(cfg);
+      const events = await adapter.track(trackingNumber);
+      if (events.length > 0) return events;
+    }
+  } catch { /* silencioso */ }
+  return [];
 }
 
 // ─── Customs ─────────────────────────────────────────────────
