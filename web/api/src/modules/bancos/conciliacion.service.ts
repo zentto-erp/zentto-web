@@ -573,3 +573,54 @@ export async function getMovimientoById(movimientoId: number): Promise<any | nul
   );
   return rows[0] ?? null;
 }
+
+// ── CRUD Cuentas Bancarias ──────────────────────────────────────────────────
+
+export async function insertCuentaBancaria(data: {
+  BankId: number;
+  AccountNumber: string;
+  AccountName: string;
+  CurrencyCode: string;
+}) {
+  const scope = await getScope();
+  const rows = await callSp<any>("usp_Bank_Account_Insert", {
+    CompanyId: scope.companyId,
+    BranchId: scope.branchId,
+    BankId: data.BankId,
+    AccountNumber: data.AccountNumber,
+    AccountName: data.AccountName,
+    CurrencyCode: data.CurrencyCode,
+    UserId: scope.userId ?? null,
+  });
+  return rows[0] ?? { ok: false, mensaje: "Sin respuesta" };
+}
+
+export async function updateCuentaBancaria(id: number, data: {
+  BankId: number;
+  AccountNumber: string;
+  AccountName: string;
+  CurrencyCode: string;
+  IsActive?: boolean;
+}) {
+  const scope = await getScope();
+  const rows = await callSp<any>("usp_Bank_Account_Update", {
+    BankAccountId: id,
+    CompanyId: scope.companyId,
+    BankId: data.BankId,
+    AccountNumber: data.AccountNumber,
+    AccountName: data.AccountName,
+    CurrencyCode: data.CurrencyCode,
+    IsActive: data.IsActive ?? true,
+    UserId: scope.userId ?? null,
+  });
+  return rows[0] ?? { ok: false, mensaje: "Sin respuesta" };
+}
+
+export async function deleteCuentaBancaria(id: number) {
+  const scope = await getScope();
+  const rows = await callSp<any>("usp_Bank_Account_Delete", {
+    BankAccountId: id,
+    CompanyId: scope.companyId,
+  });
+  return rows[0] ?? { ok: false, mensaje: "Sin respuesta" };
+}

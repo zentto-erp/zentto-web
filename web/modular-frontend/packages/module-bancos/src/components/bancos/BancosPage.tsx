@@ -16,44 +16,15 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
+import SearchIcon from "@mui/icons-material/Search";
+import InputAdornment from "@mui/material/InputAdornment";
+import { useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useBancosList,
   useCreateBanco,
   useUpdateBanco,
   useDeleteBanco,
 } from "../../hooks/useBancosAuxiliares";
-
-const BANCOS_FILTERS: FilterFieldDef[] = [
-  {
-    field: "tipo",
-    label: "Tipo",
-    type: "select",
-    options: [
-      { value: "NACIONAL", label: "Nacional" },
-      { value: "INTERNACIONAL", label: "Internacional" },
-    ],
-  },
-  {
-    field: "moneda",
-    label: "Moneda",
-    type: "select",
-    options: [
-      { value: "VES", label: "VES" },
-      { value: "USD", label: "USD" },
-      { value: "EUR", label: "EUR" },
-    ],
-  },
-  {
-    field: "estado",
-    label: "Estado",
-    type: "select",
-    options: [
-      { value: "ACTIVO", label: "Activo" },
-      { value: "INACTIVO", label: "Inactivo" },
-    ],
-  },
-];
 
 const EMPTY_FORM = {
   Nombre: "",
@@ -66,7 +37,6 @@ const EMPTY_FORM = {
 export default function BancosPage() {
   /* ── state ── */
   const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
@@ -170,20 +140,26 @@ export default function BancosPage() {
     <Box>
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Bancos</Typography>
+        <Typography variant="h5" fontWeight={600}>Entidades</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
           Nuevo Banco
         </Button>
       </Stack>
 
-      {/* Filters */}
-      <ZenttoFilterPanel
-        filters={BANCOS_FILTERS}
-        values={filterValues}
-        onChange={(v) => { setFilterValues(v); setPage(1); }}
-        searchPlaceholder="Buscar banco..."
-        searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setPage(1); }}
+      {/* Search */}
+      <TextField
+        placeholder="Buscar banco..."
+        size="small"
+        value={search}
+        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        sx={{ mb: 2, maxWidth: 360 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+        }}
       />
 
       {/* Grid */}
@@ -192,7 +168,6 @@ export default function BancosPage() {
         rows={rows}
         columns={columns}
         loading={isLoading}
-        enableHeaderFilters
         rowCount={data?.total ?? rows.length}
         pageSizeOptions={[25, 50, 100]}
         paginationModel={{ page: page - 1, pageSize: limit }}
@@ -203,7 +178,13 @@ export default function BancosPage() {
         paginationMode="server"
         disableRowSelectionOnClick
         getRowId={(r) => r.Nombre ?? r.NOMBRE ?? Math.random()}
-        enableClipboard
+        showExportCsv={false}
+        showExportExcel={false}
+        showExportJson={false}
+        hideDensityButton
+        hideColumnsButton
+        hideQuickFilter
+        hideToolbar
         sx={{ minHeight: 400 }}
         mobileVisibleFields={['Nombre', 'Telefonos']}
         smExtraFields={['Contacto']}

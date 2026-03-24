@@ -253,11 +253,11 @@ export default function ConciliacionBancariaPage() {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">Conciliaciones Bancarias</Typography>
+        <Typography variant="h5" fontWeight={600}>Conciliaciones</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => router.push("/conciliacion/wizard")}
+          onClick={() => router.push("/bancos/conciliacion")}
         >
           Nueva Conciliación
         </Button>

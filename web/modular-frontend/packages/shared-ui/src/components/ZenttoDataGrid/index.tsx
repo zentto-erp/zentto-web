@@ -504,6 +504,10 @@ function buildMobileActionColumn(
   }) as ZenttoColDef;
 }
 
+/** Check if a column is an action column (by field name, type, or headerName) */
+const isActionCol = (c: { field: string; type?: string; headerName?: string }) =>
+  c.field === 'actions' || c.field === 'acciones' || c.type === 'actions' || c.headerName === 'Acciones';
+
 // ─── ZenttoDataGrid ─────────────────────────────────────────────────────────
 
 export function ZenttoDataGrid({
@@ -806,7 +810,7 @@ export function ZenttoDataGrid({
   const dataColumns = useMemo(
     () =>
       layout.processedColumns.filter(
-        (c) => c.field !== 'actions' && c.type !== 'actions' && !c.field.startsWith('__')
+        (c) => !isActionCol(c) && !c.field.startsWith('__')
       ),
     [layout.processedColumns]
   );
@@ -896,11 +900,11 @@ export function ZenttoDataGrid({
 
     // In mobile: hide original action columns if they've been collapsed into the ⋮ menu
     const actionColCount = layout.processedColumns.filter(
-      (c) => c.field === 'actions' || (c as any).type === 'actions'
+      (c) => isActionCol(c as any)
     ).length;
     if (isSmall && actionColCount > 1) {
       layout.processedColumns.forEach((c) => {
-        if (c.field === 'actions' || (c as any).type === 'actions') {
+        if (isActionCol(c as any)) {
           model[c.field] = false; // hide original action columns
         }
       });
@@ -926,8 +930,8 @@ export function ZenttoDataGrid({
     if (pinnedColumns) cols = applyColumnPinning(cols, pinnedColumns);
 
     // Separate action columns
-    const actionCols = cols.filter((c) => c.field === 'actions' || c.type === 'actions');
-    const dataCols = cols.filter((c) => c.field !== 'actions' && c.type !== 'actions');
+    const actionCols = cols.filter((c) => isActionCol(c));
+    const dataCols = cols.filter((c) => !isActionCol(c));
 
     const result: ZenttoColDef[] = [];
 
@@ -977,7 +981,7 @@ export function ZenttoDataGrid({
       result.push(buildMobileActionColumn(actionCols));
     } else {
       // Desktop or single action → show normally
-      result.push(...actionCols);
+      result.push(...actionCols.map((c) => ({ ...c, filterable: false, sortable: false })));
     }
 
     return result;
@@ -1340,7 +1344,7 @@ export function ZenttoDataGrid({
               (c) => c.field !== 'actions' && (c as any).type !== 'actions' && !c.field.startsWith('__')
             );
             const actionCols = (pivotedColumns as ZenttoColDef[]).filter(
-              (c) => c.field === 'actions' || (c as any).type === 'actions'
+              (c) => isActionCol(c as any)
             );
             const fl = (c: ZenttoColDef) => (c.field + ' ' + (c.headerName ?? '')).toLowerCase();
 

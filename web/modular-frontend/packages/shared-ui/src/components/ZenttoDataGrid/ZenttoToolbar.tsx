@@ -128,23 +128,24 @@ export function ZenttoToolbar({
         </>
       )}
 
-      {/* MUI native tools */}
-      <GridToolbarFilterButton />
+      {/* Filter button — native dropdown OR header-filters toggle */}
+      {enableHeaderFilters ? (
+        <Tooltip title={headerFiltersVisible ? 'Ocultar filtros de columna' : 'Mostrar filtros de columna'}>
+          <Button
+            size="small"
+            startIcon={<FilterListIcon fontSize="small" />}
+            onClick={onToggleHeaderFilters}
+            color="primary"
+            sx={{ textTransform: 'none', fontSize: '0.8125rem' }}
+          >
+            Filtros
+          </Button>
+        </Tooltip>
+      ) : (
+        <GridToolbarFilterButton />
+      )}
       {!hideColumnsButton && <GridToolbarColumnsButton />}
       {!hideDensityButton && <GridToolbarDensitySelector />}
-
-      {/* Header Filters toggle */}
-      {enableHeaderFilters && (
-        <Tooltip title={headerFiltersVisible ? 'Ocultar filtros de columna' : 'Mostrar filtros de columna'}>
-          <IconButton
-            size="small"
-            onClick={onToggleHeaderFilters}
-            color={headerFiltersVisible ? 'primary' : 'default'}
-          >
-            <FilterListIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
 
       {/* Reset layout */}
       {hasCustomLayout && (

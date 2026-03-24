@@ -19,6 +19,9 @@ import {
   getCuentasBancarias,
   getMovimientosCuenta,
   getMovimientoById,
+  insertCuentaBancaria,
+  updateCuentaBancaria,
+  deleteCuentaBancaria,
 } from "./conciliacion.service.js";
 import { emitBankMovementAccountingEntry, linkMovementToEntry, getLinkedEntries } from "./bancos-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
@@ -111,6 +114,39 @@ bancosRouter.get("/cuentas/list", async (req, res) => {
   try {
     const data = await getCuentasBancarias();
     res.json({ rows: data });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// POST /v1/bancos/cuentas - Crear cuenta bancaria
+bancosRouter.post("/cuentas", async (req, res) => {
+  try {
+    const result = await insertCuentaBancaria(req.body);
+    if (result.ok) return res.json({ success: true, message: result.mensaje, id: result.id });
+    return res.status(400).json({ success: false, message: result.mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// PUT /v1/bancos/cuentas/:id - Actualizar cuenta bancaria
+bancosRouter.put("/cuentas/:id", async (req, res) => {
+  try {
+    const result = await updateCuentaBancaria(Number(req.params.id), req.body);
+    if (result.ok) return res.json({ success: true, message: result.mensaje });
+    return res.status(400).json({ success: false, message: result.mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// DELETE /v1/bancos/cuentas/:id - Desactivar cuenta bancaria
+bancosRouter.delete("/cuentas/:id", async (req, res) => {
+  try {
+    const result = await deleteCuentaBancaria(Number(req.params.id));
+    if (result.ok) return res.json({ success: true, message: result.mensaje });
+    return res.status(400).json({ success: false, message: result.mensaje });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

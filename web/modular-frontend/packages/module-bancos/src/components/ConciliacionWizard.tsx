@@ -592,12 +592,8 @@ export default function ConciliacionWizard() {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/bancos/conciliacion")}>
-          Volver
-        </Button>
-        <Typography variant="h5" fontWeight={700}>
-          <AccountBalanceIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-          Nueva Conciliación Bancaria
+        <Typography variant="h5" fontWeight={600}>
+          Nueva Conciliación
         </Typography>
       </Stack>
 

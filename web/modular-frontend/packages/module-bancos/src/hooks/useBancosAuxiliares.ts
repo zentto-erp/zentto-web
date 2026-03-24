@@ -92,3 +92,30 @@ export function useMovimientoDetalle(id?: number | string) {
   });
 }
 
+// ── CRUD Cuentas Bancarias ──────────────────────────────────────────────────
+
+export function useCreateCuentaBancaria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => apiPost(`${API_BASE}/cuentas`, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  });
+}
+
+export function useUpdateCuentaBancaria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { id: number; data: Record<string, unknown> }) =>
+      apiPut(`${API_BASE}/cuentas/${payload.id}`, payload.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  });
+}
+
+export function useDeleteCuentaBancaria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`${API_BASE}/cuentas/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  });
+}
+

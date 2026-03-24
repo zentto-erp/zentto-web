@@ -1258,7 +1258,7 @@ CREATE OR REPLACE FUNCTION usp_fin_bank_list(
     p_offset     INT DEFAULT 0,
     p_limit      INT DEFAULT 50
 )
-RETURNS TABLE("TotalCount" BIGINT, "Nombre" VARCHAR, "Contacto" VARCHAR, "Direccion" VARCHAR, "Telefonos" VARCHAR)
+RETURNS TABLE("TotalCount" BIGINT, "BankId" BIGINT, "Nombre" VARCHAR, "Contacto" VARCHAR, "Direccion" VARCHAR, "Telefonos" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE v_total BIGINT;
 BEGIN
@@ -1267,7 +1267,7 @@ BEGIN
       AND (p_search IS NULL OR "BankName" ILIKE p_search OR "ContactName" ILIKE p_search);
 
     RETURN QUERY
-    SELECT v_total, b."BankName", b."ContactName", b."AddressLine", b."Phones"
+    SELECT v_total, b."BankId", b."BankName", b."ContactName", b."AddressLine", b."Phones"
     FROM fin."Bank" b
     WHERE b."CompanyId" = p_company_id AND b."IsActive" = TRUE
       AND (p_search IS NULL OR b."BankName" ILIKE p_search OR b."ContactName" ILIKE p_search)

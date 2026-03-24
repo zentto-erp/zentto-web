@@ -2160,6 +2160,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
+        ba.BankAccountId,
+        ba.BankId,
         ba.AccountNumber    AS Nro_Cta,
         b.BankName          AS Banco,
         ba.AccountName      AS Descripcion,
@@ -2304,6 +2306,97 @@ BEGIN
       AND je2.IsDeleted = 0
 
     ORDER BY EntryDate DESC, JournalEntryId DESC;
+END;
+GO
+
+-- ============================================================================
+--  CRUD: fin.BankAccount
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Account_Insert
+    @CompanyId       INT,
+    @BranchId        INT,
+    @BankId          BIGINT,
+    @AccountNumber   NVARCHAR(40),
+    @AccountName     NVARCHAR(150),
+    @CurrencyCode    CHAR(3),
+    @UserId          INT = NULL,
+    @Resultado       BIT OUTPUT,
+    @Mensaje         NVARCHAR(250) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM fin.BankAccount WHERE CompanyId=@CompanyId AND AccountNumber=@AccountNumber)
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje = N'Ya existe una cuenta con ese número';
+        RETURN;
+    END
+
+    INSERT INTO fin.BankAccount(CompanyId, BranchId, BankId, AccountNumber, AccountName, CurrencyCode, CreatedByUserId, UpdatedByUserId)
+    VALUES (@CompanyId, @BranchId, @BankId, @AccountNumber, @AccountName, @CurrencyCode, @UserId, @UserId);
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Cuenta creada correctamente';
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Account_Update
+    @BankAccountId   BIGINT,
+    @CompanyId       INT,
+    @BankId          BIGINT,
+    @AccountNumber   NVARCHAR(40),
+    @AccountName     NVARCHAR(150),
+    @CurrencyCode    CHAR(3),
+    @IsActive        BIT = 1,
+    @UserId          INT = NULL,
+    @Resultado       BIT OUTPUT,
+    @Mensaje         NVARCHAR(250) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE fin.BankAccount
+    SET BankId=@BankId, AccountNumber=@AccountNumber, AccountName=@AccountName,
+        CurrencyCode=@CurrencyCode, IsActive=@IsActive,
+        UpdatedAt=SYSUTCDATETIME(), UpdatedByUserId=@UserId
+    WHERE BankAccountId=@BankAccountId AND CompanyId=@CompanyId;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje = N'Cuenta no encontrada';
+        RETURN;
+    END
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Cuenta actualizada correctamente';
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Account_Delete
+    @BankAccountId   BIGINT,
+    @CompanyId       INT,
+    @Resultado       BIT OUTPUT,
+    @Mensaje         NVARCHAR(250) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE fin.BankAccount
+    SET IsActive=0, UpdatedAt=SYSUTCDATETIME()
+    WHERE BankAccountId=@BankAccountId AND CompanyId=@CompanyId;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje = N'Cuenta no encontrada';
+        RETURN;
+    END
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Cuenta desactivada correctamente';
 END;
 GO
 

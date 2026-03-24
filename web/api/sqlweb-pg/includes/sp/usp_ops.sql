@@ -1580,10 +1580,10 @@ END; $$;
 -- usp_Bank_Account_List
 DROP FUNCTION IF EXISTS usp_bank_account_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_bank_account_list(p_company_id INT)
-RETURNS TABLE("Nro_Cta" VARCHAR,"Banco" VARCHAR,"Descripcion" VARCHAR,"Moneda" VARCHAR,
+RETURNS TABLE("BankAccountId" BIGINT,"BankId" BIGINT,"Nro_Cta" VARCHAR,"Banco" VARCHAR,"Descripcion" VARCHAR,"Moneda" VARCHAR,
     "Saldo" NUMERIC,"Saldo_Disponible" NUMERIC,"BancoNombre" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
-    RETURN QUERY SELECT ba."AccountNumber",b."BankName",ba."AccountName",ba."CurrencyCode"::VARCHAR,
+    RETURN QUERY SELECT ba."BankAccountId",ba."BankId",ba."AccountNumber",b."BankName",ba."AccountName",ba."CurrencyCode"::VARCHAR,
         ba."Balance",ba."AvailableBalance",b."BankName"
     FROM fin."BankAccount" ba INNER JOIN fin."Bank" b ON b."BankId"=ba."BankId"
     WHERE ba."CompanyId"=p_company_id AND ba."IsActive"=TRUE AND b."IsActive"=TRUE
@@ -1706,6 +1706,84 @@ BEGIN
       AND je2."IsDeleted" = FALSE
 
     ORDER BY "EntryDate" DESC, "JournalEntryId" DESC;
+END; $$;
+
+-- ============================================================================
+--  CRUD: fin.BankAccount
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS usp_bank_account_insert(INT,INT,BIGINT,VARCHAR,VARCHAR,CHAR,INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_bank_account_insert(
+    p_company_id   INT,
+    p_branch_id    INT,
+    p_bank_id      BIGINT,
+    p_account_number VARCHAR(40),
+    p_account_name   VARCHAR(150),
+    p_currency_code  CHAR(3),
+    p_user_id        INT DEFAULT NULL
+)
+RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR, "id" BIGINT)
+LANGUAGE plpgsql AS $$
+DECLARE v_id BIGINT;
+BEGIN
+    IF EXISTS (SELECT 1 FROM fin."BankAccount" WHERE "CompanyId"=p_company_id AND "AccountNumber"=p_account_number) THEN
+        RETURN QUERY SELECT FALSE, 'Ya existe una cuenta con ese número'::VARCHAR, 0::BIGINT;
+        RETURN;
+    END IF;
+
+    INSERT INTO fin."BankAccount"("CompanyId","BranchId","BankId","AccountNumber","AccountName","CurrencyCode","CreatedByUserId","UpdatedByUserId")
+    VALUES (p_company_id, p_branch_id, p_bank_id, p_account_number, p_account_name, p_currency_code, p_user_id, p_user_id)
+    RETURNING "BankAccountId" INTO v_id;
+
+    RETURN QUERY SELECT TRUE, 'Cuenta creada correctamente'::VARCHAR, v_id;
+END; $$;
+
+DROP FUNCTION IF EXISTS usp_bank_account_update(BIGINT,INT,BIGINT,VARCHAR,VARCHAR,CHAR,BOOLEAN,INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_bank_account_update(
+    p_id             BIGINT,
+    p_company_id     INT,
+    p_bank_id        BIGINT,
+    p_account_number VARCHAR(40),
+    p_account_name   VARCHAR(150),
+    p_currency_code  CHAR(3),
+    p_is_active      BOOLEAN DEFAULT TRUE,
+    p_user_id        INT DEFAULT NULL
+)
+RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE fin."BankAccount"
+    SET "BankId"=p_bank_id, "AccountNumber"=p_account_number, "AccountName"=p_account_name,
+        "CurrencyCode"=p_currency_code, "IsActive"=p_is_active,
+        "UpdatedAt"=NOW() AT TIME ZONE 'UTC', "UpdatedByUserId"=p_user_id
+    WHERE "BankAccountId"=p_id AND "CompanyId"=p_company_id;
+
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT FALSE, 'Cuenta no encontrada'::VARCHAR;
+        RETURN;
+    END IF;
+
+    RETURN QUERY SELECT TRUE, 'Cuenta actualizada correctamente'::VARCHAR;
+END; $$;
+
+DROP FUNCTION IF EXISTS usp_bank_account_delete(BIGINT,INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_bank_account_delete(
+    p_id           BIGINT,
+    p_company_id   INT
+)
+RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE fin."BankAccount"
+    SET "IsActive"=FALSE, "UpdatedAt"=NOW() AT TIME ZONE 'UTC'
+    WHERE "BankAccountId"=p_id AND "CompanyId"=p_company_id;
+
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT FALSE, 'Cuenta no encontrada'::VARCHAR;
+        RETURN;
+    END IF;
+
+    RETURN QUERY SELECT TRUE, 'Cuenta desactivada correctamente'::VARCHAR;
 END; $$;
 
 -- Verificacion

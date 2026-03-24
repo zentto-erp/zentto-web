@@ -93,8 +93,8 @@ export default function BancosHome() {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard bancario
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+        Bancos
       </Typography>
 
       {/* STATS CARDS */}

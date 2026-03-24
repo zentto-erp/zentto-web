@@ -1,14 +1,27 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
+  FormControl, IconButton, InputLabel, MenuItem, Paper, Select, Stack,
+  TextField, Tooltip, Typography,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Grid from "@mui/material/Grid2";
 import dayjs from "dayjs";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
-import { useCuentasBancarias, useMovimientosCuenta } from "../../hooks/useBancosAuxiliares";
+import { useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
+import {
+  useBancosList,
+  useCuentasBancarias,
+  useMovimientosCuenta,
+  useCreateCuentaBancaria,
+  useUpdateCuentaBancaria,
+  useDeleteCuentaBancaria,
+} from "../../hooks/useBancosAuxiliares";
 
 const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
   {
@@ -35,35 +48,7 @@ const tipoColors: Record<string, "success" | "error" | "info" | "warning" | "def
   IDB: "default",
 };
 
-const colsCuentas: ZenttoColDef[] = [
-  { field: "Nro_Cta", headerName: "Nro Cuenta", width: 150 },
-  {
-    field: "BancoNombre",
-    headerName: "Banco",
-    flex: 1,
-    valueGetter: (value, row) => row.BancoNombre ?? row.Banco ?? "",
-  },
-  {
-    field: "Saldo",
-    headerName: "Saldo",
-    width: 140,
-    align: "right",
-    headerAlign: "right",
-    currency: true,
-    aggregation: "sum",
-    renderCell: (p) => {
-      const val = Number(p.value ?? 0);
-      return (
-        <Chip
-          size="small"
-          label={formatCurrency(val)}
-          color={val >= 0 ? "success" : "error"}
-          variant="outlined"
-        />
-      );
-    },
-  },
-];
+const CURRENCY_OPTIONS = ["VES", "USD", "EUR"];
 
 export default function CuentasBancariasPage() {
   const router = useRouter();
@@ -101,6 +86,56 @@ export default function CuentasBancariasPage() {
       renderCell: (p) => formatCurrency(Number(p.value ?? 0)),
     },
   ];
+  const colsCuentas: ZenttoColDef[] = useMemo(() => [
+    { field: "Nro_Cta", headerName: "Nro Cuenta", width: 130 },
+    { field: "BancoNombre", headerName: "Banco", flex: 1, valueGetter: (_v: any, row: any) => row.BancoNombre ?? row.Banco ?? "" },
+    {
+      field: "Saldo", headerName: "Saldo", width: 130, align: "right" as const, headerAlign: "right" as const, currency: true, aggregation: "sum" as const,
+      renderCell: (p: any) => <Chip size="small" label={formatCurrency(Number(p.value ?? 0))} color={Number(p.value ?? 0) >= 0 ? "success" : "error"} variant="outlined" />,
+    },
+    {
+      field: "acciones", headerName: "Acciones", width: 90, sortable: false,
+      renderCell: (params: any) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Editar"><IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditCta(params.row); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
+          <Tooltip title="Eliminar"><IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); setDeleteTarget(params.row.BankAccountId); }}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+        </Stack>
+      ),
+    },
+  ], []);
+
+  const handleEditCta = (row: Record<string, any>) => {
+    setForm({ BankId: row.BankId ?? 0, AccountNumber: row.Nro_Cta ?? "", AccountName: row.Descripcion ?? "", CurrencyCode: row.Moneda?.trim() ?? "VES" });
+    setEditId(row.BankAccountId); setFormOpen(true);
+  };
+
+  /* ── CRUD state ── */
+  const [formOpen, setFormOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState({ BankId: 0, AccountNumber: "", AccountName: "", CurrencyCode: "VES" });
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const crear = useCreateCuentaBancaria();
+  const actualizar = useUpdateCuentaBancaria();
+  const eliminar = useDeleteCuentaBancaria();
+  const { showToast } = useToast();
+  const { data: bancosData } = useBancosList({ limit: 200 });
+  const bancos = (bancosData?.rows ?? bancosData?.items ?? []) as Record<string, any>[];
+  const saving = crear.isPending || actualizar.isPending;
+
+  const handleNew = () => { setForm({ BankId: 0, AccountNumber: "", AccountName: "", CurrencyCode: "VES" }); setEditId(null); setFormOpen(true); };
+  const handleSave = async () => {
+    try {
+      if (editId) { await actualizar.mutateAsync({ id: editId, data: form }); showToast("Cuenta actualizada", "success"); }
+      else { await crear.mutateAsync(form); showToast("Cuenta creada", "success"); }
+      setFormOpen(false);
+    } catch (err: any) { showToast(err?.message ?? "Error al guardar", "error"); }
+  };
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try { await eliminar.mutateAsync(deleteTarget); showToast("Cuenta desactivada", "success"); setDeleteTarget(null); }
+    catch (err: any) { showToast(err?.message ?? "Error al eliminar", "error"); }
+  };
+
   const [nroCta, setNroCta] = useState<string>("");
   const [movSearch, setMovSearch] = useState("");
   const [movFilterValues, setMovFilterValues] = useState<Record<string, string>>({
@@ -133,21 +168,20 @@ export default function CuentasBancariasPage() {
 
   return (
     <Box>
-      <ContextActionHeader
-        title="Cuentas Bancarias"
-        secondaryActions={[
-          {
-            label: "Imprimir",
-            onClick: () => window.print(),
-          },
-          {
-            label: "Nueva Conciliación",
-            onClick: () => {
-              window.location.href = "/conciliacion/wizard";
-            },
-          },
-        ]}
-      />
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5" fontWeight={600}>Cuentas bancarias</Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
+            Nueva cuenta
+          </Button>
+          <Button variant="outlined" size="small" onClick={() => window.print()}>
+            Imprimir
+          </Button>
+          <Button variant="outlined" size="small" onClick={() => { window.location.href = "/bancos/conciliacion"; }}>
+            Nueva conciliación
+          </Button>
+        </Box>
+      </Stack>
 
       {/* Print header (hidden on screen, visible on print) */}
       <Box className="print-only" sx={{ display: "none", mb: 2 }}>
@@ -174,7 +208,7 @@ export default function CuentasBancariasPage() {
               columns={colsCuentas}
               loading={loadingCtas}
               onRowClick={(params) => setNroCta(String(params.row.Nro_Cta))}
-              getRowId={(r) => r.Nro_Cta ?? r.nroCta ?? Math.random()}
+              getRowId={(r) => r.BankAccountId ?? r.Nro_Cta ?? Math.random()}
               density="compact"
               hideFooter
               disableRowSelectionOnClick
@@ -248,6 +282,49 @@ export default function CuentasBancariasPage() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Create / Edit Dialog */}
+      <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{editId ? "Editar cuenta" : "Nueva cuenta"}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <FormControl fullWidth>
+              <InputLabel>Banco</InputLabel>
+              <Select value={form.BankId || ""} label="Banco" onChange={(e) => setForm((f) => ({ ...f, BankId: Number(e.target.value) }))}>
+                {bancos.map((b) => (
+                  <MenuItem key={b.BankId ?? b.Nombre} value={b.BankId ?? 0}>{b.Nombre ?? b.BankName}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField label="Número de cuenta" fullWidth value={form.AccountNumber} onChange={(e) => setForm((f) => ({ ...f, AccountNumber: e.target.value }))} />
+            <TextField label="Descripción" fullWidth value={form.AccountName} onChange={(e) => setForm((f) => ({ ...f, AccountName: e.target.value }))} />
+            <FormControl fullWidth>
+              <InputLabel>Moneda</InputLabel>
+              <Select value={form.CurrencyCode} label="Moneda" onChange={(e) => setForm((f) => ({ ...f, CurrencyCode: e.target.value }))}>
+                {CURRENCY_OPTIONS.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFormOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving || !form.BankId || !form.AccountNumber}>
+            {editId ? "Actualizar" : "Guardar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={deleteTarget != null} onClose={() => setDeleteTarget(null)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <Typography>¿Desactivar esta cuenta bancaria?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleDelete} disabled={eliminar.isPending}>Desactivar</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Print styles */}
       <style>{`

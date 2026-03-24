@@ -29,7 +29,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
+import { useToast, ZenttoDataGrid, ZenttoFilterPanel, type ZenttoColDef, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useCajaChicaBoxes,
   useCreateCajaChicaBox,
@@ -232,10 +232,12 @@ export default function CajaChicaPage() {
 
   return (
     <Box>
-      <ContextActionHeader
-        title="Caja Chica"
-        primaryAction={{ label: "Nueva Caja", onClick: () => setShowCreateBox(true) }}
-      />
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5" fontWeight={600}>Caja Chica</Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowCreateBox(true)}>
+          Nueva Caja
+        </Button>
+      </Stack>
 
       <Grid container spacing={2}>
         {/* Panel izquierdo: Cajas */}
