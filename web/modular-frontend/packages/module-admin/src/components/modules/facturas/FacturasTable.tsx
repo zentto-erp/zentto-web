@@ -217,7 +217,7 @@ export default function FacturasTable() {
         <Typography variant="h5" fontWeight={600}>
           Facturas
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/facturas/new")} size="large">
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/facturas/new")}>
           Nueva Factura
         </Button>
       </Box>

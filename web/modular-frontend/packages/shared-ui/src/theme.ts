@@ -2,6 +2,8 @@
 import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
 import type { } from '@mui/x-data-grid/themeAugmentation';
+import { esES as dataGridEsES } from '@mui/x-data-grid/locales';
+import { esES as coreEsES } from '@mui/material/locale';
 
 /* ── Zentto Brand Colors (derivados del ecommerce) ── */
 export const brandColors = {
@@ -35,7 +37,7 @@ export const brandColors = {
   shortcutOrange: '#ff9900',
 };
 
-const theme = createTheme({
+const baseThemeOptions = {
   cssVariables: {
     colorSchemeSelector: 'data-toolpad-color-scheme',
   },
@@ -122,6 +124,13 @@ const theme = createTheme({
         showCellVerticalBorder: false,
         rowHeight: 44,
         columnHeaderHeight: 48,
+        localeText: {
+          toolbarDensity: 'Tamaño',
+          toolbarDensityLabel: 'Tamaño de fila',
+          toolbarDensityCompact: 'Compacto',
+          toolbarDensityStandard: 'Estándar',
+          toolbarDensityComfortable: 'Grande',
+        },
       },
       styleOverrides: {
         root: {
@@ -283,7 +292,9 @@ const theme = createTheme({
       },
     },
   },
-});
+};
+
+const theme = createTheme(baseThemeOptions, dataGridEsES, coreEsES);
 
 export default theme;
 

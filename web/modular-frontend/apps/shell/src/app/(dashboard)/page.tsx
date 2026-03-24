@@ -97,8 +97,8 @@ export default function AppSelectorPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 8 }, bgcolor: 'background.default' }}>
-      <Box sx={{ width: '100%', maxWidth: 1200, mt: 5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 4 }, bgcolor: 'background.default' }}>
+      <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
         {isAdmin && <Box sx={(t) => ({ width: '100%', p: 2, mb: 4, borderRadius: 2, textAlign: 'center', ...(t.palette.mode === 'dark' ? { bgcolor: '#1e293b', color: '#93c5fd', border: '1px solid #1e40af' } : { bgcolor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }) })}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Modo administrador activo</Typography>
         </Box>}

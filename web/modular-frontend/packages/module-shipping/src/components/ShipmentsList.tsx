@@ -38,8 +38,7 @@ export default function ShipmentsList({ onNavigate }: Props) {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
         <Typography variant="h5" fontWeight={700}>Mis Envíos</Typography>
-        <Button variant="contained" startIcon={<AddBoxIcon />} onClick={() => onNavigate("/envios/nuevo")}
-          sx={{ bgcolor: "#1565c0" }}>
+        <Button variant="contained" startIcon={<AddBoxIcon />} onClick={() => onNavigate("/envios/nuevo")}>
           Nuevo Envío
         </Button>
       </Box>
@@ -79,7 +78,7 @@ export default function ShipmentsList({ onNavigate }: Props) {
         <Paper sx={{ p: 6, textAlign: "center", borderRadius: 2 }}>
           <LocalShippingIcon sx={{ fontSize: 64, color: "#ccc", mb: 2 }} />
           <Typography variant="h6" color="text.secondary">No hay envíos</Typography>
-          <Button variant="contained" sx={{ mt: 2, bgcolor: "#1565c0" }} onClick={() => onNavigate("/envios/nuevo")}>
+          <Button variant="contained" sx={{ mt: 2 }} onClick={() => onNavigate("/envios/nuevo")}>
             Crear primer envío
           </Button>
         </Paper>

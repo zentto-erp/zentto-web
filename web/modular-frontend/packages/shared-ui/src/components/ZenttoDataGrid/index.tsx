@@ -1216,7 +1216,7 @@ export function ZenttoDataGrid({
         getRowClassName={resolvedGetRowClassName}
         isRowSelectable={resolvedIsRowSelectable}
         pinnedRows={resolvedPinnedRows}
-        rowCount={serverRowCount}
+        {...(serverRowCount != null ? { rowCount: serverRowCount } : {})}
         slots={
           hideToolbar
             ? props.slots

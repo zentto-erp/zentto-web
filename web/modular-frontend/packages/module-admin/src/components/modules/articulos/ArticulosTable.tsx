@@ -417,7 +417,7 @@ export default function ArticulosTable() {
 
         <Tooltip title="Crear un nuevo artículo en inventario">
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<AddIcon />}
             onClick={() => router.push(`${basePath}/new`)}
             size="small"

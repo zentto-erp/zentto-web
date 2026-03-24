@@ -330,11 +330,9 @@ export default function OdooLayout({
                 </Box>
 
                 {/* Page Content */}
-                <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', bgcolor: 'background.default', p: { xs: 2, md: 3 } }}>
-                    <Box sx={{ flexGrow: 1 }}>
-                        {children}
-                    </Box>
-                    <Box sx={{ flexShrink: 0, pt: 4, pb: 1, display: 'flex', justifyContent: 'center' }}>
+                <Box component="main" sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', bgcolor: 'background.default', p: { xs: 2, md: 3 } }}>
+                    {children}
+                    <Box sx={{ pt: 4, pb: 1, display: 'flex', justifyContent: 'center' }}>
                         <Copyright />
                     </Box>
                 </Box>
