@@ -29,8 +29,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.5.2",
-    "@zentto/datagrid": "^0.1.2",
-    "@zentto/datagrid-core": "^0.1.2"
+    "@zentto/datagrid": "^0.2.0",
+    "@zentto/datagrid-core": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",

@@ -22,7 +22,7 @@
     "next": "16.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@zentto/datagrid": "^0.1.2",
-    "@zentto/datagrid-core": "^0.1.2"
+    "@zentto/datagrid": "^0.2.0",
+    "@zentto/datagrid-core": "^0.2.0"
   }
 }
