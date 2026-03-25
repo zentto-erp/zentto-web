@@ -5,7 +5,8 @@ type CaptchaAction =
   | "reset_password"
   | "verify_email"
   | "resend_verification"
-  | "track_public";
+  | "track_public"
+  | "backoffice_login";
 
 type CaptchaValidation = {
   ok: boolean;

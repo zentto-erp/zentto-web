@@ -25,6 +25,7 @@ import jwt from "jsonwebtoken";
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import { obs } from "../integrations/observability.js";
+import { validateCaptchaToken } from "../usuarios/captcha.service.js";
 
 const router = Router();
 
@@ -91,9 +92,17 @@ router.get("/status", (_req, res) => {
 // Requiere Master Key. Solo disponible si el TOTP aún no está configurado.
 
 router.post("/setup", async (req: Request, res: Response) => {
-  const { masterKey } = req.body as { masterKey?: string };
+  const { masterKey, captchaToken } = req.body as { masterKey?: string; captchaToken?: string };
+  const ip = getIp(req);
 
   await constantDelay();
+
+  // Verificar captcha
+  const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
+  if (!captcha.ok) {
+    res.status(400).json({ error: "captcha_required", reason: captcha.reason });
+    return;
+  }
 
   if (!MASTER_KEY || masterKey !== MASTER_KEY) {
     res.status(401).json({ error: "unauthorized" });
@@ -184,9 +193,20 @@ router.post("/login", async (req: Request, res: Response) => {
     return;
   }
 
-  const { masterKey, totpCode } = req.body as { masterKey?: string; totpCode?: string };
+  const { masterKey, totpCode, captchaToken } = req.body as {
+    masterKey?: string;
+    totpCode?: string;
+    captchaToken?: string;
+  };
 
   await constantDelay();
+
+  // Verificar captcha antes de cualquier otra validación
+  const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
+  if (!captcha.ok) {
+    res.status(400).json({ error: "captcha_required", reason: captcha.reason });
+    return;
+  }
 
   // Validar Master Key
   if (!MASTER_KEY || masterKey !== MASTER_KEY) {

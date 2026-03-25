@@ -48,6 +48,12 @@ import {
   ConfirmDialog,
 } from "@zentto/shared-ui";
 import { useAuth } from "@zentto/shared-auth";
+import dynamic from "next/dynamic";
+
+const TurnstileCaptcha = dynamic(
+  () => import("@zentto/shared-auth").then((m) => ({ default: m.TurnstileCaptcha })),
+  { ssr: false }
+);
 import type { GridPaginationModel } from "@mui/x-data-grid";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -185,12 +191,14 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
   const [setupQr, setSetupQr] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
   // Paso 1 → verificar Master Key, luego ver si hay TOTP configurado
   const handleMasterKey = async () => {
     if (!masterKey.trim()) { setError("Ingresa la Master Key"); return; }
+    if (!captchaToken) { setError("Completa la verificacion anti-bot"); return; }
     setLoading(true); setError("");
     try {
       // Verificar status del TOTP
@@ -202,7 +210,7 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
         const setupRes = await fetch(`${base}/v1/backoffice/auth/setup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ masterKey: masterKey.trim() }),
+          body: JSON.stringify({ masterKey: masterKey.trim(), captchaToken }),
         });
         const setup = await setupRes.json();
         if (!setupRes.ok) {
@@ -258,7 +266,7 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
       const res = await fetch(`${base}/v1/backoffice/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ masterKey: masterKey.trim(), totpCode: code }),
+        body: JSON.stringify({ masterKey: masterKey.trim(), totpCode: code, captchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -288,7 +296,7 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
       </DialogTitle>
 
       <DialogContent>
-        {/* ── Paso 1: Master Key ── */}
+        {/* ── Paso 1: Master Key + Captcha ── */}
         {step === "key" && (
           <>
             <Typography variant="body2" color="text.secondary" mb={2}>
@@ -300,12 +308,14 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
               fullWidth
               value={masterKey}
               onChange={(e) => { setMasterKey(e.target.value); setError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && handleMasterKey()}
+              onKeyDown={(e) => e.key === "Enter" && captchaToken && handleMasterKey()}
               error={!!error}
               helperText={error}
               autoFocus
               disabled={loading}
+              sx={{ mb: 2 }}
             />
+            <TurnstileCaptcha onTokenChange={setCaptchaToken} />
           </>
         )}
 
