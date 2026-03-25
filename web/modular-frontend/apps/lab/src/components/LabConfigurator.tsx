@@ -130,7 +130,7 @@ function generateCode(cfg: LabConfig, fields: FieldOption[], numericFields: Fiel
   if (mode === "props") return props.join("\n");
 
   return `import type { ColumnDef } from "@zentto/datagrid-core";
-import "@zentto/datagrid"; // registra <zentto-grid>
+// import("@zentto/datagrid") — se registra dinamicamente en useEffect
 
 // Tus columnas aqui...
 const columns: ColumnDef[] = [ /* ... */ ];

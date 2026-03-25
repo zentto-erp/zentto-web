@@ -33,6 +33,8 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import { useAuth } from '@zentto/shared-auth';
 import { apiPut, useAllSettings, useCountries } from '@zentto/shared-api';
 import {
+  FormGrid,
+  FormField,
   PaymentSettingsPanel,
   SettingsInputGroup,
   SettingsItem,
@@ -211,22 +213,26 @@ export default function ConfiguracionPage() {
                 ))}
               </Select>
             </FormControl>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                size="small"
-                label="Moneda base"
-                value={getValue('general', 'monedaBase', 'VES')}
-                onChange={(e) => setValue('general', 'monedaBase', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                label="Moneda referencia"
-                value={getValue('general', 'monedaReferencia', 'USD')}
-                onChange={(e) => setValue('general', 'monedaReferencia', e.target.value)}
-                fullWidth
-              />
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Moneda base"
+                  value={getValue('general', 'monedaBase', 'VES')}
+                  onChange={(e) => setValue('general', 'monedaBase', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Moneda referencia"
+                  value={getValue('general', 'monedaReferencia', 'USD')}
+                  onChange={(e) => setValue('general', 'monedaReferencia', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+            </FormGrid>
           </SettingsInputGroup>
         </SettingsItem>
       </SettingsSection>
@@ -245,47 +251,55 @@ export default function ConfiguracionPage() {
               onChange={(e) => setValue('contabilidad', 'formatoPlanCuentas', e.target.value)}
               fullWidth
             />
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                size="small"
-                label="Impuesto principal"
-                value={getValue('contabilidad', 'nombreImpuestoPrincipal', 'IVA')}
-                onChange={(e) => setValue('contabilidad', 'nombreImpuestoPrincipal', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                label="Identificación fiscal"
-                value={getValue('contabilidad', 'nombreIdentificacion', 'RIF')}
-                onChange={(e) => setValue('contabilidad', 'nombreIdentificacion', e.target.value)}
-                fullWidth
-              />
-            </Stack>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Mes inicio fiscal</InputLabel>
-                <Select
-                  label="Mes inicio fiscal"
-                  value={Number(getValue('contabilidad', 'periodoFiscalStartMonth', 1))}
-                  onChange={(e) => setValue('contabilidad', 'periodoFiscalStartMonth', Number(e.target.value))}
-                >
-                  {Array.from({ length: 12 }).map((_, idx) => (
-                    <MenuItem key={idx + 1} value={idx + 1}>{idx + 1}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Cierre anual</InputLabel>
-                <Select
-                  label="Cierre anual"
-                  value={getValue('contabilidad', 'periodoFiscalCloseYearBehavior', 'soft')}
-                  onChange={(e) => setValue('contabilidad', 'periodoFiscalCloseYearBehavior', e.target.value)}
-                >
-                  <MenuItem value="soft">Soft</MenuItem>
-                  <MenuItem value="hard">Hard</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Impuesto principal"
+                  value={getValue('contabilidad', 'nombreImpuestoPrincipal', 'IVA')}
+                  onChange={(e) => setValue('contabilidad', 'nombreImpuestoPrincipal', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Identificación fiscal"
+                  value={getValue('contabilidad', 'nombreIdentificacion', 'RIF')}
+                  onChange={(e) => setValue('contabilidad', 'nombreIdentificacion', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+            </FormGrid>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Mes inicio fiscal</InputLabel>
+                  <Select
+                    label="Mes inicio fiscal"
+                    value={Number(getValue('contabilidad', 'periodoFiscalStartMonth', 1))}
+                    onChange={(e) => setValue('contabilidad', 'periodoFiscalStartMonth', Number(e.target.value))}
+                  >
+                    {Array.from({ length: 12 }).map((_, idx) => (
+                      <MenuItem key={idx + 1} value={idx + 1}>{idx + 1}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Cierre anual</InputLabel>
+                  <Select
+                    label="Cierre anual"
+                    value={getValue('contabilidad', 'periodoFiscalCloseYearBehavior', 'soft')}
+                    onChange={(e) => setValue('contabilidad', 'periodoFiscalCloseYearBehavior', e.target.value)}
+                  >
+                    <MenuItem value="soft">Soft</MenuItem>
+                    <MenuItem value="hard">Hard</MenuItem>
+                  </Select>
+                </FormControl>
+              </FormField>
+            </FormGrid>
             <FormControlLabel
               control={
                 <Switch
@@ -462,23 +476,27 @@ export default function ConfiguracionPage() {
               }
               label="Correlativos automáticos"
             />
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                size="small"
-                label="Formato impresión"
-                value={getValue('facturacion', 'formatoImpresion', 'carta')}
-                onChange={(e) => setValue('facturacion', 'formatoImpresion', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                label="Copias por defecto"
-                type="number"
-                value={Number(getValue('facturacion', 'copiasPorDefecto', 1))}
-                onChange={(e) => setValue('facturacion', 'copiasPorDefecto', Number(e.target.value))}
-                fullWidth
-              />
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Formato impresión"
+                  value={getValue('facturacion', 'formatoImpresion', 'carta')}
+                  onChange={(e) => setValue('facturacion', 'formatoImpresion', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Copias por defecto"
+                  type="number"
+                  value={Number(getValue('facturacion', 'copiasPorDefecto', 1))}
+                  onChange={(e) => setValue('facturacion', 'copiasPorDefecto', Number(e.target.value))}
+                  fullWidth
+                />
+              </FormField>
+            </FormGrid>
             <FormControlLabel
               control={
                 <Switch
@@ -508,61 +526,71 @@ export default function ConfiguracionPage() {
             hasCheckbox={false}
           >
             <SettingsInputGroup>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Caja ID"
-                  value={getValue('pos', 'caja.id', '1')}
-                  onChange={(e) => setValue('pos', 'caja.id', e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Nombre caja"
-                  value={getValue('pos', 'caja.nombre', 'Caja Principal')}
-                  onChange={(e) => setValue('pos', 'caja.nombre', e.target.value)}
-                  fullWidth
-                />
-              </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Serie factura"
-                  value={getValue('pos', 'caja.serieFactura', 'A')}
-                  onChange={(e) => setValue('pos', 'caja.serieFactura', e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Almacén ID"
-                  value={getValue('pos', 'caja.almacenId', '1')}
-                  onChange={(e) => setValue('pos', 'caja.almacenId', e.target.value)}
-                  fullWidth
-                />
-              </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Marca impresora"
-                  value={getValue('pos', 'impresora.marca', 'PNP')}
-                  onChange={(e) => setValue('pos', 'impresora.marca', e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Conexión"
-                  value={getValue('pos', 'impresora.conexion', 'emulador')}
-                  onChange={(e) => setValue('pos', 'impresora.conexion', e.target.value)}
-                  fullWidth
-                />
-              </Stack>
-              <TextField
-                size="small"
-                label="Agent URL"
-                value={getValue('pos', 'impresora.agentUrl', 'http://localhost:7654')}
-                onChange={(e) => setValue('pos', 'impresora.agentUrl', e.target.value)}
-                fullWidth
-              />
+              <FormGrid spacing={2}>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Caja ID"
+                    value={getValue('pos', 'caja.id', '1')}
+                    onChange={(e) => setValue('pos', 'caja.id', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Nombre caja"
+                    value={getValue('pos', 'caja.nombre', 'Caja Principal')}
+                    onChange={(e) => setValue('pos', 'caja.nombre', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Serie factura"
+                    value={getValue('pos', 'caja.serieFactura', 'A')}
+                    onChange={(e) => setValue('pos', 'caja.serieFactura', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Almacén ID"
+                    value={getValue('pos', 'caja.almacenId', '1')}
+                    onChange={(e) => setValue('pos', 'caja.almacenId', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Marca impresora"
+                    value={getValue('pos', 'impresora.marca', 'PNP')}
+                    onChange={(e) => setValue('pos', 'impresora.marca', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Conexión"
+                    value={getValue('pos', 'impresora.conexion', 'emulador')}
+                    onChange={(e) => setValue('pos', 'impresora.conexion', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12}>
+                  <TextField
+                    size="small"
+                    label="Agent URL"
+                    value={getValue('pos', 'impresora.agentUrl', 'http://localhost:7654')}
+                    onChange={(e) => setValue('pos', 'impresora.agentUrl', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+              </FormGrid>
             </SettingsInputGroup>
           </SettingsItem>
         </SettingsSection>
@@ -603,24 +631,28 @@ export default function ConfiguracionPage() {
                 }
                 label="Permitir pedido sin mesa"
               />
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  type="number"
-                  label="Alerta preparación (min)"
-                  value={Number(getValue('restaurante', 'tiempoAlertaPreparacion', 15))}
-                  onChange={(e) => setValue('restaurante', 'tiempoAlertaPreparacion', Number(e.target.value))}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  type="number"
-                  label="Propina sugerida (%)"
-                  value={Number(getValue('restaurante', 'propinaSugeridaPct', 10))}
-                  onChange={(e) => setValue('restaurante', 'propinaSugeridaPct', Number(e.target.value))}
-                  fullWidth
-                />
-              </Stack>
+              <FormGrid spacing={2}>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label="Alerta preparación (min)"
+                    value={Number(getValue('restaurante', 'tiempoAlertaPreparacion', 15))}
+                    onChange={(e) => setValue('restaurante', 'tiempoAlertaPreparacion', Number(e.target.value))}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label="Propina sugerida (%)"
+                    value={Number(getValue('restaurante', 'propinaSugeridaPct', 10))}
+                    onChange={(e) => setValue('restaurante', 'propinaSugeridaPct', Number(e.target.value))}
+                    fullWidth
+                  />
+                </FormField>
+              </FormGrid>
             </SettingsInputGroup>
           </SettingsItem>
         </SettingsSection>
@@ -686,59 +718,65 @@ export default function ConfiguracionPage() {
           hasCheckbox={false}
         >
           <SettingsInputGroup>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Stack spacing={1} flex={1}>
-                <Typography variant="caption" fontWeight={600}>Color primario</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <input
-                    type="color"
-                    value={String(getValue('branding', 'primaryColor', '#ff9900'))}
-                    onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
-                    style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
-                  />
-                  <TextField
-                    size="small"
-                    value={getValue('branding', 'primaryColor', '#ff9900')}
-                    onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
-                    sx={{ maxWidth: 120 }}
-                  />
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={4}>
+                <Stack spacing={1}>
+                  <Typography variant="caption" fontWeight={600}>Color primario</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <input
+                      type="color"
+                      value={String(getValue('branding', 'primaryColor', '#ff9900'))}
+                      onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
+                      style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                    />
+                    <TextField
+                      size="small"
+                      value={getValue('branding', 'primaryColor', '#ff9900')}
+                      onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
+                      sx={{ maxWidth: 120 }}
+                    />
+                  </Stack>
                 </Stack>
-              </Stack>
-              <Stack spacing={1} flex={1}>
-                <Typography variant="caption" fontWeight={600}>Color secundario (sidebar)</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <input
-                    type="color"
-                    value={String(getValue('branding', 'secondaryColor', '#232f3e'))}
-                    onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
-                    style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
-                  />
-                  <TextField
-                    size="small"
-                    value={getValue('branding', 'secondaryColor', '#232f3e')}
-                    onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
-                    sx={{ maxWidth: 120 }}
-                  />
+              </FormField>
+              <FormField xs={12} sm={4}>
+                <Stack spacing={1}>
+                  <Typography variant="caption" fontWeight={600}>Color secundario (sidebar)</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <input
+                      type="color"
+                      value={String(getValue('branding', 'secondaryColor', '#232f3e'))}
+                      onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
+                      style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                    />
+                    <TextField
+                      size="small"
+                      value={getValue('branding', 'secondaryColor', '#232f3e')}
+                      onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
+                      sx={{ maxWidth: 120 }}
+                    />
+                  </Stack>
                 </Stack>
-              </Stack>
-              <Stack spacing={1} flex={1}>
-                <Typography variant="caption" fontWeight={600}>Color accent</Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <input
-                    type="color"
-                    value={String(getValue('branding', 'accentColor', '#ff9900'))}
-                    onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
-                    style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
-                  />
-                  <TextField
-                    size="small"
-                    value={getValue('branding', 'accentColor', '#ff9900')}
-                    onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
-                    sx={{ maxWidth: 120 }}
-                  />
+              </FormField>
+              <FormField xs={12} sm={4}>
+                <Stack spacing={1}>
+                  <Typography variant="caption" fontWeight={600}>Color accent</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <input
+                      type="color"
+                      value={String(getValue('branding', 'accentColor', '#ff9900'))}
+                      onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
+                      style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                    />
+                    <TextField
+                      size="small"
+                      value={getValue('branding', 'accentColor', '#ff9900')}
+                      onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
+                      sx={{ maxWidth: 120 }}
+                    />
+                  </Stack>
                 </Stack>
-              </Stack>
-            </Stack>
+              </FormField>
+            </FormGrid>
           </SettingsInputGroup>
         </SettingsItem>
 

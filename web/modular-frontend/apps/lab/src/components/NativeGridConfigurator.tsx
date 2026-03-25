@@ -565,7 +565,7 @@ export default function MyGrid() {
 -->
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import '@zentto/datagrid';
+// import('@zentto/datagrid') — se registra dinamicamente en useEffect
 import type { ColumnDef } from '@zentto/datagrid-core';
 
 const gridRef = ref<any>(null);

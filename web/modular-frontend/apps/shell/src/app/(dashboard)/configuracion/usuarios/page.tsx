@@ -4,8 +4,8 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   Box, Typography, Button, IconButton, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, FormControlLabel, Switch,
-  Alert, CircularProgress, Stack, Tooltip, MenuItem, Card, CardContent,
-  Checkbox, FormGroup, Divider, InputAdornment,
+  Alert, CircularProgress, Tooltip, MenuItem, Card, CardContent,
+  Checkbox, FormGroup, Divider, InputAdornment, Stack,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -15,7 +15,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '@zentto/shared-auth';
 import { SYSTEM_MODULES } from '@zentto/shared-auth';
-import { useToast } from '@zentto/shared-ui';
+import { useToast, FormGrid, FormField } from '@zentto/shared-ui';
 import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
@@ -277,31 +277,45 @@ function CreateUsuarioDialog({ open, onClose, onSuccess }: { open: boolean; onCl
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Crear Usuario</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {err && <Alert severity="error">{err}</Alert>}
-          <TextField label="Codigo de Usuario" required fullWidth size="small"
-            value={form.Cod_Usuario} onChange={(e) => setForm({ ...form, Cod_Usuario: e.target.value.toUpperCase() })}
-            inputProps={{ maxLength: 10 }} />
-          <TextField label="Nombre" fullWidth size="small"
-            value={form.Nombre} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
-          <TextField label="Contrasena" required type="password" fullWidth size="small"
-            value={form.Password} onChange={(e) => setForm({ ...form, Password: e.target.value })}
-            helperText="Minimo 6 caracteres, 1 mayuscula, 1 numero" />
-          <TextField label="Tipo" select fullWidth size="small"
-            value={form.Tipo} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
-            {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
-          </TextField>
-          <Divider />
-          <Typography variant="subtitle2">Permisos de Campo</Typography>
-          <FormGroup row>
-            <FormControlLabel control={<Switch checked={form.Updates} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
-            <FormControlLabel control={<Switch checked={form.Addnews} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
-            <FormControlLabel control={<Switch checked={form.Deletes} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
-            <FormControlLabel control={<Switch checked={form.PrecioMinimo} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Min." />
-            <FormControlLabel control={<Switch checked={form.Credito} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Credito" />
-            <FormControlLabel control={<Switch checked={form.Cambiar} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
-          </FormGroup>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mt: 1 }}>
+          {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+          <FormField xs={12} sm={6}>
+            <TextField label="Codigo de Usuario" required fullWidth size="small"
+              value={form.Cod_Usuario} onChange={(e) => setForm({ ...form, Cod_Usuario: e.target.value.toUpperCase() })}
+              inputProps={{ maxLength: 10 }} />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Nombre" fullWidth size="small"
+              value={form.Nombre} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Contrasena" required type="password" fullWidth size="small"
+              value={form.Password} onChange={(e) => setForm({ ...form, Password: e.target.value })}
+              helperText="Minimo 6 caracteres, 1 mayuscula, 1 numero" />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Tipo" select fullWidth size="small"
+              value={form.Tipo} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
+              {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+            </TextField>
+          </FormField>
+          <FormField xs={12}>
+            <Divider />
+          </FormField>
+          <FormField xs={12}>
+            <Typography variant="subtitle2">Permisos de Campo</Typography>
+          </FormField>
+          <FormField xs={12}>
+            <FormGroup row>
+              <FormControlLabel control={<Switch checked={form.Updates} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
+              <FormControlLabel control={<Switch checked={form.Addnews} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
+              <FormControlLabel control={<Switch checked={form.Deletes} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
+              <FormControlLabel control={<Switch checked={form.PrecioMinimo} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Min." />
+              <FormControlLabel control={<Switch checked={form.Credito} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Credito" />
+              <FormControlLabel control={<Switch checked={form.Cambiar} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
+            </FormGroup>
+          </FormField>
+        </FormGrid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
@@ -346,28 +360,40 @@ function EditUsuarioDialog({ user, onClose, onSuccess }: { user: Usuario | null;
     <Dialog open={!!user} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Editar Usuario: {user?.Cod_Usuario}</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {err && <Alert severity="error">{err}</Alert>}
-          <TextField label="Nombre" fullWidth size="small"
-            value={form.Nombre || ''} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
-          <TextField label="Nueva Contrasena (dejar vacio para no cambiar)" type="password" fullWidth size="small"
-            value={form.Password || ''} onChange={(e) => setForm({ ...form, Password: e.target.value })}
-            helperText="Dejar vacio para mantener la contrasena actual" />
-          <TextField label="Tipo" select fullWidth size="small"
-            value={form.Tipo || ''} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
-            {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
-          </TextField>
-          <Divider />
-          <Typography variant="subtitle2">Permisos de Campo</Typography>
-          <FormGroup row>
-            <FormControlLabel control={<Switch checked={form.Updates ?? false} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
-            <FormControlLabel control={<Switch checked={form.Addnews ?? false} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
-            <FormControlLabel control={<Switch checked={form.Deletes ?? false} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
-            <FormControlLabel control={<Switch checked={form.PrecioMinimo ?? false} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Min." />
-            <FormControlLabel control={<Switch checked={form.Credito ?? false} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Credito" />
-            <FormControlLabel control={<Switch checked={form.Cambiar ?? false} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
-          </FormGroup>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mt: 1 }}>
+          {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+          <FormField xs={12} sm={6}>
+            <TextField label="Nombre" fullWidth size="small"
+              value={form.Nombre || ''} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Tipo" select fullWidth size="small"
+              value={form.Tipo || ''} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
+              {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+            </TextField>
+          </FormField>
+          <FormField xs={12}>
+            <TextField label="Nueva Contrasena (dejar vacio para no cambiar)" type="password" fullWidth size="small"
+              value={form.Password || ''} onChange={(e) => setForm({ ...form, Password: e.target.value })}
+              helperText="Dejar vacio para mantener la contrasena actual" />
+          </FormField>
+          <FormField xs={12}>
+            <Divider />
+          </FormField>
+          <FormField xs={12}>
+            <Typography variant="subtitle2">Permisos de Campo</Typography>
+          </FormField>
+          <FormField xs={12}>
+            <FormGroup row>
+              <FormControlLabel control={<Switch checked={form.Updates ?? false} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
+              <FormControlLabel control={<Switch checked={form.Addnews ?? false} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
+              <FormControlLabel control={<Switch checked={form.Deletes ?? false} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
+              <FormControlLabel control={<Switch checked={form.PrecioMinimo ?? false} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Min." />
+              <FormControlLabel control={<Switch checked={form.Credito ?? false} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Credito" />
+              <FormControlLabel control={<Switch checked={form.Cambiar ?? false} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
+            </FormGroup>
+          </FormField>
+        </FormGrid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
@@ -433,22 +459,26 @@ function ModulosDialog({ codigo, onClose, onSuccess }: { codigo: string | null; 
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
         ) : (
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            {err && <Alert severity="error">{err}</Alert>}
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <Button size="small" onClick={handleSelectAll}>Seleccionar Todos</Button>
-              <Button size="small" onClick={handleClearAll}>Quitar Todos</Button>
-            </Stack>
-            <FormGroup>
-              {SYSTEM_MODULES.map((mod) => (
-                <FormControlLabel
-                  key={mod}
-                  control={<Checkbox checked={selected[mod] ?? false} onChange={() => handleToggle(mod)} />}
-                  label={MODULE_LABELS[mod] || mod}
-                />
-              ))}
-            </FormGroup>
-          </Stack>
+          <FormGrid spacing={1} sx={{ mt: 1 }}>
+            {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+            <FormField xs={12}>
+              <Stack direction="row" spacing={1}>
+                <Button size="small" onClick={handleSelectAll}>Seleccionar Todos</Button>
+                <Button size="small" onClick={handleClearAll}>Quitar Todos</Button>
+              </Stack>
+            </FormField>
+            <FormField xs={12}>
+              <FormGroup>
+                {SYSTEM_MODULES.map((mod) => (
+                  <FormControlLabel
+                    key={mod}
+                    control={<Checkbox checked={selected[mod] ?? false} onChange={() => handleToggle(mod)} />}
+                    label={MODULE_LABELS[mod] || mod}
+                  />
+                ))}
+              </FormGroup>
+            </FormField>
+          </FormGrid>
         )}
       </DialogContent>
       <DialogActions>
@@ -487,14 +517,16 @@ function ResetPasswordDialog({ codigo, onClose, onSuccess }: { codigo: string | 
     <Dialog open={!!codigo} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Resetear Contrasena: {codigo}</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {err && <Alert severity="error">{err}</Alert>}
-          <TextField
-            label="Nueva Contrasena" type="password" fullWidth size="small"
-            value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
-            helperText="Minimo 6 caracteres"
-          />
-        </Stack>
+        <FormGrid spacing={2} sx={{ mt: 1 }}>
+          {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+          <FormField xs={12}>
+            <TextField
+              label="Nueva Contrasena" type="password" fullWidth size="small"
+              value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
+              helperText="Minimo 6 caracteres"
+            />
+          </FormField>
+        </FormGrid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>

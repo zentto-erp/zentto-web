@@ -8,6 +8,7 @@ import {
   Select, Slider, Stack, Tab, Tabs, TextField, Tooltip, Typography,
   useMediaQuery, useTheme, CircularProgress,
 } from '@mui/material';
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
@@ -182,69 +183,74 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
     <Stack spacing={2}>
       {/* Filters */}
       <Paper sx={{ p: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ sm: 'center' }}
-          flexWrap="wrap"
-        >
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              value={filters.type ?? ''}
-              label="Tipo"
-              onChange={(e) => setFilters(f => ({ ...f, type: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="info">Info</MenuItem>
-              <MenuItem value="success">Exito</MenuItem>
-              <MenuItem value="warning">Advertencia</MenuItem>
-              <MenuItem value="error">Error</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filters.read ?? ''}
-              label="Estado"
-              onChange={(e) => setFilters(f => ({ ...f, read: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="false">No leidos</MenuItem>
-              <MenuItem value="true">Leidos</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            type="date"
-            label="Desde"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filters.dateFrom ?? ''}
-            onChange={(e) => setFilters(f => ({ ...f, dateFrom: e.target.value || undefined }))}
-            sx={{ minWidth: 150 }}
-          />
-          <TextField
-            type="date"
-            label="Hasta"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filters.dateTo ?? ''}
-            onChange={(e) => setFilters(f => ({ ...f, dateTo: e.target.value || undefined }))}
-            sx={{ minWidth: 150 }}
-          />
-          <Box sx={{ flex: 1 }} />
-          {unreadCount > 0 && (
-            <Button
-              variant="outlined"
+        <FormGrid spacing={2} alignItems="center">
+          <FormField xs={12} sm={6} md={3}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Tipo</InputLabel>
+              <Select
+                value={filters.type ?? ''}
+                label="Tipo"
+                onChange={(e) => setFilters(f => ({ ...f, type: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="info">Info</MenuItem>
+                <MenuItem value="success">Exito</MenuItem>
+                <MenuItem value="warning">Advertencia</MenuItem>
+                <MenuItem value="error">Error</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+          <FormField xs={12} sm={6} md={3}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.read ?? ''}
+                label="Estado"
+                onChange={(e) => setFilters(f => ({ ...f, read: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="false">No leidos</MenuItem>
+                <MenuItem value="true">Leidos</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+          <FormField xs={6} sm={6} md={2}>
+            <TextField
+              type="date"
+              label="Desde"
               size="small"
-              startIcon={<DoneAllIcon />}
-              onClick={handleMarkAllRead}
-              disabled={markRead.isPending}
-            >
-              Marcar todas como leidas ({unreadCount})
-            </Button>
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={filters.dateFrom ?? ''}
+              onChange={(e) => setFilters(f => ({ ...f, dateFrom: e.target.value || undefined }))}
+            />
+          </FormField>
+          <FormField xs={6} sm={6} md={2}>
+            <TextField
+              type="date"
+              label="Hasta"
+              size="small"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={filters.dateTo ?? ''}
+              onChange={(e) => setFilters(f => ({ ...f, dateTo: e.target.value || undefined }))}
+            />
+          </FormField>
+          {unreadCount > 0 && (
+            <FormField xs={12} md={2}>
+              <Button
+                variant="outlined"
+                size="small"
+                fullWidth
+                startIcon={<DoneAllIcon />}
+                onClick={handleMarkAllRead}
+                disabled={markRead.isPending}
+              >
+                Marcar leidas ({unreadCount})
+              </Button>
+            </FormField>
           )}
-        </Stack>
+        </FormGrid>
       </Paper>
 
       {/* Grid */}
@@ -353,31 +359,31 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
     <Stack spacing={2}>
       {/* Filters */}
       <Paper sx={{ p: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ sm: 'center' }}
-        >
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filters.status ?? ''}
-              label="Estado"
-              onChange={(e) => setFilters(f => ({ ...f, status: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="pending">Pendiente</MenuItem>
-              <MenuItem value="completed">Completada</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            label="Asignado a"
-            size="small"
-            value={filters.assignedTo ?? ''}
-            onChange={(e) => setFilters(f => ({ ...f, assignedTo: e.target.value || undefined }))}
-            sx={{ minWidth: 180 }}
-          />
-        </Stack>
+        <FormGrid spacing={2} alignItems="center">
+          <FormField xs={12} sm={6} md={4}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.status ?? ''}
+                label="Estado"
+                onChange={(e) => setFilters(f => ({ ...f, status: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="pending">Pendiente</MenuItem>
+                <MenuItem value="completed">Completada</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+          <FormField xs={12} sm={6} md={4}>
+            <TextField
+              label="Asignado a"
+              size="small"
+              fullWidth
+              value={filters.assignedTo ?? ''}
+              onChange={(e) => setFilters(f => ({ ...f, assignedTo: e.target.value || undefined }))}
+            />
+          </FormField>
+        </FormGrid>
       </Paper>
 
       {/* Grid */}
@@ -512,24 +518,22 @@ function MessagesTab({ isMobile }: { isMobile: boolean }) {
     <Stack spacing={2}>
       {/* Filters */}
       <Paper sx={{ p: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ sm: 'center' }}
-        >
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              value={filters.read ?? ''}
-              label="Estado"
-              onChange={(e) => setFilters(f => ({ ...f, read: e.target.value || undefined }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="false">No leidos</MenuItem>
-              <MenuItem value="true">Leidos</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        <FormGrid spacing={2} alignItems="center">
+          <FormField xs={12} sm={6} md={4}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.read ?? ''}
+                label="Estado"
+                onChange={(e) => setFilters(f => ({ ...f, read: e.target.value || undefined }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="false">No leidos</MenuItem>
+                <MenuItem value="true">Leidos</MenuItem>
+              </Select>
+            </FormControl>
+          </FormField>
+        </FormGrid>
       </Paper>
 
       {/* Grid */}

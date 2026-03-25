@@ -14,6 +14,7 @@ import {
   IconButton,
   Link,
 } from '@mui/material';
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useByocDeploy, ByocCredentials } from '@/hooks/useByocDeploy';
@@ -209,8 +210,8 @@ export default function CredentialsPage({
                 />
               </Box>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <Box sx={{ flex: 1 }}>
+              <FormGrid spacing={2}>
+                <FormField xs={12} sm={6}>
                   <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, color: '#1a1a2e' }}>
                     Puerto SSH
                   </Typography>
@@ -222,8 +223,8 @@ export default function CredentialsPage({
                     variant="outlined"
                     size="small"
                   />
-                </Box>
-                <Box sx={{ flex: 1 }}>
+                </FormField>
+                <FormField xs={12} sm={6}>
                   <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, color: '#1a1a2e' }}>
                     Usuario SSH
                   </Typography>
@@ -234,8 +235,8 @@ export default function CredentialsPage({
                     variant="outlined"
                     size="small"
                   />
-                </Box>
-              </Stack>
+                </FormField>
+              </FormGrid>
 
               <Box>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, color: '#1a1a2e' }}>
