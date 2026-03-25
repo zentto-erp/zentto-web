@@ -227,7 +227,7 @@ export async function listDocumentosVenta(input: {
       Codigo: input.codigo || null,
       FromDate: input.from || null,
       ToDate: input.to || null,
-      Estado: input.estado || null,
+      ...(input.estado ? { Estado: input.estado } : {}),
       Page: page,
       Limit: limit
     },
