@@ -41,9 +41,11 @@ export const BrandingContext = createContext<BrandingContextValue>({
 export default function BrandingProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthOptional();
   const company = auth?.company;
-  const companyId = company?.companyId ?? 1;
+  const companyId = company?.companyId ?? 0;
+  const isAuthenticated = auth?.isAuthenticated ?? false;
 
-  const { data: raw, isLoading } = useModuleSettings('branding', companyId);
+  // No llamar a la API si no hay sesión — evita 401 loop en la página de login
+  const { data: raw, isLoading } = useModuleSettings('branding', companyId || 1, isAuthenticated);
 
   const branding = useMemo<BrandingConfig>(() => {
     if (!raw || typeof raw !== 'object') return DEFAULTS;
