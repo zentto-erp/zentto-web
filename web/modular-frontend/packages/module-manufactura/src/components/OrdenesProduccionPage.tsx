@@ -436,9 +436,7 @@ const { data, isLoading } = useWorkOrdersList({
         enable-status-bar
         enable-configurator
         enable-grouping
-      ></zentto-grid>}
-        detailPanelHeight="auto"
-      />
+      ></zentto-grid>
 
       {/* Dialog: Detalle de Orden */}
       <OrdenDetalleDialog

@@ -353,9 +353,7 @@ const { data, isLoading } = useVehiclesList({
         enable-context-menu
         enable-status-bar
         enable-configurator
-      ></zentto-grid>}
-        detailPanelHeight={120}
-      />
+      ></zentto-grid>
 
       {/* Dialog: Crear/Editar Vehiculo */}
       <Dialog

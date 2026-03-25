@@ -383,9 +383,7 @@ const { data, isLoading } = useDeliveryNotesList({
         enable-context-menu
         enable-status-bar
         enable-configurator
-      ></zentto-grid>}
-        detailPanelHeight={100}
-      />
+      ></zentto-grid>
 
       {/* Dialog: Nuevo Albaran */}
       <Dialog
