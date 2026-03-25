@@ -365,9 +365,11 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             </Typography>
           </Stack>
 
+          {/* TODO: Turnstile deshabilitado temporalmente — loop de verificación en producción
           {captchaSiteKey && (
             <TurnstileCaptcha onTokenChange={(t) => setCaptchaToken(t || null)} />
           )}
+          */}
 
           <Button
             type="submit"
