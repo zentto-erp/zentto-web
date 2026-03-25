@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import {
   Science as LabIcon,
+  Science as ScienceIcon,
   Inventory as ArticulosIcon,
   Receipt as FacturasIcon,
 } from "@mui/icons-material";
@@ -22,6 +23,8 @@ import { usePathname, useRouter } from "next/navigation";
 const NAV_ITEMS = [
   { label: "Articulos", href: "/articulos", icon: <ArticulosIcon fontSize="small" /> },
   { label: "Facturas", href: "/facturas", icon: <FacturasIcon fontSize="small" /> },
+  { label: "Nativo: Articulos", href: "/nativo-articulos", icon: <ScienceIcon fontSize="small" /> },
+  { label: "Nativo: Facturas", href: "/nativo-facturas", icon: <ScienceIcon fontSize="small" /> },
 ];
 
 // Tema minimo — sin depender de shared-ui theme

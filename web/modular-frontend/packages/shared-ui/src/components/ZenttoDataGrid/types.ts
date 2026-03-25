@@ -1,3 +1,4 @@
+import type React from 'react';
 import type { GridColDef, DataGridProps, GridRowId, GridRowsProp } from '@mui/x-data-grid';
 
 export type GridRow = Record<string, unknown>;
@@ -155,6 +156,15 @@ export interface CellRange {
   endCol: number;
 }
 
+// ─── Context Menu ──────────────────────────────────────────────────────────
+
+export interface ContextMenuItem {
+  label: string;
+  icon?: React.ReactNode;
+  action: (params: { row: GridRow; field: string; value: unknown }) => void;
+  divider?: boolean;
+}
+
 // ─── ZenttoDataGridProps ────────────────────────────────────────────────────
 
 export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
@@ -224,8 +234,14 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   dateLocale?: string;
   defaultCurrency?: string;
 
+  // ─── Find (Ctrl+F) ──────────────────────────────────────────
+  enableFind?: boolean;
+
   // ─── Layout Persistente ───────────────────────────────────────
   gridId?: string;
+
+  // ─── Status Bar ─────────────────────────────────────────
+  enableStatusBar?: boolean;
 
   // ─── Toolbar ──────────────────────────────────────────────────
   toolbarTitle?: string;
@@ -234,6 +250,10 @@ export interface ZenttoDataGridProps extends Omit<DataGridProps, 'columns'> {
   hideColumnsButton?: boolean;
   hideDensityButton?: boolean;
   hideQuickFilter?: boolean;
+
+  // ─── Context Menu ───────────────────────────────────────────
+  enableContextMenu?: boolean;
+  contextMenuItems?: ContextMenuItem[];
 }
 
 // ─── Internal Markers ───────────────────────────────────────────────────────

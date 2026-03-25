@@ -57,6 +57,7 @@ export type {
   ColumnGroup,
   HeaderFilter,
   CellRange,
+  ContextMenuItem,
   GridRow,
 } from './components/ZenttoDataGrid/types';
 

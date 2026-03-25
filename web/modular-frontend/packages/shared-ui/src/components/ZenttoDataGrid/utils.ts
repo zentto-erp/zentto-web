@@ -387,10 +387,20 @@ export function applyHeaderFilters(
       switch (filter.operator) {
         case 'contains':
           return strCell.includes(strFilter);
-        case 'equals':
+        case 'equals': {
+          // For numbers, compare numerically
+          if (!isNaN(numCell) && !isNaN(numFilter)) return numCell === numFilter;
           return strCell === strFilter;
-        case 'startsWith':
+        }
+        case 'startsWith': {
+          // For dates: compare date portion (YYYY-MM-DD)
+          const dateStr = String(cellValue);
+          if (dateStr.includes('T') || dateStr.includes('-')) {
+            const cellDate = dateStr.substring(0, 10); // YYYY-MM-DD
+            return cellDate === String(filter.value);
+          }
           return strCell.startsWith(strFilter);
+        }
         case 'endsWith':
           return strCell.endsWith(strFilter);
         case '>':
@@ -629,35 +639,112 @@ export function applyColumnPinning(
 ): ZenttoColDef[] {
   if (!pinned) return columns;
 
-  return columns.map((col) => {
-    const isLeft = pinned.left?.includes(col.field);
-    const isRight = pinned.right?.includes(col.field);
+  // Calculate left offsets — each pinned-left column stacks after the previous
+  const leftFields = pinned.left ?? [];
+  const rightFields = pinned.right ?? [];
+
+  // Build left offset map: col0 = 0px, col1 = col0.width, col2 = col0.width + col1.width...
+  let leftOffset = 0;
+  const leftOffsets: Record<string, number> = {};
+  for (const field of leftFields) {
+    const col = columns.find((c) => c.field === field);
+    leftOffsets[field] = leftOffset;
+    leftOffset += (col?.width as number) || 120; // default 120px if no width
+  }
+
+  // Build right offset map (reverse): last col = 0px, second-to-last = last.width...
+  let rightOffset = 0;
+  const rightOffsets: Record<string, number> = {};
+  for (let i = rightFields.length - 1; i >= 0; i--) {
+    const field = rightFields[i];
+    const col = columns.find((c) => c.field === field);
+    rightOffsets[field] = rightOffset;
+    rightOffset += (col?.width as number) || 120;
+  }
+
+  // Reorder: pinned-left first, then unpinned, then pinned-right
+  const leftCols = leftFields.map((f) => columns.find((c) => c.field === f)).filter(Boolean) as ZenttoColDef[];
+  const rightCols = rightFields.map((f) => columns.find((c) => c.field === f)).filter(Boolean) as ZenttoColDef[];
+  const middleCols = columns.filter((c) => !leftFields.includes(c.field) && !rightFields.includes(c.field));
+  const ordered = [...leftCols, ...middleCols, ...rightCols];
+
+  return ordered.map((col) => {
+    const isLeft = leftFields.includes(col.field);
+    const isRight = rightFields.includes(col.field);
     if (!isLeft && !isRight) return col;
 
+    const idx = isLeft ? leftOffsets[col.field] : rightOffsets[col.field];
     const side = isLeft ? 'left' : 'right';
+    // Use unique class per offset so CSS can target each independently
+    const pinClass = `zentto-pin-${side}-${idx}`;
+    const isLastLeft = isLeft && col.field === leftFields[leftFields.length - 1];
+    const isFirstRight = isRight && col.field === rightFields[0];
+
     return {
       ...col,
-      cellClassName: `${String(col.cellClassName ?? '')} zentto-pin-${side}`.trim(),
-      headerClassName: `${String(col.headerClassName ?? '')} zentto-pin-${side}`.trim(),
+      cellClassName: `${String(col.cellClassName ?? '')} zentto-pin ${pinClass}${isLastLeft ? ' zentto-pin-left-last' : ''}${isFirstRight ? ' zentto-pin-right-first' : ''}`.trim(),
+      headerClassName: `${String(col.headerClassName ?? '')} zentto-pin ${pinClass}${isLastLeft ? ' zentto-pin-left-last' : ''}${isFirstRight ? ' zentto-pin-right-first' : ''}`.trim(),
     };
   });
 }
 
-/** sx styles for pinned columns */
+/** Generate sx styles for pinned columns */
+export function buildPinningSx(
+  columns: ZenttoColDef[],
+  pinned?: { left?: string[]; right?: string[] }
+): Record<string, unknown> {
+  if (!pinned) return {};
+
+  const sx: Record<string, unknown> = {};
+  const basePinStyle = {
+    position: 'sticky !important',
+    zIndex: '4 !important',
+    backgroundColor: 'var(--mui-palette-background-paper, #fff) !important',
+  };
+
+  // Left pins
+  let leftOffset = 0;
+  for (const field of pinned.left ?? []) {
+    const col = columns.find((c) => c.field === field);
+    const w = (col?.width as number) || 120;
+    const cls = `& .zentto-pin-left-${leftOffset}`;
+    sx[cls] = { ...basePinStyle, left: `${leftOffset}px !important` };
+    leftOffset += w;
+  }
+
+  // Right pins
+  let rightOffset = 0;
+  for (let i = (pinned.right?.length ?? 0) - 1; i >= 0; i--) {
+    const field = pinned.right![i];
+    const col = columns.find((c) => c.field === field);
+    const w = (col?.width as number) || 120;
+    const cls = `& .zentto-pin-right-${rightOffset}`;
+    sx[cls] = { ...basePinStyle, right: `${rightOffset}px !important` };
+    rightOffset += w;
+  }
+
+  // Border separators
+  sx['& .zentto-pin-left-last'] = { borderRight: '2px solid var(--mui-palette-divider, #e0e0e0)', boxShadow: '4px 0 8px rgba(0,0,0,0.08)' };
+  sx['& .zentto-pin-right-first'] = { borderLeft: '2px solid var(--mui-palette-divider, #e0e0e0)', boxShadow: '-4px 0 8px rgba(0,0,0,0.08)' };
+
+  return sx;
+}
+
+/** Legacy pinningSx — kept for backwards compatibility */
 export const pinningSx = {
-  '& .zentto-pin-left': {
+  '& .zentto-pin-left-0': {
     position: 'sticky !important',
     left: '0 !important',
-    zIndex: '3 !important',
+    zIndex: '4 !important',
     backgroundColor: 'var(--mui-palette-background-paper, #fff) !important',
     borderRight: '2px solid',
     borderColor: 'divider',
     boxShadow: '4px 0 8px rgba(0,0,0,0.08)',
   },
-  '& .zentto-pin-right': {
+  '& .zentto-pin-right-0': {
     position: 'sticky !important',
     right: '0 !important',
-    zIndex: '3 !important',
+    zIndex: '4 !important',
     backgroundColor: 'var(--mui-palette-background-paper, #fff) !important',
     borderLeft: '2px solid',
     borderColor: 'divider',

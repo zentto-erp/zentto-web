@@ -36,6 +36,11 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import SearchIcon from '@mui/icons-material/Search';
 
 import { toDateOnly, formatDateTime } from '@zentto/shared-api';
 import { useTimezone } from '@zentto/shared-auth';
@@ -59,6 +64,7 @@ import {
   exportToMarkdown,
   applyColumnPinning,
   pinningSx,
+  buildPinningSx,
 } from './utils';
 import {
   GridRow,
@@ -66,6 +72,7 @@ import {
   ZenttoColDef,
   PivotConfig,
   HeaderFilter,
+  ContextMenuItem,
   DETAIL_ROW_KEY,
   TOTALS_ROW_KEY,
   GROUP_ROW_KEY,
@@ -252,6 +259,10 @@ const baseGridSx = {
     '&:hover': { color: 'text.secondary' },
     '&:active': { cursor: 'grabbing' },
   },
+
+  // ── Find (Ctrl+F) highlight ─────────────────────────────────────────
+  '& .zentto-find-match': { backgroundColor: 'rgba(255, 213, 79, 0.3)' },
+  '& .zentto-find-current': { backgroundColor: 'rgba(255, 152, 0, 0.5)', outline: '2px solid #ff9800' },
 } as const;
 
 // ─── Column: expand/collapse for master-detail ──────────────────────────────
@@ -508,7 +519,95 @@ function buildMobileActionColumn(
 const isActionCol = (c: { field: string; type?: string; headerName?: string }) =>
   c.field === 'actions' || c.field === 'acciones' || c.type === 'actions' || c.headerName === 'Acciones';
 
+// ─── HeaderFilterDate — date input with clear button ────────────────────────
+function HeaderFilterDate({
+  field,
+  onChange,
+  sx: sxProp,
+}: {
+  field: string;
+  onChange: (field: string, value: string, colType?: string) => void;
+  sx?: Record<string, unknown>;
+}) {
+  const [value, setValue] = React.useState('');
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+      <TextField
+        type="date"
+        size="small"
+        variant="outlined"
+        value={value}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          setValue(e.target.value);
+          onChange(field, e.target.value, 'date');
+        }}
+        sx={{
+          flex: 1,
+          ...sxProp,
+          '& .MuiInputBase-input': { py: '1px', px: '4px', fontSize: '0.65rem' },
+        }}
+        InputLabelProps={{ shrink: true }}
+      />
+      {value && (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            setValue('');
+            onChange(field, '', 'date');
+          }}
+          sx={{ p: 0, width: 16, height: 16, fontSize: '0.65rem' }}
+        >
+          ✕
+        </IconButton>
+      )}
+    </Box>
+  );
+}
+
 // ─── ZenttoDataGrid ─────────────────────────────────────────────────────────
+
+// ─── StatusBarPortal — injects status info inside MUI DataGrid footer ─────
+function StatusBarPortal({ apiRef, rowCount, summary }: {
+  apiRef: ReturnType<typeof useGridApiRef>;
+  rowCount: number;
+  summary: { field: string; label: string; formattedValue: string }[];
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const gridRoot = apiRef.current?.rootElementRef?.current;
+    if (!gridRoot) return;
+    const footer = gridRoot.querySelector('.MuiDataGrid-footerContainer');
+    if (!footer || !containerRef.current) return;
+
+    // Make footer flex with our status at the left
+    (footer as HTMLElement).style.display = 'flex';
+    (footer as HTMLElement).style.alignItems = 'center';
+
+    // Insert our status div as first child of footer
+    if (footer.firstChild !== containerRef.current) {
+      footer.insertBefore(containerRef.current, footer.firstChild);
+    }
+  });
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{
+        display: 'flex', alignItems: 'center', gap: 1.5,
+        px: 1.5, fontSize: '0.78rem', color: '#666',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span><strong>{rowCount}</strong> filas</span>
+      {summary.map((s) => (
+        <span key={s.field}><strong>{s.label}:</strong> {s.formattedValue}</span>
+      ))}
+    </Box>
+  );
+}
 
 export function ZenttoDataGrid({
   columns,
@@ -548,6 +647,8 @@ export function ZenttoDataGrid({
   enableClipboard = false,
   // Cell selection
   enableCellSelection = false,
+  // Find (Ctrl+F)
+  enableFind = false,
   // Lazy loading
   onLoadMore,
   loadingMore = false,
@@ -563,6 +664,8 @@ export function ZenttoDataGrid({
   showExportMarkdown = false,
   // Layout
   gridId,
+  // Status Bar
+  enableStatusBar = false,
   // Toolbar
   toolbarTitle,
   toolbarActions,
@@ -570,6 +673,9 @@ export function ZenttoDataGrid({
   hideColumnsButton = false,
   hideDensityButton = false,
   hideQuickFilter = false,
+  // Context menu
+  enableContextMenu = false,
+  contextMenuItems,
   // DataGrid passthrough
   getRowId,
   columnVisibilityModel: externalVisibilityModel,
@@ -601,6 +707,10 @@ export function ZenttoDataGrid({
   const [groupByField, setGroupByField] = useState<string | null>(
     rowGroupingConfig?.field ?? null
   );
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [findMatches, setFindMatches] = useState<{rowId: GridRowId; field: string}[]>([]);
+  const [findCurrentIdx, setFindCurrentIdx] = useState(0);
   const apiRef = useGridApiRef();
   const lastExpandedId = useRef<GridRowId | null>(null);
 
@@ -669,12 +779,33 @@ export function ZenttoDataGrid({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedIds, getDetailContent]);
 
-  // ── Header filter change ──────────────────────────────────────────────────
+  // ── Header filter change (smart: detects operators for numbers) ───────────
   const handleHeaderFilterChange = useCallback(
-    (field: string, value: string) => {
+    (field: string, value: string, colType?: string) => {
       setHeaderFilters((prev) => {
         const existing = prev.filter((f) => f.field !== field);
         if (!value) return existing;
+
+        // For number columns, parse operator prefix: >100, <50, >=200, <=300, =100
+        if (colType === 'number') {
+          const match = value.match(/^(>=|<=|>|<|=)?\s*(.+)$/);
+          if (match) {
+            const op = match[1] || '=';
+            const num = match[2].trim();
+            if (!num) return existing;
+            const opMap: Record<string, HeaderFilter['operator']> = {
+              '>': '>', '<': '<', '>=': '>=', '<=': '<=', '=': 'equals',
+            };
+            return [...existing, { field, value: num, operator: opMap[op] || 'equals' }];
+          }
+        }
+
+        // For date columns, compare as date string
+        if (colType === 'date' || colType === 'dateTime') {
+          return [...existing, { field, value, operator: 'startsWith' as const }];
+        }
+
+        // Default: text contains
         return [...existing, { field, value, operator: 'contains' as const }];
       });
     },
@@ -715,7 +846,7 @@ export function ZenttoDataGrid({
   }, [groupedRows, treeDataConfig, activePivotConfig, groupByField, expandedTreeNodes, getRowIdFn]);
 
   // ── Master-detail: inject detail rows ─────────────────────────────────────
-  const processedRows = useMemo(
+  const baseProcessedRows = useMemo(
     () => injectDetailRows(treeRows, expandedIds, getDetailContent, getRowIdFn),
     [treeRows, expandedIds, getDetailContent, getRowIdFn]
   );
@@ -725,6 +856,12 @@ export function ZenttoDataGrid({
   const totalsRow = useMemo(
     () => (hasTotals ? computeTotals(pivotedRows, pivotedColumns as ZenttoColDef[], totalsLabel) : null),
     [hasTotals, pivotedRows, pivotedColumns, totalsLabel]
+  );
+
+  // Inject totals as last row (MUI Community doesn't support pinnedRows)
+  const processedRows = useMemo(
+    () => (hasTotals && totalsRow ? [...baseProcessedRows, totalsRow] : baseProcessedRows),
+    [baseProcessedRows, hasTotals, totalsRow]
   );
 
   // ── Normalize date/currency columns ───────────────────────────────────────
@@ -955,18 +1092,96 @@ export function ZenttoDataGrid({
     const DATE_FIELDS = /fecha|date|createdAt|updatedAt|created_at|updated_at|vencimiento|dueDate|issueDate|closeDate|startDate|endDate|expiry/i;
     const DATETIME_FIELDS = /createdAt|updatedAt|created_at|updated_at|lastLogin|loginAt/i;
     const autoFormattedCols = dataCols.map((col) => {
-      if (col.valueFormatter || col.renderCell) return col;
-      if (!DATE_FIELDS.test(col.field)) return col;
-      if (DATETIME_FIELDS.test(col.field)) {
-        return { ...col, valueFormatter: (value: any) => {
-          if (!value) return '';
-          try { return formatDateTime ? formatDateTime(value, { timeZone: tz }) : String(value); } catch { return String(value); }
-        }};
+      let enhanced = { ...col };
+
+      // Auto-format dates
+      if (!col.valueFormatter && !col.renderCell) {
+        if (DATETIME_FIELDS.test(col.field)) {
+          enhanced = { ...enhanced, valueFormatter: (value: any) => {
+            if (!value) return '';
+            try { return formatDateTime ? formatDateTime(value, { timeZone: tz }) : String(value); } catch { return String(value); }
+          }};
+        } else if (DATE_FIELDS.test(col.field)) {
+          enhanced = { ...enhanced, valueFormatter: (value: any) => {
+            if (!value) return '';
+            try { return toDateOnly ? toDateOnly(value, tz) : String(value); } catch { return String(value); }
+          }};
+        }
       }
-      return { ...col, valueFormatter: (value: any) => {
-        if (!value) return '';
-        try { return toDateOnly ? toDateOnly(value, tz) : String(value); } catch { return String(value); }
-      }};
+
+      // Inject inline header filter into column header
+      if (enableHeaderFilters && headerFiltersVisible) {
+        const originalRenderHeader = enhanced.renderHeader;
+        const colType = enhanced.type as string | undefined;
+        const isNumber = colType === 'number' || !!(enhanced as any).currency;
+        const isDate = /fecha|date|createdAt|updatedAt|vencimiento|dueDate/i.test(enhanced.field);
+        const statusOpts = (enhanced as any).statusColors as Record<string, string> | undefined;
+        const isStatus = !!statusOpts;
+
+        const filterInputSx = {
+          '& .MuiInputBase-root': { fontSize: '0.7rem', height: 22, borderRadius: 1.5, bgcolor: '#f5f5f5' },
+          '& .MuiInputBase-input': { py: '2px', px: '6px' },
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: '#ddd' },
+          '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#bbb' },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main', borderWidth: 1.5 },
+          '& .MuiOutlinedInput-root.Mui-focused': { bgcolor: '#fff' },
+          '& .MuiNativeSelect-select': { fontSize: '0.7rem', py: '2px', px: '6px', height: 18 },
+        };
+
+        enhanced = {
+          ...enhanced,
+          renderHeader: (params: any) => (
+            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '2px' }}>
+              <Box sx={{ fontWeight: 600, fontSize: 'inherit', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {originalRenderHeader ? originalRenderHeader(params) : (enhanced.headerName ?? enhanced.field)}
+              </Box>
+              {isStatus ? (
+                <TextField
+                  select
+                  size="small"
+                  variant="outlined"
+                  defaultValue=""
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => handleHeaderFilterChange(enhanced.field, e.target.value, 'text')}
+                  SelectProps={{ native: true }}
+                  sx={filterInputSx}
+                >
+                  <option value="">Todos</option>
+                  {Object.keys(statusOpts!).map((key) => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </TextField>
+              ) : isDate ? (
+                <HeaderFilterDate
+                  field={enhanced.field}
+                  onChange={handleHeaderFilterChange}
+                  sx={filterInputSx}
+                />
+              ) : isNumber ? (
+                <TextField
+                  placeholder=">100, <50..."
+                  size="small"
+                  variant="outlined"
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => handleHeaderFilterChange(enhanced.field, e.target.value, 'number')}
+                  sx={filterInputSx}
+                />
+              ) : (
+                <TextField
+                  placeholder={`${enhanced.headerName ?? enhanced.field}...`}
+                  size="small"
+                  variant="outlined"
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => handleHeaderFilterChange(enhanced.field, e.target.value, 'text')}
+                  sx={filterInputSx}
+                />
+              )}
+            </Box>
+          ),
+        };
+      }
+
+      return enhanced;
     });
     result.push(...autoFormattedCols);
 
@@ -985,7 +1200,55 @@ export function ZenttoDataGrid({
     }
 
     return result;
-  }, [layout.processedColumns, getDetailContent, groupByField, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall, onRowReorder, apiRef, tz]);
+  }, [layout.processedColumns, getDetailContent, groupByField, expandedIds, toggleExpand, detailPanelHeight, pinnedColumns, mobileDetailDrawer, isSmall, onRowReorder, apiRef, tz, enableHeaderFilters, headerFiltersVisible]);
+
+  // ── Find (Ctrl+F) ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!enableFind) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        const gridEl = (apiRef.current as any)?.rootElementRef?.current;
+        if (gridEl?.contains(document.activeElement) || gridEl?.contains(e.target as Node)) {
+          e.preventDefault();
+          setFindOpen(true);
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [enableFind, apiRef]);
+
+  useEffect(() => {
+    if (!findQuery || findQuery.length < 2) { setFindMatches([]); return; }
+    const q = findQuery.toLowerCase();
+    const matches: {rowId: GridRowId; field: string}[] = [];
+    for (const row of processedRows as GridRow[]) {
+      if (row[DETAIL_ROW_KEY] || row[GROUP_ROW_KEY] || row[TOTALS_ROW_KEY]) continue;
+      const rowId = resolveId(row) as GridRowId;
+      for (const col of finalColumns) {
+        if (col.field.startsWith('__zentto_')) continue;
+        const val = row[col.field];
+        if (val != null && String(val).toLowerCase().includes(q)) {
+          matches.push({ rowId, field: col.field });
+        }
+      }
+    }
+    setFindMatches(matches);
+    setFindCurrentIdx(0);
+  }, [findQuery, processedRows, finalColumns]);
+
+  // Scroll to current match
+  useEffect(() => {
+    if (findMatches.length === 0 || findCurrentIdx >= findMatches.length) return;
+    const match = findMatches[findCurrentIdx];
+    try {
+      (apiRef.current as any)?.scrollToIndexes?.({
+        rowIndex: (processedRows as GridRow[]).findIndex(
+          (r) => resolveId(r) === match.rowId
+        ),
+      });
+    } catch { /* noop */ }
+  }, [findCurrentIdx, findMatches, apiRef, processedRows]);
 
   // ── Export handlers ───────────────────────────────────────────────────────
   const handleExportCsv = useCallback(() => {
@@ -1027,6 +1290,95 @@ export function ZenttoDataGrid({
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [enableClipboard, handleCopyAll, apiRef]);
+
+  // ── Context Menu ─────────────────────────────────────────────────────────
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    row: GridRow;
+    field: string;
+    value: unknown;
+  } | null>(null);
+
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      if (!enableContextMenu) return;
+
+      const cellEl = (event.target as HTMLElement).closest('.MuiDataGrid-cell') as HTMLElement | null;
+      if (!cellEl) return;
+
+      const field = cellEl.getAttribute('data-field');
+      if (!field) return;
+
+      const rowEl = cellEl.closest('.MuiDataGrid-row') as HTMLElement | null;
+      if (!rowEl) return;
+
+      const rowId = rowEl.getAttribute('data-id');
+      if (rowId == null) return;
+
+      const row = (processedRows as GridRow[]).find(
+        (r) => String(getRowIdFn(r)) === rowId
+      );
+      if (!row || row[DETAIL_ROW_KEY] || row[TOTALS_ROW_KEY] || row[GROUP_ROW_KEY]) return;
+
+      event.preventDefault();
+      setContextMenu({
+        mouseX: event.clientX,
+        mouseY: event.clientY,
+        row,
+        field,
+        value: row[field],
+      });
+    },
+    [enableContextMenu, processedRows, getRowIdFn]
+  );
+
+  const handleContextMenuClose = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleCopyCellValue = useCallback(() => {
+    if (!contextMenu) return;
+    const text = contextMenu.value != null ? String(contextMenu.value) : '';
+    navigator.clipboard.writeText(text).catch(() => {});
+    setContextMenu(null);
+  }, [contextMenu]);
+
+  const handleCopyRow = useCallback(() => {
+    if (!contextMenu) return;
+    const cols = finalColumns.filter(
+      (c) => !c.field.startsWith('__zentto_') && c.field !== 'actions'
+    );
+    const values = cols.map((c) => {
+      const v = contextMenu.row[c.field];
+      return v != null ? String(v) : '';
+    });
+    navigator.clipboard.writeText(values.join('	')).catch(() => {});
+    setContextMenu(null);
+  }, [contextMenu, finalColumns]);
+
+  const handleFilterByValue = useCallback(() => {
+    if (!contextMenu) return;
+    const value = contextMenu.value;
+    const field = contextMenu.field;
+    try {
+      apiRef.current?.setFilterModel?.({
+        items: [
+          {
+            field,
+            operator: value == null ? 'isEmpty' : 'equals',
+            value: value != null ? String(value) : undefined,
+          },
+        ],
+      });
+    } catch { /* filter model not supported */ }
+    setContextMenu(null);
+  }, [contextMenu, apiRef]);
+
+  const handleContextMenuExport = useCallback(() => {
+    exportToCsv(processedRows, finalColumns, exportFilename);
+    setContextMenu(null);
+  }, [processedRows, finalColumns, exportFilename]);
 
   // ── Infinite scroll / lazy loading ────────────────────────────────────────
   useEffect(() => {
@@ -1110,13 +1462,18 @@ export function ZenttoDataGrid({
   }, [dataColumns]);
 
   // ── Final sx ──────────────────────────────────────────────────────────────
+  const dynamicPinningSx = useMemo(
+    () => pinnedColumns ? buildPinningSx(layout.processedColumns, pinnedColumns) : {},
+    [pinnedColumns, layout.processedColumns]
+  );
+
   const finalSx = useMemo(
     () => ({
       ...baseGridSx,
-      ...(pinnedColumns ? pinningSx : {}),
+      ...dynamicPinningSx,
       ...(sx ?? {}),
     }),
-    [pinnedColumns, sx]
+    [dynamicPinningSx, sx]
   );
 
   // ── Pinned rows (top/bottom) ──────────────────────────────────────────────
@@ -1145,6 +1502,49 @@ export function ZenttoDataGrid({
     return Object.keys(result).length ? result : undefined;
   }, [pinnedRowsTop, pinnedRowsBottom, processedRows, getRowIdFn, hasTotals, totalsRow]);
 
+  // ── Row count for toolbar ─────────────────────────────────────────────────
+  const dataRows = (processedRows as GridRow[]).filter(
+    (r) => !r[DETAIL_ROW_KEY] && !r[GROUP_ROW_KEY] && !r[TOTALS_ROW_KEY]
+  );
+  const displayRowCount = dataRows.length;
+
+  // ── Status Bar aggregation ──────────────────────────────────────────────────
+  const numericSummary = useMemo(() => {
+    if (!enableStatusBar) return [];
+    // Use pivoted data when pivot is active, otherwise original
+    const activeColumns = activePivotConfig ? pivotedColumns : columns;
+    const activeRows = (activePivotConfig ? pivotedRows : processedRows) as GridRow[];
+    const dataOnlyRows = activeRows.filter(
+      (r) => !r[DETAIL_ROW_KEY] && !r[GROUP_ROW_KEY] && !r[TOTALS_ROW_KEY]
+    );
+    // In pivot mode, sum all numeric columns; otherwise only those with aggregation:'sum'
+    const numCols = (activeColumns as ZenttoColDef[]).filter((c) => {
+      if (activePivotConfig) return c.type === 'number';
+      return (c as any).aggregation === 'sum' && (c.type === 'number' || (c as any).currency);
+    });
+    return numCols.map((c) => {
+      const sum = dataOnlyRows.reduce((acc, r) => acc + (Number(r[c.field]) || 0), 0);
+      return {
+        field: c.field,
+        label: c.headerName || c.field,
+        formattedValue: new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2 }).format(sum),
+      };
+    });
+  }, [enableStatusBar, processedRows, columns, activePivotConfig, pivotedColumns, pivotedRows]);
+
+  // ── getCellClassName for find highlighting ──────────────────────────────
+  const findCellClassName = useCallback(
+    (params: any) => {
+      if (!findQuery || findMatches.length === 0) return '';
+      const idx = findMatches.findIndex(
+        (m) => m.rowId === params.id && m.field === params.field
+      );
+      if (idx === -1) return '';
+      return idx === findCurrentIdx ? 'zentto-find-current' : 'zentto-find-match';
+    },
+    [findQuery, findMatches, findCurrentIdx]
+  );
+
   // ── Wait for layout to load before rendering (fixes IndexedDB race) ───────
   if (!layout.loaded) {
     return (
@@ -1157,47 +1557,43 @@ export function ZenttoDataGrid({
     );
   }
 
-  // ── Row count for toolbar ─────────────────────────────────────────────────
-  const displayRowCount = (processedRows as GridRow[]).filter(
-    (r) => !r[DETAIL_ROW_KEY] && !r[GROUP_ROW_KEY] && !r[TOTALS_ROW_KEY]
-  ).length;
-
-  // ─────────────────────────────────────────────────────────────────────────
+  //─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Header filter row (inline filters below headers) */}
-      {enableHeaderFilters && headerFiltersVisible && (
-        <Box
-          className="zentto-header-filter-row"
-          sx={{
-            display: 'flex',
-            gap: 0.5,
-            px: 1,
-            py: 0.5,
-            bgcolor: (t: any) => t.palette.mode === 'dark' ? alpha(t.palette.common.white, 0.03) : '#fafbfc',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            overflowX: 'auto',
-          }}
-        >
-          {dataColumns.map((col) => (
-            <TextField
-              key={col.field}
-              placeholder={`${col.headerName ?? col.field}...`}
-              size="small"
-              variant="outlined"
-              onChange={(e) => handleHeaderFilterChange(col.field, e.target.value)}
-              sx={{
-                minWidth: 100,
-                flex: 1,
-                '& .MuiInputBase-root': { fontSize: '0.75rem', height: 28 },
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-              }}
-            />
-          ))}
+      {findOpen && enableFind && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.5, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', zIndex: 10 }}>
+          <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+          <TextField
+            autoFocus
+            size="small"
+            placeholder="Buscar..."
+            value={findQuery}
+            onChange={(e) => setFindQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setFindOpen(false); setFindQuery(''); setFindMatches([]); }
+              if (e.key === 'Enter' && findMatches.length > 0) {
+                if (e.shiftKey) {
+                  setFindCurrentIdx((i) => (i - 1 + findMatches.length) % findMatches.length);
+                } else {
+                  setFindCurrentIdx((i) => (i + 1) % findMatches.length);
+                }
+              }
+            }}
+            sx={{ width: 250, '& .MuiInputBase-root': { height: 28, fontSize: '0.8rem' } }}
+          />
+          <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: 80 }}>
+            {findQuery.length >= 2
+              ? findMatches.length > 0
+                ? `${findCurrentIdx + 1} de ${findMatches.length}`
+                : 'Sin resultados'
+              : ''}
+          </Typography>
+          <IconButton size="small" onClick={() => { setFindOpen(false); setFindQuery(''); setFindMatches([]); }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </Box>
       )}
-
+      <Box onContextMenu={enableContextMenu ? handleContextMenu : undefined}>
       <DataGrid
         {...props}
         apiRef={apiRef}
@@ -1205,6 +1601,7 @@ export function ZenttoDataGrid({
         columns={finalColumns as GridColDef[]}
         getRowId={getRowIdFn as any}
         density={layout.density}
+        columnHeaderHeight={enableHeaderFilters && headerFiltersVisible ? 68 : undefined}
         onDensityChange={(d) => layout.onDensityChange(d as any)}
         columnVisibilityModel={responsiveVisibilityModel}
         onColumnVisibilityModelChange={handleColumnVisibilityChange}
@@ -1218,6 +1615,7 @@ export function ZenttoDataGrid({
         // The DetailPanelWrapper's ResizeObserver handles height measurement instead.
         {...(getDetailContent ? { getEstimatedRowHeight: resolvedGetEstimatedRowHeight } as any : {})}
         getRowClassName={resolvedGetRowClassName}
+        getCellClassName={enableFind ? findCellClassName : undefined}
         isRowSelectable={resolvedIsRowSelectable}
         pinnedRows={resolvedPinnedRows}
         {...(serverRowCount != null ? { rowCount: serverRowCount } : {})}
@@ -1276,6 +1674,80 @@ export function ZenttoDataGrid({
               }
         }
         sx={finalSx}
+        localeText={{
+          // Toolbar
+          toolbarFilters: 'Filtros',
+          toolbarColumns: 'Columnas',
+          toolbarDensity: 'Densidad',
+          toolbarDensityLabel: 'Densidad',
+          toolbarDensityCompact: 'Compacto',
+          toolbarDensityStandard: 'Normal',
+          toolbarDensityComfortable: 'Amplio',
+          toolbarExport: 'Exportar',
+          toolbarExportCSV: 'Descargar CSV',
+          toolbarExportPrint: 'Imprimir',
+          // Filter
+          filterOperatorContains: 'contiene',
+          filterOperatorDoesNotContain: 'no contiene',
+          filterOperatorEquals: 'es igual a',
+          filterOperatorDoesNotEqual: 'no es igual a',
+          filterOperatorStartsWith: 'comienza con',
+          filterOperatorEndsWith: 'termina con',
+          filterOperatorIsEmpty: 'esta vacio',
+          filterOperatorIsNotEmpty: 'no esta vacio',
+          filterOperatorIsAnyOf: 'es alguno de',
+          filterPanelAddFilter: 'Agregar filtro',
+          filterPanelRemoveAll: 'Eliminar todos',
+          filterPanelDeleteIconLabel: 'Eliminar',
+          filterPanelOperator: 'Operador',
+          filterPanelColumns: 'Columna',
+          filterPanelInputLabel: 'Valor',
+          filterPanelInputPlaceholder: 'Filtrar valor',
+          // Column header
+          columnHeaderFiltersTooltipActive: (count: number) => count > 1 ? `${count} filtros activos` : `${count} filtro activo`,
+          columnHeaderFiltersLabel: 'Mostrar filtros',
+          columnHeaderSortIconLabel: 'Ordenar',
+          columnMenuLabel: 'Menu',
+          columnMenuShowColumns: 'Mostrar columnas',
+          columnMenuManageColumns: 'Administrar columnas',
+          columnMenuFilter: 'Filtrar',
+          columnMenuHideColumn: 'Ocultar columna',
+          columnMenuUnsort: 'Quitar orden',
+          columnMenuSortAsc: 'Ordenar ascendente',
+          columnMenuSortDesc: 'Ordenar descendente',
+          // Columns panel
+          columnsPanelTextFieldLabel: 'Buscar columna',
+          columnsPanelTextFieldPlaceholder: 'Titulo de columna',
+          columnsPanelShowAllButton: 'Mostrar todas',
+          columnsPanelHideAllButton: 'Ocultar todas',
+          // Pagination
+          footerRowSelected: (count: number) => count > 1 ? `${count.toLocaleString('es-VE')} filas seleccionadas` : `${count.toLocaleString('es-VE')} fila seleccionada`,
+          footerTotalRows: 'Total de filas:',
+          footerTotalVisibleRows: (visibleCount: number, totalCount: number) => `${visibleCount.toLocaleString('es-VE')} de ${totalCount.toLocaleString('es-VE')}`,
+          MuiTablePagination: {
+            labelRowsPerPage: 'Filas por pagina:',
+            labelDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) => `${from}\u2013${to} de ${count !== -1 ? count.toLocaleString('es-VE') : `mas de ${to}`}`,
+          },
+          // No rows
+          noRowsLabel: 'Sin datos',
+          noResultsOverlayLabel: 'No se encontraron resultados',
+          // Selection
+          checkboxSelectionHeaderName: 'Seleccion',
+          checkboxSelectionSelectAllRows: 'Seleccionar todas',
+          checkboxSelectionUnselectAllRows: 'Deseleccionar todas',
+          checkboxSelectionSelectRow: 'Seleccionar fila',
+          checkboxSelectionUnselectRow: 'Deseleccionar fila',
+          // Boolean
+          booleanCellTrueLabel: 'Si',
+          booleanCellFalseLabel: 'No',
+          // Actions
+          actionsCellMore: 'mas',
+          // Pinning
+          pinToLeft: 'Fijar a la izquierda',
+          pinToRight: 'Fijar a la derecha',
+          unpin: 'Desfijar',
+          ...props.localeText,
+        }}
         disableRowSelectionOnClick
         // Handle row clicks:
         // - Group headers: toggle expand
@@ -1296,6 +1768,103 @@ export function ZenttoDataGrid({
           (props.onRowClick as any)?.(params, event, details);
         }}
       />
+      </Box>
+
+      {/* Context Menu */}
+      {enableContextMenu && (
+        <Menu
+          open={contextMenu !== null}
+          onClose={handleContextMenuClose}
+          anchorReference="anchorPosition"
+          anchorPosition={
+            contextMenu !== null
+              ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+              : undefined
+          }
+          slotProps={{
+            paper: {
+              elevation: 8,
+              sx: {
+                minWidth: 220,
+                borderRadius: 2,
+                '& .MuiMenuItem-root': {
+                  fontSize: '0.8125rem',
+                  py: 0.75,
+                },
+              },
+            },
+          }}
+        >
+          <MenuItem onClick={handleCopyCellValue}>
+            <ListItemIcon><ContentCopyIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Copiar valor de celda</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleCopyRow}>
+            <ListItemIcon><ContentCopyIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Copiar fila</ListItemText>
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={() => {
+            if (!contextMenu) return;
+            try {
+              apiRef.current?.pinColumn?.(contextMenu.field, 'left');
+            } catch { /* pinning not available */ }
+            setContextMenu(null);
+          }}>
+            <ListItemIcon><PushPinIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Fijar columna a la izquierda</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => {
+            if (!contextMenu) return;
+            try {
+              apiRef.current?.pinColumn?.(contextMenu.field, 'right');
+            } catch { /* pinning not available */ }
+            setContextMenu(null);
+          }}>
+            <ListItemIcon><PushPinIcon fontSize="small" sx={{ transform: 'rotate(90deg)' }} /></ListItemIcon>
+            <ListItemText>Fijar columna a la derecha</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => {
+            if (!contextMenu) return;
+            try {
+              apiRef.current?.unpinColumn?.(contextMenu.field);
+            } catch { /* unpinning not available */ }
+            setContextMenu(null);
+          }}>
+            <ListItemIcon><PushPinIcon fontSize="small" color="disabled" /></ListItemIcon>
+            <ListItemText>Desfijar columna</ListItemText>
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={handleFilterByValue}>
+            <ListItemIcon><FilterAltIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Filtrar por este valor</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleContextMenuExport}>
+            <ListItemIcon><FileDownloadIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Exportar datos visibles</ListItemText>
+          </MenuItem>
+          {contextMenuItems && contextMenuItems.length > 0 && <Divider />}
+          {contextMenuItems?.map((item, idx) => (
+            <React.Fragment key={idx}>
+              {item.divider && <Divider />}
+              <MenuItem onClick={() => {
+                if (contextMenu) {
+                  item.action({ row: contextMenu.row, field: contextMenu.field, value: contextMenu.value });
+                }
+                setContextMenu(null);
+              }}>
+                {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+                <ListItemText>{item.label}</ListItemText>
+              </MenuItem>
+            </React.Fragment>
+          ))}
+        </Menu>
+      )}
+
+      {/* Status Bar — inyectado dentro del footer del DataGrid via portal DOM */}
+      {enableStatusBar && (
+        <StatusBarPortal apiRef={apiRef} rowCount={displayRowCount} summary={numericSummary} />
+      )}
 
       {/* Loading more indicator (infinite scroll) */}
       {loadingMore && (
