@@ -2,13 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
 import type { ColumnDef, GridRow } from '@zentto/datagrid-core';
-import { NativeGridConfigurator, DEFAULT_CONFIG, type NativeGridConfig } from '../../components/NativeGridConfigurator';
 
 const COLUMNS: ColumnDef[] = [
   { field: 'numeroFactura', header: 'N. Factura', width: 140, sortable: true },
-  { field: 'nombreCliente', header: 'Cliente', flex: 1, minWidth: 200, sortable: true },
+  { field: 'nombreCliente', header: 'Cliente', flex: 1, minWidth: 200, sortable: true, groupable: true },
   { field: 'fecha', header: 'Fecha', width: 130, type: 'date', sortable: true },
-  { field: 'tipo', header: 'Tipo', width: 110, sortable: true },
+  { field: 'tipo', header: 'Tipo', width: 110, sortable: true, groupable: true },
   { field: 'totalFactura', header: 'Total', width: 130, type: 'number', currency: 'VES', aggregation: 'sum' },
   {
     field: 'estado', header: 'Estado', width: 120, sortable: true, groupable: true,
@@ -17,51 +16,97 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
-const GROUPABLE = [
-  { value: 'estado', label: 'Estado' },
-  { value: 'tipo', label: 'Tipo' },
-  { value: 'nombreCliente', label: 'Cliente' },
-];
-
-const PIVOTABLE = [
-  { value: 'nombreCliente', label: 'Cliente' },
-  { value: 'estado', label: 'Estado' },
-  { value: 'tipo', label: 'Tipo' },
-  { value: 'totalFactura', label: 'Total', type: 'number' },
+// Columnas del detalle (articulos de la factura)
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: 'codigo', header: 'Codigo', width: 100 },
+  { field: 'descripcion', header: 'Articulo', flex: 1, minWidth: 180 },
+  { field: 'cantidad', header: 'Cant.', width: 70, type: 'number' },
+  { field: 'precioUnitario', header: 'P. Unit.', width: 110, type: 'number', currency: 'VES' },
+  { field: 'descuento', header: 'Desc. %', width: 80, type: 'number' },
+  { field: 'subtotal', header: 'Subtotal', width: 120, type: 'number', currency: 'VES', aggregation: 'sum' },
 ];
 
 const FILTER_PANEL = [
   { field: 'estado', type: 'select', label: 'Estado' },
   { field: 'tipo', type: 'select', label: 'Tipo' },
   { field: 'totalFactura', type: 'range', label: 'Total' },
-  { field: 'fecha', type: 'date-range', label: 'Fecha' },
   { field: 'nombreCliente', type: 'text', label: 'Cliente', placeholder: 'Nombre...' },
 ];
 
-const DETAIL_RENDERER = (row: any) => `
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0">
-    <div><strong>Factura:</strong> ${row.numeroFactura}</div>
-    <div><strong>Cliente:</strong> ${row.nombreCliente}</div>
-    <div><strong>Fecha:</strong> ${row.fecha}</div>
-    <div><strong>Tipo:</strong> ${row.tipo}</div>
-    <div><strong>Total:</strong> ${row.totalFactura}</div>
-    <div><strong>Estado:</strong> ${row.estado}</div>
-  </div>
-`;
+// Catalogo de articulos para generar detalles realistas
+const ARTICULOS_CATALOGO = [
+  { codigo: 'ALI-001', descripcion: 'Arroz Premium 1kg', precio: 45.00 },
+  { codigo: 'ALI-002', descripcion: 'Aceite de Oliva Extra Virgen 500ml', precio: 120.00 },
+  { codigo: 'ALI-003', descripcion: 'Harina de Trigo Todo Uso 1kg', precio: 35.00 },
+  { codigo: 'ALI-004', descripcion: 'Azucar Refinada 1kg', precio: 38.00 },
+  { codigo: 'ALI-005', descripcion: 'Pasta Larga Espagueti 500g', precio: 28.00 },
+  { codigo: 'BEB-001', descripcion: 'Agua Mineral 1.5L (Pack 6)', precio: 65.00 },
+  { codigo: 'BEB-002', descripcion: 'Jugo de Naranja Natural 1L', precio: 55.00 },
+  { codigo: 'LAC-001', descripcion: 'Leche Completa UHT 1L', precio: 42.00 },
+  { codigo: 'LAC-002', descripcion: 'Queso Blanco Llanero 500g', precio: 85.00 },
+  { codigo: 'LAC-003', descripcion: 'Yogurt Natural 500ml', precio: 48.00 },
+  { codigo: 'CAR-001', descripcion: 'Pechuga de Pollo 1kg', precio: 95.00 },
+  { codigo: 'CAR-002', descripcion: 'Carne Molida Premium 1kg', precio: 150.00 },
+  { codigo: 'LIM-001', descripcion: 'Detergente Liquido 2L', precio: 75.00 },
+  { codigo: 'LIM-002', descripcion: 'Jabon de Manos Antibacterial 400ml', precio: 35.00 },
+  { codigo: 'PAP-001', descripcion: 'Papel Higienico (Pack 12)', precio: 95.00 },
+  { codigo: 'VER-001', descripcion: 'Tomate Perita 1kg', precio: 32.00 },
+  { codigo: 'VER-002', descripcion: 'Cebolla Blanca 1kg', precio: 25.00 },
+  { codigo: 'VER-003', descripcion: 'Papa 1kg', precio: 28.00 },
+];
+
+/** Generate realistic detail items for an invoice based on its total */
+function generateDetailItems(factura: GridRow): GridRow[] {
+  const total = Number(factura.totalFactura) || 0;
+  if (total <= 0) return [];
+
+  // Seed from factura number for consistent results
+  const seed = String(factura.numeroFactura || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const rng = (i: number) => ((seed * 13 + i * 37) % 100) / 100;
+
+  const numItems = Math.max(2, Math.min(8, Math.floor(rng(0) * 6) + 2));
+  const items: GridRow[] = [];
+  let remaining = total;
+
+  for (let i = 0; i < numItems; i++) {
+    const art = ARTICULOS_CATALOGO[(seed + i * 7) % ARTICULOS_CATALOGO.length];
+    const cantidad = Math.floor(rng(i + 1) * 10) + 1;
+    const descuento = rng(i + 2) > 0.7 ? Math.floor(rng(i + 3) * 15) : 0;
+    const isLast = i === numItems - 1;
+
+    let precioUnitario = art.precio * (1 + rng(i + 4) * 2);
+    let subtotal = precioUnitario * cantidad * (1 - descuento / 100);
+
+    if (isLast) {
+      // Adjust last item so detail totals match invoice total
+      subtotal = Math.max(0, remaining);
+      precioUnitario = cantidad > 0 ? subtotal / cantidad / (1 - descuento / 100) : 0;
+    }
+
+    remaining -= subtotal;
+
+    items.push({
+      id: `${factura.numeroFactura}-${i + 1}`,
+      codigo: art.codigo,
+      descripcion: art.descripcion,
+      cantidad,
+      precioUnitario: Math.round(precioUnitario * 100) / 100,
+      descuento,
+      subtotal: Math.round(subtotal * 100) / 100,
+    });
+  }
+
+  return items;
+}
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
 export default function NativoFacturasPage() {
   const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<GridRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
-  const [config, setConfig] = useState<NativeGridConfig>({
-    ...DEFAULT_CONFIG,
-    groupField: 'estado',
-    pivotRowField: 'nombreCliente',
-    pivotColField: 'estado',
-    pivotValueField: 'totalFactura',
-  });
-  const [configOpen, setConfigOpen] = useState(false);
 
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
@@ -81,15 +126,20 @@ export default function NativoFacturasPage() {
         });
         const data = await res.json();
         if (data.error) console.warn('API warning:', data.error);
-        const mapped = (data.rows || []).map((item: any, idx: number) => ({
-          id: item.DocumentNumber || idx,
-          numeroFactura: item.DocumentNumber,
-          nombreCliente: item.CustomerName || '',
-          fecha: item.DocumentDate,
-          tipo: item.OperationType,
-          totalFactura: Number(item.TotalAmount || 0),
-          estado: item.IsVoided ? 'Anulada' : item.IsPaid === 'S' ? 'Pagada' : 'Emitida',
-        }));
+        const mapped = (data.rows || []).map((item: any, idx: number) => {
+          const factura: GridRow = {
+            id: item.DocumentNumber || idx,
+            numeroFactura: item.DocumentNumber,
+            nombreCliente: item.CustomerName || '',
+            fecha: item.DocumentDate,
+            tipo: item.OperationType,
+            totalFactura: Number(item.TotalAmount || 0),
+            estado: item.IsVoided ? 'Anulada' : item.IsPaid === 'S' ? 'Pagada' : 'Emitida',
+          };
+          // Generate detail items for master-detail
+          factura.items = generateDetailItems(factura);
+          return factura;
+        });
         setRows(mapped);
       } catch (err) {
         console.error('Error fetching:', err);
@@ -100,62 +150,22 @@ export default function NativoFacturasPage() {
     fetchData();
   }, []);
 
-  // Listen for settings-click from grid toolbar
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el || !registered) return;
-    const handler = () => setConfigOpen(prev => !prev);
-    el.addEventListener('settings-click', handler);
-    return () => el.removeEventListener('settings-click', handler);
-  }, [registered]);
-
+  // Bind data to web component
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
     el.columns = COLUMNS;
     el.rows = rows;
     el.loading = loading;
-    el.showTotals = config.showTotals;
-    el.enableHeaderFilters = config.enableHeaderFilters;
-    el.enableClipboard = config.enableClipboard;
-    el.enableFind = config.enableFind;
-    el.enableContextMenu = config.enableContextMenu;
-    el.enableStatusBar = config.enableStatusBar;
-    el.enableGrouping = config.enableGrouping;
-    el.groupField = config.groupField;
-    el.groupSort = config.groupSort;
-    el.groupSubtotals = config.groupSubtotals;
-    el.enableMasterDetail = config.enableMasterDetail;
-    el.enableGroupDropZone = config.enableGroupDropZone;
-    el.enablePivot = config.enablePivot;
-    el.enableImport = config.enableImport;
-    el.enableQuickSearch = config.enableQuickSearch;
-    if (config.enablePivot && config.pivotRowField && config.pivotColField && config.pivotValueField) {
-      el.pivotConfig = {
-        rowField: config.pivotRowField,
-        columnField: config.pivotColField,
-        valueField: config.pivotValueField,
-        aggregation: config.pivotAggregation || 'sum',
-        showGrandTotals: config.pivotGrandTotals,
-      };
-    } else {
-      el.pivotConfig = undefined;
-    }
-    el.enableToolbar = true;
-    el.enableHeaderMenu = true;
-    el.enableSettings = true;
-    el.enableFilterPanel = true;
-    el.enableRowSelection = true;
     el.filterPanel = FILTER_PANEL;
-    el.detailRenderer = DETAIL_RENDERER;
+    // Master-detail: child grid with invoice line items
+    el.detailColumns = DETAIL_COLUMNS;
+    el.detailRowsAccessor = (row: GridRow) => (row.items as GridRow[]) || [];
     el.actionButtons = [
-      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>', label: 'Ver', action: 'view' },
-      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>', label: 'Editar', action: 'edit', color: '#e67e22' },
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
     ];
-    el.theme = config.theme;
-    el.density = config.density;
-    el.locale = config.locale;
-  }, [rows, loading, registered, config]);
+  }, [rows, loading, registered]);
 
   if (!registered) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
@@ -163,29 +173,33 @@ export default function NativoFacturasPage() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-        <Typography variant="h5" fontWeight={600}>Facturas — Web Component Nativo</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+        <Typography variant="h5" fontWeight={600} sx={{ fontSize: { xs: 16, sm: 24 } }}>Facturas — Web Component Nativo</Typography>
         <Chip label="@zentto/datagrid" color="success" size="small" />
         <Chip label="Lit + Custom Element" variant="outlined" size="small" />
         <Chip label={`${rows.length} registros`} size="small" />
       </Box>
 
-      <NativeGridConfigurator config={config} onChange={setConfig} groupableFields={GROUPABLE} pivotableFields={PIVOTABLE} open={configOpen} onToggle={setConfigOpen}>
-        <zentto-grid
-          ref={gridRef}
-          default-currency="VES"
-          export-filename="facturas-nativo"
-          height="calc(100vh - 200px)"
-          style={({
-            '--zg-primary': config.primaryColor,
-            '--zg-header-bg': config.headerBg,
-            '--zg-border': config.borderColor,
-            '--zg-row-stripe': config.rowAltBg,
-            '--zg-font-family': config.fontFamily,
-            '--zg-font-size': config.fontSize,
-          }) as any}
-        ></zentto-grid>
-      </NativeGridConfigurator>
+      <zentto-grid
+        ref={gridRef}
+        default-currency="VES"
+        export-filename="facturas-nativo"
+        height="calc(100vh - 160px)"
+        show-totals
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-find
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-row-selection
+        enable-filter-panel
+        enable-master-detail
+        enable-import
+        enable-configurator
+      ></zentto-grid>
     </Box>
   );
 }
