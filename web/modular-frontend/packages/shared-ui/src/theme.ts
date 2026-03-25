@@ -187,18 +187,18 @@ const baseThemeOptions = {
     },
     // Inputs: defaults funcionales — sin sobreescribir estilos de MUI
     MuiFormControl: {
-      defaultProps: { size: 'medium', fullWidth: true },
+      defaultProps: { size: 'small', fullWidth: true },
     },
     MuiInputLabel: {
-      defaultProps: { size: 'medium' },
+      defaultProps: { size: 'small' },
     },
     MuiSelect: {
-      defaultProps: { size: 'medium' },
+      defaultProps: { size: 'small' },
     },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
-        size: 'medium',
+        size: 'small',
         fullWidth: true,
       },
     },

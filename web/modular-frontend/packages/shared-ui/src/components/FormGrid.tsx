@@ -16,7 +16,7 @@ export interface FormGridProps extends Omit<GridProps, 'container'> {
  *     <FormField xs={12} sm={6}><TextField label="Nombre" /></FormField>
  *   </FormGrid>
  */
-export function FormGrid({ spacing = 3, children, ...props }: FormGridProps) {
+export function FormGrid({ spacing = 2, children, ...props }: FormGridProps) {
   return (
     <Grid container spacing={spacing} {...props}>
       {children}
@@ -43,7 +43,7 @@ export interface FormFieldProps extends Omit<GridProps, 'item'> {
  *     <TextField label="Email" />
  *   </FormField>
  */
-export function FormField({ xs = 12, sm, md, lg, children, ...props }: FormFieldProps) {
+export function FormField({ xs = 12, sm = 6, md = 4, lg = 3, children, ...props }: FormFieldProps) {
   return (
     <Grid item xs={xs} sm={sm} md={md} lg={lg} {...props}>
       {children}
