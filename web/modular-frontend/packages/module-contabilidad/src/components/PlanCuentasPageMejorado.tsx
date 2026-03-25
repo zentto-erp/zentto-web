@@ -46,6 +46,7 @@ function MayorAnaliticoDialog({ open, onClose, cuenta }: { open: boolean; onClos
     el.columns = MAYOR_COLUMNS;
     el.rows = (data?.rows ?? []).map((row: any, i: number) => ({ id: i, ...row }));
     el.loading = isLoading;
+    // No actionButtons needed — read-only mayor analitico report
   }, [data, isLoading, registered]);
 
   return (

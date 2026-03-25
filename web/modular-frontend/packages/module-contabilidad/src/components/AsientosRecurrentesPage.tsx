@@ -201,6 +201,10 @@ function RecurrenteFormDialog({
   );
 }
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 // ---- Main Component ----
 
 const COLUMNS: ColumnDef[] = [
@@ -241,7 +245,26 @@ export default function AsientosRecurrentesPage() {
     el.columns = COLUMNS;
     el.rows = templates.map((r: any) => ({ ...r, id: r.RecurringEntryId ?? r.id, active: r.active ? "true" : "false" }));
     el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
+      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
+    ];
   }, [templates, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: any) => {
+      const { action, row } = e.detail;
+      const template = templates.find((t: any) => (t.RecurringEntryId ?? t.id) === row.id);
+      if (action === 'view' && template) { setEditItem(template); setDialogOpen(true); }
+      if (action === 'edit' && template) { setEditItem(template); setDialogOpen(true); }
+      if (action === 'delete') setDeleteConfirm(row.id);
+    };
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered, templates]);
 
   const handleExecute = async (id: number) => {
     setError(null); setSuccessMsg(null);

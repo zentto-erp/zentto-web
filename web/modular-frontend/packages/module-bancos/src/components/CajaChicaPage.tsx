@@ -19,6 +19,10 @@ import {
   useActiveSession, useAddExpense, useExpensesList,
 } from "../hooks/useCajaChica";
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 const CATEGORIAS = [
   { value: "TRANSPORTE", label: "Transporte" }, { value: "MATERIAL_OFICINA", label: "Material de Oficina" },
   { value: "LIMPIEZA", label: "Limpieza" }, { value: "ALIMENTACION", label: "Alimentación" },
@@ -82,6 +86,9 @@ export default function CajaChicaPage() {
     const el = boxesGridRef.current; if (!el || !registered) return;
     el.columns = COLS_BOXES; el.rows = boxes; el.loading = boxesQuery.isLoading;
     el.getRowId = (r: any) => r.Id ?? Math.random();
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+    ];
   }, [boxes, boxesQuery.isLoading, registered]);
 
   useEffect(() => {
@@ -92,9 +99,23 @@ export default function CajaChicaPage() {
   }, [registered]);
 
   useEffect(() => {
+    const el = boxesGridRef.current; if (!el || !registered) return;
+    const handler = (e: any) => {
+      const { action, row } = e.detail;
+      if (action === 'view' && row?.Id) setSelectedBoxId(Number(row.Id));
+    };
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered]);
+
+  useEffect(() => {
     const el = expensesGridRef.current; if (!el || !registered) return;
     el.columns = COLS_EXPENSES; el.rows = expenses; el.loading = expensesQuery.isLoading;
     el.getRowId = (r: any) => r.Id ?? Math.random();
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
+    ];
   }, [expenses, expensesQuery.isLoading, registered]);
 
   const handleCreateBox = async () => { if (!boxForm.name.trim()) return; try { await createBoxMut.mutateAsync({ name: boxForm.name, maxAmount: Number(boxForm.maxAmount) || 0, responsible: boxForm.responsible || undefined }); showToast("Caja chica creada"); setShowCreateBox(false); setBoxForm({ name: "", maxAmount: "", responsible: "" }); } catch (e: any) { showToast(e?.message ?? "Error al crear caja chica"); } };

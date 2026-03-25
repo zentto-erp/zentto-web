@@ -136,6 +136,7 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
     el.columns = COLUMNS;
     el.rows = gridRows;
     el.loading = loadingDetalle;
+    // No actionButtons needed — read-only invoice detail line items
   }, [gridRows, loadingDetalle, registered]);
 
   // Anular handler

@@ -28,6 +28,8 @@ import type {
 
 // ─── Tab mapping ──────────────────────────────────────────────
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+
 const TAB_MAP: Record<string, number> = {
   notificaciones: 0,
   tareas: 1,
@@ -155,7 +157,24 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver / Marcar leida", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, isLoading, columns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        const notif = rows.find(r => r.id === row.id);
+        if (notif && !notif.read) handleMarkOneRead(String(notif.id));
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [rows]);
 
   const unreadCount = rows.filter(r => !r.read).length;
 
@@ -311,7 +330,24 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver progreso", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, isLoading, columns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        const task = rows.find(r => r.id === row.id);
+        if (task) { setEditDialog(task); setSliderVal(task.progress); }
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [rows]);
 
   return (
     <Stack spacing={2}>
@@ -450,7 +486,27 @@ function MessagesTab({ isMobile }: { isMobile: boolean }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver mensaje", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, isLoading, columns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        const msg = rows.find(r => r.id === row.id);
+        if (msg) {
+          setSelectedMsg(msg);
+          if (msg.unread) handleMarkRead(String(msg.id));
+        }
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [rows]);
 
   return (
     <Stack spacing={2}>

@@ -48,6 +48,7 @@ export default function PlanCuentasPage() {
     el.columns = COLUMNS;
     el.rows = filteredRows.map((r: any) => ({ ...r, id: r.codCuenta ?? r.cod_cuenta ?? r.COD_CUENTA ?? Math.random() }));
     el.loading = isLoading;
+    // No actionButtons needed — read-only plan de cuentas view (use PlanCuentasPageMejorado for editing)
   }, [filteredRows, isLoading, registered]);
 
   if (!registered) {

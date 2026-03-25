@@ -11,6 +11,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
@@ -119,7 +120,20 @@ export default function MovimientosTable() {
     el.columns = MOV_COLUMNS; el.rows = movGridRows; el.loading = isLoading;
     el.getRowId = (r: any) => r.id;
     el.detailRenderer = DETAIL_RENDERER;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver detalle", action: "view", color: "#6b7280" },
+    ];
   }, [movGridRows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = movGridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") { /* TODO: ver detalle movimiento */ }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, movGridRows]);
 
   return (
     <Box sx={{ p: 2 }}>

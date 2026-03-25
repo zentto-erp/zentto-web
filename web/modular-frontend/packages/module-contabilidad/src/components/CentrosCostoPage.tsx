@@ -153,6 +153,7 @@ function PnLByCostCenterTab() {
     el.columns = PNL_COLUMNS;
     el.rows = rows;
     el.loading = isLoading;
+    // No actionButtons needed — read-only P&L report grid
   }, [rows, isLoading, registered]);
 
   const filters = (
@@ -225,6 +226,7 @@ function PivotTab() {
     el.columns = PIVOT_COLUMNS;
     el.rows = pivotRows;
     el.loading = isLoading;
+    // No actionButtons needed — read-only pivot report grid
   }, [pivotRows, isLoading, registered]);
 
   const filters = (

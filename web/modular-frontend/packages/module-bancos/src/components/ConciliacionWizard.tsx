@@ -98,12 +98,14 @@ export default function ConciliacionWizard() {
     const el = extractoGridRef.current; if (!el || !registered || activeStep !== 2) return;
     el.columns = COLS_EXTRACTO_DISPLAY; el.rows = movimientosExtracto;
     el.getRowId = (r: any) => r.id ?? Math.random();
+    // No actionButtons needed — wizard step display grid
   }, [movimientosExtracto, registered, activeStep]);
 
   useEffect(() => {
     const el = sistemaGridRef.current; if (!el || !registered || activeStep !== 2) return;
     el.columns = COLS_SISTEMA_DISPLAY; el.rows = noConciliados;
     el.getRowId = (r: any) => r.id ?? Math.random();
+    // No actionButtons needed — wizard step display grid
   }, [noConciliados, registered, activeStep]);
 
   const handleNext = async () => {

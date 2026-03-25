@@ -14,6 +14,9 @@ import { useRetencionesList, useGenerarRetencion, type WithholdingFilter } from 
 import ConceptosRetencionPage from "./ConceptosRetencionPage";
 import UnidadTributariaPage from "./UnidadTributariaPage";
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
 interface GenForm { documentId: number; withholdingType: string; countryCode: string; }
 
 const COLUMNS: ColumnDef[] = [
@@ -55,7 +58,27 @@ function ComprobantesTab() {
     el.columns = COLUMNS;
     el.rows = rows.map((r: any) => ({ ...r, id: r.VoucherId }));
     el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
+    ];
   }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: any) => {
+      const { action, row } = e.detail;
+      if (action === 'view') {
+        // View withholding voucher detail
+      }
+      if (action === 'edit') {
+        // Edit withholding voucher
+      }
+    };
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered]);
 
   const handleGenerar = async () => {
     await generarMutation.mutateAsync(genForm);

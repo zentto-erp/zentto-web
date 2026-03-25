@@ -64,6 +64,7 @@ export default function LibroFiscalPage() {
     el.columns = COLUMNS;
     el.rows = rows.map((r: any) => ({ ...r, id: r.EntryId }));
     el.loading = isLoading;
+    // No actionButtons needed — read-only report grid
   }, [rows, isLoading, registered]);
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function LibroFiscalPage() {
     if (!el || !registered || resumenRows.length === 0) return;
     el.columns = RESUMEN_COLUMNS;
     el.rows = resumenRows.map((r: any, idx: number) => ({ ...r, id: idx }));
+    // No actionButtons needed — read-only report grid
   }, [resumenRows, registered]);
 
   const handleGenerar = async () => {

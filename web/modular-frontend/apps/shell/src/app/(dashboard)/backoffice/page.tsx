@@ -113,6 +113,8 @@ interface BackupRow {
 
 const SESSION_KEY = "bo_session_token"; // session token JWT (no la master key)
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+
 const PLAN_OPTIONS = ["FREE", "STARTER", "PRO", "ENTERPRISE"];
 
 const STATUS_COLORS: Record<
@@ -638,7 +640,24 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = loading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, loading]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        const t = rows.find((r) => r.CompanyCode === row.CompanyCode);
+        if (t) { setApplyTarget(t); setApplyOpen(true); }
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [rows]);
 
   return (
     <Box>
@@ -742,7 +761,23 @@ function RecursosTab({ masterKey }: { masterKey: string }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = loading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, loading]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        console.log("Ver recurso:", row);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, []);
 
   return (
     <Box>
@@ -880,7 +915,23 @@ function CleanupTab({ masterKey }: { masterKey: string }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = loading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, loading]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        setConfirmAction({ queueId: row.QueueId, action: "cancel", label: `Ver detalles de limpieza: ${row.LegalName}` });
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, []);
 
   return (
     <Box>
@@ -1017,7 +1068,24 @@ function RespaldosTab({ masterKey }: { masterKey: string }) {
     el.columns = columns;
     el.rows = mappedRows;
     el.loading = loading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#1976d2" },
+    ];
   }, [mappedRows, loading]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        const target = rows.find((r) => r.CompanyCode === row.CompanyCode);
+        if (target) { setBackupTarget(target); setBackupConfirmOpen(true); }
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [rows]);
 
   return (
     <Box>

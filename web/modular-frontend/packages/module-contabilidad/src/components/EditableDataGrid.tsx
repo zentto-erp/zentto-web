@@ -7,6 +7,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import AddIcon from "@mui/icons-material/Add";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 // ---- Tipos ----
 export interface EditableDataGridProps<T extends { id?: string | number }> {
   rows: T[];
@@ -59,7 +62,27 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
       id: getRowId ? getRowId(r) : r.id,
     }));
     el.loading = loading;
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#d32f2f" },
+    ];
   }, [initialRows, columns, loading, registered, getRowId]);
+
+  React.useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      const original = initialRows.find((r: any) => (getRowId ? getRowId(r) : r.id) === row.id) as T | undefined;
+      if (action === "edit" && original && onRowClick) {
+        onRowClick(original);
+      } else if (action === "delete" && row.id != null) {
+        onDelete(row.id);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, initialRows, getRowId, onRowClick, onDelete]);
 
   if (!registered) {
     return (

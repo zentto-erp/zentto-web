@@ -20,6 +20,9 @@ import { useCreateAsiento, usePlanCuentas } from "../hooks/useContabilidad";
 import { useCentrosCostoList } from "../hooks/useContabilidadAdvanced";
 import { CircularProgress } from "@mui/material";
 
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 interface DetalleLinea {
   id: string; codCuenta: string; descripcion: string; centroCosto?: string; documento?: string; debe: number; haber: number;
 }
@@ -68,7 +71,26 @@ export default function NuevoAsientoPage() {
     if (!el || !registered) return;
     el.columns = COLUMNS;
     el.rows = lineas;
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#d32f2f" },
+    ];
   }, [lineas, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") {
+        console.log("Editar linea asiento:", row);
+      } else if (action === "delete") {
+        setLineas((prev) => prev.filter((l) => l.id !== row.id));
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered]);
 
   const handleAddLinea = () => {
     const newId = Math.max(...lineas.map((l) => Number(l.id)), 0) + 1;

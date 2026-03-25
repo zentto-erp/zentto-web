@@ -12,6 +12,9 @@ import AddIcon from "@mui/icons-material/Add";
 import { useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
 const COLUMNS: ColumnDef[] = [
   { field: "CountryCode", header: "Pais", width: 80, sortable: true },
   { field: "TaxYear", header: "Ano", width: 80, type: "number", sortable: true },
@@ -42,7 +45,31 @@ export default function UnidadTributariaPage() {
     el.columns = COLUMNS;
     el.rows = rows.map((r: any) => ({ ...r, id: r.TaxUnitId ?? `${r.CountryCode}-${r.TaxYear}`, EffectiveDate: r.EffectiveDate?.slice(0, 10) }));
     el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
+    ];
   }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: any) => {
+      const { action, row } = e.detail;
+      const item = rows.find((r: any) => (r.TaxUnitId ?? `${r.CountryCode}-${r.TaxYear}`) === row.id);
+      if (!item) return;
+      if (action === 'view' || action === 'edit') {
+        setForm({
+          countryCode: item.CountryCode, taxYear: item.TaxYear,
+          unitValue: item.UnitValue, currency: item.Currency,
+          effectiveDate: item.EffectiveDate?.slice(0, 10) ?? "",
+        });
+        setDialogOpen(true);
+      }
+    };
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered, rows]);
 
   const handleSave = async () => {
     try { await upsert.mutateAsync(form); setDialogOpen(false); } catch { /* handled */ }

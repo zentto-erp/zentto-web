@@ -83,6 +83,7 @@ export default function ConciliacionBancariaPage() {
     if (!el || !registered) return;
     el.columns = ENTRY_COLUMNS;
     el.rows = asientos.map((r: any) => ({ ...r, id: r.JournalEntryId ?? r.id ?? Math.random(), EntryDate: r.EntryDate?.slice?.(0, 10) ?? r.EntryDate }));
+    // No actionButtons needed — read-only view of linked journal entries
   }, [asientos, registered]);
 
   const handleImportCSV = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {

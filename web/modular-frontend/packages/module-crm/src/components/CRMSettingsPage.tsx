@@ -40,6 +40,8 @@ import {
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
 /* ─── Tab panel helper ──────────────────────────────────────── */
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
@@ -247,21 +249,27 @@ const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
   ];
 
   // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = stageColumns;
+    el.rows = stages;
+    el.loading = stagesLoading;
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+    ];
+  }, [stages, stagesLoading, registered, stageColumns]);
 
   useEffect(() => {
-
     const el = gridRef.current;
-
     if (!el || !registered) return;
-
-    el.columns = columns;
-
-    el.rows = rows;
-
-    el.loading = isLoading;
-
-  }, [rows, isLoading, registered, columns]);
-
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") openEditStage(row);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, stages]);
 
   return (
     <Box>

@@ -27,6 +27,9 @@ import {
 } from "../hooks/useLogistica";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 interface DriverFormData {
   driverId?: number;
   carrierId?: number;
@@ -173,21 +176,42 @@ const { data, isLoading } = useDriversList({
   };
 
   // Bind data to zentto-grid web component
-
   useEffect(() => {
-
     const el = gridRef.current;
-
     if (!el || !registered) return;
-
     el.columns = columns;
-
     el.rows = rows;
-
     el.loading = isLoading;
-
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
+    ];
   }, [rows, isLoading, registered, columns]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") {
+        setFormData({
+          driverId: Number(row.DriverId ?? row.Id),
+          carrierId: row.CarrierId ? Number(row.CarrierId) : undefined,
+          driverCode: String(row.DriverCode ?? ""),
+          driverName: String(row.DriverName ?? ""),
+          licenseNumber: String(row.LicenseNumber ?? ""),
+          licenseExpiry: row.LicenseExpiry ? String(row.LicenseExpiry).slice(0, 10) : "",
+          phone: String(row.Phone ?? ""),
+          isActive: Boolean(row.IsActive),
+        });
+        setIsEditing(true);
+        setDialogOpen(true);
+      }
+      if (action === "delete") { /* TODO: eliminar conductor */ }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
 
   return (
     <Box sx={{ p: 2 }}>

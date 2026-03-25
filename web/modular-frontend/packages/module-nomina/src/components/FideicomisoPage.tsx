@@ -23,6 +23,9 @@ import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 import {
   useTrustList,
   useCalculateTrust,
@@ -79,7 +82,26 @@ export default function FideicomisoPage() {
     el.rows = rows;
     el.loading = isLoading;
     el.getRowId = (r: any) => r.id ?? `${r.employeeCode}-${r.quarter}`;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#1976d2" },
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#ed6c02" },
+    ];
   }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        console.log("Ver fideicomiso:", row);
+      } else if (action === "edit") {
+        console.log("Editar fideicomiso:", row);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered]);
 
   const handleCalculate = async () => {
     await calculateMutation.mutateAsync(calcForm);
