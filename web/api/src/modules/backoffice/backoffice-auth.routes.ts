@@ -22,7 +22,14 @@
 import { Router, type Request, type Response } from "express";
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
-import { authenticator } from "otplib";
+import {
+  TOTP,
+  NobleCryptoPlugin,
+  ScureBase32Plugin,
+  generateSecret,
+  generateURI,
+  verifySync,
+} from "otplib";
 import QRCode from "qrcode";
 import { obs } from "../integrations/observability.js";
 import { validateCaptchaToken } from "../usuarios/captcha.service.js";
@@ -35,8 +42,10 @@ const SESSION_TTL    = 8 * 60 * 60;                     // 8 horas en segundos
 const TOTP_ISSUER    = "Zentto Backoffice";
 const TOTP_ACCOUNT   = process.env.BACKOFFICE_ADMIN_EMAIL ?? "admin@zentto.net";
 
-// TOTP: ventana ±1 intervalo (30s) para tolerancia de reloj
-authenticator.options = { window: 1 };
+// TOTP plugins (otplib v13)
+const otpCrypto = new NobleCryptoPlugin();
+const otpBase32 = new ScureBase32Plugin();
+const TOTP_OPTS = { crypto: otpCrypto, base32: otpBase32, period: 30, digits: 6 as const, algorithm: "sha1" as const, window: 1 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -115,8 +124,8 @@ router.post("/setup", async (req: Request, res: Response) => {
   }
 
   // Generar nuevo secret base32
-  const secret = authenticator.generateSecret(20); // 160 bits
-  const otpAuthUrl = authenticator.keyuri(TOTP_ACCOUNT, TOTP_ISSUER, secret);
+  const secret = generateSecret(); // 20 bytes (160 bits) base32
+  const otpAuthUrl = generateURI({ secret, label: TOTP_ACCOUNT, issuer: TOTP_ISSUER, algorithm: "sha1", digits: 6, period: 30 });
 
   // Generar QR code como data URL (base64 PNG)
   const qrDataUrl = await QRCode.toDataURL(otpAuthUrl, {
@@ -164,7 +173,8 @@ router.post("/setup/confirm", async (req: Request, res: Response) => {
     return;
   }
 
-  const valid = authenticator.check(code.trim(), secret);
+  const result = verifySync({ token: code.trim(), secret, ...TOTP_OPTS });
+  const valid = result.valid;
   if (!valid) {
     obs.audit("backoffice.auth.totp.setup_confirm_failed", { module: "backoffice-auth" });
     res.status(401).json({ error: "invalid_totp_code" });
@@ -228,7 +238,8 @@ router.post("/login", async (req: Request, res: Response) => {
     return;
   }
 
-  const valid = authenticator.check(totpCode.trim(), totpSecret);
+  const loginResult = verifySync({ token: totpCode.trim(), secret: totpSecret, ...TOTP_OPTS });
+  const valid = loginResult.valid;
   if (!valid) {
     obs.audit("backoffice.auth.login.invalid_totp", { module: "backoffice-auth", ip });
     res.status(401).json({ error: "invalid_totp_code" });
