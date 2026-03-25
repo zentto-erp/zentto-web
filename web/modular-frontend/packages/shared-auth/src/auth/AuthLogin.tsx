@@ -27,6 +27,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useToast } from '@zentto/shared-ui';
+import TurnstileCaptcha from './TurnstileCaptcha';
 
 interface loginType {
   title?: string;
@@ -62,7 +63,10 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const [loadingCompanies, setLoadingCompanies] = React.useState(false);
   const [companyOptions, setCompanyOptions] = React.useState<CompanyOption[]>([]);
   const [selectedScope, setSelectedScope] = React.useState<string>('');
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const { showToast } = useToast();
+
+  const captchaSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const {
     control,
@@ -196,6 +200,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         password: data.password,
         companyId: companyId ? String(companyId) : undefined,
         branchId: branchId ? String(branchId) : undefined,
+        captchaToken: captchaToken ?? undefined,
         callbackUrl: '/',
         redirect: false,
       });
@@ -360,11 +365,15 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             </Typography>
           </Stack>
 
+          {captchaSiteKey && (
+            <TurnstileCaptcha onTokenChange={(t) => setCaptchaToken(t || null)} />
+          )}
+
           <Button
             type="submit"
             variant="contained"
             size="large"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (!!captchaSiteKey && !captchaToken)}
             fullWidth
             sx={{
               py: 1.75,
