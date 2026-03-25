@@ -11,7 +11,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import type { ZenttoColDef } from "@zentto/shared-ui";
 import { formatCurrency } from "@zentto/shared-api";
 import { useFuelMonthlyReport } from "../hooks/useFlota";
 import type { ColumnDef } from "@zentto/datagrid-core";

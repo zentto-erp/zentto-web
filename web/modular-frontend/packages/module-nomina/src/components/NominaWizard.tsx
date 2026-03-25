@@ -41,8 +41,6 @@ import CalculateIcon from "@mui/icons-material/Calculate";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import SaveIcon from "@mui/icons-material/Save";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 import { useRouter } from "next/navigation";
 import { formatCurrency, useLookup } from "@zentto/shared-api";
@@ -50,7 +48,7 @@ import { useTimezone } from "@zentto/shared-auth";
 import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
 import { EditableDataGrid } from "@zentto/module-contabilidad";
-import type { ZenttoColDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 import {
   useConceptosList,
@@ -263,35 +261,28 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
 
   // ─── Columnas conceptos ───────────────────────────────────────
 
-  const colsConceptos: ZenttoColDef[] = [
+  const colsConceptos: ColumnDef[] = [
     {
       field: "tipo",
-      headerName: "Tipo",
+      header: "Tipo",
       width: 120,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          icon={params.value === "ASIGNACION" ? <AddCircleIcon /> : <RemoveCircleIcon />}
-          label={params.value === "ASIGNACION" ? "Asignación" : "Deducción"}
-          color={params.value === "ASIGNACION" ? "success" : "error"}
-        />
-      ),
+      statusColors: { ASIGNACION: "success", DEDUCCION: "error" },
+      statusVariant: "outlined",
     },
-    { field: "codigo", headerName: "Código", width: 110 },
-    { field: "descripcion", headerName: "Descripción", flex: 1 },
+    { field: "codigo", header: "Codigo", width: 110 },
+    { field: "descripcion", header: "Descripcion", flex: 1 },
     {
       field: "formula",
-      headerName: "Fórmula",
+      header: "Formula",
       width: 160,
-      renderCell: (params) => params.value || "—",
+      renderCell: (value: unknown) => value ? String(value) : "—",
     },
     {
       field: "valor",
-      headerName: "Valor",
+      header: "Valor",
       width: 140,
-      editable: true,
-      type: "number" as const,
-      renderCell: (params) => formatCurrency(params.value),
+      type: "number",
+      currency: true,
     },
   ];
 

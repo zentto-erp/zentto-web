@@ -105,17 +105,16 @@ function generateCode(cfg: LabConfig, fields: FieldOption[]): string {
   }
 
   return `/**
- * Ejemplo funcional de ZenttoDataGrid
+ * Ejemplo funcional de <zentto-grid> (web component nativo)
  * Copiar este archivo, instalar dependencias y funciona.
  *
- * npm install @zentto/shared-ui @mui/material @mui/x-data-grid \\
- *             @emotion/react @emotion/styled
+ * npm install @zentto/datagrid @zentto/datagrid-core
  */
 "use client";
 
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 // ─── Tipos ─────────────────────────────────────────────────
 interface Producto {
@@ -129,29 +128,29 @@ interface Producto {
 }
 
 // ─── Columnas ──────────────────────────────────────────────
-const columns: ZenttoColDef[] = [
+const columns: ColumnDef[] = [
   {
     field: "codigo",
-    headerName: "Codigo",
+    header: "Codigo",
     width: 120,
     sortable: true,
   },
   {
     field: "nombre",
-    headerName: "Nombre",
+    header: "Nombre",
     flex: 1,
     minWidth: 200,
     sortable: true,
   },
   {
     field: "categoria",
-    headerName: "Categoria",
+    header: "Categoria",
     width: 130,
     sortable: true,
   },
   {
     field: "precio",
-    headerName: "Precio",
+    header: "Precio",
     width: 120,
     type: "number",
     currency: true,        // formatea como moneda automaticamente
@@ -159,14 +158,14 @@ const columns: ZenttoColDef[] = [
   },
   {
     field: "stock",
-    headerName: "Stock",
+    header: "Stock",
     width: 100,
     type: "number",
     aggregation: "sum",
   },
   {
     field: "estado",
-    headerName: "Estado",
+    header: "Estado",
     width: 110,
     statusColors: {        // chip coloreado automatico
       Activo: "success",
@@ -192,14 +191,33 @@ const productos: Producto[] = [
 
 // ─── Componente ────────────────────────────────────────────
 export default function ProductosTable() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = productos;
+  }, [registered]);
+
   return (
     <Box sx={{ height: 600, p: 2 }}>
       <Typography variant="h5" fontWeight={600} sx={{ mb: 2 }}>
         Productos
       </Typography>
 
-      <ZenttoDataGrid
-${p.join("\n")}
+      <zentto-grid
+        ref={gridRef}
+        export-filename="productos"
+        height="500px"
+        enable-toolbar
+        enable-header-filters
+        enable-clipboard
       />
     </Box>
   );

@@ -30,7 +30,7 @@ import {
   Settings as SettingsIcon,
   VisibilityOff as HideIcon,
 } from "@mui/icons-material";
-import type { PivotConfig, RowGroupingConfig } from "@zentto/shared-ui";
+import type { PivotConfig, RowGroupingConfig } from "@zentto/datagrid-core";
 
 // ─── Types ──────────────────────────────────────────
 
@@ -129,20 +129,26 @@ function generateCode(cfg: LabConfig, fields: FieldOption[], numericFields: Fiel
 
   if (mode === "props") return props.join("\n");
 
-  return `import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+  return `import type { ColumnDef } from "@zentto/datagrid-core";
+import "@zentto/datagrid"; // registra <zentto-grid>
 
 // Tus columnas aqui...
-const columns: ZenttoColDef[] = [ /* ... */ ];
+const columns: ColumnDef[] = [ /* ... */ ];
 
-<ZenttoDataGrid
-  gridId="mi-tabla"
-  columns={columns}
-  rows={rows}
-  loading={isLoading}
-  ${props.join("\n  ")}
-  exportFilename="mi-tabla"
-  pageSizeOptions={[10, 25, 50, 100]}
+// Bind via useRef + useEffect:
+// gridRef.current.columns = columns;
+// gridRef.current.rows = rows;
+// gridRef.current.loading = isLoading;
+
+<zentto-grid
+  ref={gridRef}
+  export-filename="mi-tabla"
+  height="500px"
+  enable-toolbar
+  enable-header-filters
+  enable-clipboard
 />`;
+
 }
 
 // ─── Component ──────────────────────────────────────────
@@ -178,7 +184,7 @@ export function LabConfigurator({
         <AccordionSummary expandIcon={<ExpandIcon />}>
           <Stack direction="row" spacing={1} alignItems="center">
             <SettingsIcon fontSize="small" color="primary" />
-            <Typography variant="subtitle2">Configurar ZenttoDataGrid</Typography>
+            <Typography variant="subtitle2">Configurar zentto-grid</Typography>
             <Chip label="LAB" size="small" color="warning" />
           </Stack>
         </AccordionSummary>

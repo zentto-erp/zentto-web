@@ -27,28 +27,29 @@ import type { LabConfig } from "./PivotConfigurator";
 
 function generateFullCode(cfg: LabConfig): string {
   const imports = [
-    `import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";`,
+    `import type { ColumnDef } from "@zentto/datagrid-core";`,
+    `import "@zentto/datagrid"; // registra <zentto-grid>`,
   ];
 
   // Build columns
-  const cols = `const columns: ZenttoColDef[] = [
-  { field: "numeroFactura", headerName: "Numero", width: 150, sortable: true },
-  { field: "nombreCliente", headerName: "Cliente", flex: 1, minWidth: 180 },
+  const cols = `const columns: ColumnDef[] = [
+  { field: "numeroFactura", header: "Numero", width: 150, sortable: true },
+  { field: "nombreCliente", header: "Cliente", flex: 1, minWidth: 180 },
   {
-    field: "fecha", headerName: "Fecha", width: 120,
+    field: "fecha", header: "Fecha", width: 120,
     valueFormatter: (value) => value ? new Date(value).toLocaleDateString("es-VE") : "",
   },
   {
-    field: "tipoDoc", headerName: "Tipo", width: 110,
+    field: "tipoDoc", header: "Tipo", width: 110,
     statusColors: { FACT: "primary", PRESUP: "info", PEDIDO: "warning" },
     statusVariant: "outlined",
   },
   {
-    field: "totalFactura", headerName: "Total", width: 140,
+    field: "totalFactura", header: "Total", width: 140,
     type: "number", currency: true, aggregation: "sum",
   },
   {
-    field: "estado", headerName: "Estado", width: 120,
+    field: "estado", header: "Estado", width: 120,
     statusColors: { Pagada: "success", Emitida: "info", Anulada: "error" },
     statusVariant: "outlined",
   },
@@ -109,9 +110,23 @@ function generateFullCode(cfg: LabConfig): string {
 
 ${cols}
 
-// En tu componente:
-<ZenttoDataGrid
-  ${props.join("\n  ")}
+// En tu componente — bind via useRef + useEffect:
+// const gridRef = useRef<any>(null);
+// useEffect(() => {
+//   const el = gridRef.current;
+//   if (!el) return;
+//   el.columns = columns;
+//   el.rows = rows;
+//   el.loading = isLoading;
+// }, [rows, isLoading]);
+
+<zentto-grid
+  ref={gridRef}
+  export-filename="facturas"
+  height="500px"
+  enable-toolbar
+  enable-header-filters
+  enable-clipboard
 />`;
 }
 
