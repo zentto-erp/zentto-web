@@ -211,11 +211,14 @@ router.post("/login", async (req: Request, res: Response) => {
 
   await constantDelay();
 
-  // Verificar captcha antes de cualquier otra validación
-  const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
-  if (!captcha.ok) {
-    res.status(400).json({ error: "captcha_required", reason: captcha.reason });
-    return;
+  // Captcha es opcional en /login — la protección real es TOTP + rate limit.
+  // El token de Turnstile ya se consumió en /setup, y es single-use.
+  if (captchaToken) {
+    const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
+    if (!captcha.ok) {
+      res.status(400).json({ error: "captcha_failed", reason: captcha.reason });
+      return;
+    }
   }
 
   // Validar Master Key
