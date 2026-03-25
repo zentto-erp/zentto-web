@@ -115,4 +115,9 @@ export function useAuth() {
   return ctx;
 }
 
+/** Like useAuth but returns null instead of throwing when outside AuthProvider */
+export function useAuthOptional(): AuthContextType | null {
+  return useContext(AuthContext) ?? null;
+}
+
 export default AuthContext;

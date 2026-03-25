@@ -1,6 +1,6 @@
 "use client";
 
-export { AuthProvider, useAuth } from './AuthContext';
+export { AuthProvider, useAuth, useAuthOptional } from './AuthContext';
 export type { AuthContextType } from './AuthContext';
 export {
   ROLES, isAdminRole, getRoleName, canAccessDebug,

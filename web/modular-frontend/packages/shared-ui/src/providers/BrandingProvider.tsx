@@ -2,7 +2,7 @@
 
 import React, { createContext, useMemo } from 'react';
 import { useModuleSettings } from '@zentto/shared-api';
-import { useAuth } from '@zentto/shared-auth';
+import { useAuthOptional } from '@zentto/shared-auth';
 import { createBrandedTheme, DEFAULT_BRANDING, brandColors } from '../theme';
 import type { BrandingColors } from '../theme';
 import type { Theme } from '@mui/material/styles';
@@ -39,7 +39,8 @@ export const BrandingContext = createContext<BrandingContextValue>({
 });
 
 export default function BrandingProvider({ children }: { children: React.ReactNode }) {
-  const { company } = useAuth();
+  const auth = useAuthOptional();
+  const company = auth?.company;
   const companyId = company?.companyId ?? 1;
 
   const { data: raw, isLoading } = useModuleSettings('branding', companyId);
