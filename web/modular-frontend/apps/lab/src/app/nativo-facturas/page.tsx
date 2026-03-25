@@ -23,12 +23,45 @@ const GROUPABLE = [
   { value: 'nombreCliente', label: 'Cliente' },
 ];
 
+const PIVOTABLE = [
+  { value: 'nombreCliente', label: 'Cliente' },
+  { value: 'estado', label: 'Estado' },
+  { value: 'tipo', label: 'Tipo' },
+  { value: 'totalFactura', label: 'Total', type: 'number' },
+];
+
+const FILTER_PANEL = [
+  { field: 'estado', type: 'select', label: 'Estado' },
+  { field: 'tipo', type: 'select', label: 'Tipo' },
+  { field: 'totalFactura', type: 'range', label: 'Total' },
+  { field: 'fecha', type: 'date-range', label: 'Fecha' },
+  { field: 'nombreCliente', type: 'text', label: 'Cliente', placeholder: 'Nombre...' },
+];
+
+const DETAIL_RENDERER = (row: any) => `
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0">
+    <div><strong>Factura:</strong> ${row.numeroFactura}</div>
+    <div><strong>Cliente:</strong> ${row.nombreCliente}</div>
+    <div><strong>Fecha:</strong> ${row.fecha}</div>
+    <div><strong>Tipo:</strong> ${row.tipo}</div>
+    <div><strong>Total:</strong> ${row.totalFactura}</div>
+    <div><strong>Estado:</strong> ${row.estado}</div>
+  </div>
+`;
+
 export default function NativoFacturasPage() {
   const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<GridRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
-  const [config, setConfig] = useState<NativeGridConfig>({ ...DEFAULT_CONFIG, groupField: 'estado' });
+  const [config, setConfig] = useState<NativeGridConfig>({
+    ...DEFAULT_CONFIG,
+    groupField: 'estado',
+    pivotRowField: 'nombreCliente',
+    pivotColField: 'estado',
+    pivotValueField: 'totalFactura',
+  });
+  const [configOpen, setConfigOpen] = useState(false);
 
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
@@ -67,6 +100,15 @@ export default function NativoFacturasPage() {
     fetchData();
   }, []);
 
+  // Listen for settings-click from grid toolbar
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setConfigOpen(prev => !prev);
+    el.addEventListener('settings-click', handler);
+    return () => el.removeEventListener('settings-click', handler);
+  }, [registered]);
+
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
@@ -81,7 +123,35 @@ export default function NativoFacturasPage() {
     el.enableStatusBar = config.enableStatusBar;
     el.enableGrouping = config.enableGrouping;
     el.groupField = config.groupField;
+    el.groupSort = config.groupSort;
+    el.groupSubtotals = config.groupSubtotals;
     el.enableMasterDetail = config.enableMasterDetail;
+    el.enableGroupDropZone = config.enableGroupDropZone;
+    el.enablePivot = config.enablePivot;
+    el.enableImport = config.enableImport;
+    el.enableQuickSearch = config.enableQuickSearch;
+    if (config.enablePivot && config.pivotRowField && config.pivotColField && config.pivotValueField) {
+      el.pivotConfig = {
+        rowField: config.pivotRowField,
+        columnField: config.pivotColField,
+        valueField: config.pivotValueField,
+        aggregation: config.pivotAggregation || 'sum',
+        showGrandTotals: config.pivotGrandTotals,
+      };
+    } else {
+      el.pivotConfig = undefined;
+    }
+    el.enableToolbar = true;
+    el.enableHeaderMenu = true;
+    el.enableSettings = true;
+    el.enableFilterPanel = true;
+    el.enableRowSelection = true;
+    el.filterPanel = FILTER_PANEL;
+    el.detailRenderer = DETAIL_RENDERER;
+    el.actionButtons = [
+      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>', label: 'Ver', action: 'view' },
+      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>', label: 'Editar', action: 'edit', color: '#e67e22' },
+    ];
     el.theme = config.theme;
     el.density = config.density;
     el.locale = config.locale;
@@ -100,7 +170,7 @@ export default function NativoFacturasPage() {
         <Chip label={`${rows.length} registros`} size="small" />
       </Box>
 
-      <NativeGridConfigurator config={config} onChange={setConfig} groupableFields={GROUPABLE}>
+      <NativeGridConfigurator config={config} onChange={setConfig} groupableFields={GROUPABLE} pivotableFields={PIVOTABLE} open={configOpen} onToggle={setConfigOpen}>
         <zentto-grid
           ref={gridRef}
           default-currency="VES"
@@ -109,8 +179,8 @@ export default function NativoFacturasPage() {
           style={({
             '--zg-primary': config.primaryColor,
             '--zg-header-bg': config.headerBg,
-            '--zg-border-color': config.borderColor,
-            '--zg-row-alt-bg': config.rowAltBg,
+            '--zg-border': config.borderColor,
+            '--zg-row-stripe': config.rowAltBg,
             '--zg-font-family': config.fontFamily,
             '--zg-font-size': config.fontSize,
           }) as any}
