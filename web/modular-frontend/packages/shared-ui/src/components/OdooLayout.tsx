@@ -38,6 +38,7 @@ import Copyright from './Copyright';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useColorScheme } from '@mui/material/styles';
 import { brandColors } from '../theme';
+import { useBranding } from '../hooks/useBranding';
 
 // Type definition for our custom navigation (ignoring toolpad core for this specific top nav)
 interface NavItem {
@@ -57,6 +58,7 @@ export default function OdooLayout({
     const pathname = usePathname();
     const theme = useTheme();
     const { data: session } = useSession();
+    const { dynamicBrandColors: bc } = useBranding();
 
     const { mode, setMode, systemMode } = useColorScheme();
     // Resuelve el modo real: si es 'system' usa systemMode, sino usa mode explícito
@@ -136,7 +138,7 @@ export default function OdooLayout({
                                 justifyContent: isDrawerExpanded ? 'flex-start' : 'center',
                                 color: isRouteActive ? '#fff' : 'rgba(255,255,255,0.7)',
                                 bgcolor: isRouteActive && !hasChildren ? 'rgba(255,153,0,0.15)' : 'transparent',
-                                boxShadow: isRouteActive && !hasChildren ? `inset 4px 0 0 0 ${brandColors.accent}` : 'none',
+                                boxShadow: isRouteActive && !hasChildren ? `inset 4px 0 0 0 ${bc.accent}` : 'none',
                                 transition: 'all 0.2s',
                                 '&:hover': {
                                     bgcolor: isRouteActive && !hasChildren ? 'rgba(255,153,0,0.25)' : 'rgba(255,255,255,0.06)',
@@ -211,7 +213,7 @@ export default function OdooLayout({
                             width: drawerPaperWidth,
                             boxSizing: 'border-box',
                             borderRight: 'none',
-                            backgroundColor: brandColors.dark, /* Zentto Brand Dark */
+                            backgroundColor: bc.dark, /* Zentto Brand Dark */
                             color: '#fff',
                             boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.3)' : 'none',
                             transition: 'width 0.2s',
@@ -243,7 +245,7 @@ export default function OdooLayout({
             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: `calc(100% - ${actualSidebarWidth}px)`, transition: 'width 0.2s' }}>
 
                 {/* Top Header */}
-                <Box component="header" sx={{ backgroundColor: brandColors.dark, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <Box component="header" sx={{ backgroundColor: bc.dark, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                     <Toolbar variant="dense" sx={{ minHeight: 64, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -257,7 +259,7 @@ export default function OdooLayout({
                             {/* Breadcrumbs */}
                             {!hideSidebar && (
                                 <Typography variant="body1" sx={{ ml: { xs: 0, sm: 2 }, color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <span style={{ color: brandColors.accent, cursor: 'pointer', fontWeight: 500 }} onClick={goToShell}>Home</span>
+                                    <span style={{ color: bc.accent, cursor: 'pointer', fontWeight: 500 }} onClick={goToShell}>Home</span>
                                     <span style={{ display: isMobile ? 'none' : 'inline' }}>/</span>
                                     <span style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize', display: isMobile ? 'none' : 'inline' }}>
                                         {(pathname || '').split('/').filter(Boolean).join(' / ') || 'Dashboard'}
@@ -276,7 +278,7 @@ export default function OdooLayout({
                                         }
                                     }}
                                     sx={{
-                                        bgcolor: brandColors.accent, color: brandColors.dark, fontWeight: 600, fontSize: '0.75rem',
+                                        bgcolor: bc.accent, color: bc.dark, fontWeight: 600, fontSize: '0.75rem',
                                         cursor: ((session as any)?.companyAccesses?.length ?? 0) > 1 ? 'pointer' : 'default',
                                     }}
                                 />

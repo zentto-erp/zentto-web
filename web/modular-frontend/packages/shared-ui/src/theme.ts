@@ -247,3 +247,42 @@ const theme = createTheme(baseThemeOptions, dataGridEsES, coreEsES);
 
 export default theme;
 
+/* ── Runtime branding: theme factory ── */
+
+export interface BrandingColors {
+  primaryColor: string;
+  primaryDark: string;
+  secondaryColor: string;
+  secondaryDark: string;
+  accentColor: string;
+}
+
+const DEFAULT_BRANDING: BrandingColors = {
+  primaryColor: '#ff9900',
+  primaryDark: '#e68a00',
+  secondaryColor: '#232f3e',
+  secondaryDark: '#131921',
+  accentColor: '#ff9900',
+};
+
+export { DEFAULT_BRANDING, baseThemeOptions };
+
+/** Create a MUI theme with tenant-specific colors (runtime, no rebuild). */
+export function createBrandedTheme(overrides: Partial<BrandingColors> = {}) {
+  const b = { ...DEFAULT_BRANDING, ...overrides };
+  const opts = structuredClone(baseThemeOptions) as typeof baseThemeOptions;
+  // Light
+  opts.colorSchemes.light.palette.primary = {
+    main: b.primaryColor, light: b.primaryColor + '33', dark: b.primaryDark, contrastText: b.secondaryDark,
+  };
+  opts.colorSchemes.light.palette.secondary = {
+    main: b.secondaryColor, light: b.secondaryColor + '1a', dark: b.secondaryDark, contrastText: '#fff',
+  };
+  // Dark
+  opts.colorSchemes.dark.palette.primary = {
+    main: b.primaryColor, light: b.primaryColor + '33', dark: b.primaryDark, contrastText: b.secondaryDark,
+  };
+  opts.colorSchemes.dark.palette.background = { default: b.secondaryDark, paper: b.secondaryColor + '99' };
+  return createTheme(opts, dataGridEsES, coreEsES);
+}
+

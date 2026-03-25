@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
@@ -14,7 +13,7 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     OdooLayout,
-    theme
+    BrandedThemeProvider
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -67,12 +66,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <QueryProvider>
                         <AuthProvider>
                             <AppRouterCacheProvider>
-                                <ThemeProvider theme={theme} defaultMode="system">
+                                <BrandedThemeProvider defaultMode="system">
                                     <CssBaseline />
                                     <LocalizationProviderWrapper>
                                         <AppContent>{children}</AppContent>
                                     </LocalizationProviderWrapper>
-                                </ThemeProvider>
+                                </BrandedThemeProvider>
                             </AppRouterCacheProvider>
                         </AuthProvider>
                     </QueryProvider>

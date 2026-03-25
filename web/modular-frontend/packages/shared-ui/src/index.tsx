@@ -2,11 +2,18 @@
 
 // Theme
 export { default as theme } from './theme';
-export { brandColors } from './theme';
+export { brandColors, createBrandedTheme, DEFAULT_BRANDING } from './theme';
+export type { BrandingColors } from './theme';
 
 // Providers
 export { default as ToastProvider, useToast } from './providers/ToastProvider';
 export { default as LocalizationProviderWrapper } from './providers/LocalizationProviderWrapper';
+export { default as BrandingProvider } from './providers/BrandingProvider';
+export type { BrandingConfig, BrandingContextValue } from './providers/BrandingProvider';
+
+// Branding
+export { default as BrandedThemeProvider } from './components/BrandedThemeProvider';
+export { useBranding } from './hooks/useBranding';
 
 // Components
 export { default as Copyright } from './components/Copyright';

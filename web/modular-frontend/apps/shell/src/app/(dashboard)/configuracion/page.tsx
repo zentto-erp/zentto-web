@@ -28,6 +28,7 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import PaletteIcon from '@mui/icons-material/Palette';
 
 import { useAuth } from '@zentto/shared-auth';
 import { apiPut, useAllSettings, useCountries } from '@zentto/shared-api';
@@ -84,6 +85,7 @@ export default function ConfiguracionPage() {
       { id: 'facturacion', label: 'Facturación / Fiscal', icon: <ReceiptLongIcon /> },
       { id: 'pagos', label: 'Formas de Pago', icon: <PaymentsIcon /> },
       { id: 'suscripcion', label: 'Plan y Suscripción', icon: <WorkspacePremiumIcon /> },
+      { id: 'branding', label: 'Marca / Personalización', icon: <PaletteIcon /> },
     ];
 
     if (hasModule('pos')) {
@@ -673,6 +675,195 @@ export default function ConfiguracionPage() {
               </Button>
             </Stack>
           </Paper>
+        </Box>
+      </SettingsSection>
+
+      {/* ── Branding / Personalización de marca ── */}
+      <SettingsSection id="branding" title="Marca / Personalización">
+        <SettingsItem
+          title="Colores de marca"
+          description="Personaliza los colores principales de la interfaz para tu empresa. Al guardar, todos los módulos reflejarán los cambios."
+          hasCheckbox={false}
+        >
+          <SettingsInputGroup>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <Stack spacing={1} flex={1}>
+                <Typography variant="caption" fontWeight={600}>Color primario</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <input
+                    type="color"
+                    value={String(getValue('branding', 'primaryColor', '#ff9900'))}
+                    onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
+                    style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                  />
+                  <TextField
+                    size="small"
+                    value={getValue('branding', 'primaryColor', '#ff9900')}
+                    onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
+                    sx={{ maxWidth: 120 }}
+                  />
+                </Stack>
+              </Stack>
+              <Stack spacing={1} flex={1}>
+                <Typography variant="caption" fontWeight={600}>Color secundario (sidebar)</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <input
+                    type="color"
+                    value={String(getValue('branding', 'secondaryColor', '#232f3e'))}
+                    onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
+                    style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                  />
+                  <TextField
+                    size="small"
+                    value={getValue('branding', 'secondaryColor', '#232f3e')}
+                    onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
+                    sx={{ maxWidth: 120 }}
+                  />
+                </Stack>
+              </Stack>
+              <Stack spacing={1} flex={1}>
+                <Typography variant="caption" fontWeight={600}>Color accent</Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <input
+                    type="color"
+                    value={String(getValue('branding', 'accentColor', '#ff9900'))}
+                    onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
+                    style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                  />
+                  <TextField
+                    size="small"
+                    value={getValue('branding', 'accentColor', '#ff9900')}
+                    onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
+                    sx={{ maxWidth: 120 }}
+                  />
+                </Stack>
+              </Stack>
+            </Stack>
+          </SettingsInputGroup>
+        </SettingsItem>
+
+        <SettingsItem
+          title="Identidad visual"
+          description="Cambia el nombre, subtítulo y logo que se muestra en el sidebar y login."
+          hasCheckbox={false}
+        >
+          <SettingsInputGroup>
+            <TextField
+              size="small"
+              label="Nombre de la aplicación"
+              placeholder="ZENTTO"
+              value={getValue('branding', 'appName', '')}
+              onChange={(e) => setValue('branding', 'appName', e.target.value)}
+              helperText="Vacío = ZENTTO (predeterminado)"
+              fullWidth
+            />
+            <TextField
+              size="small"
+              label="Subtítulo"
+              placeholder="Sistema Administrador"
+              value={getValue('branding', 'appSubtitle', '')}
+              onChange={(e) => setValue('branding', 'appSubtitle', e.target.value)}
+              helperText="Vacío = Sistema Administrador (predeterminado)"
+              fullWidth
+            />
+            <TextField
+              size="small"
+              label="URL del logo"
+              placeholder="https://miempresa.com/logo.svg"
+              value={getValue('branding', 'logoUrl', '')}
+              onChange={(e) => setValue('branding', 'logoUrl', e.target.value)}
+              helperText="URL pública de tu logo (SVG o PNG). Vacío = logo Zentto."
+              fullWidth
+            />
+            {getValue('branding', 'logoUrl', '') && (
+              <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  component="img"
+                  src={String(getValue('branding', 'logoUrl', ''))}
+                  alt="Preview"
+                  sx={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 1 }}
+                />
+                <Typography variant="caption" color="text.secondary">Vista previa del logo</Typography>
+              </Paper>
+            )}
+          </SettingsInputGroup>
+        </SettingsItem>
+
+        <SettingsItem
+          title="Vista previa"
+          description="Así se verá el sidebar con tu marca personalizada."
+          hasCheckbox={false}
+        >
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              background: String(getValue('branding', 'secondaryColor', '#232f3e')) || '#232f3e',
+              borderRadius: 2,
+              maxWidth: 280,
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+              <Box sx={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${getValue('branding', 'primaryColor', '#ff9900')}, ${getValue('branding', 'accentColor', '#ff9900')})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {getValue('branding', 'logoUrl', '') ? (
+                  <Box component="img" src={String(getValue('branding', 'logoUrl', ''))} sx={{ width: 28, height: 28, objectFit: 'contain' }} />
+                ) : (
+                  <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>Z</Typography>
+                )}
+              </Box>
+              <Box>
+                <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.1em' }}>
+                  {String(getValue('branding', 'appName', '')) || 'ZENTTO'}
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', fontWeight: 600 }}>
+                  {String(getValue('branding', 'appSubtitle', '')) || 'Sistema Administrador'}
+                </Typography>
+              </Box>
+            </Stack>
+            {['Dashboard', 'Contabilidad', 'Ventas', 'Inventario'].map((item, i) => (
+              <Box
+                key={item}
+                sx={{
+                  py: 0.75, px: 1.5, mb: 0.5, borderRadius: 1,
+                  bgcolor: i === 0 ? `${getValue('branding', 'accentColor', '#ff9900')}25` : 'transparent',
+                  borderLeft: i === 0 ? `3px solid ${getValue('branding', 'accentColor', '#ff9900')}` : '3px solid transparent',
+                }}
+              >
+                <Typography sx={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: i === 0 ? 600 : 400 }}>
+                  {item}
+                </Typography>
+              </Box>
+            ))}
+            <Box sx={{ mt: 2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', textAlign: 'center' }}>
+                Powered by Zentto
+              </Typography>
+            </Box>
+          </Paper>
+        </SettingsItem>
+
+        <Box>
+          <Button
+            variant="outlined"
+            size="small"
+            color="warning"
+            onClick={() => {
+              setValue('branding', 'primaryColor', '#ff9900');
+              setValue('branding', 'primaryDark', '#e68a00');
+              setValue('branding', 'secondaryColor', '#232f3e');
+              setValue('branding', 'secondaryDark', '#131921');
+              setValue('branding', 'accentColor', '#ff9900');
+              setValue('branding', 'appName', '');
+              setValue('branding', 'appSubtitle', '');
+              setValue('branding', 'logoUrl', '');
+            }}
+          >
+            Restaurar colores predeterminados
+          </Button>
         </Box>
       </SettingsSection>
     </SettingsLayout>

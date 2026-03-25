@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
 import { QueryProvider } from '@zentto/shared-api';
@@ -12,7 +11,7 @@ import {
   LoadingFallback,
   ToastProvider,
   LocalizationProviderWrapper,
-  theme as sharedTheme,
+  BrandedThemeProvider,
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -75,14 +74,14 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
       <QueryProvider>
         <AuthProvider>
           <AppRouterCacheProvider>
-            <ThemeProvider theme={sharedTheme} defaultMode="system">
+            <BrandedThemeProvider defaultMode="system">
               <CssBaseline />
               <LocalizationProviderWrapper>
                 <TenantGuard>
                   <AppContent>{children}</AppContent>
                 </TenantGuard>
               </LocalizationProviderWrapper>
-            </ThemeProvider>
+            </BrandedThemeProvider>
           </AppRouterCacheProvider>
         </AuthProvider>
       </QueryProvider>

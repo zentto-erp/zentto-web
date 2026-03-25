@@ -3,11 +3,10 @@
 import * as React from 'react';
 import { Suspense } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { theme } from '@zentto/shared-ui';
+import { BrandedThemeProvider } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 import { StoreLayout } from '@zentto/module-ecommerce';
 import { useRouter } from 'next/navigation';
@@ -46,10 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body>
                 <QueryClientProvider client={queryClient}>
                     <AppRouterCacheProvider>
-                        <ThemeProvider theme={theme} defaultMode="system">
-                                <CssBaseline />
+                        <BrandedThemeProvider defaultMode="system">
+                            <CssBaseline />
                             <AppContent>{children}</AppContent>
-                        </ThemeProvider>
+                        </BrandedThemeProvider>
                     </AppRouterCacheProvider>
                 </QueryClientProvider>
             </body>
