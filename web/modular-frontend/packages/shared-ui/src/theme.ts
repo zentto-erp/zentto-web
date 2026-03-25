@@ -1,9 +1,9 @@
 'use client';
 import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
-import type { } from '@mui/x-data-grid/themeAugmentation';
-import { esES as dataGridEsES } from '@mui/x-data-grid/locales';
 import { esES as coreEsES } from '@mui/material/locale';
+
+// @mui/x-data-grid theme augmentation and locale removed (legacy — migrated to native <zentto-grid>)
 
 /* ── Zentto Brand Colors (derivados del ecommerce) ── */
 export const brandColors = {
@@ -243,7 +243,7 @@ const baseThemeOptions = {
   },
 };
 
-const theme = createTheme(baseThemeOptions, dataGridEsES, coreEsES);
+const theme = createTheme(baseThemeOptions as any, coreEsES);
 
 export default theme;
 
@@ -283,6 +283,6 @@ export function createBrandedTheme(overrides: Partial<BrandingColors> = {}) {
     main: b.primaryColor, light: b.primaryColor + '33', dark: b.primaryDark, contrastText: b.secondaryDark,
   };
   opts.colorSchemes.dark.palette.background = { default: b.secondaryDark, paper: b.secondaryColor + '99' };
-  return createTheme(opts, dataGridEsES, coreEsES);
+  return createTheme(opts as any, coreEsES);
 }
 

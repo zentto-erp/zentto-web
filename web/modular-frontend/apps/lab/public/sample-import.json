@@ -1,0 +1,7 @@
+[
+  { "id": 100, "codigo": "IMP-001", "descripcion": "Articulo Importado 1", "categoria": "IMPORTADOS", "precioCompra": 10.00, "precioVenta": 25.00, "stock": 50, "unidad": "UND", "estado": "Activo" },
+  { "id": 101, "codigo": "IMP-002", "descripcion": "Articulo Importado 2", "categoria": "IMPORTADOS", "precioCompra": 15.00, "precioVenta": 35.00, "stock": 30, "unidad": "UND", "estado": "Activo" },
+  { "id": 102, "codigo": "IMP-003", "descripcion": "Articulo Importado 3", "categoria": "IMPORTADOS", "precioCompra": 8.50, "precioVenta": 19.99, "stock": 100, "unidad": "KG", "estado": "Activo" },
+  { "id": 103, "codigo": "IMP-004", "descripcion": "Articulo Importado 4", "categoria": "IMPORTADOS", "precioCompra": 22.00, "precioVenta": 45.00, "stock": 20, "unidad": "UND", "estado": "Inactivo" },
+  { "id": 104, "codigo": "IMP-005", "descripcion": "Articulo Importado 5", "categoria": "IMPORTADOS", "precioCompra": 5.00, "precioVenta": 12.50, "stock": 200, "unidad": "UND", "estado": "Activo" }
+]

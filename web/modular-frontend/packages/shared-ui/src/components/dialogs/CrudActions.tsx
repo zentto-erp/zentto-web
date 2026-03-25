@@ -6,7 +6,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import type { GridRenderCellParams } from '@mui/x-data-grid';
+/** Local stub — replaces @mui/x-data-grid import (legacy) */
+type GridRenderCellParams = { value: any; row: any; field: string };
 import type { ZenttoColDef } from '../ZenttoDataGrid/types';
 
 export interface CrudActionHandlers<T = any> {
