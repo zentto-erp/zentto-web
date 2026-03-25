@@ -373,7 +373,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             type="submit"
             variant="contained"
             size="large"
-            disabled={isSubmitting || (!!captchaSiteKey && !captchaToken)}
+            disabled={isSubmitting}
             fullWidth
             sx={{
               py: 1.75,
