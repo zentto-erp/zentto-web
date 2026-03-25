@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Analytics functions for Logistics, Fleet, and Manufacturing dashboards
 
 -- ============================================================================
@@ -472,6 +473,7 @@ BEGIN
     ORDER BY wo."CreatedAt" DESC LIMIT 10;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_logistics_analytics_receiptsbymonth(INT, INT) CASCADE;

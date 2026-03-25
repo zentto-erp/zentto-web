@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Nuclear drop ALL overloads of document template functions to prevent "not unique" errors
 
 DO $do$
@@ -87,6 +88,7 @@ BEGIN
     p_resultado := 1; p_mensaje := 'Plantilla guardada correctamente.';
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- +goose Down
 -- No rollback

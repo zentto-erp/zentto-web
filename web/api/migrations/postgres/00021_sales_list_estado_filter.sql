@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Agregar filtro por estado (Emitida/Pagada/Anulada) a usp_doc_salesdocument_list
 
 DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP) CASCADE;
@@ -157,8 +158,10 @@ BEGIN
     LIMIT v_limit OFFSET (v_page - 1) * v_limit;
 END;
 $func$;
+-- +goose StatementEnd
 
 -- +goose Down
+-- +goose StatementBegin
 -- Restaurar funcion sin filtro de estado
 DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, VARCHAR) CASCADE;
 
@@ -301,3 +304,5 @@ BEGIN
     LIMIT v_limit OFFSET (v_page - 1) * v_limit;
 END;
 $func$;
+
+-- +goose StatementEnd

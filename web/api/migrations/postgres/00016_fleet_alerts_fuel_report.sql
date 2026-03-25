@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Fleet: Alertas de documentos/mantenimientos + Reporte combustible mensual
 
 -- usp_Fleet_Alerts_Get
@@ -181,6 +182,7 @@ BEGIN
     ORDER BY v."LicensePlate";
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_fleet_alerts_get(INT, INT) CASCADE;

@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Fix: INT → BIGINT en parámetros y columnas RETURNS TABLE de entidades
 -- Afecta: usp_crm, usp_fleet, usp_inv, usp_logistics, usp_mfg, usp_bank
 
@@ -65,6 +66,7 @@ DROP FUNCTION IF EXISTS usp_inv_lot_validateforsale CASCADE;
 -- Evita conflicto con usp_inv.sql que tiene usp_inv_movement_list(p_company_id, p_product_id, ...)
 DROP FUNCTION IF EXISTS usp_inv_movement_list(VARCHAR, VARCHAR, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_movinvent_list(VARCHAR, VARCHAR, INT, INT) CASCADE;
+-- +goose StatementEnd
 
 -- Re-create from updated SP files (ejecutado por goose-deploy-all.sh via run-functions.sql)
 -- Las funciones se recargan automáticamente con run-functions.sql en el deploy

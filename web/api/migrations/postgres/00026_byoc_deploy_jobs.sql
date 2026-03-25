@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 
 -- Tabla de jobs de deploy BYOC
 CREATE TABLE IF NOT EXISTS sys."ByocDeployJob" (
@@ -186,6 +187,7 @@ BEGIN
   UPDATE sys."OnboardingToken" SET "UsedAt" = NOW() WHERE "Token" = p_token;
   RETURN QUERY SELECT v_company_id, v_deploy_type::VARCHAR, 1, ''::VARCHAR;
 END; $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_sys_onboardingtoken_validate(VARCHAR);

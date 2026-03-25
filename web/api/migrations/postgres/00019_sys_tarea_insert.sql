@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Función para insertar tareas desde el Kafka notification consumer
 -- Con deduplicación: no crear si ya existe tarea con mismo título no completada
 
@@ -27,6 +28,7 @@ BEGIN
     RETURNING "Sys_Tareas"."Id", 'ok'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_sys_tarea_insert(VARCHAR, TEXT, VARCHAR, VARCHAR, DATE);

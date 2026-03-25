@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Fix: DROP ALL overloads of usp_hr_legalconcept_list to avoid "function is not unique"
 -- The pg driver sends all params as 'unknown' type, so PG can't pick which overload to use.
 
@@ -68,6 +69,7 @@ BEGIN
     ORDER BY c."ConventionCode", c."CalculationType", c."SortOrder", c."ConceptCode";
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR, VARCHAR, VARCHAR, INT) CASCADE;

@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Fix: Eliminar TODAS las sobrecargas de funciones DocumentTemplate
 -- que causan "function is not unique" en cada deploy.
 --
@@ -120,6 +121,7 @@ BEGIN
     p_resultado := 1; p_mensaje := 'Plantilla eliminada correctamente.'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- +goose Down
 -- No rollback needed

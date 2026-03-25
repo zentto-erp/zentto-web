@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Nuclear DROP de sobrecargas en funciones de documentos de compra
 -- Corrige "function is not unique" al existir firmas antiguas en produccion
 
@@ -171,6 +172,7 @@ BEGIN
     LIMIT v_limit OFFSET (v_page - 1) * v_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_doc_purchasedocument_list(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
