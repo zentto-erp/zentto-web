@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -8,12 +8,13 @@ import {
   MenuItem,
   TextField,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
 import type { ZenttoColDef } from "@zentto/shared-ui";
 import { formatCurrency } from "@zentto/shared-api";
 import { useFuelMonthlyReport } from "../hooks/useFlota";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const MONTHS = [
   { value: 1, label: "Enero" },
@@ -33,13 +34,13 @@ const MONTHS = [
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-const columns: ZenttoColDef[] = [
-  { field: "LicensePlate", headerName: "Placa", flex: 1, minWidth: 100 },
-  { field: "Brand", headerName: "Marca", flex: 1, minWidth: 100, mobileHide: true },
-  { field: "Model", headerName: "Modelo", flex: 1, minWidth: 100, mobileHide: true },
+const columns: ColumnDef[] = [
+  { field: "LicensePlate", header: "Placa", flex: 1, minWidth: 100 },
+  { field: "Brand", header: "Marca", flex: 1, minWidth: 100, mobileHide: true },
+  { field: "Model", header: "Modelo", flex: 1, minWidth: 100, mobileHide: true },
   {
     field: "TotalLiters",
-    headerName: "Total Litros",
+    header: "Total Litros",
     flex: 1,
     minWidth: 120,
     type: "number",
@@ -48,7 +49,7 @@ const columns: ZenttoColDef[] = [
   },
   {
     field: "TotalCost",
-    headerName: "Costo Total",
+    header: "Costo Total",
     flex: 1,
     minWidth: 130,
     type: "number",
@@ -57,7 +58,7 @@ const columns: ZenttoColDef[] = [
   },
   {
     field: "AvgCostPerLiter",
-    headerName: "Costo/Litro Prom.",
+    header: "Costo/Litro Prom.",
     flex: 1,
     minWidth: 140,
     type: "number",
@@ -69,9 +70,33 @@ const columns: ZenttoColDef[] = [
 export default function ReportesPage() {
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const { data, isLoading } = useFuelMonthlyReport(year, month);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useFuelMonthlyReport(year, month);
 
   const rows = (data?.rows ?? []).map((r, idx) => ({ id: r.VehicleId ?? idx, ...r }));
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box>
@@ -121,18 +146,29 @@ export default function ReportesPage() {
       {/* Grid de resultados */}
       <Card sx={{ borderRadius: 2 }}>
         <CardContent>
-          <ZenttoDataGrid
-            gridId="flota-reportes-list"
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            enableHeaderFilters
-            serverRowCount={rows.length}
-            autoHeight
-            disableRowSelectionOnClick
-          />
+          <zentto-grid
+        ref={gridRef}
+        export-filename="flota-reportes-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         </CardContent>
       </Card>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

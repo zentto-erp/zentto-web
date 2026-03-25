@@ -1,97 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-  IconButton,
-  Tooltip,
+  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  MenuItem, Select, FormControl, InputLabel, CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
-  useOccHealthList,
-  useCreateOccHealth,
-  useUpdateOccHealth,
-  useOccHealthDetail,
-  type OccHealthFilter,
-  type OccHealthInput,
+  useOccHealthList, useCreateOccHealth, useUpdateOccHealth, useOccHealthDetail,
+  type OccHealthFilter, type OccHealthInput,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
 
-const STATUS_COLORS: Record<string, "warning" | "info" | "primary" | "default"> = {
-  OPEN: "warning",
-  REPORTED: "info",
-  INVESTIGATING: "primary",
-  CLOSED: "default",
-};
+const STATUS_LABELS: Record<string, string> = { OPEN: "Abierto", REPORTED: "Reportado", INVESTIGATING: "En Investigación", CLOSED: "Cerrado" };
 
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: "Abierto",
-  REPORTED: "Reportado",
-  INVESTIGATING: "En Investigación",
-  CLOSED: "Cerrado",
-};
+const emptyForm: OccHealthInput = { employeeCode: "", type: "", date: "", severity: "LEVE", daysLost: 0, description: "", status: "OPEN", correctiveActions: "" };
 
-const SEVERITY_COLORS: Record<string, "success" | "warning" | "error" | "default"> = {
-  LEVE: "success",
-  MODERADO: "warning",
-  GRAVE: "error",
-  FATAL: "error",
-};
-
-const emptyForm: OccHealthInput = {
-  employeeCode: "", type: "", date: "", severity: "LEVE",
-  daysLost: 0, description: "", status: "OPEN", correctiveActions: "",
-};
-
-const SALUD_FILTERS: FilterFieldDef[] = [
-  {
-    field: "type", label: "Tipo", type: "select",
-    options: [
-      { value: "ACCIDENTE", label: "Accidente" },
-      { value: "INCIDENTE", label: "Incidente" },
-      { value: "ENFERMEDAD", label: "Enfermedad" },
-    ],
-  },
-  {
-    field: "status", label: "Estado", type: "select",
-    options: [
-      { value: "OPEN", label: "Abierto" },
-      { value: "REPORTED", label: "Reportado" },
-      { value: "INVESTIGATING", label: "En Investigacion" },
-      { value: "CLOSED", label: "Cerrado" },
-    ],
-  },
-  {
-    field: "severity", label: "Severidad", type: "select",
-    options: [
-      { value: "LEVE", label: "Leve" },
-      { value: "MODERADO", label: "Moderado" },
-      { value: "GRAVE", label: "Grave" },
-      { value: "FATAL", label: "Fatal" },
-    ],
-  },
+const COLUMNS: ColumnDef[] = [
+  { field: "OccurrenceDate", header: "Fecha", width: 110 },
+  { field: "RecordType", header: "Tipo", width: 140, statusColors: { ACCIDENTE: "error", INCIDENTE: "warning", ENFERMEDAD: "info" }, statusVariant: "outlined" },
+  { field: "EmployeeName", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
+  { field: "Severity", header: "Severidad", width: 120, statusColors: { LEVE: "success", MODERADO: "warning", GRAVE: "error", FATAL: "error" } },
+  { field: "DaysLost", header: "Días Perdidos", width: 120, type: "number" },
+  { field: "Status", header: "Estado", width: 140, statusColors: { OPEN: "warning", REPORTED: "info", INVESTIGATING: "info", CLOSED: "default" } },
 ];
 
+const SALUD_FILTERS: FilterFieldDef[] = [
+  { field: "type", label: "Tipo", type: "select", options: [
+    { value: "ACCIDENTE", label: "Accidente" }, { value: "INCIDENTE", label: "Incidente" }, { value: "ENFERMEDAD", label: "Enfermedad" },
+  ]},
+  { field: "status", label: "Estado", type: "select", options: [
+    { value: "OPEN", label: "Abierto" }, { value: "REPORTED", label: "Reportado" }, { value: "INVESTIGATING", label: "En Investigacion" }, { value: "CLOSED", label: "Cerrado" },
+  ]},
+  { field: "severity", label: "Severidad", type: "select", options: [
+    { value: "LEVE", label: "Leve" }, { value: "MODERADO", label: "Moderado" }, { value: "GRAVE", label: "Grave" }, { value: "FATAL", label: "Fatal" },
+  ]},
+];
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
 export default function SaludOcupacionalPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<OccHealthFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -107,157 +61,55 @@ export default function SaludOcupacionalPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: ZenttoColDef[] = [
-    { field: "OccurrenceDate", headerName: "Fecha", width: 110 },
-    {
-      field: "RecordType",
-      headerName: "Tipo",
-      width: 140,
-      renderCell: (p) => (
-        <Chip
-          label={
-            p.value === "ACCIDENTE" ? "Accidente" :
-            p.value === "INCIDENTE" ? "Incidente" :
-            p.value === "ENFERMEDAD" ? "Enfermedad" : p.value
-          }
-          size="small"
-          variant="outlined"
-          color={
-            p.value === "ACCIDENTE" ? "error" :
-            p.value === "INCIDENTE" ? "warning" : "info"
-          }
-        />
-      ),
-      statusColors: { 'ACCIDENTE': 'error', 'INCIDENTE': 'warning', 'ENFERMEDAD': 'info' },
-    },
-    { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    {
-      field: "Severity",
-      headerName: "Severidad",
-      width: 120,
-      renderCell: (p) => (
-        <Chip
-          label={p.value || "—"}
-          size="small"
-          color={SEVERITY_COLORS[p.value] || "default"}
-        />
-      ),
-      statusColors: { 'LEVE': 'success', 'MODERADO': 'warning', 'GRAVE': 'error', 'FATAL': 'error' },
-    },
-    { field: "DaysLost", headerName: "Días Perdidos", width: 120, type: "number" },
-    {
-      field: "Status",
-      headerName: "Estado",
-      width: 140,
-      renderCell: (p) => (
-        <Chip
-          label={STATUS_LABELS[p.value] || p.value || "Abierto"}
-          size="small"
-          color={STATUS_COLORS[p.value] || "default"}
-        />
-      ),
-      statusColors: { 'OPEN': 'warning', 'REPORTED': 'info', 'INVESTIGATING': 'info', 'CLOSED': 'default' },
-    },
-    {
-      field: "actions",
-      headerName: "",
-      width: 100,
-      sortable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver detalle">
-            <IconButton size="small" onClick={() => setDetailId(p.row.OccupationalHealthId)}>
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Editar registro">
-            <IconButton
-              size="small"
-              onClick={() => {
-                setForm({
-                  id: p.row.OccupationalHealthId,
-                  employeeCode: p.row.EmployeeCode ?? "",
-                  type: p.row.RecordType ?? "",
-                  date: p.row.OccurrenceDate ?? "",
-                  severity: p.row.Severity ?? "LEVE",
-                  daysLost: p.row.DaysLost ?? 0,
-                  description: p.row.Description ?? "",
-                  status: p.row.Status ?? "OPEN",
-                  correctiveActions: p.row.CorrectiveAction ?? "",
-                });
-                setEditMode(true);
-                setDialogOpen(true);
-              }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
+    el.getRowId = (r: any) => r.OccupationalHealthId ?? `${r.EmployeeCode}-${r.OccurrenceDate}`;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver detalle", action: "view" },
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+    ];
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") setDetailId(row.OccupationalHealthId);
+      if (action === "edit") {
+        setForm({ id: row.OccupationalHealthId, employeeCode: row.EmployeeCode ?? "", type: row.RecordType ?? "", date: row.OccurrenceDate ?? "", severity: row.Severity ?? "LEVE", daysLost: row.DaysLost ?? 0, description: row.Description ?? "", status: row.Status ?? "OPEN", correctiveActions: row.CorrectiveAction ?? "" });
+        setEditMode(true); setDialogOpen(true);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
 
   const handleSave = async () => {
-    if (editMode && form.id) {
-      await updateMutation.mutateAsync(form);
-    } else {
-      await createMutation.mutateAsync(form);
-    }
-    setDialogOpen(false);
-    setEditMode(false);
-    setForm({ ...emptyForm });
+    if (editMode && form.id) await updateMutation.mutateAsync(form);
+    else await createMutation.mutateAsync(form);
+    setDialogOpen(false); setEditMode(false); setForm({ ...emptyForm });
   };
 
-  const handleOpenCreate = () => {
-    setEditMode(false);
-    setForm({ ...emptyForm });
-    setDialogOpen(true);
-  };
+  const handleOpenCreate = () => { setEditMode(false); setForm({ ...emptyForm }); setDialogOpen(true); };
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">Salud Ocupacional</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
-          Nuevo Registro
-        </Button>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>Nuevo Registro</Button>
       </Stack>
 
-      <ZenttoFilterPanel
-        filters={SALUD_FILTERS}
-        values={filterValues}
-        onChange={(v) => {
-          setFilterValues(v);
-          setFilter((f) => ({
-            ...f,
-            type: v.type || undefined,
-            status: v.status || undefined,
-            severity: v.severity || undefined,
-          }));
-        }}
-        searchPlaceholder="Buscar registros..."
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setFilter((f) => ({ ...f, search: v || undefined }));
-        }}
+      <ZenttoFilterPanel filters={SALUD_FILTERS} values={filterValues}
+        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, type: v.type || undefined, status: v.status || undefined, severity: v.severity || undefined })); }}
+        searchPlaceholder="Buscar registros..." searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
       />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <ZenttoDataGrid
-            gridId="nomina-salud-ocupacional-list"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.OccupationalHealthId ?? `${r.EmployeeCode}-${r.OccurrenceDate}`}
-          enableGrouping
-          enableClipboard
-          enableHeaderFilters
-          mobileVisibleFields={['EmployeeName', 'RecordType']}
-          smExtraFields={['Severity', 'Status']}
-        />
+        <zentto-grid ref={gridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Paper>
 
       {/* Create/Edit Dialog */}
@@ -265,76 +117,27 @@ export default function SaludOcupacionalPage() {
         <DialogTitle>{editMode ? "Editar Registro" : "Nuevo Registro de Salud Ocupacional"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <EmployeeSelector
-              value={form.employeeCode}
-              onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))}
-            />
-            <FormControl fullWidth>
-              <InputLabel>Tipo</InputLabel>
-              <Select
-                value={form.type}
-                label="Tipo"
-                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              >
-                <MenuItem value="ACCIDENTE">Accidente</MenuItem>
-                <MenuItem value="INCIDENTE">Incidente</MenuItem>
-                <MenuItem value="ENFERMEDAD">Enfermedad</MenuItem>
+            <EmployeeSelector value={form.employeeCode} onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))} />
+            <FormControl fullWidth><InputLabel>Tipo</InputLabel>
+              <Select value={form.type} label="Tipo" onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
+                <MenuItem value="ACCIDENTE">Accidente</MenuItem><MenuItem value="INCIDENTE">Incidente</MenuItem><MenuItem value="ENFERMEDAD">Enfermedad</MenuItem>
               </Select>
             </FormControl>
-            <DatePicker
-              label="Fecha"
-              value={form.date ? dayjs(form.date) : null}
-              onChange={(v) => setForm((f) => ({ ...f, date: v ? v.format('YYYY-MM-DD') : '' }))}
-              slotProps={{ textField: { size: 'small', fullWidth: true } }}
-            />
-            <FormControl fullWidth>
-              <InputLabel>Severidad</InputLabel>
-              <Select
-                value={form.severity}
-                label="Severidad"
-                onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value }))}
-              >
-                <MenuItem value="LEVE">Leve</MenuItem>
-                <MenuItem value="MODERADO">Moderado</MenuItem>
-                <MenuItem value="GRAVE">Grave</MenuItem>
-                <MenuItem value="FATAL">Fatal</MenuItem>
+            <DatePicker label="Fecha" value={form.date ? dayjs(form.date) : null} onChange={(v) => setForm((f) => ({ ...f, date: v ? v.format('YYYY-MM-DD') : '' }))} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+            <FormControl fullWidth><InputLabel>Severidad</InputLabel>
+              <Select value={form.severity} label="Severidad" onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value }))}>
+                <MenuItem value="LEVE">Leve</MenuItem><MenuItem value="MODERADO">Moderado</MenuItem>
+                <MenuItem value="GRAVE">Grave</MenuItem><MenuItem value="FATAL">Fatal</MenuItem>
               </Select>
             </FormControl>
-            <TextField
-              label="Días Perdidos"
-              type="number"
-              fullWidth
-              value={form.daysLost || ""}
-              onChange={(e) => setForm((f) => ({ ...f, daysLost: Number(e.target.value) }))}
-            />
-            <TextField
-              label="Descripción"
-              fullWidth
-              multiline
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            />
-            <TextField
-              label="Acciones Correctivas"
-              fullWidth
-              multiline
-              rows={2}
-              value={form.correctiveActions || ""}
-              onChange={(e) => setForm((f) => ({ ...f, correctiveActions: e.target.value }))}
-            />
+            <TextField label="Días Perdidos" type="number" fullWidth value={form.daysLost || ""} onChange={(e) => setForm((f) => ({ ...f, daysLost: Number(e.target.value) }))} />
+            <TextField label="Descripción" fullWidth multiline rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+            <TextField label="Acciones Correctivas" fullWidth multiline rows={2} value={form.correctiveActions || ""} onChange={(e) => setForm((f) => ({ ...f, correctiveActions: e.target.value }))} />
             {editMode && (
-              <FormControl fullWidth>
-                <InputLabel>Estado</InputLabel>
-                <Select
-                  value={form.status || "OPEN"}
-                  label="Estado"
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-                >
-                  <MenuItem value="OPEN">Abierto</MenuItem>
-                  <MenuItem value="REPORTED">Reportado</MenuItem>
-                  <MenuItem value="INVESTIGATING">En Investigación</MenuItem>
-                  <MenuItem value="CLOSED">Cerrado</MenuItem>
+              <FormControl fullWidth><InputLabel>Estado</InputLabel>
+                <Select value={form.status || "OPEN"} label="Estado" onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+                  <MenuItem value="OPEN">Abierto</MenuItem><MenuItem value="REPORTED">Reportado</MenuItem>
+                  <MenuItem value="INVESTIGATING">En Investigación</MenuItem><MenuItem value="CLOSED">Cerrado</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -342,13 +145,7 @@ export default function SaludOcupacionalPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            {editMode ? "Actualizar" : "Guardar"}
-          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>{editMode ? "Actualizar" : "Guardar"}</Button>
         </DialogActions>
       </Dialog>
 
@@ -356,9 +153,7 @@ export default function SaludOcupacionalPage() {
       <Dialog open={detailId != null} onClose={() => setDetailId(null)} maxWidth="sm" fullWidth>
         <DialogTitle>Detalle del Registro</DialogTitle>
         <DialogContent>
-          {detail.isLoading ? (
-            <CircularProgress />
-          ) : (
+          {detail.isLoading ? <CircularProgress /> : (
             <Stack spacing={1.5} mt={1}>
               <Typography variant="body2"><strong>Empleado:</strong> {detail.data?.EmployeeName ?? detail.data?.EmployeeCode}</Typography>
               <Typography variant="body2"><strong>Tipo:</strong> {detail.data?.RecordType}</Typography>
@@ -371,10 +166,10 @@ export default function SaludOcupacionalPage() {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailId(null)}>Cerrar</Button>
-        </DialogActions>
+        <DialogActions><Button onClick={() => setDetailId(null)}>Cerrar</Button></DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

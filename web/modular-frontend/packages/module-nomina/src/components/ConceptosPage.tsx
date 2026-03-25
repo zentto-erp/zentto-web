@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -15,23 +15,30 @@ import {
   Select,
   FormControl,
   InputLabel,
-  IconButton,
-  Tooltip,
   FormControlLabel,
   Switch,
   Divider,
   Typography,
   Collapse,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import { useLookup } from "@zentto/shared-api";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useConceptosList, useSaveConcepto, useDeleteConcepto, type ConceptoFilter, type ConceptoInput } from "../hooks/useNomina";
 import FormulaEditor from "./FormulaEditor";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Código", width: 100, sortable: true },
+  { field: "codigoNomina", header: "Cód. Nómina", width: 120, sortable: true },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 200, sortable: true },
+  { field: "tipo", header: "Tipo", width: 120, sortable: true, groupable: true },
+  { field: "clase", header: "Clase", width: 100, sortable: true, groupable: true },
+  { field: "formula", header: "Fórmula", width: 150 },
+  { field: "valorDefecto", header: "Valor Def.", width: 110, type: "number" },
+];
 
 const emptyForm: ConceptoInput = {
   codigo: "",
@@ -51,7 +58,12 @@ const CONCEPTOS_FILTERS: FilterFieldDef[] = [
   },
 ];
 
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 export default function ConceptosPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -66,6 +78,23 @@ export default function ConceptosPage() {
   const { data: frequencies = [] } = useLookup('PAYROLL_FREQUENCY');
 
   const rows = data?.data ?? data?.rows ?? [];
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`;
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
+    ];
+  }, [rows, isLoading, registered]);
 
   const handleNew = () => {
     setForm({ ...emptyForm });
@@ -101,36 +130,17 @@ export default function ConceptosPage() {
     await deleteMutation.mutateAsync(codigo);
   };
 
-  const columns: ZenttoColDef[] = [
-    { field: "codigo", headerName: "Código", width: 100 },
-    { field: "codigoNomina", headerName: "Cód. Nómina", width: 120 },
-    { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200 },
-    { field: "tipo", headerName: "Tipo", width: 120 },
-    { field: "clase", headerName: "Clase", width: 100 },
-    { field: "formula", headerName: "Fórmula", width: 150 },
-    { field: "valorDefecto", headerName: "Valor Def.", width: 110, type: "number" },
-    {
-      field: "actions",
-      headerName: "Acciones",
-      width: 110,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Editar">
-            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row);
+      if (action === "delete") handleDelete(row);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
 
   const handleSave = async () => {
     await saveMutation.mutateAsync(form);
@@ -162,19 +172,17 @@ export default function ConceptosPage() {
       />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <ZenttoDataGrid
-            gridId="nomina-conceptos-list"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`}
-          enableGrouping
-          enableClipboard
-          enableHeaderFilters
-          mobileVisibleFields={['codigo', 'nombre']}
-          smExtraFields={['tipo', 'clase']}
+        <zentto-grid
+          ref={gridRef}
+          height="100%"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
         />
       </Paper>
 
@@ -183,7 +191,6 @@ export default function ConceptosPage() {
         <DialogTitle>{editMode ? "Editar Concepto" : "Nuevo Concepto"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            {/* Row 1: Código + Código Nómina */}
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Código"
@@ -208,7 +215,6 @@ export default function ConceptosPage() {
               onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
             />
 
-            {/* Row 2: Tipo + Clase */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth>
                 <InputLabel>Tipo</InputLabel>
@@ -242,7 +248,6 @@ export default function ConceptosPage() {
               </FormControl>
             </Stack>
 
-            {/* Formula editor */}
             <Divider>
               <Typography variant="caption" color="text.secondary">Cálculo</Typography>
             </Divider>
@@ -253,7 +258,6 @@ export default function ConceptosPage() {
               conceptCodes={rows.map((r: any) => r.codigo ?? r.Codigo).filter(Boolean)}
             />
 
-            {/* Row: Base + Valor por defecto */}
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Base de cálculo (sobre)"
@@ -273,7 +277,6 @@ export default function ConceptosPage() {
               />
             </Stack>
 
-            {/* Advanced fields */}
             <Box>
               <Button
                 size="small"
@@ -350,4 +353,12 @@ export default function ConceptosPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -1,45 +1,20 @@
 // components/common/DataGrid.tsx
 /**
- * COMPONENTE GENÉRICO DE TABLA
- * Reutilizable en TODOS los módulos (Clientes, Proveedores, Artículos, etc.)
- * 
- * Features:
- * - Paginación
- * - Ordenamiento
- * - Búsqueda
- * - Acciones (Ver, Editar, Eliminar)
- * - Exportar CSV
- * - Loading state
- * - Empty state
+ * COMPONENTE GENERICO DE TABLA
+ * Reutilizable en TODOS los modulos (Clientes, Proveedores, Articulos, etc.)
+ *
+ * Migrado de MUI Table HTML nativo a @zentto/datagrid (web component).
  */
 
 'use client';
 
-import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  CircularProgress,
-  Box,
-  Button,
-  IconButton,
-  Pagination,
-  Toolbar,
-  Typography,
-  TableSortLabel,
-  Tooltip,
-} from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
-  Download as DownloadIcon,
-} from '@mui/icons-material';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Box, CircularProgress } from '@mui/material';
+import type { ColumnDef } from '@zentto/datagrid-core';
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 export interface Column<T> {
   accessor: keyof T;
@@ -89,50 +64,96 @@ export default function DataGrid<T extends Record<string, unknown>>({
   emptyText = 'No hay registros',
   timeZone,
 }: DataGridProps<T>) {
-  const [sortConfig, setSortConfig] = useState<{
-    accessor: string;
-    order: 'asc' | 'desc';
-  } | null>(null);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const totalPages = Math.ceil(totalRecords / pageSize);
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
 
-  const handleSort = (accessor: string) => {
-    let order: 'asc' | 'desc' = 'asc';
-    if (sortConfig?.accessor === accessor && sortConfig.order === 'asc') {
-      order = 'desc';
-    }
-    setSortConfig({ accessor, order });
-    onSortChange?.(accessor, order);
-  };
+  // Map Column<T> to ColumnDef[]
+  const gridColumns = useMemo<ColumnDef[]>(() => {
+    return columns.map((col) => {
+      const def: ColumnDef = {
+        field: String(col.accessor),
+        header: col.header,
+        sortable: col.sortable ?? false,
+      };
+      if (col.width) def.width = parseInt(col.width, 10) || 150;
+      else def.flex = 1;
 
-  const formatCellValue = (column: Column<T>, value: unknown): string => {
-    if (column.formatFn) {
-      return column.formatFn(value);
-    }
-
-    switch (column.type) {
-      case 'date': {
-        const parsed = value instanceof Date ? value : new Date(String(value ?? ''));
-        if (Number.isNaN(parsed.getTime())) return '-';
-        const dateOpts: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-        if (timeZone) dateOpts.timeZone = timeZone;
-        return parsed.toLocaleDateString('es', dateOpts);
+      if (col.type === 'number') def.type = 'number';
+      else if (col.type === 'date') def.type = 'date';
+      else if (col.type === 'currency') {
+        def.type = 'number';
+        def.currency = 'USD';
       }
-      case 'currency':
-        return new Intl.NumberFormat('es-ES', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(Number(value ?? 0));
-      case 'percentage':
-        return `${(Number(value ?? 0) * 100).toFixed(2)}%`;
-      case 'status':
-        return getStatusBadge(String(value ?? ''));
-      default:
-        return String(value ?? '-');
-    }
-  };
 
-  if (isLoading) {
+      return def;
+    });
+  }, [columns]);
+
+  // Build action buttons
+  const actionButtons = useMemo(() => {
+    if (actions.length === 0) return [];
+    const iconMap: Record<string, string> = {
+      view: SVG_VIEW,
+      edit: SVG_EDIT,
+      delete: SVG_DELETE,
+    };
+    const colorMap: Record<string, string> = {
+      error: '#dc2626',
+      warning: '#e67e22',
+      success: '#16a34a',
+    };
+    return actions.map((a) => ({
+      icon: iconMap[a.id] || SVG_VIEW,
+      label: a.label,
+      action: a.id,
+      color: a.color ? colorMap[a.color] : undefined,
+    }));
+  }, [actions]);
+
+  // Map data to rows with id
+  const gridRows = useMemo(() => {
+    return data.map((row, idx) => ({
+      id: idx,
+      ...row,
+    }));
+  }, [data]);
+
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = gridColumns;
+    el.rows = gridRows;
+    el.loading = isLoading;
+    if (actionButtons.length > 0) {
+      el.actionButtons = actionButtons;
+    }
+  }, [gridColumns, gridRows, isLoading, registered, actionButtons]);
+
+  // Listen for action-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered || actions.length === 0) return;
+
+    const handler = (e: CustomEvent) => {
+      const { action: actionId, row } = e.detail || {};
+      if (!row) return;
+      const idx = row.id as number;
+      const originalRow = data[idx];
+      if (!originalRow) return;
+      const matchedAction = actions.find((a) => a.id === actionId);
+      if (matchedAction) matchedAction.onClick(originalRow);
+    };
+
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered, actions, data]);
+
+  if (isLoading && !registered) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
@@ -140,155 +161,32 @@ export default function DataGrid<T extends Record<string, unknown>>({
     );
   }
 
+  if (!registered) return null;
+
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-      {/* Header */}
-      <Toolbar
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          p: 2,
-        }}
-      >
-        <Typography variant="h6">{title}</Typography>
-        {onExport && (
-          <Button
-            startIcon={<DownloadIcon />}
-            onClick={onExport}
-            variant="outlined"
-            size="small"
-          >
-            Exportar
-          </Button>
-        )}
-      </Toolbar>
-
-      {/* Table */}
-      <TableContainer>
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              {columns.map((column) => (
-                <TableCell
-                  key={String(column.accessor)}
-                  width={column.width}
-                  sortDirection={
-                    sortConfig?.accessor === String(column.accessor)
-                      ? sortConfig.order
-                      : false
-                  }
-                >
-                  {column.sortable ? (
-                    <TableSortLabel
-                      active={
-                        sortConfig?.accessor === String(column.accessor)
-                      }
-                      direction={
-                        sortConfig?.accessor === String(column.accessor)
-                          ? sortConfig.order
-                          : 'asc'
-                      }
-                      onClick={() => handleSort(String(column.accessor))}
-                    >
-                      {column.header}
-                    </TableSortLabel>
-                  ) : (
-                    column.header
-                  )}
-                </TableCell>
-              ))}
-              {actions.length > 0 && (
-                <TableCell align="center" width="150px">
-                  Acciones
-                </TableCell>
-              )}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + (actions.length > 0 ? 1 : 0)}
-                  align="center"
-                  sx={{ py: 3 }}
-                >
-                  {emptyText}
-                </TableCell>
-              </TableRow>
-            ) : (
-              data.map((row, idx) => (
-                <TableRow key={idx} hover>
-                  {columns.map((column) => (
-                    <TableCell key={String(column.accessor)}>
-                      {formatCellValue(column, row[column.accessor])}
-                    </TableCell>
-                  ))}
-                  {actions.length > 0 && (
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                        {actions.map((action) => (
-                          <Tooltip key={action.id} title={action.label}>
-                            <IconButton
-                              size="small"
-                              color={action.color || 'primary'}
-                              onClick={() => action.onClick(row)}
-                            >
-                              {action.icon || getDefaultIcon(action.id)}
-                            </IconButton>
-                          </Tooltip>
-                        ))}
-                      </Box>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={(_, page) => onPageChange?.(page)}
-            color="primary"
-          />
-        </Box>
-      )}
-    </Paper>
+    <Box sx={{ width: '100%', minHeight: 400 }}>
+      <zentto-grid
+        ref={gridRef}
+        default-currency="USD"
+        export-filename={title || 'export'}
+        height="500px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
+    </Box>
   );
 }
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-function getDefaultIcon(actionId: string) {
-  switch (actionId) {
-    case 'view':
-      return <ViewIcon />;
-    case 'edit':
-      return <EditIcon />;
-    case 'delete':
-      return <DeleteIcon />;
-    default:
-      return null;
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
   }
 }
-
-function getStatusBadge(status: string) {
-  const statusMap: { [key: string]: string } = {
-    activo: '✓ Activo',
-    inactivo: '✗ Inactivo',
-    pendiente: '⏳ Pendiente',
-    completado: '✓ Completado',
-    cancelado: '✗ Cancelado',
-    pagado: '✓ Pagado',
-    vencido: '⚠ Vencido',
-  };
-  return statusMap[status?.toLowerCase()] || status;
-}
-

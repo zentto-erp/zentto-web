@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -18,17 +18,18 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useRoutingList,
   useUpsertRouting,
   useWorkCentersList,
   type RoutingRow,
 } from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -68,8 +69,15 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<RoutingFormData>(emptyForm());
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data: routingRows, isLoading } = useRoutingList(bomId);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: routingRows, isLoading } = useRoutingList(bomId);
   const { data: wcData } = useWorkCentersList({ limit: 500 });
   const upsertRouting = useUpsertRouting(bomId);
 
@@ -78,48 +86,48 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
 
   /* ─── Columns ──────────────────────────────────────────── */
 
-  const columns: ZenttoColDef[] = [
+  const columns: ColumnDef[] = [
     {
       field: "OperationNumber",
-      headerName: "Secuencia",
+      header: "Secuencia",
       width: 100,
       type: "number",
     },
     {
       field: "OperationName",
-      headerName: "Operacion",
+      header: "Operacion",
       flex: 1.2,
       minWidth: 160,
     },
     {
       field: "WorkCenterName",
-      headerName: "Centro de Trabajo",
+      header: "Centro de Trabajo",
       flex: 1,
       minWidth: 150,
     },
     {
       field: "SetupTime",
-      headerName: "Setup (min)",
+      header: "Setup (min)",
       width: 120,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "RunTime",
-      headerName: "Ejecucion (min)",
+      header: "Ejecucion (min)",
       width: 130,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "CostPerOperation",
-      headerName: "Costo Operacion",
+      header: "Costo Operacion",
       width: 140,
       currency: true,
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 90,
       sortable: false,
       filterable: false,
@@ -184,6 +192,23 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
 
   const dialogTitle = form.routingId ? "Editar Operacion" : "Nueva Operacion";
 
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
+
   return (
     <Box sx={{ p: 1 }}>
       {/* Header */}
@@ -209,22 +234,19 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
       </Box>
 
       {/* Grid */}
-      <ZenttoDataGrid
-        gridId="manufactura-routing-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.RoutingId ?? row.Id ?? row.OperationNumber ?? Math.random()}
-        loading={isLoading}
-        enableHeaderFilters
-        disableRowSelectionOnClick
-        autoHeight
-        hideFooter={rows.length <= 10}
-        pageSizeOptions={[10, 25]}
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 1 }}
-        mobileVisibleFields={["OperationName", "WorkCenterName"]}
-        smExtraFields={["OperationNumber", "RunTime"]}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="manufactura-routing-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
       {rows.length === 0 && !isLoading && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
           No hay operaciones definidas para esta BOM.
@@ -362,4 +384,12 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

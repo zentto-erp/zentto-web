@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -24,8 +25,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import { ZenttoDataGrid, ConfirmDialog } from "@zentto/shared-ui";
-import type { ZenttoColDef } from "@zentto/shared-ui";
+import { ConfirmDialog } from "@zentto/shared-ui";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useCompraById, useDetalleCompra, useIndicadoresCompra } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
 import { formatDate } from "@zentto/shared-api";
@@ -40,11 +41,8 @@ const STEPS = ["Emitida", "Recibida", "Pagada"];
 
 function getActiveStep(row: Record<string, any> | null, ind: Record<string, any> | null): number {
   if (!row) return 0;
-  // Si CxP pagado completamente → paso 3
   if (ind?.cxp?.generado && Number(ind?.cxp?.pendienteTotal || 0) === 0) return 2;
-  // Si tiene recepción → paso 2
   if (ind?.recepcion?.recibida) return 1;
-  // Default → emitida (paso 1)
   return 0;
 }
 
@@ -54,48 +52,13 @@ function isAnulada(row: Record<string, any> | null): boolean {
   return status === "ANULADA" || status === "ANULADO" || status === "VOID";
 }
 
-const columns: ZenttoColDef[] = [
-  { field: "CODIGO", headerName: "Codigo", flex: 0.8, minWidth: 100 },
-  { field: "DESCRIPCION", headerName: "Descripcion", flex: 2, minWidth: 200 },
-  {
-    field: "CANTIDAD",
-    headerName: "Cant.",
-    flex: 0.5,
-    minWidth: 80,
-    type: "number",
-    valueFormatter: (value: any) => Number(value || 0).toFixed(2),
-  },
-  {
-    field: "PRECIO_COSTO",
-    headerName: "P. Unit.",
-    flex: 0.7,
-    minWidth: 100,
-    type: "number",
-    valueFormatter: (value: any) => Number(value || 0).toFixed(2),
-  },
-  {
-    field: "ALICUOTA",
-    headerName: "IVA %",
-    flex: 0.5,
-    minWidth: 70,
-    type: "number",
-    valueGetter: (_value: any, row: any) => Number(row.Alicuota ?? row.ALICUOTA ?? 0),
-    valueFormatter: (value: any) => `${Number(value || 0).toFixed(0)}%`,
-  },
-  {
-    field: "SUBTOTAL",
-    headerName: "Total",
-    flex: 0.8,
-    minWidth: 110,
-    type: "number",
-    valueGetter: (_value: any, row: any) => {
-      const c = Number(row.CANTIDAD || 0);
-      const p = Number(row.PRECIO_COSTO || 0);
-      const alicuota = Number(row.Alicuota ?? row.ALICUOTA ?? 0);
-      return c * p * (1 + alicuota / 100);
-    },
-    valueFormatter: (value: any) => Number(value || 0).toFixed(2),
-  },
+const COLUMNS: ColumnDef[] = [
+  { field: "CODIGO", header: "Codigo", width: 120, sortable: true },
+  { field: "DESCRIPCION", header: "Descripcion", flex: 1, minWidth: 200, sortable: true },
+  { field: "CANTIDAD", header: "Cant.", width: 100, type: "number", aggregation: "sum" },
+  { field: "PRECIO_COSTO", header: "P. Unit.", width: 120, type: "number", currency: "VES" },
+  { field: "ALICUOTA", header: "IVA %", width: 90, type: "number" },
+  { field: "SUBTOTAL", header: "Total", width: 130, type: "number", currency: "VES", aggregation: "sum" },
 ];
 
 export default function CompraDetail({ numFact }: CompraDetailProps) {
@@ -106,6 +69,8 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
   const indicadores = useIndicadoresCompra(numFact);
 
   const [anularOpen, setAnularOpen] = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const gridRef = useRef<any>(null);
 
   const row = (compra.data ?? null) as Record<string, any> | null;
   const detRows = (detalle.data ?? []) as CompraDetalleRow[];
@@ -125,11 +90,34 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
   }, 0);
   const total = Number(row?.TOTAL || 0) || subtotal + totalIva;
 
-  // Rows con id para DataGrid
-  const gridRows = detRows.map((d, idx) => ({
-    id: d.ID || d.CODIGO ? `${d.CODIGO}_${idx}` : idx,
-    ...d,
-  }));
+  // Rows con id y campos calculados
+  const gridRows: GridRow[] = detRows.map((d, idx) => {
+    const c = Number(d.CANTIDAD || 0);
+    const p = Number(d.PRECIO_COSTO || 0);
+    const alicuota = Number(d.Alicuota ?? d.ALICUOTA ?? 0);
+    return {
+      id: d.ID || d.CODIGO ? `${d.CODIGO}_${idx}` : idx,
+      ...d,
+      CANTIDAD: c,
+      PRECIO_COSTO: p,
+      ALICUOTA: alicuota,
+      SUBTOTAL: c * p * (1 + alicuota / 100),
+    };
+  });
+
+  // Register web component
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
+  // Bind data to grid
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = gridRows;
+    el.loading = detalle.isLoading;
+  }, [gridRows, detalle.isLoading, registered]);
 
   const handleAnular = async () => {
     // TODO: integrar con API de anulacion
@@ -138,7 +126,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
 
   return (
     <Box sx={{ maxWidth: 1100, mx: "auto" }}>
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <Paper sx={{ px: 3, py: 2, mb: 2 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -185,7 +173,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         </Box>
       </Paper>
 
-      {/* ── Status Stepper / Anulada ── */}
+      {/* -- Status Stepper / Anulada -- */}
       <Paper sx={{ px: 3, py: 2, mb: 2 }}>
         {anulada ? (
           <Box sx={{ textAlign: "center", py: 1 }}>
@@ -208,7 +196,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         )}
       </Paper>
 
-      {/* ── Proveedor + Documento ── */}
+      {/* -- Proveedor + Documento -- */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2.5, height: "100%" }}>
@@ -216,7 +204,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
               Proveedor
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {row?.NOMBRE || row?.COD_PROVEEDOR || "—"}
+              {row?.NOMBRE || row?.COD_PROVEEDOR || "\u2014"}
             </Typography>
             {row?.RIF && (
               <Typography variant="body2" color="text.secondary">
@@ -249,19 +237,19 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">Fecha</Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {row?.FECHA ? formatDate(row.FECHA, { timeZone }) : "—"}
+                  {row?.FECHA ? formatDate(row.FECHA, { timeZone }) : "\u2014"}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">Tipo</Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {row?.TIPO || "—"}
+                  {row?.TIPO || "\u2014"}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">Vencimiento</Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {row?.FECHA_VENCIMIENTO ? formatDate(row.FECHA_VENCIMIENTO, { timeZone }) : "—"}
+                  {row?.FECHA_VENCIMIENTO ? formatDate(row.FECHA_VENCIMIENTO, { timeZone }) : "\u2014"}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
@@ -282,32 +270,35 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         </Grid>
       </Grid>
 
-      {/* ── Lineas de detalle ── */}
+      {/* -- Lineas de detalle -- */}
       <Paper sx={{ p: 2.5, mb: 2 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.75rem" }}>
           Lineas de compra
         </Typography>
 
-        <ZenttoDataGrid
-          rows={gridRows}
-          columns={columns}
-          hideToolbar
-          autoHeight
-          disableColumnMenu
-          hideFooter={gridRows.length <= 10}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 25 } },
-          }}
-          sx={{
-            border: "none",
-            "& .MuiDataGrid-columnHeaders": {
-              bgcolor: "grey.50",
-              fontWeight: 700,
-            },
-          }}
-        />
+        {!registered ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="compra-detalle"
+            height="350px"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
+        )}
 
-        {/* ── Totales ── */}
+        {/* -- Totales -- */}
         <Divider sx={{ my: 2 }} />
         <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
           <Box sx={{ minWidth: 260 }}>
@@ -330,7 +321,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         </Box>
       </Paper>
 
-      {/* ── Indicadores de proceso ── */}
+      {/* -- Indicadores de proceso -- */}
       <Paper sx={{ p: 2.5 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.75rem" }}>
           Indicadores de proceso
@@ -395,16 +386,24 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         </Stack>
       </Paper>
 
-      {/* ── Dialogo de anulacion ── */}
+      {/* -- Dialogo de anulacion -- */}
       <ConfirmDialog
         open={anularOpen}
         onClose={() => setAnularOpen(false)}
         onConfirm={handleAnular}
         title="Anular compra"
-        message={`¿Estas seguro de anular la compra ${numFact}? Esta accion revertira el impacto en inventario y CxP.`}
+        message={`\u00bfEstas seguro de anular la compra ${numFact}? Esta accion revertira el impacto en inventario y CxP.`}
         confirmLabel="Anular"
         variant="danger"
       />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

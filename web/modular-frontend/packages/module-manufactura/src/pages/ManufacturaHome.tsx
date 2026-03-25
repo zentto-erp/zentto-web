@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -11,6 +11,7 @@ import {
   Paper,
   Skeleton,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { alpha } from "@mui/material/styles";
@@ -35,12 +36,22 @@ import {
   useRecentOrders,
   useBOMList,
 } from "../hooks/useManufactura";
-import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { brandColors } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered, columns]);
+
   return ((current - previous) / previous) * 100;
 }
 
@@ -134,12 +145,12 @@ const ORDER_STATUS_COLORS: Record<string, string> = {
 
 /* ─── Recent Orders Columns ──────────────────────────────── */
 
-const recentOrderCols: ZenttoColDef[] = [
-  { field: "WorkOrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 100 },
-  { field: "ProductName", headerName: "Producto", flex: 1.2, minWidth: 130, mobileHide: true },
+const recentOrderCols: ColumnDef[] = [
+  { field: "WorkOrderNumber", header: "N. Orden", flex: 0.8, minWidth: 100 },
+  { field: "ProductName", header: "Producto", flex: 1.2, minWidth: 130, mobileHide: true },
   {
     field: "PlannedQuantity",
-    headerName: "Planificada",
+    header: "Planificada",
     width: 90,
     type: "number",
     aggregation: "sum",
@@ -148,7 +159,7 @@ const recentOrderCols: ZenttoColDef[] = [
   },
   {
     field: "ProducedQuantity",
-    headerName: "Producida",
+    header: "Producida",
     width: 90,
     type: "number",
     aggregation: "sum",
@@ -157,7 +168,7 @@ const recentOrderCols: ZenttoColDef[] = [
   },
   {
     field: "StatusLabel",
-    headerName: "Estado",
+    header: "Estado",
     width: 120,
     statusColors: {
       Borrador: "default",
@@ -170,20 +181,20 @@ const recentOrderCols: ZenttoColDef[] = [
 
 /* ─── Recent BOMs Columns ────────────────────────────────── */
 
-const recentBomCols: ZenttoColDef[] = [
-  { field: "BOMCode", headerName: "Codigo", flex: 0.7, minWidth: 90 },
-  { field: "BOMName", headerName: "Nombre", flex: 1.3, minWidth: 140 },
-  { field: "ProductName", headerName: "Producto", flex: 1, minWidth: 120, mobileHide: true },
+const recentBomCols: ColumnDef[] = [
+  { field: "BOMCode", header: "Codigo", flex: 0.7, minWidth: 90 },
+  { field: "BOMName", header: "Nombre", flex: 1.3, minWidth: 140 },
+  { field: "ProductName", header: "Producto", flex: 1, minWidth: 120, mobileHide: true },
   {
     field: "TotalCost",
-    headerName: "Costo",
+    header: "Costo",
     width: 100,
     currency: true,
     mobileHide: true,
   },
   {
     field: "Status",
-    headerName: "Estado",
+    header: "Estado",
     width: 100,
     statusColors: {
       DRAFT: "default",
@@ -200,7 +211,12 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
   const bp = basePath.replace(/\/+$/, "");
 
   // Data hooks
-  const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
   const { data: prodByProductRaw, isLoading: loadingProd } = useProductionByProduct();
   const { data: ordersByStatusRaw, isLoading: loadingStatus } = useOrdersByStatus();
   const { data: recentOrdersRaw, isLoading: loadingRecent } = useRecentOrders();
@@ -437,19 +453,17 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
             {loadingBom ? (
               <Skeleton variant="rectangular" height={200} />
             ) : bomRows.length > 0 ? (
-              <ZenttoDataGrid
-                rows={bomRows}
-                columns={recentBomCols}
-                getRowId={(row) => row.id}
-                serverRowCount={bomRows.length}
-                autoHeight
-                hideFooter
-                disableRowSelectionOnClick
-                density="compact"
-                sx={{ border: 0 }}
-                mobileVisibleFields={["BOMCode", "Status"]}
-                smExtraFields={["BOMName"]}
-              />
+              <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             ) : (
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 100, bgcolor: "#f8f9fa", borderRadius: 2 }}>
                 <Typography variant="body2" color="text.secondary">
@@ -467,18 +481,17 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
             {loadingRecent ? (
               <Skeleton variant="rectangular" height={200} />
             ) : recentRows.length > 0 ? (
-              <ZenttoDataGrid
-                rows={recentRows}
-                columns={recentOrderCols}
-                serverRowCount={recentRows.length}
-                autoHeight
-                hideFooter
-                disableRowSelectionOnClick
-                density="compact"
-                sx={{ border: 0 }}
-                mobileVisibleFields={["WorkOrderNumber", "StatusLabel"]}
-                smExtraFields={["ProductName"]}
-              />
+              <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             ) : (
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 100, bgcolor: "#f8f9fa", borderRadius: 2 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -491,4 +504,12 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
       </Grid>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

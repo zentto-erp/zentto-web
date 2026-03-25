@@ -1,77 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
+  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  Paper, Stack, TextField, Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/DeleteOutline';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Close';
-import {
-  GridActionsCellItem,
-  GridColDef,
-  GridEventListener,
-  GridPaginationModel,
-  GridRowEditStopReasons,
-  GridRowId,
-  GridRowModel,
-  GridRowModes,
-  GridRowModesModel,
-  GridRowsProp,
-  GridToolbarContainer,
-  GridToolbarFilterButton,
-  GridToolbarQuickFilter,
-} from '@mui/x-data-grid';
-import { ZenttoDataGrid } from '@zentto/shared-ui';
-import type { ZenttoColDef } from '@zentto/shared-ui';
+import type { ColumnDef } from '@zentto/datagrid-core';
 import { ContextActionHeader } from '@zentto/shared-ui';
 
-export type CatalogField = {
-  name: string;
-  label?: string;
-  required?: boolean;
-  hidden?: boolean;
-  readOnly?: boolean;
-};
-
+export type CatalogField = { name: string; label?: string; required?: boolean; hidden?: boolean; readOnly?: boolean; };
 export type CatalogRow = Record<string, unknown>;
-
-export type CatalogResponse = {
-  rows?: CatalogRow[];
-  total?: number;
-  page?: number;
-  limit?: number;
-};
-
-export type CatalogMetadataColumn = {
-  columnName: string;
-  dataType: string;
-  isNullable: boolean;
-  isIdentity: boolean;
-  isComputed: boolean;
-  isRowVersion: boolean;
-};
-
-export type CatalogTableMetadata = {
-  schema: string;
-  table: string;
-  fullName?: string;
-  primaryKeys: string[];
-  columns: CatalogMetadataColumn[];
-};
+export type CatalogResponse = { rows?: CatalogRow[]; total?: number; page?: number; limit?: number; };
+export type CatalogMetadataColumn = { columnName: string; dataType: string; isNullable: boolean; isIdentity: boolean; isComputed: boolean; isRowVersion: boolean; };
+export type CatalogTableMetadata = { schema: string; table: string; fullName?: string; primaryKeys: string[]; columns: CatalogMetadataColumn[]; };
 
 export interface CatalogoCrudApiClient {
   list: (endpoint: string, params: { page: number; limit: number; search?: string }) => Promise<CatalogResponse>;
@@ -82,197 +25,70 @@ export interface CatalogoCrudApiClient {
 }
 
 interface CatalogoCrudBaseProps {
-  endpoint: string;
-  title: string;
-  apiClient: CatalogoCrudApiClient;
-  fields?: CatalogField[];
-  tableName?: string;
-  schema?: string;
-  timeZone?: string;
+  endpoint: string; title: string; apiClient: CatalogoCrudApiClient;
+  fields?: CatalogField[]; tableName?: string; schema?: string; timeZone?: string;
 }
-
-type GridRow = Record<string, unknown>;
 
 const PAGE_SIZE = 20;
 const FALLBACK_KEY_CANDIDATES = ['Codigo', 'codigo', 'Id', 'id'];
 
-function normalizeFieldName(name: string): string {
-  return name.replace(/[\s_]/g, '').toLowerCase();
-}
-
-function isExcludedField(name: string): boolean {
-  return normalizeFieldName(name) === 'upsizets';
-}
-
-function prettifyLabel(name: string): string {
-  return name
-    .replace(/_/g, ' ')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function getValueByField(row: CatalogRow, field: string): unknown {
-  if (row[field] !== undefined) return row[field];
-  const lookup = field.toLowerCase();
-  const key = Object.keys(row).find((k) => k.toLowerCase() === lookup);
-  return key ? row[key] : undefined;
-}
-
-function asString(value: unknown): string {
-  if (value === undefined || value === null) return '';
-  return String(value);
-}
+function normalizeFieldName(name: string): string { return name.replace(/[\s_]/g, '').toLowerCase(); }
+function isExcludedField(name: string): boolean { return normalizeFieldName(name) === 'upsizets'; }
+function prettifyLabel(name: string): string { return name.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\s+/g, ' ').trim().replace(/\b\w/g, (c) => c.toUpperCase()); }
+function getValueByField(row: CatalogRow, field: string): unknown { if (row[field] !== undefined) return row[field]; const lookup = field.toLowerCase(); const key = Object.keys(row).find((k) => k.toLowerCase() === lookup); return key ? row[key] : undefined; }
+function asString(value: unknown): string { if (value === undefined || value === null) return ''; return String(value); }
 
 function resolveKeyField(rows: CatalogRow[], metadata?: CatalogTableMetadata | null): string {
   if (metadata?.primaryKeys?.length) return metadata.primaryKeys[0];
   const first = rows[0];
-  if (first) {
-    const keys = Object.keys(first);
-    const match = FALLBACK_KEY_CANDIDATES.find((candidate) => keys.some((k) => k.toLowerCase() === candidate.toLowerCase()));
-    if (match) {
-      const keyName = keys.find((k) => k.toLowerCase() === match.toLowerCase());
-      if (keyName) return keyName;
-    }
-  }
+  if (first) { const keys = Object.keys(first); const match = FALLBACK_KEY_CANDIDATES.find((candidate) => keys.some((k) => k.toLowerCase() === candidate.toLowerCase())); if (match) { const keyName = keys.find((k) => k.toLowerCase() === match.toLowerCase()); if (keyName) return keyName; } }
   return 'Codigo';
 }
 
-function resolveFields(input: {
-  explicitFields?: CatalogField[];
-  rows: CatalogRow[];
-  keyField: string;
-  metadata?: CatalogTableMetadata | null;
-}): CatalogField[] {
+function resolveFields(input: { explicitFields?: CatalogField[]; rows: CatalogRow[]; keyField: string; metadata?: CatalogTableMetadata | null; }): CatalogField[] {
   const { explicitFields, rows, keyField, metadata } = input;
-
-  if (explicitFields && explicitFields.length > 0) {
-    return explicitFields
-      .filter((f) => !isExcludedField(f.name))
-      .filter((f) => f.name.toLowerCase() !== keyField.toLowerCase())
-      .map((f) => ({ ...f, label: f.label || prettifyLabel(f.name) }));
-  }
-
-  if (metadata?.columns?.length) {
-    return metadata.columns
-      .filter((col) => !col.isComputed && !col.isRowVersion && !col.isIdentity)
-      .filter((col) => !isExcludedField(col.columnName))
-      .filter((col) => col.columnName.toLowerCase() !== keyField.toLowerCase())
-      .map((col) => ({
-        name: col.columnName,
-        label: prettifyLabel(col.columnName),
-        required: !col.isNullable,
-      }));
-  }
-
+  if (explicitFields && explicitFields.length > 0) return explicitFields.filter((f) => !isExcludedField(f.name)).filter((f) => f.name.toLowerCase() !== keyField.toLowerCase()).map((f) => ({ ...f, label: f.label || prettifyLabel(f.name) }));
+  if (metadata?.columns?.length) return metadata.columns.filter((col) => !col.isComputed && !col.isRowVersion && !col.isIdentity).filter((col) => !isExcludedField(col.columnName)).filter((col) => col.columnName.toLowerCase() !== keyField.toLowerCase()).map((col) => ({ name: col.columnName, label: prettifyLabel(col.columnName), required: !col.isNullable }));
   const first = rows[0];
   if (!first) return [];
-  return Object.keys(first)
-    .filter((k) => !isExcludedField(k))
-    .filter((k) => k.toLowerCase() !== keyField.toLowerCase())
-    .map((k) => ({ name: k, label: prettifyLabel(k), required: false }));
+  return Object.keys(first).filter((k) => !isExcludedField(k)).filter((k) => k.toLowerCase() !== keyField.toLowerCase()).map((k) => ({ name: k, label: prettifyLabel(k), required: false }));
 }
 
-function extractErrorMessage(error: unknown): string {
-  if (!(error instanceof Error)) return 'No se pudo completar la operacion.';
-  return error.message || 'No se pudo completar la operacion.';
-}
+function extractErrorMessage(error: unknown): string { if (!(error instanceof Error)) return 'No se pudo completar la operacion.'; return error.message || 'No se pudo completar la operacion.'; }
+function isLegacyOkError(error: unknown): boolean { if (!(error instanceof Error)) return false; const message = error.message.trim().toLowerCase(); return message === 'ok' || message === '"ok"' || message === "'ok'"; }
+function buildPayload(values: Record<string, string>, fields: CatalogField[]): Record<string, unknown> { const payload: Record<string, unknown> = {}; for (const field of fields) { if (field.readOnly || field.hidden || isExcludedField(field.name)) continue; const raw = values[field.name] ?? ''; const value = raw.trim(); if (value.length > 0 || field.required) payload[field.name] = value; } return payload; }
+function resolveRowKey(row: CatalogRow, keyField: string): string | number | null { const value = getValueByField(row, keyField); if (value === undefined || value === null || value === '') return null; if (typeof value === 'number' || typeof value === 'string') return value; return String(value); }
 
-function isLegacyOkError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const message = error.message.trim().toLowerCase();
-  return message === 'ok' || message === '"ok"' || message === "'ok'";
-}
-
-function buildPayload(values: Record<string, string>, fields: CatalogField[]): Record<string, unknown> {
-  const payload: Record<string, unknown> = {};
-  for (const field of fields) {
-    if (field.readOnly || field.hidden || isExcludedField(field.name)) continue;
-    const raw = values[field.name] ?? '';
-    const value = raw.trim();
-    if (value.length > 0 || field.required) {
-      payload[field.name] = value;
-    }
-  }
-  return payload;
-}
-
-function buildPayloadFromRow(row: CatalogRow, fields: CatalogField[]): Record<string, unknown> {
-  const payload: Record<string, unknown> = {};
-  for (const field of fields) {
-    if (field.readOnly || field.hidden || isExcludedField(field.name)) continue;
-    payload[field.name] = getValueByField(row, field.name);
-  }
-  return payload;
-}
-
-function resolveRowKey(row: CatalogRow, keyField: string): string | number | null {
-  const value = getValueByField(row, keyField);
-  if (value === undefined || value === null || value === '') return null;
-  if (typeof value === 'number' || typeof value === 'string') return value;
-  return String(value);
-}
-
-function mapDataGridType(sqlType?: string): GridColDef['type'] {
+function mapColumnType(sqlType?: string): ColumnDef['type'] {
   const t = (sqlType || '').toLowerCase();
-  if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney'].includes(t)) {
-    return 'number';
-  }
-  if (['bit'].includes(t)) return 'boolean';
-  if (['date'].includes(t)) return 'date';
-  if (['datetime', 'datetime2', 'smalldatetime', 'datetimeoffset', 'time'].includes(t)) return 'dateTime';
-  return 'string';
+  if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney'].includes(t)) return 'number';
+  if (['date', 'datetime', 'datetime2', 'smalldatetime', 'datetimeoffset'].includes(t)) return 'date';
+  return undefined;
 }
 
-function defaultGetRowId(row: GridRow): GridRowId {
-  return String(row.id ?? row.Codigo ?? row.codigo ?? crypto.randomUUID());
-}
-
-function CrudToolbar() {
-  return (
-    <GridToolbarContainer>
-      <GridToolbarFilterButton />
-      <Box sx={{ flexGrow: 1 }} />
-      <GridToolbarQuickFilter debounceMs={300} />
-    </GridToolbarContainer>
-  );
-}
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [createValues, setCreateValues] = useState<Record<string, string>>({});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editKey, setEditKey] = useState<string | number | null>(null);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  // ── Editable DataGrid state ──
-  const [localRows, setLocalRows] = useState<GridRowsProp>([]);
-  const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],
-    enabled: !!apiClient.describe,
-    retry: false,
-    queryFn: async () => {
-      if (!apiClient.describe) return null;
-      try {
-        return await apiClient.describe(tableName || endpoint, schema);
-      } catch {
-        return null;
-      }
-    },
+    enabled: !!apiClient.describe, retry: false,
+    queryFn: async () => { if (!apiClient.describe) return null; try { return await apiClient.describe(tableName || endpoint, schema); } catch { return null; } },
   });
 
   const listQuery = useQuery<CatalogResponse>({
     queryKey: [endpoint, 'catalog-list', search, page, PAGE_SIZE],
-    queryFn: async () =>
-      apiClient.list(endpoint, {
-        page,
-        limit: PAGE_SIZE,
-        search: search.trim() || undefined,
-      }),
+    queryFn: async () => apiClient.list(endpoint, { page, limit: PAGE_SIZE, search: search.trim() || undefined }),
     placeholderData: (previous) => previous,
   });
 
@@ -281,286 +97,95 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const limit = Number(listQuery.data?.limit ?? PAGE_SIZE);
 
   const keyField = useMemo(() => resolveKeyField(rows, metadataQuery.data), [metadataQuery.data, rows]);
-  const resolvedFields = useMemo(
-    () => resolveFields({ explicitFields: fields, rows, keyField, metadata: metadataQuery.data }),
-    [fields, keyField, metadataQuery.data, rows]
-  );
+  const resolvedFields = useMemo(() => resolveFields({ explicitFields: fields, rows, keyField, metadata: metadataQuery.data }), [fields, keyField, metadataQuery.data, rows]);
 
-  const metadataByColumn = useMemo(() => {
-    const map = new Map<string, CatalogMetadataColumn>();
-    for (const col of metadataQuery.data?.columns ?? []) {
-      map.set(col.columnName.toLowerCase(), col);
-    }
-    return map;
-  }, [metadataQuery.data?.columns]);
+  const metadataByColumn = useMemo(() => { const map = new Map<string, CatalogMetadataColumn>(); for (const col of metadataQuery.data?.columns ?? []) map.set(col.columnName.toLowerCase(), col); return map; }, [metadataQuery.data?.columns]);
 
-  const gridRows = useMemo(
-    () =>
-      rows.map((row) => {
-        const keyValue = resolveRowKey(row, keyField);
-        const normalized: Record<string, unknown> = {
-          ...row,
-          id: keyValue ?? crypto.randomUUID(),
-          [keyField]: keyValue ?? '',
-        };
-        for (const field of resolvedFields) {
-          normalized[field.name] = getValueByField(row, field.name);
-        }
-        return normalized;
-      }),
-    [keyField, resolvedFields, rows]
-  );
+  const gridRows = useMemo(() => rows.map((row) => {
+    const keyValue = resolveRowKey(row, keyField);
+    const normalized: Record<string, unknown> = { ...row, id: keyValue ?? crypto.randomUUID(), [keyField]: keyValue ?? '' };
+    for (const field of resolvedFields) normalized[field.name] = getValueByField(row, field.name);
+    return normalized;
+  }), [keyField, resolvedFields, rows]);
 
-  // Sync localRows when gridRows change
+  const gridColumns = useMemo<ColumnDef[]>(() => [
+    { field: keyField, header: prettifyLabel(keyField), width: 120, sortable: true },
+    ...resolvedFields.filter((f) => !f.hidden).map((f) => {
+      const meta = metadataByColumn.get(f.name.toLowerCase());
+      return { field: f.name, header: f.label || prettifyLabel(f.name), flex: 1, minWidth: 160, type: mapColumnType(meta?.dataType), sortable: true } as ColumnDef;
+    }),
+  ], [keyField, metadataByColumn, resolvedFields]);
+
+  useEffect(() => { import('@zentto/datagrid').then(() => setRegistered(true)); }, []);
+
   useEffect(() => {
-    setLocalRows(gridRows);
-  }, [gridRows]);
-
-  const gridColumns = useMemo<GridColDef[]>(
-    () => [
-      {
-        field: keyField,
-        headerName: prettifyLabel(keyField),
-        width: 120,
-        editable: false,
-      },
-      ...resolvedFields
-        .filter((f) => !f.hidden)
-        .map((f) => {
-          const meta = metadataByColumn.get(f.name.toLowerCase());
-          return {
-            field: f.name,
-            headerName: f.label || prettifyLabel(f.name),
-            flex: 1,
-            minWidth: 160,
-            editable: !f.readOnly,
-            type: mapDataGridType(meta?.dataType),
-          } as GridColDef;
-        }),
-    ],
-    [keyField, metadataByColumn, resolvedFields]
-  );
-
-  // Auto-convert string dates to Date objects and format in company timezone
-  const normalizedColumns = useMemo(() => {
-    return gridColumns.map((col) => {
-      if ((col.type === 'date' || col.type === 'dateTime') && !col.valueGetter) {
-        return {
-          ...col,
-          valueGetter: (value: unknown) => {
-            if (value == null || value === '') return null;
-            if (value instanceof Date) return value;
-            const d = new Date(value as string);
-            return isNaN(d.getTime()) ? null : d;
-          },
-          valueFormatter: (value: unknown) => {
-            if (value == null) return '';
-            const d = value instanceof Date ? value : new Date(String(value));
-            if (isNaN(d.getTime())) return '';
-            const opts: Intl.DateTimeFormatOptions = col.type === 'dateTime'
-              ? { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
-              : { year: 'numeric', month: '2-digit', day: '2-digit' };
-            if (timeZone) opts.timeZone = timeZone;
-            return d.toLocaleString('es', opts);
-          },
-        };
-      }
-      return col;
-    });
-  }, [gridColumns, timeZone]);
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = gridColumns; el.rows = gridRows;
+    el.loading = listQuery.isLoading || metadataQuery.isLoading;
+    el.getRowId = (row: any) => String(resolveRowKey(row as CatalogRow, keyField) ?? row.id ?? crypto.randomUUID());
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#1976d2' },
+      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
+    ];
+  }, [gridColumns, gridRows, listQuery.isLoading, metadataQuery.isLoading, registered, keyField]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const payload = buildPayload(createValues, resolvedFields);
-      try {
-        return await apiClient.create(endpoint, payload);
-      } catch (error) {
-        if (!isLegacyOkError(error)) throw error;
-        return { ok: true };
-      }
+      const payload = buildPayload(formValues, resolvedFields);
+      try { return await (editKey != null ? apiClient.update(endpoint, editKey, payload) : apiClient.create(endpoint, payload)); }
+      catch (error) { if (!isLegacyOkError(error)) throw error; return { ok: true }; }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint, 'catalog-list'] });
-      setCreateDialogOpen(false);
-      setCreateValues({});
-      setFeedback({ type: 'success', message: 'Registro creado correctamente.' });
+      setDialogOpen(false); setFormValues({}); setEditKey(null);
+      setFeedback({ type: 'success', message: editKey != null ? 'Registro actualizado correctamente.' : 'Registro creado correctamente.' });
     },
-    onError: (error) => {
-      setFeedback({ type: 'error', message: extractErrorMessage(error) });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (row: CatalogRow) => {
-      const key = resolveRowKey(row, keyField);
-      if (key === null) throw new Error(`No se encontro llave primaria (${keyField}) para editar.`);
-      const payload = buildPayloadFromRow(row, resolvedFields);
-      try {
-        await apiClient.update(endpoint, key, payload);
-      } catch (error) {
-        if (!isLegacyOkError(error)) throw error;
-      }
-      return row;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint, 'catalog-list'] });
-    },
-    onError: (error) => {
-      setFeedback({ type: 'error', message: extractErrorMessage(error) });
-    },
+    onError: (error) => setFeedback({ type: 'error', message: extractErrorMessage(error) }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (target: CatalogRow) => {
-      const key = resolveRowKey(target, keyField);
-      if (key === null) throw new Error(`No se encontro llave primaria (${keyField}) para eliminar.`);
-      try {
-        await apiClient.remove(endpoint, key);
-      } catch (error) {
-        if (!isLegacyOkError(error)) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint, 'catalog-list'] });
-      setFeedback({ type: 'success', message: 'Registro eliminado correctamente.' });
-    },
-    onError: (error) => {
-      setFeedback({ type: 'error', message: extractErrorMessage(error) });
-    },
+    mutationFn: async (key: string | number) => { try { await apiClient.remove(endpoint, key); } catch (error) { if (!isLegacyOkError(error)) throw error; } },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: [endpoint, 'catalog-list'] }); setFeedback({ type: 'success', message: 'Registro eliminado correctamente.' }); },
+    onError: (error) => setFeedback({ type: 'error', message: extractErrorMessage(error) }),
   });
 
-  const isCreateDisabled = resolvedFields.some((f) => f.required && !asString(createValues[f.name]).trim());
-
-  // ── Inline-editable DataGrid handlers ──
-
-  const getRowId = useCallback(
-    (row: GridRow): GridRowId => {
-      return String(resolveRowKey(row as CatalogRow, keyField) ?? row.id ?? crypto.randomUUID());
-    },
-    [keyField]
-  );
-
-  const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
-    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-      event.defaultMuiPrevented = true;
+  const handleEdit = useCallback((row: CatalogRow) => {
+    const key = resolveRowKey(row, keyField);
+    if (key === null) return;
+    setEditKey(key);
+    const values: Record<string, string> = {};
+    for (const field of resolvedFields) {
+      if (field.readOnly || field.hidden) continue;
+      values[field.name] = asString(getValueByField(row, field.name));
     }
-  };
+    setFormValues(values);
+    setDialogOpen(true);
+  }, [keyField, resolvedFields]);
 
-  const handleEditClick = useCallback((id: GridRowId) => {
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.Edit } }));
-  }, []);
+  const handleDelete = useCallback(async (row: CatalogRow) => {
+    const key = resolveRowKey(row, keyField);
+    if (key === null) return;
+    await deleteMutation.mutateAsync(key);
+  }, [keyField, deleteMutation]);
 
-  const handleSaveClick = useCallback((id: GridRowId) => {
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.View } }));
-  }, []);
-
-  const handleCancelClick = useCallback((id: GridRowId) => {
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.View, ignoreModifications: true } }));
-  }, []);
-
-  const handleDeleteClick = useCallback(
-    async (id: GridRowId) => {
-      const row = localRows.find((r) => String(getRowId(r as GridRow)) === String(id)) as GridRow | undefined;
-      if (!row) return;
-      try {
-        await deleteMutation.mutateAsync(row as CatalogRow);
-        setLocalRows((prev) => prev.filter((r) => String(getRowId(r as GridRow)) !== String(id)));
-      } catch (error) {
-        console.error('Error al eliminar fila', error);
-      }
-    },
-    [deleteMutation, getRowId, localRows]
-  );
-
-  const processRowUpdate = useCallback(
-    async (newRow: GridRowModel) => {
-      let updatedRow: GridRow = { ...(newRow as GridRow) };
-      const serverRow = await updateMutation.mutateAsync(updatedRow as CatalogRow);
-      if (serverRow) {
-        updatedRow = serverRow as GridRow;
-      }
-
-      setLocalRows((prev) =>
-        prev.map((row) => {
-          const currentId = getRowId(row as GridRow);
-          const editedId = getRowId(newRow as GridRow);
-          return String(currentId) === String(editedId) ? { ...(row as GridRow), ...updatedRow } : row;
-        })
-      );
-
-      return updatedRow;
-    },
-    [getRowId, updateMutation]
-  );
-
-  const columnsWithActions: ZenttoColDef[] = useMemo(() => {
-    if (normalizedColumns.some((col) => col.field === 'actions')) return normalizedColumns as ZenttoColDef[];
-
-    const actionsColumn: ZenttoColDef = {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Acciones',
-      width: 120,
-      getActions: (params) => {
-        const isInEditMode = rowModesModel[params.id]?.mode === GridRowModes.Edit;
-
-        if (isInEditMode) {
-          return [
-            <GridActionsCellItem
-              key="save"
-              icon={<SaveIcon fontSize="small" />}
-              label="Guardar"
-              onClick={() => handleSaveClick(params.id)}
-            />,
-            <GridActionsCellItem
-              key="cancel"
-              icon={<CancelIcon fontSize="small" />}
-              label="Cancelar"
-              onClick={() => handleCancelClick(params.id)}
-            />,
-          ];
-        }
-
-        return [
-          <GridActionsCellItem
-            key="edit"
-            icon={<EditIcon fontSize="small" />}
-            label="Editar"
-            onClick={() => handleEditClick(params.id)}
-          />,
-          <GridActionsCellItem
-            key="delete"
-            icon={<DeleteIcon fontSize="small" />}
-            label="Eliminar"
-            onClick={() => handleDeleteClick(params.id)}
-          />,
-        ];
-      },
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === 'edit') handleEdit(row);
+      if (action === 'delete') handleDelete(row);
     };
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered, gridRows, handleEdit, handleDelete]);
 
-    return [...normalizedColumns, actionsColumn] as ZenttoColDef[];
-  }, [normalizedColumns, handleCancelClick, handleDeleteClick, handleEditClick, handleSaveClick, rowModesModel]);
-
-  const paginationModel: GridPaginationModel = {
-    page: Math.max(page - 1, 0),
-    pageSize: limit,
-  };
+  const isFormDisabled = resolvedFields.some((f) => f.required && !asString(formValues[f.name]).trim());
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <ContextActionHeader
-        title={title}
-        primaryAction={{
-          label: 'Nuevo',
-          onClick: () => {
-            setCreateValues({});
-            setCreateDialogOpen(true);
-          }
-        }}
-        onSearch={(v) => {
-          setSearch(v);
-          setPage(1);
-        }}
+      <ContextActionHeader title={title}
+        primaryAction={{ label: 'Nuevo', onClick: () => { setFormValues({}); setEditKey(null); setDialogOpen(true); } }}
+        onSearch={(v) => { setSearch(v); setPage(1); }}
         searchPlaceholder="Buscar registros..."
       />
 
@@ -570,60 +195,26 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
         <Box sx={{ mt: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <Stack spacing={1.5}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setCreateValues({});
-                  setCreateDialogOpen(true);
-                }}
-              >
-                Nuevo
-              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setFormValues({}); setEditKey(null); setDialogOpen(true); }}>Nuevo</Button>
             </Box>
 
             <Box sx={{ width: '100%', minHeight: 420 }}>
-              <ZenttoDataGrid
-                rows={localRows}
-                columns={columnsWithActions}
-                loading={listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending}
-                getRowId={getRowId}
-                enableHeaderFilters
-                paginationMode="server"
-                rowCount={total}
-                paginationModel={paginationModel}
-                onPaginationModelChange={(model) => setPage(model.page + 1)}
-                pageSizeOptions={[limit]}
-                filterMode="client"
-                ignoreDiacritics
-                slots={{
-                  toolbar: CrudToolbar,
-                }}
-                editMode="row"
-                rowModesModel={rowModesModel}
-                onRowModesModelChange={setRowModesModel}
-                onRowEditStop={handleRowEditStop as any}
-                processRowUpdate={processRowUpdate}
-                onProcessRowUpdateError={(error) => {
-                  console.error('Error al actualizar fila', error);
-                }}
-                disableRowSelectionOnClick
-                mobileVisibleFields={
-                  columnsWithActions
-                    .filter((c) => c.type !== 'actions')
-                    .slice(0, 2)
-                    .map((c) => c.field)
-                }
+              <zentto-grid ref={gridRef} height="420px"
+                enable-toolbar enable-header-menu enable-header-filters enable-clipboard
+                enable-quick-search enable-context-menu enable-status-bar enable-configurator
               />
             </Box>
           </Stack>
         </Box>
       </Box>
 
-      <Dialog open={createDialogOpen} onClose={() => !createMutation.isPending && setCreateDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Nuevo {title}</DialogTitle>
+      <Dialog open={dialogOpen} onClose={() => !createMutation.isPending && setDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{editKey != null ? `Editar ${title}` : `Nuevo ${title}`}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {editKey != null && (
+              <TextField label={prettifyLabel(keyField)} value={String(editKey)} disabled />
+            )}
             {resolvedFields
               .filter((field) => !field.hidden)
               .filter((field) => !field.readOnly)
@@ -632,21 +223,19 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
                   key={field.name}
                   label={field.label || prettifyLabel(field.name)}
                   required={field.required}
-                  value={createValues[field.name] ?? ''}
-                  onChange={(e) => setCreateValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
+                  value={formValues[field.name] ?? ''}
+                  onChange={(e) => setFormValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
                 />
               ))}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)} disabled={createMutation.isPending}>
-            Cancelar
-          </Button>
-          <Button variant="contained" onClick={() => createMutation.mutate()} disabled={createMutation.isPending || isCreateDisabled}>
-            Guardar
-          </Button>
+          <Button onClick={() => setDialogOpen(false)} disabled={createMutation.isPending}>Cancelar</Button>
+          <Button variant="contained" onClick={() => createMutation.mutate()} disabled={createMutation.isPending || isFormDisabled}>Guardar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

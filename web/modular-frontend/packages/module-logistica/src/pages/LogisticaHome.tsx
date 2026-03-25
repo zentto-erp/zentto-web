@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -11,6 +11,7 @@ import {
   Paper,
   Skeleton,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { alpha } from "@mui/material/styles";
@@ -35,13 +36,23 @@ import {
   useReceiptsList,
   useDeliveryNotesList,
 } from "../hooks/useLogistica";
-import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { brandColors } from "@zentto/shared-ui";
 import { formatCurrency } from "@zentto/shared-api";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = activityCols;
+    el.rows = activityRows;
+    el.loading = loadingActivity;
+  }, [activityRows, loadingActivity, registered, activityCols]);
+
   return ((current - previous) / previous) * 100;
 }
 
@@ -119,10 +130,10 @@ function KPICard({ title, value, icon, color, change, loading }: KPICardProps) {
 
 /* ─── Activity Table Columns ─────────────────────────────── */
 
-const activityCols: ZenttoColDef[] = [
+const activityCols: ColumnDef[] = [
   {
     field: "ActivityType",
-    headerName: "Tipo",
+    header: "Tipo",
     width: 100,
     renderCell: (params) => (
       <Chip
@@ -133,18 +144,18 @@ const activityCols: ZenttoColDef[] = [
       />
     ),
   },
-  { field: "DocNumber", headerName: "Documento", flex: 1, minWidth: 120 },
-  { field: "EntityName", headerName: "Entidad", flex: 1.2, minWidth: 130, mobileHide: true },
+  { field: "DocNumber", header: "Documento", flex: 1, minWidth: 120 },
+  { field: "EntityName", header: "Entidad", flex: 1.2, minWidth: 130, mobileHide: true },
   {
     field: "ActivityDate",
-    headerName: "Fecha",
+    header: "Fecha",
     width: 100,
     valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     mobileHide: true,
   },
   {
     field: "StatusLabel",
-    headerName: "Estado",
+    header: "Estado",
     width: 110,
     renderCell: (params) => (
       <Chip label={String(params.value)} size="small" variant="outlined" />
@@ -154,18 +165,18 @@ const activityCols: ZenttoColDef[] = [
 
 /* ─── Quick Stats Columns ────────────────────────────────── */
 
-const recentReceiptCols: ZenttoColDef[] = [
-  { field: "ReceiptNumber", headerName: "N. Recepcion", flex: 1, minWidth: 120 },
-  { field: "SupplierName", headerName: "Proveedor", flex: 1.2, minWidth: 130 },
+const recentReceiptCols: ColumnDef[] = [
+  { field: "ReceiptNumber", header: "N. Recepcion", flex: 1, minWidth: 120 },
+  { field: "SupplierName", header: "Proveedor", flex: 1.2, minWidth: 130 },
   {
     field: "ReceiptDate",
-    headerName: "Fecha",
+    header: "Fecha",
     width: 100,
     valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
   },
   {
     field: "Status",
-    headerName: "Estado",
+    header: "Estado",
     width: 100,
     renderCell: (params) => {
       const s = String(params.value ?? "DRAFT");
@@ -177,18 +188,18 @@ const recentReceiptCols: ZenttoColDef[] = [
   },
 ];
 
-const recentDeliveryCols: ZenttoColDef[] = [
-  { field: "DeliveryNumber", headerName: "N. Albaran", flex: 1, minWidth: 120 },
-  { field: "CustomerName", headerName: "Cliente", flex: 1.2, minWidth: 130 },
+const recentDeliveryCols: ColumnDef[] = [
+  { field: "DeliveryNumber", header: "N. Albaran", flex: 1, minWidth: 120 },
+  { field: "CustomerName", header: "Cliente", flex: 1.2, minWidth: 130 },
   {
     field: "DeliveryDate",
-    headerName: "Fecha",
+    header: "Fecha",
     width: 100,
     valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
   },
   {
     field: "Status",
-    headerName: "Estado",
+    header: "Estado",
     width: 110,
     renderCell: (params) => {
       const s = String(params.value ?? "DRAFT");
@@ -220,7 +231,12 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
   const bp = basePath.replace(/\/+$/, "");
 
   // Data hooks
-  const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
   const { data: receiptsMonthRaw, isLoading: loadingReceipts } = useReceiptsByMonth();
   const { data: deliveryStatusRaw, isLoading: loadingDelivery } = useDeliveryByStatus();
   const { data: activityRaw, isLoading: loadingActivity } = useRecentActivity();
@@ -451,19 +467,17 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
         {loadingActivity ? (
           <Skeleton variant="rectangular" height={300} />
         ) : activityRows.length > 0 ? (
-          <ZenttoDataGrid
-            rows={activityRows}
-            columns={activityCols}
-            serverRowCount={activityRows.length}
-            autoHeight
-            hideFooter
-            disableRowSelectionOnClick
-            density="compact"
-            enableClipboard
-            sx={{ border: 0 }}
-            mobileVisibleFields={["DocNumber", "StatusLabel"]}
-            smExtraFields={["ActivityType"]}
-          />
+          <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         ) : (
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -481,19 +495,17 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
             {loadingRecentReceipts ? (
               <Skeleton variant="rectangular" height={200} />
             ) : receiptRows.length > 0 ? (
-              <ZenttoDataGrid
-                rows={receiptRows}
-                columns={recentReceiptCols}
-                serverRowCount={receiptRows.length}
-                autoHeight
-                hideFooter
-                disableRowSelectionOnClick
-                density="compact"
-                enableClipboard
-                sx={{ border: 0 }}
-                mobileVisibleFields={["ReceiptNumber", "Status"]}
-                smExtraFields={["SupplierName"]}
-              />
+              <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
                 Sin recepciones recientes
@@ -507,19 +519,17 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
             {loadingRecentDeliveries ? (
               <Skeleton variant="rectangular" height={200} />
             ) : deliveryRows.length > 0 ? (
-              <ZenttoDataGrid
-                rows={deliveryRows}
-                columns={recentDeliveryCols}
-                serverRowCount={deliveryRows.length}
-                autoHeight
-                hideFooter
-                disableRowSelectionOnClick
-                density="compact"
-                enableClipboard
-                sx={{ border: 0 }}
-                mobileVisibleFields={["DeliveryNumber", "Status"]}
-                smExtraFields={["CustomerName"]}
-              />
+              <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
                 Sin entregas recientes
@@ -530,4 +540,12 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
       </Grid>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

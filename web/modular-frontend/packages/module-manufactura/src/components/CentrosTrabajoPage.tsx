@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -18,8 +18,9 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -28,6 +29,7 @@ import {
   useUpsertWorkCenter,
   type WorkCenterFilter,
 } from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface WorkCenterFormData {
   workCenterId?: number | null;
@@ -67,8 +69,15 @@ export default function CentrosTrabajoPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useWorkCentersList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useWorkCentersList({
     search,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -78,26 +87,26 @@ export default function CentrosTrabajoPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "WorkCenterCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
-    { field: "WorkCenterName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
+  const columns: ColumnDef[] = [
+    { field: "WorkCenterCode", header: "Codigo", flex: 0.8, minWidth: 100 },
+    { field: "WorkCenterName", header: "Nombre", flex: 1.5, minWidth: 180 },
     {
       field: "CostPerHour",
-      headerName: "Costo/Hora",
+      header: "Costo/Hora",
       width: 120,
       currency: true,
       aggregation: "sum",
     },
     {
       field: "Capacity",
-      headerName: "Capacidad",
+      header: "Capacidad",
       width: 110,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "IsActive",
-      headerName: "Activo",
+      header: "Activo",
       width: 90,
       statusColors: {
         true: "success",
@@ -107,7 +116,7 @@ export default function CentrosTrabajoPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 80,
       sortable: false,
       filterable: false,
@@ -157,6 +166,23 @@ export default function CentrosTrabajoPage() {
 
   const dialogTitle = isEditing ? "Editar Centro de Trabajo" : "Nuevo Centro de Trabajo";
 
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -200,25 +226,19 @@ export default function CentrosTrabajoPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="manufactura-centros-trabajo-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.WorkCenterId ?? row.Id ?? row.WorkCenterCode ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={["WorkCenterName", "IsActive"]}
-        smExtraFields={["CostPerHour", "Capacity"]}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="manufactura-centros-trabajo-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {/* Dialog: Crear/Editar */}
       <Dialog
@@ -322,4 +342,12 @@ export default function CentrosTrabajoPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

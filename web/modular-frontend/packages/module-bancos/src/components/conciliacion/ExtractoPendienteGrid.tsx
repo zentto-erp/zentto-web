@@ -1,9 +1,17 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Box, Paper, Typography, IconButton, Tooltip, Stack } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import LinkIcon from "@mui/icons-material/Link";
-import { formatCurrency } from "@zentto/shared-api";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "Fecha", header: "Fecha", width: 100 },
+  { field: "Descripcion", header: "Descripcion", flex: 1, minWidth: 180 },
+  { field: "Referencia", header: "Referencia", width: 120 },
+  { field: "Monto", header: "Monto", width: 130, type: "number", aggregation: "sum" },
+  { field: "Tipo", header: "Tipo", width: 100 },
+];
 
 interface ExtractoPendienteGridProps {
   extracto: any[];
@@ -14,93 +22,42 @@ interface ExtractoPendienteGridProps {
   isConciliando?: boolean;
 }
 
-const columns: ZenttoColDef[] = [
-  { field: "Fecha", headerName: "Fecha", width: 100 },
-  { field: "Descripcion", headerName: "Descripcion", flex: 1, minWidth: 180 },
-  { field: "Referencia", headerName: "Referencia", width: 120 },
-  {
-    field: "Monto",
-    headerName: "Monto",
-    width: 130,
-    type: "number",
-    currency: true,
-    aggregation: "sum",
-    renderCell: (p) => formatCurrency(p.value ?? 0),
-  },
-  { field: "Tipo", headerName: "Tipo", width: 100 },
-];
-
 export default function ExtractoPendienteGrid({
-  extracto,
-  hasConciliacion,
-  onSelectionChange,
-  onConciliar,
-  canConciliar = false,
-  isConciliando = false,
+  extracto, hasConciliacion, onSelectionChange, onConciliar, canConciliar = false, isConciliando = false,
 }: ExtractoPendienteGridProps) {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = extracto; el.loading = false;
+    el.getRowId = (r: any) => r.ID ?? r.id ?? Math.random();
+  }, [extracto, registered]);
+
   return (
     <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
-      <Box
-        sx={{
-          p: 2,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Typography variant="h6" fontWeight={600}>
-          Extracto pendiente
-        </Typography>
+      <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h6" fontWeight={600}>Extracto pendiente</Typography>
         {onConciliar && (
           <Stack direction="row" spacing={1}>
             <Tooltip title="Conciliar seleccion">
-              <span>
-                <IconButton
-                  color="success"
-                  disabled={!canConciliar || isConciliando}
-                  onClick={onConciliar}
-                >
-                  <LinkIcon />
-                </IconButton>
-              </span>
+              <span><IconButton color="success" disabled={!canConciliar || isConciliando} onClick={onConciliar}><LinkIcon /></IconButton></span>
             </Tooltip>
           </Stack>
         )}
       </Box>
 
       {hasConciliacion && extracto.length > 0 ? (
-        <ZenttoDataGrid
-          rows={extracto}
-          columns={columns}
-          getRowId={(r) => r.ID ?? r.id ?? Math.random()}
-          autoHeight
-          disableMultipleRowSelection
-          onRowSelectionModelChange={(model: any, _details: any) => {
-            const ids = Array.isArray(model) ? model : Array.from(model as any);
-            onSelectionChange?.(ids[0] as number ?? null);
-          }}
-          showTotals
-          enableClipboard
-          sx={{
-            border: 0,
-            "& .MuiDataGrid-row": { cursor: "pointer" },
-          }}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 5 } },
-          }}
-          pageSizeOptions={[5, 10]}
-          mobileVisibleFields={['Fecha', 'Monto']}
-          smExtraFields={['Descripcion', 'Tipo']}
-        />
+        <zentto-grid ref={gridRef} height="300px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       ) : (
         <Box sx={{ p: 3, textAlign: "center" }}>
-          <Typography color="text.secondary">
-            {hasConciliacion ? "Sin extractos pendientes" : "Seleccione una conciliacion"}
-          </Typography>
+          <Typography color="text.secondary">{hasConciliacion ? "Sin extractos pendientes" : "Seleccione una conciliacion"}</Typography>
         </Box>
       )}
     </Paper>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

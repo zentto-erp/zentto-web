@@ -1,359 +1,192 @@
-// components/modules/facturas/FacturasTable.tsx
+// Facturas — migrado de MUI DataGrid a @zentto/datagrid nativo
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Stack,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
-import {
-  Add as AddIcon,
-  Receipt as ReceiptIcon,
-} from "@mui/icons-material";
-import {
-  ZenttoDataGrid,
-  type ZenttoColDef,
-  buildCrudActionsColumn,
-  ConfirmDialog,
-  ZenttoFilterPanel,
-  type FilterFieldDef,
-} from "@zentto/shared-ui";
-import {
-  useFacturasList,
-  useDeleteFactura,
-  useDetalleFactura,
-} from "../../hooks/useFacturas";
+import { Box, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useFacturasList, useDeleteFactura, useDetalleFactura } from "../../hooks/useFacturas";
 import { useTimezone } from "../../hooks/useTimezone";
-import { toDateOnly } from "@zentto/shared-api";
-import { GridSidebar } from "../../components/GridSidebar";
-import { buildPivotConfig, buildGroupingConfig, type LabConfig } from "../../components/LabConfigurator";
 
-// ============ Master-detail estilo AG Grid ============
-const detailColumns: ZenttoColDef[] = [
-  { field: "codigo", headerName: "Codigo", width: 120 },
-  { field: "descripcion", headerName: "Descripcion", flex: 1, minWidth: 200 },
-  { field: "cantidad", headerName: "Cant.", width: 70, type: "number" },
-  { field: "precio", headerName: "Precio", width: 110, type: "number", currency: true },
-  { field: "descuento", headerName: "Desc.", width: 90, type: "number", currency: true },
-  { field: "total", headerName: "Total", width: 120, type: "number", currency: true, aggregation: "sum" },
+// ─── SVG Icons ───────────────────────────────────────
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
+// ─── Columns ─────────────────────────────────────────
+const COLUMNS: ColumnDef[] = [
+  { field: 'numeroFactura', header: 'Numero', width: 150, sortable: true },
+  { field: 'nombreCliente', header: 'Cliente', flex: 1, minWidth: 180, sortable: true, groupable: true },
+  { field: 'fecha', header: 'Fecha', width: 120, type: 'date', sortable: true },
+  { field: 'tipoDoc', header: 'Tipo', width: 110, sortable: true, groupable: true,
+    statusColors: { FACT: 'primary', PRESUP: 'info', PEDIDO: 'warning' }, statusVariant: 'outlined' },
+  { field: 'totalFactura', header: 'Total', width: 140, type: 'number', currency: 'VES', aggregation: 'sum' },
+  { field: 'estado', header: 'Estado', width: 120, sortable: true, groupable: true,
+    statusColors: { Pagada: 'success', Pendiente: 'warning', Emitida: 'info', Anulada: 'error' }, statusVariant: 'outlined' },
 ];
 
-const STATUS_COLOR: Record<string, "success" | "error" | "info" | "warning" | "default"> = {
-  Pagada: "success", Emitida: "info", Anulada: "error", Pendiente: "warning",
-};
+// Detail columns for master-detail (invoice line items)
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: 'codigo', header: 'Codigo', width: 120 },
+  { field: 'descripcion', header: 'Descripcion', flex: 1, minWidth: 200 },
+  { field: 'cantidad', header: 'Cant.', width: 70, type: 'number' },
+  { field: 'precio', header: 'Precio', width: 110, type: 'number', currency: 'VES' },
+  { field: 'descuento', header: 'Desc.', width: 90, type: 'number', currency: 'VES' },
+  { field: 'total', header: 'Total', width: 120, type: 'number', currency: 'VES', aggregation: 'sum' },
+];
 
-function FacturaDetailPanel({ row }: { row: any }) {
-  const numeroFactura = row.numeroFactura;
-  const { data: detalle, isLoading } = useDetalleFactura(numeroFactura);
-  const rawRows = Array.isArray(detalle) ? detalle : [];
-
-  const lines = useMemo(
-    () =>
-      rawRows.map((line: any, idx: number) => {
-        const qty = Number(line.CANTIDAD ?? line.Quantity ?? 0);
-        const price = Number(line.PRECIO ?? line.UnitPrice ?? 0);
-        const discount = Number(line.DESCUENTO ?? line.DiscountAmount ?? 0);
-        return {
-          id: idx,
-          codigo: line.COD_SERV ?? line.ItemCode ?? "",
-          descripcion: line.DESCRIPCION ?? line.Description ?? "",
-          cantidad: qty,
-          precio: price,
-          descuento: discount,
-          total: Number(line.TOTAL ?? line.LineTotal ?? qty * price - discount),
-        };
-      }),
-    [rawRows]
-  );
-
-  const fmt = (v: number) => new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(v);
-
-  return (
-    <Box sx={{ bgcolor: "#fafafa", borderBottom: "2px solid #e0e0e0" }}>
-      {/* ── Header resumen (estilo AG Grid) ── */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={2}
-        sx={{ px: 3, py: 1.5, bgcolor: "#f5f5f5", borderBottom: "1px solid #eee" }}
-      >
-        <ReceiptIcon color="action" />
-        <Box>
-          <Typography variant="subtitle2" fontWeight={700}>{numeroFactura}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {row.nombreCliente || "Sin cliente"}
-          </Typography>
-        </Box>
-        <Chip
-          label={row.estado || "—"}
-          size="small"
-          color={STATUS_COLOR[row.estado] || "default"}
-          variant="filled"
-        />
-        <Typography variant="body2" color="text.secondary">{row.fecha ? new Date(row.fecha).toLocaleDateString("es-VE") : ""}</Typography>
-        <Box sx={{ flex: 1 }} />
-        <Box sx={{ textAlign: "right" }}>
-          <Typography variant="caption" color="text.secondary">Total</Typography>
-          <Typography variant="subtitle2" fontWeight={700}>{fmt(Number(row.totalFactura || 0))} VES</Typography>
-        </Box>
-        <Typography variant="caption" color="text.secondary">
-          {lines.length} item{lines.length !== 1 ? "s" : ""}
-        </Typography>
-      </Stack>
-
-      {/* ── Tabla de lineas ── */}
-      {isLoading ? (
-        <Box sx={{ p: 2, display: "flex", justifyContent: "center" }}>
-          <CircularProgress size={20} />
-        </Box>
-      ) : lines.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ p: 2, pl: 3 }}>
-          Sin renglones
-        </Typography>
-      ) : (
-        <Box sx={{ px: 2, pb: 1 }}>
-          <ZenttoDataGrid
-            gridId={`detail-${numeroFactura}`}
-            columns={detailColumns}
-            rows={lines}
-            density="compact"
-            showTotals
-            hideToolbar
-            disableRowSelectionOnClick
-            hideFooter
-            sx={{
-              border: "none",
-              "& .MuiDataGrid-columnHeaders": { bgcolor: "#f0f0f0", fontSize: "0.75rem" },
-              "& .MuiDataGrid-cell": { fontSize: "0.8rem" },
-            }}
-          />
-        </Box>
-      )}
-    </Box>
-  );
-}
-
-// ============ Definicion de filtros ============
-const FACTURA_FILTERS: FilterFieldDef[] = [
-  {
-    field: "cliente",
-    label: "Cliente",
-    type: "text",
-    placeholder: "Nombre o codigo...",
-  },
-  {
-    field: "estado",
-    label: "Estado",
-    type: "select",
-    options: [
-      { value: "Emitida", label: "Emitida" },
-      { value: "Pagada", label: "Pagada" },
-      { value: "Anulada", label: "Anulada" },
-    ],
-  },
-  { field: "from", label: "Fecha desde", type: "date" },
-  { field: "to", label: "Fecha hasta", type: "date" },
+const FILTER_PANEL = [
+  { field: 'estado', type: 'select', label: 'Estado' },
+  { field: 'tipoDoc', type: 'select', label: 'Tipo' },
+  { field: 'totalFactura', type: 'range', label: 'Total' },
+  { field: 'nombreCliente', type: 'text', label: 'Cliente', placeholder: 'Nombre...' },
 ];
 
 export default function FacturasTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [anularOpen, setAnularOpen] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<string | null>(null);
 
-  // Configurador lab
-  const [labConfig, setLabConfig] = useState<LabConfig>({
-    pivotEnabled: true, pivotRowField: "nombreCliente", pivotColField: "estado",
-    pivotValueField: "totalFactura", pivotAgg: "sum", pivotGrandTotals: true, pivotRowTotals: true,
-    groupingEnabled: true, groupField: "estado", groupSubtotals: true, groupSort: "asc",
-    headerFilters: true, showTotals: true, clipboard: true, columnGroups: true, pinning: true,
-    pinnedLeft: ["numeroFactura"], pinnedRight: ["actions"],
-  });
+  // Register web component
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
 
-  const FACTURA_FIELDS = [
-    { value: "nombreCliente", label: "Cliente" },
-    { value: "estado", label: "Estado" },
-    { value: "tipoDoc", label: "Tipo" },
-    { value: "fecha", label: "Fecha" },
-    { value: "numeroFactura", label: "Numero" },
-  ];
-  const FACTURA_NUMERIC = [{ value: "totalFactura", label: "Total" }];
-
-  // Filtros (manejados por ZenttoFilterPanel)
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-
-  const handleFilterChange = (vals: Record<string, string>) => {
-    setFilterValues(vals);
-    setPage(0);
-  };
-
-  const handleSearchChange = (val: string) => {
-    setSearch(val);
-    setPage(0);
-  };
-
-  const { data: facturas, isLoading } = useFacturasList({
-    search: search || undefined,
-    page: page + 1,
-    limit: pageSize,
-    estado: filterValues.estado || undefined,
-    cliente: filterValues.cliente || undefined,
-    from: filterValues.from || undefined,
-    to: filterValues.to || undefined,
-  });
-
+  // Fetch data
+  const { data: facturas, isLoading } = useFacturasList({ page: 1, limit: 100 });
   const { mutate: deleteFactura, isPending: isDeleting } = useDeleteFactura();
 
-  const handleAnularClick = (numero: string) => {
-    setSelectedFactura(numero);
-    setAnularOpen(true);
+  // Map API data to grid rows with detail items
+  const rows = useMemo(() => {
+    return (facturas?.data || []).map((f: any, idx: number) => ({
+      id: f.numeroFactura || idx,
+      ...f,
+      tipoDoc: 'FACT',
+      // items will be loaded on expand
+      _hasDetail: true,
+    }));
+  }, [facturas?.data]);
+
+  // Action handlers
+  const handleAction = (e: CustomEvent) => {
+    const { action, row } = e.detail;
+    if (action === 'view') router.push(`/facturas/${row.numeroFactura}`);
+    if (action === 'edit') router.push(`/facturas/${row.numeroFactura}/edit`);
+    if (action === 'delete') {
+      setSelectedFactura(row.numeroFactura);
+      setAnularOpen(true);
+    }
   };
 
   const handleConfirmAnular = () => {
     if (selectedFactura) {
       deleteFactura(selectedFactura, {
-        onSuccess: () => {
-          setAnularOpen(false);
-          setSelectedFactura(null);
-        },
-        onError: (err) => {
-          console.error("Error anulando:", err);
-        },
+        onSuccess: () => { setAnularOpen(false); setSelectedFactura(null); },
+        onError: (err) => console.error("Error anulando:", err),
       });
     }
   };
 
-  const columns = useMemo<ZenttoColDef[]>(
-    () => [
-      { field: "numeroFactura", headerName: "Numero", width: 150, sortable: true },
-      { field: "nombreCliente", headerName: "Cliente", flex: 1, minWidth: 180, sortable: true, mobileHide: true },
-      {
-        field: "fecha", headerName: "Fecha", width: 120, sortable: true,
-        valueFormatter: (value: string) => value ? toDateOnly(value, timeZone) : "",
-      },
-      {
-        field: "tipoDoc", headerName: "Tipo", width: 110, tabletHide: true,
-        statusColors: { FACT: "primary", PRESUP: "info", PEDIDO: "warning" },
-        statusVariant: "outlined",
-      },
-      { field: "totalFactura", headerName: "Total", width: 140, type: "number", currency: true, aggregation: "sum" },
-      {
-        field: "estado", headerName: "Estado", width: 120,
-        statusColors: { Pagada: "success", Pendiente: "warning", Emitida: "info", Anulada: "error", Cancelada: "default" },
-        statusVariant: "outlined",
-      },
-      buildCrudActionsColumn({
-        onView: (row) => router.push(`/facturas/${row.numeroFactura}`),
-        onDelete: (row) => handleAnularClick(row.numeroFactura),
-      }),
-    ],
-    [timeZone, router]
-  );
+  // Detail renderer: HTML string with invoice header info
+  const detailRenderer = (row: any) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);margin-bottom:8px">
+      <strong>${row.numeroFactura}</strong>
+      <span style="color:#666">${row.nombreCliente || 'Sin cliente'}</span>
+      <span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${
+        row.estado === 'Pagada' ? '#ecfdf5;color:#059669' :
+        row.estado === 'Anulada' ? '#fef2f2;color:#dc2626' :
+        '#eff6ff;color:#2563eb'
+      }">${row.estado}</span>
+      <span style="flex:1"></span>
+      <span style="font-weight:700">${new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2 }).format(Number(row.totalFactura || 0))} VES</span>
+    </div>
+  `;
 
-  const rows = useMemo(
-    () =>
-      (facturas?.data || []).map((f: any, idx: number) => ({
-        id: f.numeroFactura || idx,
-        ...f,
-      })),
-    [facturas?.data]
-  );
+  // Bind props to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.filterPanel = FILTER_PANEL;
+    el.detailRenderer = detailRenderer;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
+      { icon: SVG_DELETE, label: 'Anular', action: 'delete', color: '#dc2626' },
+    ];
+  }, [rows, isLoading, registered]);
+
+  // Listen for action clicks
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.addEventListener('action-click', handleAction);
+    return () => el.removeEventListener('action-click', handleAction);
+  }, [registered, router]);
+
+  if (!registered) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+  }
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Facturas
-        </Typography>
+        <Typography variant="h5" fontWeight={600}>Facturas</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/facturas/new")}>
           Nueva Factura
         </Button>
       </Box>
 
-      {/* Filtros reutilizables */}
-      <ZenttoFilterPanel
-        filters={FACTURA_FILTERS}
-        values={filterValues}
-        onChange={handleFilterChange}
-        searchPlaceholder="Buscar por numero, cliente o referencia..."
-        searchValue={search}
-        onSearchChange={handleSearchChange}
-      />
-
-      {/* Grid + Sidebar integrado estilo AG Grid */}
-      <GridSidebar config={labConfig} onChange={setLabConfig} fields={FACTURA_FIELDS} numericFields={FACTURA_NUMERIC}>
-        <ZenttoDataGrid
-          gridId="lab-facturas"
-          columns={columns}
-          rows={rows}
-          loading={isLoading}
-          paginationMode="server"
-          rowCount={facturas?.total ?? 0}
-          serverRowCount={facturas?.total ?? 0}
-          paginationModel={{ page, pageSize }}
-          onPaginationModelChange={(model) => {
-            setPage(model.page);
-            setPageSize(model.pageSize);
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          density="comfortable"
-          // ─── Funciones controladas por el configurador ──────
-          enableClipboard={labConfig.clipboard}
-          enableHeaderFilters={labConfig.headerFilters}
-          showTotals={labConfig.showTotals}
-          totalsLabel="Totales"
-          defaultCurrency="VES"
-          enableGrouping={labConfig.groupingEnabled}
-          rowGroupingConfig={buildGroupingConfig(labConfig)}
-          enablePivot={labConfig.pivotEnabled}
-          pivotConfig={buildPivotConfig(labConfig, FACTURA_FIELDS)}
-          columnGroups={labConfig.columnGroups ? [
-            { groupId: "documento", headerName: "Documento", children: ["numeroFactura", "tipoDoc", "estado"] },
-            { groupId: "comercial", headerName: "Comercial", children: ["nombreCliente", "totalFactura"] },
-            { groupId: "fechas", headerName: "Fechas", children: ["fecha"] },
-          ] : undefined}
-          pinnedColumns={labConfig.pinning ? { left: ["numeroFactura"], right: ["actions"] } : undefined}
-          // Master-Detail
-          getDetailContent={(row) => (
-            <FacturaDetailPanel row={row} />
-          )}
-          detailPanelHeight="auto"
-          // Nuevas features
-          enableContextMenu
-          enableFind
-          enableStatusBar
-          // Export
-          exportFilename="lab-facturas"
-          hideQuickFilter
-          mobileVisibleFields={["numeroFactura", "nombreCliente", "totalFactura"]}
-          sx={{ height: "100%" }}
-        />
-      </GridSidebar>
+      {/* Grid nativo */}
+      <zentto-grid
+        ref={gridRef}
+        default-currency="VES"
+        export-filename="facturas"
+        height="calc(100vh - 180px)"
+        show-totals
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-find
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-row-selection
+        enable-filter-panel
+        enable-master-detail
+      ></zentto-grid>
 
       {/* Anular Confirmation Dialog */}
-      <ConfirmDialog
-        open={anularOpen}
-        title="Anular Factura"
-        message={`Esta seguro de que desea anular la factura ${selectedFactura || ""}? Esta accion no puede deshacerse.`}
-        confirmLabel={isDeleting ? "Anulando..." : "Anular"}
-        variant="danger"
-        onConfirm={handleConfirmAnular}
-        onClose={() => {
-          setAnularOpen(false);
-          setSelectedFactura(null);
-        }}
-        loading={isDeleting}
-      />
+      <Dialog open={anularOpen} onClose={() => { setAnularOpen(false); setSelectedFactura(null); }}>
+        <DialogTitle>Anular Factura</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Esta seguro de que desea anular la factura <strong>{selectedFactura}</strong>? Esta accion no puede deshacerse.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setAnularOpen(false); setSelectedFactura(null); }}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmAnular} disabled={isDeleting}>
+            {isDeleting ? 'Anulando...' : 'Anular'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

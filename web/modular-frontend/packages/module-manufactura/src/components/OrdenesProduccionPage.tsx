@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -22,8 +22,9 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -42,6 +43,7 @@ import OrdenDetalleDialog from "./OrdenDetalleDialog";
 import MaterialConsumptionPanel from "./MaterialConsumptionPanel";
 import OutputReportPanel from "./OutputReportPanel";
 import RoutingPage from "./RoutingPage";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Tab Panel helper ────────────────────────────────────── */
 
@@ -68,6 +70,23 @@ function OrdenDetailPanel({ row }: { row: Record<string, unknown> }) {
     { label: 'Inicio planificado', value: row.PlannedStart ? String(row.PlannedStart).slice(0, 10) : null },
     { label: 'Fin planificado', value: row.PlannedEnd ? String(row.PlannedEnd).slice(0, 10) : null },
   ].filter(f => f.value != null && f.value !== '');
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ px: 2, py: 1 }}>
@@ -209,6 +228,8 @@ export default function OrdenesProduccionPage() {
   const [plannedEnd, setPlannedEnd] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [notes, setNotes] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -222,7 +243,12 @@ export default function OrdenesProduccionPage() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  const { data, isLoading } = useWorkOrdersList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useWorkOrdersList({
     ...filter,
     search: search || undefined,
     page: paginationModel.page + 1,
@@ -236,20 +262,20 @@ export default function OrdenesProduccionPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "WorkOrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 120 },
-    { field: "ProductName", headerName: "Producto", flex: 1.5, minWidth: 180 },
-    { field: "BOMCode", headerName: "BOM", flex: 0.8, minWidth: 100 },
+  const columns: ColumnDef[] = [
+    { field: "WorkOrderNumber", header: "N. Orden", flex: 0.8, minWidth: 120 },
+    { field: "ProductName", header: "Producto", flex: 1.5, minWidth: 180 },
+    { field: "BOMCode", header: "BOM", flex: 0.8, minWidth: 100 },
     {
       field: "PlannedQuantity",
-      headerName: "Cantidad",
+      header: "Cantidad",
       width: 100,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 130,
       statusColors: {
         DRAFT: "default",
@@ -260,7 +286,7 @@ export default function OrdenesProduccionPage() {
     },
     {
       field: "Priority",
-      headerName: "Prioridad",
+      header: "Prioridad",
       width: 100,
       statusColors: {
         HIGH: "error",
@@ -270,19 +296,19 @@ export default function OrdenesProduccionPage() {
     },
     {
       field: "PlannedStart",
-      headerName: "Inicio",
+      header: "Inicio",
       width: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "PlannedEnd",
-      headerName: "Fin",
+      header: "Fin",
       width: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 140,
       sortable: false,
       filterable: false,
@@ -397,30 +423,20 @@ export default function OrdenesProduccionPage() {
       />
 
       {/* DataGrid con master-detail */}
-      <ZenttoDataGrid
-        gridId="manufactura-ordenes-produccion-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.WorkOrderId ?? row.Id ?? row.WorkOrderNumber ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        enableGrouping
-        onRowClick={(params) => {
-          const id = Number(params.row.WorkOrderId ?? params.row.Id);
-          if (id) setDetailOrderId(id);
-        }}
-        sx={{ bgcolor: "background.paper", borderRadius: 2, "& .MuiDataGrid-row": { cursor: "pointer" } }}
-        mobileVisibleFields={["WorkOrderNumber", "Status"]}
-        smExtraFields={["ProductName", "PlannedStart"]}
-        getDetailContent={(row: any) => <OrdenDetailPanel row={row} />}
+      <zentto-grid
+        ref={gridRef}
+        export-filename="manufactura-ordenes-produccion-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+        enable-grouping
+      ></zentto-grid>}
         detailPanelHeight="auto"
       />
 
@@ -549,4 +565,12 @@ export default function OrdenesProduccionPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

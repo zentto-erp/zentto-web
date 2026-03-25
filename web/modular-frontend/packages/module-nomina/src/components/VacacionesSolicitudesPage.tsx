@@ -1,60 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  IconButton,
-  Alert,
-  Tooltip,
+  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  Chip, Alert,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import PaymentIcon from "@mui/icons-material/Payment";
+import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import {
-  useVacacionSolicitudesList,
-  useAprobarSolicitud,
-  useRechazarSolicitud,
-  useCancelarSolicitud,
-  useProcesarPagoVacaciones,
-  type SolicitudFilter,
+  useVacacionSolicitudesList, useAprobarSolicitud, useRechazarSolicitud,
+  useCancelarSolicitud, useProcesarPagoVacaciones, type SolicitudFilter,
 } from "../hooks/useVacacionesSolicitudes";
 
 const statusColors: Record<string, "warning" | "success" | "error" | "info" | "default"> = {
-  PENDIENTE: "warning",
-  APROBADA: "success",
-  RECHAZADA: "error",
-  PROCESADA: "info",
-  CANCELADA: "default",
+  PENDIENTE: "warning", APROBADA: "success", RECHAZADA: "error", PROCESADA: "info", CANCELADA: "default",
 };
 
+const COLUMNS: ColumnDef[] = [
+  { field: "RequestId", header: "ID", width: 70 },
+  { field: "EmployeeCode", header: "Cédula", width: 120, sortable: true },
+  { field: "EmployeeName", header: "Empleado", flex: 1, minWidth: 180, sortable: true },
+  { field: "RequestDate", header: "Fecha Solicitud", width: 120 },
+  { field: "StartDate", header: "Desde", width: 110 },
+  { field: "EndDate", header: "Hasta", width: 110 },
+  { field: "TotalDays", header: "Días", width: 70, type: "number" },
+  { field: "IsPartial", header: "Parcial", width: 80 },
+  { field: "Status", header: "Estado", width: 120, statusColors: { PENDIENTE: "warning", APROBADA: "success", RECHAZADA: "error", PROCESADA: "info", CANCELADA: "default" } },
+];
+
 const SOLICITUDES_FILTERS: FilterFieldDef[] = [
-  {
-    field: "status", label: "Estado", type: "select",
-    options: [
-      { value: "PENDIENTE", label: "Pendiente" },
-      { value: "APROBADA", label: "Aprobada" },
-      { value: "RECHAZADA", label: "Rechazada" },
-      { value: "PROCESADA", label: "Procesada" },
-      { value: "CANCELADA", label: "Cancelada" },
-    ],
-  },
+  { field: "status", label: "Estado", type: "select", options: [
+    { value: "PENDIENTE", label: "Pendiente" }, { value: "APROBADA", label: "Aprobada" },
+    { value: "RECHAZADA", label: "Rechazada" }, { value: "PROCESADA", label: "Procesada" },
+    { value: "CANCELADA", label: "Cancelada" },
+  ]},
   { field: "fechaDesde", label: "Fecha desde", type: "date" },
   { field: "fechaHasta", label: "Fecha hasta", type: "date" },
 ];
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+const SVG_REJECT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+const SVG_PAY = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+
 export default function VacacionesSolicitudesPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<SolicitudFilter>({ page: 1, limit: 50 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -73,161 +64,61 @@ export default function VacacionesSolicitudesPage() {
   const rows = data?.rows ?? data?.data ?? [];
   const totalCount = data?.total ?? data?.totalCount ?? rows.length;
 
-  const showSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(""), 4000);
-  };
+  const showSuccess = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(""), 4000); };
 
-  const handleAprobar = async (id: number) => {
-    await aprobarMut.mutateAsync(id);
-    showSuccess("Solicitud aprobada exitosamente");
-  };
-
+  const handleAprobar = async (id: number) => { await aprobarMut.mutateAsync(id); showSuccess("Solicitud aprobada exitosamente"); };
   const handleRechazar = async () => {
     if (!rejectId || !rejectReason) return;
     await rechazarMut.mutateAsync({ id: rejectId, reason: rejectReason });
-    setRejectOpen(false);
-    setRejectReason("");
-    setRejectId(null);
-    showSuccess("Solicitud rechazada");
+    setRejectOpen(false); setRejectReason(""); setRejectId(null); showSuccess("Solicitud rechazada");
   };
+  const handleProcesarPago = async (id: number) => { await procesarPagoMut.mutateAsync(id); showSuccess("Pago de vacaciones generado exitosamente"); };
 
-  const handleCancelar = async (id: number) => {
-    await cancelarMut.mutateAsync(id);
-    showSuccess("Solicitud cancelada");
-  };
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
-  const handleProcesarPago = async (id: number) => {
-    await procesarPagoMut.mutateAsync(id);
-    showSuccess("Pago de vacaciones generado exitosamente");
-  };
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
+    el.getRowId = (r: any) => r.RequestId ?? r.requestId ?? Math.random();
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver detalle", action: "view" },
+      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
+      { icon: SVG_REJECT, label: "Rechazar", action: "reject", color: "#dc2626" },
+      { icon: SVG_PAY, label: "Generar pago", action: "pay", color: "#1976d2" },
+    ];
+  }, [rows, isLoading, registered]);
 
-  const columns: ZenttoColDef[] = [
-    { field: "RequestId", headerName: "ID", width: 70 },
-    { field: "EmployeeCode", headerName: "Cédula", width: 120 },
-    { field: "EmployeeName", headerName: "Empleado", flex: 1, minWidth: 180 },
-    { field: "RequestDate", headerName: "Fecha Solicitud", width: 120 },
-    { field: "StartDate", headerName: "Desde", width: 110 },
-    { field: "EndDate", headerName: "Hasta", width: 110 },
-    { field: "TotalDays", headerName: "Días", width: 70, type: "number" },
-    {
-      field: "IsPartial", headerName: "Parcial", width: 80,
-      renderCell: (p) => p.value ? <Chip label="Sí" size="small" color="info" /> : null,
-    },
-    {
-      field: "Status", headerName: "Estado", width: 120,
-      renderCell: (p) => (
-        <Chip
-          label={p.value}
-          size="small"
-          color={statusColors[p.value as string] || "default"}
-        />
-      ),
-      statusColors: { 'PENDIENTE': 'warning', 'APROBADA': 'success', 'RECHAZADA': 'error', 'PROCESADA': 'info', 'CANCELADA': 'default' },
-    },
-    {
-      field: "acciones", headerName: "Acciones", width: 200, sortable: false,
-      renderCell: (p) => {
-        const status = p.row.Status;
-        const id = p.row.RequestId;
-        return (
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Ver detalle">
-              <IconButton size="small" onClick={() => setSelectedRow(p.row)}>
-                <VisibilityIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            {status === "PENDIENTE" && (
-              <>
-                <Tooltip title="Aprobar solicitud">
-                  <span>
-                    <IconButton
-                      size="small"
-                      color="success"
-                      onClick={() => handleAprobar(id)}
-                      disabled={aprobarMut.isPending}
-                    >
-                      <CheckCircleIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <Tooltip title="Rechazar solicitud">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => { setRejectId(id); setRejectOpen(true); }}
-                  >
-                    <CancelIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
-            {status === "APROBADA" && (
-              <Tooltip title="Generar pago">
-                <span>
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={() => handleProcesarPago(id)}
-                    disabled={procesarPagoMut.isPending}
-                  >
-                    <PaymentIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-          </Stack>
-        );
-      },
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") setSelectedRow(row);
+      if (action === "approve" && row.Status === "PENDIENTE") handleAprobar(row.RequestId);
+      if (action === "reject" && row.Status === "PENDIENTE") { setRejectId(row.RequestId); setRejectOpen(true); }
+      if (action === "pay" && row.Status === "APROBADA") handleProcesarPago(row.RequestId);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Typography variant="h6" fontWeight={600} mb={2}>
-        Solicitudes de Vacaciones
-      </Typography>
-
+      <Typography variant="h6" fontWeight={600} mb={2}>Solicitudes de Vacaciones</Typography>
       {successMsg && <Alert severity="success" sx={{ mb: 2 }}>{successMsg}</Alert>}
 
-      <ZenttoFilterPanel
-        filters={SOLICITUDES_FILTERS}
-        values={filterValues}
-        onChange={(v) => {
-          setFilterValues(v);
-          setFilter((f) => ({ ...f, status: v.status || undefined }));
-        }}
-        searchPlaceholder="Buscar por cedula..."
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setFilter((f) => ({ ...f, employeeCode: v || undefined }));
-        }}
+      <ZenttoFilterPanel filters={SOLICITUDES_FILTERS} values={filterValues}
+        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, status: v.status || undefined })); }}
+        searchPlaceholder="Buscar por cedula..." searchValue={search}
+        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, employeeCode: v || undefined })); }}
       />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <ZenttoDataGrid
-            gridId="nomina-vacaciones-solicitudes-list"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          rowCount={totalCount}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.RequestId ?? r.requestId ?? Math.random()}
-          enableGrouping
-          enableClipboard
-          enableHeaderFilters
-          mobileVisibleFields={['EmployeeCode', 'EmployeeName']}
-          smExtraFields={['StartDate', 'Status']}
-        />
+        <zentto-grid ref={gridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Paper>
 
       {/* Detail Dialog */}
       <Dialog open={selectedRow != null} onClose={() => setSelectedRow(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Detalle Solicitud #{selectedRow?.RequestId}
-        </DialogTitle>
+        <DialogTitle>Detalle Solicitud #{selectedRow?.RequestId}</DialogTitle>
         <DialogContent>
           {selectedRow && (
             <Stack spacing={1.5} mt={1}>
@@ -240,33 +131,21 @@ export default function VacacionesSolicitudesPage() {
                 <Typography variant="body2"><strong>Estado:</strong></Typography>
                 <Chip label={selectedRow.Status} size="small" color={statusColors[selectedRow.Status] || "default"} />
               </Box>
-              {selectedRow.Notes && (
-                <Typography variant="body2"><strong>Notas:</strong> {selectedRow.Notes}</Typography>
-              )}
-              {selectedRow.ApprovedBy && (
-                <Typography variant="body2"><strong>Aprobado por:</strong> {selectedRow.ApprovedBy}</Typography>
-              )}
-              {selectedRow.RejectionReason && (
-                <Typography variant="body2"><strong>Motivo de rechazo:</strong> {selectedRow.RejectionReason}</Typography>
-              )}
+              {selectedRow.Notes && <Typography variant="body2"><strong>Notas:</strong> {selectedRow.Notes}</Typography>}
+              {selectedRow.ApprovedBy && <Typography variant="body2"><strong>Aprobado por:</strong> {selectedRow.ApprovedBy}</Typography>}
+              {selectedRow.RejectionReason && <Typography variant="body2"><strong>Motivo de rechazo:</strong> {selectedRow.RejectionReason}</Typography>}
             </Stack>
           )}
         </DialogContent>
         <DialogActions>
           {selectedRow?.Status === "PENDIENTE" && (
             <>
-              <Button color="success" onClick={() => { handleAprobar(selectedRow.RequestId); setSelectedRow(null); }}>
-                Aprobar
-              </Button>
-              <Button color="error" onClick={() => { setRejectId(selectedRow.RequestId); setRejectOpen(true); setSelectedRow(null); }}>
-                Rechazar
-              </Button>
+              <Button color="success" onClick={() => { handleAprobar(selectedRow.RequestId); setSelectedRow(null); }}>Aprobar</Button>
+              <Button color="error" onClick={() => { setRejectId(selectedRow.RequestId); setRejectOpen(true); setSelectedRow(null); }}>Rechazar</Button>
             </>
           )}
           {selectedRow?.Status === "APROBADA" && (
-            <Button color="primary" onClick={() => { handleProcesarPago(selectedRow.RequestId); setSelectedRow(null); }}>
-              Generar Pago
-            </Button>
+            <Button color="primary" onClick={() => { handleProcesarPago(selectedRow.RequestId); setSelectedRow(null); }}>Generar Pago</Button>
           )}
           <Button onClick={() => setSelectedRow(null)}>Cerrar</Button>
         </DialogActions>
@@ -276,28 +155,15 @@ export default function VacacionesSolicitudesPage() {
       <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Rechazar Solicitud</DialogTitle>
         <DialogContent>
-          <TextField
-            label="Motivo del rechazo"
-            multiline
-            rows={3}
-            fullWidth
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            sx={{ mt: 1 }}
-          />
+          <TextField label="Motivo del rechazo" multiline rows={3} fullWidth value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} sx={{ mt: 1 }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setRejectOpen(false); setRejectReason(""); }}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleRechazar}
-            disabled={!rejectReason || rechazarMut.isPending}
-          >
-            Rechazar
-          </Button>
+          <Button variant="contained" color="error" onClick={handleRechazar} disabled={!rejectReason || rechazarMut.isPending}>Rechazar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

@@ -1,178 +1,70 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Stack,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  Tooltip,
-  CircularProgress,
+  Box, Paper, Typography, Button, TextField, Dialog, DialogTitle, DialogContent,
+  DialogActions, Stack, MenuItem, Select, InputLabel, FormControl, CircularProgress,
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import SendIcon from "@mui/icons-material/Send";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import CalculateIcon from "@mui/icons-material/Calculate";
-import { formatCurrency, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useCountries } from "@zentto/shared-api";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
-  useDeclaracionesList,
-  useCalcularDeclaracion,
-  usePresentarDeclaracion,
-  type DeclarationFilter,
+  useDeclaracionesList, useCalcularDeclaracion, usePresentarDeclaracion, type DeclarationFilter,
 } from "../hooks/useFiscalTributaria";
 
 const DECLARATION_TYPES = [
-  { value: "", label: "Todos" },
-  { value: "IVA", label: "IVA" },
-  { value: "ISLR", label: "ISLR" },
-  { value: "IRPF", label: "IRPF" },
+  { value: "", label: "Todos" }, { value: "IVA", label: "IVA" },
+  { value: "ISLR", label: "ISLR" }, { value: "IRPF", label: "IRPF" },
   { value: "MODELO_303", label: "Modelo 303" },
 ];
-
 const STATUS_OPTIONS = [
-  { value: "", label: "Todos" },
-  { value: "DRAFT", label: "Borrador" },
-  { value: "CALCULATED", label: "Calculada" },
-  { value: "SUBMITTED", label: "Presentada" },
+  { value: "", label: "Todos" }, { value: "DRAFT", label: "Borrador" },
+  { value: "CALCULATED", label: "Calculada" }, { value: "SUBMITTED", label: "Presentada" },
   { value: "PAID", label: "Pagada" },
 ];
 
-const statusColor = (s: string) => {
-  switch (s) {
-    case "DRAFT": return "default";
-    case "CALCULATED": return "info";
-    case "SUBMITTED": return "warning";
-    case "PAID": return "success";
-    default: return "default";
-  }
-};
+const COLUMNS: ColumnDef[] = [
+  { field: "DeclarationType", header: "Tipo", width: 130, sortable: true, groupable: true },
+  { field: "PeriodCode", header: "Periodo", width: 110, sortable: true },
+  { field: "CountryCode", header: "Pais", width: 80, sortable: true },
+  { field: "SalesBase", header: "Base Ventas", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "SalesTax", header: "Imp. Ventas", width: 120, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "PurchasesBase", header: "Base Compras", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "PurchasesTax", header: "Imp. Compras", width: 120, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "NetPayable", header: "Neto a Pagar", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "Status", header: "Estado", width: 130, sortable: true, groupable: true,
+    statusColors: { DRAFT: "default", CALCULATED: "info", SUBMITTED: "warning", PAID: "success" },
+    statusVariant: "outlined",
+  },
+];
 
-interface CalcForm {
-  declarationType: string;
-  periodCode: string;
-  countryCode: string;
-}
+interface CalcForm { declarationType: string; periodCode: string; countryCode: string; }
 
 export default function DeclaracionesPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const { data: countries = [] } = useCountries();
-  const router = useRouter();
   const [filter, setFilter] = useState<DeclarationFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [openCalc, setOpenCalc] = useState(false);
-  const [calcForm, setCalcForm] = useState<CalcForm>({
-    declarationType: "IVA",
-    periodCode: "",
-    countryCode: "VE",
-  });
+  const [calcForm, setCalcForm] = useState<CalcForm>({ declarationType: "IVA", periodCode: "", countryCode: "VE" });
 
   const { data, isLoading } = useDeclaracionesList(filter);
   const calcularMutation = useCalcularDeclaracion();
   const presentarMutation = usePresentarDeclaracion();
-
   const rows = data?.rows ?? [];
 
-  const columns: ZenttoColDef[] = [
-    {
-      field: "DeclarationType",
-      headerName: "Tipo",
-      width: 130,
-      renderCell: (p) => <Chip label={p.value} size="small" color="primary" variant="outlined" />,
-    },
-    { field: "PeriodCode", headerName: "Periodo", width: 110 },
-    { field: "CountryCode", headerName: "Pais", width: 80 },
-    {
-      field: "SalesBase",
-      headerName: "Base Ventas",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "SalesTax",
-      headerName: "Imp. Ventas",
-      width: 120,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "PurchasesBase",
-      headerName: "Base Compras",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "PurchasesTax",
-      headerName: "Imp. Compras",
-      width: 120,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "NetPayable",
-      headerName: "Neto a Pagar",
-      width: 140,
-      renderCell: (p) => (
-        <Typography variant="body2" fontWeight={700}>
-          {formatCurrency(p.value)}
-        </Typography>
-      ),
-    },
-    {
-      field: "Status",
-      headerName: "Estado",
-      width: 130,
-      renderCell: (p) => (
-        <Chip label={p.value} size="small" color={statusColor(p.value) as any} />
-      ),
-    },
-    {
-      field: "acciones",
-      headerName: "",
-      width: 130,
-      sortable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver detalle">
-            <IconButton
-              size="small"
-              onClick={() => router.push(`/contabilidad/fiscal/declaraciones/${p.row.DeclarationId}`)}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {p.row.Status === "CALCULATED" && (
-            <Tooltip title="Presentar">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => presentarMutation.mutate({ id: p.row.DeclarationId })}
-                disabled={presentarMutation.isPending}
-              >
-                <SendIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Tooltip title="Exportar">
-            <IconButton size="small">
-              <FileDownloadIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows.map((r: any) => ({ ...r, id: r.DeclarationId }));
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
 
   const handleCalcular = async () => {
     await calcularMutation.mutateAsync(calcForm);
@@ -180,15 +72,13 @@ export default function DeclaracionesPage() {
     setCalcForm({ declarationType: "IVA", periodCode: "", countryCode: "VE" });
   };
 
+  if (!registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+  }
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Declaraciones tributarias"
-        primaryAction={{
-          label: "Calcular declaración",
-          onClick: () => setOpenCalc(true),
-        }}
-      />
+      <ContextActionHeader title="Declaraciones tributarias" primaryAction={{ label: "Calcular declaracion", onClick: () => setOpenCalc(true) }} />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <ZenttoFilterPanel
@@ -200,94 +90,66 @@ export default function DeclaracionesPage() {
           values={filterValues}
           onChange={(vals) => {
             setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              declarationType: vals.declarationType || undefined,
-              year: vals.year ? Number(vals.year) : undefined,
-              status: vals.status || undefined,
-              page: 1,
-            }));
+            setFilter((f) => ({ ...f, declarationType: vals.declarationType || undefined, year: vals.year ? Number(vals.year) : undefined, status: vals.status || undefined, page: 1 }));
           }}
           searchPlaceholder="Buscar declaracion..."
           searchValue={search}
           onSearchChange={setSearch}
         />
 
-        {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <ZenttoDataGrid
-            gridId="contabilidad-declaraciones-list"
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            enableHeaderFilters
-            pageSizeOptions={[25, 50]}
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            rowCount={data?.total ?? 0}
-            paginationMode="server"
-            disableRowSelectionOnClick
-            getRowId={(row) => row.DeclarationId}
-            sx={{ border: "none" }}
-            mobileVisibleFields={['DeclarationType', 'PeriodCode']}
-            smExtraFields={['Status', 'NetPayable']}
-          />
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="declaraciones"
+            height="100%"
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
         </Paper>
       </Box>
 
-      {/* Dialog Calcular Declaracion */}
       <Dialog open={openCalc} onClose={() => setOpenCalc(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Calcular declaración</DialogTitle>
+        <DialogTitle>Calcular declaracion</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormControl fullWidth>
-              <InputLabel>Tipo declaración</InputLabel>
-              <Select
-                label="Tipo declaración"
-                value={calcForm.declarationType}
-                onChange={(e) => setCalcForm((f) => ({ ...f, declarationType: e.target.value }))}
-              >
-                {DECLARATION_TYPES.filter((t) => t.value).map((t) => (
-                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                ))}
+              <InputLabel>Tipo declaracion</InputLabel>
+              <Select label="Tipo declaracion" value={calcForm.declarationType} onChange={(e) => setCalcForm((f) => ({ ...f, declarationType: e.target.value }))}>
+                {DECLARATION_TYPES.filter((t) => t.value).map((t) => (<MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>))}
               </Select>
             </FormControl>
-            <TextField
-              label="Periodo (YYYY-MM)"
-             
-              fullWidth
-              placeholder="2026-03"
-              value={calcForm.periodCode}
-              onChange={(e) => setCalcForm((f) => ({ ...f, periodCode: e.target.value }))}
-            />
+            <TextField label="Periodo (YYYY-MM)" fullWidth placeholder="2026-03" value={calcForm.periodCode} onChange={(e) => setCalcForm((f) => ({ ...f, periodCode: e.target.value }))} />
             <FormControl fullWidth>
               <InputLabel>Pais</InputLabel>
-              <Select
-                label="Pais"
-                value={calcForm.countryCode}
-                onChange={(e) => setCalcForm((f) => ({ ...f, countryCode: e.target.value }))}
-              >
-                {countries.map((c) => (
-                  <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
-                ))}
+              <Select label="Pais" value={calcForm.countryCode} onChange={(e) => setCalcForm((f) => ({ ...f, countryCode: e.target.value }))}>
+                {countries.map((c) => (<MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>))}
               </Select>
             </FormControl>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCalc(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleCalcular}
-            disabled={calcularMutation.isPending || !calcForm.periodCode}
-            startIcon={calcularMutation.isPending ? <CircularProgress size={16} /> : <CalculateIcon />}
-          >
+          <Button variant="contained" onClick={handleCalcular} disabled={calcularMutation.isPending || !calcForm.periodCode}
+            startIcon={calcularMutation.isPending ? <CircularProgress size={16} /> : undefined}>
             Calcular
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

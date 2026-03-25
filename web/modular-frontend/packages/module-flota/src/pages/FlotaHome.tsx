@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Alert,
   AlertTitle,
@@ -12,6 +12,7 @@ import {
   Paper,
   Skeleton,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { alpha } from "@mui/material/styles";
@@ -36,12 +37,22 @@ import {
   useNextMaintenance,
   useFlotaTrends,
 } from "../hooks/useFlota";
-import { brandColors, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { brandColors } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = maintenanceCols;
+    el.rows = maintRows;
+    el.loading = loadingMaint;
+  }, [maintRows, loadingMaint, registered, maintenanceCols]);
+
   return ((current - previous) / previous) * 100;
 }
 
@@ -125,19 +136,19 @@ function KPICard({ title, value, subtitle, icon, color, change, loading }: KPICa
 
 /* ─── Maintenance Table Columns ──────────────────────────── */
 
-const maintenanceCols: ZenttoColDef[] = [
-  { field: "OrderNumber", headerName: "N. Orden", flex: 0.8, minWidth: 90 },
-  { field: "LicensePlate", headerName: "Placa", flex: 0.7, minWidth: 80 },
-  { field: "MaintenanceType", headerName: "Tipo", flex: 1, minWidth: 120, mobileHide: true },
+const maintenanceCols: ColumnDef[] = [
+  { field: "OrderNumber", header: "N. Orden", flex: 0.8, minWidth: 90 },
+  { field: "LicensePlate", header: "Placa", flex: 0.7, minWidth: 80 },
+  { field: "MaintenanceType", header: "Tipo", flex: 1, minWidth: 120, mobileHide: true },
   {
     field: "ScheduledDate",
-    headerName: "Fecha",
+    header: "Fecha",
     width: 100,
     valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
   },
   {
     field: "EstimatedCost",
-    headerName: "Costo Est.",
+    header: "Costo Est.",
     width: 100,
     type: "number",
     valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
@@ -152,7 +163,12 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
   const bp = basePath.replace(/\/+$/, "");
 
   // Data hooks
-  const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
   const { data: alerts } = useFleetAlerts();
   const { data: fuelByVehicleRaw, isLoading: loadingFuel } = useFuelCostByVehicle();
   const { data: kmByMonthRaw, isLoading: loadingKm } = useKmByMonth();
@@ -373,18 +389,17 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
         {loadingMaint ? (
           <Skeleton variant="rectangular" height={250} />
         ) : maintRows.length > 0 ? (
-          <ZenttoDataGrid
-            rows={maintRows}
-            columns={maintenanceCols}
-            serverRowCount={maintRows.length}
-            autoHeight
-            hideFooter
-            disableRowSelectionOnClick
-            density="compact"
-            sx={{ border: 0 }}
-            mobileVisibleFields={["OrderNumber", "LicensePlate", "ScheduledDate"]}
-            smExtraFields={["MaintenanceType"]}
-          />
+          <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         ) : (
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -395,4 +410,12 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       </Paper>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

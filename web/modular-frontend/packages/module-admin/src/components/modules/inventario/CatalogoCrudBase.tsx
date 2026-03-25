@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Stack, TextField, Typography } from '@mui/material';
-import { GridColDef } from '@mui/x-data-grid';
-import EditableDataGrid from '../../EditableDataGrid';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { ContextActionHeader } from '@zentto/shared-ui';
+import type { ColumnDef } from '@zentto/datagrid-core';
+
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 export type CatalogField = {
   name: string;
@@ -180,24 +182,30 @@ function resolveRowKey(row: CatalogRow, keyField: string): string | number | nul
   return String(value);
 }
 
-function mapDataGridType(sqlType?: string): GridColDef['type'] {
+function mapColumnType(sqlType?: string): string | undefined {
   const t = (sqlType || '').toLowerCase();
   if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney'].includes(t)) {
     return 'number';
   }
   if (['bit'].includes(t)) return 'boolean';
   if (['date'].includes(t)) return 'date';
-  if (['datetime', 'datetime2', 'smalldatetime', 'datetimeoffset', 'time'].includes(t)) return 'dateTime';
-  return 'string';
+  if (['datetime', 'datetime2', 'smalldatetime', 'datetimeoffset', 'time'].includes(t)) return 'date';
+  return undefined;
 }
 
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const queryClient = useQueryClient();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createValues, setCreateValues] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],
@@ -259,26 +267,26 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     [keyField, resolvedFields, rows]
   );
 
-  const gridColumns = useMemo<GridColDef[]>(
+  const gridColumns = useMemo<ColumnDef[]>(
     () => [
       {
         field: keyField,
-        headerName: prettifyLabel(keyField),
+        header: prettifyLabel(keyField),
         width: 120,
-        editable: false,
       },
       ...resolvedFields
         .filter((f) => !f.hidden)
         .map((f) => {
           const meta = metadataByColumn.get(f.name.toLowerCase());
-          return {
+          const colDef: ColumnDef = {
             field: f.name,
-            headerName: f.label || prettifyLabel(f.name),
+            header: f.label || prettifyLabel(f.name),
             flex: 1,
             minWidth: 160,
-            editable: !f.readOnly,
-            type: mapDataGridType(meta?.dataType),
-          } as GridColDef;
+          };
+          const colType = mapColumnType(meta?.dataType);
+          if (colType) colDef.type = colType as any;
+          return colDef;
         }),
     ],
     [keyField, metadataByColumn, resolvedFields]
@@ -344,6 +352,37 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     },
   });
 
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = gridColumns;
+    el.rows = gridRows;
+    el.loading = listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending;
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
+      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
+    ];
+  }, [gridColumns, gridRows, listQuery.isLoading, metadataQuery.isLoading, updateMutation.isPending, deleteMutation.isPending, registered]);
+
+  // Listen for action-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const handler = async (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === 'delete') {
+        await deleteMutation.mutateAsync(row as CatalogRow);
+      }
+      // edit could be handled here if needed
+    };
+
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered, deleteMutation]);
+
   const isCreateDisabled = resolvedFields.some((f) => f.required && !asString(createValues[f.name]).trim());
 
   return (
@@ -368,26 +407,22 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
         {feedback && <Alert severity={feedback.type} sx={{ mb: 2 }}>{feedback.message}</Alert>}
 
         <Box sx={{ mt: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <EditableDataGrid
-            rows={gridRows}
-            columns={gridColumns}
-            loading={listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending}
-            page={page}
-            pageSize={limit}
-            rowCount={total}
-            onPageChange={setPage}
-            onAddRow={() => {
-              setCreateValues({});
-              setCreateDialogOpen(true);
-            }}
-            onUpdateRow={async (row) => updateMutation.mutateAsync(row)}
-            onDeleteRow={async (row) => {
-              await deleteMutation.mutateAsync(row);
-            }}
-            addButtonText="Nuevo"
-            getRowId={(row) => String(resolveRowKey(row as CatalogRow, keyField) ?? row.id ?? crypto.randomUUID())}
-            timeZone={timeZone}
-          />
+          {registered && (
+            <zentto-grid
+              ref={gridRef}
+              default-currency="VES"
+              height="100%"
+              enable-toolbar
+              enable-header-menu
+              enable-header-filters
+              enable-clipboard
+              enable-quick-search
+              enable-context-menu
+              enable-status-bar
+              enable-editing
+              enable-configurator
+            ></zentto-grid>
+          )}
         </Box>
       </Box>
 
@@ -420,4 +455,12 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

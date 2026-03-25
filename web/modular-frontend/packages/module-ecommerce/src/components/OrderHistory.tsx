@@ -1,8 +1,8 @@
 "use client";
 
-import { Box, Typography, CircularProgress, Chip } from "@mui/material";
-import { formatDate, formatCurrency } from "@zentto/shared-api";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { useEffect, useRef, useState } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface OrderRow {
   orderNumber: string;
@@ -21,8 +21,41 @@ interface Props {
   onViewOrder?: (orderNumber: string) => void;
 }
 
+const COLUMNS: ColumnDef[] = [
+  { field: "orderNumber", header: "Pedido", flex: 1, sortable: true },
+  { field: "orderDate", header: "Fecha", flex: 1, type: "date", sortable: true },
+  { field: "totalAmount", header: "Total", flex: 1, type: "number", currency: "USD", aggregation: "sum" },
+  {
+    field: "isPaid",
+    header: "Estado",
+    flex: 1,
+    sortable: true,
+    groupable: true,
+    statusColors: { S: "success", N: "warning" },
+    statusVariant: "outlined",
+  },
+];
+
 export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
+  const rows = orders.map((o) => ({
+    ...o,
+    id: o.orderNumber,
+  }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = !!loading;
+  }, [rows, loading, registered]);
 
   if (loading) {
     return (
@@ -40,44 +73,32 @@ export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
     );
   }
 
-  const columns: ZenttoColDef[] = [
-    { field: "orderNumber", headerName: "Pedido", flex: 1 },
-    {
-      field: "orderDate",
-      headerName: "Fecha",
-      flex: 1,
-      renderCell: (params) => formatDate(params.value, { timeZone }),
-    },
-    {
-      field: "totalAmount",
-      headerName: "Total",
-      flex: 1,
-      type: "number",
-      renderCell: (params) => `$${(params.value as number)?.toFixed(2)}`,
-    },
-    {
-      field: "isPaid",
-      headerName: "Estado",
-      flex: 1,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          label={params.value === "S" ? "Pagado" : "Pendiente"}
-          color={params.value === "S" ? "success" : "warning"}
-        />
-      ),
-    },
-  ];
+  if (!registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress /></Box>;
+  }
 
   return (
-    <ZenttoDataGrid
-      rows={orders}
-      columns={columns}
-      getRowId={(row) => row.orderNumber}
-      hideToolbar
-      autoHeight
-      onRowClick={onViewOrder ? (params) => onViewOrder(params.row.orderNumber) : undefined}
-      sx={{ cursor: onViewOrder ? "pointer" : "default" }}
-    />
+    <zentto-grid
+      ref={gridRef}
+      default-currency="USD"
+      export-filename="order-history"
+      height="400px"
+      enable-toolbar
+      enable-header-menu
+      enable-header-filters
+      enable-clipboard
+      enable-quick-search
+      enable-context-menu
+      enable-status-bar
+      enable-configurator
+    ></zentto-grid>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

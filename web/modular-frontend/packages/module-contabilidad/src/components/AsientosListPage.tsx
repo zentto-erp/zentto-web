@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -19,70 +19,16 @@ import {
   Alert,
   Tooltip,
 } from "@mui/material";
-import BlockIcon from "@mui/icons-material/Block";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useAsientosList,
   useAsientoDetalle,
   useAnularAsiento,
   type AsientoFilter,
 } from "../hooks/useContabilidad";
-
-function AsientoDetailPanel({ asientoId }: { asientoId: number }) {
-  const detalle = useAsientoDetalle(asientoId);
-
-  if (detalle.isLoading) {
-    return (
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <CircularProgress size={16} />
-        <Typography variant="caption" color="text.secondary">Cargando detalle...</Typography>
-      </Box>
-    );
-  }
-
-  const rows = (detalle.data?.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }));
-
-  const cols: ZenttoColDef[] = [
-    { field: 'codCuenta', headerName: 'Cuenta', width: 120 },
-    { field: 'descripcion', headerName: 'Descripción', flex: 1, minWidth: 180 },
-    { field: 'debe', headerName: 'Debe', width: 130, type: 'number',
-      aggregation: 'sum',
-      renderCell: (p: any) => p.value ? formatCurrency(p.value) : '-' },
-    { field: 'haber', headerName: 'Haber', width: 130, type: 'number',
-      aggregation: 'sum',
-      renderCell: (p: any) => p.value ? formatCurrency(p.value) : '-' },
-    { field: 'centroCosto', headerName: 'C. Costo', width: 100 },
-  ];
-
-  return (
-    <Box sx={{ px: 2, py: 1.5, bgcolor: 'transparent' }}>
-      <Stack direction="row" spacing={3} sx={{ mb: 1, px: 0.5 }}>
-        <Typography variant="caption" color="text.secondary">
-          Concepto: <strong>{detalle.data?.cabecera?.concepto ?? '—'}</strong>
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Estado: <strong>{detalle.data?.cabecera?.estado ?? '—'}</strong>
-        </Typography>
-      </Stack>
-      <ZenttoDataGrid
-        rows={rows}
-        columns={cols}
-        getRowId={(r: any) => r._id}
-        hideToolbar
-        mobileDetailDrawer={false}
-        density="compact"
-        hideFooter={rows.length < 5}
-        autoHeight
-        showTotals
-        totalsLabel="Totales"
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-      />
-    </Box>
-  );
-}
 
 const ASIENTOS_FILTERS: FilterFieldDef[] = [
   { field: "fechaDesde", label: "Fecha desde", type: "date" },
@@ -100,9 +46,35 @@ const ASIENTOS_FILTERS: FilterFieldDef[] = [
   ]},
 ];
 
+const COLUMNS: ColumnDef[] = [
+  { field: "id", header: "ID", width: 70, sortable: true },
+  { field: "fecha", header: "Fecha", width: 120, type: "date", sortable: true },
+  { field: "tipoAsiento", header: "Tipo", width: 100, sortable: true, groupable: true },
+  { field: "concepto", header: "Concepto", flex: 1, minWidth: 200, sortable: true },
+  { field: "referencia", header: "Ref.", width: 100, sortable: true },
+  { field: "totalDebe", header: "Debe", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "totalHaber", header: "Haber", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "estado", header: "Estado", width: 110, sortable: true, groupable: true,
+    statusColors: { APPROVED: "success", VOIDED: "error", DRAFT: "default", APROBADO: "success", ANULADO: "error", BORRADOR: "default" },
+    statusVariant: "outlined",
+  },
+];
+
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: "codCuenta", header: "Cuenta", width: 120 },
+  { field: "descripcion", header: "Descripcion", flex: 1, minWidth: 180 },
+  { field: "debe", header: "Debe", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "haber", header: "Haber", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "centroCosto", header: "C. Costo", width: 100 },
+];
+
 export default function AsientosListPage() {
   const router = useRouter();
   const { timeZone } = useTimezone();
+  const gridRef = useRef<any>(null);
+  const detailGridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<AsientoFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -116,58 +88,26 @@ export default function AsientosListPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: ZenttoColDef[] = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "fecha", headerName: "Fecha", width: 120,
-      valueFormatter: (value: string) => value ? toDateOnly(value, timeZone) : "" },
-    { field: "tipoAsiento", headerName: "Tipo", width: 100 },
-    { field: "concepto", headerName: "Concepto", flex: 1, minWidth: 200 },
-    { field: "referencia", headerName: "Ref.", width: 100 },
-    {
-      field: "totalDebe",
-      headerName: "Debe",
-      width: 130,
-      type: "number",
-      aggregation: "sum",
-      currency: true,
-    },
-    {
-      field: "totalHaber",
-      headerName: "Haber",
-      width: 130,
-      type: "number",
-      aggregation: "sum",
-      currency: true,
-    },
-    {
-      field: "estado",
-      headerName: "Estado",
-      width: 110,
-      statusColors: { APPROVED: "success", VOIDED: "error", DRAFT: "default", APROBADO: "success", ANULADO: "error", BORRADOR: "default" },
-    },
-    {
-      field: "acciones",
-      headerName: "",
-      width: 100,
-      sortable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver detalle del asiento">
-            <IconButton size="small" onClick={() => setSelectedId(p.row.id)}>
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {p.row.estado !== "ANULADO" && (
-            <Tooltip title="Anular asiento">
-              <IconButton size="small" color="error" onClick={() => setAnularId(p.row.id)}>
-                <BlockIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows.map((r: any) => ({ ...r, id: r.asientoId ?? r.id ?? r.Id }));
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = detailGridRef.current;
+    if (!el || !registered || !detalle.data) return;
+    const detRows = (detalle.data.detalle ?? []).map((d: any, i: number) => ({ ...d, id: i }));
+    el.columns = DETAIL_COLUMNS;
+    el.rows = detRows;
+    el.loading = detalle.isLoading;
+  }, [detalle.data, detalle.isLoading, registered]);
 
   const handleAnular = async () => {
     if (!anularId || !motivoAnulacion) return;
@@ -175,6 +115,10 @@ export default function AsientosListPage() {
     setAnularId(null);
     setMotivoAnulacion("");
   };
+
+  if (!registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+  }
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -210,29 +154,21 @@ export default function AsientosListPage() {
         />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 400, width: "100%", elevation: 0, border: '1px solid #E5E7EB', overflow: 'auto' }}>
-          <ZenttoDataGrid
-            gridId="contabilidad-asientos-list"
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            enableHeaderFilters
-            pageSizeOptions={[25, 50]}
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            disableRowSelectionOnClick
-            getRowId={(row) => row.asientoId ?? row.id ?? row.Id}
-            sx={{ border: 'none', minHeight: 400 }}
-            mobileVisibleFields={['fecha', 'concepto']}
-            smExtraFields={['estado', 'totalDebe']}
-            getDetailContent={(row: any) => <AsientoDetailPanel asientoId={row.asientoId ?? row.id} />}
-            detailPanelHeight="auto"
-            showTotals
-            enableGrouping
-            enablePivot
-            enableClipboard
-          />
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="asientos-contables"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
         </Paper>
       </Box>
 
@@ -251,24 +187,22 @@ export default function AsientosListPage() {
                 <strong>Fecha:</strong> {detalle.data.cabecera?.fecha} &nbsp;|&nbsp;
                 <strong>Estado:</strong> {detalle.data.cabecera?.estado}
               </Typography>
-              <ZenttoDataGrid
-                rows={(detalle.data.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }))}
-                columns={[
-                  { field: "codCuenta", headerName: "Cuenta", width: 120 },
-                  { field: "descripcion", headerName: "Descripción", flex: 1 },
-                  { field: "debe", headerName: "Debe", width: 130, renderCell: (p) => formatCurrency(p.value) },
-                  { field: "haber", headerName: "Haber", width: 130, renderCell: (p) => formatCurrency(p.value) },
-                  { field: "centroCosto", headerName: "C. Costo", width: 100 },
-                ]}
-                autoHeight
-                getRowId={(r) => r._id}
-                disableRowSelectionOnClick
-                hideFooter
-                hideToolbar
-                mobileDetailDrawer={false}
-                density="compact"
-                mobileVisibleFields={['codCuenta', 'debe']}
-              />
+              <Box sx={{ height: 300 }}>
+                <zentto-grid
+                  ref={detailGridRef}
+                  default-currency="VES"
+                  height="100%"
+                  show-totals
+                  enable-toolbar
+                  enable-header-menu
+                  enable-header-filters
+                  enable-clipboard
+                  enable-quick-search
+                  enable-context-menu
+                  enable-status-bar
+                  enable-configurator
+                ></zentto-grid>
+              </Box>
             </Box>
           ) : (
             <Alert severity="info">No se encontraron datos</Alert>
@@ -284,7 +218,7 @@ export default function AsientosListPage() {
         <DialogTitle>Anular Asiento #{anularId}</DialogTitle>
         <DialogContent>
           <TextField
-            label="Motivo de anulación"
+            label="Motivo de anulacion"
             fullWidth
             multiline
             rows={3}
@@ -295,16 +229,19 @@ export default function AsientosListPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAnularId(null)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleAnular}
-            disabled={!motivoAnulacion || anularMutation.isPending}
-          >
+          <Button variant="contained" color="error" onClick={handleAnular} disabled={!motivoAnulacion || anularMutation.isPending}>
             Anular
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

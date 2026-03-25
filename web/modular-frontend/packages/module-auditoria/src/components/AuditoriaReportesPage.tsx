@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -14,13 +14,13 @@ import {
   CircularProgress,
   Chip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { toDateOnly, formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useFiscalRecords } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const TAB_LABELS = ["Por Módulo", "Por Usuario", "Registros Fiscales"];
 
@@ -33,6 +33,13 @@ export default function AuditoriaReportesPage() {
   );
   const [fechaHasta, setFechaHasta] = useState(toDateOnly(now, timeZone));
   const [run, setRun] = useState(false);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
 
   const logsQuery = useAuditLogs(
     run ? { fechaDesde, fechaHasta, limit: 500 } : undefined
@@ -72,48 +79,65 @@ export default function AuditoriaReportesPage() {
     .map(([user, v], i) => ({ id: i, userName: user, ...v }))
     .sort((a, b) => b.total - a.total);
 
-  const moduleColumns: ZenttoColDef[] = [
-    { field: "moduleName", headerName: "Módulo", flex: 1, minWidth: 150 },
-    { field: "total", headerName: "Total", width: 100, type: "number" },
-    { field: "creates", headerName: "Creaciones", width: 110, type: "number" },
-    { field: "updates", headerName: "Actualizaciones", width: 130, type: "number" },
-    { field: "deletes", headerName: "Eliminaciones", width: 120, type: "number" },
+  const moduleColumns: ColumnDef[] = [
+    { field: "moduleName", header: "Módulo", flex: 1, minWidth: 150 },
+    { field: "total", header: "Total", width: 100, type: "number" },
+    { field: "creates", header: "Creaciones", width: 110, type: "number" },
+    { field: "updates", header: "Actualizaciones", width: 130, type: "number" },
+    { field: "deletes", header: "Eliminaciones", width: 120, type: "number" },
   ];
 
-  const userColumns: ZenttoColDef[] = [
-    { field: "userName", headerName: "Usuario", flex: 1, minWidth: 150 },
-    { field: "total", headerName: "Total", width: 100, type: "number" },
-    { field: "creates", headerName: "Creaciones", width: 110, type: "number" },
-    { field: "updates", headerName: "Actualizaciones", width: 130, type: "number" },
-    { field: "deletes", headerName: "Eliminaciones", width: 120, type: "number" },
+  const userColumns: ColumnDef[] = [
+    { field: "userName", header: "Usuario", flex: 1, minWidth: 150 },
+    { field: "total", header: "Total", width: 100, type: "number" },
+    { field: "creates", header: "Creaciones", width: 110, type: "number" },
+    { field: "updates", header: "Actualizaciones", width: 130, type: "number" },
+    { field: "deletes", header: "Eliminaciones", width: 120, type: "number" },
   ];
 
-  const fiscalColumns: ZenttoColDef[] = [
-    { field: "FiscalRecordId", headerName: "ID", width: 70 },
+  const fiscalColumns: ColumnDef[] = [
+    { field: "FiscalRecordId", header: "ID", width: 70 },
     {
       field: "CreatedAt",
-      headerName: "Fecha",
+      header: "Fecha",
       width: 160,
       renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
     },
-    { field: "InvoiceNumber", headerName: "N° Factura", width: 140 },
-    { field: "InvoiceType", headerName: "Tipo", width: 100 },
-    { field: "CountryCode", headerName: "País", width: 70 },
+    { field: "InvoiceNumber", header: "N° Factura", width: 140 },
+    { field: "InvoiceType", header: "Tipo", width: 100 },
+    { field: "CountryCode", header: "País", width: 70 },
     {
       field: "SentToAuthority",
-      headerName: "Enviado",
+      header: "Enviado",
       width: 100,
       renderCell: (p) => <Chip label={p.value ? "Sí" : "No"} size="small" color={p.value ? "success" : "default"} variant="outlined" />,
     },
     {
       field: "AuthorityStatus",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
       renderCell: (p) => <Chip label={p.value ?? "N/A"} size="small" color={p.value === "ACCEPTED" ? "success" : "default"} variant="outlined" />,
     },
   ];
 
   const isLoading = logsQuery.isLoading || fiscalQuery.isLoading;
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -162,48 +186,61 @@ export default function AuditoriaReportesPage() {
         ) : (
           <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
             {tab === 0 && (
-              <ZenttoDataGrid
-            gridId="auditoria-reportes-modulo"
-                rows={moduleRows}
-                columns={moduleColumns}
-                enableHeaderFilters
-                disableRowSelectionOnClick
-                hideFooter={moduleRows.length <= 25}
-                sx={{ border: "none" }}
-                mobileVisibleFields={['moduleName', 'total']}
-                smExtraFields={['creates', 'updates']}
-              />
+              <zentto-grid
+        ref={gridRef}
+        export-filename="auditoria-reportes-modulo"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             )}
             {tab === 1 && (
-              <ZenttoDataGrid
-                gridId="auditoria-reportes-usuario"
-                rows={userRows}
-                columns={userColumns}
-                enableHeaderFilters
-                disableRowSelectionOnClick
-                hideFooter={userRows.length <= 25}
-                sx={{ border: "none" }}
-                mobileVisibleFields={['userName', 'total']}
-                smExtraFields={['creates', 'updates']}
-              />
+              <zentto-grid
+        ref={gridRef}
+        export-filename="auditoria-reportes-usuario"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             )}
             {tab === 2 && (
-              <ZenttoDataGrid
-                gridId="auditoria-reportes-fiscal"
-                rows={fiscalQuery.data?.data ?? []}
-                columns={fiscalColumns}
-                enableHeaderFilters
-                getRowId={(r) => r.FiscalRecordId}
-                disableRowSelectionOnClick
-                hideFooter={(fiscalQuery.data?.data ?? []).length <= 25}
-                sx={{ border: "none" }}
-                mobileVisibleFields={['CreatedAt', 'InvoiceNumber']}
-                smExtraFields={['InvoiceType', 'AuthorityStatus']}
-              />
+              <zentto-grid
+        ref={gridRef}
+        export-filename="auditoria-reportes-fiscal"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             )}
           </Paper>
         )}
       </Box>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -43,18 +43,17 @@ import {
   PlayArrow as ApplyIcon,
 } from "@mui/icons-material";
 import {
-  ZenttoDataGrid,
-  type ZenttoColDef,
   ConfirmDialog,
 } from "@zentto/shared-ui";
 import { useAuth } from "@zentto/shared-auth";
 import dynamic from "next/dynamic";
+import { useRef } from "react";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const TurnstileCaptcha = dynamic(
   () => import("@zentto/shared-auth").then((m) => ({ default: m.TurnstileCaptcha })),
   { ssr: false }
 );
-import type { GridPaginationModel } from "@mui/x-data-grid";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -551,14 +550,10 @@ function ApplyPlanModal({
 // ─── Tab: Tenants ─────────────────────────────────────────────────────────────
 
 function TenantsTab({ masterKey }: { masterKey: string }) {
+  const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<TenantRow[]>([]);
-  const [rowCount, setRowCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [pagination, setPagination] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: 20,
-  });
   const [applyTarget, setApplyTarget] = useState<TenantRow | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
 
@@ -567,7 +562,7 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
     setError("");
     try {
       const res = await apiFetch<{ rows: Record<string, unknown>[]; totalCount: number }>(
-        `/v1/backoffice/tenants?page=${pagination.page + 1}&pageSize=${pagination.pageSize}`,
+        `/v1/backoffice/tenants?page=1&pageSize=200`,
         masterKey
       );
       const mapped: TenantRow[] = (res.rows ?? []).map((r, i) => ({
@@ -583,89 +578,67 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
         LastLogin: (r.LastLogin as string) ?? null,
       }));
       setRows(mapped);
-      setRowCount(res.totalCount ?? mapped.length);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [masterKey, pagination]);
+  }, [masterKey]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const columns: ZenttoColDef[] = [
-    { field: "CompanyCode", headerName: "Codigo", width: 110 },
-    { field: "LegalName", headerName: "Empresa", flex: 1, minWidth: 180 },
+  const columns: ColumnDef[] = [
+    { field: "CompanyCode", header: "Codigo", width: 110, sortable: true },
+    { field: "LegalName", header: "Empresa", flex: 1, minWidth: 180, sortable: true },
     {
       field: "Plan",
-      headerName: "Plan",
+      header: "Plan",
       width: 120,
-      renderCell: ({ value }) => (
-        <Chip
-          label={value as string}
-          size="small"
-          color={value === "FREE" ? "default" : "primary"}
-        />
-      ),
+      sortable: true,
+      groupable: true,
+      statusColors: { FREE: "default", STARTER: "primary", PRO: "primary", ENTERPRISE: "primary" },
+      statusVariant: "filled",
     },
-    { field: "LicenseType", headerName: "Tipo Lic.", width: 120 },
+    { field: "LicenseType", header: "Tipo Lic.", width: 120, sortable: true },
     {
       field: "LicenseStatus",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
-      renderCell: ({ value }) => (
-        <Chip
-          label={value as string}
-          size="small"
-          color={STATUS_COLORS[value as string] ?? "default"}
-        />
-      ),
+      sortable: true,
+      groupable: true,
+      statusColors: { ACTIVE: "success", INACTIVE: "default", SUSPENDED: "error", TRIAL: "warning" },
+      statusVariant: "filled",
     },
     {
-      field: "ExpiresAt",
-      headerName: "Vence",
+      field: "ExpiresAtLabel",
+      header: "Vence",
       width: 130,
-      valueFormatter: ({ value }) =>
-        value ? new Date(value as string).toLocaleDateString("es-VE") : "—",
+      sortable: true,
     },
-    { field: "UserCount", headerName: "Usuarios", width: 100, type: "number" },
+    { field: "UserCount", header: "Usuarios", width: 100, type: "number", sortable: true },
     {
-      field: "LastLogin",
-      headerName: "Ultimo Acceso",
+      field: "LastLoginLabel",
+      header: "Ultimo Acceso",
       width: 150,
-      valueFormatter: ({ value }) =>
-        value ? new Date(value as string).toLocaleString("es-VE") : "—",
-    },
-    {
-      field: "__actions",
-      headerName: "Acciones",
-      width: 130,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <Stack direction="row" gap={0.5}>
-          <Tooltip title="Ver detalle">
-            <IconButton size="small" color="info">
-              <ViewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Aplicar plan">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={() => {
-                setApplyTarget(row as TenantRow);
-                setApplyOpen(true);
-              }}
-            >
-              <ApplyIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
+      sortable: true,
     },
   ];
+
+  const mappedRows = rows.map((r) => ({
+    ...r,
+    ExpiresAtLabel: r.ExpiresAt ? new Date(r.ExpiresAt).toLocaleDateString("es-VE") : "—",
+    LastLoginLabel: r.LastLogin ? new Date(r.LastLogin).toLocaleString("es-VE") : "—",
+  }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = loading;
+  }, [mappedRows, loading]);
 
   return (
     <Box>
@@ -679,15 +652,17 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
           Actualizar
         </Button>
       </Stack>
-      <ZenttoDataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        paginationModel={pagination}
-        onPaginationModelChange={setPagination}
-        rowCount={rowCount}
-        paginationMode="server"
-        autoHeight
+      <zentto-grid
+        ref={gridRef}
+        height="600px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
       />
       <ApplyPlanModal
         open={applyOpen}
@@ -705,6 +680,7 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
 const MAX_DB_MB = 10240; // 10 GB referencia visual
 
 function RecursosTab({ masterKey }: { masterKey: string }) {
+  const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<ResourceRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -738,52 +714,35 @@ function RecursosTab({ masterKey }: { masterKey: string }) {
     load();
   }, [load]);
 
-  const columns: ZenttoColDef[] = [
-    { field: "CompanyCode", headerName: "Codigo", width: 110 },
-    { field: "LegalName", headerName: "Empresa", flex: 1, minWidth: 180 },
-    {
-      field: "DbSizeMB",
-      headerName: "BD (MB)",
-      width: 210,
-      type: "number",
-      renderCell: ({ value }) => {
-        const mb = value as number;
-        const pct = Math.min(100, (mb / MAX_DB_MB) * 100);
-        const color: "error" | "warning" | "primary" =
-          pct > 80 ? "error" : pct > 50 ? "warning" : "primary";
-        return (
-          <Box width="100%">
-            <Typography variant="caption">{mb.toFixed(1)} MB</Typography>
-            <LinearProgress
-              variant="determinate"
-              value={pct}
-              color={color}
-              sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
-            />
-          </Box>
-        );
-      },
-    },
-    {
-      field: "LastLoginAt",
-      headerName: "Ultimo Acceso",
-      width: 160,
-      valueFormatter: ({ value }) =>
-        value ? new Date(value as string).toLocaleString("es-VE") : "—",
-    },
+  const columns: ColumnDef[] = [
+    { field: "CompanyCode", header: "Codigo", width: 110, sortable: true },
+    { field: "LegalName", header: "Empresa", flex: 1, minWidth: 180, sortable: true },
+    { field: "DbSizeMBLabel", header: "BD (MB)", width: 140, type: "number", sortable: true },
+    { field: "LastLoginAtLabel", header: "Ultimo Acceso", width: 160, sortable: true },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
-      renderCell: ({ value }) => (
-        <Chip
-          label={value as string}
-          size="small"
-          color={STATUS_COLORS[value as string] ?? "default"}
-        />
-      ),
+      sortable: true,
+      groupable: true,
+      statusColors: { ACTIVE: "success", INACTIVE: "default", SUSPENDED: "error" },
+      statusVariant: "filled",
     },
   ];
+
+  const mappedRows = rows.map((r) => ({
+    ...r,
+    DbSizeMBLabel: `${r.DbSizeMB.toFixed(1)} MB`,
+    LastLoginAtLabel: r.LastLoginAt ? new Date(r.LastLoginAt).toLocaleString("es-VE") : "—",
+  }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = loading;
+  }, [mappedRows, loading]);
 
   return (
     <Box>
@@ -797,11 +756,17 @@ function RecursosTab({ masterKey }: { masterKey: string }) {
           Actualizar
         </Button>
       </Stack>
-      <ZenttoDataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        autoHeight
+      <zentto-grid
+        ref={gridRef}
+        height="600px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
       />
     </Box>
   );
@@ -883,111 +848,39 @@ function CleanupTab({ masterKey }: { masterKey: string }) {
     }
   };
 
-  const columns: ZenttoColDef[] = [
-    { field: "CompanyCode", headerName: "Codigo", width: 110 },
-    { field: "LegalName", headerName: "Empresa", flex: 1, minWidth: 160 },
-    { field: "Reason", headerName: "Razon", width: 160 },
+  const gridRef = useRef<any>(null);
+
+  const columns: ColumnDef[] = [
+    { field: "CompanyCode", header: "Codigo", width: 110, sortable: true },
+    { field: "LegalName", header: "Empresa", flex: 1, minWidth: 160, sortable: true },
+    { field: "Reason", header: "Razon", width: 160, sortable: true },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
-      renderCell: ({ value }) => (
-        <Chip
-          label={value as string}
-          size="small"
-          color={STATUS_COLORS[value as string] ?? "default"}
-        />
-      ),
+      sortable: true,
+      groupable: true,
+      statusColors: { PENDING: "warning", NOTIFIED: "info", CONFIRMED: "error", CANCELLED: "default" },
+      statusVariant: "filled",
     },
-    {
-      field: "FlaggedAt",
-      headerName: "Marcado",
-      width: 130,
-      valueFormatter: ({ value }) =>
-        value ? new Date(value as string).toLocaleDateString("es-VE") : "—",
-    },
-    {
-      field: "DeleteAfter",
-      headerName: "Eliminar tras",
-      width: 130,
-      valueFormatter: ({ value }) =>
-        value ? new Date(value as string).toLocaleDateString("es-VE") : "—",
-    },
-    {
-      field: "DaysUntilDelete",
-      headerName: "Dias restantes",
-      width: 130,
-      type: "number",
-      renderCell: ({ value }) => (
-        <Typography
-          variant="body2"
-          color={(value as number) <= 3 ? "error" : "text.primary"}
-          fontWeight={(value as number) <= 3 ? 700 : 400}
-        >
-          {value as number} dia(s)
-        </Typography>
-      ),
-    },
-    {
-      field: "__actions",
-      headerName: "Acciones",
-      width: 200,
-      sortable: false,
-      renderCell: ({ row }) => {
-        const r = row as CleanupRow;
-        return (
-          <Stack direction="row" gap={0.5}>
-            <Tooltip title="Cancelar">
-              <IconButton
-                size="small"
-                color="success"
-                onClick={() =>
-                  setConfirmAction({
-                    queueId: r.QueueId,
-                    action: "CANCEL",
-                    label: "Cancelar la eliminacion de este tenant?",
-                  })
-                }
-              >
-                <CancelIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Notificar">
-              <IconButton
-                size="small"
-                color="info"
-                onClick={() =>
-                  setConfirmAction({
-                    queueId: r.QueueId,
-                    action: "NOTIFY",
-                    label: "Enviar notificacion de eliminacion al tenant?",
-                  })
-                }
-              >
-                <NotifyIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Confirmar eliminacion">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() =>
-                  setConfirmAction({
-                    queueId: r.QueueId,
-                    action: "CONFIRM_DELETE",
-                    label:
-                      "Confirmar eliminacion permanente? Esta accion no puede deshacerse.",
-                  })
-                }
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        );
-      },
-    },
+    { field: "FlaggedAtLabel", header: "Marcado", width: 130, sortable: true },
+    { field: "DeleteAfterLabel", header: "Eliminar tras", width: 130, sortable: true },
+    { field: "DaysUntilDelete", header: "Dias restantes", width: 130, type: "number", sortable: true },
   ];
+
+  const mappedRows = rows.map((r) => ({
+    ...r,
+    FlaggedAtLabel: r.FlaggedAt ? new Date(r.FlaggedAt).toLocaleDateString("es-VE") : "—",
+    DeleteAfterLabel: r.DeleteAfter ? new Date(r.DeleteAfter).toLocaleDateString("es-VE") : "—",
+  }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = loading;
+  }, [mappedRows, loading]);
 
   return (
     <Box>
@@ -1010,11 +903,17 @@ function CleanupTab({ masterKey }: { masterKey: string }) {
           {scanLoading ? "Escaneando..." : "Escanear ahora"}
         </Button>
       </Stack>
-      <ZenttoDataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        autoHeight
+      <zentto-grid
+        ref={gridRef}
+        height="600px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
       />
       <ConfirmDialog
         open={!!confirmAction}
@@ -1088,64 +987,37 @@ function RespaldosTab({ masterKey }: { masterKey: string }) {
     }
   };
 
-  const columns: ZenttoColDef[] = [
-    { field: "CompanyCode", headerName: "Codigo", width: 110 },
-    { field: "LegalName", headerName: "Empresa", flex: 1, minWidth: 180 },
-    {
-      field: "LastBackupAt",
-      headerName: "Ultimo Respaldo",
-      width: 170,
-      valueFormatter: ({ value }) =>
-        value ? new Date(value as string).toLocaleString("es-VE") : "Sin respaldo",
-    },
-    {
-      field: "BackupSizeMB",
-      headerName: "Tamano (MB)",
-      width: 130,
-      type: "number",
-      valueFormatter: ({ value }) =>
-        value != null ? `${Number(value).toFixed(1)} MB` : "—",
-    },
+  const gridRef = useRef<any>(null);
+
+  const columns: ColumnDef[] = [
+    { field: "CompanyCode", header: "Codigo", width: 110, sortable: true },
+    { field: "LegalName", header: "Empresa", flex: 1, minWidth: 180, sortable: true },
+    { field: "LastBackupAtLabel", header: "Ultimo Respaldo", width: 170, sortable: true },
+    { field: "BackupSizeMBLabel", header: "Tamano (MB)", width: 130, sortable: true },
     {
       field: "BackupStatus",
-      headerName: "Estado",
+      header: "Estado",
       width: 130,
-      renderCell: ({ value }) => (
-        <Chip
-          label={value as string}
-          size="small"
-          color={STATUS_COLORS[value as string] ?? "default"}
-          icon={
-            value === "OK" ? (
-              <CheckIcon fontSize="small" />
-            ) : value === "FAILED" ? (
-              <WarningIcon fontSize="small" />
-            ) : undefined
-          }
-        />
-      ),
-    },
-    {
-      field: "__actions",
-      headerName: "Acciones",
-      width: 130,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <Tooltip title="Crear respaldo">
-          <IconButton
-            size="small"
-            color="primary"
-            onClick={() => {
-              setBackupTarget(row as BackupRow);
-              setBackupConfirmOpen(true);
-            }}
-          >
-            <BackupIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      ),
+      sortable: true,
+      groupable: true,
+      statusColors: { OK: "success", FAILED: "error", RUNNING: "info", UNKNOWN: "default" },
+      statusVariant: "filled",
     },
   ];
+
+  const mappedRows = rows.map((r) => ({
+    ...r,
+    LastBackupAtLabel: r.LastBackupAt ? new Date(r.LastBackupAt).toLocaleString("es-VE") : "Sin respaldo",
+    BackupSizeMBLabel: r.BackupSizeMB != null ? `${r.BackupSizeMB.toFixed(1)} MB` : "—",
+  }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = loading;
+  }, [mappedRows, loading]);
 
   return (
     <Box>
@@ -1159,11 +1031,17 @@ function RespaldosTab({ masterKey }: { masterKey: string }) {
           Actualizar
         </Button>
       </Stack>
-      <ZenttoDataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        autoHeight
+      <zentto-grid
+        ref={gridRef}
+        height="600px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
       />
       <ConfirmDialog
         open={backupConfirmOpen}
@@ -1185,6 +1063,11 @@ export default function BackofficePage() {
   const [tab, setTab] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
+
+  // Register zentto-grid web component
+  useEffect(() => {
+    import("@zentto/datagrid").catch(() => {});
+  }, []);
 
   const isSysAdmin =
     (user as Record<string, unknown> | null)?.role === "SYSADMIN" ||
@@ -1278,4 +1161,12 @@ export default function BackofficePage() {
       {tab === 3 && <RespaldosTab masterKey={token} />}
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "zentto-grid": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

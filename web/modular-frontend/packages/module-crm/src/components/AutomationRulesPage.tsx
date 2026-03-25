@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -12,17 +12,15 @@ import {
   MenuItem,
   FormControlLabel,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
-import {
-  ZenttoDataGrid,
+import { 
   FormDialog,
   DeleteDialog,
   ZenttoFilterPanel,
-  type ZenttoColDef,
-  type FilterFieldDef,
-} from "@zentto/shared-ui";
+  type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useAutomationRules,
   useUpsertRule,
@@ -30,6 +28,7 @@ import {
   type AutomationRule,
 } from "../hooks/useCRMAutomation";
 import { usePipelineStages } from "../hooks/useCRM";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Trigger / Action labels & colors ───────────────────────── */
 
@@ -124,7 +123,12 @@ const AUTOMATION_FILTERS: FilterFieldDef[] = [
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function AutomationRulesPage() {
-  const { data: rulesRaw, isLoading } = useAutomationRules();
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: rulesRaw, isLoading } = useAutomationRules();
   const upsertMutation = useUpsertRule();
   const deleteMutation = useDeleteRule();
 
@@ -153,6 +157,8 @@ export default function AutomationRulesPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AutomationRule | null>(null);
   const [form, setForm] = useState<RuleForm>(emptyForm);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   // Stages for condition/action selects
   const { data: stagesRaw } = usePipelineStages(undefined);
@@ -233,11 +239,11 @@ export default function AutomationRulesPage() {
 
   /* ─── Columns ─────────────────────────────────────────────── */
 
-  const columns: ZenttoColDef[] = [
-    { field: "RuleName", headerName: "Nombre", flex: 1.5, minWidth: 200 },
+  const columns: ColumnDef[] = [
+    { field: "RuleName", header: "Nombre", flex: 1.5, minWidth: 200 },
     {
       field: "TriggerEvent",
-      headerName: "Trigger",
+      header: "Trigger",
       width: 160,
       renderCell: (params: any) => (
         <Chip
@@ -250,7 +256,7 @@ export default function AutomationRulesPage() {
     },
     {
       field: "ActionType",
-      headerName: "Accion",
+      header: "Accion",
       width: 160,
       renderCell: (params: any) => (
         <Chip
@@ -262,7 +268,7 @@ export default function AutomationRulesPage() {
     },
     {
       field: "IsActive",
-      headerName: "Activa",
+      header: "Activa",
       width: 100,
       renderCell: (params: any) => (
         <Switch
@@ -275,13 +281,13 @@ export default function AutomationRulesPage() {
     },
     {
       field: "SortOrder",
-      headerName: "Orden",
+      header: "Orden",
       width: 80,
       type: "number",
     },
     {
       field: "actions",
-      headerName: "",
+      header: "",
       width: 80,
       sortable: false,
       filterable: false,
@@ -306,6 +312,15 @@ export default function AutomationRulesPage() {
   const renderConditionFields = () => {
     switch (form.TriggerEvent) {
       case "LEAD_STALE":
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <TextField
             label="Dias sin actividad"
@@ -492,19 +507,20 @@ export default function AutomationRulesPage() {
         onSearchChange={setSearchText}
       />
 
-      <ZenttoDataGrid
-        gridId="crm-automation-rules-list"
-        rows={rules}
-        columns={columns}
-        loading={isLoading}
-        getRowId={(row: any) => row.RuleId}
-        onRowClick={(params: any) => handleRowClick(params.row)}
-        enableClipboard
-        enableGrouping
-        enableHeaderFilters
-        autoHeight
-        sx={{ minHeight: 300 }}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="crm-automation-rules-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+        enable-grouping
+      ></zentto-grid>
 
       {/* ─── Form Dialog ──────────────────────────────────────── */}
       <FormDialog
@@ -600,4 +616,12 @@ export default function AutomationRulesPage() {
       />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

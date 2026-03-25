@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -13,10 +13,11 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import {
@@ -25,6 +26,7 @@ import {
   useUpdateCarrier,
   type CarrierFilter,
 } from "../hooks/useLogistica";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface CarrierFormData {
   id?: number;
@@ -66,8 +68,15 @@ export default function TransportistasPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useCarriersList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useCarriersList({
     ...filter,
     search,
     page: paginationModel.page + 1,
@@ -79,15 +88,15 @@ export default function TransportistasPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "CarrierCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
-    { field: "CarrierName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
-    { field: "FiscalId", headerName: "RIF / NIF", flex: 1, minWidth: 120 },
-    { field: "ContactName", headerName: "Contacto", flex: 1.2, minWidth: 140 },
-    { field: "Phone", headerName: "Telefono", flex: 1, minWidth: 120 },
+  const columns: ColumnDef[] = [
+    { field: "CarrierCode", header: "Codigo", flex: 0.8, minWidth: 100 },
+    { field: "CarrierName", header: "Nombre", flex: 1.5, minWidth: 180 },
+    { field: "FiscalId", header: "RIF / NIF", flex: 1, minWidth: 120 },
+    { field: "ContactName", header: "Contacto", flex: 1.2, minWidth: 140 },
+    { field: "Phone", header: "Telefono", flex: 1, minWidth: 120 },
     {
       field: "IsActive",
-      headerName: "Activo",
+      header: "Activo",
       width: 90,
       renderCell: (params) => (
         <Chip
@@ -100,7 +109,7 @@ export default function TransportistasPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 80,
       sortable: false,
       filterable: false,
@@ -149,6 +158,23 @@ export default function TransportistasPage() {
     });
   };
 
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -192,25 +218,19 @@ export default function TransportistasPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="logistica-transportistas-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.CarrierId ?? row.Id ?? row.CarrierCode ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['CarrierCode', 'CarrierName']}
-        smExtraFields={['IsActive', 'Phone']}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="logistica-transportistas-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {/* Dialog: Crear/Editar */}
       <Dialog
@@ -285,4 +305,12 @@ export default function TransportistasPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

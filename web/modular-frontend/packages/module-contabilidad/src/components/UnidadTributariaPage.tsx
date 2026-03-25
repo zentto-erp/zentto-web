@@ -1,26 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
-  DialogTitle, DialogContent, DialogActions,
+  DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
-import type { ZenttoColDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
 
-const columns: ZenttoColDef[] = [
-  { field: "CountryCode", headerName: "Pais", width: 80 },
-  { field: "TaxYear", headerName: "Ano", width: 80 },
-  { field: "UnitValue", headerName: "Valor UT", width: 120, type: "number" },
-  { field: "Currency", headerName: "Moneda", width: 80 },
-  { field: "EffectiveDate", headerName: "Vigente desde", width: 130, valueFormatter: (v: string) => v?.slice(0, 10) },
+const COLUMNS: ColumnDef[] = [
+  { field: "CountryCode", header: "Pais", width: 80, sortable: true },
+  { field: "TaxYear", header: "Ano", width: 80, type: "number", sortable: true },
+  { field: "UnitValue", header: "Valor UT", width: 120, type: "number" },
+  { field: "Currency", header: "Moneda", width: 80 },
+  { field: "EffectiveDate", header: "Vigente desde", width: 130, type: "date" },
 ];
 
 export default function UnidadTributariaPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const { data: countries = [] } = useCountries();
   const [filterCountry, setFilterCountry] = useState("");
   const [search, setSearch] = useState("");
@@ -32,12 +34,23 @@ export default function UnidadTributariaPage() {
   const upsert = useTaxUnitUpsert();
   const rows = data?.rows ?? [];
 
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows.map((r: any) => ({ ...r, id: r.TaxUnitId ?? `${r.CountryCode}-${r.TaxYear}`, EffectiveDate: r.EffectiveDate?.slice(0, 10) }));
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
   const handleSave = async () => {
-    try {
-      await upsert.mutateAsync(form);
-      setDialogOpen(false);
-    } catch { /* handled */ }
+    try { await upsert.mutateAsync(form); setDialogOpen(false); } catch { /* handled */ }
   };
+
+  if (!registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+  }
 
   return (
     <Box>
@@ -54,37 +67,25 @@ export default function UnidadTributariaPage() {
           { field: "countryCode", label: "Periodo (pais)", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
         ] as FilterFieldDef[]}
         values={filterValues}
-        onChange={(vals) => {
-          setFilterValues(vals);
-          setFilterCountry(vals.countryCode || "");
-        }}
+        onChange={(vals) => { setFilterValues(vals); setFilterCountry(vals.countryCode || ""); }}
         searchPlaceholder="Buscar..."
         searchValue={search}
         onSearchChange={setSearch}
       />
 
-      <ZenttoDataGrid
-        gridId="contabilidad-unidad-tributaria-list"
-        rows={rows}
-        columns={columns}
-        loading={isLoading}
-        enableHeaderFilters
-        getRowId={(r) => r.TaxUnitId ?? `${r.CountryCode}-${r.TaxYear}`}
-        autoHeight
-        onRowClick={(p) => {
-          setForm({
-            countryCode: p.row.CountryCode, taxYear: p.row.TaxYear,
-            unitValue: p.row.UnitValue, currency: p.row.Currency,
-            effectiveDate: p.row.EffectiveDate?.slice(0, 10) ?? "",
-          });
-          setDialogOpen(true);
-        }}
-        sx={{ "& .MuiDataGrid-row": { cursor: "pointer" } }}
-        initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-        pageSizeOptions={[10, 25]}
-        mobileVisibleFields={['CountryCode', 'UnitValue']}
-        smExtraFields={['TaxYear', 'EffectiveDate']}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="unidad-tributaria"
+        height="calc(100vh - 300px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Valor Unidad Tributaria</DialogTitle>
@@ -100,23 +101,18 @@ export default function UnidadTributariaPage() {
               </TextField>
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField label="Ano" type="number" fullWidth value={form.taxYear}
-                onChange={(e) => setForm({ ...form, taxYear: Number(e.target.value) })} />
+              <TextField label="Ano" type="number" fullWidth value={form.taxYear} onChange={(e) => setForm({ ...form, taxYear: Number(e.target.value) })} />
             </FormField>
             <FormField xs={12} sm={6}>
-              <TextField label="Valor UT" type="number" fullWidth value={form.unitValue}
-                onChange={(e) => setForm({ ...form, unitValue: Number(e.target.value) })} />
+              <TextField label="Valor UT" type="number" fullWidth value={form.unitValue} onChange={(e) => setForm({ ...form, unitValue: Number(e.target.value) })} />
             </FormField>
             <FormField xs={12} sm={6}>
               <TextField label="Moneda" fullWidth value={form.currency} disabled />
             </FormField>
             <FormField xs={12}>
-              <DatePicker
-                label="Vigente desde"
-                value={form.effectiveDate ? dayjs(form.effectiveDate) : null}
+              <DatePicker label="Vigente desde" value={form.effectiveDate ? dayjs(form.effectiveDate) : null}
                 onChange={(v) => setForm({ ...form, effectiveDate: v ? v.format('YYYY-MM-DD') : '' })}
-                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-              />
+                slotProps={{ textField: { size: 'small', fullWidth: true } }} />
             </FormField>
           </FormGrid>
         </DialogContent>
@@ -129,4 +125,12 @@ export default function UnidadTributariaPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

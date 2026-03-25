@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -19,7 +19,8 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -28,6 +29,15 @@ import {
   useTrustSummary,
   type TrustFilter,
 } from "../hooks/useRRHH";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "employeeCode", header: "Código", width: 100, sortable: true },
+  { field: "employeeName", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
+  { field: "quarter", header: "Trimestre", width: 100, sortable: true },
+  { field: "deposit", header: "Depósito", width: 130, type: "number", aggregation: "sum" },
+  { field: "interest", header: "Intereses", width: 130, type: "number", aggregation: "sum" },
+  { field: "balance", header: "Saldo", width: 130, type: "number", aggregation: "sum" },
+];
 
 const FIDEICOMISO_FILTERS: FilterFieldDef[] = [
   {
@@ -42,6 +52,8 @@ const FIDEICOMISO_FILTERS: FilterFieldDef[] = [
 ];
 
 export default function FideicomisoPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const currentYear = new Date().getFullYear();
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -56,35 +68,18 @@ export default function FideicomisoPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const summaryData = summaryQuery.data;
 
-  const columns: ZenttoColDef[] = [
-    { field: "employeeCode", headerName: "Código", width: 100 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "quarter", headerName: "Trimestre", width: 100 },
-    {
-      field: "deposit",
-      headerName: "Depósito",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-    {
-      field: "interest",
-      headerName: "Intereses",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-    {
-      field: "balance",
-      headerName: "Saldo",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-  ];
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id ?? `${r.employeeCode}-${r.quarter}`;
+  }, [rows, isLoading, registered]);
 
   const handleCalculate = async () => {
     await calculateMutation.mutateAsync(calcForm);
@@ -136,20 +131,18 @@ export default function FideicomisoPage() {
       />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <ZenttoDataGrid
-            gridId="nomina-fideicomiso-list"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? `${r.employeeCode}-${r.quarter}`}
-          showTotals
-          totalsLabel="Total"
-          enableClipboard
-          enableHeaderFilters
-          mobileVisibleFields={['employeeCode', 'employeeName']}
-          smExtraFields={['balance', 'quarter']}
+        <zentto-grid
+          ref={gridRef}
+          height="100%"
+          show-totals
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
         />
       </Paper>
 
@@ -189,4 +182,12 @@ export default function FideicomisoPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

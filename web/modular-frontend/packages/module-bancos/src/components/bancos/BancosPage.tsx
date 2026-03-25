@@ -1,41 +1,30 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-  Tooltip,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
-import { useToast, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
-import {
-  useBancosList,
-  useCreateBanco,
-  useUpdateBanco,
-  useDeleteBanco,
-} from "../../hooks/useBancosAuxiliares";
+import { useToast } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useBancosList, useCreateBanco, useUpdateBanco, useDeleteBanco } from "../../hooks/useBancosAuxiliares";
 
-const EMPTY_FORM = {
-  Nombre: "",
-  Contacto: "",
-  Direccion: "",
-  Telefonos: "",
-  Co_Usuario: "SUP",
-};
+const EMPTY_FORM = { Nombre: "", Contacto: "", Direccion: "", Telefonos: "", Co_Usuario: "SUP" };
+
+const COLUMNS: ColumnDef[] = [
+  { field: "Nombre", header: "Nombre", flex: 1, minWidth: 180, sortable: true },
+  { field: "Contacto", header: "Contacto", width: 160 },
+  { field: "Direccion", header: "Dirección", flex: 1, minWidth: 200 },
+  { field: "Telefonos", header: "Teléfonos", width: 150 },
+];
+
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 export default function BancosPage() {
-  /* ── state ── */
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -44,212 +33,99 @@ export default function BancosPage() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  /* ── queries & mutations ── */
   const { data, isLoading } = useBancosList({ search, page, limit });
   const crear = useCreateBanco();
   const actualizar = useUpdateBanco();
   const eliminar = useDeleteBanco();
   const { showToast } = useToast();
-
   const saving = crear.isPending || actualizar.isPending;
-
   const rows = (data?.rows ?? data?.items ?? []) as Record<string, any>[];
 
-  /* ── columns ── */
-  const columns = useMemo<ZenttoColDef[]>(
-    () => [
-      { field: "Nombre", headerName: "Nombre", flex: 1, minWidth: 180 },
-      { field: "Contacto", headerName: "Contacto", width: 160 },
-      { field: "Direccion", headerName: "Dirección", flex: 1, minWidth: 200 },
-      { field: "Telefonos", headerName: "Teléfonos", width: 150 },
-      {
-        field: "acciones",
-        headerName: "Acciones",
-        width: 110,
-        sortable: false,
-        renderCell: (params) => (
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Editar banco">
-              <IconButton size="small" onClick={() => handleEdit(params.row)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Eliminar banco">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => setDeleteTarget(params.row.Nombre)}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        ),
-      },
-    ],
-    [],
-  );
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
-  /* ── handlers ── */
-  const handleNew = () => {
-    setForm({ ...EMPTY_FORM });
-    setEditNombre(null);
-    setFormOpen(true);
-  };
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
+    el.getRowId = (r: any) => r.Nombre ?? r.NOMBRE ?? Math.random();
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
+    ];
+  }, [rows, isLoading, registered]);
 
   const handleEdit = (row: Record<string, any>) => {
-    setForm({
-      Nombre: row.Nombre ?? "",
-      Contacto: row.Contacto ?? "",
-      Direccion: row.Direccion ?? "",
-      Telefonos: row.Telefonos ?? "",
-      Co_Usuario: "SUP",
-    });
-    setEditNombre(row.Nombre);
-    setFormOpen(true);
+    setForm({ Nombre: row.Nombre ?? "", Contacto: row.Contacto ?? "", Direccion: row.Direccion ?? "", Telefonos: row.Telefonos ?? "", Co_Usuario: "SUP" });
+    setEditNombre(row.Nombre); setFormOpen(true);
   };
 
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row);
+      if (action === "delete") setDeleteTarget(row.Nombre);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
+
+  const handleNew = () => { setForm({ ...EMPTY_FORM }); setEditNombre(null); setFormOpen(true); };
   const handleSave = async () => {
     try {
-      if (editNombre) {
-        await actualizar.mutateAsync({ nombre: editNombre, data: form });
-        showToast("Banco actualizado correctamente", "success");
-      } else {
-        await crear.mutateAsync(form);
-        showToast("Banco creado correctamente", "success");
-      }
+      if (editNombre) { await actualizar.mutateAsync({ nombre: editNombre, data: form }); showToast("Banco actualizado correctamente", "success"); }
+      else { await crear.mutateAsync(form); showToast("Banco creado correctamente", "success"); }
       setFormOpen(false);
-    } catch (err: any) {
-      showToast(err?.message ?? "Error al guardar", "error");
-    }
+    } catch (err: any) { showToast(err?.message ?? "Error al guardar", "error"); }
   };
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    try {
-      await eliminar.mutateAsync(deleteTarget);
-      showToast("Banco eliminado correctamente", "success");
-      setDeleteTarget(null);
-    } catch (err: any) {
-      showToast(err?.message ?? "Error al eliminar", "error");
-    }
+    try { await eliminar.mutateAsync(deleteTarget); showToast("Banco eliminado correctamente", "success"); setDeleteTarget(null); }
+    catch (err: any) { showToast(err?.message ?? "Error al eliminar", "error"); }
   };
 
-  /* ── render ── */
   return (
     <Box>
-      {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight={600}>Entidades</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nuevo Banco
-        </Button>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nuevo Banco</Button>
       </Stack>
 
-      {/* Search */}
-      <TextField
-        placeholder="Buscar banco..."
-        size="small"
-        value={search}
+      <TextField placeholder="Buscar banco..." size="small" value={search}
         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         sx={{ mb: 2, maxWidth: 360 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        }}
+        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
       />
 
-      {/* Grid */}
-      <ZenttoDataGrid
-        gridId="bancos-bancos-list"
-        rows={rows}
-        columns={columns}
-        loading={isLoading}
-        rowCount={data?.total ?? rows.length}
-        pageSizeOptions={[25, 50, 100]}
-        paginationModel={{ page: page - 1, pageSize: limit }}
-        onPaginationModelChange={(m) => {
-          setPage(m.page + 1);
-          setLimit(m.pageSize);
-        }}
-        paginationMode="server"
-        disableRowSelectionOnClick
-        getRowId={(r) => r.Nombre ?? r.NOMBRE ?? Math.random()}
-        showExportCsv={false}
-        showExportExcel={false}
-        showExportJson={false}
-        hideDensityButton
-        hideColumnsButton
-        hideQuickFilter
-        hideToolbar
-        sx={{ minHeight: 400 }}
-        mobileVisibleFields={['Nombre', 'Telefonos']}
-        smExtraFields={['Contacto']}
-      />
+      <Box sx={{ minHeight: 400 }}>
+        <zentto-grid ref={gridRef} height="400px" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+      </Box>
 
-      {/* Create / Edit Dialog */}
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editNombre ? "Editar Banco" : "Nuevo Banco"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Nombre"
-              fullWidth
-              value={form.Nombre}
-              disabled={!!editNombre}
-              onChange={(e) => setForm((f) => ({ ...f, Nombre: e.target.value }))}
-            />
-            <TextField
-              label="Contacto"
-              fullWidth
-              value={form.Contacto}
-              onChange={(e) => setForm((f) => ({ ...f, Contacto: e.target.value }))}
-            />
-            <TextField
-              label="Dirección"
-              fullWidth
-              value={form.Direccion}
-              onChange={(e) => setForm((f) => ({ ...f, Direccion: e.target.value }))}
-            />
-            <TextField
-              label="Teléfonos"
-              fullWidth
-              value={form.Telefonos}
-              onChange={(e) => setForm((f) => ({ ...f, Telefonos: e.target.value }))}
-            />
+            <TextField label="Nombre" fullWidth value={form.Nombre} disabled={!!editNombre} onChange={(e) => setForm((f) => ({ ...f, Nombre: e.target.value }))} />
+            <TextField label="Contacto" fullWidth value={form.Contacto} onChange={(e) => setForm((f) => ({ ...f, Contacto: e.target.value }))} />
+            <TextField label="Dirección" fullWidth value={form.Direccion} onChange={(e) => setForm((f) => ({ ...f, Direccion: e.target.value }))} />
+            <TextField label="Teléfonos" fullWidth value={form.Telefonos} onChange={(e) => setForm((f) => ({ ...f, Telefonos: e.target.value }))} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFormOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {editNombre ? "Actualizar" : "Guardar"}
-          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>{editNombre ? "Actualizar" : "Guardar"}</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteTarget != null} onClose={() => setDeleteTarget(null)}>
         <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent>
-          <Typography>
-            ¿Está seguro de eliminar el banco &quot;{deleteTarget}&quot;?
-          </Typography>
-        </DialogContent>
+        <DialogContent><Typography>¿Está seguro de eliminar el banco &quot;{deleteTarget}&quot;?</Typography></DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteTarget(null)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDelete}
-            disabled={eliminar.isPending}
-          >
-            Eliminar
-          </Button>
+          <Button variant="contained" color="error" onClick={handleDelete} disabled={eliminar.isPending}>Eliminar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

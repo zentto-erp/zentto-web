@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -18,10 +18,10 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -33,6 +33,7 @@ import {
   useCompleteTrip,
   type TripFilter,
 } from "../hooks/useFlota";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const statusColors: Record<string, "info" | "warning" | "success" | "default"> = {
   PLANNED: "info",
@@ -83,8 +84,15 @@ export default function ViajesPage() {
   const [endMileage, setEndMileage] = useState("");
   const [arrivalDate, setArrivedAt] = useState("");
   const [fuelUsed, setFuelUsed] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useTripsList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useTripsList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -95,22 +103,22 @@ export default function ViajesPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "TripNumber", headerName: "N. Viaje", flex: 0.8, minWidth: 100 },
-    { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 0.8, minWidth: 110 },
-    { field: "DriverId", headerName: "Conductor", flex: 1, minWidth: 120 },
-    { field: "Origin", headerName: "Origen", flex: 1, minWidth: 120 },
-    { field: "Destination", headerName: "Destino", flex: 1, minWidth: 120 },
+  const columns: ColumnDef[] = [
+    { field: "TripNumber", header: "N. Viaje", flex: 0.8, minWidth: 100 },
+    { field: "LicensePlate", header: "Placa Vehiculo", flex: 0.8, minWidth: 110 },
+    { field: "DriverId", header: "Conductor", flex: 1, minWidth: 120 },
+    { field: "Origin", header: "Origen", flex: 1, minWidth: 120 },
+    { field: "Destination", header: "Destino", flex: 1, minWidth: 120 },
     {
       field: "DepartedAt",
-      headerName: "Fecha Salida",
+      header: "Fecha Salida",
       flex: 0.8,
       minWidth: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "ArrivedAt",
-      headerName: "Fecha Llegada",
+      header: "Fecha Llegada",
       flex: 0.8,
       minWidth: 110,
       valueFormatter: (value: unknown) => {
@@ -120,10 +128,19 @@ export default function ViajesPage() {
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
       renderCell: (params) => {
         const status = String(params.value ?? "PLANNED");
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <Chip
             label={statusLabels[status] ?? status}
@@ -136,7 +153,7 @@ export default function ViajesPage() {
     },
     {
       field: "DistanceKm",
-      headerName: "Distancia",
+      header: "Distancia",
       width: 100,
       valueFormatter: (value: unknown) => {
         const n = Number(value ?? 0);
@@ -145,7 +162,7 @@ export default function ViajesPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 100,
       sortable: false,
       filterable: false,
@@ -275,24 +292,19 @@ export default function ViajesPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="flota-viajes-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.TripId ?? row.Id ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['TripNumber', 'LicensePlate']}
-        smExtraFields={['Status', 'DepartedAt']}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="flota-viajes-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {/* Dialog: Nuevo Viaje */}
       <Dialog
@@ -481,4 +493,12 @@ export default function ViajesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

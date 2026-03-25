@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -19,10 +19,10 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -33,6 +33,7 @@ import {
   useUpdateVehicle,
   type VehicleFilter,
 } from "../hooks/useFlota";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 function VehiculoDetailPanel({ row }: { row: Record<string, unknown> }) {
   const fields = [
@@ -43,6 +44,23 @@ function VehiculoDetailPanel({ row }: { row: Record<string, unknown> }) {
     { label: 'Conductor asignado', value: row.DefaultDriverId },
     { label: 'Notas', value: row.Notes },
   ].filter(f => f.value != null && f.value !== '');
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -119,8 +137,15 @@ export default function VehiculosPage() {
   const [color, setColor] = useState("");
   const [vin, setVin] = useState("");
   const [notes, setNotes] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useVehiclesList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useVehiclesList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -131,14 +156,14 @@ export default function VehiculosPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "LicensePlate", headerName: "Placa", flex: 0.8, minWidth: 100 },
-    { field: "Brand", headerName: "Marca", flex: 1, minWidth: 100 },
-    { field: "Model", headerName: "Modelo", flex: 1, minWidth: 100 },
-    { field: "Year", headerName: "Ano", width: 70 },
+  const columns: ColumnDef[] = [
+    { field: "LicensePlate", header: "Placa", flex: 0.8, minWidth: 100 },
+    { field: "Brand", header: "Marca", flex: 1, minWidth: 100 },
+    { field: "Model", header: "Modelo", flex: 1, minWidth: 100 },
+    { field: "Year", header: "Ano", width: 70 },
     {
       field: "VehicleType",
-      headerName: "Tipo",
+      header: "Tipo",
       width: 120,
       renderCell: (params) => (
         <Chip label={String(params.value ?? "")} size="small" variant="outlined" />
@@ -146,7 +171,7 @@ export default function VehiculosPage() {
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 130,
       renderCell: (params) => {
         const status = String(params.value ?? "ACTIVE");
@@ -160,10 +185,10 @@ export default function VehiculosPage() {
         );
       },
     },
-    { field: "DefaultDriverId", headerName: "Conductor", flex: 1, minWidth: 120 },
+    { field: "DefaultDriverId", header: "Conductor", flex: 1, minWidth: 120 },
     {
       field: "CurrentOdometer",
-      headerName: "Kilometraje",
+      header: "Kilometraje",
       width: 110,
       valueFormatter: (value: unknown) => {
         const n = Number(value ?? 0);
@@ -172,7 +197,7 @@ export default function VehiculosPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 100,
       sortable: false,
       filterable: false,
@@ -316,24 +341,19 @@ export default function VehiculosPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="flota-vehiculos-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.VehicleId ?? row.Id ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['LicensePlate', 'Brand']}
-        smExtraFields={['VehicleType', 'Status']}
-        getDetailContent={(row: any) => <VehiculoDetailPanel row={row} />}
+      <zentto-grid
+        ref={gridRef}
+        export-filename="flota-vehiculos-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>}
         detailPanelHeight={120}
       />
 
@@ -530,4 +550,12 @@ export default function VehiculosPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

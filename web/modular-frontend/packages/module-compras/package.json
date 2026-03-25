@@ -14,6 +14,8 @@
     "@zentto/shared-api": "0.1.0",
     "@zentto/shared-auth": "0.1.0",
     "@zentto/shared-ui": "0.1.0",
+    "@zentto/datagrid": "^0.1.2",
+    "@zentto/datagrid-core": "^0.1.2",
     "@mui/material": "^6.5.0",
     "@mui/icons-material": "^6.5.0",
     "@mui/x-charts": "^8.28.0",

@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
   Chip,
+  CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const FISCAL_FILTERS: FilterFieldDef[] = [
   { field: "fechaDesde", label: "Fecha desde", type: "date" },
@@ -21,25 +22,32 @@ export default function FiscalRecordsPage() {
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<FiscalRecordFilter>({ page: 1, limit: 25 });
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const { data, isLoading } = useFiscalRecords(filter);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useFiscalRecords(filter);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "FiscalRecordId", headerName: "ID", width: 70 },
+  const columns: ColumnDef[] = [
+    { field: "FiscalRecordId", header: "ID", width: 70 },
     {
       field: "CreatedAt",
-      headerName: "Fecha",
+      header: "Fecha",
       width: 160,
       renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
     },
-    { field: "InvoiceNumber", headerName: "N° Factura", width: 140 },
-    { field: "InvoiceType", headerName: "Tipo", width: 100 },
-    { field: "CountryCode", headerName: "País", width: 70 },
+    { field: "InvoiceNumber", header: "N° Factura", width: 140 },
+    { field: "InvoiceType", header: "Tipo", width: 100 },
+    { field: "CountryCode", header: "País", width: 70 },
     {
       field: "RecordHash",
-      headerName: "Hash",
+      header: "Hash",
       width: 180,
       renderCell: (p) => (
         <span style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
@@ -49,7 +57,7 @@ export default function FiscalRecordsPage() {
     },
     {
       field: "SentToAuthority",
-      headerName: "Enviado",
+      header: "Enviado",
       width: 100,
       renderCell: (p) => (
         <Chip
@@ -62,7 +70,7 @@ export default function FiscalRecordsPage() {
     },
     {
       field: "AuthorityStatus",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
       renderCell: (p) => (
         <Chip
@@ -74,6 +82,23 @@ export default function FiscalRecordsPage() {
       ),
     },
   ];
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -98,27 +123,29 @@ export default function FiscalRecordsPage() {
         />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
-          <ZenttoDataGrid
-            gridId="auditoria-fiscal-records-list"
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            enableHeaderFilters
-            rowCount={total}
-            pageSizeOptions={[25, 50]}
-            paginationMode="server"
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            disableRowSelectionOnClick
-            getRowId={(row) => row.FiscalRecordId}
-            sx={{ border: "none" }}
-            mobileVisibleFields={['CreatedAt', 'InvoiceNumber']}
-            smExtraFields={['InvoiceType', 'AuthorityStatus']}
-          />
+          <zentto-grid
+        ref={gridRef}
+        export-filename="auditoria-fiscal-records-list"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         </Paper>
       </Box>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -1,29 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
-  DialogTitle, DialogContent, DialogActions, Alert,
+  DialogTitle, DialogContent, DialogActions, Alert, CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import { useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
 
-const columns: ZenttoColDef[] = [
-  { field: "ConceptCode", headerName: "Codigo", width: 140 },
-  { field: "Description", headerName: "Descripcion", flex: 1, minWidth: 200 },
-  { field: "SupplierType", headerName: "Tipo Persona", width: 130 },
-  { field: "ActivityCode", headerName: "Actividad", width: 130 },
-  { field: "RetentionType", headerName: "Tipo Ret.", width: 100 },
-  { field: "Rate", headerName: "%", width: 80, type: "number", valueFormatter: (v: number) => `${v}%` },
-  { field: "SubtrahendUT", headerName: "Sustraendo UT", width: 120, type: "number" },
-  { field: "MinBaseUT", headerName: "Min Base UT", width: 110, type: "number" },
-  { field: "SeniatCode", headerName: "Cod SENIAT", width: 100 },
-  { field: "CountryCode", headerName: "Pais", width: 60 },
+const COLUMNS: ColumnDef[] = [
+  { field: "ConceptCode", header: "Codigo", width: 140, sortable: true },
+  { field: "Description", header: "Descripcion", flex: 1, minWidth: 200, sortable: true },
+  { field: "SupplierType", header: "Tipo Persona", width: 130, sortable: true, groupable: true },
+  { field: "ActivityCode", header: "Actividad", width: 130, sortable: true },
+  { field: "RetentionType", header: "Tipo Ret.", width: 100, sortable: true, groupable: true },
+  { field: "Rate", header: "%", width: 80, type: "number" },
+  { field: "SubtrahendUT", header: "Sustraendo UT", width: 120, type: "number" },
+  { field: "MinBaseUT", header: "Min Base UT", width: 110, type: "number" },
+  { field: "SeniatCode", header: "Cod SENIAT", width: 100 },
+  { field: "CountryCode", header: "Pais", width: 60, sortable: true },
 ];
 
 export default function ConceptosRetencionPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const { data: countries = [] } = useCountries();
   const { data: retTypes = [] } = useLookup('RETENTION_TYPE');
   const { data: supplierTypes = [] } = useLookup('SUPPLIER_TYPE');
@@ -41,11 +44,19 @@ export default function ConceptosRetencionPage() {
   const upsert = useConceptoUpsert();
   const rows = data?.rows ?? [];
 
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows.map((r: any) => ({ ...r, id: r.ConceptId ?? r.ConceptCode }));
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
   const handleSave = async () => {
-    try {
-      await upsert.mutateAsync(form as any);
-      setDialogOpen(false);
-    } catch { /* toast handled by mutation */ }
+    try { await upsert.mutateAsync(form as any); setDialogOpen(false); }
+    catch { /* toast handled by mutation */ }
   };
 
   const handleEdit = (row: any) => {
@@ -58,6 +69,10 @@ export default function ConceptosRetencionPage() {
     });
     setDialogOpen(true);
   };
+
+  if (!registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+  }
 
   return (
     <Box>
@@ -78,37 +93,27 @@ export default function ConceptosRetencionPage() {
         values={filterValues}
         onChange={(vals) => {
           setFilterValues(vals);
-          setFilter((f) => ({
-            ...f,
-            retentionType: vals.retentionType || undefined,
-            countryCode: vals.countryCode || undefined,
-          }));
+          setFilter((f) => ({ ...f, retentionType: vals.retentionType || undefined, countryCode: vals.countryCode || undefined }));
         }}
         searchPlaceholder="Buscar concepto..."
         searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setFilter((f) => ({ ...f, search: v || undefined }));
-        }}
+        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
       />
 
-      <ZenttoDataGrid
-        gridId="contabilidad-conceptos-retencion-list"
-        rows={rows}
-        columns={columns}
-        loading={isLoading}
-        enableHeaderFilters
-        getRowId={(r) => r.ConceptId ?? r.ConceptCode}
-        autoHeight
-        onRowClick={(p) => handleEdit(p.row)}
-        sx={{ "& .MuiDataGrid-row": { cursor: "pointer" } }}
-        initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
-        pageSizeOptions={[25, 50]}
-        mobileVisibleFields={['Description', 'RetentionType']}
-        smExtraFields={['Rate', 'CountryCode']}
-        enableGrouping
-        enableClipboard
-      />
+      <zentto-grid
+        ref={gridRef}
+        default-currency="VES"
+        export-filename="conceptos-retencion"
+        height="calc(100vh - 300px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{form.conceptCode ? "Editar Concepto" : "Nuevo Concepto"}</DialogTitle>
@@ -123,31 +128,23 @@ export default function ConceptosRetencionPage() {
                 {countries.map((c) => <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>)}
               </TextField>
             </Stack>
-            <TextField label="Descripcion" fullWidth value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <TextField label="Descripcion" fullWidth value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <Stack direction="row" spacing={2}>
-              <TextField select label="Tipo Persona" fullWidth value={form.supplierType}
-                onChange={(e) => setForm({ ...form, supplierType: e.target.value })}>
+              <TextField select label="Tipo Persona" fullWidth value={form.supplierType} onChange={(e) => setForm({ ...form, supplierType: e.target.value })}>
                 {supplierTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
               </TextField>
-              <TextField label="Actividad" fullWidth value={form.activityCode}
-                onChange={(e) => setForm({ ...form, activityCode: e.target.value })} />
+              <TextField label="Actividad" fullWidth value={form.activityCode} onChange={(e) => setForm({ ...form, activityCode: e.target.value })} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField select label="Tipo Retencion" fullWidth value={form.retentionType}
-                onChange={(e) => setForm({ ...form, retentionType: e.target.value })}>
+              <TextField select label="Tipo Retencion" fullWidth value={form.retentionType} onChange={(e) => setForm({ ...form, retentionType: e.target.value })}>
                 {retTypes.map((t) => <MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>)}
               </TextField>
-              <TextField label="% Retencion" type="number" fullWidth value={form.rate}
-                onChange={(e) => setForm({ ...form, rate: Number(e.target.value) })} />
+              <TextField label="% Retencion" type="number" fullWidth value={form.rate} onChange={(e) => setForm({ ...form, rate: Number(e.target.value) })} />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField label="Sustraendo (UT)" type="number" fullWidth value={form.subtrahendUT}
-                onChange={(e) => setForm({ ...form, subtrahendUT: Number(e.target.value) })} />
-              <TextField label="Base Minima (UT)" type="number" fullWidth value={form.minBaseUT}
-                onChange={(e) => setForm({ ...form, minBaseUT: Number(e.target.value) })} />
-              <TextField label="Cod SENIAT" fullWidth value={form.seniatCode}
-                onChange={(e) => setForm({ ...form, seniatCode: e.target.value })} />
+              <TextField label="Sustraendo (UT)" type="number" fullWidth value={form.subtrahendUT} onChange={(e) => setForm({ ...form, subtrahendUT: Number(e.target.value) })} />
+              <TextField label="Base Minima (UT)" type="number" fullWidth value={form.minBaseUT} onChange={(e) => setForm({ ...form, minBaseUT: Number(e.target.value) })} />
+              <TextField label="Cod SENIAT" fullWidth value={form.seniatCode} onChange={(e) => setForm({ ...form, seniatCode: e.target.value })} />
             </Stack>
           </Stack>
         </DialogContent>
@@ -160,4 +157,12 @@ export default function ConceptosRetencionPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

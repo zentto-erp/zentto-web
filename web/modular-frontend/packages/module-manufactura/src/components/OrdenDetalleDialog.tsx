@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -22,13 +22,13 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import AddIcon from "@mui/icons-material/Add";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useWorkOrderDetail,
   useConsumeMaterial,
@@ -39,6 +39,7 @@ import {
   type ConsumeMaterialPayload,
   type ReportOutputPayload,
 } from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 // ── Status helpers ──────────────────────────────────────────────
 
@@ -126,6 +127,23 @@ function ConsumeMaterialDialog({ open, onClose, workOrderId }: ConsumeMaterialDi
     reset();
     onClose();
   };
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Dialog
@@ -389,8 +407,15 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
   const [tabIndex, setTabIndex] = useState(0);
   const [consumeOpen, setConsumeOpen] = useState(false);
   const [outputOpen, setOutputOpen] = useState(false);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined);
   const startOrder = useStartWorkOrder();
   const completeOrder = useCompleteWorkOrder();
   const cancelOrder = useCancelWorkOrder();
@@ -408,24 +433,24 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
 
   // ── Columns: Materials ──────────────────────────────────────
 
-  const materialColumns: ZenttoColDef[] = [
-    { field: "ProductCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
-    { field: "ProductName", headerName: "Descripcion", flex: 1.5, minWidth: 160 },
+  const materialColumns: ColumnDef[] = [
+    { field: "ProductCode", header: "Codigo", flex: 0.8, minWidth: 100 },
+    { field: "ProductName", header: "Descripcion", flex: 1.5, minWidth: 160 },
     {
       field: "PlannedQuantity",
-      headerName: "Cant. Planificada",
+      header: "Cant. Planificada",
       width: 130,
       type: "number",
     },
     {
       field: "ConsumedQuantity",
-      headerName: "Cant. Consumida",
+      header: "Cant. Consumida",
       width: 130,
       type: "number",
     },
     {
       field: "UnitCost",
-      headerName: "Costo Unit.",
+      header: "Costo Unit.",
       width: 110,
       type: "number",
       valueFormatter: (value: unknown) => {
@@ -437,20 +462,20 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
 
   // ── Columns: Outputs ────────────────────────────────────────
 
-  const outputColumns: ZenttoColDef[] = [
-    { field: "ProductCode", headerName: "Codigo", flex: 0.8, minWidth: 100 },
-    { field: "ProductName", headerName: "Producto", flex: 1.2, minWidth: 140 },
+  const outputColumns: ColumnDef[] = [
+    { field: "ProductCode", header: "Codigo", flex: 0.8, minWidth: 100 },
+    { field: "ProductName", header: "Producto", flex: 1.2, minWidth: 140 },
     {
       field: "Quantity",
-      headerName: "Cantidad",
+      header: "Cantidad",
       width: 110,
       type: "number",
     },
-    { field: "WarehouseName", headerName: "Almacen", flex: 1, minWidth: 120 },
-    { field: "LotNumber", headerName: "Lote", flex: 0.8, minWidth: 100 },
+    { field: "WarehouseName", header: "Almacen", flex: 1, minWidth: 120 },
+    { field: "LotNumber", header: "Lote", flex: 0.8, minWidth: 100 },
     {
       field: "CreatedAt",
-      headerName: "Fecha",
+      header: "Fecha",
       width: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
@@ -572,18 +597,17 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
                   Consumir Material
                 </Button>
               </Box>
-              <ZenttoDataGrid
-                rows={materials}
-                columns={materialColumns}
-                getRowId={(row) => row.MaterialConsumptionId ?? row.ProductId ?? Math.random()}
-                autoHeight
-                disableRowSelectionOnClick
-                hideFooter={materials.length <= 10}
-                pageSizeOptions={[10, 25]}
-                sx={{ bgcolor: "background.paper", borderRadius: 1 }}
-                mobileVisibleFields={["ProductCode", "ConsumedQuantity"]}
-                smExtraFields={["ProductName"]}
-              />
+              <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
               {materials.length === 0 && !isLoading && (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
                   No hay materiales consumidos aun.
@@ -611,18 +635,17 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
                   Reportar Salida
                 </Button>
               </Box>
-              <ZenttoDataGrid
-                rows={outputs}
-                columns={outputColumns}
-                getRowId={(row) => row.OutputId ?? row.ProductId ?? Math.random()}
-                autoHeight
-                disableRowSelectionOnClick
-                hideFooter={outputs.length <= 10}
-                pageSizeOptions={[10, 25]}
-                sx={{ bgcolor: "background.paper", borderRadius: 1 }}
-                mobileVisibleFields={["ProductCode", "Quantity"]}
-                smExtraFields={["WarehouseName"]}
-              />
+              <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
               {outputs.length === 0 && !isLoading && (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
                   No hay produccion reportada aun.
@@ -705,4 +728,12 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
       />
     </>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

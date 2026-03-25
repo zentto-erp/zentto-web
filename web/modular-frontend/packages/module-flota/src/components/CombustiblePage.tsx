@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -16,10 +16,10 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -29,6 +29,7 @@ import {
   useCreateFuelLog,
   type FuelFilter,
 } from "../hooks/useFlota";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const COMBUSTIBLE_FILTERS: FilterFieldDef[] = [
   { field: "from", label: "Fecha desde", type: "date" },
@@ -54,8 +55,15 @@ export default function CombustiblePage() {
   const [totalCost, setTotalCost] = useState("");
   const [stationName, setStationName] = useState("");
   const [notes, setNotes] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useFuelLogsList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useFuelLogsList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -65,35 +73,35 @@ export default function CombustiblePage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
+  const columns: ColumnDef[] = [
     {
       field: "FuelDate",
-      headerName: "Fecha",
+      header: "Fecha",
       flex: 1,
       minWidth: 110,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
-    { field: "LicensePlate", headerName: "Placa Vehiculo", flex: 1, minWidth: 110 },
-    { field: "FuelType", headerName: "Tipo Combustible", flex: 1, minWidth: 120 },
+    { field: "LicensePlate", header: "Placa Vehiculo", flex: 1, minWidth: 110 },
+    { field: "FuelType", header: "Tipo Combustible", flex: 1, minWidth: 120 },
     {
       field: "Quantity",
-      headerName: "Litros",
+      header: "Litros",
       width: 90,
       valueFormatter: (value: unknown) => Number(value ?? 0).toFixed(2),
     },
     {
       field: "TotalCost",
-      headerName: "Costo",
+      header: "Costo",
       width: 110,
       valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
     },
     {
       field: "OdometerReading",
-      headerName: "Kilometraje",
+      header: "Kilometraje",
       width: 110,
       valueFormatter: (value: unknown) => Number(value ?? 0).toLocaleString("es") + " km",
     },
-    { field: "StationName", headerName: "Estacion", flex: 1, minWidth: 130 },
+    { field: "StationName", header: "Estacion", flex: 1, minWidth: 130 },
   ];
 
   const resetForm = () => {
@@ -132,6 +140,23 @@ export default function CombustiblePage() {
 
   const canSubmit = !createFuelLog.isPending && !!vehicleId && !!logDate && !!fuelType && !!liters && !!totalCost;
 
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -169,24 +194,19 @@ export default function CombustiblePage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="flota-combustible-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.FuelLogId ?? row.Id ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['LicensePlate', 'FuelDate']}
-        smExtraFields={['TotalCost', 'Quantity']}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="flota-combustible-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {/* Dialog: Registrar Carga */}
       <Dialog
@@ -253,4 +273,12 @@ export default function CombustiblePage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

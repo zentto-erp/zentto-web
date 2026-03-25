@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -15,13 +15,14 @@ import {
   IconButton,
   Alert,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
@@ -52,26 +53,33 @@ export default function AuditLogPage() {
   const [filter, setFilter] = useState<AuditLogFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useAuditLogs(filter);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useAuditLogs(filter);
   const detalle = useAuditLogDetail(selectedId);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "AuditLogId", headerName: "ID", width: 70 },
+  const columns: ColumnDef[] = [
+    { field: "AuditLogId", header: "ID", width: 70 },
     {
       field: "CreatedAt",
-      headerName: "Fecha",
+      header: "Fecha",
       width: 160,
       renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
     },
-    { field: "UserName", headerName: "Usuario", width: 120 },
-    { field: "ModuleName", headerName: "Módulo", width: 120 },
+    { field: "UserName", header: "Usuario", width: 120 },
+    { field: "ModuleName", header: "Módulo", width: 120 },
     {
       field: "ActionType",
-      headerName: "Acción",
+      header: "Acción",
       width: 110,
       renderCell: (p) => (
         <Chip
@@ -82,12 +90,12 @@ export default function AuditLogPage() {
         />
       ),
     },
-    { field: "EntityName", headerName: "Entidad", width: 130 },
-    { field: "EntityId", headerName: "ID Entidad", width: 90 },
-    { field: "Summary", headerName: "Descripción", flex: 1, minWidth: 200 },
+    { field: "EntityName", header: "Entidad", width: 130 },
+    { field: "EntityId", header: "ID Entidad", width: 90 },
+    { field: "Summary", header: "Descripción", flex: 1, minWidth: 200 },
     {
       field: "acciones",
-      headerName: "",
+      header: "",
       width: 60,
       sortable: false,
       renderCell: (p) => (
@@ -103,6 +111,23 @@ export default function AuditLogPage() {
   const updateFilter = (key: string, value: string) => {
     setFilter((f) => ({ ...f, [key]: value || undefined, page: 1 }));
   };
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -132,25 +157,19 @@ export default function AuditLogPage() {
 
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
-          <ZenttoDataGrid
-            gridId="auditoria-audit-log-list"
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            enableHeaderFilters
-            rowCount={total}
-            pageSizeOptions={[25, 50, 100]}
-            paginationMode="server"
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            disableRowSelectionOnClick
-            getRowId={(row) => row.AuditLogId}
-            sx={{ border: "none" }}
-            mobileVisibleFields={['CreatedAt', 'ActionType']}
-            smExtraFields={['UserName', 'ModuleName']}
-          />
+          <zentto-grid
+        ref={gridRef}
+        export-filename="auditoria-audit-log-list"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         </Paper>
       </Box>
 
@@ -217,5 +236,13 @@ function tryFormatJson(str: string): string {
     return JSON.stringify(JSON.parse(str), null, 2);
   } catch {
     return str;
+  }
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
   }
 }

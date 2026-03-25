@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -23,11 +23,11 @@ import {
   CheckCircle as CheckCircleIcon,
   HourglassEmpty as HourglassIcon,
 } from "@mui/icons-material";
-import type { GridColDef } from "@mui/x-data-grid";
-import { ZenttoDataGrid, ConfirmDialog } from "@zentto/shared-ui";
+import { ConfirmDialog } from "@zentto/shared-ui";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFacturaById, useDetalleFactura, useDeleteFactura } from "../../../hooks/useFacturas";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface FacturaDetailProps {
@@ -42,73 +42,21 @@ const STEPS = ["Emitida", "Cobrada"];
 function getActiveStep(estado: string): number {
   if (estado === "Anulada") return -1;
   if (estado === "CONTADO" || estado === "Cobrada") return 1;
-  return 0; // Emitida / CREDITO / pendiente
+  return 0;
 }
 
 function isPaid(estado: string): boolean {
   return estado === "CONTADO" || estado === "Cobrada";
 }
 
-// ── Columns for ZenttoDataGrid ──────────────────────────────────────────────
-const columns: GridColDef[] = [
-  {
-    field: "codigo",
-    headerName: "Codigo",
-    flex: 0.8,
-    minWidth: 100,
-    valueGetter: (_value: unknown, row: DetalleRow) =>
-      row.COD_SERV ?? row.CODIGO ?? row.codigo ?? "",
-  },
-  {
-    field: "descripcion",
-    headerName: "Descripcion",
-    flex: 2,
-    minWidth: 200,
-    valueGetter: (_value: unknown, row: DetalleRow) =>
-      row.DESCRIPCION ?? row.descripcion ?? row.NOMBRE ?? "",
-  },
-  {
-    field: "cantidad",
-    headerName: "Cant.",
-    flex: 0.5,
-    minWidth: 70,
-    type: "number",
-    valueGetter: (_value: unknown, row: DetalleRow) => Number(row.CANTIDAD ?? row.cantidad ?? 0),
-  },
-  {
-    field: "precio",
-    headerName: "Precio",
-    flex: 0.7,
-    minWidth: 90,
-    type: "number",
-    valueGetter: (_value: unknown, row: DetalleRow) =>
-      Number(row.PRECIO ?? row.precio ?? row.PRECIO_VENTA ?? 0),
-    valueFormatter: (value: number) => formatCurrency(value),
-  },
-  {
-    field: "alicuota",
-    headerName: "IVA %",
-    flex: 0.5,
-    minWidth: 70,
-    type: "number",
-    valueGetter: (_value: unknown, row: DetalleRow) =>
-      Number(row.ALICUOTA ?? row.alicuota ?? 0),
-    valueFormatter: (value: number) => `${value}%`,
-  },
-  {
-    field: "total",
-    headerName: "Total",
-    flex: 0.8,
-    minWidth: 100,
-    type: "number",
-    valueGetter: (_value: unknown, row: DetalleRow) => {
-      const cant = Number(row.CANTIDAD ?? row.cantidad ?? 0);
-      const precio = Number(row.PRECIO ?? row.precio ?? row.PRECIO_VENTA ?? 0);
-      const desc = Number(row.DESCUENTO ?? row.descuento ?? 0);
-      return cant * precio - desc;
-    },
-    valueFormatter: (value: number) => formatCurrency(value),
-  },
+// ── Columns for zentto-grid ──────────────────────────────────────────────
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", flex: 0.8, minWidth: 100 },
+  { field: "descripcion", header: "Descripcion", flex: 2, minWidth: 200 },
+  { field: "cantidad", header: "Cant.", flex: 0.5, minWidth: 70, type: "number" },
+  { field: "precio", header: "Precio", flex: 0.7, minWidth: 90, type: "number", currency: "VES" },
+  { field: "alicuota", header: "IVA %", flex: 0.5, minWidth: 70, type: "number" },
+  { field: "total", header: "Total", flex: 0.8, minWidth: 100, type: "number", currency: "VES", aggregation: "sum" },
 ];
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -116,6 +64,12 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const [anularOpen, setAnularOpen] = useState(false);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
 
   // Queries
   const {
@@ -134,6 +88,26 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
   const isAnulada = estado === "Anulada";
   const activeStep = getActiveStep(estado);
   const pagada = isPaid(estado);
+
+  // Map rows for the grid
+  const gridRows = useMemo(
+    () =>
+      detRows.map((d, idx) => ({
+        id: idx,
+        codigo: d.COD_SERV ?? d.CODIGO ?? d.codigo ?? "",
+        descripcion: d.DESCRIPCION ?? d.descripcion ?? d.NOMBRE ?? "",
+        cantidad: Number(d.CANTIDAD ?? d.cantidad ?? 0),
+        precio: Number(d.PRECIO ?? d.precio ?? d.PRECIO_VENTA ?? 0),
+        alicuota: Number(d.ALICUOTA ?? d.alicuota ?? 0),
+        total: (() => {
+          const cant = Number(d.CANTIDAD ?? d.cantidad ?? 0);
+          const precio = Number(d.PRECIO ?? d.precio ?? d.PRECIO_VENTA ?? 0);
+          const desc = Number(d.DESCUENTO ?? d.descuento ?? 0);
+          return cant * precio - desc;
+        })(),
+      })),
+    [detRows]
+  );
 
   // Totals
   const subtotal = detRows.reduce((acc, d) => {
@@ -154,6 +128,15 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
     return acc + (cant * precio - desc) * (alic / 100);
   }, 0);
   const totalFactura = factura?.totalFactura ?? baseImponible + totalIva;
+
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = gridRows;
+    el.loading = loadingDetalle;
+  }, [gridRows, loadingDetalle, registered]);
 
   // Anular handler
   const handleAnular = async () => {
@@ -304,22 +287,29 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
         </Paper>
       </Box>
 
-      {/* ── Lineas (ZenttoDataGrid) ────────────────────────────────────────── */}
+      {/* ── Lineas (zentto-grid) ────────────────────────────────────────── */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: 1 }}>
           Lineas de la Factura
         </Typography>
-        <ZenttoDataGrid
-          rows={detRows.map((d, idx) => ({ ...d, id: idx }))}
-          columns={columns}
-          hideToolbar
-          disableRowSelectionOnClick
-          pageSizeOptions={[25]}
-          density="compact"
-          sx={{
-            "& .MuiDataGrid-columnHeaders": { backgroundColor: "grey.50" },
-          }}
-        />
+        <Box sx={{ minHeight: 200 }}>
+          {registered && (
+            <zentto-grid
+              ref={gridRef}
+              default-currency="VES"
+              height="300px"
+              show-totals
+              enable-toolbar
+              enable-header-menu
+              enable-header-filters
+              enable-clipboard
+              enable-quick-search
+              enable-context-menu
+              enable-status-bar
+              enable-configurator
+            ></zentto-grid>
+          )}
+        </Box>
 
         {/* Totales */}
         {detRows.length > 0 && (
@@ -397,11 +387,19 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
         onClose={() => setAnularOpen(false)}
         onConfirm={handleAnular}
         title="Anular Factura"
-        message={`¿Estas seguro de anular la factura ${numeroFactura}? Esta accion no se puede deshacer.`}
+        message={`Estas seguro de anular la factura ${numeroFactura}? Esta accion no se puede deshacer.`}
         confirmLabel="Anular"
         variant="danger"
         loading={isAnulando}
       />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -1,8 +1,8 @@
 // components/modules/articulos/ArticulosTable.tsx
-// Tabla de artículos con filtros avanzados: selectores, rangos, comodines
+// Tabla de articulos con filtros avanzados: selectores, rangos, comodines
 "use client";
 
-import { useState, useCallback, useMemo, type Dispatch, type SetStateAction } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Box,
@@ -28,17 +28,7 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  GridColDef,
-  GridPaginationModel,
-  GridSortModel,
-  GridRenderCellParams,
-} from "@mui/x-data-grid";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
-import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
@@ -51,6 +41,11 @@ import { formatCurrency, apiGet } from "@zentto/shared-api";
 import { useQuery } from "@tanstack/react-query";
 import { debounce } from "lodash";
 import type { ArticuloFilter } from "@zentto/shared-api/types";
+import type { ColumnDef } from "@zentto/datagrid-core";
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 // ============ Componente selector reutilizable ============
 function FilterSelect({
@@ -89,17 +84,18 @@ export default function ArticulosTable() {
   const router = useRouter();
   const pathname = usePathname() || '';
   const basePath = pathname.includes('/inventario/') ? '/inventario/articulos' : '/articulos';
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
 
   // ========== Estado del DataGrid ==========
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: 20,
-  });
-  const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: "codigo", sort: "asc" },
-  ]);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [sortModel, setSortModel] = useState([{ field: "codigo", sort: "asc" as const }]);
 
-  // ========== Búsqueda ==========
+  // ========== Busqueda ==========
   const [searchText, setSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [wildcardText, setWildcardText] = useState("");
@@ -129,7 +125,7 @@ export default function ArticulosTable() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState<string | null>(null);
 
-  // ========== Debounce para búsqueda ==========
+  // ========== Debounce para busqueda ==========
   const debouncedSetSearch = useCallback(
     debounce((value: string) => {
       setDebouncedSearch(value);
@@ -216,7 +212,7 @@ export default function ArticulosTable() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  // Resetear página al cambiar un filtro
+  // Resetear pagina al cambiar un filtro
   const onFilterChange = <T,>(setter: Dispatch<SetStateAction<T>>) => (val: T) => {
     setter(val);
     setPaginationModel((p) => ({ ...p, page: 0 }));
@@ -260,89 +256,57 @@ export default function ArticulosTable() {
   const { mutate: deleteArticulo, isPending: isDeleting } = useDeleteArticulo();
 
   // ========== Columnas del DataGrid ==========
-  const columns: GridColDef[] = useMemo(
+  const columns = useMemo<ColumnDef[]>(
     () => {
-      // Compacta: Código, Artículo, Categoría, Precio Compra, Precio Venta, Stock, Estado
-      const base: GridColDef[] = [
-        { field: "codigo", headerName: "Código", width: 120, sortable: true },
-        { field: "descripcion", headerName: "Artículo", flex: 1, minWidth: 200, sortable: true },
-        { field: "categoria", headerName: "Categoría", width: 110, sortable: true },
+      const base: ColumnDef[] = [
+        { field: "codigo", header: "Codigo", width: 120, sortable: true },
+        { field: "descripcion", header: "Articulo", flex: 1, minWidth: 200, sortable: true },
+        { field: "categoria", header: "Categoria", width: 110, sortable: true },
+        { field: "precioCompra", header: "Costo", width: 110, type: "number", currency: "VES", sortable: true },
+        { field: "precioVenta", header: "Precio", width: 110, type: "number", currency: "VES", sortable: true },
+        { field: "precioUsd", header: "Precio ($)", width: 100, type: "number", currency: "USD" },
+        { field: "stock", header: "Stock", width: 80, type: "number", sortable: true, aggregation: "sum" },
         {
-          field: "precioCompra", headerName: "Costo", width: 110, sortable: true, align: "right", headerAlign: "right",
-          renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
-        },
-        {
-          field: "precioVenta", headerName: "Precio", width: 110, sortable: true, align: "right", headerAlign: "right",
-          renderCell: (params: GridRenderCellParams) => formatCurrency(params.value),
-        },
-        {
-          field: "precioUsd", headerName: "Precio ($)", width: 100, sortable: false, align: "right", headerAlign: "right",
-          renderCell: (params: GridRenderCellParams) => {
-            const venta = params.row.precioVenta ?? 0;
-            return tasaCambio > 1 && venta > 0 ? `$ ${(venta / tasaCambio).toFixed(2)}` : "—";
-          },
-        },
-        { field: "stock", headerName: "Stock", width: 80, sortable: true, align: "right", headerAlign: "right",
-          renderCell: (params: GridRenderCellParams) => params.value?.toLocaleString("es-VE") ?? "0",
-        },
-        {
-          field: "estado", headerName: "Estado", width: 100, sortable: true,
-          renderCell: (params: GridRenderCellParams) => (
-            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-              <Chip label={params.value === "Activo" ? "Activo" : "Inactivo"} color={params.value === "Activo" ? "success" : "default"} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.75rem' }} />
-            </Box>
-          ),
+          field: "estado", header: "Estado", width: 100, sortable: true,
+          statusColors: { Activo: "success", Inactivo: "error" },
+          statusVariant: "outlined",
         },
       ];
 
-      // Extendida: sigue orden del formulario — Referencia, Marca, Línea, Clase, Unidad, Tipo, Mínimo, Máximo, Cód. Barras, N° Parte, Ubicación
-      const extended: GridColDef[] = [
-        { field: "referencia", headerName: "Referencia", width: 120, sortable: true },
-        { field: "marca", headerName: "Marca", width: 110, sortable: true },
-        {
-          field: "linea", headerName: "Línea", width: 100, sortable: true,
-          renderCell: (params: GridRenderCellParams) =>
-            params.value ? <Chip label={params.value} size="small" variant="outlined" color="info" /> : "—",
-        },
-        { field: "clase", headerName: "Clase", width: 100, sortable: true },
-        { field: "unidad", headerName: "Unidad", width: 80, sortable: true },
-        { field: "tipo", headerName: "Tipo", width: 100, sortable: true },
-        { field: "minimo", headerName: "Mínimo", width: 80, sortable: true, align: "right", headerAlign: "right" },
-        { field: "maximo", headerName: "Máximo", width: 80, sortable: true, align: "right", headerAlign: "right" },
-        { field: "barra", headerName: "Cód. Barras", width: 120, sortable: true },
-        { field: "nParte", headerName: "N° Parte", width: 110, sortable: true },
-        { field: "ubicacion", headerName: "Ubicación", width: 100, sortable: true },
+      const extended: ColumnDef[] = [
+        { field: "referencia", header: "Referencia", width: 120, sortable: true },
+        { field: "marca", header: "Marca", width: 110, sortable: true },
+        { field: "linea", header: "Linea", width: 100, sortable: true },
+        { field: "clase", header: "Clase", width: 100, sortable: true },
+        { field: "unidad", header: "Unidad", width: 80, sortable: true },
+        { field: "tipo", header: "Tipo", width: 100, sortable: true },
+        { field: "minimo", header: "Minimo", width: 80, type: "number", sortable: true },
+        { field: "maximo", header: "Maximo", width: 80, type: "number", sortable: true },
+        { field: "barra", header: "Cod. Barras", width: 120, sortable: true },
+        { field: "nParte", header: "N. Parte", width: 110, sortable: true },
+        { field: "ubicacion", header: "Ubicacion", width: 100, sortable: true },
       ];
 
-      const actions: GridColDef = {
-        field: "actions", type: "actions", headerName: "Acciones", width: 120, resizable: false,
-        getActions: (params) => [
-          <Tooltip title="Ver detalle" key="view">
-            <IconButton size="small" onClick={() => router.push(`${basePath}/${params.row.codigo}`)}>
-              <ViewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip title="Editar artículo" key="edit">
-            <IconButton size="small" onClick={() => router.push(`${basePath}/${params.row.codigo}/edit`)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>,
-          <Tooltip title="Eliminar artículo" key="delete">
-            <IconButton size="small" onClick={() => { setSelectedArticulo(params.row.codigo); setDeleteDialogOpen(true); }}>
-              <DeleteIcon fontSize="small" color="error" />
-            </IconButton>
-          </Tooltip>,
-        ],
-      };
-
-      return extendedView ? [...base, ...extended, actions] : [...base, actions];
+      return extendedView ? [...base, ...extended] : base;
     },
-    [router, basePath, extendedView, tasaCambio]
+    [extendedView]
   );
 
   // ========== Filas mapeadas ==========
-  const rows = articulosData?.data ?? [];
+  const rawRows = articulosData?.data ?? [];
   const totalRows = articulosData?.total ?? 0;
+
+  const rows = useMemo(
+    () =>
+      rawRows.map((item: any) => ({
+        ...item,
+        id: item.codigo,
+        precioUsd: tasaCambio > 1 && (item.precioVenta ?? 0) > 0
+          ? Number(((item.precioVenta ?? 0) / tasaCambio).toFixed(2))
+          : 0,
+      })),
+    [rawRows, tasaCambio]
+  );
 
   // ========== Eliminar ==========
   const handleDelete = () => {
@@ -359,16 +323,49 @@ export default function ArticulosTable() {
   const precioMin = filterOptions?.precioMin ?? 0;
   const precioMax = filterOptions?.precioMax ?? 1000;
 
+  // ========== Bind data to web component ==========
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver detalle", action: "view" },
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
+    ];
+  }, [columns, rows, isLoading, registered]);
+
+  // ========== Listen for action-click events ==========
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === "view") router.push(`${basePath}/${row.codigo}`);
+      if (action === "edit") router.push(`${basePath}/${row.codigo}/edit`);
+      if (action === "delete") {
+        setSelectedArticulo(row.codigo);
+        setDeleteDialogOpen(true);
+      }
+    };
+
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, router, basePath]);
+
   // ========== RENDER ==========
   return (
     <Box sx={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0, height: "100%" }}>
-      {/* ===== BARRA SUPERIOR: Búsqueda + Botones ===== */}
+      {/* ===== BARRA SUPERIOR: Busqueda + Botones ===== */}
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <TextField
-          placeholder="Buscar por código, descripción, marca, referencia..."
+          placeholder="Buscar por codigo, descripcion, marca, referencia..."
           value={searchText}
           onChange={handleSearchChange}
-         
           sx={{ flex: 1, maxWidth: 500 }}
           InputProps={{
             startAdornment: (
@@ -415,14 +412,25 @@ export default function ArticulosTable() {
 
         <Box sx={{ flex: 1 }} />
 
-        <Tooltip title="Crear un nuevo artículo en inventario">
+        <Tooltip title="Vista compacta / extendida">
+          <Button
+            variant={extendedView ? "contained" : "outlined"}
+            startIcon={<ViewColumnIcon />}
+            onClick={() => setExtendedView(!extendedView)}
+            size="small"
+          >
+            {extendedView ? "Compacta" : "Extendida"}
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Crear un nuevo articulo en inventario">
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => router.push(`${basePath}/new`)}
             size="small"
           >
-            Nuevo Artículo
+            Nuevo Articulo
           </Button>
         </Tooltip>
 
@@ -442,55 +450,20 @@ export default function ArticulosTable() {
         <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, position: 'relative', zIndex: 10 }}>
           {/* Fila 1: Selectores principales */}
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-            Filtros básicos
+            Filtros basicos
           </Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-            <FilterSelect
-              label="Línea"
-              value={filterLinea}
-              options={filterOptions?.lineas ?? []}
-              onChange={onFilterChange(setFilterLinea)}
-            />
-            <FilterSelect
-              label="Categoría"
-              value={filterCategoria}
-              options={filterOptions?.categorias ?? []}
-              onChange={onFilterChange(setFilterCategoria)}
-            />
-            <FilterSelect
-              label="Marca"
-              value={filterMarca}
-              options={filterOptions?.marcas ?? []}
-              onChange={onFilterChange(setFilterMarca)}
-            />
-            <FilterSelect
-              label="Tipo"
-              value={filterTipo}
-              options={filterOptions?.tipos ?? []}
-              onChange={onFilterChange(setFilterTipo)}
-            />
+            <FilterSelect label="Linea" value={filterLinea} options={filterOptions?.lineas ?? []} onChange={onFilterChange(setFilterLinea)} />
+            <FilterSelect label="Categoria" value={filterCategoria} options={filterOptions?.categorias ?? []} onChange={onFilterChange(setFilterCategoria)} />
+            <FilterSelect label="Marca" value={filterMarca} options={filterOptions?.marcas ?? []} onChange={onFilterChange(setFilterMarca)} />
+            <FilterSelect label="Tipo" value={filterTipo} options={filterOptions?.tipos ?? []} onChange={onFilterChange(setFilterTipo)} />
           </Stack>
 
           {/* Fila 2: Selectores secundarios */}
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-            <FilterSelect
-              label="Clase"
-              value={filterClase}
-              options={filterOptions?.clases ?? []}
-              onChange={onFilterChange(setFilterClase)}
-            />
-            <FilterSelect
-              label="Unidad"
-              value={filterUnidad}
-              options={filterOptions?.unidades ?? []}
-              onChange={onFilterChange(setFilterUnidad)}
-            />
-            <FilterSelect
-              label="Ubicación"
-              value={filterUbicacion}
-              options={filterOptions?.ubicaciones ?? []}
-              onChange={onFilterChange(setFilterUbicacion)}
-            />
+            <FilterSelect label="Clase" value={filterClase} options={filterOptions?.clases ?? []} onChange={onFilterChange(setFilterClase)} />
+            <FilterSelect label="Unidad" value={filterUnidad} options={filterOptions?.unidades ?? []} onChange={onFilterChange(setFilterUnidad)} />
+            <FilterSelect label="Ubicacion" value={filterUbicacion} options={filterOptions?.ubicaciones ?? []} onChange={onFilterChange(setFilterUbicacion)} />
             <TextField
               select
               label="Estado"
@@ -563,7 +536,7 @@ export default function ArticulosTable() {
               {/* Rango de stock */}
               <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 200 }}>
                 <TextField
-                  label="Stock mín"
+                  label="Stock min"
                   type="number"
                   size="small"
                   value={stockMin}
@@ -572,7 +545,7 @@ export default function ArticulosTable() {
                 />
                 <Typography variant="body2" color="text.secondary">—</Typography>
                 <TextField
-                  label="Stock máx"
+                  label="Stock max"
                   type="number"
                   size="small"
                   value={stockMax}
@@ -581,7 +554,7 @@ export default function ArticulosTable() {
                 />
               </Stack>
 
-              {/* Búsqueda con comodines */}
+              {/* Busqueda con comodines */}
               <Box sx={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
                 <TextField
                   label="Comodines"
@@ -590,7 +563,7 @@ export default function ArticulosTable() {
                   onChange={handleWildcardChange}
                   size="small"
                   fullWidth
-                  helperText="* = cualquier texto, ? = 1 carácter"
+                  helperText="* = cualquier texto, ? = 1 caracter"
                   InputProps={{
                     endAdornment: wildcardText ? (
                       <InputAdornment position="end">
@@ -614,7 +587,7 @@ export default function ArticulosTable() {
                     onClick={() => onFilterChange(setFilterServicio)(val as any)}
                     sx={{ minWidth: 40, px: 1 }}
                   >
-                    {val === undefined ? "Todos" : val ? "Sí" : "No"}
+                    {val === undefined ? "Todos" : val ? "Si" : "No"}
                   </Button>
                 ))}
               </Stack>
@@ -623,109 +596,42 @@ export default function ArticulosTable() {
         </Paper>
       </Collapse>
 
-      {/* ===== RESUMEN — solo si hay búsqueda o filtros activos ===== */}
+      {/* ===== RESUMEN — solo si hay busqueda o filtros activos ===== */}
       {activeFilterCount > 0 && (
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            {totalRows.toLocaleString("es-VE")} artículo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
+            {totalRows.toLocaleString("es-VE")} articulo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
           </Typography>
         </Stack>
       )}
 
       {/* ===== DATA GRID ===== */}
-      <ZenttoDataGrid
-        gridId="ventas-articulos-list"
-        rows={rows}
-        columns={columns}
-        serverRowCount={totalRows}
-        loading={isLoading}
-        paginationMode="server"
-        sortingMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        sortModel={sortModel}
-        onSortModelChange={setSortModel}
-        pageSizeOptions={[10, 20, 50, 100]}
-        disableRowSelectionOnClick
-        disableColumnFilter
-        disableVirtualization
-        hideColumnsButton
-        hideQuickFilter
-        toolbarActions={
-          <Tooltip title={extendedView ? "Vista compacta" : "Vista extendida"}>
-            <Button
-              variant={extendedView ? "contained" : "outlined"}
-              startIcon={<ViewColumnIcon />}
-              onClick={() => setExtendedView(!extendedView)}
-              size="small"
-            >
-              {extendedView ? "Compacta" : "Extendida"}
-            </Button>
-          </Tooltip>
-        }
-        getRowId={(row) => row.codigo}
-        mobileVisibleFields={["codigo", "descripcion"]}
-        sx={{
-          flex: 1,
-          minHeight: 400,
-          // Escalar texto con densidad
-          '&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell, &.MuiDataGrid-root--densityCompact .MuiDataGrid-columnHeaderTitle': {
-            fontSize: '0.8rem',
-          },
-          '&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell, &.MuiDataGrid-root--densityStandard .MuiDataGrid-columnHeaderTitle': {
-            fontSize: '0.875rem',
-          },
-          '&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell, &.MuiDataGrid-root--densityComfortable .MuiDataGrid-columnHeaderTitle': {
-            fontSize: '0.95rem',
-          },
-          "& .MuiDataGrid-row:hover": {
-            backgroundColor: "action.hover",
-          },
-          "& .MuiDataGrid-columnHeaders": {
-            position: "sticky !important",
-            top: "0 !important",
-            zIndex: "5 !important",
-            backgroundColor: "var(--mui-palette-background-paper, #fff) !important",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          },
-          "& .MuiDataGrid-footerContainer": {
-            overflow: "hidden",
-          },
-          '& .MuiDataGrid-cell[data-field="actions"], & .MuiDataGrid-columnHeader[data-field="actions"]': {
-            position: "sticky !important",
-            right: "0 !important",
-            zIndex: "6 !important",
-            backgroundColor: "var(--mui-palette-background-paper, #fff) !important",
-            boxShadow: "-4px 0 8px rgba(0,0,0,0.08)",
-          },
-          "& .MuiDataGrid-columnSeparator": {
-            zIndex: "0 !important",
-          },
-          '& .MuiDataGrid-columnHeader[data-field="actions"] .MuiDataGrid-columnSeparator': {
-            display: "none",
-          },
-        }}
-        localeText={{
-          noRowsLabel: "No se encontraron artículos",
-          toolbarDensity: "Tamaño",
-          toolbarDensityLabel: "Tamaño de fila",
-          toolbarDensityCompact: "Compacto",
-          toolbarDensityStandard: "Normal",
-          toolbarDensityComfortable: "Amplio",
-          MuiTablePagination: {
-            labelRowsPerPage: "Filas por página:",
-            labelDisplayedRows: ({ from, to, count }) =>
-              `${from}–${to} de ${count !== -1 ? count.toLocaleString("es-VE") : `más de ${to}`}`,
-          },
-        }}
-      />
+      <Box sx={{ flex: 1, minHeight: 400 }}>
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="articulos"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
+        )}
+      </Box>
 
       {/* ===== DIALOG ELIMINAR ===== */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogTitle>Confirmar eliminacion</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Está seguro de que desea eliminar el artículo <strong>{selectedArticulo}</strong>?
+            Esta seguro de que desea eliminar el articulo <strong>{selectedArticulo}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -744,4 +650,12 @@ export default function ArticulosTable() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

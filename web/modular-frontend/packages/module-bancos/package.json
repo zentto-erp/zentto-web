@@ -22,6 +22,8 @@
     "dayjs": "^1.11.13",
     "jspdf": "^2.5.2",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "@zentto/datagrid": "^0.1.2",
+    "@zentto/datagrid-core": "^0.1.2"
   }
 }

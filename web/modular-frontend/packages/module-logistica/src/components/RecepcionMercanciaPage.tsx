@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -15,10 +15,11 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -31,6 +32,7 @@ import {
   useCompleteReceipt,
   type ReceiptFilter,
 } from "../hooks/useLogistica";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface ReceiptLine {
   productCode: string;
@@ -97,6 +99,8 @@ export default function RecepcionMercanciaPage() {
   const [warehouseId, setWarehouseId] = useState("");
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
   const [lines, setLines] = useState<ReceiptLine[]>([emptyLine()]);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -109,7 +113,12 @@ export default function RecepcionMercanciaPage() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  const { data, isLoading } = useReceiptsList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useReceiptsList({
     ...filter,
     search: search || undefined,
     page: paginationModel.page + 1,
@@ -121,24 +130,33 @@ export default function RecepcionMercanciaPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "ReceiptNumber", headerName: "N. Recepcion", flex: 1, minWidth: 130 },
-    { field: "PurchaseDocumentNumber", headerName: "N. Orden Compra", flex: 1, minWidth: 140 },
-    { field: "SupplierName", headerName: "Proveedor", flex: 1.5, minWidth: 180 },
-    { field: "WarehouseName", headerName: "Almacen", flex: 1, minWidth: 120 },
+  const columns: ColumnDef[] = [
+    { field: "ReceiptNumber", header: "N. Recepcion", flex: 1, minWidth: 130 },
+    { field: "PurchaseDocumentNumber", header: "N. Orden Compra", flex: 1, minWidth: 140 },
+    { field: "SupplierName", header: "Proveedor", flex: 1.5, minWidth: 180 },
+    { field: "WarehouseName", header: "Almacen", flex: 1, minWidth: 120 },
     {
       field: "ReceiptDate",
-      headerName: "Fecha Recepcion",
+      header: "Fecha Recepcion",
       flex: 1,
       minWidth: 130,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
       renderCell: (params) => {
         const status = String(params.value ?? "DRAFT");
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <Chip
             label={statusLabels[status] ?? status}
@@ -151,7 +169,7 @@ export default function RecepcionMercanciaPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 120,
       sortable: false,
       filterable: false,
@@ -261,25 +279,19 @@ export default function RecepcionMercanciaPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="logistica-recepcion-mercancia-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.ReceiptId ?? row.Id ?? row.ReceiptNumber ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['ReceiptNumber', 'SupplierName']}
-        smExtraFields={['Status', 'ReceiptDate']}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="logistica-recepcion-mercancia-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {/* Dialog: Nueva Recepcion */}
       <Dialog
@@ -444,4 +456,12 @@ export default function RecepcionMercanciaPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

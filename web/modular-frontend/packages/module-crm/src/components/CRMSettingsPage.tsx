@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -22,6 +22,7 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
@@ -29,17 +30,15 @@ import StairsIcon from "@mui/icons-material/Stairs";
 import ScoreIcon from "@mui/icons-material/Score";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import {
-  ZenttoDataGrid,
-  FormDialog,
-  type ZenttoColDef,
-} from "@zentto/shared-ui";
+import { 
+  FormDialog } from "@zentto/shared-ui";
 import {
   usePipelinesList,
   usePipelineStages,
   useCreatePipeline,
   useCreateStage,
 } from "../hooks/useCRM";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Tab panel helper ──────────────────────────────────────── */
 
@@ -88,9 +87,16 @@ export default function CRMSettingsPage() {
   const [stageDays, setStageDays] = useState(7);
   const [stageIsClosed, setStageIsClosed] = useState(false);
   const [stageIsWon, setStageIsWon] = useState(false);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   // Data
-  const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
   const pipelines: any[] = (pipelinesRaw as any)?.data ?? (pipelinesRaw as any)?.rows ?? pipelinesRaw ?? [];
 
   const { data: stagesRaw, isLoading: stagesLoading } = usePipelineStages(selectedPipeline);
@@ -178,12 +184,12 @@ export default function CRMSettingsPage() {
 
   /* ── Stage columns ───────────────────────────────────────── */
 
-  const stageColumns: ZenttoColDef[] = [
-    { field: "SortOrder", headerName: "Orden", width: 80 },
-    { field: "Name", headerName: "Nombre", flex: 1 },
+  const stageColumns: ColumnDef[] = [
+    { field: "SortOrder", header: "Orden", width: 80 },
+    { field: "Name", header: "Nombre", flex: 1 },
     {
       field: "Color",
-      headerName: "Color",
+      header: "Color",
       width: 100,
       renderCell: (params: any) => (
         <Box
@@ -199,13 +205,13 @@ export default function CRMSettingsPage() {
     },
     {
       field: "Probability",
-      headerName: "Probabilidad %",
+      header: "Probabilidad %",
       width: 130,
       renderCell: (params: any) => `${params.value ?? 0}%`,
     },
     {
       field: "IsClosed",
-      headerName: "Cerrada",
+      header: "Cerrada",
       width: 90,
       renderCell: (params: any) => (
         <Chip
@@ -217,7 +223,7 @@ export default function CRMSettingsPage() {
     },
     {
       field: "IsWon",
-      headerName: "Ganada",
+      header: "Ganada",
       width: 90,
       renderCell: (params: any) => (
         <Chip
@@ -229,7 +235,7 @@ export default function CRMSettingsPage() {
     },
     {
       field: "actions",
-      headerName: "",
+      header: "",
       width: 80,
       sortable: false,
       renderCell: (params: any) => (
@@ -239,6 +245,23 @@ export default function CRMSettingsPage() {
       ),
     },
   ];
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box>
@@ -365,14 +388,18 @@ export default function CRMSettingsPage() {
             ) : stagesLoading ? (
               <Typography color="text.secondary">Cargando...</Typography>
             ) : (
-              <ZenttoDataGrid
-            gridId="crm-settings-stages"
-                rows={stages}
-                columns={stageColumns}
-                getRowId={(row: any) => row.StageId}
-                autoHeight
-                hideFooter={stages.length <= 10}
-              />
+              <zentto-grid
+        ref={gridRef}
+        export-filename="crm-settings-stages"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
             )}
           </TabPanel>
 
@@ -527,4 +554,12 @@ export default function CRMSettingsPage() {
       </FormDialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

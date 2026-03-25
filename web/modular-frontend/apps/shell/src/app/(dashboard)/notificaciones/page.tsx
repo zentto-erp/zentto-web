@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
   FormControl, IconButton, InputLabel, LinearProgress, MenuItem, Paper,
   Select, Slider, Stack, Tab, Tabs, TextField, Tooltip, Typography,
-  useMediaQuery, useTheme,
+  useMediaQuery, useTheme, CircularProgress,
 } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
@@ -14,8 +14,7 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import CheckIcon from '@mui/icons-material/Check';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { ZenttoDataGrid } from '@zentto/shared-ui';
-import type { ZenttoColDef } from '@zentto/shared-ui';
+import type { ColumnDef } from '@zentto/datagrid-core';
 import {
   useNotificationsList, useMarkNotificationsRead,
   useTasksList, useToggleTask,
@@ -43,6 +42,11 @@ export default function NotificacionesPage() {
   const searchParams = useSearchParams();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
 
   const tabParam = searchParams.get('tab') ?? 'notificaciones';
   const [activeTab, setActiveTab] = useState(TAB_MAP[tabParam] ?? 0);
@@ -52,6 +56,10 @@ export default function NotificacionesPage() {
     const name = TAB_NAMES[newVal];
     router.replace(`/notificaciones${name === 'notificaciones' ? '' : `?tab=${name}`}`, { scroll: false });
   };
+
+  if (!registered) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+  }
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
@@ -85,6 +93,7 @@ export default function NotificacionesPage() {
 // ═══════════════════════════════════════════════════════════════
 
 function NotificationsTab({ isMobile }: { isMobile: boolean }) {
+  const gridRef = useRef<any>(null);
   const router = useRouter();
   const [filters, setFilters] = useState<NotificationFilters>({});
   const { data, isLoading, refetch } = useNotificationsList(filters);
@@ -105,77 +114,48 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
     refetch();
   };
 
-  const handleRowClick = (row: NotificationItem) => {
-    if (!row.read) handleMarkOneRead(row.id);
-    if (row.route) router.push(row.route);
-  };
-
-  const typeColors: Record<string, 'info' | 'success' | 'warning' | 'error'> = {
-    info: 'info',
-    success: 'success',
-    warning: 'warning',
-    error: 'error',
-  };
-
-  const columns: ZenttoColDef[] = useMemo(() => [
+  const columns = useMemo<ColumnDef[]>(() => [
     {
       field: 'type',
-      headerName: 'Tipo',
+      header: 'Tipo',
       width: 110,
+      sortable: true,
+      groupable: true,
       statusColors: { info: 'info', success: 'success', warning: 'warning', error: 'error' },
       statusVariant: 'filled',
     },
-    { field: 'title', headerName: 'Titulo', flex: 1, minWidth: 180 },
-    { field: 'message', headerName: 'Mensaje', flex: 2, minWidth: 200, mobileHide: true },
-    { field: 'time', headerName: 'Fecha', width: 160, mobileHide: true },
+    { field: 'title', header: 'Titulo', flex: 1, minWidth: 180, sortable: true },
+    { field: 'message', header: 'Mensaje', flex: 2, minWidth: 200, sortable: true },
+    { field: 'time', header: 'Fecha', width: 160, sortable: true },
     {
-      field: 'read',
-      headerName: 'Estado',
+      field: 'estadoLabel',
+      header: 'Estado',
       width: 120,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          label={params.value ? 'Leida' : 'No leida'}
-          color={params.value ? 'default' : 'primary'}
-          variant={params.value ? 'outlined' : 'filled'}
-        />
-      ),
-    },
-    {
-      field: 'route',
-      headerName: 'Ruta',
-      width: 80,
-      mobileHide: true,
-      tabletHide: true,
-      renderCell: (params) =>
-        params.value ? (
-          <Tooltip title="Ir a destino">
-            <OpenInNewIcon fontSize="small" color="action" />
-          </Tooltip>
-        ) : null,
-    },
-    {
-      field: 'actions',
-      headerName: '',
-      width: 60,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) =>
-        !params.row.read ? (
-          <Tooltip title="Marcar como leida">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMarkOneRead(params.row.id);
-              }}
-            >
-              <CheckIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ) : null,
+      sortable: true,
+      statusColors: { 'No leida': 'primary', 'Leida': 'default' },
+      statusVariant: 'outlined',
     },
   ], []);
+
+  const mappedRows = useMemo(() =>
+    rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      title: r.title,
+      message: r.message,
+      time: r.time,
+      estadoLabel: r.read ? 'Leida' : 'No leida',
+    })),
+    [rows]
+  );
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = isLoading;
+  }, [mappedRows, isLoading, columns]);
 
   const unreadCount = rows.filter(r => !r.read).length;
 
@@ -250,28 +230,18 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
 
       {/* Grid */}
       <Paper sx={{ height: 600 }}>
-        <ZenttoDataGrid
-          gridId="notification-center-notifs"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          getRowId={(row) => row.id}
-          onRowClick={(params) => handleRowClick(params.row as NotificationItem)}
-          mobileVisibleFields={['type', 'title', 'read']}
-          smExtraFields={['message', 'time']}
-          density="compact"
-          toolbarTitle="Notificaciones"
-          showExportCsv
-          exportFilename="notificaciones"
-          getRowClassName={(params) =>
-            params.row.read ? '' : 'zentto-row-unread'
-          }
-          sx={{
-            '& .zentto-row-unread': {
-              bgcolor: 'action.hover',
-              fontWeight: 500,
-            },
-          }}
+        <zentto-grid
+          ref={gridRef}
+          height="100%"
+          export-filename="notificaciones"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
         />
       </Paper>
     </Stack>
@@ -283,6 +253,7 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
 // ═══════════════════════════════════════════════════════════════
 
 function TasksTab({ isMobile }: { isMobile: boolean }) {
+  const gridRef = useRef<any>(null);
   const [filters, setFilters] = useState<TaskFilters>({});
   const { data, isLoading, refetch } = useTasksList(filters);
   const toggleTask = useToggleTask();
@@ -297,11 +268,6 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
     refetch();
   };
 
-  const handleOpenProgress = (task: TaskItem) => {
-    setSliderVal(task.progress);
-    setEditDialog(task);
-  };
-
   const handleSaveProgress = async () => {
     if (!editDialog) return;
     await toggleTask.mutateAsync({ id: editDialog.id, progress: sliderVal });
@@ -309,91 +275,43 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
     refetch();
   };
 
-  const columns: ZenttoColDef[] = useMemo(() => [
-    { field: 'title', headerName: 'Titulo', flex: 1, minWidth: 180 },
-    { field: 'description', headerName: 'Descripcion', flex: 1.5, minWidth: 200, mobileHide: true },
+  const columns = useMemo<ColumnDef[]>(() => [
+    { field: 'title', header: 'Titulo', flex: 1, minWidth: 180, sortable: true },
+    { field: 'description', header: 'Descripcion', flex: 1.5, minWidth: 200, sortable: true },
+    { field: 'progress', header: 'Progreso', width: 100, type: 'number', sortable: true },
+    { field: 'assignedTo', header: 'Asignado a', width: 140, sortable: true },
+    { field: 'dueDate', header: 'Vencimiento', width: 130, sortable: true },
     {
-      field: 'progress',
-      headerName: 'Progreso',
-      width: 180,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1 }}>
-          <LinearProgress
-            variant="determinate"
-            value={params.value as number}
-            color={(params.row.color as any) ?? 'primary'}
-            sx={{ flex: 1, borderRadius: 1, height: 8 }}
-          />
-          <Typography variant="caption" sx={{ minWidth: 35, textAlign: 'right' }}>
-            {params.value}%
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      field: 'color',
-      headerName: 'Color',
-      width: 100,
-      mobileHide: true,
-      tabletHide: true,
-      renderCell: (params) => (
-        <Chip size="small" label={params.value as string} color={(params.value as any) ?? 'default'} />
-      ),
-    },
-    { field: 'assignedTo', headerName: 'Asignado a', width: 140, mobileHide: true },
-    { field: 'dueDate', headerName: 'Vencimiento', width: 130, mobileHide: true },
-    {
-      field: 'completed',
-      headerName: 'Estado',
+      field: 'estadoLabel',
+      header: 'Estado',
       width: 120,
-      renderCell: (params) => {
-        const done = params.row.progress === 100;
-        return (
-          <Chip
-            size="small"
-            label={done ? 'Completada' : 'Pendiente'}
-            color={done ? 'success' : 'warning'}
-            variant={done ? 'filled' : 'outlined'}
-          />
-        );
-      },
-    },
-    {
-      field: 'actions',
-      headerName: '',
-      width: 120,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Cambiar progreso">
-            <Button
-              size="small"
-              variant="text"
-              sx={{ minWidth: 0, textTransform: 'none', fontSize: '0.75rem' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenProgress(params.row as TaskItem);
-              }}
-            >
-              Editar
-            </Button>
-          </Tooltip>
-          <Tooltip title={params.row.progress === 100 ? 'Reabrir' : 'Completar'}>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleComplete(params.row as TaskItem);
-              }}
-            >
-              <CheckIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
+      sortable: true,
+      groupable: true,
+      statusColors: { Completada: 'success', Pendiente: 'warning' },
+      statusVariant: 'filled',
     },
   ], []);
+
+  const mappedRows = useMemo(() =>
+    rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      progress: r.progress,
+      assignedTo: r.assignedTo,
+      dueDate: r.dueDate,
+      estadoLabel: r.progress === 100 ? 'Completada' : 'Pendiente',
+    })),
+    [rows]
+  );
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = isLoading;
+  }, [mappedRows, isLoading, columns]);
 
   return (
     <Stack spacing={2}>
@@ -428,18 +346,18 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
 
       {/* Grid */}
       <Paper sx={{ height: 600 }}>
-        <ZenttoDataGrid
-          gridId="notification-center-tasks"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          getRowId={(row) => row.id}
-          mobileVisibleFields={['title', 'progress', 'completed']}
-          smExtraFields={['assignedTo', 'dueDate']}
-          density="compact"
-          toolbarTitle="Tareas"
-          showExportCsv
-          exportFilename="tareas"
+        <zentto-grid
+          ref={gridRef}
+          height="100%"
+          export-filename="tareas"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
         />
       </Paper>
 
@@ -488,6 +406,7 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
 // ═══════════════════════════════════════════════════════════════
 
 function MessagesTab({ isMobile }: { isMobile: boolean }) {
+  const gridRef = useRef<any>(null);
   const [filters, setFilters] = useState<MessageFilters>({});
   const { data, isLoading, refetch } = useMessagesList(filters);
   const markRead = useMarkMessageRead();
@@ -500,50 +419,38 @@ function MessagesTab({ isMobile }: { isMobile: boolean }) {
     refetch();
   };
 
-  const handleRowClick = (msg: MessageItem) => {
-    if (msg.unread) handleMarkRead(msg.id);
-    setSelectedMsg(msg);
-  };
-
-  const columns: ZenttoColDef[] = useMemo(() => [
-    { field: 'sender', headerName: 'Remitente', width: 180 },
-    { field: 'subject', headerName: 'Asunto', flex: 1, minWidth: 220 },
-    { field: 'time', headerName: 'Fecha', width: 160, mobileHide: true },
+  const columns = useMemo<ColumnDef[]>(() => [
+    { field: 'sender', header: 'Remitente', width: 180, sortable: true },
+    { field: 'subject', header: 'Asunto', flex: 1, minWidth: 220, sortable: true },
+    { field: 'time', header: 'Fecha', width: 160, sortable: true },
     {
-      field: 'unread',
-      headerName: 'Estado',
+      field: 'estadoLabel',
+      header: 'Estado',
       width: 120,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          label={params.value ? 'No leido' : 'Leido'}
-          color={params.value ? 'primary' : 'default'}
-          variant={params.value ? 'filled' : 'outlined'}
-        />
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: '',
-      width: 60,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) =>
-        params.row.unread ? (
-          <Tooltip title="Marcar como leido">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMarkRead(params.row.id);
-              }}
-            >
-              <CheckIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ) : null,
+      sortable: true,
+      statusColors: { 'No leido': 'primary', 'Leido': 'default' },
+      statusVariant: 'outlined',
     },
   ], []);
+
+  const mappedRows = useMemo(() =>
+    rows.map((r) => ({
+      id: r.id,
+      sender: r.sender,
+      subject: r.subject,
+      time: r.time,
+      estadoLabel: r.unread ? 'No leido' : 'Leido',
+    })),
+    [rows]
+  );
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = columns;
+    el.rows = mappedRows;
+    el.loading = isLoading;
+  }, [mappedRows, isLoading, columns]);
 
   return (
     <Stack spacing={2}>
@@ -571,28 +478,18 @@ function MessagesTab({ isMobile }: { isMobile: boolean }) {
 
       {/* Grid */}
       <Paper sx={{ height: 600 }}>
-        <ZenttoDataGrid
-          gridId="notification-center-msgs"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          getRowId={(row) => row.id}
-          onRowClick={(params) => handleRowClick(params.row as MessageItem)}
-          mobileVisibleFields={['sender', 'subject', 'unread']}
-          smExtraFields={['time']}
-          density="compact"
-          toolbarTitle="Mensajes"
-          showExportCsv
-          exportFilename="mensajes"
-          getRowClassName={(params) =>
-            params.row.unread ? 'zentto-row-unread' : ''
-          }
-          sx={{
-            '& .zentto-row-unread': {
-              bgcolor: 'action.hover',
-              fontWeight: 500,
-            },
-          }}
+        <zentto-grid
+          ref={gridRef}
+          height="100%"
+          export-filename="mensajes"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
         />
       </Paper>
 
@@ -625,4 +522,12 @@ function MessagesTab({ isMobile }: { isMobile: boolean }) {
       </Dialog>
     </Stack>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

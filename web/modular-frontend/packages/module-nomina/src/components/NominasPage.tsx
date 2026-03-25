@@ -1,130 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Stack,
-  CircularProgress,
-  Switch,
-  FormControlLabel,
-  Tooltip,
+  Box, Paper, Typography, Button, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
+  Stack, CircularProgress, Switch, FormControlLabel,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, DatePicker, ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker, ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import LockIcon from "@mui/icons-material/Lock";
 import { formatCurrency } from "@zentto/shared-api";
 import {
-  useNominasList,
-  useNominaDetalle,
-  useProcesarNominaCompleta,
-  useCerrarNomina,
-  type NominaFilter,
+  useNominasList, useNominaDetalle, useProcesarNominaCompleta, useCerrarNomina, type NominaFilter,
 } from "../hooks/useNomina";
 import NominaBatchWizard from "./NominaBatchWizard";
 
-type NominaDetalleItem = Record<string, unknown>;
+const COLUMNS: ColumnDef[] = [
+  { field: "nomina", header: "Nómina", width: 120, sortable: true, groupable: true },
+  { field: "cedula", header: "Cédula", width: 120, sortable: true },
+  { field: "nombreEmpleado", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
+  { field: "fechaInicio", header: "Desde", width: 110 },
+  { field: "fechaHasta", header: "Hasta", width: 110 },
+  { field: "totalAsignaciones", header: "Asignaciones", width: 130, type: "number", aggregation: "sum" },
+  { field: "totalDeducciones", header: "Deducciones", width: 130, type: "number", aggregation: "sum" },
+  { field: "totalNeto", header: "Neto", width: 130, type: "number", aggregation: "sum" },
+  { field: "cerrada", header: "Estado", width: 100, statusColors: { true: "default", false: "success" } },
+];
 
-function NominaDetailPanel({ nomina, cedula }: { nomina: string; cedula: string }) {
-  const detalle = useNominaDetalle(nomina, cedula);
-
-  if (detalle.isLoading) {
-    return (
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <CircularProgress size={16} />
-        <Typography variant="caption" color="text.secondary">Cargando conceptos...</Typography>
-      </Box>
-    );
-  }
-
-  const rows = (detalle.data?.detalle ?? []).map((d: any, i: number) => ({ ...d, _id: i }));
-
-  const cols: ZenttoColDef[] = [
-    { field: 'concepto', headerName: 'Concepto', flex: 1, minWidth: 200 },
-    { field: 'tipo', headerName: 'Tipo', width: 110,
-      renderCell: (p: any) => (
-        <Chip
-          label={p.value}
-          size="small"
-          color={p.value === 'ASIGNACION' ? 'success' : p.value === 'DEDUCCION' ? 'error' : 'default'}
-          variant="outlined"
-        />
-      ),
-    },
-    { field: 'monto', headerName: 'Monto', width: 150, type: 'number',
-      aggregation: 'sum',
-      renderCell: (p: any) => (
-        <Typography
-          variant="body2"
-          fontWeight={600}
-          color={p.row?.tipo === 'DEDUCCION' ? 'error.main' : 'success.main'}
-        >
-          {formatCurrency(p.value ?? 0)}
-        </Typography>
-      ),
-    },
-  ];
-
-  return (
-    <Box sx={{ px: 2, py: 1.5 }}>
-      <Stack direction="row" spacing={3} sx={{ mb: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          Empleado: <strong>{detalle.data?.cabecera?.nombre ?? '—'}</strong>
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Período: <strong>{detalle.data?.cabecera?.fechaInicio ? String(detalle.data.cabecera.fechaInicio).slice(0, 10) : '—'} — {detalle.data?.cabecera?.fechaHasta ? String(detalle.data.cabecera.fechaHasta).slice(0, 10) : '—'}</strong>
-        </Typography>
-      </Stack>
-      <ZenttoDataGrid
-        rows={rows}
-        columns={cols}
-        getRowId={(r: any) => r._id}
-        hideToolbar
-        mobileDetailDrawer={false}
-        density="compact"
-        hideFooter={rows.length < 5}
-        autoHeight
-        showTotals
-        totalsLabel="Neto"
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-      />
-    </Box>
-  );
-}
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: "concepto", header: "Concepto", flex: 1, minWidth: 200 },
+  { field: "tipo", header: "Tipo", width: 120, statusColors: { ASIGNACION: "success", DEDUCCION: "error" }, statusVariant: "outlined" },
+  { field: "monto", header: "Monto", width: 130, type: "number" },
+];
 
 const NOMINAS_FILTERS: FilterFieldDef[] = [
   { field: "periodo", label: "Período", type: "text", placeholder: "Ej: MENSUAL, QUINCENAL..." },
-  {
-    field: "tipo", label: "Tipo", type: "select",
-    options: [
-      { value: "MENSUAL", label: "Mensual" },
-      { value: "QUINCENAL", label: "Quincenal" },
-      { value: "SEMANAL", label: "Semanal" },
-    ],
-  },
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "ABIERTA", label: "Abierta" },
-      { value: "CERRADA", label: "Cerrada" },
-    ],
-  },
+  { field: "tipo", label: "Tipo", type: "select", options: [
+    { value: "MENSUAL", label: "Mensual" }, { value: "QUINCENAL", label: "Quincenal" }, { value: "SEMANAL", label: "Semanal" },
+  ]},
+  { field: "estado", label: "Estado", type: "select", options: [{ value: "ABIERTA", label: "Abierta" }, { value: "CERRADA", label: "Cerrada" }] },
   { field: "fechaDesde", label: "Fecha desde", type: "date" },
   { field: "fechaHasta", label: "Fecha hasta", type: "date" },
 ];
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_LOCK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+
 export default function NominasPage() {
+  const gridRef = useRef<any>(null);
+  const detalleGridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<NominaFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -141,192 +65,75 @@ export default function NominasPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  const columns: ZenttoColDef[] = [
-    { field: "nomina", headerName: "Nómina", width: 120 },
-    { field: "cedula", headerName: "Cédula", width: 120 },
-    { field: "nombreEmpleado", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "fechaInicio", headerName: "Desde", width: 110, renderCell: (p) => p.value ? new Date(p.value).toLocaleDateString() : "" },
-    { field: "fechaHasta", headerName: "Hasta", width: 110, renderCell: (p) => p.value ? new Date(p.value).toLocaleDateString() : "" },
-    {
-      field: "totalAsignaciones",
-      headerName: "Asignaciones",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-    {
-      field: "totalDeducciones",
-      headerName: "Deducciones",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-    {
-      field: "totalNeto",
-      headerName: "Neto",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-    {
-      field: "cerrada",
-      headerName: "Estado",
-      width: 100,
-      renderCell: (p) => (
-        <Chip
-          label={p.value ? "CERRADA" : "ABIERTA"}
-          size="small"
-          color={p.value ? "default" : "success"}
-        />
-      ),
-    },
-    {
-      field: "acciones",
-      headerName: "",
-      width: 100,
-      sortable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver nomina">
-            <IconButton
-              size="small"
-              onClick={() => {
-                setSelectedNomina(p.row.nomina);
-                setSelectedCedula(p.row.cedula);
-              }}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {p.row.estado !== "CERRADA" && (
-            <Tooltip title="Cerrar nomina">
-              <IconButton
-                size="small"
-                color="warning"
-                onClick={() => cerrarMutation.mutate({ nomina: p.row.nomina, cedula: p.row.cedula })}
-              >
-                <LockIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
-  const handleProcesar = async () => {
-    await procesarMutation.mutateAsync(procesarData);
-    setProcesarOpen(false);
-  };
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
+    el.getRowId = (r: any) => `${r.nomina}-${r.cedula}-${r.fechaInicio ?? Math.random()}`;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver nómina", action: "view" },
+      { icon: SVG_LOCK, label: "Cerrar nómina", action: "close", color: "#ed6c02" },
+    ];
+  }, [rows, isLoading, registered]);
 
-  if (view === "batch") {
-    return <NominaBatchWizard onBack={() => setView("list")} />;
-  }
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") { setSelectedNomina(row.nomina); setSelectedCedula(row.cedula); }
+      if (action === "close" && row.estado !== "CERRADA") cerrarMutation.mutate({ nomina: row.nomina, cedula: row.cedula });
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
+
+  // Detalle grid in dialog
+  useEffect(() => {
+    const el = detalleGridRef.current; if (!el || !registered || !selectedNomina) return;
+    const detalleRows = ((detalle.data?.detalle ?? []) as any[]).map((d: any, i: number) => ({ ...d, _id: i }));
+    el.columns = DETAIL_COLUMNS; el.rows = detalleRows; el.loading = detalle.isLoading;
+    el.getRowId = (r: any) => r._id;
+  }, [detalle.data, detalle.isLoading, registered, selectedNomina]);
+
+  const handleProcesar = async () => { await procesarMutation.mutateAsync(procesarData); setProcesarOpen(false); };
+
+  if (view === "batch") return <NominaBatchWizard onBack={() => setView("list")} />;
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Procesos de Nómina"
-        primaryAction={{
-          label: "Nómina Masiva",
-          onClick: () => setView("batch"),
-        }}
-        secondaryActions={[
-          {
-            label: "Procesar Individual",
-            onClick: () => setProcesarOpen(true),
-          },
-        ]}
+      <ContextActionHeader title="Procesos de Nómina"
+        primaryAction={{ label: "Nómina Masiva", onClick: () => setView("batch") }}
+        secondaryActions={[{ label: "Procesar Individual", onClick: () => setProcesarOpen(true) }]}
         searchPlaceholder="Buscar nóminas..."
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel
-          filters={NOMINAS_FILTERS}
-          values={filterValues}
-          onChange={(v) => {
-            setFilterValues(v);
-            setFilter((f) => ({
-              ...f,
-              fechaDesde: v.fechaDesde || undefined,
-              fechaHasta: v.fechaHasta || undefined,
-            }));
-          }}
-          searchPlaceholder="Buscar nominas..."
-          searchValue={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setFilter((f) => ({ ...f, search: v || undefined }));
-          }}
+        <ZenttoFilterPanel filters={NOMINAS_FILTERS} values={filterValues}
+          onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, fechaDesde: v.fechaDesde || undefined, fechaHasta: v.fechaHasta || undefined })); }}
+          searchPlaceholder="Buscar nominas..." searchValue={search}
+          onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
         />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
-          <ZenttoDataGrid
-            gridId="nomina-nominas-list"
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            pageSizeOptions={[25, 50]}
-            disableRowSelectionOnClick
-            getRowId={(r) => `${r.nomina}-${r.cedula}-${r.fechaInicio ?? Math.random()}`}
-            showTotals
-            totalsLabel="Total"
-            enableGrouping
-            enableClipboard
-            enableHeaderFilters
-            mobileVisibleFields={['cedula', 'nombreEmpleado']}
-            smExtraFields={['totalNeto', 'cerrada']}
-            getDetailContent={(row: any) => <NominaDetailPanel nomina={row.nomina} cedula={row.cedula} />}
-            detailPanelHeight="auto"
-          />
+          <zentto-grid ref={gridRef} height="100%" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
         </Paper>
 
         {/* Detalle Dialog */}
-        <Dialog
-          open={selectedNomina != null}
-          onClose={() => { setSelectedNomina(null); setSelectedCedula(null); }}
-          maxWidth="md"
-          fullWidth
-        >
+        <Dialog open={selectedNomina != null} onClose={() => { setSelectedNomina(null); setSelectedCedula(null); }} maxWidth="md" fullWidth>
           <DialogTitle>Detalle de Nómina</DialogTitle>
           <DialogContent>
-            {detalle.isLoading ? (
-              <CircularProgress />
-            ) : detalle.data?.cabecera ? (
+            {detalle.isLoading ? <CircularProgress /> : detalle.data?.cabecera ? (
               <Box>
-                <Typography variant="body2" mb={1}>
-                  <strong>Empleado:</strong> {detalle.data.cabecera.nombre} ({detalle.data.cabecera.cedula})
-                </Typography>
-                <Typography variant="body2" mb={2}>
-                  <strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}
-                </Typography>
-                <ZenttoDataGrid
-                  rows={((detalle.data.detalle ?? []) as NominaDetalleItem[]).map((d, i: number) => ({ ...d, _id: i }))}
-                  columns={[
-                    { field: "concepto", headerName: "Concepto", flex: 1 },
-                    { field: "tipo", headerName: "Tipo", width: 120 },
-                    { field: "monto", headerName: "Monto", width: 130, renderCell: (p) => formatCurrency(p.value) },
-                  ]}
-                  autoHeight
-                  getRowId={(r) => r._id}
-                  disableRowSelectionOnClick
-                  hideFooter
-                  hideToolbar
-                  mobileDetailDrawer={false}
-                  density="compact"
-                  mobileVisibleFields={['concepto', 'monto']}
-                />
+                <Typography variant="body2" mb={1}><strong>Empleado:</strong> {detalle.data.cabecera.nombre} ({detalle.data.cabecera.cedula})</Typography>
+                <Typography variant="body2" mb={2}><strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}</Typography>
+                <Box sx={{ height: 350 }}>
+                  <zentto-grid ref={detalleGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+                </Box>
               </Box>
-            ) : (
-              <Typography>No se encontró información</Typography>
-            )}
+            ) : <Typography>No se encontró información</Typography>}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => { setSelectedNomina(null); setSelectedCedula(null); }}>Cerrar</Button>
-          </DialogActions>
+          <DialogActions><Button onClick={() => { setSelectedNomina(null); setSelectedCedula(null); }}>Cerrar</Button></DialogActions>
         </Dialog>
 
         {/* Procesar Dialog */}
@@ -334,43 +141,20 @@ export default function NominasPage() {
           <DialogTitle>Procesar Nómina Completa</DialogTitle>
           <DialogContent>
             <Stack spacing={2} mt={1}>
-              <TextField
-                label="Código Nómina"
-                fullWidth
-                value={procesarData.nomina}
-                onChange={(e) => setProcesarData((d) => ({ ...d, nomina: e.target.value }))}
-              />
-              <DatePicker
-                label="Fecha Inicio"
-                value={procesarData.fechaInicio ? dayjs(procesarData.fechaInicio) : null}
-                onChange={(v) => setProcesarData((d) => ({ ...d, fechaInicio: v ? v.format('YYYY-MM-DD') : '' }))}
-                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-              />
-              <DatePicker
-                label="Fecha Hasta"
-                value={procesarData.fechaHasta ? dayjs(procesarData.fechaHasta) : null}
-                onChange={(v) => setProcesarData((d) => ({ ...d, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
-                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={procesarData.soloActivos}
-                    onChange={(e) => setProcesarData((d) => ({ ...d, soloActivos: e.target.checked }))}
-                  />
-                }
-                label="Solo empleados activos"
-              />
+              <TextField label="Código Nómina" fullWidth value={procesarData.nomina} onChange={(e) => setProcesarData((d) => ({ ...d, nomina: e.target.value }))} />
+              <DatePicker label="Fecha Inicio" value={procesarData.fechaInicio ? dayjs(procesarData.fechaInicio) : null} onChange={(v) => setProcesarData((d) => ({ ...d, fechaInicio: v ? v.format('YYYY-MM-DD') : '' }))} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+              <DatePicker label="Fecha Hasta" value={procesarData.fechaHasta ? dayjs(procesarData.fechaHasta) : null} onChange={(v) => setProcesarData((d) => ({ ...d, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+              <FormControlLabel control={<Switch checked={procesarData.soloActivos} onChange={(e) => setProcesarData((d) => ({ ...d, soloActivos: e.target.checked }))} />} label="Solo empleados activos" />
             </Stack>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setProcesarOpen(false)}>Cancelar</Button>
-            <Button variant="contained" onClick={handleProcesar} disabled={procesarMutation.isPending}>
-              Procesar
-            </Button>
+            <Button variant="contained" onClick={handleProcesar} disabled={procesarMutation.isPending}>Procesar</Button>
           </DialogActions>
         </Dialog>
       </Box>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

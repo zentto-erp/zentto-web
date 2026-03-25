@@ -1,35 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/DeleteOutline';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Close';
-import {
-  GridActionsCellItem,
-  GridColDef,
-  GridEventListener,
-  GridFilterModel,
-  GridPaginationModel,
-  GridRowEditStopReasons,
-  GridRowId,
-  GridRowModel,
-  GridRowModes,
-  GridRowModesModel,
-  GridRowsProp,
-  GridToolbarContainer,
-  GridToolbarFilterButton,
-  GridToolbarQuickFilter,
-} from '@mui/x-data-grid';
-import { ZenttoDataGrid } from '@zentto/shared-ui';
+import type { ColumnDef } from '@zentto/datagrid-core';
 
 type GridRow = Record<string, unknown>;
 
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
 interface EditableDataGridProps {
-  rows: GridRowsProp;
-  columns: GridColDef[];
+  rows: GridRow[];
+  columns: ColumnDef[];
   loading?: boolean;
   page: number;
   pageSize: number;
@@ -39,25 +22,12 @@ interface EditableDataGridProps {
   onUpdateRow?: (row: GridRow) => Promise<GridRow | void> | GridRow | void;
   onDeleteRow?: (row: GridRow) => Promise<void> | void;
   addButtonText?: string;
-  getRowId?: (row: GridRow) => GridRowId;
-  filterModel?: GridFilterModel;
-  onFilterModelChange?: (model: GridFilterModel) => void;
-  filterMode?: 'client' | 'server';
+  getRowId?: (row: GridRow) => string | number;
   timeZone?: string;
 }
 
-function defaultGetRowId(row: GridRow): GridRowId {
+function defaultGetRowId(row: GridRow): string | number {
   return String(row.id ?? row.Codigo ?? row.codigo ?? crypto.randomUUID());
-}
-
-function CrudToolbar() {
-  return (
-    <GridToolbarContainer>
-      <GridToolbarFilterButton />
-      <Box sx={{ flexGrow: 1 }} />
-      <GridToolbarQuickFilter debounceMs={300} />
-    </GridToolbarContainer>
-  );
 }
 
 export default function EditableDataGrid({
@@ -73,46 +43,29 @@ export default function EditableDataGrid({
   onDeleteRow,
   addButtonText = 'Nuevo',
   getRowId = defaultGetRowId,
-  filterModel,
-  onFilterModelChange,
-  filterMode = 'client',
   timeZone,
 }: EditableDataGridProps) {
-  const [localRows, setLocalRows] = useState<GridRowsProp>(rows);
-  const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
-  const [internalFilterModel, setInternalFilterModel] = useState<GridFilterModel>(() => ({ items: [] }));
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const [localRows, setLocalRows] = useState<GridRow[]>(rows);
+
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
 
   useEffect(() => {
     setLocalRows(rows);
   }, [rows]);
 
-  const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
-    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-      event.defaultMuiPrevented = true;
-    }
-  };
-
-  const handleEditClick = useCallback((id: GridRowId) => {
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.Edit } }));
-  }, []);
-
-  const handleSaveClick = useCallback((id: GridRowId) => {
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.View } }));
-  }, []);
-
-  const handleCancelClick = useCallback((id: GridRowId) => {
-    setRowModesModel((prev) => ({ ...prev, [id]: { mode: GridRowModes.View, ignoreModifications: true } }));
-  }, []);
-
   const handleDeleteClick = useCallback(
-    async (id: GridRowId) => {
-      const row = localRows.find((r) => String(getRowId(r as GridRow)) === String(id)) as GridRow | undefined;
+    async (id: string | number) => {
+      const row = localRows.find((r) => String(getRowId(r)) === String(id));
       if (!row) return;
       try {
         if (onDeleteRow) {
           await onDeleteRow(row);
         }
-        setLocalRows((prev) => prev.filter((r) => String(getRowId(r as GridRow)) !== String(id)));
+        setLocalRows((prev) => prev.filter((r) => String(getRowId(r)) !== String(id)));
       } catch (error) {
         console.error('Error al eliminar fila', error);
       }
@@ -120,110 +73,41 @@ export default function EditableDataGrid({
     [getRowId, localRows, onDeleteRow]
   );
 
-  const processRowUpdate = useCallback(
-    async (newRow: GridRowModel) => {
-      let updatedRow: GridRow = { ...(newRow as GridRow) };
-      if (onUpdateRow) {
-        const serverRow = await onUpdateRow(updatedRow);
-        if (serverRow) {
-          updatedRow = serverRow;
-        }
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = localRows;
+    el.loading = loading;
+    el.actionButtons = [
+      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
+      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
+    ];
+  }, [columns, localRows, loading, registered]);
+
+  // Listen for action-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      const id = getRowId(row);
+      if (action === 'delete') {
+        handleDeleteClick(id);
       }
-
-      setLocalRows((prev) =>
-        prev.map((row) => {
-          const currentId = getRowId(row as GridRow);
-          const editedId = getRowId(newRow as GridRow);
-          return String(currentId) === String(editedId) ? { ...(row as GridRow), ...updatedRow } : row;
-        })
-      );
-
-      return updatedRow;
-    },
-    [getRowId, onUpdateRow]
-  );
-
-  // Auto-convert string dates to Date objects and format in company timezone
-  const normalizedColumns = useMemo(() => {
-    return columns.map((col) => {
-      if ((col.type === 'date' || col.type === 'dateTime') && !col.valueGetter) {
-        return {
-          ...col,
-          valueGetter: (value: unknown) => {
-            if (value == null || value === '') return null;
-            if (value instanceof Date) return value;
-            const d = new Date(value as string);
-            return isNaN(d.getTime()) ? null : d;
-          },
-          valueFormatter: (value: unknown) => {
-            if (value == null) return '';
-            const d = value instanceof Date ? value : new Date(String(value));
-            if (isNaN(d.getTime())) return '';
-            const opts: Intl.DateTimeFormatOptions = col.type === 'dateTime'
-              ? { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
-              : { year: 'numeric', month: '2-digit', day: '2-digit' };
-            if (timeZone) opts.timeZone = timeZone;
-            return d.toLocaleString('es', opts);
-          },
-        };
-      }
-      return col;
-    });
-  }, [columns, timeZone]);
-
-  const columnsWithActions = useMemo(() => {
-    if (normalizedColumns.some((col) => col.field === 'actions')) return normalizedColumns;
-
-    const actionsColumn: GridColDef = {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Acciones',
-      width: 120,
-      getActions: (params) => {
-        const isInEditMode = rowModesModel[params.id]?.mode === GridRowModes.Edit;
-
-        if (isInEditMode) {
-          return [
-            <GridActionsCellItem
-              key="save"
-              icon={<SaveIcon fontSize="small" />}
-              label="Guardar"
-              onClick={() => handleSaveClick(params.id)}
-            />,
-            <GridActionsCellItem
-              key="cancel"
-              icon={<CancelIcon fontSize="small" />}
-              label="Cancelar"
-              onClick={() => handleCancelClick(params.id)}
-            />,
-          ];
-        }
-
-        return [
-          <GridActionsCellItem
-            key="edit"
-            icon={<EditIcon fontSize="small" />}
-            label="Editar"
-            onClick={() => handleEditClick(params.id)}
-          />,
-          <GridActionsCellItem
-            key="delete"
-            icon={<DeleteIcon fontSize="small" />}
-            label="Eliminar"
-            onClick={() => handleDeleteClick(params.id)}
-          />,
-        ];
-      },
+      // edit action could be handled here if needed
     };
 
-    return [...normalizedColumns, actionsColumn];
-  }, [normalizedColumns, handleCancelClick, handleDeleteClick, handleEditClick, handleSaveClick, rowModesModel]);
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered, getRowId, handleDeleteClick]);
 
-  const paginationModel: GridPaginationModel = {
-    page: Math.max(page - 1, 0),
-    pageSize,
-  };
-  const effectiveFilterModel = filterModel ?? internalFilterModel;
+  if (!registered) {
+    return null;
+  }
 
   return (
     <Stack spacing={1.5}>
@@ -236,41 +120,29 @@ export default function EditableDataGrid({
       )}
 
       <Box sx={{ width: '100%', minHeight: 420 }}>
-        <ZenttoDataGrid
-          rows={localRows}
-          columns={columnsWithActions}
-          loading={loading}
-          getRowId={getRowId}
-          paginationMode="server"
-          rowCount={rowCount}
-          paginationModel={paginationModel}
-          onPaginationModelChange={(model) => onPageChange(model.page + 1)}
-          pageSizeOptions={[pageSize]}
-          filterMode={filterMode}
-          filterModel={effectiveFilterModel}
-          onFilterModelChange={(model) => {
-            if (onFilterModelChange) {
-              onFilterModelChange(model);
-              return;
-            }
-            setInternalFilterModel(model);
-          }}
-          ignoreDiacritics
-          slots={{
-            toolbar: CrudToolbar,
-          }}
-          editMode="row"
-          rowModesModel={rowModesModel}
-          onRowModesModelChange={setRowModesModel}
-          onRowEditStop={handleRowEditStop}
-          processRowUpdate={processRowUpdate}
-          onProcessRowUpdateError={(error) => {
-            console.error('Error al actualizar fila', error);
-          }}
-          disableRowSelectionOnClick
-          hideToolbar
-        />
+        <zentto-grid
+          ref={gridRef}
+          default-currency="VES"
+          height="400px"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-editing
+          enable-configurator
+        ></zentto-grid>
       </Box>
     </Stack>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

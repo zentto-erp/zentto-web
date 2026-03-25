@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -17,15 +17,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivitiesList,
@@ -34,6 +34,7 @@ import {
   type Activity,
   type ActivityFilter,
 } from "../hooks/useCRM";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const typeConfig: Record<string, { icon: React.ReactNode; color: "primary" | "secondary" | "success" | "warning" | "info" }> = {
   CALL: { icon: <PhoneIcon sx={{ fontSize: 14 }} />, color: "primary" },
@@ -84,27 +85,43 @@ export default function ActividadesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyActivity);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useActivitiesList(filter);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useActivitiesList(filter);
   const createActivity = useCreateActivity();
   const completeActivity = useCompleteActivity();
 
   const rows: Activity[] = data?.data ?? data?.rows ?? [];
   const totalCount = data?.totalCount ?? data?.TotalCount ?? rows.length;
 
-  const columns: ZenttoColDef[] = [
+  const columns: ColumnDef[] = [
     {
       field: "Subject",
-      headerName: "Asunto",
+      header: "Asunto",
       flex: 1,
       minWidth: 200,
     },
     {
       field: "ActivityType",
-      headerName: "Tipo",
+      header: "Tipo",
       width: 130,
       renderCell: (p) => {
         const cfg = typeConfig[p.value] ?? typeConfig.TASK;
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <Chip
             icon={cfg.icon as React.ReactElement}
@@ -118,12 +135,12 @@ export default function ActividadesPage() {
     },
     {
       field: "DueDate",
-      headerName: "Fecha límite",
+      header: "Fecha límite",
       width: 140,
     },
     {
       field: "IsCompleted",
-      headerName: "Completada",
+      header: "Completada",
       width: 110,
       renderCell: (p) => (
         <Checkbox
@@ -140,12 +157,12 @@ export default function ActividadesPage() {
     },
     {
       field: "AssignedToName",
-      headerName: "Asignado a",
+      header: "Asignado a",
       width: 150,
     },
     {
       field: "LeadCode",
-      headerName: "Lead",
+      header: "Lead",
       width: 120,
     },
   ];
@@ -198,24 +215,19 @@ export default function ActividadesPage() {
 
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>
-        <ZenttoDataGrid
-        gridId="crm-actividades-list"
-          rows={rows}
-          columns={columns}
-          getRowId={(r) => r.ActivityId}
-          loading={isLoading}
-          enableHeaderFilters
-          paginationMode="server"
-          rowCount={totalCount}
-          pageSizeOptions={[10, 25, 50]}
-          paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-          onPaginationModelChange={(m) => setFilter({ ...filter, page: m.page + 1, limit: m.pageSize })}
-          autoHeight
-          disableRowSelectionOnClick
-          sx={{ border: "none" }}
-          mobileVisibleFields={['Subject', 'ActivityType']}
-          smExtraFields={['DueDate', 'IsCompleted']}
-        />
+        <zentto-grid
+        ref={gridRef}
+        export-filename="crm-actividades-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
       </Paper>
 
       {/* Dialog Crear */}
@@ -281,4 +293,12 @@ export default function ActividadesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

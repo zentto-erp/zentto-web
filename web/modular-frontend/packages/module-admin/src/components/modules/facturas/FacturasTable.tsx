@@ -1,7 +1,7 @@
 // components/modules/facturas/FacturasTable.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -11,9 +11,6 @@ import {
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import {
-  ZenttoDataGrid,
-  type ZenttoColDef,
-  buildCrudActionsColumn,
   ConfirmDialog,
   ZenttoFilterPanel,
   type FilterFieldDef,
@@ -25,79 +22,21 @@ import {
 } from "../../../hooks/useFacturas";
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly } from "@zentto/shared-api";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 // ============ Master-detail: renglones de factura ============
-const detailColumns: ZenttoColDef[] = [
-  { field: "lineNumber", headerName: "#", width: 50 },
-  { field: "codigo", headerName: "Codigo", width: 130 },
-  { field: "descripcion", headerName: "Descripcion", flex: 1, minWidth: 200 },
-  { field: "cantidad", headerName: "Cantidad", width: 100, type: "number" },
-  { field: "precio", headerName: "Precio", width: 120, type: "number", currency: true },
-  { field: "descuento", headerName: "Descuento", width: 110, type: "number", currency: true },
-  { field: "total", headerName: "Total", width: 120, type: "number", currency: true, aggregation: "sum" },
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: "lineNumber", header: "#", width: 50 },
+  { field: "codigo", header: "Codigo", width: 130 },
+  { field: "descripcion", header: "Descripcion", flex: 1, minWidth: 200 },
+  { field: "cantidad", header: "Cantidad", width: 100, type: "number" },
+  { field: "precio", header: "Precio", width: 120, type: "number", currency: "VES" },
+  { field: "descuento", header: "Descuento", width: 110, type: "number", currency: "VES" },
+  { field: "total", header: "Total", width: 120, type: "number", currency: "VES", aggregation: "sum" },
 ];
-
-function FacturaDetailPanel({ numeroFactura }: { numeroFactura: string }) {
-  const { data: detalle, isLoading } = useDetalleFactura(numeroFactura);
-  const rawRows = Array.isArray(detalle) ? detalle : [];
-
-  const rows = useMemo(
-    () =>
-      rawRows.map((line: any, idx: number) => {
-        const qty = Number(line.CANTIDAD ?? line.Quantity ?? 0);
-        const price = Number(line.PRECIO ?? line.UnitPrice ?? 0);
-        const discount = Number(line.DESCUENTO ?? line.DiscountAmount ?? 0);
-        return {
-          id: idx,
-          lineNumber: idx + 1,
-          codigo: line.COD_SERV ?? line.ItemCode ?? "",
-          descripcion: line.DESCRIPCION ?? line.Description ?? "",
-          cantidad: qty,
-          precio: price,
-          descuento: discount,
-          total: Number(line.TOTAL ?? line.LineTotal ?? qty * price - discount),
-        };
-      }),
-    [rawRows]
-  );
-
-  if (isLoading) {
-    return (
-      <Box sx={{ p: 2, display: "flex", justifyContent: "center" }}>
-        <CircularProgress size={24} />
-      </Box>
-    );
-  }
-
-  if (rows.length === 0) {
-    return (
-      <Box sx={{ p: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          Sin renglones de detalle
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ p: 1.5, pl: 6 }}>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-        Detalle de {numeroFactura}
-      </Typography>
-      <ZenttoDataGrid
-        gridId={`factura-detail-${numeroFactura}`}
-        columns={detailColumns}
-        rows={rows}
-        density="compact"
-        showTotals
-        hideToolbar
-        disableRowSelectionOnClick
-        hideFooter
-        sx={{ maxHeight: 300 }}
-      />
-    </Box>
-  );
-}
 
 // ============ Definicion de filtros ============
 const FACTURA_FILTERS: FilterFieldDef[] = [
@@ -121,9 +60,29 @@ const FACTURA_FILTERS: FilterFieldDef[] = [
   { field: "to", label: "Fecha hasta", type: "date" },
 ];
 
+// ============ Columnas principales ============
+const COLUMNS: ColumnDef[] = [
+  { field: "numeroFactura", header: "Numero", width: 150, sortable: true },
+  { field: "nombreCliente", header: "Cliente", flex: 1, minWidth: 180, sortable: true },
+  { field: "fecha", header: "Fecha", width: 120, type: "date", sortable: true },
+  {
+    field: "tipoDoc", header: "Tipo", width: 110,
+    statusColors: { FACT: "primary", PRESUP: "info", PEDIDO: "warning" },
+    statusVariant: "outlined",
+  },
+  { field: "totalFactura", header: "Total", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "estado", header: "Estado", width: 120,
+    statusColors: { Pagada: "success", Pendiente: "warning", Emitida: "info", Anulada: "error", Cancelada: "default" },
+    statusVariant: "outlined",
+  },
+];
+
 export default function FacturasTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [anularOpen, setAnularOpen] = useState(false);
@@ -132,6 +91,10 @@ export default function FacturasTable() {
   // Filtros (manejados por ZenttoFilterPanel)
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -174,41 +137,50 @@ export default function FacturasTable() {
     }
   };
 
-  const columns = useMemo<ZenttoColDef[]>(
-    () => [
-      { field: "numeroFactura", headerName: "Numero", width: 150, sortable: true },
-      { field: "nombreCliente", headerName: "Cliente", flex: 1, minWidth: 180, sortable: true, mobileHide: true },
-      {
-        field: "fecha", headerName: "Fecha", width: 120, sortable: true,
-        valueFormatter: (value: string) => value ? toDateOnly(value, timeZone) : "",
-      },
-      {
-        field: "tipoDoc", headerName: "Tipo", width: 110, tabletHide: true,
-        statusColors: { FACT: "primary", PRESUP: "info", PEDIDO: "warning" },
-        statusVariant: "outlined",
-      },
-      { field: "totalFactura", headerName: "Total", width: 140, type: "number", currency: true, aggregation: "sum" },
-      {
-        field: "estado", headerName: "Estado", width: 120,
-        statusColors: { Pagada: "success", Pendiente: "warning", Emitida: "info", Anulada: "error", Cancelada: "default" },
-        statusVariant: "outlined",
-      },
-      buildCrudActionsColumn({
-        onView: (row) => router.push(`/facturas/${row.numeroFactura}`),
-        onDelete: (row) => handleAnularClick(row.numeroFactura),
-      }),
-    ],
-    [timeZone, router]
-  );
-
   const rows = useMemo(
     () =>
       (facturas?.data || []).map((f: any, idx: number) => ({
         id: f.numeroFactura || idx,
         ...f,
+        fecha: f.fecha ? toDateOnly(f.fecha, timeZone) : "",
       })),
-    [facturas?.data]
+    [facturas?.data, timeZone]
   );
+
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.detailColumns = DETAIL_COLUMNS;
+    el.detailRowsAccessor = (row: GridRow) => {
+      // Detail rows will be populated via action-click -> view
+      // For now, return empty — master-detail requires items on the row
+      return (row._detailRows as GridRow[]) || [];
+    };
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view" },
+      { icon: SVG_DELETE, label: "Anular", action: "delete", color: "#dc2626" },
+    ];
+  }, [rows, isLoading, registered]);
+
+  // Listen for action-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === "view") router.push(`/facturas/${row.numeroFactura}`);
+      if (action === "delete") handleAnularClick(row.numeroFactura);
+    };
+
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, router]);
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
@@ -232,34 +204,26 @@ export default function FacturasTable() {
         onSearchChange={handleSearchChange}
       />
 
-      {/* ZenttoDataGrid con master-detail */}
+      {/* zentto-grid con master-detail */}
       <Box sx={{ flex: 1, minHeight: 400 }}>
-        <ZenttoDataGrid
-          gridId="facturas-table"
-          columns={columns}
-          rows={rows}
-          loading={isLoading}
-          enableClipboard
-          showTotals
-          paginationMode="server"
-          rowCount={facturas?.total ?? 0}
-          serverRowCount={facturas?.total ?? 0}
-          paginationModel={{ page, pageSize }}
-          onPaginationModelChange={(model) => {
-            setPage(model.page);
-            setPageSize(model.pageSize);
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          density="comfortable"
-          exportFilename="facturas"
-          hideQuickFilter
-          getDetailContent={(row) => (
-            <FacturaDetailPanel numeroFactura={row.numeroFactura} />
-          )}
-          detailPanelHeight="auto"
-          mobileVisibleFields={["numeroFactura", "nombreCliente", "totalFactura"]}
-          sx={{ height: "100%" }}
-        />
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="facturas"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-master-detail
+            enable-configurator
+          ></zentto-grid>
+        )}
       </Box>
 
       {/* Anular Confirmation Dialog */}
@@ -278,4 +242,12 @@ export default function FacturasTable() {
       />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

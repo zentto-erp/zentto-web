@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -35,11 +35,7 @@ import {
 } from "@mui/icons-material";
 import { useClientesList } from "../../../hooks/useClientes";
 import { toDateOnly } from "@zentto/shared-api";
-import {
-  ZenttoDataGrid,
-  type ZenttoColDef,
-  DatePicker,
-} from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
@@ -49,6 +45,7 @@ import {
   useCxcDocumentosPendientes,
   useCxcSaldo,
 } from "../../../hooks/useCxcTx";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 // ─── Tipos internos ───────────────────────────────────────────
 
@@ -62,6 +59,23 @@ type FormaPagoLine = {
 };
 type ClienteRow = Record<string, any>;
 
+// ─── Columnas de clientes ─────────────────────────────────────
+
+const CLIENTE_COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 90 },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 160 },
+  { field: "rif", header: "RIF", width: 120 },
+  { field: "telefono", header: "Telefono", width: 130 },
+  { field: "saldo", header: "Saldo", width: 120, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "estado",
+    header: "Estado",
+    width: 100,
+    statusColors: { Activo: "success", Inactivo: "error" },
+    statusVariant: "outlined",
+  },
+];
+
 // ─── Componente Principal ─────────────────────────────────────
 
 export default function CxcMasterPage() {
@@ -70,6 +84,12 @@ export default function CxcMasterPage() {
   const [selectedCod, setSelectedCod] = useState("");
   const [selectedNombre, setSelectedNombre] = useState("");
   const [tabValue, setTabValue] = useState(0);
+  const clienteGridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
 
   // ─── Datos de clientes ────────────────────────────────────
   const clientesQuery = useClientesList({ search, limit: 50 });
@@ -88,36 +108,6 @@ export default function CxcMasterPage() {
     setTabValue(0);
   }, []);
 
-  // ─── Columnas de la tabla de clientes ─────────────────────
-  const clienteColumns = useMemo<ZenttoColDef[]>(
-    () => [
-      { field: "codigo", headerName: "Codigo", width: 90 },
-      { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 160 },
-      { field: "rif", headerName: "RIF", width: 120, mobileHide: true },
-      { field: "telefono", headerName: "Telefono", width: 130, mobileHide: true, tabletHide: true },
-      {
-        field: "saldo",
-        headerName: "Saldo",
-        width: 120,
-        type: "number",
-        currency: true,
-        aggregation: "sum",
-        valueGetter: (_value: any, row: any) => Number(row.saldo || row.SALDO_TOT || 0),
-      },
-      {
-        field: "estado",
-        headerName: "Estado",
-        width: 100,
-        statusColors: {
-          Activo: "success",
-          Inactivo: "error",
-        },
-        statusVariant: "outlined",
-      },
-    ],
-    []
-  );
-
   const clienteRows = useMemo(
     () =>
       clientes.map((c: ClienteRow, idx: number) => ({
@@ -131,6 +121,33 @@ export default function CxcMasterPage() {
       })),
     [clientes]
   );
+
+  // Bind clientes grid
+  useEffect(() => {
+    const el = clienteGridRef.current;
+    if (!el || !registered) return;
+    el.columns = CLIENTE_COLUMNS;
+    el.rows = clienteRows;
+    el.loading = clientesQuery.isLoading;
+  }, [clienteRows, clientesQuery.isLoading, registered]);
+
+  // Listen for row-click on clientes grid
+  useEffect(() => {
+    const el = clienteGridRef.current;
+    if (!el || !registered) return;
+
+    const handler = (e: CustomEvent) => {
+      const row = e.detail?.row;
+      if (!row) return;
+      const cli = clientes.find(
+        (c: ClienteRow) => (c.codigo || c.CODIGO) === row.codigo
+      );
+      if (cli) handleSelectCliente(cli);
+    };
+
+    el.addEventListener("row-click", handler);
+    return () => el.removeEventListener("row-click", handler);
+  }, [registered, clientes, handleSelectCliente]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, minHeight: 0 }}>
@@ -155,29 +172,21 @@ export default function CxcMasterPage() {
         </Stack>
 
         <Box sx={{ height: 280 }}>
-          <ZenttoDataGrid
-            columns={clienteColumns}
-            rows={clienteRows}
-            loading={clientesQuery.isLoading}
-            density="compact"
-            enableClipboard
-            hideToolbar
-            onRowClick={(params) => {
-              const cli = clientes.find(
-                (c: ClienteRow) => (c.codigo || c.CODIGO) === params.row.codigo
-              );
-              if (cli) handleSelectCliente(cli);
-            }}
-            getRowClassName={(params) =>
-              params.row.codigo === selectedCod ? "Mui-selected" : ""
-            }
-            gridId="cxc-clientes"
-            sx={{
-              height: "100%",
-              "& .Mui-selected": { bgcolor: "primary.50" },
-              cursor: "pointer",
-            }}
-          />
+          {registered && (
+            <zentto-grid
+              ref={clienteGridRef}
+              default-currency="VES"
+              height="280px"
+              enable-toolbar
+              enable-header-menu
+              enable-header-filters
+              enable-clipboard
+              enable-quick-search
+              enable-context-menu
+              enable-status-bar
+              enable-configurator
+            ></zentto-grid>
+          )}
         </Box>
       </Paper>
 
@@ -280,6 +289,13 @@ function EstadoCuentaTab({
   isLoading: boolean;
   timeZone: string;
 }) {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
+
   const totalPendiente = useMemo(
     () => documentos.reduce((acc, d) => acc + Number(d.pendiente || 0), 0),
     [documentos]
@@ -289,60 +305,27 @@ function EstadoCuentaTab({
     [documentos]
   );
 
-  const columns = useMemo(
-    (): ZenttoColDef[] => [
+  const columns = useMemo<ColumnDef[]>(
+    () => [
       {
         field: "tipoDoc",
-        headerName: "Tipo",
+        header: "Tipo",
         width: 100,
-        statusColors: {
-          FACT: "primary",
-          NC: "info",
-          ND: "warning",
-        },
+        statusColors: { FACT: "primary", NC: "info", ND: "warning" },
         statusVariant: "outlined",
       },
-      {
-        field: "numDoc",
-        headerName: "Documento",
-        width: 150,
-        sortable: true,
-      },
-      {
-        field: "fecha",
-        headerName: "Fecha",
-        width: 120,
-        sortable: true,
-        valueFormatter: (value: string) =>
-          value ? toDateOnly(value, timeZone) : "",
-      },
-      {
-        field: "total",
-        headerName: "Total",
-        width: 130,
-        type: "number",
-        currency: true,
-        aggregation: "sum",
-      },
-      {
-        field: "pendiente",
-        headerName: "Pendiente",
-        width: 130,
-        type: "number",
-        currency: true,
-        aggregation: "sum",
-      },
+      { field: "numDoc", header: "Documento", width: 150, sortable: true },
+      { field: "fecha", header: "Fecha", width: 120, type: "date", sortable: true },
+      { field: "total", header: "Total", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+      { field: "pendiente", header: "Pendiente", width: 130, type: "number", currency: "VES", aggregation: "sum" },
       {
         field: "estadoCalc",
-        headerName: "Estado",
+        header: "Estado",
         width: 110,
-        statusColors: {
-          Pendiente: "warning",
-          Cobrado: "success",
-        },
+        statusColors: { Pendiente: "warning", Cobrado: "success" },
       },
     ],
-    [timeZone]
+    []
   );
 
   const rows = useMemo(
@@ -352,12 +335,22 @@ function EstadoCuentaTab({
         ...d,
         total: Number(d.total || 0),
         pendiente: Number(d.pendiente || 0),
+        fecha: d.fecha ? toDateOnly(d.fecha as string, timeZone) : "",
         estadoCalc: Number(d.pendiente) > 0 ? "Pendiente" : "Cobrado",
       })),
-    [documentos]
+    [documentos, timeZone]
   );
 
-  if (isLoading) {
+  // Bind data
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [columns, rows, isLoading, registered]);
+
+  if (isLoading && !registered) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress size={28} />
@@ -365,7 +358,7 @@ function EstadoCuentaTab({
     );
   }
 
-  if (documentos.length === 0) {
+  if (documentos.length === 0 && !isLoading) {
     return <Alert severity="info">No hay documentos pendientes para este cliente.</Alert>;
   }
 
@@ -378,17 +371,23 @@ function EstadoCuentaTab({
       </Stack>
 
       <Box sx={{ height: 400 }}>
-        <ZenttoDataGrid
-          columns={columns}
-          rows={rows}
-          enableClipboard
-          enableHeaderFilters
-          showTotals
-          density="compact"
-          exportFilename="estado-cuenta"
-          gridId="cxc-estado-cuenta"
-          sx={{ height: "100%" }}
-        />
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="estado-cuenta"
+            height="400px"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
+        )}
       </Box>
     </Box>
   );
@@ -747,4 +746,12 @@ function CobrosAplicadosTab({ codCliente }: { codCliente: string }) {
       )}
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

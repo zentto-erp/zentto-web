@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -15,10 +15,11 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -32,6 +33,7 @@ import {
   useDeliverDeliveryNote,
   type DeliveryFilter,
 } from "../hooks/useLogistica";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 function AlbaranDetailPanel({ row }: { row: Record<string, unknown> }) {
   const statusColors: Record<string, 'default' | 'info' | 'warning' | 'primary' | 'success' | 'error'> = {
@@ -45,6 +47,23 @@ function AlbaranDetailPanel({ row }: { row: Record<string, unknown> }) {
     { label: 'Entregado a', value: row.DeliveredToName },
     { label: 'Fecha', value: row.DeliveryDate ? String(row.DeliveryDate).slice(0, 10) : null },
   ].filter(f => f.value != null && f.value !== '');
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ px: 3, py: 2, display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
@@ -150,6 +169,8 @@ export default function AlbaranesPage() {
   const [salesDocumentNumber, setSalesDocumentNumber] = useState("");
   const [carrierId, setCarrierId] = useState("");
   const [lines, setLines] = useState<DeliveryLine[]>([emptyLine()]);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -162,7 +183,12 @@ export default function AlbaranesPage() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  const { data, isLoading } = useDeliveryNotesList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useDeliveryNotesList({
     ...filter,
     search: search || undefined,
     page: paginationModel.page + 1,
@@ -175,20 +201,20 @@ export default function AlbaranesPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "DeliveryNumber", headerName: "N. Albaran", flex: 1, minWidth: 130 },
-    { field: "SalesDocumentNumber", headerName: "N. Doc. Venta", flex: 1, minWidth: 130 },
-    { field: "CustomerName", headerName: "Cliente", flex: 1.5, minWidth: 180 },
+  const columns: ColumnDef[] = [
+    { field: "DeliveryNumber", header: "N. Albaran", flex: 1, minWidth: 130 },
+    { field: "SalesDocumentNumber", header: "N. Doc. Venta", flex: 1, minWidth: 130 },
+    { field: "CustomerName", header: "Cliente", flex: 1.5, minWidth: 180 },
     {
       field: "DeliveryDate",
-      headerName: "Fecha",
+      header: "Fecha",
       flex: 1,
       minWidth: 120,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 130,
       renderCell: (params) => {
         const status = String(params.value ?? "DRAFT");
@@ -202,10 +228,10 @@ export default function AlbaranesPage() {
         );
       },
     },
-    { field: "CarrierName", headerName: "Transportista", flex: 1, minWidth: 140 },
+    { field: "CarrierName", header: "Transportista", flex: 1, minWidth: 140 },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 140,
       sortable: false,
       filterable: false,
@@ -345,25 +371,19 @@ export default function AlbaranesPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="logistica-albaranes-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.DeliveryId ?? row.Id ?? row.DeliveryNumber ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['DeliveryNumber', 'CustomerName']}
-        smExtraFields={['Status', 'DeliveryDate']}
-        getDetailContent={(row: any) => <AlbaranDetailPanel row={row} />}
+      <zentto-grid
+        ref={gridRef}
+        export-filename="logistica-albaranes-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>}
         detailPanelHeight={100}
       />
 
@@ -550,4 +570,12 @@ export default function AlbaranesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

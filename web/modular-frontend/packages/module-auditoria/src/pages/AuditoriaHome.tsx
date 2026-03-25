@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  CircularProgress,
 } from "@mui/material";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -23,10 +24,11 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
 import { formatCurrency, toDateOnly, formatDateTime } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
@@ -44,13 +46,13 @@ const ACTION_ICONS: Record<string, React.ReactElement> = {
   LOGIN: <LoginIcon fontSize="small" />,
 };
 
-const logColumns: ZenttoColDef[] = [
-  { field: "CreatedAt", headerName: "Fecha", flex: 1.2, renderCell: (p) => p.value ? formatDateTime(p.value, {}) : "-" },
-  { field: "UserName", headerName: "Usuario", flex: 1, renderCell: (p) => p.value ?? "-" },
-  { field: "ModuleName", headerName: "Módulo", flex: 1 },
+const logColumns: ColumnDef[] = [
+  { field: "CreatedAt", header: "Fecha", flex: 1.2, renderCell: (p) => p.value ? formatDateTime(p.value, {}) : "-" },
+  { field: "UserName", header: "Usuario", flex: 1, renderCell: (p) => p.value ?? "-" },
+  { field: "ModuleName", header: "Módulo", flex: 1 },
   {
     field: "ActionType",
-    headerName: "Acción",
+    header: "Acción",
     flex: 1,
     renderCell: (p) => (
       <Chip
@@ -62,7 +64,7 @@ const logColumns: ZenttoColDef[] = [
       />
     ),
   },
-  { field: "Summary", headerName: "Descripción", flex: 2, renderCell: (p) => p.value ?? `${p.row.EntityName} ${p.row.EntityId ?? ""}` },
+  { field: "Summary", header: "Descripción", flex: 2, renderCell: (p) => p.value ?? `${p.row.EntityName} ${p.row.EntityId ?? ""}` },
 ];
 
 export default function AuditoriaHome() {
@@ -72,7 +74,12 @@ export default function AuditoriaHome() {
   const fechaDesde = toDateOnly(new Date(now.getFullYear(), 0, 1), timeZone);
   const fechaHasta = toDateOnly(now, timeZone);
 
-  const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
 
   const stats = [
     { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.statBlue },
@@ -87,6 +94,23 @@ export default function AuditoriaHome() {
     { label: "Registros Fiscales", icon: <ReceiptLongIcon />, path: "/auditoria/fiscal-records" },
     { label: "Reportes", icon: <AssessmentIcon />, path: "/auditoria/reportes" },
   ];
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -144,13 +168,16 @@ export default function AuditoriaHome() {
                   </Typography>
                 </Box>
               ) : (
-                <ZenttoDataGrid
-                  rows={(data?.ultimosLogs ?? []).slice(0, 10)}
-                  columns={logColumns}
-                  getRowId={(row: any) => row.AuditLogId ?? Math.random()}
-                  hideToolbar
-                  autoHeight
-                />
+                <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
               )}
             </Paper>
           </Box>
@@ -188,4 +215,12 @@ function Row({ label, value }: { label: string; value: number | string }) {
       <Typography variant="body2" fontWeight={600}>{value}</Typography>
     </Stack>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

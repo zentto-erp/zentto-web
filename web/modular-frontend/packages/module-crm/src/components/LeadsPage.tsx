@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -17,11 +17,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useLeadsList,
   usePipelinesList,
@@ -31,6 +31,7 @@ import {
   type Lead,
   type LeadFilter,
 } from "../hooks/useCRM";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 const priorityColor: Record<string, "error" | "warning" | "info" | "default"> = {
   HIGH: "error",
@@ -89,8 +90,15 @@ export default function LeadsPage() {
   const [form, setForm] = useState(emptyLead);
   const [searchText, setSearchText] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useLeadsList(filter);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useLeadsList(filter);
   const { data: pipelinesData } = usePipelinesList();
   const pipelines = pipelinesData?.data ?? pipelinesData?.rows ?? pipelinesData ?? [];
 
@@ -104,22 +112,22 @@ export default function LeadsPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const totalCount = data?.totalCount ?? data?.TotalCount ?? rows.length;
 
-  const columns: ZenttoColDef[] = [
-    { field: "LeadCode", headerName: "Código", width: 110 },
-    { field: "ContactName", headerName: "Contacto", flex: 1, minWidth: 160 },
-    { field: "CompanyName", headerName: "Empresa", width: 160 },
-    { field: "Email", headerName: "Email", width: 180 },
-    { field: "Phone", headerName: "Teléfono", width: 130 },
-    { field: "StageName", headerName: "Etapa", width: 130 },
+  const columns: ColumnDef[] = [
+    { field: "LeadCode", header: "Código", width: 110 },
+    { field: "ContactName", header: "Contacto", flex: 1, minWidth: 160 },
+    { field: "CompanyName", header: "Empresa", width: 160 },
+    { field: "Email", header: "Email", width: 180 },
+    { field: "Phone", header: "Teléfono", width: 130 },
+    { field: "StageName", header: "Etapa", width: 130 },
     {
       field: "EstimatedValue",
-      headerName: "Valor Est.",
+      header: "Valor Est.",
       width: 130,
       renderCell: (p) => formatCurrency(p.value),
     },
     {
       field: "Priority",
-      headerName: "Prioridad",
+      header: "Prioridad",
       width: 110,
       renderCell: (p) => (
         <Chip
@@ -131,7 +139,7 @@ export default function LeadsPage() {
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 110,
       renderCell: (p) => (
         <Chip
@@ -141,8 +149,8 @@ export default function LeadsPage() {
         />
       ),
     },
-    { field: "Source", headerName: "Origen", width: 110 },
-    { field: "AssignedToName", headerName: "Asignado a", width: 140 },
+    { field: "Source", header: "Origen", width: 110 },
+    { field: "AssignedToName", header: "Asignado a", width: 140 },
   ];
 
   const handleOpenNew = () => {
@@ -183,6 +191,23 @@ export default function LeadsPage() {
     }
   };
 
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
+
   return (
     <Box>
       <ContextActionHeader
@@ -219,25 +244,19 @@ export default function LeadsPage() {
 
       {/* DataGrid */}
       <Paper sx={{ borderRadius: 2 }}>
-        <ZenttoDataGrid
-        gridId="crm-leads-list"
-          rows={rows}
-          columns={columns}
-          getRowId={(r) => r.LeadId}
-          loading={isLoading}
-          enableHeaderFilters
-          paginationMode="server"
-          rowCount={totalCount}
-          pageSizeOptions={[10, 25, 50]}
-          paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-          onPaginationModelChange={(m) => setFilter({ ...filter, page: m.page + 1, limit: m.pageSize })}
-          onRowClick={(p) => handleEdit(p.row as Lead)}
-          autoHeight
-          disableRowSelectionOnClick
-          sx={{ border: "none" }}
-          mobileVisibleFields={['ContactName', 'Status']}
-          smExtraFields={['CompanyName', 'StageName']}
-        />
+        <zentto-grid
+        ref={gridRef}
+        export-filename="crm-leads-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
       </Paper>
 
       {/* Dialog Crear/Editar */}
@@ -349,4 +368,12 @@ export default function LeadsPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

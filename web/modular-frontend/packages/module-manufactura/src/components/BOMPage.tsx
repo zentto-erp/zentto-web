@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -18,8 +18,9 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
@@ -32,6 +33,7 @@ import {
   useObsoleteBOM,
   type BOMFilter,
 } from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface BOMLine {
   productId: string;
@@ -82,8 +84,15 @@ export default function BOMPage() {
   const [bomName, setBomName] = useState("");
   const [outputQuantity, setOutputQuantity] = useState("1");
   const [lines, setLines] = useState<BOMLine[]>([emptyLine()]);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  const { data, isLoading } = useBOMList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useBOMList({
     ...filter,
     search,
     page: paginationModel.page + 1,
@@ -96,27 +105,27 @@ export default function BOMPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "BOMCode", headerName: "Codigo BOM", flex: 0.8, minWidth: 120 },
-    { field: "BOMName", headerName: "Nombre", flex: 1.5, minWidth: 180 },
-    { field: "ProductName", headerName: "Producto", flex: 1.2, minWidth: 150 },
+  const columns: ColumnDef[] = [
+    { field: "BOMCode", header: "Codigo BOM", flex: 0.8, minWidth: 120 },
+    { field: "BOMName", header: "Nombre", flex: 1.5, minWidth: 180 },
+    { field: "ProductName", header: "Producto", flex: 1.2, minWidth: 150 },
     {
       field: "OutputQuantity",
-      headerName: "Cant. Producida",
+      header: "Cant. Producida",
       width: 130,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "TotalCost",
-      headerName: "Costo Total",
+      header: "Costo Total",
       width: 130,
       currency: true,
       aggregation: "sum",
     },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
       statusColors: {
         DRAFT: "default",
@@ -126,13 +135,22 @@ export default function BOMPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 120,
       sortable: false,
       filterable: false,
       renderCell: (params) => {
         const status = String(params.row.Status ?? "");
         const id = Number(params.row.BOMId ?? params.row.Id);
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <Stack direction="row" spacing={0.5}>
             {status === "DRAFT" && (
@@ -246,26 +264,20 @@ export default function BOMPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="manufactura-bom-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.BOMId ?? row.Id ?? row.BOMCode ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        enableGrouping
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={["BOMName", "Status"]}
-        smExtraFields={["ProductName", "TotalCost"]}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="manufactura-bom-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+        enable-grouping
+      ></zentto-grid>
 
       {/* Dialog: Crear BOM */}
       <Dialog
@@ -422,4 +434,12 @@ export default function BOMPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

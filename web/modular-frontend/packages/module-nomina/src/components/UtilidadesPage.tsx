@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -12,15 +12,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
   CircularProgress,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { formatCurrency } from "@zentto/shared-api";
 import {
   useProfitSharingList,
@@ -29,6 +25,25 @@ import {
   useApproveProfitSharing,
   type ProfitSharingFilter,
 } from "../hooks/useRRHH";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "fiscalYear", header: "Año Fiscal", width: 120, sortable: true },
+  { field: "daysGranted", header: "Días Otorgados", width: 140, type: "number" },
+  { field: "totalEmployees", header: "Total Empleados", width: 140, type: "number" },
+  { field: "totalAmount", header: "Monto Total", width: 150, type: "number", aggregation: "sum" },
+  {
+    field: "status", header: "Estado", width: 120,
+    statusColors: { APROBADO: "success", PROCESADO: "info", PENDIENTE: "warning" },
+  },
+];
+
+const SUMMARY_COLUMNS: ColumnDef[] = [
+  { field: "employeeCode", header: "Código", width: 100 },
+  { field: "employeeName", header: "Empleado", flex: 1, minWidth: 200 },
+  { field: "daysWorked", header: "Días Trabajados", width: 140, type: "number" },
+  { field: "salary", header: "Salario", width: 130, type: "number" },
+  { field: "amount", header: "Utilidades", width: 130, type: "number" },
+];
 
 const UTILIDADES_FILTERS: FilterFieldDef[] = [
   {
@@ -41,7 +56,13 @@ const UTILIDADES_FILTERS: FilterFieldDef[] = [
   },
 ];
 
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
 export default function UtilidadesPage() {
+  const gridRef = useRef<any>(null);
+  const summaryGridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<ProfitSharingFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -57,69 +78,46 @@ export default function UtilidadesPage() {
   const rows = data?.data ?? data?.rows ?? [];
   const summaryRows = summary.data?.employees ?? summary.data?.data ?? [];
 
-  const columns: ZenttoColDef[] = [
-    { field: "fiscalYear", headerName: "Año Fiscal", width: 120 },
-    { field: "daysGranted", headerName: "Días Otorgados", width: 140 },
-    { field: "totalEmployees", headerName: "Total Empleados", width: 140 },
-    {
-      field: "totalAmount",
-      headerName: "Monto Total",
-      width: 150,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-      currency: true,
-      aggregation: 'sum',
-    },
-    {
-      field: "status",
-      headerName: "Estado",
-      width: 120,
-      renderCell: (p) => (
-        <Chip
-          label={p.value || "PENDIENTE"}
-          size="small"
-          color={
-            p.value === "APROBADO" ? "success" :
-            p.value === "PROCESADO" ? "info" : "warning"
-          }
-        />
-      ),
-      statusColors: { 'APROBADO': 'success', 'PROCESADO': 'info', 'PENDIENTE': 'warning' },
-    },
-    {
-      field: "actions",
-      headerName: "",
-      width: 120,
-      sortable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver resumen">
-            <IconButton size="small" onClick={() => setSummaryId(p.row.id)}>
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {p.row.status !== "APROBADO" && p.row.status !== "PROCESADO" && (
-            <Tooltip title="Aprobar calculo">
-              <IconButton
-                size="small"
-                color="success"
-                onClick={() => approveMutation.mutate({ id: p.row.id })}
-              >
-                <CheckCircleIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
 
-  const summaryColumns: ZenttoColDef[] = [
-    { field: "employeeCode", headerName: "Código", width: 100 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "daysWorked", headerName: "Días Trabajados", width: 140 },
-    { field: "salary", headerName: "Salario", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
-    { field: "amount", headerName: "Utilidades", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id ?? r.fiscalYear;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver resumen", action: "view" },
+      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
+    ];
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") setSummaryId(row.id);
+      if (action === "approve" && row.status !== "APROBADO" && row.status !== "PROCESADO") {
+        approveMutation.mutate({ id: row.id });
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
+
+  // Summary dialog grid
+  useEffect(() => {
+    const el = summaryGridRef.current;
+    if (!el || !registered || summaryId == null) return;
+    el.columns = SUMMARY_COLUMNS;
+    el.rows = (Array.isArray(summaryRows) ? summaryRows : []).map((r: Record<string, unknown>, i: number) => ({ ...r, _id: i }));
+    el.loading = summary.isLoading;
+    el.getRowId = (r: any) => r._id;
+  }, [summaryRows, summary.isLoading, registered, summaryId]);
 
   const handleGenerate = async () => {
     await generateMutation.mutateAsync(generateForm);
@@ -151,20 +149,18 @@ export default function UtilidadesPage() {
       />
 
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <ZenttoDataGrid
-            gridId="nomina-utilidades-list"
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? r.fiscalYear}
-          showTotals
-          totalsLabel="Total"
-          enableClipboard
-          enableHeaderFilters
-          mobileVisibleFields={['fiscalYear', 'totalAmount']}
-          smExtraFields={['status', 'totalEmployees']}
+        <zentto-grid
+          ref={gridRef}
+          height="100%"
+          show-totals
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
         />
       </Paper>
 
@@ -216,18 +212,20 @@ export default function UtilidadesPage() {
                   <strong>Empleados:</strong> {summary.data?.totalEmployees ?? summaryRows.length}
                 </Typography>
               </Stack>
-              <ZenttoDataGrid
-                rows={summaryRows.map((r: Record<string, unknown>, i: number) => ({ ...r, _id: i }))}
-                columns={summaryColumns}
-                autoHeight
-                getRowId={(r) => r._id}
-                disableRowSelectionOnClick
-                pageSizeOptions={[25, 50]}
-                hideToolbar
-                mobileDetailDrawer={false}
-                density="compact"
-                mobileVisibleFields={['employeeName', 'amount']}
-              />
+              <Box sx={{ height: 400 }}>
+                <zentto-grid
+                  ref={summaryGridRef}
+                  height="100%"
+                  enable-toolbar
+                  enable-header-menu
+                  enable-header-filters
+                  enable-clipboard
+                  enable-quick-search
+                  enable-context-menu
+                  enable-status-bar
+                  enable-configurator
+                />
+              </Box>
             </Box>
           )}
         </DialogContent>
@@ -237,4 +235,12 @@ export default function UtilidadesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

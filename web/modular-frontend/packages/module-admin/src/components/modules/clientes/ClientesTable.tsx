@@ -1,20 +1,22 @@
 // components/modules/clientes/ClientesTable.tsx
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Typography } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import {
-  ZenttoDataGrid,
-  type ZenttoColDef,
-  buildCrudActionsColumn,
   DeleteDialog,
   ZenttoFilterPanel,
   type FilterFieldDef,
 } from "@zentto/shared-ui";
 import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
 import { Cliente } from "@zentto/shared-api/types";
+import type { ColumnDef } from "@zentto/datagrid-core";
+
+const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 const CLIENTE_FILTERS: FilterFieldDef[] = [
   {
@@ -29,10 +31,28 @@ const CLIENTE_FILTERS: FilterFieldDef[] = [
   },
 ];
 
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 100, sortable: true },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 200, sortable: true },
+  { field: "rif", header: "RIF", width: 130, sortable: true },
+  { field: "email", header: "Email", width: 200 },
+  { field: "telefono", header: "Telefono", width: 140 },
+  { field: "saldo", header: "Saldo", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "estado",
+    header: "Estado",
+    width: 110,
+    statusColors: { Activo: "success", Inactivo: "error", Suspendido: "warning" },
+    statusVariant: "outlined",
+  },
+];
+
 export default function ClientesTable() {
   const router = useRouter();
   const crud = useCrudGeneric<Cliente>("clientes");
   const { data, isLoading } = crud.list();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -40,6 +60,10 @@ export default function ClientesTable() {
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
 
   const { mutate: deleteCliente, isPending: isDeleting } = crud.delete("");
+
+  useEffect(() => {
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, []);
 
   // Filtrado local
   const filteredData = useMemo(() => {
@@ -61,33 +85,6 @@ export default function ClientesTable() {
     return filtered;
   }, [data, search, filterValues]);
 
-  const columns = useMemo<ZenttoColDef[]>(
-    () => [
-      { field: "codigo", headerName: "Codigo", width: 100, sortable: true },
-      { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200, sortable: true },
-      { field: "rif", headerName: "RIF", width: 130, sortable: true, mobileHide: true },
-      { field: "email", headerName: "Email", width: 200, mobileHide: true, tabletHide: true },
-      { field: "telefono", headerName: "Telefono", width: 140, mobileHide: true, tabletHide: true },
-      { field: "saldo", headerName: "Saldo", width: 140, type: "number", currency: true, aggregation: "sum", mobileHide: true },
-      {
-        field: "estado",
-        headerName: "Estado",
-        width: 110,
-        statusColors: { Activo: "success", Inactivo: "error", Suspendido: "warning" },
-        statusVariant: "outlined",
-      },
-      buildCrudActionsColumn({
-        onView: (row) => router.push(`/clientes/${row.codigo}`),
-        onEdit: (row) => router.push(`/clientes/${row.codigo}/edit`),
-        onDelete: (row) => {
-          setSelectedClient(row);
-          setDeleteOpen(true);
-        },
-      }),
-    ],
-    [router]
-  );
-
   const rows = useMemo(
     () =>
       filteredData.map((client: Cliente, idx: number) => ({
@@ -96,6 +93,43 @@ export default function ClientesTable() {
       })),
     [filteredData]
   );
+
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.actionButtons = [
+      { icon: SVG_VIEW, label: "Ver", action: "view" },
+      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
+    ];
+  }, [rows, isLoading, registered]);
+
+  // Listen for action-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === "view") router.push(`/clientes/${row.codigo}`);
+      if (action === "edit") router.push(`/clientes/${row.codigo}/edit`);
+      if (action === "delete") {
+        const client = filteredData.find((c: Cliente) => c.codigo === row.codigo);
+        if (client) {
+          setSelectedClient(client);
+          setDeleteOpen(true);
+        }
+      }
+    };
+
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, router, filteredData]);
 
   const handleDeleteConfirm = () => {
     if (selectedClient) {
@@ -130,22 +164,25 @@ export default function ClientesTable() {
         onSearchChange={setSearch}
       />
 
-      {/* ZenttoDataGrid */}
+      {/* zentto-grid */}
       <Box sx={{ flex: 1, minHeight: 400 }}>
-        <ZenttoDataGrid
-          columns={columns}
-          rows={rows}
-          loading={isLoading}
-          enableClipboard
-          enableHeaderFilters
-          showTotals
-          density="comfortable"
-          exportFilename="clientes"
-          gridId="clientes-table"
-          toolbarTitle={`${filteredData.length} clientes`}
-          pageSizeOptions={[10, 25, 50, 100]}
-          sx={{ height: "100%" }}
-        />
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="clientes"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
+        )}
       </Box>
 
       <DeleteDialog
@@ -160,4 +197,12 @@ export default function ClientesTable() {
       />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

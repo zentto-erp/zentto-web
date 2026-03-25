@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -16,14 +16,15 @@ import {
   Divider,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
-import { ContextActionHeader, ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
-const taxRateColumns: ZenttoColDef[] = [
-  { field: "code", headerName: "Código", flex: 1 },
-  { field: "name", headerName: "Nombre", flex: 2 },
-  { field: "rate", headerName: "Tasa %", flex: 1, type: "number", renderCell: (p) => `${p.value}%` },
-  { field: "surchargeRate", headerName: "Recargo %", flex: 1, type: "number", renderCell: (p) => `${p.value ?? 0}%` },
+const taxRateColumns: ColumnDef[] = [
+  { field: "code", header: "Código", flex: 1 },
+  { field: "name", header: "Nombre", flex: 2 },
+  { field: "rate", header: "Tasa %", flex: 1, type: "number", renderCell: (p) => `${p.value}%` },
+  { field: "surchargeRate", header: "Recargo %", flex: 1, type: "number", renderCell: (p) => `${p.value ?? 0}%` },
 ];
 
 export default function FiscalConfigPage() {
@@ -38,6 +39,13 @@ export default function FiscalConfigPage() {
 
   const [form, setForm] = useState<Record<string, any>>({});
   const [dirty, setDirty] = useState(false);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
 
   useEffect(() => {
     if (config.data) {
@@ -57,6 +65,23 @@ export default function FiscalConfigPage() {
   const handleSave = async () => {
     await saveMutation.mutateAsync({ ...form, countryCode });
   };
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -141,13 +166,16 @@ export default function FiscalConfigPage() {
             {taxRateOptions.length > 0 && (
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>Tasas de Impuesto ({countryCode})</Typography>
-                <ZenttoDataGrid
-                  rows={taxRateOptions}
-                  columns={taxRateColumns}
-                  getRowId={(row: any) => row.code}
-                  hideToolbar
-                  autoHeight
-                />
+                <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
               </Paper>
             )}
 
@@ -259,4 +287,12 @@ export default function FiscalConfigPage() {
       </Box>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
@@ -19,11 +19,11 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useBOMList,
   useRoutingList,
@@ -31,6 +31,7 @@ import {
   useWorkCentersList,
   type RoutingRow,
 } from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface RoutingFormData {
   routingId: number | null;
@@ -59,9 +60,16 @@ export default function RutasProduccionPage() {
   const [selectedBomId, setSelectedBomId] = useState<number | undefined>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<RoutingFormData>(emptyForm());
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   // Data queries
-  const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
   const { data: routingRows, isLoading: routingLoading } = useRoutingList(selectedBomId);
   const { data: wcData } = useWorkCentersList({ limit: 500 });
   const upsertRouting = useUpsertRouting(selectedBomId);
@@ -70,47 +78,47 @@ export default function RutasProduccionPage() {
   const workCenters = (wcData?.rows ?? []) as Record<string, unknown>[];
   const rows = (routingRows ?? []) as RoutingRow[];
 
-  const columns: ZenttoColDef[] = [
+  const columns: ColumnDef[] = [
     {
       field: "OperationNumber",
-      headerName: "N. Operacion",
+      header: "N. Operacion",
       width: 120,
       type: "number",
     },
     {
       field: "OperationName",
-      headerName: "Nombre",
+      header: "Nombre",
       flex: 1.2,
       minWidth: 160,
     },
     {
       field: "WorkCenterName",
-      headerName: "Centro de Trabajo",
+      header: "Centro de Trabajo",
       flex: 1,
       minWidth: 150,
     },
     {
       field: "SetupTime",
-      headerName: "Setup (min)",
+      header: "Setup (min)",
       width: 120,
       type: "number",
     },
     {
       field: "RunTime",
-      headerName: "Ejecucion (min)",
+      header: "Ejecucion (min)",
       width: 130,
       type: "number",
     },
     {
       field: "Description",
-      headerName: "Descripcion",
+      header: "Descripcion",
       flex: 1,
       minWidth: 150,
       renderCell: (params) => String(params.value ?? ""),
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 90,
       sortable: false,
       filterable: false,
@@ -170,6 +178,23 @@ export default function RutasProduccionPage() {
     form.operationNumber && form.operationName && form.workCenterId;
 
   const dialogTitle = form.routingId ? "Editar Operacion" : "Nueva Operacion";
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = columns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered, columns]);
+
 
   return (
     <Box sx={{ p: 2 }}>
@@ -232,22 +257,19 @@ export default function RutasProduccionPage() {
 
       {/* Grid */}
       {selectedBomId ? (
-        <ZenttoDataGrid
-        gridId="manufactura-rutas-produccion-list"
-          rows={rows}
-          columns={columns}
-          enableHeaderFilters
-          getRowId={(row) =>
-            row.RoutingId ?? row.Id ?? row.OperationNumber ?? Math.random()
-          }
-          loading={routingLoading}
-          disableRowSelectionOnClick
-          autoHeight
-          pageSizeOptions={[10, 25, 50]}
-          sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-          mobileVisibleFields={["OperationName", "WorkCenterName"]}
-          smExtraFields={["OperationNumber", "RunTime"]}
-        />
+        <zentto-grid
+        ref={gridRef}
+        export-filename="manufactura-rutas-produccion-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
       ) : (
         <Box
           sx={{
@@ -401,4 +423,12 @@ export default function RutasProduccionPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

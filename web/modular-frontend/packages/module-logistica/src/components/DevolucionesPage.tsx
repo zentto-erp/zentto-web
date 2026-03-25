@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -15,10 +15,11 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import { ZenttoDataGrid, type ZenttoColDef, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -27,6 +28,7 @@ import {
   useCreateReturn,
   type ReturnFilter,
 } from "../hooks/useLogistica";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 interface ReturnLine {
   productCode: string;
@@ -94,6 +96,8 @@ export default function DevolucionesPage() {
   const [supplierId, setSupplierId] = useState("");
   const [returnReason, setReturnReason] = useState("");
   const [lines, setLines] = useState<ReturnLine[]>([emptyLine()]);
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -106,7 +110,12 @@ export default function DevolucionesPage() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  const { data, isLoading } = useReturnsList({
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data, isLoading } = useReturnsList({
     ...filter,
     search: search || undefined,
     page: paginationModel.page + 1,
@@ -117,23 +126,32 @@ export default function DevolucionesPage() {
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
   const total = data?.total ?? 0;
 
-  const columns: ZenttoColDef[] = [
-    { field: "ReturnNumber", headerName: "N. Devolucion", flex: 1, minWidth: 130 },
-    { field: "SupplierName", headerName: "Proveedor", flex: 1.5, minWidth: 180 },
+  const columns: ColumnDef[] = [
+    { field: "ReturnNumber", header: "N. Devolucion", flex: 1, minWidth: 130 },
+    { field: "SupplierName", header: "Proveedor", flex: 1.5, minWidth: 180 },
     {
       field: "ReturnDate",
-      headerName: "Fecha",
+      header: "Fecha",
       flex: 1,
       minWidth: 120,
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
-    { field: "Reason", headerName: "Motivo", flex: 1.5, minWidth: 180 },
+    { field: "Reason", header: "Motivo", flex: 1.5, minWidth: 180 },
     {
       field: "Status",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
       renderCell: (params) => {
         const status = String(params.value ?? "DRAFT");
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <Chip
             label={statusLabels[status] ?? status}
@@ -146,7 +164,7 @@ export default function DevolucionesPage() {
     },
     {
       field: "actions",
-      headerName: "Acciones",
+      header: "Acciones",
       width: 80,
       sortable: false,
       filterable: false,
@@ -235,25 +253,19 @@ export default function DevolucionesPage() {
       />
 
       {/* DataGrid */}
-      <ZenttoDataGrid
-        gridId="logistica-devoluciones-list"
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.ReturnId ?? row.Id ?? row.ReturnNumber ?? Math.random()}
-        rowCount={total}
-        loading={isLoading}
-        enableHeaderFilters
-        paginationMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        autoHeight
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-        mobileVisibleFields={['ReturnNumber', 'SupplierName']}
-        smExtraFields={['Status', 'ReturnDate']}
-      />
+      <zentto-grid
+        ref={gridRef}
+        export-filename="logistica-devoluciones-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {/* Dialog: Nueva Devolucion */}
       <Dialog
@@ -399,4 +411,12 @@ export default function DevolucionesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

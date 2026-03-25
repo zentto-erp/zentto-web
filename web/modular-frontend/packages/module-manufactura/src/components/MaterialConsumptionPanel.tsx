@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -8,12 +8,13 @@ import {
   LinearProgress,
   TextField,
   Typography,
+  CircularProgress,
 } from "@mui/material";
-import { ZenttoDataGrid, type ZenttoColDef } from "@zentto/shared-ui";
 import {
   useWorkOrderDetail,
   useConsumeMaterial,
 } from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Props ──────────────────────────────────────────────── */
 
@@ -24,12 +25,19 @@ interface MaterialConsumptionPanelProps {
 /* ─── Component ──────────────────────────────────────────── */
 
 export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsumptionPanelProps) {
-  const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
+  
+  useEffect(() => {
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, []);
+
+const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
   const consumeMaterial = useConsumeMaterial(workOrderId);
 
   const [quantities, setQuantities] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
   const order = (detail ?? {}) as Record<string, unknown>;
   const materials = (Array.isArray(order.Materials) ? order.Materials : []) as Record<string, unknown>[];
@@ -55,31 +63,40 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
 
   /* ─── Columns ──────────────────────────────────────────── */
 
-  const columns: ZenttoColDef[] = [
-    { field: "ProductCode", headerName: "Codigo", flex: 0.7, minWidth: 90 },
-    { field: "ProductName", headerName: "Material", flex: 1.3, minWidth: 140 },
+  const columns: ColumnDef[] = [
+    { field: "ProductCode", header: "Codigo", flex: 0.7, minWidth: 90 },
+    { field: "ProductName", header: "Material", flex: 1.3, minWidth: 140 },
     {
       field: "PlannedQuantity",
-      headerName: "Requerida",
+      header: "Requerida",
       width: 100,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "ConsumedQuantity",
-      headerName: "Consumida",
+      header: "Consumida",
       width: 100,
       type: "number",
       aggregation: "sum",
     },
     {
       field: "Pending",
-      headerName: "Pendiente",
+      header: "Pendiente",
       width: 100,
       type: "number",
       aggregation: "sum",
       renderCell: (params) => {
         const val = Number(params.value ?? 0);
+        // Bind data to zentto-grid web component
+        useEffect(() => {
+          const el = gridRef.current;
+          if (!el || !registered) return;
+          el.columns = columns;
+          el.rows = rows;
+          el.loading = isLoading;
+        }, [rows, isLoading, registered, columns]);
+
         return (
           <Typography
             variant="body2"
@@ -92,7 +109,7 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
     },
     ...(canConsume ? [{
       field: "consumeInput",
-      headerName: "A Consumir",
+      header: "A Consumir",
       width: 120,
       sortable: false,
       filterable: false,
@@ -156,19 +173,17 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {successMsg && <Alert severity="success" sx={{ mb: 2 }}>{successMsg}</Alert>}
 
-      <ZenttoDataGrid
-        rows={rows}
-        columns={columns}
-        getRowId={(row) => row.id}
-        autoHeight
-        disableRowSelectionOnClick
-        hideFooter={rows.length <= 10}
-        pageSizeOptions={[10, 25]}
-        enableClipboard
-        sx={{ bgcolor: "background.paper", borderRadius: 1 }}
-        mobileVisibleFields={["ProductCode", "Pending"]}
-        smExtraFields={["ProductName", "ConsumedQuantity"]}
-      />
+      <zentto-grid
+        ref={gridRef}
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
 
       {rows.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
@@ -189,4 +204,12 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
       )}
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }
