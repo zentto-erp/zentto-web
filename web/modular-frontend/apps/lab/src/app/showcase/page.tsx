@@ -520,7 +520,6 @@ export default function ShowcasePage() {
         enable-range-selection
         enable-paste
         enable-editing
-        enable-create
       ></zentto-grid>
     </Box>
   );
