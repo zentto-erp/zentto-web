@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 interface OrderRow {
   orderNumber: string;
@@ -36,6 +35,16 @@ const COLUMNS: ColumnDef[] = [
     statusColors: { S: "success", N: "warning" },
     statusVariant: "outlined",
   },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver pedido", action: "view", color: "#6b7280" },
+    ],
+  },
 ];
 
 export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
@@ -57,9 +66,6 @@ export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
     el.columns = COLUMNS;
     el.rows = rows;
     el.loading = !!loading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver pedido", action: "view", color: "#6b7280" },
-    ];
   }, [rows, loading, registered]);
 
   useEffect(() => {

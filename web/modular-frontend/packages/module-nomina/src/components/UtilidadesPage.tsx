@@ -34,6 +34,13 @@ const COLUMNS: ColumnDef[] = [
     field: "status", header: "Estado", width: 120,
     statusColors: { APROBADO: "success", PROCESADO: "info", PENDIENTE: "warning" },
   },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver resumen", action: "view" },
+      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
+    ],
+  },
 ];
 
 const SUMMARY_COLUMNS: ColumnDef[] = [
@@ -45,7 +52,6 @@ const SUMMARY_COLUMNS: ColumnDef[] = [
 ];
 
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
 
 export default function UtilidadesPage() {
@@ -76,10 +82,6 @@ export default function UtilidadesPage() {
     el.rows = rows;
     el.loading = isLoading;
     el.getRowId = (r: any) => r.id ?? r.fiscalYear;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver resumen", action: "view" },
-      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
-    ];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

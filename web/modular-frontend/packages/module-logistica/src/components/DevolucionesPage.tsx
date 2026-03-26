@@ -15,11 +15,9 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
-  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -30,9 +28,6 @@ import {
 } from "../hooks/useLogistica";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 interface ReturnLine {
   productCode: string;
@@ -68,29 +63,12 @@ const emptyLine = (): ReturnLine => ({
   reason: "",
 });
 
-const DEVOLUCIONES_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "DRAFT", label: "Borrador" },
-      { value: "PENDING", label: "Pendiente" },
-      { value: "APPROVED", label: "Aprobada" },
-      { value: "COMPLETE", label: "Completa" },
-      { value: "REJECTED", label: "Rechazada" },
-      { value: "VOIDED", label: "Anulada" },
-    ],
-  },
-  { field: "from", label: "Fecha desde", type: "date" },
-  { field: "to", label: "Fecha hasta", type: "date" },
-];
 
 export default function DevolucionesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [filter, setFilter] = useState<ReturnFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -103,25 +81,12 @@ export default function DevolucionesPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
 
-  const handleFilterChange = (vals: Record<string, string>) => {
-    setFilterValues(vals);
-    setFilter((f) => ({
-      ...f,
-      status: vals.estado || undefined,
-      fechaDesde: vals.from || undefined,
-      fechaHasta: vals.to || undefined,
-    }));
-    setPaginationModel((p) => ({ ...p, page: 0 }));
-  };
-
-  
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
   }, []);
 
 const { data, isLoading } = useReturnsList({
     ...filter,
-    search: search || undefined,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
@@ -160,22 +125,14 @@ const { data, isLoading } = useReturnsList({
     {
       field: "actions",
       header: "Acciones",
-      width: 80,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Tooltip title="Ver detalle">
-          <IconButton
-            size="small"
-            onClick={() => {
-              setSelectedRow(params.row);
-              setDetailOpen(true);
-            }}
-          >
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      ),
+      type: "actions",
+      width: 130,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver", action: "view", color: "#6b7280" },
+        { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+        { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+      ],
     },
   ];
 
@@ -219,11 +176,6 @@ const { data, isLoading } = useReturnsList({
     el.columns = columns;
     el.rows = rows;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#6b7280" },
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
-    ];
   }, [rows, isLoading, registered, columns]);
 
   useEffect(() => {
@@ -240,7 +192,7 @@ const { data, isLoading } = useReturnsList({
   }, [registered, rows]);
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
       <Box sx={{
         display: "flex",
@@ -264,30 +216,24 @@ const { data, isLoading } = useReturnsList({
         </Button>
       </Box>
 
-      {/* Filter */}
-      <ZenttoFilterPanel
-        filters={DEVOLUCIONES_FILTERS}
-        values={filterValues}
-        onChange={handleFilterChange}
-        searchPlaceholder="Buscar devoluciones..."
-        searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
-      />
-
       {/* DataGrid */}
-      <zentto-grid
-        ref={gridRef}
-        export-filename="logistica-devoluciones-list"
-        height="400px"
-        enable-toolbar
-        enable-header-menu
-        enable-header-filters
-        enable-clipboard
-        enable-quick-search
-        enable-context-menu
-        enable-status-bar
-        enable-configurator
-      ></zentto-grid>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid
+          ref={gridRef}
+          export-filename="logistica-devoluciones-list"
+          height="calc(100vh - 200px)"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+          enable-grouping
+          enable-pivot
+        ></zentto-grid>
+      </Box>
 
       {/* Dialog: Nueva Devolucion */}
       <Dialog

@@ -11,8 +11,6 @@ import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly } from "@zentto/shared-api";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 const ABONO_FILTERS: FilterFieldDef[] = [
   { field: "cliente", label: "Cliente", type: "text", placeholder: "Nombre del cliente..." },
@@ -82,6 +80,13 @@ export default function AbonosTable() {
       { field: "numeroFactura", header: "Factura", width: 140, sortable: true },
       { field: "fecha", header: "Fecha", width: 120, type: "date", sortable: true },
       { field: "monto", header: "Monto", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+      {
+        field: "actions", header: "Acciones", type: "actions" as any, width: 100, pin: "right",
+        actions: [
+          { icon: "view", label: "Ver", action: "view" },
+          { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+        ],
+      } as ColumnDef,
     ],
     []
   );
@@ -103,10 +108,6 @@ export default function AbonosTable() {
     el.columns = columns;
     el.rows = rows;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view" },
-      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
-    ];
   }, [columns, rows, isLoading, registered]);
 
   // Listen for action-click events

@@ -26,10 +26,18 @@ const COLUMNS: ColumnDef[] = [
   { field: "TotalDays", header: "Días", width: 70, type: "number" },
   { field: "IsPartial", header: "Parcial", width: 80 },
   { field: "Status", header: "Estado", width: 120, statusColors: { PENDIENTE: "warning", APROBADA: "success", RECHAZADA: "error", PROCESADA: "info", CANCELADA: "default" } },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 160, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view" },
+      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
+      { icon: SVG_REJECT, label: "Rechazar", action: "reject", color: "#dc2626" },
+      { icon: SVG_PAY, label: "Generar pago", action: "pay", color: "#1976d2" },
+    ],
+  },
 ];
 
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
 const SVG_REJECT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
 const SVG_PAY = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
@@ -69,12 +77,6 @@ export default function VacacionesSolicitudesPage() {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => r.RequestId ?? r.requestId ?? Math.random();
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver detalle", action: "view" },
-      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
-      { icon: SVG_REJECT, label: "Rechazar", action: "reject", color: "#dc2626" },
-      { icon: SVG_PAY, label: "Generar pago", action: "pay", color: "#1976d2" },
-    ];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

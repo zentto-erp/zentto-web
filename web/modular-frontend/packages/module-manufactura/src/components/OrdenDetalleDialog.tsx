@@ -128,23 +128,6 @@ function ConsumeMaterialDialog({ open, onClose, workOrderId }: ConsumeMaterialDi
     onClose();
   };
 
-  // Bind data to zentto-grid web component
-
-  useEffect(() => {
-
-    const el = gridRef.current;
-
-    if (!el || !registered) return;
-
-    el.columns = columns;
-
-    el.rows = rows;
-
-    el.loading = isLoading;
-
-  }, [rows, isLoading, registered, columns]);
-
-
   return (
     <Dialog
       open={open}
@@ -407,7 +390,8 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
   const [tabIndex, setTabIndex] = useState(0);
   const [consumeOpen, setConsumeOpen] = useState(false);
   const [outputOpen, setOutputOpen] = useState(false);
-  const gridRef = useRef<any>(null);
+  const materialsGridRef = useRef<any>(null);
+  const outputsGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
 
   
@@ -480,6 +464,23 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined)
       valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
     },
   ];
+
+  // Bind data to zentto-grid web components
+  useEffect(() => {
+    const el = materialsGridRef.current;
+    if (!el || !registered) return;
+    el.columns = materialColumns;
+    el.rows = materials.map((m, i) => ({ id: i, ...m }));
+    el.loading = isLoading;
+  }, [materials, isLoading, registered]);
+
+  useEffect(() => {
+    const el = outputsGridRef.current;
+    if (!el || !registered) return;
+    el.columns = outputColumns;
+    el.rows = outputs.map((o, i) => ({ id: i, ...o }));
+    el.loading = isLoading;
+  }, [outputs, isLoading, registered]);
 
   // ── Action handlers ─────────────────────────────────────────
 
@@ -598,7 +599,7 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined)
                 </Button>
               </Box>
               <zentto-grid
-        ref={gridRef}
+        ref={materialsGridRef}
         height="400px"
         enable-toolbar
         enable-header-menu
@@ -636,7 +637,7 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined)
                 </Button>
               </Box>
               <zentto-grid
-        ref={gridRef}
+        ref={outputsGridRef}
         height="400px"
         enable-toolbar
         enable-header-menu

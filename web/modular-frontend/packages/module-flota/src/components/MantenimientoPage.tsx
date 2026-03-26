@@ -11,22 +11,16 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Stack,
   TextField,
   Toolbar,
   Typography,
-  Tooltip,
   useMediaQuery,
   useTheme,
-  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import {  DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -38,9 +32,6 @@ import {
 } from "../hooks/useFlota";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 const statusColors: Record<string, "info" | "warning" | "success" | "error" | "default"> = {
   SCHEDULED: "info",
@@ -56,26 +47,12 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
-const MANTENIMIENTO_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "SCHEDULED", label: "Programado" },
-      { value: "IN_PROGRESS", label: "En Progreso" },
-      { value: "COMPLETED", label: "Completado" },
-      { value: "CANCELLED", label: "Cancelado" },
-    ],
-  },
-  { field: "from", label: "Fecha desde", type: "date" },
-  { field: "to", label: "Fecha hasta", type: "date" },
-];
 
 export default function MantenimientoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [filter, setFilter] = useState<MaintenanceFilter>({ page: 1, limit: 25 });
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -150,57 +127,14 @@ const { data, isLoading } = useMaintenanceOrdersList({
     {
       field: "actions",
       header: "Acciones",
-      width: 140,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => {
-        const status = String(params.row.Status ?? "");
-        const id = Number(params.row.MaintenanceOrderId ?? params.row.Id);
-        return (
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Ver detalle">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSelectedRow(params.row);
-                  setDetailOpen(true);
-                }}
-              >
-                <VisibilityIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            {(status === "SCHEDULED" || status === "IN_PROGRESS") && (
-              <>
-                <Tooltip title="Completar">
-                  <IconButton
-                    size="small"
-                    color="success"
-                    onClick={() => {
-                      setSelectedRow(params.row);
-                      setActualCost(String(params.row.EstimatedCost ?? ""));
-                      setCompletedDate("");
-                      setCompleteOpen(true);
-                    }}
-                  >
-                    <CheckCircleIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Cancelar">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => {
-                      if (id) cancelOrder.mutate(id);
-                    }}
-                  >
-                    <CancelIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
-          </Stack>
-        );
-      },
+      type: "actions",
+      width: 130,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver", action: "view", color: "#6b7280" },
+        { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+        { icon: "delete", label: "Cancelar", action: "delete", color: "#dc2626" },
+      ],
     },
   ];
 
@@ -256,11 +190,6 @@ const { data, isLoading } = useMaintenanceOrdersList({
     el.columns = columns;
     el.rows = rows;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#6b7280" },
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-      { icon: SVG_DELETE, label: "Cancelar", action: "delete", color: "#dc2626" },
-    ];
   }, [rows, isLoading, registered, columns]);
 
   useEffect(() => {
@@ -302,30 +231,11 @@ const { data, isLoading } = useMaintenanceOrdersList({
         </Button>
       </Box>
 
-      {/* Filter */}
-      <ZenttoFilterPanel
-        filters={MANTENIMIENTO_FILTERS}
-        values={filterValues}
-        onChange={(vals) => {
-          setFilterValues(vals);
-          setFilter((f) => ({
-            ...f,
-            status: vals.estado || undefined,
-            fechaDesde: vals.from || undefined,
-            fechaHasta: vals.to || undefined,
-          }));
-          setPaginationModel((p) => ({ ...p, page: 0 }));
-        }}
-        searchPlaceholder="Buscar ordenes de mantenimiento..."
-        searchValue=""
-        onSearchChange={() => {}}
-      />
-
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
         export-filename="flota-mantenimiento-list"
-        height="400px"
+        height="calc(100vh - 200px)"
         enable-toolbar
         enable-header-menu
         enable-header-filters
@@ -334,6 +244,8 @@ const { data, isLoading } = useMaintenanceOrdersList({
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-grouping
+        enable-pivot
       ></zentto-grid>
 
       {/* Dialog: Nueva Orden */}

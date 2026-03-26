@@ -10,9 +10,6 @@ import { useFacturasList, useDeleteFactura, useDetalleFactura } from "../../hook
 import { useTimezone } from "../../hooks/useTimezone";
 
 // ─── SVG Icons ───────────────────────────────────────
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 // ─── Columns ─────────────────────────────────────────
 const COLUMNS: ColumnDef[] = [
@@ -24,6 +21,14 @@ const COLUMNS: ColumnDef[] = [
   { field: 'totalFactura', header: 'Total', width: 140, type: 'number', currency: 'VES', aggregation: 'sum' },
   { field: 'estado', header: 'Estado', width: 120, sortable: true, groupable: true,
     statusColors: { Pagada: 'success', Pendiente: 'warning', Emitida: 'info', Anulada: 'error' }, statusVariant: 'outlined' },
+  {
+    field: 'actions', header: 'Acciones', type: 'actions', width: 130, pin: 'right',
+    actions: [
+      { icon: 'view', label: 'Ver', action: 'view' },
+      { icon: 'edit', label: 'Editar', action: 'edit', color: '#e67e22' },
+      { icon: 'delete', label: 'Anular', action: 'delete', color: '#dc2626' },
+    ],
+  },
 ];
 
 // Detail columns for master-detail (invoice line items)
@@ -115,11 +120,6 @@ export default function FacturasTable() {
     el.loading = isLoading;
     el.filterPanel = FILTER_PANEL;
     el.detailRenderer = detailRenderer;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
-      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
-      { icon: SVG_DELETE, label: 'Anular', action: 'delete', color: '#dc2626' },
-    ];
   }, [rows, isLoading, registered]);
 
   // Listen for action clicks

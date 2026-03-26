@@ -66,8 +66,6 @@ function mapColumnType(sqlType?: string): ColumnDef['type'] {
   return undefined;
 }
 
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const gridRef = useRef<any>(null);
@@ -114,6 +112,17 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
       const meta = metadataByColumn.get(f.name.toLowerCase());
       return { field: f.name, header: f.label || prettifyLabel(f.name), flex: 1, minWidth: 160, type: mapColumnType(meta?.dataType), sortable: true } as ColumnDef;
     }),
+    {
+      field: 'actions',
+      header: 'Acciones',
+      type: 'actions',
+      width: 100,
+      pin: 'right',
+      actions: [
+        { icon: 'edit', label: 'Editar', action: 'edit', color: '#1976d2' },
+        { icon: 'delete', label: 'Eliminar', action: 'delete', color: '#dc2626' },
+      ],
+    } as ColumnDef,
   ], [keyField, metadataByColumn, resolvedFields]);
 
   useEffect(() => { import('@zentto/datagrid').then(() => setRegistered(true)); }, []);
@@ -123,10 +132,6 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     el.columns = gridColumns; el.rows = gridRows;
     el.loading = listQuery.isLoading || metadataQuery.isLoading;
     el.getRowId = (row: any) => String(resolveRowKey(row as CatalogRow, keyField) ?? row.id ?? crypto.randomUUID());
-    el.actionButtons = [
-      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#1976d2' },
-      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
-    ];
   }, [gridColumns, gridRows, listQuery.isLoading, metadataQuery.isLoading, registered, keyField]);
 
   const createMutation = useMutation({

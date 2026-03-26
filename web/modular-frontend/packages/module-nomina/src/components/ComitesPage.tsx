@@ -30,10 +30,15 @@ const COLUMNS: ColumnDef[] = [
   { field: "FormationDate", header: "Fecha Inicio", width: 120 },
   { field: "ActiveMemberCount", header: "Miembros", width: 100, type: "number" },
   { field: "IsActive", header: "Estado", width: 110, statusColors: { true: "success", false: "default" } },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view" },
+    ],
+  },
 ];
 
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 export default function ComitesPage() {
   const gridRef = useRef<any>(null);
@@ -68,7 +73,6 @@ export default function ComitesPage() {
     el.rows = rows;
     el.loading = isLoading;
     el.getRowId = (r: any) => r.SafetyCommitteeId ?? r.CommitteeName;
-    el.actionButtons = [{ icon: SVG_VIEW, label: "Ver detalle", action: "view" }];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Alert,
   Box,
@@ -43,15 +43,6 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
-  // Bind data to zentto-grid web component
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el || !registered) return;
-    el.columns = columns;
-    el.rows = rows;
-    el.loading = isLoading;
-  }, [rows, isLoading, registered, columns]);
-
   return ((current - previous) / previous) * 100;
 }
 
@@ -209,14 +200,17 @@ const recentBomCols: ColumnDef[] = [
 export default function ManufacturaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
+  const bomGridRef = useRef<any>(null);
+  const ordersGridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  // Data hooks
-  
+  // Register zentto-grid web component
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
   }, []);
 
-const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
+  // Data hooks
+  const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
   const { data: prodByProductRaw, isLoading: loadingProd } = useProductionByProduct();
   const { data: ordersByStatusRaw, isLoading: loadingStatus } = useOrdersByStatus();
   const { data: recentOrdersRaw, isLoading: loadingRecent } = useRecentOrders();
@@ -293,6 +287,23 @@ const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
 
   const recentRows = recentOrders.map((o, i) => ({ id: o.WorkOrderId ?? i, ...o }));
   const bomRows = recentBoms.map((b, i) => ({ id: (b.BOMId as number) ?? i, ...b }));
+
+  // Bind data to zentto-grid web components
+  useEffect(() => {
+    const el = bomGridRef.current;
+    if (!el || !registered) return;
+    el.columns = recentBomCols;
+    el.rows = bomRows;
+    el.loading = loadingBom;
+  }, [bomRows, loadingBom, registered]);
+
+  useEffect(() => {
+    const el = ordersGridRef.current;
+    if (!el || !registered) return;
+    el.columns = recentOrderCols;
+    el.rows = recentRows;
+    el.loading = loadingRecent;
+  }, [recentRows, loadingRecent, registered]);
 
   // Pie data
   const pieData = ordersByStatus.map((d, idx) => ({
@@ -454,7 +465,7 @@ const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
               <Skeleton variant="rectangular" height={200} />
             ) : bomRows.length > 0 ? (
               <zentto-grid
-        ref={gridRef}
+        ref={bomGridRef}
         height="400px"
         enable-toolbar
         enable-header-menu
@@ -482,7 +493,7 @@ const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
               <Skeleton variant="rectangular" height={200} />
             ) : recentRows.length > 0 ? (
               <zentto-grid
-        ref={gridRef}
+        ref={ordersGridRef}
         height="400px"
         enable-toolbar
         enable-header-menu

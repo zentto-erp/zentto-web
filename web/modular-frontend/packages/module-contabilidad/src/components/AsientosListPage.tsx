@@ -59,6 +59,16 @@ const COLUMNS: ColumnDef[] = [
     statusColors: { APPROVED: "success", VOIDED: "error", DRAFT: "default", APROBADO: "success", ANULADO: "error", BORRADOR: "default" },
     statusVariant: "outlined",
   },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view" },
+    ],
+  },
 ];
 
 const DETAIL_COLUMNS: ColumnDef[] = [
@@ -101,9 +111,6 @@ export default function AsientosListPage() {
     // Master-detail: show journal entry lines
     el.detailColumns = DETAIL_COLUMNS;
     el.detailRowsAccessor = (row: any) => (row.lineas || row.detalle || []).map((d: any, i: number) => ({ ...d, id: i }));
-    el.actionButtons = [
-      { icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>', label: 'Ver detalle', action: 'view' },
-    ];
   }, [rows, isLoading, registered]);
 
   // Listen for action clicks

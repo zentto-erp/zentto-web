@@ -33,7 +33,6 @@ import {
     useUpsertRecetaItemMutation,
 } from '@/hooks/useRestauranteAdmin';
 
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
 export default function AdminRecetasPage() {
     const gridRef = useRef<any>(null);
@@ -66,6 +65,12 @@ export default function AdminRecetasPage() {
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'nombre', header: 'Plato o Bebida', flex: 1, minWidth: 280, sortable: true },
         { field: 'recetaEstado', header: 'Ingredientes / Insumos Asociados', width: 260, sortable: true },
+        {
+            field: 'actions', header: 'Acciones', type: 'actions', width: 80, pin: 'right',
+            actions: [
+                { icon: 'edit', label: 'Editar receta', action: 'edit', color: '#1976d2' },
+            ],
+        },
     ], []);
 
     const rows = useMemo(() =>
@@ -83,9 +88,6 @@ export default function AdminRecetasPage() {
         el.columns = columns;
         el.rows = rows;
         el.loading = loading;
-        el.actionButtons = [
-            { icon: SVG_EDIT, label: "Editar receta", action: "edit", color: "#1976d2" },
-        ];
     }, [rows, loading, registered, columns]);
 
     useEffect(() => {

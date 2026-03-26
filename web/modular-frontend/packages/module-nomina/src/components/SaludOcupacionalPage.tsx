@@ -26,11 +26,16 @@ const COLUMNS: ColumnDef[] = [
   { field: "Severity", header: "Severidad", width: 120, statusColors: { LEVE: "success", MODERADO: "warning", GRAVE: "error", FATAL: "error" } },
   { field: "DaysLost", header: "Días Perdidos", width: 120, type: "number" },
   { field: "Status", header: "Estado", width: 140, statusColors: { OPEN: "warning", REPORTED: "info", INVESTIGATING: "info", CLOSED: "default" } },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+    ],
+  },
 ];
 
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
 export default function SaludOcupacionalPage() {
   const gridRef = useRef<any>(null);
@@ -54,10 +59,6 @@ export default function SaludOcupacionalPage() {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => r.OccupationalHealthId ?? `${r.EmployeeCode}-${r.OccurrenceDate}`;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver detalle", action: "view" },
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-    ];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

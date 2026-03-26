@@ -22,7 +22,6 @@ import { useAuth } from "@zentto/shared-auth";
 
 type ConciliacionRow = Record<string, any>;
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_LOCK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 
 export default function ConciliacionBancariaPage() {
@@ -78,6 +77,13 @@ export default function ConciliacionBancariaPage() {
     { field: "Saldo_Final_Sistema", header: "Saldo Sistema", width: 140, type: "number" },
     { field: "Diferencia", header: "Diferencia", width: 130, type: "number" },
     { field: "Estado", header: "Estado", width: 130, statusColors: { ABIERTA: "warning", EN_PROCESO: "info", CERRADA: "success", ANULADA: "error" } },
+    {
+      field: "actions", header: "Acciones", type: "actions" as any, width: 100, pin: "right",
+      actions: [
+        { icon: "view", label: "Ver", action: "view" },
+        { icon: SVG_LOCK, label: "Cerrar", action: "close", color: "#ed6c02" },
+      ],
+    } as ColumnDef,
   ], []);
 
   const COLS_MOV: ColumnDef[] = [
@@ -103,10 +109,6 @@ export default function ConciliacionBancariaPage() {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => r.ID ?? Math.random();
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view" },
-      { icon: SVG_LOCK, label: "Cerrar", action: "close", color: "#ed6c02" },
-    ];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

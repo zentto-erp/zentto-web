@@ -24,8 +24,6 @@ import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly } from "@zentto/shared-api";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 // ============ Master-detail: renglones de factura ============
 const DETAIL_COLUMNS: ColumnDef[] = [
@@ -76,6 +74,13 @@ const COLUMNS: ColumnDef[] = [
     statusColors: { Pagada: "success", Pendiente: "warning", Emitida: "info", Anulada: "error", Cancelada: "default" },
     statusVariant: "outlined",
   },
+  {
+    field: "actions", header: "Acciones", type: "actions" as any, width: 100, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "delete", label: "Anular", action: "delete", color: "#dc2626" },
+    ],
+  } as ColumnDef,
 ];
 
 export default function FacturasTable() {
@@ -160,10 +165,6 @@ export default function FacturasTable() {
       // For now, return empty — master-detail requires items on the row
       return (row._detailRows as GridRow[]) || [];
     };
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view" },
-      { icon: SVG_DELETE, label: "Anular", action: "delete", color: "#dc2626" },
-    ];
   }, [rows, isLoading, registered]);
 
   // Listen for action-click events

@@ -37,6 +37,13 @@ const FIL_COLUMNS: ColumnDef[] = [
   { field: "employerAmount", header: "Monto Patronal", width: 140, type: "number", aggregation: "sum" },
   { field: "totalAmount", header: "Total", width: 130, type: "number", aggregation: "sum" },
   { field: "status", header: "Estado", width: 130, statusColors: { PRESENTADA: "success", GENERADA: "info", PENDIENTE: "warning" } },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: SVG_PUBLISH, label: "Generar declaracion", action: "generate", color: "#1976d2" },
+      { icon: SVG_CHECK, label: "Marcar presentada", action: "mark", color: "#2e7d32" },
+    ],
+  },
 ];
 
 
@@ -77,10 +84,6 @@ export default function ObligacionesPage() {
     const el = filGridRef.current; if (!el || !registered) return;
     el.columns = FIL_COLUMNS; el.rows = filRows; el.loading = filLoading;
     el.getRowId = (r: any) => r.id ?? `${r.obligationCode}-${r.period}`;
-    el.actionButtons = [
-      { icon: SVG_PUBLISH, label: "Generar declaracion", action: "generate", color: "#1976d2" },
-      { icon: SVG_CHECK, label: "Marcar presentada", action: "mark", color: "#2e7d32" },
-    ];
   }, [filRows, filLoading, registered]);
 
   useEffect(() => {

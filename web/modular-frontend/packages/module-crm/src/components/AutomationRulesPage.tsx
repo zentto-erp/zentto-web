@@ -11,16 +11,12 @@ import {
   TextField,
   MenuItem,
   FormControlLabel,
-  Alert,
-  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
-import { 
+import {
   FormDialog,
-  DeleteDialog,
-  ZenttoFilterPanel,
-  type FilterFieldDef } from "@zentto/shared-ui";
+  DeleteDialog } from "@zentto/shared-ui";
 import {
   useAutomationRules,
   useUpsertRule,
@@ -30,8 +26,6 @@ import {
 import { usePipelineStages } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 /* ─── Trigger / Action labels & colors ───────────────────────── */
 
@@ -113,16 +107,6 @@ const emptyForm: RuleForm = {
   SortOrder: 0,
 };
 
-const AUTOMATION_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "true", label: "Activas" },
-      { value: "false", label: "Inactivas" },
-    ],
-  },
-];
-
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function AutomationRulesPage() {
@@ -140,19 +124,7 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
     return Array.isArray(rulesRaw) ? rulesRaw : (rulesRaw as any)?.data ?? [];
   }, [rulesRaw]);
 
-  const rules = useMemo(() => {
-    let filtered = allRules;
-    if (filterValues.estado === "true") filtered = filtered.filter((r) => r.IsActive);
-    if (filterValues.estado === "false") filtered = filtered.filter((r) => !r.IsActive);
-    if (searchText) {
-      const q = searchText.toLowerCase();
-      filtered = filtered.filter((r) => r.RuleName.toLowerCase().includes(q));
-    }
-    return filtered;
-  }, [allRules, filterValues, searchText]);
-
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const [searchText, setSearchText] = useState("");
+  const rules = allRules;
 
   // Dialog state
   const [formOpen, setFormOpen] = useState(false);
@@ -290,23 +262,14 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
     },
     {
       field: "actions",
-      header: "",
-      width: 80,
-      sortable: false,
-      filterable: false,
-      renderCell: (params: any) => (
-        <Button
-          size="small"
-          color="error"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteTarget(params.row);
-            setDeleteOpen(true);
-          }}
-        >
-          Eliminar
-        </Button>
-      ),
+      header: "Acciones",
+      type: "actions",
+      width: 100,
+      pin: "right",
+      actions: [
+        { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+        { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+      ],
     },
   ];
 
@@ -471,10 +434,6 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
     el.columns = columns;
     el.rows = rules;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
-    ];
   }, [rules, isLoading, registered, columns]);
 
   useEffect(() => {
@@ -492,7 +451,7 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
   /* ─── Render ──────────────────────────────────────────────── */
 
   return (
-    <Box>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Box
         sx={{
           display: "flex",
@@ -517,29 +476,23 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
         </Button>
       </Box>
 
-      <ZenttoFilterPanel
-        filters={AUTOMATION_FILTERS}
-        values={filterValues}
-        onChange={setFilterValues}
-        searchPlaceholder="Buscar reglas..."
-        searchValue={searchText}
-        onSearchChange={setSearchText}
-      />
-
-      <zentto-grid
-        ref={gridRef}
-        export-filename="crm-automation-rules-list"
-        height="400px"
-        enable-toolbar
-        enable-header-menu
-        enable-header-filters
-        enable-clipboard
-        enable-quick-search
-        enable-context-menu
-        enable-status-bar
-        enable-configurator
-        enable-grouping
-      ></zentto-grid>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid
+          ref={gridRef}
+          export-filename="crm-automation-rules-list"
+          height="calc(100vh - 200px)"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+          enable-grouping
+          enable-pivot
+        ></zentto-grid>
+      </Box>
 
       {/* ─── Form Dialog ──────────────────────────────────────── */}
       <FormDialog

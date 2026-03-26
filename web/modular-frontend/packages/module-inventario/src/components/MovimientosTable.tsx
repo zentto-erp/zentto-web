@@ -11,7 +11,6 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
@@ -41,6 +40,16 @@ const MOV_COLUMNS: ColumnDef[] = [
   { field: "almacen", header: "Almacén", width: 130 },
   { field: "referencia", header: "Referencia", width: 130 },
   { field: "notas", header: "Notas", flex: 1, minWidth: 150 },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view", color: "#6b7280" },
+    ],
+  },
 ];
 
 const DETAIL_RENDERER = (row: any) => `
@@ -120,9 +129,6 @@ export default function MovimientosTable() {
     el.columns = MOV_COLUMNS; el.rows = movGridRows; el.loading = isLoading;
     el.getRowId = (r: any) => r.id;
     el.detailRenderer = DETAIL_RENDERER;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver detalle", action: "view", color: "#6b7280" },
-    ];
   }, [movGridRows, isLoading, registered]);
 
   useEffect(() => {

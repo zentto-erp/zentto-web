@@ -55,6 +55,12 @@ const LOAN_COLUMNS: ColumnDef[] = [
     field: "status", header: "Estado", width: 120,
     statusColors: { APROBADO: "success", RECHAZADO: "error", PAGADO: "info", PENDIENTE: "warning" },
   },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: SVG_APPROVE, label: "Aprobar préstamo", action: "approve", color: "#2e7d32" },
+    ],
+  },
 ];
 
 
@@ -103,9 +109,6 @@ export default function CajaAhorroPage() {
     el.rows = loanRows;
     el.loading = loansLoading;
     el.getRowId = (r: any) => r.id ?? `${r.employeeCode}-${r.amount}`;
-    el.actionButtons = [
-      { icon: SVG_APPROVE, label: "Aprobar préstamo", action: "approve", color: "#2e7d32" },
-    ];
   }, [loanRows, loansLoading, registered]);
 
   useEffect(() => {

@@ -24,9 +24,6 @@ import {
   type CreatePresupuestoInput, type VarianzaRow,
 } from "../hooks/useContabilidadAdvanced";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 const MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const MONTH_FIELDS = ["month01","month02","month03","month04","month05","month06","month07","month08","month09","month10","month11","month12"] as const;
@@ -192,6 +189,18 @@ const MAIN_COLUMNS: ColumnDef[] = [
   { field: "costCenterCode", header: "Centro costo", width: 140 },
   { field: "status", header: "Estado", width: 110, statusColors: { APPROVED: "success", CLOSED: "error", DRAFT: "default" }, statusVariant: "outlined" },
   { field: "total", header: "Total", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 130,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  },
 ];
 
 export default function PresupuestosPage() {
@@ -225,11 +234,6 @@ export default function PresupuestosPage() {
     el.columns = MAIN_COLUMNS;
     el.rows = filteredPresupuestos.map((r: any) => ({ ...r, id: r.BudgetId ?? r.id ?? r._id }));
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: 'Ver', action: 'view' },
-      { icon: SVG_EDIT, label: 'Editar', action: 'edit', color: '#e67e22' },
-      { icon: SVG_DELETE, label: 'Eliminar', action: 'delete', color: '#dc2626' },
-    ];
   }, [filteredPresupuestos, isLoading, registered, selectedId]);
 
   useEffect(() => {

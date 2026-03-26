@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Button,
   Chip,
   Checkbox,
@@ -17,7 +16,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -25,7 +23,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
 import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
-import { ContextActionHeader, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useActivitiesList,
@@ -36,9 +34,6 @@ import {
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 const typeConfig: Record<string, { icon: React.ReactNode; color: "primary" | "secondary" | "success" | "warning" | "info" }> = {
   CALL: { icon: <PhoneIcon sx={{ fontSize: 14 }} />, color: "primary" },
@@ -64,31 +59,10 @@ const emptyActivity = {
   dueDate: "",
 };
 
-const ACTIVIDADES_FILTERS: FilterFieldDef[] = [
-  {
-    field: "tipo", label: "Tipo", type: "select",
-    options: [
-      { value: "CALL", label: "Llamada" },
-      { value: "EMAIL", label: "Correo" },
-      { value: "MEETING", label: "Reunion" },
-      { value: "NOTE", label: "Nota" },
-      { value: "TASK", label: "Tarea" },
-    ],
-  },
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "false", label: "Pendientes" },
-      { value: "true", label: "Completadas" },
-    ],
-  },
-];
-
 export default function ActividadesPage() {
   const [filter, setFilter] = useState<ActivityFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyActivity);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
 
@@ -161,6 +135,18 @@ const { data, isLoading } = useActivitiesList(filter);
       header: "Lead",
       width: 120,
     },
+    {
+      field: "actions",
+      header: "Acciones",
+      type: "actions",
+      width: 130,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver", action: "view", color: "#6b7280" },
+        { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+        { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+      ],
+    },
   ];
 
   const handleCreate = () => {
@@ -185,11 +171,6 @@ const { data, isLoading } = useActivitiesList(filter);
     el.columns = columns;
     el.rows = rows;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#6b7280" },
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
-    ];
   }, [rows, isLoading, registered, columns]);
 
   useEffect(() => {
@@ -206,7 +187,7 @@ const { data, isLoading } = useActivitiesList(filter);
   }, [registered, rows]);
 
   return (
-    <Box>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
         title="Actividades"
         actions={
@@ -216,32 +197,12 @@ const { data, isLoading } = useActivitiesList(filter);
         }
       />
 
-      {/* Filtros */}
-      <Box sx={{ mb: 2 }}>
-        <ZenttoFilterPanel
-          filters={ACTIVIDADES_FILTERS}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              type: vals.tipo || undefined,
-              isCompleted: vals.estado === "" || !vals.estado ? undefined : vals.estado === "true",
-              page: 1,
-            }));
-          }}
-          searchPlaceholder="Buscar actividades..."
-          searchValue=""
-          onSearchChange={() => {}}
-        />
-      </Box>
-
       {/* DataGrid */}
-      <Paper sx={{ borderRadius: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
         ref={gridRef}
         export-filename="crm-actividades-list"
-        height="400px"
+        height="calc(100vh - 200px)"
         enable-toolbar
         enable-header-menu
         enable-header-filters
@@ -250,8 +211,10 @@ const { data, isLoading } = useActivitiesList(filter);
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-grouping
+        enable-pivot
       ></zentto-grid>
-      </Paper>
+      </Box>
 
       {/* Dialog Crear */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

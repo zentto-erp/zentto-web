@@ -14,7 +14,6 @@ import {
   type InflationIndex, type MonetaryClassification,
 } from "../hooks/useContabilidadLegal";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -48,6 +47,16 @@ const HISTORIAL_COLUMNS: ColumnDef[] = [
   { field: "CalculatedAt", header: "Fecha calculo", width: 160 },
   { field: "TotalAdjustment", header: "Ajuste total", width: 160, type: "number", currency: "VES" },
   { field: "Status", header: "Estado", width: 130, statusColors: { POSTED: "success", DRAFT: "warning" } },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view", color: "#1976d2" },
+    ],
+  },
 ];
 
 export default function InflacionAjustePage() {
@@ -127,9 +136,6 @@ export default function InflacionAjustePage() {
     el.columns = HISTORIAL_COLUMNS;
     el.rows = historialRows.map((r: any) => ({ ...r, id: r.InflationAdjustmentId ?? r.id }));
     el.loading = historialQuery.isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver detalle", action: "view", color: "#1976d2" },
-    ];
   }, [historialRows, historialQuery.isLoading, registered, tab]);
 
   useEffect(() => {

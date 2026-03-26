@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
-  Typography,
   Button,
   TextField,
   Chip,
@@ -17,11 +15,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import {
   useLeadsList,
   usePipelinesList,
@@ -33,9 +30,6 @@ import {
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 const priorityColor: Record<string, "error" | "warning" | "info" | "default"> = {
   HIGH: "error",
@@ -68,32 +62,11 @@ const emptyLead = {
   stageId: "" as number | string,
 };
 
-const LEADS_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "OPEN", label: "Abierto" },
-      { value: "WON", label: "Ganado" },
-      { value: "LOST", label: "Perdido" },
-    ],
-  },
-  {
-    field: "prioridad", label: "Prioridad", type: "select",
-    options: [
-      { value: "HIGH", label: "Alta" },
-      { value: "MEDIUM", label: "Media" },
-      { value: "LOW", label: "Baja" },
-    ],
-  },
-];
-
 export default function LeadsPage() {
   const [filter, setFilter] = useState<LeadFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyLead);
-  const [searchText, setSearchText] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
 
@@ -155,6 +128,18 @@ const { data, isLoading } = useLeadsList(filter);
     },
     { field: "Source", header: "Origen", width: 110 },
     { field: "AssignedToName", header: "Asignado a", width: 140 },
+    {
+      field: "actions",
+      header: "Acciones",
+      type: "actions",
+      width: 130,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver", action: "view", color: "#6b7280" },
+        { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+        { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+      ],
+    },
   ];
 
   const handleOpenNew = () => {
@@ -202,11 +187,6 @@ const { data, isLoading } = useLeadsList(filter);
     el.columns = columns;
     el.rows = rows;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver", action: "view", color: "#6b7280" },
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-      { icon: SVG_DELETE, label: "Eliminar", action: "delete", color: "#dc2626" },
-    ];
   }, [rows, isLoading, registered, columns]);
 
   useEffect(() => {
@@ -223,7 +203,7 @@ const { data, isLoading } = useLeadsList(filter);
   }, [registered, rows]);
 
   return (
-    <Box>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
         title="Leads"
         actions={
@@ -233,35 +213,12 @@ const { data, isLoading } = useLeadsList(filter);
         }
       />
 
-      {/* Filtros */}
-      <Box sx={{ mb: 2 }}>
-        <ZenttoFilterPanel
-          filters={LEADS_FILTERS}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              status: vals.estado || undefined,
-              priority: vals.prioridad || undefined,
-              page: 1,
-            }));
-          }}
-          searchPlaceholder="Nombre, empresa, email..."
-          searchValue={searchText}
-          onSearchChange={(v) => {
-            setSearchText(v);
-            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
-          }}
-        />
-      </Box>
-
       {/* DataGrid */}
-      <Paper sx={{ borderRadius: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
         ref={gridRef}
         export-filename="crm-leads-list"
-        height="400px"
+        height="calc(100vh - 200px)"
         enable-toolbar
         enable-header-menu
         enable-header-filters
@@ -270,8 +227,10 @@ const { data, isLoading } = useLeadsList(filter);
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-grouping
+        enable-pivot
       ></zentto-grid>
-      </Paper>
+      </Box>
 
       {/* Dialog Crear/Editar */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

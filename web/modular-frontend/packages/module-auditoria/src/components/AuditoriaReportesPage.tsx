@@ -122,21 +122,22 @@ export default function AuditoriaReportesPage() {
 
   const isLoading = logsQuery.isLoading || fiscalQuery.isLoading;
 
+  const fiscalRows = (fiscalQuery.data?.data ?? []).map((r: any, i: number) => ({
+    id: r.FiscalRecordId ?? i,
+    ...r,
+  }));
+
+  const rows = tab === 0 ? moduleRows : tab === 1 ? userRows : fiscalRows;
+  const columns = tab === 0 ? moduleColumns : tab === 1 ? userColumns : fiscalColumns;
+
   // Bind data to zentto-grid web component
-
   useEffect(() => {
-
     const el = gridRef.current;
-
     if (!el || !registered) return;
-
     el.columns = columns;
-
     el.rows = rows;
-
     el.loading = isLoading;
-
-  }, [rows, isLoading, registered, columns]);
+  }, [rows, columns, isLoading, registered]);
 
 
   return (

@@ -17,6 +17,12 @@ const COLUMNS: ColumnDef[] = [
   { field: "fechaRetiro", header: "Fecha Retiro", width: 120 },
   { field: "causaRetiro", header: "Causa", width: 140 },
   { field: "montoTotal", header: "Total", width: 140, type: "number", aggregation: "sum" },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver liquidacion", action: "view" },
+    ],
+  },
 ];
 
 const DETAIL_COLUMNS: ColumnDef[] = [
@@ -25,7 +31,6 @@ const DETAIL_COLUMNS: ColumnDef[] = [
 ];
 
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 export default function LiquidacionesPage() {
   const gridRef = useRef<any>(null);
@@ -46,7 +51,6 @@ export default function LiquidacionesPage() {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => r.liquidacionId ?? r.id ?? Math.random();
-    el.actionButtons = [{ icon: SVG_VIEW, label: "Ver liquidacion", action: "view" }];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

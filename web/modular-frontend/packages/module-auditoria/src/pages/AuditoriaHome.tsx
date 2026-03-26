@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -70,16 +70,22 @@ const logColumns: ColumnDef[] = [
 export default function AuditoriaHome() {
   const router = useRouter();
   const { timeZone } = useTimezone();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const now = new Date();
   const fechaDesde = toDateOnly(new Date(now.getFullYear(), 0, 1), timeZone);
   const fechaHasta = toDateOnly(now, timeZone);
 
-  
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
   }, []);
 
-const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
+  const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
+
+  const rows = ((data as any)?.ultimosLogs ?? []).map((l: any, i: number) => ({
+    id: l.AuditLogId ?? i,
+    ...l,
+  }));
 
   const stats = [
     { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.statBlue },

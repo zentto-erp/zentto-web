@@ -23,6 +23,13 @@ const COLUMNS: ColumnDef[] = [
   { field: "Diagnosis", header: "Diagnóstico", width: 200 },
   { field: "EstimatedCost", header: "Costo", width: 120, type: "number", aggregation: "sum" },
   { field: "Status", header: "Estado", width: 120, statusColors: { APROBADO: "success", RECHAZADO: "error", PENDIENTE: "warning" } },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
+      { icon: SVG_REJECT, label: "Rechazar", action: "reject", color: "#dc2626" },
+    ],
+  },
 ];
 
 
@@ -48,10 +55,6 @@ export default function OrdenesMedicasPage() {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => r.MedicalOrderId ?? `${r.EmployeeCode}-${r.OrderDate}-${r.OrderType}`;
-    el.actionButtons = [
-      { icon: SVG_APPROVE, label: "Aprobar", action: "approve", color: "#2e7d32" },
-      { icon: SVG_REJECT, label: "Rechazar", action: "reject", color: "#dc2626" },
-    ];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

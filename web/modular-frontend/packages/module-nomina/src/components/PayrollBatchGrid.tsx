@@ -21,12 +21,17 @@ const COLUMNS: ColumnDef[] = [
   { field: "totalDeducciones", header: "Deducciones", width: 130, type: "number", aggregation: "sum" },
   { field: "totalNeto", header: "Neto a Pagar", width: 140, type: "number", aggregation: "sum" },
   { field: "lineCount", header: "Conceptos", width: 90, type: "number" },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar detalle", action: "edit" },
+    ],
+  },
 ];
 
 interface Props { batchId: number; }
 
 
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
 export default function PayrollBatchGrid({ batchId }: Props) {
   const gridRef = useRef<any>(null);
@@ -55,7 +60,6 @@ export default function PayrollBatchGrid({ batchId }: Props) {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = grid.isLoading;
     el.getRowId = (r: any) => r.employeeCode || r.employeeId || Math.random();
-    el.actionButtons = [{ icon: SVG_EDIT, label: "Editar detalle", action: "edit" }];
   }, [rows, grid.isLoading, registered]);
 
   useEffect(() => {

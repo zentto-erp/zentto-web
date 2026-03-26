@@ -24,6 +24,13 @@ const COLUMNS: ColumnDef[] = [
   { field: "totalDeducciones", header: "Deducciones", width: 130, type: "number", aggregation: "sum" },
   { field: "totalNeto", header: "Neto", width: 130, type: "number", aggregation: "sum" },
   { field: "cerrada", header: "Estado", width: 100, statusColors: { true: "default", false: "success" } },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver nómina", action: "view" },
+      { icon: SVG_LOCK, label: "Cerrar nómina", action: "close", color: "#ed6c02" },
+    ],
+  },
 ];
 
 const DETAIL_COLUMNS: ColumnDef[] = [
@@ -33,7 +40,6 @@ const DETAIL_COLUMNS: ColumnDef[] = [
 ];
 
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_LOCK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 
 export default function NominasPage() {
@@ -60,10 +66,6 @@ export default function NominasPage() {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => `${r.nomina}-${r.cedula}-${r.fechaInicio ?? Math.random()}`;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver nómina", action: "view" },
-      { icon: SVG_LOCK, label: "Cerrar nómina", action: "close", color: "#ed6c02" },
-    ];
   }, [rows, isLoading, registered]);
 
   useEffect(() => {

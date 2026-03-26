@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -44,15 +44,6 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
-  // Bind data to zentto-grid web component
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el || !registered) return;
-    el.columns = activityCols;
-    el.rows = activityRows;
-    el.loading = loadingActivity;
-  }, [activityRows, loadingActivity, registered, activityCols]);
-
   return ((current - previous) / previous) * 100;
 }
 
@@ -229,9 +220,11 @@ const STATUS_COLORS: Record<string, string> = {
 export default function LogisticaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
+  const gridRef = useRef<any>(null);
+  const gridReceiptsRef = useRef<any>(null);
+  const gridDeliveriesRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  // Data hooks
-  
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
   }, []);
@@ -326,6 +319,33 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
     id: (r as Record<string, unknown>).DeliveryId ?? i,
     ...(r as Record<string, unknown>),
   }));
+
+  // Bind activity grid
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = activityCols;
+    el.rows = activityRows;
+    el.loading = loadingActivity;
+  }, [activityRows, loadingActivity, registered]);
+
+  // Bind receipts grid
+  useEffect(() => {
+    const el = gridReceiptsRef.current;
+    if (!el || !registered) return;
+    el.columns = recentReceiptCols;
+    el.rows = receiptRows;
+    el.loading = loadingRecentReceipts;
+  }, [receiptRows, loadingRecentReceipts, registered]);
+
+  // Bind deliveries grid
+  useEffect(() => {
+    const el = gridDeliveriesRef.current;
+    if (!el || !registered) return;
+    el.columns = recentDeliveryCols;
+    el.rows = deliveryRows;
+    el.loading = loadingRecentDeliveries;
+  }, [deliveryRows, loadingRecentDeliveries, registered]);
 
   return (
     <Box>
@@ -496,7 +516,7 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
               <Skeleton variant="rectangular" height={200} />
             ) : receiptRows.length > 0 ? (
               <zentto-grid
-        ref={gridRef}
+        ref={gridReceiptsRef}
         height="400px"
         enable-toolbar
         enable-header-menu
@@ -520,7 +540,7 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
               <Skeleton variant="rectangular" height={200} />
             ) : deliveryRows.length > 0 ? (
               <zentto-grid
-        ref={gridRef}
+        ref={gridDeliveriesRef}
         height="400px"
         enable-toolbar
         enable-header-menu

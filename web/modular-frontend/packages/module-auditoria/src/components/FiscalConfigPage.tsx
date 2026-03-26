@@ -20,13 +20,22 @@ import { ContextActionHeader } from "@zentto/shared-ui";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
 const taxRateColumns: ColumnDef[] = [
   { field: "code", header: "Código", flex: 1 },
   { field: "name", header: "Nombre", flex: 2 },
   { field: "rate", header: "Tasa %", flex: 1, type: "number", renderCell: (p) => `${p.value}%` },
   { field: "surchargeRate", header: "Recargo %", flex: 1, type: "number", renderCell: (p) => `${p.value ?? 0}%` },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+    ],
+  },
 ];
 
 export default function FiscalConfigPage() {
@@ -75,9 +84,6 @@ export default function FiscalConfigPage() {
     el.columns = taxRateColumns;
     el.rows = taxRateOptions;
     el.loading = taxRates.isLoading;
-    el.actionButtons = [
-      { icon: SVG_EDIT, label: "Editar", action: "edit", color: "#1976d2" },
-    ];
   }, [taxRateOptions, taxRates.isLoading, registered, taxRateColumns]);
 
   useEffect(() => {

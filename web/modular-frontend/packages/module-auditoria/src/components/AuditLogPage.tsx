@@ -12,19 +12,15 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  IconButton,
   Alert,
-  Tooltip,
   CircularProgress,
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { formatDateTime } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
@@ -96,17 +92,14 @@ const { data, isLoading } = useAuditLogs(filter);
     { field: "EntityId", header: "ID Entidad", width: 90 },
     { field: "Summary", header: "Descripción", flex: 1, minWidth: 200 },
     {
-      field: "acciones",
-      header: "",
-      width: 60,
-      sortable: false,
-      renderCell: (p) => (
-        <Tooltip title="Ver detalle">
-          <IconButton size="small" onClick={() => setSelectedId(p.row.AuditLogId)}>
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      ),
+      field: "actions",
+      header: "Acciones",
+      type: "actions",
+      width: 80,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver detalle", action: "view", color: "#6b7280" },
+      ],
     },
   ];
 
@@ -121,9 +114,6 @@ const { data, isLoading } = useAuditLogs(filter);
     el.columns = columns;
     el.rows = rows;
     el.loading = isLoading;
-    el.actionButtons = [
-      { icon: SVG_VIEW, label: "Ver detalle", action: "view", color: "#6b7280" },
-    ];
   }, [rows, isLoading, registered, columns]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Alert,
   AlertTitle,
@@ -44,15 +44,6 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
-  // Bind data to zentto-grid web component
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el || !registered) return;
-    el.columns = maintenanceCols;
-    el.rows = maintRows;
-    el.loading = loadingMaint;
-  }, [maintRows, loadingMaint, registered, maintenanceCols]);
-
   return ((current - previous) / previous) * 100;
 }
 
@@ -161,14 +152,16 @@ const maintenanceCols: ColumnDef[] = [
 export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
 
-  // Data hooks
-  
+  // Register zentto-grid web component
   useEffect(() => {
     import('@zentto/datagrid').then(() => setRegistered(true));
   }, []);
 
-const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
+  // Data hooks
+  const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
   const { data: alerts } = useFleetAlerts();
   const { data: fuelByVehicleRaw, isLoading: loadingFuel } = useFuelCostByVehicle();
   const { data: kmByMonthRaw, isLoading: loadingKm } = useKmByMonth();
@@ -226,6 +219,15 @@ const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
   ];
 
   const maintRows = nextMaint.map((m, i) => ({ id: m.MaintenanceOrderId ?? i, ...m }));
+
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = maintenanceCols;
+    el.rows = maintRows;
+    el.loading = loadingMaint;
+  }, [maintRows, loadingMaint, registered]);
 
   return (
     <Box>

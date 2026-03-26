@@ -12,9 +12,6 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import type { ColumnDef } from '@zentto/datagrid-core';
 
-const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
 
 export interface Column<T> {
   accessor: keyof T;
@@ -93,25 +90,28 @@ export default function DataGrid<T extends Record<string, unknown>>({
     });
   }, [columns]);
 
-  // Build action buttons
-  const actionButtons = useMemo(() => {
-    if (actions.length === 0) return [];
-    const iconMap: Record<string, string> = {
-      view: SVG_VIEW,
-      edit: SVG_EDIT,
-      delete: SVG_DELETE,
-    };
+  // Build actions column for zentto-grid v0.3.3+
+  const actionsColumn = useMemo<ColumnDef | null>(() => {
+    if (actions.length === 0) return null;
     const colorMap: Record<string, string> = {
       error: '#dc2626',
       warning: '#e67e22',
       success: '#16a34a',
     };
-    return actions.map((a) => ({
-      icon: iconMap[a.id] || SVG_VIEW,
-      label: a.label,
-      action: a.id,
-      color: a.color ? colorMap[a.color] : undefined,
-    }));
+    const width = actions.length === 1 ? 80 : actions.length === 2 ? 100 : actions.length === 3 ? 130 : 160;
+    return {
+      field: 'actions',
+      header: 'Acciones',
+      type: 'actions' as any,
+      width,
+      pin: 'right',
+      actions: actions.map((a) => ({
+        icon: a.id,
+        label: a.label,
+        action: a.id,
+        color: a.color ? colorMap[a.color] : undefined,
+      })),
+    } as ColumnDef;
   }, [actions]);
 
   // Map data to rows with id
@@ -126,13 +126,10 @@ export default function DataGrid<T extends Record<string, unknown>>({
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
-    el.columns = gridColumns;
+    el.columns = actionsColumn ? [...gridColumns, actionsColumn] : gridColumns;
     el.rows = gridRows;
     el.loading = isLoading;
-    if (actionButtons.length > 0) {
-      el.actionButtons = actionButtons;
-    }
-  }, [gridColumns, gridRows, isLoading, registered, actionButtons]);
+  }, [gridColumns, gridRows, isLoading, registered, actionsColumn]);
 
   // Listen for action-click events
   useEffect(() => {
