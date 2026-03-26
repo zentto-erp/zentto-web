@@ -22,6 +22,7 @@ import {
   Science as ScienceIcon,
   Inventory as ArticulosIcon,
   Receipt as FacturasIcon,
+  AutoAwesome as ShowcaseIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { label: "Facturas", href: "/facturas", icon: <FacturasIcon fontSize="small" /> },
   { label: "Nativo: Articulos", href: "/nativo-articulos", icon: <ScienceIcon fontSize="small" /> },
   { label: "Nativo: Facturas", href: "/nativo-facturas", icon: <ScienceIcon fontSize="small" /> },
+  { label: "Showcase v1.0", href: "/showcase", icon: <ShowcaseIcon fontSize="small" />, color: "#7c3aed" },
 ];
 
 // Tema minimo — sin depender de shared-ui theme
@@ -75,7 +77,11 @@ function LabNav() {
                 onClick={() => navigate(item.href)}
                 variant={pathname === item.href ? "contained" : "text"}
                 color={pathname === item.href ? "warning" : "inherit"}
-                sx={{ color: pathname === item.href ? undefined : "#fff", textTransform: "none" }}
+                sx={{
+                  color: pathname === item.href ? undefined : (item as any).color || "#fff",
+                  textTransform: "none",
+                  ...((item as any).color && pathname !== item.href ? { fontWeight: 600 } : {}),
+                }}
                 size="small"
               >
                 {item.label}
