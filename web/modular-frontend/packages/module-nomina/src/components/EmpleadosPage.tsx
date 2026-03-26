@@ -7,7 +7,6 @@ import {
 } from "@mui/material";
 
 import type { ColumnDef } from "@zentto/datagrid-core";
-import AddIcon from "@mui/icons-material/Add";
 import NominaWizard from "./NominaWizard";
 import VacacionesWizard from "./VacacionesWizard";
 import LiquidacionesWizard from "./LiquidacionesWizard";
@@ -111,7 +110,9 @@ export default function EmpleadosPage() {
       if (action === "edit") handleEdit(row);
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => handleNew();
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, gridRows]);
 
   // Historial grid
@@ -150,13 +151,10 @@ export default function EmpleadosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" fontWeight={600}>Empleados</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nuevo Empleado</Button>
-      </Stack>
+      <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Empleados</Typography>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
-        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nuevo Empleado" />
       </Box>
 
       {/* Create / Edit Dialog */}

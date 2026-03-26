@@ -22,8 +22,6 @@ import {
 } from "@mui/material";
 import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import BlockIcon from "@mui/icons-material/Block";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
@@ -211,34 +209,17 @@ const { data, isLoading } = useBOMList({
       if (action === "delete" && (status === "DRAFT" || status === "ACTIVE")) { if (id) obsoleteBOM.mutate(id); }
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "stretch", sm: "center" },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5" fontWeight={600}>
-          Lista de Materiales (BOM)
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => { resetForm(); setDialogOpen(true); }}
-          fullWidth={isMobile}
-        >
-          Nueva BOM
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Lista de Materiales (BOM)
+      </Typography>
 
       {/* Filters */}
       <ZenttoFilterPanel
@@ -268,6 +249,8 @@ const { data, isLoading } = useBOMList({
         enable-status-bar
         enable-configurator
         enable-grouping
+        enable-create
+        create-label="Nueva BOM"
       ></zentto-grid>
 
       {/* Dialog: Crear BOM */}

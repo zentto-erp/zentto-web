@@ -15,8 +15,6 @@ import {
   useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
 import {
   useDriversList,
   useCreateDriver,
@@ -173,6 +171,14 @@ const { data, isLoading } = useDriversList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
@@ -187,18 +193,6 @@ const { data, isLoading } = useDriversList({
         <Typography variant="h5" fontWeight={600}>
           Conductores
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setDialogOpen(true);
-          }}
-          fullWidth={isMobile}
-          sx={{ maxWidth: { sm: "fit-content" } }}
-        >
-          Nuevo Conductor
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -217,6 +211,8 @@ const { data, isLoading } = useDriversList({
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nuevo Conductor"
         ></zentto-grid>
       </Box>
 

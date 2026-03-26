@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Typography, Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
+  Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import CalculateIcon from "@mui/icons-material/Calculate";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
 import { useLiquidacionesList, useLiquidacionDetalle } from "../hooks/useNomina";
 
 const COLUMNS: ColumnDef[] = [
@@ -57,7 +55,9 @@ export default function LiquidacionesPage() {
     const el = gridRef.current; if (!el || !registered) return;
     const handler = (e: CustomEvent) => { if (e.detail.action === "view") setSelectedId(e.detail.row.liquidacionId); };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => router.push("/nomina/liquidaciones/nueva");
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   // Detail dialog grid
@@ -70,13 +70,10 @@ export default function LiquidacionesPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" fontWeight={600}>Liquidaciones</Typography>
-        <Button variant="contained" startIcon={<CalculateIcon />} onClick={() => router.push("/nomina/liquidaciones/nueva")}>Nueva Liquidación</Button>
-      </Stack>
+      <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Liquidaciones</Typography>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
-        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nueva Liquidación" />
       </Box>
 
       {/* Detalle */}

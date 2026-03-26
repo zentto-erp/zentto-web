@@ -28,7 +28,6 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  Add as AddIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
@@ -338,12 +337,12 @@ export default function ArticulosTable() {
     el.loading = isLoading;
   }, [columns, rows, isLoading, registered]);
 
-  // ========== Listen for action-click events ==========
+  // ========== Listen for action-click and create-click events ==========
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
 
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail || {};
       if (!row) return;
       if (action === "view") router.push(`${basePath}/${row.codigo}`);
@@ -353,9 +352,14 @@ export default function ArticulosTable() {
         setDeleteDialogOpen(true);
       }
     };
+    const createHandler = () => router.push(`${basePath}/new`);
 
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router, basePath]);
 
   // ========== RENDER ==========
@@ -421,17 +425,6 @@ export default function ArticulosTable() {
             size="small"
           >
             {extendedView ? "Compacta" : "Extendida"}
-          </Button>
-        </Tooltip>
-
-        <Tooltip title="Crear un nuevo articulo en inventario">
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => router.push(`${basePath}/new`)}
-            size="small"
-          >
-            Nuevo Articulo
           </Button>
         </Tooltip>
 
@@ -623,6 +616,8 @@ export default function ArticulosTable() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-create
+            create-label="Nuevo Articulo"
           ></zentto-grid>
         )}
       </Box>

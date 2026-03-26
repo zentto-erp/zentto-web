@@ -20,7 +20,6 @@ import {
 import Grid from "@mui/material/Grid";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -213,6 +212,14 @@ const { data, isLoading } = useMaintenanceOrdersList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -226,9 +233,6 @@ const { data, isLoading } = useMaintenanceOrdersList({
         <Typography variant="h5" fontWeight={600}>
           Ordenes de Mantenimiento
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { resetForm(); setDialogOpen(true); }}>
-          Nueva Orden
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -246,6 +250,8 @@ const { data, isLoading } = useMaintenanceOrdersList({
         enable-configurator
         enable-grouping
         enable-pivot
+        enable-create
+        create-label="Nueva Orden"
       ></zentto-grid>
 
       {/* Dialog: Nueva Orden */}

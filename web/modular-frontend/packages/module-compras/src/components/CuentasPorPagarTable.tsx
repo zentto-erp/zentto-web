@@ -5,11 +5,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
   CircularProgress,
-  Typography,
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
 import { DeleteDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
@@ -109,7 +106,7 @@ export default function CuentasPorPagarTable() {
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail;
       if (action === "view") {
         router.push(`/cuentas-por-pagar/${row.id}`);
@@ -120,25 +117,17 @@ export default function CuentasPorPagarTable() {
         setDeleteDialogOpen(true);
       }
     };
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => router.push("/cuentas-por-pagar/new");
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Cuentas por Pagar
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/cuentas-por-pagar/new")}
-        >
-          Nueva Cuenta
-        </Button>
-      </Box>
-
       {!registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
@@ -161,6 +150,8 @@ export default function CuentasPorPagarTable() {
             enable-configurator
             enable-grouping
             enable-pivot
+            enable-create
+            create-label="Nueva Cuenta"
           />
         </Box>
       )}

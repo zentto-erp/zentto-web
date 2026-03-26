@@ -20,7 +20,6 @@ import {
 import Grid from "@mui/material/Grid";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   useTripsList,
@@ -226,6 +225,14 @@ const { data, isLoading } = useTripsList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -239,9 +246,6 @@ const { data, isLoading } = useTripsList({
         <Typography variant="h5" fontWeight={600}>
           Viajes
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { resetForm(); setDialogOpen(true); }}>
-          Nuevo Viaje
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -259,6 +263,8 @@ const { data, isLoading } = useTripsList({
         enable-configurator
         enable-grouping
         enable-pivot
+        enable-create
+        create-label="Nuevo Viaje"
       ></zentto-grid>
 
       {/* Dialog: Nuevo Viaje */}

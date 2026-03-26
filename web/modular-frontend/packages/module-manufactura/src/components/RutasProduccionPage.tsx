@@ -21,9 +21,7 @@ import {
   useTheme,
   CircularProgress,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
-import EditIcon from "@mui/icons-material/Edit";
 import {
   useBOMList,
   useRoutingList,
@@ -193,35 +191,17 @@ const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
       if (action === "delete") { /* TODO: eliminar operacion */ }
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => { setDialogOpen(true); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "stretch", sm: "center" },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5" fontWeight={600}>
-          Rutas de Produccion
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleNew}
-          disabled={!selectedBomId}
-          fullWidth={isMobile}
-        >
-          Nueva Operacion
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Rutas de Produccion
+      </Typography>
 
       {/* BOM Selector */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -269,6 +249,8 @@ const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-create
+        create-label="Nueva Operacion"
       ></zentto-grid>
       ) : (
         <Box

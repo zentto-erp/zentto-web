@@ -3,8 +3,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Typography } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import { Box, Typography } from "@mui/material";
 import {
   DeleteDialog,
   ZenttoFilterPanel,
@@ -108,12 +107,12 @@ export default function ClientesTable() {
     el.loading = isLoading;
   }, [rows, isLoading, registered]);
 
-  // Listen for action-click events
+  // Listen for action-click and create-click events
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
 
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail || {};
       if (!row) return;
       if (action === "view") router.push(`/clientes/${row.codigo}`);
@@ -126,9 +125,14 @@ export default function ClientesTable() {
         }
       }
     };
+    const createHandler = () => router.push("/clientes/new");
 
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router, filteredData]);
 
   const handleDeleteConfirm = () => {
@@ -144,15 +148,9 @@ export default function ClientesTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Gestion de Clientes
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/clientes/new")}>
-          Nuevo Cliente
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Gestion de Clientes
+      </Typography>
 
       {/* Filtros */}
       <ZenttoFilterPanel
@@ -181,6 +179,8 @@ export default function ClientesTable() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-create
+            create-label="Nuevo Cliente"
           ></zentto-grid>
         )}
       </Box>

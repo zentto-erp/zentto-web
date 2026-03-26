@@ -83,7 +83,9 @@ export default function ComitesPage() {
       if (action === "view") { setDetailId(row.SafetyCommitteeId); setDetailData(row); setDetailTab(0); }
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => setCreateOpen(true);
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   const handleCreateCommittee = async () => { await saveMutation.mutateAsync(committeeForm); setCreateOpen(false); setCommitteeForm({ ...emptyCommittee }); };
@@ -95,13 +97,10 @@ export default function ComitesPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Comités de Seguridad e Higiene</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>Nuevo Comité</Button>
-      </Stack>
+      <Typography variant="h6" sx={{ mb: 2 }}>Comités de Seguridad e Higiene</Typography>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
-        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nuevo Comité" />
       </Box>
 
       {/* Create Committee Dialog */}

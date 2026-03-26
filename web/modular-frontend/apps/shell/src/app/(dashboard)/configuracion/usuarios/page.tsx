@@ -7,7 +7,6 @@ import {
   Alert, CircularProgress, Tooltip, MenuItem, Card, CardContent,
   Checkbox, FormGroup, Divider, InputAdornment, Stack,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -143,11 +142,11 @@ export default function UsuariosPage() {
     el.loading = isLoading;
   }, [rows, isLoading, registered]);
 
-  // Handle action-click for edit/delete
+  // Handle action-click for edit/delete and create-click
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail;
       const usuario = rawRows.find((u: Usuario) => u.Cod_Usuario === row.Cod_Usuario);
       if (action === "edit" && usuario) {
@@ -156,8 +155,13 @@ export default function UsuariosPage() {
         setDeleteConfirm(row.Cod_Usuario);
       }
     };
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => setCreateOpen(true);
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, rawRows]);
 
   // Handle row click for actions
@@ -177,12 +181,6 @@ export default function UsuariosPage() {
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-          Nuevo Usuario
-        </Button>
-      </Box>
-
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
           <TextField
@@ -210,6 +208,8 @@ export default function UsuariosPage() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-create
+            create-label="Nuevo Usuario"
           />
         </Box>
       )}

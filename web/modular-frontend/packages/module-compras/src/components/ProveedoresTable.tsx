@@ -5,11 +5,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
   CircularProgress,
-  Typography,
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
 import { DeleteDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useProveedoresList, useDeleteProveedor } from "../hooks/useProveedores";
@@ -96,7 +93,7 @@ export default function ProveedoresTable() {
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail;
       if (action === "view") {
         router.push(`/proveedores/${row.codigo}`);
@@ -107,25 +104,17 @@ export default function ProveedoresTable() {
         setDeleteOpen(true);
       }
     };
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => router.push("/proveedores/new");
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Gestion de Proveedores
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/proveedores/new")}
-        >
-          Nuevo Proveedor
-        </Button>
-      </Box>
-
       {!registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
@@ -148,6 +137,8 @@ export default function ProveedoresTable() {
             enable-configurator
             enable-grouping
             enable-pivot
+            enable-create
+            create-label="Nuevo Proveedor"
           />
         </Box>
       )}

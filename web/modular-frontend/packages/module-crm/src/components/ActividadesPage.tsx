@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Button,
   Chip,
   Checkbox,
   Dialog,
@@ -16,8 +15,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Button,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import PeopleIcon from "@mui/icons-material/People";
@@ -186,15 +185,18 @@ const { data, isLoading } = useActivitiesList(filter);
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setDialogOpen(true);
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
         title="Actividades"
-        actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-            Nueva Actividad
-          </Button>
-        }
       />
 
       {/* DataGrid */}
@@ -213,6 +215,8 @@ const { data, isLoading } = useActivitiesList(filter);
         enable-configurator
         enable-grouping
         enable-pivot
+        enable-create
+        create-label="Nueva Actividad"
       ></zentto-grid>
       </Box>
 

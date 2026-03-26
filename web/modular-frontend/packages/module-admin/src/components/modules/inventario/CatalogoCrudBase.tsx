@@ -370,12 +370,12 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     el.loading = listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending;
   }, [gridColumns, gridRows, listQuery.isLoading, metadataQuery.isLoading, updateMutation.isPending, deleteMutation.isPending, registered]);
 
-  // Listen for action-click events
+  // Listen for action-click and create-click events
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
 
-    const handler = async (e: CustomEvent) => {
+    const actionHandler = async (e: CustomEvent) => {
       const { action, row } = e.detail || {};
       if (!row) return;
       if (action === 'delete') {
@@ -383,9 +383,17 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
       }
       // edit could be handled here if needed
     };
+    const createHandler = () => {
+      setCreateValues({});
+      setCreateDialogOpen(true);
+    };
 
-    el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('action-click', actionHandler);
+    el.addEventListener('create-click', createHandler);
+    return () => {
+      el.removeEventListener('action-click', actionHandler);
+      el.removeEventListener('create-click', createHandler);
+    };
   }, [registered, deleteMutation]);
 
   const isCreateDisabled = resolvedFields.some((f) => f.required && !asString(createValues[f.name]).trim());
@@ -394,13 +402,6 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ContextActionHeader
         title={title}
-        primaryAction={{
-          label: 'Nuevo',
-          onClick: () => {
-            setCreateValues({});
-            setCreateDialogOpen(true);
-          }
-        }}
         onSearch={(v) => {
           setSearch(v);
           setPage(1);
@@ -426,6 +427,8 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
               enable-status-bar
               enable-editing
               enable-configurator
+              enable-create
+              create-label="Nuevo"
             ></zentto-grid>
           )}
         </Box>

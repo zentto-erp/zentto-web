@@ -16,7 +16,6 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
 import { ContextActionHeader } from "@zentto/shared-ui";
 import {
@@ -202,15 +201,18 @@ const { data, isLoading } = useLeadsList(filter);
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => handleOpenNew();
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader
         title="Leads"
-        actions={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenNew}>
-            Nuevo Lead
-          </Button>
-        }
       />
 
       {/* DataGrid */}
@@ -229,6 +231,8 @@ const { data, isLoading } = useLeadsList(filter);
         enable-configurator
         enable-grouping
         enable-pivot
+        enable-create
+        create-label="Nuevo Lead"
       ></zentto-grid>
       </Box>
 

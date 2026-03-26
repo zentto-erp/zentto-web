@@ -23,7 +23,6 @@ import {
 
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useLookup } from "@zentto/shared-api";
-import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useConceptosList, useSaveConcepto, useDeleteConcepto, type ConceptoFilter, type ConceptoInput } from "../hooks/useNomina";
@@ -127,7 +126,9 @@ export default function ConceptosPage() {
       if (action === "delete") handleDelete(row);
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => handleNew();
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   const handleSave = async () => {
@@ -138,12 +139,6 @@ export default function ConceptosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nuevo Concepto
-        </Button>
-      </Stack>
-
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
@@ -158,6 +153,8 @@ export default function ConceptosPage() {
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nuevo Concepto"
         />
       </Box>
 

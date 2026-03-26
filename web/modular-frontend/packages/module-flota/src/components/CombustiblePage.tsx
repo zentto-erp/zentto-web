@@ -21,7 +21,6 @@ import {
 import Grid from "@mui/material/Grid";
 import {  DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -175,6 +174,14 @@ const { data, isLoading } = useFuelLogsList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setDialogOpen(true);
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -188,9 +195,6 @@ const { data, isLoading } = useFuelLogsList({
         <Typography variant="h5" fontWeight={600}>
           Control de Combustible
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-          Registrar Carga
-        </Button>
       </Box>
 
       {/* Filters */}
@@ -224,6 +228,8 @@ const { data, isLoading } = useFuelLogsList({
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-create
+        create-label="Nuevo Combustible"
       ></zentto-grid>
 
       {/* Dialog: Registrar Carga */}

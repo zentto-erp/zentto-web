@@ -19,9 +19,6 @@ import {
 import Grid from "@mui/material/Grid";
 
 import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import {
@@ -273,6 +270,14 @@ const { data, isLoading } = useDeliveryNotesList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setDialogOpen(true);
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
@@ -287,15 +292,6 @@ const { data, isLoading } = useDeliveryNotesList({
         <Typography variant="h5" fontWeight={600}>
           Albaranes / Notas de Entrega
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
-          fullWidth={isMobile}
-          sx={{ maxWidth: { sm: "fit-content" } }}
-        >
-          Nuevo Albaran
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -314,6 +310,8 @@ const { data, isLoading } = useDeliveryNotesList({
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nuevo Albaran"
         ></zentto-grid>
       </Box>
 

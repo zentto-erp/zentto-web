@@ -5,11 +5,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
   Typography,
-  CircularProgress,
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
 import {
   ConfirmDialog,
   ZenttoFilterPanel,
@@ -167,33 +164,32 @@ export default function FacturasTable() {
     };
   }, [rows, isLoading, registered]);
 
-  // Listen for action-click events
+  // Listen for action-click and create-click events
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
 
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail || {};
       if (!row) return;
       if (action === "view") router.push(`/facturas/${row.numeroFactura}`);
       if (action === "delete") handleAnularClick(row.numeroFactura);
     };
+    const createHandler = () => router.push("/facturas/new");
 
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router]);
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Facturas
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/facturas/new")}>
-          Nueva Factura
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 2 }}>
+        Facturas
+      </Typography>
 
       {/* Filtros reutilizables */}
       <ZenttoFilterPanel
@@ -223,6 +219,8 @@ export default function FacturasTable() {
             enable-status-bar
             enable-master-detail
             enable-configurator
+            enable-create
+            create-label="Nueva Factura"
           ></zentto-grid>
         )}
       </Box>

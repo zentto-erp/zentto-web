@@ -6,7 +6,6 @@ import {
   Paper, Stack, TextField, Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import AddIcon from "@mui/icons-material/Add";
 import LockIcon from "@mui/icons-material/Lock";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useRouter } from "next/navigation";
@@ -118,8 +117,10 @@ export default function ConciliacionBancariaPage() {
       if (action === "view") setSelectedId(Number(row.ID));
       if (action === "close" && row.Estado === "ABIERTA") { setSelectedId(Number(row.ID)); setCerrarOpen(true); }
     };
+    const createHandler = () => router.push("/bancos/conciliacion");
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   // Detail grids
@@ -152,15 +153,12 @@ export default function ConciliacionBancariaPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="h5" fontWeight={600}>Conciliaciones</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/bancos/conciliacion")}>Nueva Conciliación</Button>
-      </Stack>
+      <Typography variant="h5" fontWeight={600}>Conciliaciones</Typography>
 
       <ZenttoFilterPanel filters={conciliacionFilters} values={filterValues} onChange={(v) => { setFilterValues(v); setPage(1); }} searchPlaceholder="Buscar conciliación..." searchValue={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} />
 
       <Paper sx={{ p: 0 }}>
-        <zentto-grid ref={gridRef} height="400px" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+        <zentto-grid ref={gridRef} height="400px" enable-create create-label="Nueva Conciliación" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Paper>
 
       {/* Detail Dialog */}

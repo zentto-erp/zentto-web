@@ -6,7 +6,6 @@ import {
   FormControl, InputAdornment, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import AddIcon from "@mui/icons-material/Add";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
@@ -111,8 +110,10 @@ export default function CajaChicaPage() {
       const { action, row } = e.detail;
       if (action === 'view' && row?.Id) setSelectedBoxId(Number(row.Id));
     };
+    const createHandler = () => setShowCreateBox(true);
     el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
   }, [registered]);
 
   useEffect(() => {
@@ -130,17 +131,14 @@ export default function CajaChicaPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight={600}>Caja Chica</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowCreateBox(true)}>Nueva Caja</Button>
-      </Stack>
+      <Typography variant="h5" fontWeight={600} mb={2}>Caja Chica</Typography>
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}><LocalAtmIcon sx={{ mr: 1, verticalAlign: "middle", fontSize: 20 }} />Cajas Chicas</Typography>
             <ZenttoFilterPanel filters={CAJA_CHICA_FILTERS} values={cajaFilterValues} onChange={setCajaFilterValues} searchPlaceholder="Buscar caja chica..." searchValue={cajaSearch} onSearchChange={setCajaSearch} />
-            <zentto-grid ref={boxesGridRef} height="350px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+            <zentto-grid ref={boxesGridRef} height="350px" show-totals enable-create create-label="Nueva Caja" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
 

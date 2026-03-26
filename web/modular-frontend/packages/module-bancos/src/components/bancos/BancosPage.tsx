@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import { useToast } from "@zentto/shared-ui";
@@ -66,8 +65,10 @@ export default function BancosPage() {
       if (action === "edit") handleEdit(row);
       if (action === "delete") setDeleteTarget(row.Nombre);
     };
+    const createHandler = () => handleNew();
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   const handleNew = () => { setForm({ ...EMPTY_FORM }); setEditNombre(null); setFormOpen(true); };
@@ -86,10 +87,7 @@ export default function BancosPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight={600}>Entidades</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nuevo Banco</Button>
-      </Stack>
+      <Typography variant="h5" fontWeight={600} mb={2}>Entidades</Typography>
 
       <TextField placeholder="Buscar banco..." size="small" value={search}
         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -98,7 +96,7 @@ export default function BancosPage() {
       />
 
       <Box sx={{ minHeight: 400 }}>
-        <zentto-grid ref={gridRef} height="400px" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+        <zentto-grid ref={gridRef} height="400px" enable-create create-label="Nuevo Banco" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Box>
 
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>

@@ -100,8 +100,10 @@ export default function CategoriasActivosPage() {
       if (action === 'view') handleEdit(cat);
       if (action === 'edit') handleEdit(cat);
     };
+    const createHandler = () => handleNew();
     el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
   }, [registered, rows]);
 
   const handleEdit = (row: FixedAssetCategory) => {
@@ -134,7 +136,7 @@ export default function CategoriasActivosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Categorias de Activos Fijos" primaryAction={{ label: "Nueva categoria", onClick: handleNew }} />
+      <ContextActionHeader title="Categorias de Activos Fijos" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <ZenttoFilterPanel filters={CATEGORIAS_FILTERS} values={filterValues} onChange={setFilterValues}
@@ -145,6 +147,8 @@ export default function CategoriasActivosPage() {
             default-currency="VES"
             export-filename="categorias-activos"
             height="100%"
+            enable-create
+            create-label="Nueva categoria"
             enable-toolbar
             enable-header-menu
             enable-header-filters

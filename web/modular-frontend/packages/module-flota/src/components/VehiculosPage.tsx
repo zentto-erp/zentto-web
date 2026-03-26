@@ -19,7 +19,6 @@ import {
   useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   useVehiclesList,
@@ -253,6 +252,14 @@ const { data, isLoading } = useVehiclesList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
@@ -266,16 +273,6 @@ const { data, isLoading } = useVehiclesList({
         <Typography variant="h5" fontWeight={600}>
           Vehiculos
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setDialogOpen(true);
-          }}
-        >
-          Nuevo Vehiculo
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -293,6 +290,8 @@ const { data, isLoading } = useVehiclesList({
         enable-configurator
         enable-grouping
         enable-pivot
+        enable-create
+        create-label="Nuevo Vehiculo"
       ></zentto-grid>
 
       {/* Dialog: Crear/Editar Vehiculo */}

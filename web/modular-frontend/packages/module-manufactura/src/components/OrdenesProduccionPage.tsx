@@ -26,11 +26,7 @@ import {
 } from "@mui/material";
 import {  DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 import {
   useWorkOrdersList,
   useCreateWorkOrder,
@@ -360,34 +356,17 @@ const { data, isLoading } = useWorkOrdersList({
       }
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "stretch", sm: "center" },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5" fontWeight={600}>
-          Ordenes de Produccion
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => { resetForm(); setDialogOpen(true); }}
-          fullWidth={isMobile}
-        >
-          Nueva Orden
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Ordenes de Produccion
+      </Typography>
 
       {/* Filter */}
       <ZenttoFilterPanel
@@ -413,6 +392,8 @@ const { data, isLoading } = useWorkOrdersList({
         enable-status-bar
         enable-configurator
         enable-grouping
+        enable-create
+        create-label="Nueva Orden"
       ></zentto-grid>
 
       {/* Dialog: Detalle de Orden */}

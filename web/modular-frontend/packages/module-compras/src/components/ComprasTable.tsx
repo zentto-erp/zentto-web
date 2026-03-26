@@ -4,11 +4,8 @@ import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
   CircularProgress,
-  Typography,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
 import { ConfirmDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useComprasList, useDeleteCompra } from "../hooks/useCompras";
@@ -196,7 +193,7 @@ export default function ComprasTable() {
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail;
       if (action === "view") {
         router.push(`/compras/${encodeURIComponent(String(row.documentNumber))}`);
@@ -207,8 +204,13 @@ export default function ComprasTable() {
         setAnularOpen(true);
       }
     };
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => router.push("/compras/new");
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router]);
 
   const handleAnularConfirm = async () => {
@@ -226,15 +228,6 @@ export default function ComprasTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Compras
-        </Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => router.push("/compras/new")}>
-          Nueva Compra
-        </Button>
-      </Box>
-
       {!registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
@@ -258,6 +251,8 @@ export default function ComprasTable() {
             enable-master-detail
             enable-grouping
             enable-pivot
+            enable-create
+            create-label="Nueva Compra"
           />
         </Box>
       )}

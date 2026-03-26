@@ -121,8 +121,10 @@ export default function AsientosListPage() {
       const { action, row } = e.detail;
       if (action === 'view') setSelectedId(row.id);
     };
+    const createHandler = () => router.push("/contabilidad/asientos/new");
     el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
   }, [registered]);
 
   useEffect(() => {
@@ -147,13 +149,7 @@ export default function AsientosListPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Asientos contables"
-        primaryAction={{
-          label: "Nuevo asiento",
-          onClick: () => router.push("/contabilidad/asientos/new")
-        }}
-      />
+      <ContextActionHeader title="Asientos contables" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <ZenttoFilterPanel
@@ -185,6 +181,8 @@ export default function AsientosListPage() {
             export-filename="asientos-contables"
             height="100%"
             show-totals
+            enable-create
+            create-label="Nuevo asiento"
             enable-toolbar
             enable-header-menu
             enable-header-filters

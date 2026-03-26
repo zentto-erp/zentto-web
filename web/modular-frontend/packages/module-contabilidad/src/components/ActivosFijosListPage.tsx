@@ -145,8 +145,10 @@ export default function ActivosFijosListPage() {
       if (action === 'edit') router.push(`/contabilidad/activos-fijos/${row.AssetId}/edit`);
       if (action === 'delete') { setDisposeId(row.AssetId); setDisposeReason(""); }
     };
+    const createHandler = () => setOpenCreate(true);
     el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
   }, [registered, router]);
 
   const handleCreate = async () => {
@@ -175,13 +177,7 @@ export default function ActivosFijosListPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Activos fijos"
-        primaryAction={{
-          label: "Nuevo activo",
-          onClick: () => setOpenCreate(true),
-        }}
-      />
+      <ContextActionHeader title="Activos fijos" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         <ZenttoFilterPanel
@@ -211,6 +207,8 @@ export default function ActivosFijosListPage() {
             export-filename="activos-fijos"
             height="100%"
             show-totals
+            enable-create
+            create-label="Nuevo activo"
             enable-toolbar
             enable-header-menu
             enable-header-filters

@@ -21,9 +21,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
-import EditIcon from "@mui/icons-material/Edit";
 import {
   useWorkCentersList,
   useUpsertWorkCenter,
@@ -180,37 +178,17 @@ const { data, isLoading } = useWorkCentersList({
       if (action === "delete") { /* TODO: eliminar centro de trabajo */ }
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "stretch", sm: "center" },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5" fontWeight={600}>
-          Centros de Trabajo
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setDialogOpen(true);
-          }}
-          fullWidth={isMobile}
-        >
-          Nuevo Centro
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Centros de Trabajo
+      </Typography>
 
       {/* Filter */}
       <ZenttoFilterPanel
@@ -238,6 +216,8 @@ const { data, isLoading } = useWorkCentersList({
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-create
+        create-label="Nuevo Centro"
       ></zentto-grid>
 
       {/* Dialog: Crear/Editar */}

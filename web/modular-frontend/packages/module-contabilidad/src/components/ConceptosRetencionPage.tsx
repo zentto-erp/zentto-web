@@ -7,7 +7,6 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
-import AddIcon from "@mui/icons-material/Add";
 import { useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
 
@@ -76,8 +75,14 @@ export default function ConceptosRetencionPage() {
       if (action === 'view') handleEdit(concepto);
       if (action === 'edit') handleEdit(concepto);
     };
+    const createHandler = () => {
+      setForm({ conceptCode: "", description: "", supplierType: "AMBOS", activityCode: "",
+        retentionType: "ISLR", rate: 0, subtrahendUT: 0, minBaseUT: 0, seniatCode: "", countryCode: "VE" });
+      setDialogOpen(true);
+    };
     el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
   }, [registered, rows]);
 
   const handleSave = async () => {
@@ -102,14 +107,7 @@ export default function ConceptosRetencionPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h6">Conceptos de Retencion</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => {
-          setForm({ conceptCode: "", description: "", supplierType: "AMBOS", activityCode: "",
-            retentionType: "ISLR", rate: 0, subtrahendUT: 0, minBaseUT: 0, seniatCode: "", countryCode: "VE" });
-          setDialogOpen(true);
-        }}>Nuevo Concepto</Button>
-      </Stack>
+      <Typography variant="h6" sx={{ mb: 2 }}>Conceptos de Retencion</Typography>
 
       <ZenttoFilterPanel
         filters={[
@@ -131,6 +129,8 @@ export default function ConceptosRetencionPage() {
         default-currency="VES"
         export-filename="conceptos-retencion"
         height="calc(100vh - 300px)"
+        enable-create
+        create-label="Nuevo Concepto"
         enable-toolbar
         enable-header-menu
         enable-header-filters

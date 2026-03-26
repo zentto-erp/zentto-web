@@ -19,7 +19,6 @@ import {
 import Grid from "@mui/material/Grid";
 
 import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
   useReturnsList,
@@ -191,6 +190,14 @@ const { data, isLoading } = useReturnsList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setDialogOpen(true);
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
@@ -205,15 +212,6 @@ const { data, isLoading } = useReturnsList({
         <Typography variant="h5" fontWeight={600}>
           Devoluciones
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
-          fullWidth={isMobile}
-          sx={{ maxWidth: { sm: "fit-content" } }}
-        >
-          Nueva Devolucion
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -232,6 +230,8 @@ const { data, isLoading } = useReturnsList({
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nueva Devolucion"
         ></zentto-grid>
       </Box>
 

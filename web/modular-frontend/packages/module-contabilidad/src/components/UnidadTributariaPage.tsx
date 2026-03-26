@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Box, Typography, Button, Stack, TextField, MenuItem, Dialog,
+  Box, Typography, Button, TextField, MenuItem, Dialog,
   DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
 import { useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
 
@@ -72,8 +71,13 @@ export default function UnidadTributariaPage() {
         setDialogOpen(true);
       }
     };
+    const createHandler = () => {
+      setForm({ countryCode: "VE", taxYear: new Date().getFullYear(), unitValue: 0, currency: "VES", effectiveDate: `${new Date().getFullYear()}-01-01` });
+      setDialogOpen(true);
+    };
     el.addEventListener('action-click', handler);
-    return () => el.removeEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
   }, [registered, rows]);
 
   const handleSave = async () => {
@@ -86,13 +90,7 @@ export default function UnidadTributariaPage() {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h6">Unidad Tributaria</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => {
-          setForm({ countryCode: "VE", taxYear: new Date().getFullYear(), unitValue: 0, currency: "VES", effectiveDate: `${new Date().getFullYear()}-01-01` });
-          setDialogOpen(true);
-        }}>Nuevo Valor</Button>
-      </Stack>
+      <Typography variant="h6" sx={{ mb: 2 }}>Unidad Tributaria</Typography>
 
       <ZenttoFilterPanel
         filters={[
@@ -109,6 +107,8 @@ export default function UnidadTributariaPage() {
         ref={gridRef}
         export-filename="unidad-tributaria"
         height="calc(100vh - 300px)"
+        enable-create
+        create-label="Nuevo Valor"
         enable-toolbar
         enable-header-menu
         enable-header-filters

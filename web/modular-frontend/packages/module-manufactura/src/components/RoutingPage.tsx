@@ -20,9 +20,7 @@ import {
   useTheme,
   CircularProgress,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
-import EditIcon from "@mui/icons-material/Edit";
 import {
   useRoutingList,
   useUpsertRouting,
@@ -206,32 +204,17 @@ const { data: routingRows, isLoading } = useRoutingList(bomId);
       if (action === "delete") { /* TODO: eliminar operacion */ }
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => { setDialogOpen(true); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   return (
     <Box sx={{ p: 1 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Typography variant="subtitle1" fontWeight={600}>
-          Operaciones / Ruta de Produccion
-        </Typography>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={handleNew}
-        >
-          Nueva Operacion
-        </Button>
-      </Box>
+      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+        Operaciones / Ruta de Produccion
+      </Typography>
 
       {/* Grid */}
       <zentto-grid
@@ -246,6 +229,8 @@ const { data: routingRows, isLoading } = useRoutingList(bomId);
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-create
+        create-label="Nueva Operacion"
       ></zentto-grid>
       {rows.length === 0 && !isLoading && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>

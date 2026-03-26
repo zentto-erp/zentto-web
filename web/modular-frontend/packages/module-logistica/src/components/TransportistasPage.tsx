@@ -16,8 +16,6 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
 import {
   useCarriersList,
   useCreateCarrier,
@@ -161,6 +159,14 @@ const { data, isLoading } = useCarriersList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => { resetForm(); setDialogOpen(true); };
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
@@ -175,18 +181,6 @@ const { data, isLoading } = useCarriersList({
         <Typography variant="h5" fontWeight={600}>
           Transportistas
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setDialogOpen(true);
-          }}
-          fullWidth={isMobile}
-          sx={{ maxWidth: { sm: "fit-content" } }}
-        >
-          Nuevo Transportista
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -205,6 +199,8 @@ const { data, isLoading } = useCarriersList({
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nuevo Transportista"
         ></zentto-grid>
       </Box>
 

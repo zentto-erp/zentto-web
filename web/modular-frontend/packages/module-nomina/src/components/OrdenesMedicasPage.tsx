@@ -8,8 +8,6 @@ import {
 import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
-import { formatCurrency } from "@zentto/shared-api";
 import {
   useMedOrderList, useCreateMedOrder, useApproveMedOrder,
   type MedOrderFilter, type MedOrderInput,
@@ -66,7 +64,9 @@ export default function OrdenesMedicasPage() {
       if (action === "reject") approveMutation.mutate({ orderId: row.MedicalOrderId, approved: false });
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => setDialogOpen(true);
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   const handleSave = async () => {
@@ -77,13 +77,10 @@ export default function OrdenesMedicasPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Órdenes Médicas</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>Nueva Orden</Button>
-      </Stack>
+      <Typography variant="h6" sx={{ mb: 2 }}>Órdenes Médicas</Typography>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
-        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nueva Orden" />
       </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

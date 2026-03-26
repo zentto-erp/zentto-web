@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 
 import type { ColumnDef } from "@zentto/datagrid-core";
-import AddIcon from "@mui/icons-material/Add";
 import { useConstantesList, useSaveConstante, useDeleteConstante, type ConstanteInput } from "../hooks/useNomina";
 
 const COLUMNS: ColumnDef[] = [
@@ -98,17 +97,13 @@ export default function ConstantesPage() {
       if (action === "delete") handleDelete(row);
     };
     el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    const createHandler = () => handleNew();
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nueva Constante
-        </Button>
-      </Stack>
-
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
@@ -123,6 +118,8 @@ export default function ConstantesPage() {
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nueva Constante"
         />
       </Box>
 

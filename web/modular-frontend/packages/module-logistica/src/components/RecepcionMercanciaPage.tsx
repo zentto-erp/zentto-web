@@ -21,8 +21,6 @@ import Grid from "@mui/material/Grid";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import {
@@ -204,6 +202,14 @@ const { data, isLoading } = useReceiptsList({
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rows]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setDialogOpen(true);
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Header */}
@@ -218,15 +224,6 @@ const { data, isLoading } = useReceiptsList({
         <Typography variant="h5" fontWeight={600}>
           Recepcion de Mercancia
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
-          fullWidth={isMobile}
-          sx={{ maxWidth: { sm: "fit-content" } }}
-        >
-          Nueva Recepcion
-        </Button>
       </Box>
 
       {/* DataGrid */}
@@ -245,6 +242,8 @@ const { data, isLoading } = useReceiptsList({
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nueva Recepcion"
         ></zentto-grid>
       </Box>
 

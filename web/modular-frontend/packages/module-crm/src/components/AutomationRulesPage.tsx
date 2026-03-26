@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Typography,
-  Button,
   Stack,
   Chip,
   Switch,
@@ -12,7 +11,6 @@ import {
   MenuItem,
   FormControlLabel,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import {
   FormDialog,
@@ -448,6 +446,14 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
     return () => el.removeEventListener("action-click", handler);
   }, [registered, rules]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => handleCreate();
+    el.addEventListener("create-click", handler);
+    return () => el.removeEventListener("create-click", handler);
+  }, [registered]);
+
   /* ─── Render ──────────────────────────────────────────────── */
 
   return (
@@ -455,25 +461,15 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
+          gap: 1,
           mb: 3,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <SmartToyIcon sx={{ fontSize: 28, color: "primary.main" }} />
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Automatizaciones
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreate}
-          sx={{ borderRadius: 2 }}
-        >
-          Nueva Regla
-        </Button>
+        <SmartToyIcon sx={{ fontSize: 28, color: "primary.main" }} />
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          Automatizaciones
+        </Typography>
       </Box>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
@@ -491,6 +487,8 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
           enable-configurator
           enable-grouping
           enable-pivot
+          enable-create
+          create-label="Nueva Regla"
         ></zentto-grid>
       </Box>
 

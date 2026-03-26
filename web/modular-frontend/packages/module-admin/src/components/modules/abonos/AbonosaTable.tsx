@@ -3,8 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Typography } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import { Box, Typography } from "@mui/material";
 import { ConfirmDialog, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
 import { useTimezone } from "@zentto/shared-auth";
@@ -110,32 +109,32 @@ export default function AbonosTable() {
     el.loading = isLoading;
   }, [columns, rows, isLoading, registered]);
 
-  // Listen for action-click events
+  // Listen for action-click and create-click events
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
 
-    const handler = (e: CustomEvent) => {
+    const actionHandler = (e: CustomEvent) => {
       const { action, row } = e.detail || {};
       if (!row) return;
       if (action === "view") router.push(`/abonos/${row.numeroAbono}`);
       if (action === "delete") handleDeleteClick(row.numeroAbono);
     };
+    const createHandler = () => router.push("/abonos/new");
 
-    el.addEventListener("action-click", handler);
-    return () => el.removeEventListener("action-click", handler);
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
   }, [registered, router]);
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Abonos
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push("/abonos/new")}>
-          Nuevo Abono
-        </Button>
-      </Box>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Abonos
+      </Typography>
 
       {/* Filtros */}
       <ZenttoFilterPanel
@@ -164,6 +163,8 @@ export default function AbonosTable() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-create
+            create-label="Nuevo Abono"
           ></zentto-grid>
         )}
       </Box>

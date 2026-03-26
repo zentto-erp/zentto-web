@@ -102,9 +102,11 @@ export default function CuentasBancariasPage() {
       if (action === "edit") { setForm({ BankId: row.BankId ?? 0, AccountNumber: row.Nro_Cta ?? "", AccountName: row.Descripcion ?? "", CurrencyCode: row.Moneda?.trim() ?? "VES" }); setEditId(row.BankAccountId); setFormOpen(true); }
       if (action === "delete") setDeleteTarget(row.BankAccountId);
     };
+    const createHandler = () => handleNew();
     el.addEventListener("row-click", rowHandler);
     el.addEventListener("action-click", actionHandler);
-    return () => { el.removeEventListener("row-click", rowHandler); el.removeEventListener("action-click", actionHandler); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("row-click", rowHandler); el.removeEventListener("action-click", actionHandler); el.removeEventListener("create-click", createHandler); };
   }, [registered, cuentas]);
 
   // Movimientos grid
@@ -133,7 +135,6 @@ export default function CuentasBancariasPage() {
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight={600}>Cuentas bancarias</Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nueva cuenta</Button>
           <Button variant="outlined" size="small" onClick={() => window.print()}>Imprimir</Button>
           <Button variant="outlined" size="small" onClick={() => { window.location.href = "/bancos/conciliacion"; }}>Nueva conciliación</Button>
         </Box>
@@ -143,7 +144,7 @@ export default function CuentasBancariasPage() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}>Cuentas</Typography>
-            <zentto-grid ref={ctasGridRef} height="400px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+            <zentto-grid ref={ctasGridRef} height="400px" show-totals enable-create create-label="Nueva cuenta" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
 
