@@ -71,5 +71,8 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.17.23"
+  },
+  "dependencies": {
+    "qrcode-generator": "^2.0.4"
   }
 }
