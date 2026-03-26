@@ -51,7 +51,7 @@ export default function FunnelChart({ data }: Props) {
               const idx = ctx.dataIndex;
               const row = sorted[idx];
               if (!row) return formatCurrency(v ?? 0);
-              return `${row.LeadCount} leads — ${formatCurrency(row.TotalValue)} — ${row.ConversionToNext.toFixed(0)}%`;
+              return `${row.LeadCount} leads — ${formatCurrency(row.TotalValue)} — ${Number(row.ConversionToNext ?? 0).toFixed(0)}%`;
             },
             color: "#1976d2",
           },

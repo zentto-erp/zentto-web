@@ -37,7 +37,7 @@ export default function TopPerformersChart({ data }: Props) {
         {sorted.slice(0, 10).map((d) => (
           <Chip
             key={d.UserId}
-            label={`${d.UserName}: ${d.WinRate.toFixed(0)}% win`}
+            label={`${d.UserName}: ${Number(d.WinRate ?? 0).toFixed(0)}% win`}
             size="small"
             color={d.WinRate >= 50 ? "success" : d.WinRate >= 30 ? "warning" : "error"}
             variant="outlined"

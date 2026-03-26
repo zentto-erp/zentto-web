@@ -54,7 +54,7 @@ export default function LeadAgingChart({ data }: Props) {
         {sorted.map((d) => (
           <Chip
             key={d.Bucket}
-            label={`${d.Bucket}: ${d.LeadCount} (${d.Percentage.toFixed(1)}%)`}
+            label={`${d.Bucket}: ${d.LeadCount} (${Number(d.Percentage ?? 0).toFixed(1)}%)`}
             size="small"
             sx={{
               bgcolor: getBucketColor(d.Bucket),
