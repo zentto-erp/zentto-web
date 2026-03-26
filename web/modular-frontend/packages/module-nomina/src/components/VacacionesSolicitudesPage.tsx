@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   Chip, Alert,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import {
   useVacacionSolicitudesList, useAprobarSolicitud, useRechazarSolicitud,
@@ -28,15 +28,6 @@ const COLUMNS: ColumnDef[] = [
   { field: "Status", header: "Estado", width: 120, statusColors: { PENDIENTE: "warning", APROBADA: "success", RECHAZADA: "error", PROCESADA: "info", CANCELADA: "default" } },
 ];
 
-const SOLICITUDES_FILTERS: FilterFieldDef[] = [
-  { field: "status", label: "Estado", type: "select", options: [
-    { value: "PENDIENTE", label: "Pendiente" }, { value: "APROBADA", label: "Aprobada" },
-    { value: "RECHAZADA", label: "Rechazada" }, { value: "PROCESADA", label: "Procesada" },
-    { value: "CANCELADA", label: "Cancelada" },
-  ]},
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
 
 const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
@@ -47,8 +38,6 @@ export default function VacacionesSolicitudesPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<SolicitudFilter>({ page: 1, limit: 50 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectId, setRejectId] = useState<number | null>(null);
@@ -106,15 +95,9 @@ export default function VacacionesSolicitudesPage() {
       <Typography variant="h6" fontWeight={600} mb={2}>Solicitudes de Vacaciones</Typography>
       {successMsg && <Alert severity="success" sx={{ mb: 2 }}>{successMsg}</Alert>}
 
-      <ZenttoFilterPanel filters={SOLICITUDES_FILTERS} values={filterValues}
-        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, status: v.status || undefined })); }}
-        searchPlaceholder="Buscar por cedula..." searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, employeeCode: v || undefined })); }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <zentto-grid ref={gridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       {/* Detail Dialog */}
       <Dialog open={selectedRow != null} onClose={() => setSelectedRow(null)} maxWidth="sm" fullWidth>

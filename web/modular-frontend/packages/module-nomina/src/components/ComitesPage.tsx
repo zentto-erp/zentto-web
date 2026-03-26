@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   Chip, Tab, Tabs, MenuItem, Select, FormControl, InputLabel, CircularProgress, List, ListItem,
   ListItemText, ListItemSecondaryAction, IconButton, Tooltip,
 } from "@mui/material";
-import { DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
@@ -32,17 +32,6 @@ const COLUMNS: ColumnDef[] = [
   { field: "IsActive", header: "Estado", width: 110, statusColors: { true: "success", false: "default" } },
 ];
 
-const COMITES_FILTERS: FilterFieldDef[] = [
-  { field: "type", label: "Tipo", type: "select", options: [
-    { value: "SEGURIDAD_HIGIENE", label: "Seguridad e Higiene" },
-    { value: "SALUD_LABORAL", label: "Salud Laboral" },
-    { value: "BIENESTAR", label: "Bienestar" },
-  ]},
-  { field: "status", label: "Estado", type: "select", options: [
-    { value: "ACTIVO", label: "Activo" },
-    { value: "INACTIVO", label: "Inactivo" },
-  ]},
-];
 
 const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
@@ -50,8 +39,6 @@ export default function ComitesPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<CommitteeFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [createOpen, setCreateOpen] = useState(false);
   const [committeeForm, setCommitteeForm] = useState<CommitteeInput>({ ...emptyCommittee });
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -109,15 +96,9 @@ export default function ComitesPage() {
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>Nuevo Comité</Button>
       </Stack>
 
-      <ZenttoFilterPanel filters={COMITES_FILTERS} values={filterValues}
-        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, type: v.type || undefined })); }}
-        searchPlaceholder="Buscar comites..." searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <zentto-grid ref={gridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       {/* Create Committee Dialog */}
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>

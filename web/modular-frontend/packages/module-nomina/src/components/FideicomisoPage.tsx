@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
   TextField,
@@ -19,7 +18,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { formatCurrency } from "@zentto/shared-api";
@@ -42,24 +41,11 @@ const COLUMNS: ColumnDef[] = [
   { field: "balance", header: "Saldo", width: 130, type: "number", aggregation: "sum" },
 ];
 
-const FIDEICOMISO_FILTERS: FilterFieldDef[] = [
-  {
-    field: "quarter", label: "Trimestre", type: "select",
-    options: [
-      { value: "1", label: "Q1" },
-      { value: "2", label: "Q2" },
-      { value: "3", label: "Q3" },
-      { value: "4", label: "Q4" },
-    ],
-  },
-];
 
 export default function FideicomisoPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const currentYear = new Date().getFullYear();
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<TrustFilter>({ year: currentYear, page: 1, limit: 25 });
   const [calcOpen, setCalcOpen] = useState(false);
   const [calcForm, setCalcForm] = useState({ year: currentYear, quarter: 1 });
@@ -139,23 +125,10 @@ export default function FideicomisoPage() {
         </Card>
       </Stack>
 
-      {/* Filters */}
-      <ZenttoFilterPanel
-        filters={FIDEICOMISO_FILTERS}
-        values={filterValues}
-        onChange={(v) => {
-          setFilterValues(v);
-          setFilter((f) => ({ ...f, quarter: v.quarter ? Number(v.quarter) : undefined }));
-        }}
-        searchPlaceholder="Buscar empleados..."
-        searchValue={search}
-        onSearchChange={setSearch}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
-          height="100%"
+          height="calc(100vh - 200px)"
           show-totals
           enable-toolbar
           enable-header-menu
@@ -165,8 +138,10 @@ export default function FideicomisoPage() {
           enable-context-menu
           enable-status-bar
           enable-configurator
+          enable-grouping
+          enable-pivot
         />
-      </Paper>
+      </Box>
 
       {/* Calculate Dialog */}
       <Dialog open={calcOpen} onClose={() => setCalcOpen(false)} maxWidth="sm" fullWidth>

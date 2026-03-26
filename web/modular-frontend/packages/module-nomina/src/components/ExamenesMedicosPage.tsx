@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   Chip, MenuItem, Select, FormControl, InputLabel,
 } from "@mui/material";
-import { DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
@@ -26,14 +26,6 @@ const COLUMNS: ColumnDef[] = [
   { field: "ClinicName", header: "Proveedor", width: 150 },
 ];
 
-const EXAMENES_FILTERS: FilterFieldDef[] = [
-  { field: "type", label: "Tipo", type: "select", options: [
-    { value: "PREEMPLEO", label: "Pre-Empleo" }, { value: "PERIODICO", label: "Periodico" },
-    { value: "EGRESO", label: "Egreso" }, { value: "ESPECIAL", label: "Especial" },
-  ]},
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
 
 const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
@@ -42,8 +34,6 @@ export default function ExamenesMedicosPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<MedExamFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<MedExamInput>({ ...emptyForm });
@@ -101,15 +91,9 @@ export default function ExamenesMedicosPage() {
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nuevo Examen</Button>
       </Stack>
 
-      <ZenttoFilterPanel filters={EXAMENES_FILTERS} values={filterValues}
-        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, type: v.type || undefined })); }}
-        searchPlaceholder="Buscar examenes..." searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <zentto-grid ref={gridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editMode ? "Editar Examen Médico" : "Registrar Examen Médico"}</DialogTitle>

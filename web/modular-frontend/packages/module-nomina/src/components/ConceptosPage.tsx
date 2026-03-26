@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Button,
   TextField,
   Stack,
@@ -21,7 +20,7 @@ import {
   Typography,
   Collapse,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useLookup } from "@zentto/shared-api";
 import AddIcon from "@mui/icons-material/Add";
@@ -47,16 +46,6 @@ const emptyForm: ConceptoInput = {
   tipo: "ASIGNACION",
 };
 
-const CONCEPTOS_FILTERS: FilterFieldDef[] = [
-  {
-    field: "tipo", label: "Tipo", type: "select",
-    options: [
-      { value: "ASIGNACION", label: "Asignacion" },
-      { value: "DEDUCCION", label: "Deduccion" },
-      { value: "BONO", label: "Bono" },
-    ],
-  },
-];
 
 const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 const SVG_DELETE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
@@ -65,8 +54,6 @@ export default function ConceptosPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConceptoInput>({ ...emptyForm });
@@ -156,25 +143,10 @@ export default function ConceptosPage() {
         </Button>
       </Stack>
 
-      <ZenttoFilterPanel
-        filters={CONCEPTOS_FILTERS}
-        values={filterValues}
-        onChange={(v) => {
-          setFilterValues(v);
-          setFilter((f) => ({ ...f, tipo: v.tipo || undefined }));
-        }}
-        searchPlaceholder="Buscar conceptos..."
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setFilter((f) => ({ ...f, search: v || undefined }));
-        }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
-          height="100%"
+          height="calc(100vh - 200px)"
           enable-toolbar
           enable-header-menu
           enable-header-filters
@@ -183,8 +155,10 @@ export default function ConceptosPage() {
           enable-context-menu
           enable-status-bar
           enable-configurator
+          enable-grouping
+          enable-pivot
         />
-      </Paper>
+      </Box>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>

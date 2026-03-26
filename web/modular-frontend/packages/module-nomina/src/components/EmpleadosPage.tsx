@@ -2,21 +2,12 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
-  MenuItem, Select, FormControl, InputLabel, CircularProgress, Menu,
+  Box, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  MenuItem, Select, FormControl, InputLabel, CircularProgress,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import BeachAccessIcon from "@mui/icons-material/BeachAccess";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import HistoryIcon from "@mui/icons-material/History";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import DeleteIcon from "@mui/icons-material/Delete";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import NominaWizard from "./NominaWizard";
 import VacacionesWizard from "./VacacionesWizard";
 import LiquidacionesWizard from "./LiquidacionesWizard";
@@ -30,11 +21,6 @@ import { useNominasList } from "../hooks/useNomina";
 const GRUPOS = ["ADMIN", "ALMACEN", "GERENCIA", "PRODUCCION", "VENTAS"];
 const NOMINAS = ["MENSUAL", "QUINCENAL", "SEMANAL"];
 
-const EMPLEADOS_FILTERS: FilterFieldDef[] = [
-  { field: "grupo", label: "Departamento", type: "select", options: GRUPOS.map((g) => ({ value: g, label: g })) },
-  { field: "cargo", label: "Cargo", type: "text", placeholder: "Filtrar por cargo..." },
-  { field: "status", label: "Estado", type: "select", options: [{ value: "ACTIVO", label: "Activo" }, { value: "INACTIVO", label: "Inactivo" }] },
-];
 
 const emptyForm: EmpleadoInput = { CEDULA: "", NOMBRE: "", GRUPO: "", DIRECCION: "", TELEFONO: "", CARGO: "", NOMINA: "", SUELDO: 0, STATUS: "ACTIVO", SEXO: "", NACIONALIDAD: "" };
 
@@ -65,8 +51,6 @@ export default function EmpleadosPage() {
   const histGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<EmpleadoFilter>({ page: 1, limit: 50 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [editCedula, setEditCedula] = useState<string | null>(null);
   const [form, setForm] = useState<EmpleadoInput>({ ...emptyForm });
@@ -167,15 +151,9 @@ export default function EmpleadosPage() {
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nuevo Empleado</Button>
       </Stack>
 
-      <ZenttoFilterPanel filters={EMPLEADOS_FILTERS} values={filterValues}
-        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, status: v.status || undefined, grupo: v.grupo || undefined })); }}
-        searchPlaceholder="Buscar empleados..." searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <zentto-grid ref={gridRef} height="100%" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       {/* Create / Edit Dialog */}
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>

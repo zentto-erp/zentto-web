@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
+  Box, Typography, Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import { useRouter } from "next/navigation";
@@ -25,13 +24,6 @@ const DETAIL_COLUMNS: ColumnDef[] = [
   { field: "monto", header: "Monto", width: 140, type: "number" },
 ];
 
-const LIQUIDACIONES_FILTERS: FilterFieldDef[] = [
-  { field: "tipo", label: "Tipo", type: "select", options: [
-    { value: "VOLUNTARIA", label: "Voluntaria" }, { value: "DESPIDO", label: "Despido" }, { value: "JUBILACION", label: "Jubilacion" },
-  ]},
-  { field: "fecha", label: "Fecha", type: "date" },
-  { field: "estado", label: "Estado", type: "select", options: [{ value: "PENDIENTE", label: "Pendiente" }, { value: "PROCESADA", label: "Procesada" }] },
-];
 
 const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
@@ -41,8 +33,6 @@ export default function LiquidacionesPage() {
   const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const [cedula, setCedula] = useState("");
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading } = useLiquidacionesList({ cedula: cedula || undefined });
@@ -81,14 +71,9 @@ export default function LiquidacionesPage() {
         <Button variant="contained" startIcon={<CalculateIcon />} onClick={() => router.push("/nomina/liquidaciones/nueva")}>Nueva Liquidación</Button>
       </Stack>
 
-      <ZenttoFilterPanel filters={LIQUIDACIONES_FILTERS} values={filterValues} onChange={setFilterValues}
-        searchPlaceholder="Buscar por cedula..." searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setCedula(v); }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <zentto-grid ref={gridRef} height="100%" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       {/* Detalle */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="md" fullWidth>
@@ -101,7 +86,7 @@ export default function LiquidacionesPage() {
               <Typography variant="body2"><strong>Causa:</strong> {detalle.data.causaRetiro}</Typography>
               {detalle.data.detalle && (
                 <Box sx={{ height: 300, mt: 2 }}>
-                  <zentto-grid ref={detalleGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+                  <zentto-grid ref={detalleGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
                 </Box>
               )}
             </Box>

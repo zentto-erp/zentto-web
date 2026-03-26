@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   Stack, CircularProgress, Switch, FormControlLabel,
 } from "@mui/material";
-import { DatePicker, ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker, ContextActionHeader } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import { formatCurrency } from "@zentto/shared-api";
@@ -32,15 +32,6 @@ const DETAIL_COLUMNS: ColumnDef[] = [
   { field: "monto", header: "Monto", width: 130, type: "number" },
 ];
 
-const NOMINAS_FILTERS: FilterFieldDef[] = [
-  { field: "periodo", label: "Período", type: "text", placeholder: "Ej: MENSUAL, QUINCENAL..." },
-  { field: "tipo", label: "Tipo", type: "select", options: [
-    { value: "MENSUAL", label: "Mensual" }, { value: "QUINCENAL", label: "Quincenal" }, { value: "SEMANAL", label: "Semanal" },
-  ]},
-  { field: "estado", label: "Estado", type: "select", options: [{ value: "ABIERTA", label: "Abierta" }, { value: "CERRADA", label: "Cerrada" }] },
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
 
 const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_LOCK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
@@ -50,8 +41,6 @@ export default function NominasPage() {
   const detalleGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<NominaFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedNomina, setSelectedNomina] = useState<string | null>(null);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
   const [procesarOpen, setProcesarOpen] = useState(false);
@@ -109,15 +98,9 @@ export default function NominasPage() {
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel filters={NOMINAS_FILTERS} values={filterValues}
-          onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, fechaDesde: v.fechaDesde || undefined, fechaHasta: v.fechaHasta || undefined })); }}
-          searchPlaceholder="Buscar nominas..." searchValue={search}
-          onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
-        />
-
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: '1px solid #E5E7EB' }}>
-          <zentto-grid ref={gridRef} height="100%" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-        </Paper>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        </Box>
 
         {/* Detalle Dialog */}
         <Dialog open={selectedNomina != null} onClose={() => { setSelectedNomina(null); setSelectedCedula(null); }} maxWidth="md" fullWidth>
@@ -128,7 +111,7 @@ export default function NominasPage() {
                 <Typography variant="body2" mb={1}><strong>Empleado:</strong> {detalle.data.cabecera.nombre} ({detalle.data.cabecera.cedula})</Typography>
                 <Typography variant="body2" mb={2}><strong>Período:</strong> {detalle.data.cabecera.fechaInicio} - {detalle.data.cabecera.fechaHasta}</Typography>
                 <Box sx={{ height: 350 }}>
-                  <zentto-grid ref={detalleGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+                  <zentto-grid ref={detalleGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
                 </Box>
               </Box>
             ) : <Typography>No se encontró información</Typography>}

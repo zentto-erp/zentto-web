@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Box, Paper, Typography, TextField, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, TextField, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   Stack, FormControl, InputLabel, Select, MenuItem, Alert, Switch, FormControlLabel,
 } from "@mui/material";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { brandColors } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import { useBatchGrid, useBatchBulkUpdate, type BatchGridFilter } from "../hooks/useNominaBatch";
@@ -25,10 +25,6 @@ const COLUMNS: ColumnDef[] = [
 
 interface Props { batchId: number; }
 
-const BATCH_FILTERS: FilterFieldDef[] = [
-  { field: "estado", label: "Estado", type: "select", options: [{ value: "EDITADO", label: "Editado" }, { value: "SIN_EDITAR", label: "Sin editar" }] },
-  { field: "departamento", label: "Departamento", type: "text", placeholder: "Filtrar por departamento..." },
-];
 
 const SVG_EDIT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
@@ -36,8 +32,6 @@ export default function PayrollBatchGrid({ batchId }: Props) {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<BatchGridFilter>({ page: 1, limit: 50 });
-  const [searchText, setSearchText] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [onlyModified, setOnlyModified] = useState(false);
@@ -77,12 +71,7 @@ export default function PayrollBatchGrid({ batchId }: Props) {
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Toolbar */}
       <Box sx={{ mb: 2 }}>
-        <ZenttoFilterPanel filters={BATCH_FILTERS} values={filterValues}
-          onChange={(v) => { setFilterValues(v); if (v.estado === "EDITADO") setOnlyModified(true); else setOnlyModified(false); }}
-          searchPlaceholder="Buscar por nombre o cedula..." searchValue={searchText}
-          onSearchChange={(v) => { setSearchText(v); setFilter((f) => ({ ...f, search: v || undefined, page: 1 })); }}
-        />
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
           <FormControlLabel control={<Switch size="small" checked={onlyModified} onChange={(e) => setOnlyModified(e.target.checked)} />} label={<Typography variant="body2">Solo editados</Typography>} />
           <Box sx={{ flexGrow: 1 }} />
           <Button size="small" variant="outlined" color="secondary" startIcon={<GroupWorkIcon />} onClick={() => setBulkOpen(true)}>Accion Masiva</Button>
@@ -91,9 +80,9 @@ export default function PayrollBatchGrid({ batchId }: Props) {
       </Box>
 
       {/* Grid */}
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, borderRadius: 2, overflow: "hidden" }}>
-        <zentto-grid ref={gridRef} height="100%" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       <PayrollEmployeePanel batchId={batchId} employeeCode={selectedEmployee} onClose={() => setSelectedEmployee(null)} />
 

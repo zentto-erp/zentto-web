@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Button,
   TextField,
   Stack,
@@ -11,14 +10,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useConstantesList, useSaveConstante, useDeleteConstante, type ConstanteInput } from "../hooks/useNomina";
 
 const COLUMNS: ColumnDef[] = [
@@ -28,22 +23,10 @@ const COLUMNS: ColumnDef[] = [
   { field: "origen", header: "Origen", width: 120, sortable: true },
 ];
 
-const CONSTANTES_FILTERS: FilterFieldDef[] = [
-  {
-    field: "tipo", label: "Tipo", type: "select",
-    options: [
-      { value: "SISTEMA", label: "Sistema" },
-      { value: "USUARIO", label: "Usuario" },
-      { value: "LEGAL", label: "Legal" },
-    ],
-  },
-];
 
 export default function ConstantesPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConstanteInput>({ codigo: "", nombre: "", valor: 0 });
@@ -127,19 +110,10 @@ export default function ConstantesPage() {
         </Button>
       </Stack>
 
-      <ZenttoFilterPanel
-        filters={CONSTANTES_FILTERS}
-        values={filterValues}
-        onChange={setFilterValues}
-        searchPlaceholder="Buscar constantes..."
-        searchValue={search}
-        onSearchChange={setSearch}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
-          height="100%"
+          height="calc(100vh - 200px)"
           enable-toolbar
           enable-header-menu
           enable-header-filters
@@ -148,8 +122,10 @@ export default function ConstantesPage() {
           enable-context-menu
           enable-status-bar
           enable-configurator
+          enable-grouping
+          enable-pivot
         />
-      </Paper>
+      </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editMode ? "Editar Constante" : "Nueva Constante"}</DialogTitle>

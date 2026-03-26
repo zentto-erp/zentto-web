@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
   Stack,
@@ -13,7 +12,6 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useRouter } from "next/navigation";
@@ -34,17 +32,6 @@ const COLUMNS: ColumnDef[] = [
   { field: "total", header: "Monto", width: 130, type: "number", aggregation: "sum" },
 ];
 
-const VACACIONES_FILTERS: FilterFieldDef[] = [
-  { field: "departamento", label: "Departamento", type: "text", placeholder: "Filtrar por departamento..." },
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "VIGENTE", label: "Vigente" },
-      { value: "VENCIDA", label: "Vencida" },
-      { value: "PROCESADA", label: "Procesada" },
-    ],
-  },
-];
 
 const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
@@ -53,8 +40,6 @@ export default function VacacionesPage() {
   const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const [cedula, setCedula] = useState("");
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
@@ -123,22 +108,10 @@ export default function VacacionesPage() {
         </Button>
       </Stack>
 
-      <ZenttoFilterPanel
-        filters={VACACIONES_FILTERS}
-        values={filterValues}
-        onChange={setFilterValues}
-        searchPlaceholder="Buscar por cedula..."
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setCedula(v);
-        }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
-          height="100%"
+          height="calc(100vh - 200px)"
           show-totals
           enable-toolbar
           enable-header-menu
@@ -148,8 +121,10 @@ export default function VacacionesPage() {
           enable-context-menu
           enable-status-bar
           enable-configurator
+          enable-grouping
+          enable-pivot
         />
-      </Paper>
+      </Box>
 
       {/* Detalle */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="sm" fullWidth>

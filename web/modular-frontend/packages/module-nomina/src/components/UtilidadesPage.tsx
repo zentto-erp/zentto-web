@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
   TextField,
@@ -14,7 +13,7 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
@@ -45,16 +44,6 @@ const SUMMARY_COLUMNS: ColumnDef[] = [
   { field: "amount", header: "Utilidades", width: 130, type: "number" },
 ];
 
-const UTILIDADES_FILTERS: FilterFieldDef[] = [
-  {
-    field: "status", label: "Estado", type: "select",
-    options: [
-      { value: "PENDIENTE", label: "Pendiente" },
-      { value: "APROBADO", label: "Aprobado" },
-      { value: "PROCESADO", label: "Procesado" },
-    ],
-  },
-];
 
 const SVG_VIEW = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
@@ -64,8 +53,6 @@ export default function UtilidadesPage() {
   const summaryGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<ProfitSharingFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [generateOpen, setGenerateOpen] = useState(false);
   const [summaryId, setSummaryId] = useState<number | null>(null);
   const [generateForm, setGenerateForm] = useState({ fiscalYear: new Date().getFullYear(), daysGranted: 15 });
@@ -133,25 +120,10 @@ export default function UtilidadesPage() {
         </Button>
       </Stack>
 
-      <ZenttoFilterPanel
-        filters={UTILIDADES_FILTERS}
-        values={filterValues}
-        onChange={(v) => {
-          setFilterValues(v);
-          setFilter((f) => ({ ...f, status: v.status || undefined }));
-        }}
-        searchPlaceholder="Buscar por ano fiscal..."
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setFilter((f) => ({ ...f, fiscalYear: v ? Number(v) || undefined : undefined }));
-        }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
-          height="100%"
+          height="calc(100vh - 200px)"
           show-totals
           enable-toolbar
           enable-header-menu
@@ -161,8 +133,10 @@ export default function UtilidadesPage() {
           enable-context-menu
           enable-status-bar
           enable-configurator
+          enable-grouping
+          enable-pivot
         />
-      </Paper>
+      </Box>
 
       {/* Generate Dialog */}
       <Dialog open={generateOpen} onClose={() => setGenerateOpen(false)} maxWidth="sm" fullWidth>
@@ -224,6 +198,8 @@ export default function UtilidadesPage() {
                   enable-context-menu
                   enable-status-bar
                   enable-configurator
+                  enable-grouping
+                  enable-pivot
                 />
               </Box>
             </Box>

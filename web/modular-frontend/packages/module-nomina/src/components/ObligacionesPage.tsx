@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   Tab, Tabs, MenuItem, Select, FormControl, InputLabel,
 } from "@mui/material";
-import { DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
@@ -39,12 +39,6 @@ const FIL_COLUMNS: ColumnDef[] = [
   { field: "status", header: "Estado", width: 130, statusColors: { PRESENTADA: "success", GENERADA: "info", PENDIENTE: "warning" } },
 ];
 
-const OBL_FILTERS: FilterFieldDef[] = [{ field: "frequency", label: "Frecuencia", type: "select", options: [
-  { value: "MENSUAL", label: "Mensual" }, { value: "TRIMESTRAL", label: "Trimestral" }, { value: "ANUAL", label: "Anual" },
-]}];
-const FILING_FILTERS: FilterFieldDef[] = [{ field: "status", label: "Estado", type: "select", options: [
-  { value: "PENDIENTE", label: "Pendiente" }, { value: "GENERADA", label: "Generada" }, { value: "PRESENTADA", label: "Presentada" },
-]}];
 
 const SVG_PUBLISH = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>';
 const SVG_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -54,8 +48,6 @@ export default function ObligacionesPage() {
   const filGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const { data: countries = [] } = useCountries();
-  const [oblSearch, setOblSearch] = useState(""); const [oblFilterValues, setOblFilterValues] = useState<Record<string, string>>({});
-  const [filSearch, setFilSearch] = useState(""); const [filFilterValues, setFilFilterValues] = useState<Record<string, string>>({});
   const [tab, setTab] = useState(0);
   const [oblFilter, setOblFilter] = useState<ObligationsFilter>({ page: 1, limit: 25 });
   const [filFilter, setFilFilter] = useState<FilingsFilter>({ page: 1, limit: 25 });
@@ -120,25 +112,15 @@ export default function ObligacionesPage() {
       </Tabs>
 
       <TabPanel value={tab} index={0}>
-        <ZenttoFilterPanel filters={OBL_FILTERS} values={oblFilterValues}
-          onChange={(v) => { setOblFilterValues(v); setOblFilter((f) => ({ ...f, frequency: v.frequency || undefined })); }}
-          searchPlaceholder="Buscar obligaciones..." searchValue={oblSearch}
-          onSearchChange={(v) => { setOblSearch(v); setOblFilter((f) => ({ ...f, search: v || undefined })); }}
-        />
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <zentto-grid ref={oblGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-        </Paper>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid ref={oblGridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        </Box>
       </TabPanel>
 
       <TabPanel value={tab} index={1}>
-        <ZenttoFilterPanel filters={FILING_FILTERS} values={filFilterValues}
-          onChange={(v) => { setFilFilterValues(v); setFilFilter((f) => ({ ...f, status: v.status || undefined })); }}
-          searchPlaceholder="Buscar declaraciones..." searchValue={filSearch}
-          onSearchChange={(v) => { setFilSearch(v); setFilFilter((f) => ({ ...f, search: v || undefined })); }}
-        />
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <zentto-grid ref={filGridRef} height="100%" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-        </Paper>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid ref={filGridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+        </Box>
       </TabPanel>
 
       {/* New Obligation Dialog */}

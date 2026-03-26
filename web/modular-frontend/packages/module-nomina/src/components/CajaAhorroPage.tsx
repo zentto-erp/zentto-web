@@ -11,11 +11,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Paper,
   Tab,
   Tabs,
 } from "@mui/material";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
 import { formatCurrency } from "@zentto/shared-api";
@@ -58,27 +57,6 @@ const LOAN_COLUMNS: ColumnDef[] = [
   },
 ];
 
-const SAVINGS_FILTERS: FilterFieldDef[] = [
-  {
-    field: "status", label: "Estado", type: "select",
-    options: [
-      { value: "ACTIVO", label: "Activo" },
-      { value: "INACTIVO", label: "Inactivo" },
-    ],
-  },
-];
-
-const LOAN_FILTERS: FilterFieldDef[] = [
-  {
-    field: "status", label: "Estado", type: "select",
-    options: [
-      { value: "PENDIENTE", label: "Pendiente" },
-      { value: "APROBADO", label: "Aprobado" },
-      { value: "RECHAZADO", label: "Rechazado" },
-      { value: "PAGADO", label: "Pagado" },
-    ],
-  },
-];
 
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
 
@@ -87,10 +65,6 @@ export default function CajaAhorroPage() {
   const loansGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [tab, setTab] = useState(0);
-  const [savingsSearch, setSavingsSearch] = useState("");
-  const [savingsFilterVals, setSavingsFilterVals] = useState<Record<string, string>>({});
-  const [loanSearch, setLoanSearch] = useState("");
-  const [loanFilterVals, setLoanFilterVals] = useState<Record<string, string>>({});
   const [savingsFilter, setSavingsFilter] = useState<SavingsFilter>({ page: 1, limit: 25 });
   const [loanFilter, setLoanFilter] = useState<LoanFilter>({ page: 1, limit: 25 });
   const [enrollOpen, setEnrollOpen] = useState(false);
@@ -183,24 +157,10 @@ export default function CajaAhorroPage() {
       </Tabs>
 
       <TabPanel value={tab} index={0}>
-        <ZenttoFilterPanel
-          filters={SAVINGS_FILTERS}
-          values={savingsFilterVals}
-          onChange={(v) => {
-            setSavingsFilterVals(v);
-            setSavingsFilter((f) => ({ ...f, status: v.status || undefined }));
-          }}
-          searchPlaceholder="Buscar empleados..."
-          searchValue={savingsSearch}
-          onSearchChange={(v) => {
-            setSavingsSearch(v);
-            setSavingsFilter((f) => ({ ...f, search: v || undefined }));
-          }}
-        />
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
           <zentto-grid
             ref={savingsGridRef}
-            height="100%"
+            height="calc(100vh - 200px)"
             show-totals
             enable-toolbar
             enable-header-menu
@@ -210,29 +170,17 @@ export default function CajaAhorroPage() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-grouping
+            enable-pivot
           />
-        </Paper>
+        </Box>
       </TabPanel>
 
       <TabPanel value={tab} index={1}>
-        <ZenttoFilterPanel
-          filters={LOAN_FILTERS}
-          values={loanFilterVals}
-          onChange={(v) => {
-            setLoanFilterVals(v);
-            setLoanFilter((f) => ({ ...f, status: v.status || undefined }));
-          }}
-          searchPlaceholder="Buscar prestamos..."
-          searchValue={loanSearch}
-          onSearchChange={(v) => {
-            setLoanSearch(v);
-            setLoanFilter((f) => ({ ...f, search: v || undefined }));
-          }}
-        />
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
           <zentto-grid
             ref={loansGridRef}
-            height="100%"
+            height="calc(100vh - 200px)"
             show-totals
             enable-toolbar
             enable-header-menu
@@ -242,8 +190,10 @@ export default function CajaAhorroPage() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-grouping
+            enable-pivot
           />
-        </Paper>
+        </Box>
       </TabPanel>
 
       {/* Enroll Dialog */}

@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Box, Paper, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogActions,
   MenuItem, Select, FormControl, InputLabel,
 } from "@mui/material";
-import { DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
@@ -25,16 +25,6 @@ const COLUMNS: ColumnDef[] = [
   { field: "Status", header: "Estado", width: 120, statusColors: { APROBADO: "success", RECHAZADO: "error", PENDIENTE: "warning" } },
 ];
 
-const ORDENES_FILTERS: FilterFieldDef[] = [
-  { field: "type", label: "Tipo", type: "select", options: [
-    { value: "CONSULTA", label: "Consulta" }, { value: "FARMACIA", label: "Farmacia" },
-    { value: "LABORATORIO", label: "Laboratorio" }, { value: "EMERGENCIA", label: "Emergencia" },
-  ]},
-  { field: "fecha", label: "Fecha", type: "date" },
-  { field: "status", label: "Estado", type: "select", options: [
-    { value: "PENDIENTE", label: "Pendiente" }, { value: "APROBADO", label: "Aprobado" }, { value: "RECHAZADO", label: "Rechazado" },
-  ]},
-];
 
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
 const SVG_REJECT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
@@ -43,8 +33,6 @@ export default function OrdenesMedicasPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<MedOrderFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<MedOrderInput>({ employeeCode: "", type: "", date: "", diagnosis: "", cost: 0, description: "" });
 
@@ -91,15 +79,9 @@ export default function OrdenesMedicasPage() {
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>Nueva Orden</Button>
       </Stack>
 
-      <ZenttoFilterPanel filters={ORDENES_FILTERS} values={filterValues}
-        onChange={(v) => { setFilterValues(v); setFilter((f) => ({ ...f, type: v.type || undefined, status: v.status || undefined })); }}
-        searchPlaceholder="Buscar ordenes..." searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
-      />
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <zentto-grid ref={gridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+      </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Nueva Orden Médica</DialogTitle>
