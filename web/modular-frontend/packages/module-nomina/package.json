@@ -11,23 +11,24 @@
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
-    "@zentto/shared-api": "0.1.0",
-    "@zentto/shared-auth": "0.1.0",
-    "@zentto/shared-ui": "0.1.0",
     "@hookform/resolvers": "^3.9.1",
     "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.5.0",
     "@mui/x-date-pickers": "^8.5.0",
     "@tanstack/react-query": "^5.64.2",
+    "@zentto/datagrid": "^1.0.1",
+    "@zentto/datagrid-core": "^1.0.1",
+    "@zentto/shared-api": "0.1.0",
+    "@zentto/shared-auth": "0.1.0",
+    "@zentto/shared-ui": "0.1.0",
     "dayjs": "^1.11.13",
     "dompurify": "^2.5.9",
     "marked": "^17.0.4",
+    "qrcode-generator": "^2.0.4",
     "react": "^19.2.4",
     "react-hook-form": "^7.54.2",
-    "zod": "^3.24.1",
-    "@zentto/datagrid": "latest",
-    "@zentto/datagrid-core": "latest"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5"

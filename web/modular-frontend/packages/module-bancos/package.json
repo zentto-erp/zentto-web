@@ -10,19 +10,20 @@
     "./pages/*": "./src/pages/*"
   },
   "dependencies": {
-    "@zentto/module-contabilidad": "*",
-    "@zentto/shared-api": "*",
-    "@zentto/shared-auth": "*",
-    "@zentto/shared-ui": "*",
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.5.0",
     "@mui/x-date-pickers": "^8.5.0",
     "@tanstack/react-query": "^5.64.2",
+    "@zentto/datagrid": "^1.0.1",
+    "@zentto/datagrid-core": "^1.0.1",
+    "@zentto/module-contabilidad": "*",
+    "@zentto/shared-api": "*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-ui": "*",
     "dayjs": "^1.11.13",
     "jspdf": "^2.5.2",
+    "qrcode-generator": "^2.0.4",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "@zentto/datagrid": "latest",
-    "@zentto/datagrid-core": "latest"
+    "react-dom": "^19.2.4"
   }
 }
