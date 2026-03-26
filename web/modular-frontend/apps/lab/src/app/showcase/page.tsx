@@ -348,6 +348,44 @@ export default function ShowcasePage() {
       el.cellNotes = {};
     }
 
+    // v0.5: Tree data
+    if (toggles.treeData) {
+      el.setAttribute('enable-tree-data', '');
+      el.setAttribute('tree-id-field', 'id');
+      el.setAttribute('tree-parent-field', 'parentId');
+    } else {
+      el.removeAttribute('enable-tree-data');
+    }
+
+    // v0.7: Charts
+    if (toggles.charts) {
+      el.setAttribute('enable-charts', '');
+    } else {
+      el.removeAttribute('enable-charts');
+    }
+
+    // v0.7: Print
+    if (toggles.print) {
+      el.setAttribute('enable-print', '');
+    } else {
+      el.removeAttribute('enable-print');
+    }
+
+    // v0.7: Comments
+    if (toggles.comments) {
+      el.setAttribute('enable-comments', '');
+    } else {
+      el.removeAttribute('enable-comments');
+    }
+
+    // v0.8: Audit
+    if (toggles.audit) {
+      el.setAttribute('enable-audit', '');
+      el.auditUser = 'Lab User';
+    } else {
+      el.removeAttribute('enable-audit');
+    }
+
     // v0.6: Server-side mode
     if (toggles.serverSide) {
       el.setAttribute('pagination-mode', 'server');
@@ -481,15 +519,8 @@ export default function ShowcasePage() {
         enable-undo-redo
         enable-range-selection
         enable-paste
-        // v0.5: Tree data (toggled)
-        {...(toggles.treeData ? { 'enable-tree-data': true, 'tree-id-field': 'id', 'tree-parent-field': 'parentId' } : {})}
-        // v0.7: Charts and Print (toggled)
-        {...(toggles.charts ? { 'enable-charts': true } : {})}
-        {...(toggles.print ? { 'enable-print': true } : {})}
-        // v0.7: Cell comments (toggled)
-        {...(toggles.comments ? { 'enable-comments': true } : {})}
-        // v0.8: Audit trail (toggled)
-        {...(toggles.audit ? { 'enable-audit': true } : {})}
+        enable-editing
+        enable-create
       ></zentto-grid>
     </Box>
   );
