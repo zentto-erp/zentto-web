@@ -247,6 +247,12 @@ const COLUMNS: ColumnDef[] = [
     },
   },
   {
+    field: 'email',
+    header: 'QR',
+    width: 60,
+    barcode: 'qr',
+  },
+  {
     field: 'aiSummary',
     header: 'AI Resumen',
     width: 180,
