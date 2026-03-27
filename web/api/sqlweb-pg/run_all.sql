@@ -76,6 +76,12 @@ INSERT INTO public._migrations (name) VALUES ('run_all.sql')
 \echo '--- CRM Pipeline ---'
 \i 11_crm.sql
 
+\echo '--- Manufacturing (BOM, Work Centers, Work Orders) ---'
+\i 12_manufacturing.sql
+
+\echo '--- Fleet (Vehicles, Fuel, Maintenance, Trips) ---'
+\i 13_fleet.sql
+
 -- ====================================================================
 -- FASE 3: Triggers y Fulltext
 -- ====================================================================
