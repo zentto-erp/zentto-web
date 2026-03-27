@@ -23,6 +23,7 @@ import {
   Inventory as ArticulosIcon,
   Receipt as FacturasIcon,
   AutoAwesome as ShowcaseIcon,
+  Description as ReportIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { label: "Nativo: Articulos", href: "/nativo-articulos", icon: <ScienceIcon fontSize="small" /> },
   { label: "Nativo: Facturas", href: "/nativo-facturas", icon: <ScienceIcon fontSize="small" /> },
   { label: "Showcase v1.0", href: "/showcase", icon: <ShowcaseIcon fontSize="small" />, color: "#7c3aed" },
+  { label: "Report Designer", href: "/reportes", icon: <ReportIcon fontSize="small" />, color: "#0d9488" },
 ];
 
 // Tema minimo — sin depender de shared-ui theme

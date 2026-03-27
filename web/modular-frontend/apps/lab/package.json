@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3016",
+    "dev": "next dev -p 3016 --webpack",
     "build": "next build",
     "start": "next start -p 3016"
   },
@@ -21,6 +21,9 @@
     "@zentto/datagrid": "^1.0.1",
     "@zentto/datagrid-core": "^1.0.1",
     "@zentto/module-admin": "*",
+    "@zentto/report-core": "^1.4.1",
+    "@zentto/report-designer": "^1.5.1",
+    "@zentto/report-viewer": "^1.5.2",
     "@zentto/shared-api": "*",
     "@zentto/shared-auth": "*",
     "@zentto/shared-ui": "*",

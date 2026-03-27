@@ -9,8 +9,12 @@ const nextConfig = {
     '@zentto/module-admin',
     '@zentto/datagrid',
     '@zentto/datagrid-core',
+    '@zentto/report-core',
+    '@zentto/report-viewer',
+    '@zentto/report-designer',
     'lit',
   ],
+  turbopack: {},
   async rewrites() {
     return [
       // shared-api calls /v1/* — rewrite to our proxy at /api/v1/*
