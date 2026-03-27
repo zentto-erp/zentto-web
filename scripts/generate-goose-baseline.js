@@ -19,6 +19,11 @@ const SQLWEB_PG_DIR = path.dirname(RUN_ALL);
 const OUT_DIR = path.join(ROOT, 'web', 'api', 'migrations', 'postgres');
 const OUT_FILE = path.join(OUT_DIR, '00001_baseline.sql');
 const SQLSERVER_DIR = path.join(ROOT, 'web', 'api', 'migrations', 'sqlserver');
+const SEED_MANIFESTS = [
+  'run-seeds-config.sql',
+  'run-seeds-starter.sql',
+  'run-seeds-demo.sql',
+];
 
 // ── Regex ────────────────────────────────────────────────────────────
 // \x5c = backslash character (avoid escaping issues in regex literals)
@@ -98,6 +103,25 @@ function resolveIncludes(filePath, baseDir, visited = new Set()) {
   return results;
 }
 
+function isSeedScriptPath(relPath) {
+  return /(^|\/)\d+_seed_[^/]+\.sql$/i.test(relPath) || /(^|\/)seed_[^/]+\.sql$/i.test(relPath);
+}
+
+function collectSeedManagedPaths() {
+  const excluded = new Set();
+
+  for (const manifest of SEED_MANIFESTS) {
+    const blocks = resolveIncludes(manifest, SQLWEB_PG_DIR, new Set());
+
+    for (const block of blocks) {
+      if (block.content === null) continue;
+      excluded.add(path.resolve(block.path));
+    }
+  }
+
+  return excluded;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────
 
 function main() {
@@ -120,8 +144,10 @@ function main() {
 
   // Resolver todos los includes
   const blocks = resolveIncludes('run_all.sql', SQLWEB_PG_DIR);
+  const seedManagedPaths = collectSeedManagedPaths();
 
   console.log(`  Bloques resueltos: ${blocks.length}`);
+  console.log(`  Bloques excluidos por seeds: ${seedManagedPaths.size}`);
 
   // Construir el archivo de salida
   const parts = [];
@@ -133,6 +159,7 @@ function main() {
 
   let missing = 0;
   let included = 0;
+  let skipped = 0;
 
   for (const block of blocks) {
     const relPath = path.relative(SQLWEB_PG_DIR, block.path).replace(/\\/g, '/');
@@ -152,6 +179,10 @@ function main() {
       .trim();
 
     if (!stripped) continue;
+    if (seedManagedPaths.has(path.resolve(block.path)) || isSeedScriptPath(relPath)) {
+      skipped++;
+      continue;
+    }
 
     parts.push(`-- +goose StatementBegin`);
     parts.push(`-- Source: ${relPath}`);
@@ -172,6 +203,7 @@ function main() {
 
   console.log('');
   console.log(`  Bloques incluidos: ${included}`);
+  console.log(`  Bloques omitidos: ${skipped}`);
   console.log(`  Archivos faltantes: ${missing}`);
   console.log(`  Tamano del archivo: ${sizeMB} MB`);
   console.log(`  Archivo generado: ${OUT_FILE}`);
