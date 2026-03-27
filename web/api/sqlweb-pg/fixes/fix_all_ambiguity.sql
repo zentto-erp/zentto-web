@@ -2378,6 +2378,7 @@ $function$;
 -- Parametros: cambiados de TIMESTAMPTZ a TIMESTAMP para consistencia
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_list(integer, integer, character varying, timestamp with time zone, timestamp with time zone) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_list(integer, integer, character varying, timestamp without time zone, timestamp without time zone) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_list(
     p_company_id integer,
     p_branch_id  integer,
