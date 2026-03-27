@@ -84,7 +84,7 @@ END;
 $$;
 
 -- 3. Fix usp_hr_profitsharing_list: use p_year instead of p_fiscal_year
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_list(INTEGER, INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_list(INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_list(
     p_company_id    INTEGER,
     p_year          INTEGER         DEFAULT NULL,
@@ -138,7 +138,7 @@ END;
 $$;
 
 -- 4. Fix usp_hr_trust_list: use p_year instead of p_fiscal_year
-DROP FUNCTION IF EXISTS public.usp_hr_trust_list(INTEGER, INTEGER, SMALLINT, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_trust_list(INTEGER, INTEGER, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_trust_list(
     p_company_id    INTEGER,
     p_year          INTEGER         DEFAULT NULL,
@@ -192,7 +192,7 @@ END;
 $$;
 
 -- 5. Fix usp_hr_savings_list: accept p_search (fuzzy match)
-DROP FUNCTION IF EXISTS public.usp_hr_savings_list(INTEGER, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_savings_list(INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_savings_list(
     p_company_id    INTEGER,
     p_search        VARCHAR(200)    DEFAULT NULL,
@@ -244,7 +244,7 @@ END;
 $$;
 
 -- 6. Fix usp_hr_committee_list: accept p_search and p_offset/p_limit
-DROP FUNCTION IF EXISTS public.usp_hr_committee_list(INTEGER, CHARACTER, BOOLEAN, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_committee_list(INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_list(
     p_company_id    INTEGER,
     p_search        VARCHAR(200)    DEFAULT NULL,
@@ -291,7 +291,7 @@ END;
 $$;
 
 -- 7. Fix usp_hr_occhealth_list: use p_offset-based pagination
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(INTEGER, VARCHAR, VARCHAR, VARCHAR, CHARACTER, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(INTEGER, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_list(
     p_company_id        INTEGER,
     p_employee_code     VARCHAR(30)     DEFAULT NULL,
@@ -369,7 +369,7 @@ END;
 $$;
 
 -- 8. Fix usp_hr_medexam_list: use p_offset-based pagination
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(INTEGER, VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(INTEGER, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_list(
     p_company_id        INTEGER,
     p_employee_code     VARCHAR(30)     DEFAULT NULL,
@@ -427,7 +427,7 @@ END;
 $$;
 
 -- 9. Fix usp_hr_medorder_list: use p_offset-based pagination
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(INTEGER, VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(INTEGER, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medorder_list(
     p_company_id        INTEGER,
     p_employee_code     VARCHAR(30)     DEFAULT NULL,
@@ -491,7 +491,7 @@ END;
 $$;
 
 -- 10. Fix usp_hr_training_list: accept p_search and p_offset/p_limit
-DROP FUNCTION IF EXISTS public.usp_hr_training_list(INTEGER, VARCHAR, VARCHAR, CHARACTER, BOOLEAN, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_training_list(INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_training_list(
     p_company_id        INTEGER,
     p_search            VARCHAR(200)    DEFAULT NULL,
@@ -558,7 +558,7 @@ END;
 $$;
 
 -- 11. Fix usp_hr_obligation_list: accept p_company_id and p_offset/p_limit
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(CHARACTER, VARCHAR, BOOLEAN, VARCHAR, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_obligation_list(
     p_company_id        INTEGER,
     p_country_code      VARCHAR(5)      DEFAULT NULL,
