@@ -1,6 +1,6 @@
 -- Fix: usp_acct_costcenter_insert - rename params to match TypeScript service
 -- Service calls with: CompanyId -> p_company_id, CostCenterCode -> p_cost_center_code, CostCenterName -> p_cost_center_name, ParentCode -> p_parent_code
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_insert(integer, character varying, character varying, character varying, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_costcenter_insert(integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_insert(
     p_company_id        integer,
     p_cost_center_code  character varying,
@@ -56,7 +56,7 @@ END;
 $function$;
 
 -- Fix: usp_acct_costcenter_update - rename params to match TypeScript service
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_update(integer, character varying, character varying, character varying, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_costcenter_update(integer, character varying, character varying, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_update(
     p_company_id        integer,
     p_cost_center_code  character varying,
@@ -118,7 +118,7 @@ END;
 $function$;
 
 -- Fix: usp_acct_costcenter_delete - rename params to match TypeScript service
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_delete(integer, character varying, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_costcenter_delete(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_delete(
     p_company_id        integer,
     p_cost_center_code  character varying,
