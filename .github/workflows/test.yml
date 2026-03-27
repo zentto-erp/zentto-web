@@ -75,23 +75,25 @@ jobs:
         working-directory: web/api
         run: npm ci
 
-      - name: Bootstrap schema (run_all.sql)
+      - name: Bootstrap schema (goose-style cold bootstrap)
         working-directory: web/api
         env:
           PGPASSWORD: test_password
         run: |
-          # CI ya parte de zentto_test creada por el service container.
-          # Solo necesitamos extensiones y luego el bootstrap real del esquema.
+          # CI debe validar el mismo flujo de tenant provisioning:
+          # extensiones -> migrations/postgres -> run-functions -> seeds config/starter.
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-          cd sqlweb-pg
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run_all.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
-          cd ..
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
           for file in migrations/postgres/*.sql; do
             psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f "$file"
           done
+          cd sqlweb-pg
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
 
       - name: Run SP contract tests
         working-directory: web/api
