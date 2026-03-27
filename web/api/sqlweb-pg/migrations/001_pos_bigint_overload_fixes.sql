@@ -101,6 +101,7 @@ $$;
 
 -- 3. usp_pos_waitticket_getheader
 DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader(INT, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader(INT, INT, BIGINT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_getheader(
     p_company_id     INT,
@@ -168,6 +169,7 @@ $$;
 
 -- 5. usp_pos_waitticketline_getitems
 DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems(BIGINT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_getitems(
     p_wait_ticket_id BIGINT
