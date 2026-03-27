@@ -167,6 +167,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_vacationrequest_approve(
     p_request_id    BIGINT,
     p_approved_by   VARCHAR(50) DEFAULT NULL
 )
+RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
     PERFORM * FROM public.usp_hr_vacation_request_approve(p_request_id, p_approved_by);
@@ -180,6 +181,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_vacationrequest_reject(
     p_rejected_by   VARCHAR(50) DEFAULT NULL,
     p_reason        VARCHAR(500) DEFAULT NULL
 )
+RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
     PERFORM * FROM public.usp_hr_vacation_request_reject(p_request_id, p_rejected_by, p_reason);
@@ -191,6 +193,7 @@ DROP FUNCTION IF EXISTS public.usp_hr_vacationrequest_cancel(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_vacationrequest_cancel(
     p_request_id    BIGINT
 )
+RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
     PERFORM * FROM public.usp_hr_vacation_request_cancel(p_request_id);
@@ -203,6 +206,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_vacationrequest_process(
     p_request_id    BIGINT,
     p_processed_by  VARCHAR(50) DEFAULT NULL
 )
+RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
     PERFORM * FROM public.usp_hr_vacation_request_process(p_request_id, p_processed_by);
