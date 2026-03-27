@@ -111,6 +111,12 @@ jobs:
         working-directory: web/api
         env:
           PGPASSWORD: test_password
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+          DB_TYPE: postgres
         run: |
           # Validar el mismo flujo que usa producción/tenant provisioning.
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
@@ -118,9 +124,9 @@ jobs:
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
-          for file in migrations/postgres/*.sql; do
-            psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f "$file"
-          done
+          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
+          chmod +x /usr/local/bin/goose
+          bash ../scripts/migrate.sh up
           cd sqlweb-pg
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
