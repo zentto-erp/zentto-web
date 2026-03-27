@@ -49,10 +49,10 @@ DROP FUNCTION IF EXISTS usp_bank_movement_listbyaccount(integer, integer, bigint
 
 \echo '  [008] Recreando funciones con TIMESTAMP (sin zona)...'
 
-\i ../includes/sp/usp_fin_pettycash.sql
-\i ../includes/sp/usp_pay.sql
-\i ../includes/sp/usp_rest_admin.sql
-\i ../includes/sp/usp_ops.sql
+\ir ../includes/sp/usp_fin_pettycash.sql
+\ir ../includes/sp/usp_pay.sql
+\ir ../includes/sp/usp_rest_admin.sql
+\ir ../includes/sp/usp_ops.sql
 
 \echo '  [008] Registrando migración...'
 INSERT INTO public._migrations (id, description, applied_at)

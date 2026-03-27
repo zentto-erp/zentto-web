@@ -41,9 +41,9 @@ DROP FUNCTION IF EXISTS spgetmovimientobancariobyid(bigint) CASCADE;
 
 \echo '  [009] Recreando funciones con tipos BIGINT correctos...'
 
-\i ../includes/sp/sp_nomina_batch.sql
-\i ../includes/sp/usp_rest_admin.sql
-\i ../includes/sp/sp_bancos_conciliacion.sql
+\ir ../includes/sp/sp_nomina_batch.sql
+\ir ../includes/sp/usp_rest_admin.sql
+\ir ../includes/sp/sp_bancos_conciliacion.sql
 
 \echo '  [009] Registrando migración...'
 INSERT INTO public._migrations (id, description, applied_at)

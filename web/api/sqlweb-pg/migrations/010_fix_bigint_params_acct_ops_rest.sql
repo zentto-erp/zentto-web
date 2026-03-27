@@ -38,9 +38,9 @@ DROP FUNCTION IF EXISTS usp_rest_admin_adjuststock(integer, numeric) CASCADE;
 
 \echo '  [010] Recreando funciones con tipos BIGINT correctos...'
 
-\i ../includes/sp/usp_acct.sql
-\i ../includes/sp/usp_ops.sql
-\i ../includes/sp/usp_rest_admin.sql
+\ir ../includes/sp/usp_acct.sql
+\ir ../includes/sp/usp_ops.sql
+\ir ../includes/sp/usp_rest_admin.sql
 
 \echo '  [010] Registrando migración...'
 INSERT INTO public._migrations (id, description, applied_at)
