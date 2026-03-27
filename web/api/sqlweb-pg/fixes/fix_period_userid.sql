@@ -3,8 +3,8 @@
 -- with internal try-cast to integer (NULL if not numeric)
 
 -- ── usp_acct_period_close ──────────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.usp_acct_period_close(integer, character, integer, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_acct_period_close(integer, character, text, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_period_close(integer, character, integer) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_period_close(integer, character, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_period_close(
     p_company_id  integer,
     p_period_code character,
@@ -68,11 +68,11 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.usp_acct_period_close(integer, character, text, integer, text) TO zentto_app;
+GRANT EXECUTE ON FUNCTION public.usp_acct_period_close(integer, character, text) TO zentto_app;
 
 -- ── usp_acct_period_reopen ─────────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(integer, character, integer, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(integer, character, text, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(integer, character, integer) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(integer, character, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_period_reopen(
     p_company_id  integer,
     p_period_code character,
@@ -123,11 +123,11 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.usp_acct_period_reopen(integer, character, text, integer, text) TO zentto_app;
+GRANT EXECUTE ON FUNCTION public.usp_acct_period_reopen(integer, character, text) TO zentto_app;
 
 -- ── usp_acct_period_generateclosingentries ──────────────────────────────────
-DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(integer, character, integer, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(integer, character, text, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(integer, character, integer) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(integer, character, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_period_generateclosingentries(
     p_company_id  integer,
     p_period_code character,
@@ -306,4 +306,4 @@ BEGIN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.usp_acct_period_generateclosingentries(integer, character, text, integer, text) TO zentto_app;
+GRANT EXECUTE ON FUNCTION public.usp_acct_period_generateclosingentries(integer, character, text) TO zentto_app;
