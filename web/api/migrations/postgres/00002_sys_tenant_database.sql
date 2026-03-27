@@ -124,8 +124,11 @@ $$;
 -- +goose StatementBegin
 -- Seed: registrar la BD demo actual
 INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
-VALUES (0, 'DEMO', current_database(), TRUE)
-ON CONFLICT ("CompanyId") DO UPDATE SET "DbName" = EXCLUDED."DbName";
+VALUES (0, 'DEMO', current_database() || '_demo', TRUE)
+ON CONFLICT ("CompanyId") DO UPDATE SET
+  "CompanyCode" = EXCLUDED."CompanyCode",
+  "DbName" = EXCLUDED."DbName",
+  "IsDemo" = EXCLUDED."IsDemo";
 -- +goose StatementEnd
 
 -- +goose Down
