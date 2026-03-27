@@ -228,7 +228,7 @@ $$;
 -- =============================================================================
 --  SP 2: usp_Acct_Period_EnsureYear
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Period_EnsureYear(INTEGER, SMALLINT, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Period_EnsureYear(INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_EnsureYear(
     p_company_id  INTEGER,
     p_year        SMALLINT,
@@ -295,7 +295,7 @@ $$;
 -- =============================================================================
 --  SP 3: usp_Acct_Period_Close
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Period_Close(INTEGER, CHAR(6), INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Period_Close(INTEGER, CHAR(6), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_Close(
     p_company_id  INTEGER,
     p_period_code CHAR(6),
@@ -358,7 +358,7 @@ $$;
 -- =============================================================================
 --  SP 4: usp_Acct_Period_Reopen
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Period_Reopen(INTEGER, CHAR(6), INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Period_Reopen(INTEGER, CHAR(6), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_Reopen(
     p_company_id  INTEGER,
     p_period_code CHAR(6),
@@ -412,7 +412,7 @@ $$;
 -- =============================================================================
 --  SP 5: usp_Acct_Period_GenerateClosingEntries
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Period_GenerateClosingEntries(INTEGER, CHAR(6), INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Period_GenerateClosingEntries(INTEGER, CHAR(6), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_GenerateClosingEntries(
     p_company_id  INTEGER,
     p_period_code CHAR(6),
@@ -1131,7 +1131,7 @@ $$;
 --  SP 16: usp_Acct_Budget_Insert
 --  LinesJson: [{"accountCode":"5.1.01","month01":100,...,"month12":100,"notes":""}]
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Budget_Insert(INTEGER, VARCHAR(200), SMALLINT, VARCHAR(20), TEXT, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Insert(INTEGER, VARCHAR(200), SMALLINT, VARCHAR(20), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Insert(
     p_company_id      INTEGER,
     p_name            VARCHAR(200),
@@ -1194,7 +1194,7 @@ $$;
 -- =============================================================================
 --  SP 17: usp_Acct_Budget_Update
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Budget_Update(INTEGER, INTEGER, VARCHAR(200), TEXT, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Update(INTEGER, INTEGER, VARCHAR(200), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Update(
     p_company_id INTEGER,
     p_budget_id  INTEGER,
@@ -1260,7 +1260,7 @@ $$;
 -- =============================================================================
 --  SP 18: usp_Acct_Budget_Delete
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Budget_Delete(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Delete(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Delete(
     p_company_id INTEGER,
     p_budget_id  INTEGER,
@@ -1489,7 +1489,7 @@ $$;
 --  SP 23: usp_Acct_RecurringEntry_Insert
 --  LinesJson: [{"accountCode":"5.1.01","description":"...","costCenterCode":null,"debit":100,"credit":0}]
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Insert(INTEGER, VARCHAR(200), VARCHAR(10), DATE, VARCHAR(20), VARCHAR(300), INTEGER, TEXT, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Insert(INTEGER, VARCHAR(200), VARCHAR(10), DATE, VARCHAR(20), VARCHAR(300), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Insert(
     p_company_id          INTEGER,
     p_template_name       VARCHAR(200),
@@ -1564,7 +1564,7 @@ $$;
 -- =============================================================================
 --  SP 24: usp_Acct_RecurringEntry_Update
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Update(INTEGER, INTEGER, VARCHAR(200), VARCHAR(10), DATE, VARCHAR(300), INTEGER, TEXT, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Update(INTEGER, INTEGER, VARCHAR(200), VARCHAR(10), DATE, VARCHAR(300), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Update(
     p_company_id          INTEGER,
     p_recurring_entry_id  INTEGER,
@@ -1626,7 +1626,7 @@ $$;
 -- =============================================================================
 --  SP 25: usp_Acct_RecurringEntry_Delete
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Delete(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Delete(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Delete(
     p_company_id         INTEGER,
     p_recurring_entry_id INTEGER,
@@ -1661,7 +1661,7 @@ $$;
 -- =============================================================================
 --  SP 26: usp_Acct_RecurringEntry_Execute
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Execute(INTEGER, INTEGER, DATE, INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Execute(INTEGER, INTEGER, DATE, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Execute(
     p_company_id         INTEGER,
     p_recurring_entry_id INTEGER,
@@ -1851,7 +1851,7 @@ $$;
 -- =============================================================================
 --  SP 28: usp_Acct_Entry_Reverse
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_Entry_Reverse(INTEGER, INTEGER, DATE, INTEGER, VARCHAR(300), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_Entry_Reverse(INTEGER, INTEGER, DATE, INTEGER, VARCHAR(300)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Entry_Reverse(
     p_company_id INTEGER,
     p_entry_id   INTEGER,
