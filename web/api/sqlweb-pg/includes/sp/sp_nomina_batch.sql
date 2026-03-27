@@ -105,7 +105,7 @@ END $$;
 -- 1. usp_HR_Payroll_GenerateDraft
 --    Genera un borrador de nómina en lote para todos los empleados activos.
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100), INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_company_id        INTEGER,
     p_branch_id         INTEGER,
@@ -216,7 +216,8 @@ $$;
 -- 2. usp_HR_Payroll_SaveDraftLine
 --    Guarda cambios de una celda (autosave).
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(BIGINT, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
     p_line_id   BIGINT,
     p_quantity  NUMERIC(18,4),
@@ -282,7 +283,8 @@ $$;
 -- 3. usp_HR_Payroll_BatchAddLine
 --    Agrega un nuevo concepto a un empleado en el lote.
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(BIGINT, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
     p_batch_id      BIGINT,
     p_employee_code VARCHAR(24),
@@ -389,7 +391,8 @@ $$;
 -- 4. usp_HR_Payroll_BatchRemoveLine
 --    Elimina una línea de concepto del lote.
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
     p_line_id   BIGINT,
     p_user_id   INTEGER,
@@ -762,7 +765,8 @@ $$;
 -- 8. usp_HR_Payroll_ApproveDraft
 --    Aprueba un borrador de nómina.
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(BIGINT, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
     p_batch_id   BIGINT,
     p_approved_by INTEGER,
@@ -828,7 +832,8 @@ $$;
 --    Nota: el XML de líneas se construye como JSON en PostgreSQL
 --    para compatibilidad con usp_HR_Payroll_UpsertRun.
 -- ═══════════════════════════════════════════════════════════════
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
     p_batch_id  BIGINT,
     p_user_id   INTEGER,
@@ -1026,6 +1031,7 @@ $$;
 --     Formato JSON: '[{"code":"EMP001"},{"code":"EMP002"}]'
 -- ═══════════════════════════════════════════════════════════════
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(BIGINT, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
     p_batch_id       BIGINT,
     p_concept_code   VARCHAR(20),
