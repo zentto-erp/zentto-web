@@ -11,6 +11,7 @@
 -- =============================================
 
 -- ---------- 1. List (paginado con filtros y descripcion compuesta) ----------
+DROP FUNCTION IF EXISTS usp_inventario_list(VARCHAR(100), VARCHAR(50), VARCHAR(50), VARCHAR(30), VARCHAR(50), VARCHAR(25), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_list(
     p_search     VARCHAR(100) DEFAULT NULL,
     p_categoria  VARCHAR(50)  DEFAULT NULL,
@@ -164,6 +165,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo (incluye DescripcionCompleta) ----------
+DROP FUNCTION IF EXISTS usp_inventario_getbycodigo(VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_getbycodigo(
     p_codigo VARCHAR(15)
 )
@@ -265,6 +267,7 @@ END;
 $$;
 
 -- ---------- 3. Insert (columnas principales segun schema canonico) ----------
+DROP FUNCTION IF EXISTS usp_inventario_insert(INT, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_insert(
     p_company_id INT DEFAULT NULL,
     p_row_json JSONB DEFAULT '{}'::JSONB
@@ -341,6 +344,7 @@ END;
 $$;
 
 -- ---------- 4. Update ----------
+DROP FUNCTION IF EXISTS usp_inventario_update(INT, VARCHAR(15), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_update(
     p_company_id INT DEFAULT NULL,
     p_codigo   VARCHAR(15) DEFAULT NULL,
@@ -391,6 +395,7 @@ END;
 $$;
 
 -- ---------- 5. Delete (soft delete via IsDeleted) ----------
+DROP FUNCTION IF EXISTS usp_inventario_delete(VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_delete(
     p_codigo VARCHAR(15)
 )
@@ -420,6 +425,7 @@ END;
 $$;
 
 -- ---------- 6. Movimiento Insert (ENTRADA/SALIDA/AJUSTE/TRASLADO) ----------
+DROP FUNCTION IF EXISTS usp_inventario_movimiento_insert(INT, VARCHAR(80), VARCHAR(20), NUMERIC, NUMERIC, VARCHAR(60), VARCHAR(20), VARCHAR(20), VARCHAR(300), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_movimiento_insert(
     p_company_id      INT DEFAULT 1,
     p_product_code    VARCHAR(80) DEFAULT NULL,
@@ -533,6 +539,7 @@ END;
 $$;
 
 -- ---------- 7. Movimientos List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_inventario_movimiento_list(INT, VARCHAR(100), VARCHAR(80), VARCHAR(20), VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_movimiento_list(
     p_company_id      INT DEFAULT 1,
     p_search          VARCHAR(100) DEFAULT NULL,
@@ -608,6 +615,7 @@ END;
 $$;
 
 -- ---------- 8. Dashboard Inventario (metricas) ----------
+DROP FUNCTION IF EXISTS usp_inventario_dashboard(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_dashboard(
     p_company_id INT DEFAULT 1
 )
@@ -648,6 +656,7 @@ END;
 $$;
 
 -- ---------- 9. Libro de Inventario (reporte por rango de fechas) ----------
+DROP FUNCTION IF EXISTS usp_inventario_libroinventario(INT, DATE, DATE, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_libroinventario(
     p_company_id   INT DEFAULT 1,
     p_fecha_desde  DATE DEFAULT NULL,
