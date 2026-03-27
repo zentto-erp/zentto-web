@@ -5,6 +5,7 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_cotizacion_list(VARCHAR(100), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cotizacion_list(
     p_search VARCHAR(100) DEFAULT NULL,
     p_codigo VARCHAR(10)  DEFAULT NULL,
@@ -68,6 +69,7 @@ END;
 $$;
 
 -- ---------- 2. Get by NUM_FACT ----------
+DROP FUNCTION IF EXISTS usp_cotizacion_getbynumfact(VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cotizacion_getbynumfact(
     p_num_fact VARCHAR(20)
 )
