@@ -82,6 +82,9 @@ INSERT INTO public._migrations (name) VALUES ('run_all.sql')
 \echo '--- Fleet (Vehicles, Fuel, Maintenance, Trips) ---'
 \i 13_fleet.sql
 
+\echo '--- RBAC (Permission catalog, role permissions, approval rules) ---'
+\i 14_rbac.sql
+
 -- ====================================================================
 -- FASE 3: Triggers y Fulltext
 -- ====================================================================
