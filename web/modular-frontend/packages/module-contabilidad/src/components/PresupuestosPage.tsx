@@ -15,7 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   usePresupuestosList, usePresupuestoGet, useCreatePresupuesto, useUpdatePresupuesto,
@@ -25,6 +25,7 @@ import {
 } from "../hooks/useContabilidadAdvanced";
 
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const MONTH_FIELDS = ["month01","month02","month03","month04","month05","month06","month07","month08","month09","month10","month11","month12"] as const;
 
@@ -77,13 +78,14 @@ const LINE_COLUMNS: ColumnDef[] = [
 
 function PresupuestoDetailView({ presupuestoId, onBack }: { presupuestoId: number; onBack: () => void }) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data, isLoading } = usePresupuestoGet(presupuestoId);
   const [tabValue, setTabValue] = useState(0);
   const detail: PresupuestoDetalle | null = data?.data ?? data ?? null;
   const lines: PresupuestoLinea[] = detail?.lines ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered || tabValue !== 0) return;
@@ -138,8 +140,6 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
   const [fechaHasta, setFechaHasta] = useState(today);
   const { data, isLoading, error } = usePresupuestoVarianza(presupuestoId, fechaDesde, fechaHasta);
   const rows: VarianzaRow[] = useMemo(() => { const items = data?.data ?? data?.rows ?? []; return items.map((r: any, i: number) => ({ ...r, id: i })); }, [data]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
@@ -203,6 +203,10 @@ const MAIN_COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("presupuestos", "main"),
+} as const;
+
 export default function PresupuestosPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
@@ -226,8 +230,6 @@ export default function PresupuestosPage() {
     if (search) { const s = search.toLowerCase(); result = result.filter((r: any) => (r.name || "").toLowerCase().includes(s)); }
     return result;
   }, [presupuestos, filterValues, search]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered || selectedId != null) return;

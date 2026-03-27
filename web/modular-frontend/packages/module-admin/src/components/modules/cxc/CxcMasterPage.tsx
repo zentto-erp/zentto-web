@@ -46,6 +46,8 @@ import {
   useCxcSaldo,
 } from "../../../hooks/useCxcTx";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useScopedGridId } from "../../../lib/zentto-grid";
 
 // ─── Tipos internos ───────────────────────────────────────────
 
@@ -93,10 +95,13 @@ export default function CxcMasterPage() {
   const [tabValue, setTabValue] = useState(0);
   const clienteGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const clientesGridId = useScopedGridId('cxc-clientes');
+  const { ready: clientesLayoutReady } = useGridLayoutSync(clientesGridId);
 
   useEffect(() => {
+    if (!clientesLayoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [clientesLayoutReady]);
 
   // ─── Datos de clientes ────────────────────────────────────
   const clientesQuery = useClientesList({ search, limit: 50 });
@@ -197,6 +202,7 @@ export default function CxcMasterPage() {
           {registered && (
             <zentto-grid
               ref={clienteGridRef}
+              grid-id={clientesGridId}
               default-currency="VES"
               height="280px"
               enable-toolbar
@@ -313,10 +319,13 @@ function EstadoCuentaTab({
 }) {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('cxc-estado-cuenta');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   const totalPendiente = useMemo(
     () => documentos.reduce((acc, d) => acc + Number(d.pendiente || 0), 0),
@@ -397,6 +406,7 @@ function EstadoCuentaTab({
         {registered && (
           <zentto-grid
             ref={gridRef}
+            grid-id={gridId}
             default-currency="VES"
             export-filename="estado-cuenta"
             height="400px"

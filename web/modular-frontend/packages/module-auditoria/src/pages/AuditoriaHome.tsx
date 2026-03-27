@@ -23,12 +23,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
-import { formatCurrency, toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { ContextActionHeader } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "../components/zenttoGridPersistence";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
@@ -67,18 +68,17 @@ const logColumns: ColumnDef[] = [
   { field: "Summary", header: "Descripción", flex: 2, renderCell: (p) => p.value ?? `${p.row.EntityName} ${p.row.EntityId ?? ""}` },
 ];
 
+const RECENT_LOGS_GRID_ID = buildAuditoriaGridId("home", "recent-logs");
+
 export default function AuditoriaHome() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const now = new Date();
   const fechaDesde = toDateOnly(new Date(now.getFullYear(), 0, 1), timeZone);
   const fechaHasta = toDateOnly(now, timeZone);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  const { ready: layoutReady } = useGridLayoutSync(RECENT_LOGS_GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
 
   const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
 
@@ -109,13 +109,13 @@ export default function AuditoriaHome() {
 
     if (!el || !registered) return;
 
-    el.columns = columns;
+    el.columns = logColumns;
 
     el.rows = rows;
 
     el.loading = isLoading;
 
-  }, [rows, isLoading, registered, columns]);
+  }, [rows, isLoading, registered]);
 
 
   return (
@@ -175,6 +175,7 @@ export default function AuditoriaHome() {
                 </Box>
               ) : (
                 <zentto-grid
+        grid-id={RECENT_LOGS_GRID_ID}
         ref={gridRef}
         height="400px"
         enable-header-menu

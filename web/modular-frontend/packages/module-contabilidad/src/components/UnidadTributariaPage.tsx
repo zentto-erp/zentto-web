@@ -8,8 +8,9 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import { useCountries } from "@zentto/shared-api";
+import { useGridLayoutSync, useCountries } from "@zentto/shared-api";
 import { useTaxUnitList, useTaxUnitUpsert } from "../hooks/useFiscalTributaria";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 
 
 const COLUMNS: ColumnDef[] = [
@@ -31,9 +32,16 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("unidad-tributaria", "main"),
+} as const;
+
 export default function UnidadTributariaPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data: countries = [] } = useCountries();
   const [filterCountry, setFilterCountry] = useState("");
   const [search, setSearch] = useState("");
@@ -44,8 +52,6 @@ export default function UnidadTributariaPage() {
   const { data, isLoading } = useTaxUnitList(filterCountry || undefined);
   const upsert = useTaxUnitUpsert();
   const rows = data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

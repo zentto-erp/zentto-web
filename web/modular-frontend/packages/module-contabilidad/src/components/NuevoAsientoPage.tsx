@@ -13,11 +13,12 @@ import DeleteIcon from "@mui/icons-material/DeleteOutlined";
 import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArticleIcon from "@mui/icons-material/Article";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useRouter } from "next/navigation";
 import { useCreateAsiento, usePlanCuentas } from "../hooks/useContabilidad";
 import { useCentrosCostoList } from "../hooks/useContabilidadAdvanced";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 import { CircularProgress } from "@mui/material";
 
 
@@ -45,9 +46,16 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("nuevo-asiento", "main"),
+} as const;
+
 export default function NuevoAsientoPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const router = useRouter();
   const { timeZone } = useTimezone();
   const createMutation = useCreateAsiento();
@@ -72,8 +80,6 @@ export default function NuevoAsientoPage() {
   }, [lineas]);
 
   const isBalanced = Math.abs(diferencia) < 0.01;
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

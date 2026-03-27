@@ -7,12 +7,14 @@ import {
 } from "@mui/material";
 import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import dayjs from "dayjs";
 import {
   useMedExamList, useSaveMedExam, useDeleteMedExam, usePendingExams,
   type MedExamFilter, type MedExamInput,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const emptyForm: MedExamInput = { employeeCode: "", type: "", examDate: "", nextDueDate: "", result: "", provider: "", notes: "" };
 
@@ -32,11 +34,12 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("examenes-medicos");
+
 
 
 export default function ExamenesMedicosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<MedExamFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -46,11 +49,12 @@ export default function ExamenesMedicosPage() {
   const pendingExams = usePendingExams();
   const saveMutation = useSaveMedExam();
   const deleteMutation = useDeleteMedExam();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
   const pendingCount = pendingExams.data?.data?.length ?? pendingExams.data?.length ?? 0;
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

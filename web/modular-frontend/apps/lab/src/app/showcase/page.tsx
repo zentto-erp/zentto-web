@@ -11,6 +11,8 @@ import {
   Divider,
 } from '@mui/material';
 import type { ColumnDef, GridRow } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { LAB_GRID_IDS } from '../../lib/zentto-grid-ids';
 
 // ─── Mock Data: 50 products in tree structure ─────────────────────────────────
 // Categories (level 0)
@@ -309,15 +311,99 @@ const DEFAULT_TOGGLES: FeatureToggles = {
   pinnedRows: true,
 };
 
+const GRID_ID = LAB_GRID_IDS.showcase;
+const LAYOUT_KEY = `zentto-grid-layout:${GRID_ID}`;
+
+const DEFAULT_GRID_ATTRIBUTES = [
+  'show-totals', 'enable-header-menu', 'enable-header-filters',
+  'enable-clipboard', 'enable-find', 'enable-quick-search',
+  'enable-context-menu', 'enable-status-bar', 'enable-row-selection',
+  'enable-filter-panel', 'enable-import', 'enable-drag-drop',
+  'enable-undo-redo', 'enable-range-selection', 'enable-paste',
+  'enable-editing',
+] as const;
+
+type ShowcaseGridElement = HTMLElement & Record<string, any>;
+
+function hasSavedLayout() {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    if (!raw) return false;
+    const layout = JSON.parse(raw);
+    return Boolean(layout?.features && Object.keys(layout.features).length > 0);
+  } catch {
+    return false;
+  }
+}
+
+function applyDefaultGridAttributes(el: ShowcaseGridElement) {
+  for (const attr of DEFAULT_GRID_ATTRIBUTES) {
+    el.setAttribute(attr, '');
+  }
+}
+
+function applyDemoFeatureState(el: ShowcaseGridElement, next: FeatureToggles) {
+  el.enableTreeData = next.treeData;
+  el.treeIdField = 'id';
+  el.treeParentField = 'parentId';
+  el.enableCharts = next.charts;
+  el.enablePrint = next.print;
+  el.enableComments = next.comments;
+  el.enableAudit = next.audit;
+  el.paginationMode = next.serverSide ? 'server' : 'client';
+}
+
+function readFeatureStateFromGrid(el: ShowcaseGridElement, prev: FeatureToggles): FeatureToggles {
+  return {
+    ...prev,
+    treeData: Boolean(el.enableTreeData),
+    charts: Boolean(el.enableCharts),
+    print: Boolean(el.enablePrint),
+    audit: Boolean(el.enableAudit),
+    serverSide: el.paginationMode === 'server',
+    comments: Boolean(el.enableComments),
+  };
+}
+
 export default function ShowcasePage() {
-  const gridRef = useRef<any>(null);
+  const gridRef = useRef<ShowcaseGridElement | null>(null);
   const [registered, setRegistered] = useState(false);
   const [toggles, setToggles] = useState<FeatureToggles>(DEFAULT_TOGGLES);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   // Register web component
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
+
+  // Set default features ONCE on first mount (only if no saved layout exists).
+  // After that, the web component's built-in persistence (grid-id) handles everything.
+  // Do NOT re-apply features on every render — that overwrites user's configurator choices.
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const syncFromGrid = () => {
+      setToggles((prev) => readFeatureStateFromGrid(el, prev));
+    };
+
+    if (!hasSavedLayout()) {
+      applyDefaultGridAttributes(el);
+      applyDemoFeatureState(el, DEFAULT_TOGGLES);
+    }
+
+    syncFromGrid();
+
+    const handleGridStateChange = () => syncFromGrid();
+    el.addEventListener('layout-restored', handleGridStateChange as EventListener);
+    el.addEventListener('config-change', handleGridStateChange as EventListener);
+
+    return () => {
+      el.removeEventListener('layout-restored', handleGridStateChange as EventListener);
+      el.removeEventListener('config-change', handleGridStateChange as EventListener);
+    };
+  }, [registered]);
 
   // Choose data based on tree mode
   const activeRows = toggles.treeData ? MOCK_DATA : FLAT_DATA;
@@ -340,6 +426,10 @@ export default function ShowcasePage() {
     el.loading = false;
     el.filterPanel = FILTER_PANEL;
 
+    // Features are applied ONLY on initial mount (see separate useEffect below).
+    // Do NOT set features here — this useEffect re-runs on data changes
+    // and would overwrite user's configurator toggles.
+
     // v0.5: Row pinning — summary row at bottom
     if (toggles.pinnedRows) {
       el.pinnedRows = { top: [], bottom: [TOTALS_ROW] };
@@ -354,58 +444,20 @@ export default function ShowcasePage() {
       el.cellNotes = {};
     }
 
-    // v0.5: Tree data
-    if (toggles.treeData) {
-      el.setAttribute('enable-tree-data', '');
-      el.setAttribute('tree-id-field', 'id');
-      el.setAttribute('tree-parent-field', 'parentId');
-    } else {
-      el.removeAttribute('enable-tree-data');
-    }
-
-    // v0.7: Charts
-    if (toggles.charts) {
-      el.setAttribute('enable-charts', '');
-    } else {
-      el.removeAttribute('enable-charts');
-    }
-
-    // v0.7: Print
-    if (toggles.print) {
-      el.setAttribute('enable-print', '');
-    } else {
-      el.removeAttribute('enable-print');
-    }
-
-    // v0.7: Comments
-    if (toggles.comments) {
-      el.setAttribute('enable-comments', '');
-    } else {
-      el.removeAttribute('enable-comments');
-    }
-
-    // v0.8: Audit
-    if (toggles.audit) {
-      el.setAttribute('enable-audit', '');
-      el.auditUser = 'Lab User';
-    } else {
-      el.removeAttribute('enable-audit');
-    }
-
-    // v0.6: Server-side mode
-    if (toggles.serverSide) {
-      el.setAttribute('pagination-mode', 'server');
-      el.totalRows = activeRows.length;
-    } else {
-      el.removeAttribute('pagination-mode');
-    }
-  }, [activeRows, activeColumns, registered, toggles]);
+    el.auditUser = toggles.audit ? 'Lab User' : undefined;
+    el.totalRows = toggles.serverSide ? activeRows.length : 0;
+  }, [activeRows, activeColumns, registered, toggles.audit, toggles.comments, toggles.pinnedRows, toggles.serverSide]);
 
   const handleToggle = (key: keyof FeatureToggles) => {
-    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+    const el = gridRef.current;
+    setToggles((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (el) applyDemoFeatureState(el, next);
+      return next;
+    });
   };
 
-  if (!registered) {
+  if (!layoutReady || !registered) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
         <CircularProgress />
@@ -501,31 +553,18 @@ export default function ShowcasePage() {
         ))}
       </Box>
 
-      {/* The Grid */}
+      {/* The Grid — feature toggles are managed by IndexedDB persistence (grid-id).
+          Only non-feature props (currency, filename, height) go here.
+          Features are set as defaults in useEffect below, but IndexedDB overrides win. */}
       <zentto-grid
         ref={gridRef}
         default-currency="VES"
         export-filename="showcase-v1"
         height="calc(100vh - 290px)"
-        grid-id="showcase-v1-lab"
-        show-totals
-        enable-toolbar
-        enable-header-menu
-        enable-header-filters
-        enable-clipboard
-        enable-find
-        enable-quick-search
-        enable-context-menu
-        enable-status-bar
-        enable-row-selection
-        enable-filter-panel
-        enable-import
+        grid-id={GRID_ID}
         enable-configurator
-        enable-drag-drop
-        enable-undo-redo
-        enable-range-selection
-        enable-paste
-        enable-editing
+        enable-toolbar
+        locale="es"
       ></zentto-grid>
     </Box>
   );

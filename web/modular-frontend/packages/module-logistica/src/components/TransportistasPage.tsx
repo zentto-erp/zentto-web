@@ -23,6 +23,8 @@ import {
   type CarrierFilter,
 } from "../hooks/useLogistica";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { buildLogisticaGridId, useLogisticaGridId, useLogisticaGridRegistration } from "./zenttoGridPersistence";
 
 
 interface CarrierFormData {
@@ -45,6 +47,10 @@ const emptyForm = (): CarrierFormData => ({
 });
 
 
+const GRID_IDS = {
+  gridRef: buildLogisticaGridId("transportistas", "main"),
+} as const;
+
 export default function TransportistasPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -55,12 +61,10 @@ export default function TransportistasPage() {
   const [formData, setFormData] = useState<CarrierFormData>(emptyForm());
   const [isEditing, setIsEditing] = useState(false);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useLogisticaGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useLogisticaGridRegistration(layoutReady);
 
 const { data, isLoading } = useCarriersList({
     ...filter,

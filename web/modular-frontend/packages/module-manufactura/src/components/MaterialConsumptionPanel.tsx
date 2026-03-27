@@ -15,6 +15,7 @@ import {
   useConsumeMaterial,
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 /* ─── Props ──────────────────────────────────────────────── */
 
@@ -22,15 +23,12 @@ interface MaterialConsumptionPanelProps {
   workOrderId: number;
 }
 
+const GRID_ID = "module-manufactura:material-consumption:list";
+
 /* ─── Component ──────────────────────────────────────────── */
 
 export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsumptionPanelProps) {
-  
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
-
-const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
+  const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
   const consumeMaterial = useConsumeMaterial(workOrderId);
 
   const [quantities, setQuantities] = useState<Record<number, string>>({});
@@ -38,6 +36,12 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
   const [successMsg, setSuccessMsg] = useState("");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   const order = (detail ?? {}) as Record<string, unknown>;
   const materials = (Array.isArray(order.Materials) ? order.Materials : []) as Record<string, unknown>[];
@@ -88,15 +92,6 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
       aggregation: "sum",
       renderCell: (params) => {
         const val = Number(params.value ?? 0);
-        // Bind data to zentto-grid web component
-        useEffect(() => {
-          const el = gridRef.current;
-          if (!el || !registered) return;
-          el.columns = columns;
-          el.rows = rows;
-          el.loading = isLoading;
-        }, [rows, isLoading, registered, columns]);
-
         return (
           <Typography
             variant="body2"
@@ -129,8 +124,16 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
           />
         );
       },
-    } as ZenttoColDef] : []),
+    }] : []),
   ];
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered, columns]);
 
   /* ─── Handle consume ──────────────────────────────────── */
 
@@ -175,6 +178,7 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId);
 
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         height="400px"
         enable-toolbar
         enable-header-menu

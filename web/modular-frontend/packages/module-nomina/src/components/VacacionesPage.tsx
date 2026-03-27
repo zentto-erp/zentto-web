@@ -15,11 +15,12 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useVacacionesList,
   useVacacionDetalle,
 } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "vacacion", header: "ID", width: 160, sortable: true },
@@ -38,19 +39,23 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("vacaciones");
+
 
 
 export default function VacacionesPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
   const detalle = useVacacionDetalle(selectedId);
 
   const rawRows: any[] = data?.data ?? data?.rows ?? [];
+  useNominaGridId(gridRef, GRID_ID);
   const rows = rawRows.map((r: any, i: number) => {
     const inicio = r.inicio ?? r.fechaInicio;
     const hasta = r.hasta ?? r.fechaHasta;
@@ -70,10 +75,6 @@ export default function VacacionesPage() {
       total: r.total ?? r.totalCalculado ?? r.montoVacaciones ?? 0,
     };
   });
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

@@ -8,11 +8,13 @@ import {
 import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import {
   useOccHealthList, useCreateOccHealth, useUpdateOccHealth, useOccHealthDetail,
   type OccHealthFilter, type OccHealthInput,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const STATUS_LABELS: Record<string, string> = { OPEN: "Abierto", REPORTED: "Reportado", INVESTIGATING: "En Investigación", CLOSED: "Cerrado" };
 
@@ -34,11 +36,12 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("salud-ocupacional");
+
 
 
 export default function SaludOcupacionalPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<OccHealthFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -49,10 +52,11 @@ export default function SaludOcupacionalPage() {
   const createMutation = useCreateOccHealth();
   const updateMutation = useUpdateOccHealth();
   const detail = useOccHealthDetail(detailId);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useNominaGridId(gridRef, GRID_ID);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

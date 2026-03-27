@@ -5,8 +5,10 @@ import {
   Box, Paper, Typography, CircularProgress, Alert,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { usePlanCuentas } from "../hooks/useContabilidad";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 
 const PLAN_CUENTAS_FILTERS: FilterFieldDef[] = [
   { field: "tipo", label: "Tipo", type: "select", options: [
@@ -24,9 +26,16 @@ const COLUMNS: ColumnDef[] = [
   { field: "nivel", header: "Nivel", width: 80, type: "number", sortable: true },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("plan-cuentas", "main"),
+} as const;
+
 export default function PlanCuentasPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const { data, isLoading, error } = usePlanCuentas({ search: search || undefined });
@@ -39,8 +48,6 @@ export default function PlanCuentasPage() {
     if (filterValues.nivel) result = result.filter((r: any) => String(r.nivel) === filterValues.nivel);
     return result;
   }, [rows, filterValues]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

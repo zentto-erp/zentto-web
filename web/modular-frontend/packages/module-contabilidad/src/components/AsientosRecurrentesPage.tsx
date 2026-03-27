@@ -30,7 +30,7 @@ import AddIcon from "@mui/icons-material/Add";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { formatCurrency } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
 import {
   useRecurrentesList,
   useCreateRecurrente,
@@ -43,6 +43,7 @@ import {
   type CreateRecurrenteInput,
 } from "../hooks/useContabilidadAdvanced";
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const FREQUENCY_LABELS: Record<string, string> = {
   DAILY: "Diario",
   WEEKLY: "Semanal",
@@ -226,9 +227,16 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("asientos-recurrentes", "main"),
+} as const;
+
 export default function AsientosRecurrentesPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<RecurrenteTemplate | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -243,10 +251,6 @@ export default function AsientosRecurrentesPage() {
   const templates: RecurrenteTemplate[] = useMemo(() => listData?.data ?? listData?.rows ?? [], [listData]);
   const dueTemplates: RecurrenteTemplate[] = useMemo(() => dueData?.data ?? dueData?.rows ?? [], [dueData]);
   const dueCount = dueTemplates.length;
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

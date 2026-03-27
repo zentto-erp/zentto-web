@@ -24,6 +24,7 @@ import NoteIcon from "@mui/icons-material/Note";
 import TaskIcon from "@mui/icons-material/Task";
 import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import {
   useActivitiesList,
   useCreateActivity,
@@ -58,17 +59,20 @@ const emptyActivity = {
   dueDate: "",
 };
 
+const GRID_ID = "module-crm:actividades:list";
+
 export default function ActividadesPage() {
   const [filter, setFilter] = useState<ActivityFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyActivity);
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
 const { data, isLoading } = useActivitiesList(filter);
   const createActivity = useCreateActivity();
@@ -203,6 +207,7 @@ const { data, isLoading } = useActivitiesList(filter);
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="crm-actividades-list"
         height="calc(100vh - 200px)"
         enable-toolbar

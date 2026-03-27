@@ -9,6 +9,7 @@ import {
 import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
@@ -17,6 +18,7 @@ import {
   type AddCommitteeMemberInput, type RecordMeetingInput,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -38,11 +40,12 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("comites");
+
 
 
 export default function ComitesPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<CommitteeFilter>({ page: 1, limit: 25 });
   const [createOpen, setCreateOpen] = useState(false);
   const [committeeForm, setCommitteeForm] = useState<CommitteeInput>({ ...emptyCommittee });
@@ -60,11 +63,12 @@ export default function ComitesPage() {
   const removeMemberMutation = useRemoveCommitteeMember();
   const recordMeetingMutation = useRecordMeeting();
   const meetingsQuery = useCommitteeMeetings(detailId);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
   const meetings = meetingsQuery.data?.data ?? meetingsQuery.data?.rows ?? meetingsQuery.data ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useNominaGridId(gridRef, GRID_ID);
 
   useEffect(() => {
     const el = gridRef.current;

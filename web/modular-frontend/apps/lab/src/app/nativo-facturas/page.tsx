@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
 import type { ColumnDef, GridRow } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { LAB_GRID_IDS } from '../../lib/zentto-grid-ids';
 
 const COLUMNS: ColumnDef[] = [
   { field: 'numeroFactura', header: 'N. Factura', width: 140, sortable: true },
@@ -113,10 +115,12 @@ export default function NativoFacturasPage() {
   const [rows, setRows] = useState<GridRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.nativoFacturas);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   useEffect(() => {
     async function fetchData() {
@@ -170,7 +174,7 @@ export default function NativoFacturasPage() {
     // Actions now defined as type:'actions' column in COLUMNS — no need for el.actionButtons
   }, [rows, loading, registered]);
 
-  if (!registered) {
+  if (!layoutReady || !registered) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
   }
 
@@ -185,6 +189,7 @@ export default function NativoFacturasPage() {
 
       <zentto-grid
         ref={gridRef}
+        grid-id={LAB_GRID_IDS.nativoFacturas}
         default-currency="VES"
         export-filename="facturas-nativo"
         height="calc(100vh - 160px)"

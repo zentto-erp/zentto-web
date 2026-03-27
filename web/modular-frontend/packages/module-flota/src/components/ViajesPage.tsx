@@ -21,6 +21,7 @@ import Grid from "@mui/material/Grid";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import {
   useTripsList,
   useCreateTrip,
@@ -42,6 +43,7 @@ const statusLabels: Record<string, string> = {
   COMPLETED: "Completado",
 };
 
+const GRID_ID = "module-flota:viajes:list";
 
 export default function ViajesPage() {
   const theme = useTheme();
@@ -68,13 +70,14 @@ export default function ViajesPage() {
   const [fuelUsed, setFuelUsed] = useState("");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useTripsList({
+  const { data, isLoading } = useTripsList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -251,6 +254,7 @@ const { data, isLoading } = useTripsList({
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="flota-viajes-list"
         height="calc(100vh - 200px)"
         enable-toolbar

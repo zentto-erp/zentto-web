@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { DeleteDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
 
 
@@ -48,6 +49,8 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = "module-compras:cuentas-por-pagar:list";
+
 export default function CuentasPorPagarTable() {
   const router = useRouter();
   const gridRef = useRef<any>(null);
@@ -62,6 +65,7 @@ export default function CuentasPorPagarTable() {
   });
 
   const { mutate: deleteCuenta, isPending: isDeleting } = useDeleteCuentaPorPagar();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   const handleConfirmDelete = () => {
     if (selectedCuenta) {
@@ -92,8 +96,9 @@ export default function CuentasPorPagarTable() {
   });
 
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -128,7 +133,7 @@ export default function CuentasPorPagarTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {!registered ? (
+      {!layoutReady || !registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>
@@ -136,6 +141,7 @@ export default function CuentasPorPagarTable() {
         <Box sx={{ flex: 1, minHeight: 0 }}>
           <zentto-grid
             ref={gridRef}
+            grid-id={GRID_ID}
             default-currency="VES"
             export-filename="cuentas-por-pagar"
             height="calc(100vh - 200px)"

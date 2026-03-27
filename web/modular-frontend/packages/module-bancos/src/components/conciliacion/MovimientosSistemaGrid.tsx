@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Box, Paper, Typography, CircularProgress } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 const COLUMNS: ColumnDef[] = [
   { field: "Fecha", header: "Fecha", width: 100 },
@@ -21,11 +22,17 @@ interface MovimientosSistemaGridProps {
   onSelectionChange?: (id: number | null) => void;
 }
 
+const GRID_ID = "module-bancos:conciliacion:movimientos-sistema";
+
 export default function MovimientosSistemaGrid({ movimientos, isLoading, hasConciliacion, onSelectionChange }: MovimientosSistemaGridProps) {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;
@@ -45,7 +52,7 @@ export default function MovimientosSistemaGrid({ movimientos, isLoading, hasConc
       ) : isLoading ? (
         <Box sx={{ p: 4, textAlign: "center" }}><CircularProgress /></Box>
       ) : (
-        <zentto-grid ref={gridRef} height="400px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+        <zentto-grid ref={gridRef} grid-id={GRID_ID} height="400px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       )}
     </Paper>
   );

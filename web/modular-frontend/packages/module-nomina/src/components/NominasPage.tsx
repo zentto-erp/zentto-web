@@ -13,6 +13,8 @@ import {
   useNominasList, useNominaDetalle, useProcesarNominaCompleta, useCerrarNomina, type NominaFilter,
 } from "../hooks/useNomina";
 import NominaBatchWizard from "./NominaBatchWizard";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "nomina", header: "Nómina", width: 120, sortable: true, groupable: true },
@@ -41,11 +43,12 @@ const DETAIL_COLUMNS: ColumnDef[] = [
 
 
 const SVG_LOCK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+const NOMINAS_GRID_ID = buildNominaGridId("nominas");
+const NOMINAS_DETAIL_GRID_ID = buildNominaGridId("nominas", "detalle");
 
 export default function NominasPage() {
   const gridRef = useRef<any>(null);
   const detalleGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<NominaFilter>({ page: 1, limit: 25 });
   const [selectedNomina, setSelectedNomina] = useState<string | null>(null);
   const [selectedCedula, setSelectedCedula] = useState<string | null>(null);
@@ -57,10 +60,13 @@ export default function NominasPage() {
   const detalle = useNominaDetalle(selectedNomina, selectedCedula);
   const procesarMutation = useProcesarNominaCompleta();
   const cerrarMutation = useCerrarNomina();
+  const { ready: nominasLayoutReady } = useGridLayoutSync(NOMINAS_GRID_ID);
+  const { ready: detalleLayoutReady } = useGridLayoutSync(NOMINAS_DETAIL_GRID_ID);
+  const { registered } = useNominaGridRegistration(nominasLayoutReady && detalleLayoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useNominaGridId(gridRef, NOMINAS_GRID_ID);
+  useNominaGridId(detalleGridRef, NOMINAS_DETAIL_GRID_ID);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

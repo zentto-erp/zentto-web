@@ -13,7 +13,9 @@ import {
 } from "@mui/material";
 
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useConstantesList, useSaveConstante, useDeleteConstante, type ConstanteInput } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "codigo", header: "Código", width: 150, sortable: true },
@@ -29,10 +31,11 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("constantes");
+
 
 export default function ConstantesPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConstanteInput>({ codigo: "", nombre: "", valor: 0 });
@@ -40,12 +43,11 @@ export default function ConstantesPage() {
   const { data, isLoading } = useConstantesList();
   const saveMutation = useSaveConstante();
   const deleteMutation = useDeleteConstante();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

@@ -12,6 +12,8 @@ import {
 import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
 import { Cliente } from "@zentto/shared-api/types";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useScopedGridId } from "../../../lib/zentto-grid";
 
 
 const CLIENTE_FILTERS: FilterFieldDef[] = [
@@ -57,6 +59,8 @@ export default function ClientesTable() {
   const { data, isLoading } = crud.list();
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('clientes-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
 
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -66,8 +70,9 @@ export default function ClientesTable() {
   const { mutate: deleteCliente, isPending: isDeleting } = crud.delete("");
 
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // Filtrado local
   const filteredData = useMemo(() => {
@@ -167,6 +172,7 @@ export default function ClientesTable() {
         {registered && (
           <zentto-grid
             ref={gridRef}
+            grid-id={gridId}
             default-currency="VES"
             export-filename="clientes"
             height="100%"

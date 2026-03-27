@@ -11,6 +11,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { useScopedGridId } from '../../lib/zentto-grid';
 
 
 export interface Column<T> {
@@ -33,6 +35,7 @@ export interface Action<T> {
 interface DataGridProps<T> {
   columns: Column<T>[];
   data: T[];
+  gridId?: string;
   totalRecords?: number;
   pageSize?: number;
   currentPage?: number;
@@ -49,6 +52,7 @@ interface DataGridProps<T> {
 export default function DataGrid<T extends Record<string, unknown>>({
   columns,
   data,
+  gridId,
   totalRecords = 0,
   pageSize = 10,
   currentPage = 1,
@@ -63,10 +67,15 @@ export default function DataGrid<T extends Record<string, unknown>>({
 }: DataGridProps<T>) {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const scopedGridId = useScopedGridId(
+    gridId || `${title || 'data-grid'}-${columns.map((column) => String(column.accessor)).join('-')}`
+  );
+  const { ready: layoutReady } = useGridLayoutSync(scopedGridId);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // Map Column<T> to ColumnDef[]
   const gridColumns = useMemo<ColumnDef[]>(() => {
@@ -150,7 +159,7 @@ export default function DataGrid<T extends Record<string, unknown>>({
     return () => el.removeEventListener('action-click', handler);
   }, [registered, actions, data]);
 
-  if (isLoading && !registered) {
+  if ((isLoading || !layoutReady) && !registered) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
@@ -164,6 +173,7 @@ export default function DataGrid<T extends Record<string, unknown>>({
     <Box sx={{ width: '100%', minHeight: 400 }}>
       <zentto-grid
         ref={gridRef}
+        grid-id={scopedGridId}
         default-currency="USD"
         export-filename={title || 'export'}
         height="500px"

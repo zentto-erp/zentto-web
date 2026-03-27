@@ -14,9 +14,10 @@ import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import CloseIcon from "@mui/icons-material/Close";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useLibroMayor, useBalanceComprobacion, useEstadoResultados, useBalanceGeneral, useLibroDiario } from "../hooks/useContabilidad";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 import {
   useCashFlowReport, useAgingCxC, useAgingCxP, useFinancialRatios, useTaxSummary, useDrillDown,
   type CashFlowSection, type AgingBucket, type FinancialRatio, type TaxSummaryRow, type DrillDownRow,
@@ -48,11 +49,18 @@ function DrillDownDialog({ open, onClose, accountCode, accountName, fechaDesde, 
   open: boolean; onClose: () => void; accountCode: string; accountName?: string; fechaDesde: string; fechaHasta: string;
 }) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { ready: agingCxCLayoutReady } = useGridLayoutSync(GRID_IDS.agingCxCRef);
+  const { ready: agingCxPLayoutReady } = useGridLayoutSync(GRID_IDS.agingCxPRef);
+  const { ready: taxLayoutReady } = useGridLayoutSync(GRID_IDS.taxRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  useContabilidadGridId(agingCxCRef, GRID_IDS.agingCxCRef);
+  useContabilidadGridId(agingCxPRef, GRID_IDS.agingCxPRef);
+  useContabilidadGridId(taxRef, GRID_IDS.taxRef);
+  const layoutReady = gridLayoutReady && agingCxCLayoutReady && agingCxPLayoutReady && taxLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data, isLoading } = useDrillDown(accountCode, fechaDesde, fechaHasta, open && !!accountCode);
   const rows: DrillDownRow[] = useMemo(() => { const items = data?.data ?? data?.rows ?? []; return items.map((r: any, i: number) => ({ ...r, id: i })); }, [data]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
@@ -149,6 +157,13 @@ const TAX_COLS: ColumnDef[] = [
 ];
 
 // ---- Main Component ----
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("reportes-avanzados", "main"),
+  agingCxCRef: buildContabilidadGridId("reportes-avanzados", "aging-cx-c"),
+  agingCxPRef: buildContabilidadGridId("reportes-avanzados", "aging-cx-p"),
+  taxRef: buildContabilidadGridId("reportes-avanzados", "tax"),
+} as const;
+
 export default function ReportesAvanzadosPage() {
   const { timeZone } = useTimezone();
   const today = toDateOnly(new Date(), timeZone);
@@ -185,8 +200,6 @@ export default function ReportesAvanzadosPage() {
 
   const needsRange = [0, 1, 2, 3, 5, 8].includes(tab);
   const needsCorte = [4, 6, 7].includes(tab);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   // Bind grids
   useEffect(() => { const el = diarioRef.current; if (!el || !registered || tab !== 0 || !run) return; el.columns = DIARIO_COLS; el.rows = (libroDiario.data?.rows ?? []).map((r: any, i: number) => ({ ...r, id: i })); el.loading = libroDiario.isLoading; }, [libroDiario.data, libroDiario.isLoading, registered, tab, run]);

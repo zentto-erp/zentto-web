@@ -40,6 +40,7 @@ import MaterialConsumptionPanel from "./MaterialConsumptionPanel";
 import OutputReportPanel from "./OutputReportPanel";
 import RoutingPage from "./RoutingPage";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 /* ─── Tab Panel helper ────────────────────────────────────── */
@@ -187,6 +188,8 @@ const ORDENES_FILTERS: FilterFieldDef[] = [
   },
 ];
 
+const GRID_ID = "module-manufactura:ordenes-produccion:list";
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function OrdenesProduccionPage() {
@@ -210,6 +213,7 @@ export default function OrdenesProduccionPage() {
   const [notes, setNotes] = useState("");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -223,12 +227,12 @@ export default function OrdenesProduccionPage() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useWorkOrdersList({
+  const { data, isLoading } = useWorkOrdersList({
     ...filter,
     search: search || undefined,
     page: paginationModel.page + 1,
@@ -381,6 +385,7 @@ const { data, isLoading } = useWorkOrdersList({
       {/* DataGrid con master-detail */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="manufactura-ordenes-produccion-list"
         height="400px"
         enable-toolbar

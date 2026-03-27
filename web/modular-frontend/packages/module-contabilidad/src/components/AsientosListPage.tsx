@@ -20,7 +20,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
@@ -30,6 +30,7 @@ import {
   type AsientoFilter,
 } from "../hooks/useContabilidad";
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const ASIENTOS_FILTERS: FilterFieldDef[] = [
   { field: "fechaDesde", label: "Fecha desde", type: "date" },
   { field: "fechaHasta", label: "Fecha hasta", type: "date" },
@@ -79,12 +80,22 @@ const DETAIL_COLUMNS: ColumnDef[] = [
   { field: "centroCosto", header: "C. Costo", width: 100 },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("asientos-list", "main"),
+  detailGridRef: buildContabilidadGridId("asientos-list", "detail"),
+} as const;
+
 export default function AsientosListPage() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const gridRef = useRef<any>(null);
   const detailGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { ready: detailGridLayoutReady } = useGridLayoutSync(GRID_IDS.detailGridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  useContabilidadGridId(detailGridRef, GRID_IDS.detailGridRef);
+  const layoutReady = gridLayoutReady && detailGridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [filter, setFilter] = useState<AsientoFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -97,10 +108,6 @@ export default function AsientosListPage() {
   const anularMutation = useAnularAsiento();
 
   const rows = data?.data ?? data?.rows ?? [];
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

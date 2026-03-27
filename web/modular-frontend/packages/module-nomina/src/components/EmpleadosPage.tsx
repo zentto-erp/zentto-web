@@ -14,8 +14,9 @@ import {
   useEmpleadosList, useCreateEmpleado, useUpdateEmpleado, useDeleteEmpleado,
   type EmpleadoFilter, type EmpleadoInput,
 } from "../hooks/useEmpleados";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import { useNominasList } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const GRUPOS = ["ADMIN", "ALMACEN", "GERENCIA", "PRODUCCION", "VENTAS"];
 const NOMINAS = ["MENSUAL", "QUINCENAL", "SEMANAL"];
@@ -49,11 +50,13 @@ const HISTORIAL_COLUMNS: ColumnDef[] = [
   { field: "estado", header: "Estado", width: 100, statusColors: { CERRADA: "default", ABIERTA: "success" } },
 ];
 
+const EMPLEADOS_GRID_ID = buildNominaGridId("empleados");
+const EMPLEADOS_HISTORIAL_GRID_ID = buildNominaGridId("empleados", "historial");
+
 
 export default function EmpleadosPage() {
   const gridRef = useRef<any>(null);
   const histGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<EmpleadoFilter>({ page: 1, limit: 50 });
   const [formOpen, setFormOpen] = useState(false);
   const [editCedula, setEditCedula] = useState<string | null>(null);
@@ -73,9 +76,14 @@ export default function EmpleadosPage() {
   const createMut = useCreateEmpleado();
   const updateMut = useUpdateEmpleado();
   const deleteMut = useDeleteEmpleado();
+  const { ready: empleadosLayoutReady } = useGridLayoutSync(EMPLEADOS_GRID_ID);
+  const { ready: historialLayoutReady } = useGridLayoutSync(EMPLEADOS_HISTORIAL_GRID_ID);
+  const { registered } = useNominaGridRegistration(empleadosLayoutReady && historialLayoutReady);
 
   const rows = data?.data ?? data?.rows ?? data?.items ?? [];
   const totalCount = data?.totalCount ?? data?.total ?? rows.length;
+  useNominaGridId(gridRef, EMPLEADOS_GRID_ID);
+  useNominaGridId(histGridRef, EMPLEADOS_HISTORIAL_GRID_ID);
 
   const norm = (row: any, ...keys: string[]) => { for (const k of keys) if (row[k] !== undefined && row[k] !== null) return row[k]; return ""; };
 
@@ -94,8 +102,6 @@ export default function EmpleadosPage() {
       status: active ? "Activo" : "Inactivo",
     };
   }), [rows]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

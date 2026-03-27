@@ -21,11 +21,13 @@ import {
   useTasksList, useToggleTask,
   useMessagesList, useMarkMessageRead,
 } from '@zentto/shared-api';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import type {
   NotificationItem, NotificationFilters,
   TaskItem, TaskFilters,
   MessageItem, MessageFilters,
 } from '@zentto/shared-api';
+import { useScopedGridId } from '@/lib/zentto-grid';
 
 // ─── Tab mapping ──────────────────────────────────────────────
 
@@ -45,10 +47,18 @@ export default function NotificacionesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [registered, setRegistered] = useState(false);
+  const notificationsGridId = useScopedGridId('notificaciones-grid');
+  const tasksGridId = useScopedGridId('tareas-grid');
+  const messagesGridId = useScopedGridId('mensajes-grid');
+  const { ready: notificationsReady } = useGridLayoutSync(notificationsGridId);
+  const { ready: tasksReady } = useGridLayoutSync(tasksGridId);
+  const { ready: messagesReady } = useGridLayoutSync(messagesGridId);
+  const layoutReady = notificationsReady && tasksReady && messagesReady;
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   const tabParam = searchParams.get('tab') ?? 'notificaciones';
   const [activeTab, setActiveTab] = useState(TAB_MAP[tabParam] ?? 0);
@@ -59,7 +69,7 @@ export default function NotificacionesPage() {
     router.replace(`/notificaciones${name === 'notificaciones' ? '' : `?tab=${name}`}`, { scroll: false });
   };
 
-  if (!registered) {
+  if (!layoutReady || !registered) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
   }
 
@@ -83,9 +93,9 @@ export default function NotificacionesPage() {
         </Tabs>
       </Paper>
 
-      {activeTab === 0 && <NotificationsTab isMobile={isMobile} />}
-      {activeTab === 1 && <TasksTab isMobile={isMobile} />}
-      {activeTab === 2 && <MessagesTab isMobile={isMobile} />}
+      {activeTab === 0 && <NotificationsTab gridId={notificationsGridId} isMobile={isMobile} />}
+      {activeTab === 1 && <TasksTab gridId={tasksGridId} isMobile={isMobile} />}
+      {activeTab === 2 && <MessagesTab gridId={messagesGridId} isMobile={isMobile} />}
     </Box>
   );
 }
@@ -94,7 +104,7 @@ export default function NotificacionesPage() {
 // TAB: Notificaciones
 // ═══════════════════════════════════════════════════════════════
 
-function NotificationsTab({ isMobile }: { isMobile: boolean }) {
+function NotificationsTab({ gridId, isMobile }: { gridId: string; isMobile: boolean }) {
   const gridRef = useRef<any>(null);
   const router = useRouter();
   const [filters, setFilters] = useState<NotificationFilters>({});
@@ -259,6 +269,7 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
       <Paper sx={{ height: 600 }}>
         <zentto-grid
           ref={gridRef}
+          grid-id={gridId}
           height="100%"
           export-filename="notificaciones"
           enable-toolbar
@@ -279,7 +290,7 @@ function NotificationsTab({ isMobile }: { isMobile: boolean }) {
 // TAB: Tareas
 // ═══════════════════════════════════════════════════════════════
 
-function TasksTab({ isMobile }: { isMobile: boolean }) {
+function TasksTab({ gridId, isMobile }: { gridId: string; isMobile: boolean }) {
   const gridRef = useRef<any>(null);
   const [filters, setFilters] = useState<TaskFilters>({});
   const { data, isLoading, refetch } = useTasksList(filters);
@@ -395,6 +406,7 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
       <Paper sx={{ height: 600 }}>
         <zentto-grid
           ref={gridRef}
+          grid-id={gridId}
           height="100%"
           export-filename="tareas"
           enable-toolbar
@@ -452,7 +464,7 @@ function TasksTab({ isMobile }: { isMobile: boolean }) {
 // TAB: Mensajes
 // ═══════════════════════════════════════════════════════════════
 
-function MessagesTab({ isMobile }: { isMobile: boolean }) {
+function MessagesTab({ gridId, isMobile }: { gridId: string; isMobile: boolean }) {
   const gridRef = useRef<any>(null);
   const [filters, setFilters] = useState<MessageFilters>({});
   const { data, isLoading, refetch } = useMessagesList(filters);
@@ -548,6 +560,7 @@ function MessagesTab({ isMobile }: { isMobile: boolean }) {
       <Paper sx={{ height: 600 }}>
         <zentto-grid
           ref={gridRef}
+          grid-id={gridId}
           height="100%"
           export-filename="mensajes"
           enable-toolbar

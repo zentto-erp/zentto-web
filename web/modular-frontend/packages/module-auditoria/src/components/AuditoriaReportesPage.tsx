@@ -17,12 +17,14 @@ import {
 import { ContextActionHeader, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
-import { toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { toDateOnly, formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useFiscalRecords } from "../hooks/useAuditoria";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
 
 const TAB_LABELS = ["Por Módulo", "Por Usuario", "Registros Fiscales"];
+const GRID_ID = buildAuditoriaGridId("auditoria-reportes");
 
 export default function AuditoriaReportesPage() {
   const { timeZone } = useTimezone();
@@ -34,11 +36,9 @@ export default function AuditoriaReportesPage() {
   const [fechaHasta, setFechaHasta] = useState(toDateOnly(now, timeZone));
   const [run, setRun] = useState(false);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useAuditoriaGridId(gridRef, GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
 
 
   const logsQuery = useAuditLogs(

@@ -17,8 +17,10 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { ContextActionHeader } from "@zentto/shared-ui";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
 
 
 const taxRateColumns: ColumnDef[] = [
@@ -38,6 +40,8 @@ const taxRateColumns: ColumnDef[] = [
   },
 ];
 
+const TAX_RATES_GRID_ID = buildAuditoriaGridId("fiscal-config", "tax-rates");
+
 export default function FiscalConfigPage() {
   const [countryCode, setCountryCode] = useState<string>("");
   const countries = useFiscalCountries();
@@ -51,11 +55,8 @@ export default function FiscalConfigPage() {
   const [form, setForm] = useState<Record<string, any>>({});
   const [dirty, setDirty] = useState(false);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  const { ready: layoutReady } = useGridLayoutSync(TAX_RATES_GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
 
 
   useEffect(() => {
@@ -181,6 +182,7 @@ export default function FiscalConfigPage() {
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>Tasas de Impuesto ({countryCode})</Typography>
                 <zentto-grid
+        grid-id={TAX_RATES_GRID_ID}
         ref={gridRef}
         height="400px"
         enable-header-menu

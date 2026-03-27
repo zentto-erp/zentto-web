@@ -16,7 +16,7 @@ import {
 
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useProfitSharingList,
   useGenerateProfitSharing,
@@ -24,6 +24,7 @@ import {
   useApproveProfitSharing,
   type ProfitSharingFilter,
 } from "../hooks/useRRHH";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "fiscalYear", header: "Año Fiscal", width: 120, sortable: true },
@@ -53,11 +54,12 @@ const SUMMARY_COLUMNS: ColumnDef[] = [
 
 
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+const UTILIDADES_GRID_ID = buildNominaGridId("utilidades");
+const UTILIDADES_SUMMARY_GRID_ID = buildNominaGridId("utilidades", "summary");
 
 export default function UtilidadesPage() {
   const gridRef = useRef<any>(null);
   const summaryGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<ProfitSharingFilter>({ page: 1, limit: 25 });
   const [generateOpen, setGenerateOpen] = useState(false);
   const [summaryId, setSummaryId] = useState<number | null>(null);
@@ -67,13 +69,14 @@ export default function UtilidadesPage() {
   const generateMutation = useGenerateProfitSharing();
   const approveMutation = useApproveProfitSharing();
   const summary = useProfitSharingSummary(summaryId);
+  const { ready: utilidadesLayoutReady } = useGridLayoutSync(UTILIDADES_GRID_ID);
+  const { ready: summaryLayoutReady } = useGridLayoutSync(UTILIDADES_SUMMARY_GRID_ID);
+  const { registered } = useNominaGridRegistration(utilidadesLayoutReady && summaryLayoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
   const summaryRows = summary.data?.employees ?? summary.data?.data ?? [];
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  useNominaGridId(gridRef, UTILIDADES_GRID_ID);
+  useNominaGridId(summaryGridRef, UTILIDADES_SUMMARY_GRID_ID);
 
   useEffect(() => {
     const el = gridRef.current;

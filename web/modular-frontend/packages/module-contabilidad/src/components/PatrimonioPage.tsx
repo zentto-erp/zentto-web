@@ -9,7 +9,7 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { formatCurrency } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
 import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
@@ -17,6 +17,7 @@ import {
   useEquityChangesReport, type EquityMovementInput, type EquityMovement,
 } from "../hooks/useContabilidadLegal";
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const MOVEMENT_TYPES = [
   "CAPITAL_INCREASE", "CAPITAL_DECREASE", "RESERVE_LEGAL", "RESERVE_STATUTORY",
   "RESERVE_VOLUNTARY", "NET_INCOME", "RETAINED_EARNINGS", "DIVIDEND_CASH",
@@ -45,9 +46,16 @@ const COLUMNS: ColumnDef[] = [
   { field: "Description", header: "Descripcion", flex: 1, minWidth: 150 },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("patrimonio", "main"),
+} as const;
+
 export default function PatrimonioPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const currentYear = new Date().getFullYear();
   const [fiscalYear, setFiscalYear] = useState<number>(currentYear);
   const [tab, setTab] = useState(0);
@@ -65,8 +73,6 @@ export default function PatrimonioPage() {
 
   const yearOptions: number[] = [];
   for (let y = currentYear; y >= currentYear - 10; y--) yearOptions.push(y);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

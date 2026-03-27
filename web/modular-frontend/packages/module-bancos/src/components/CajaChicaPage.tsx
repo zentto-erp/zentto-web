@@ -10,7 +10,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import { useToast, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import {
@@ -59,6 +59,9 @@ const COLS_EXPENSES: ColumnDef[] = [
   } as ColumnDef,
 ];
 
+const BOXES_GRID_ID = "module-bancos:caja-chica:boxes";
+const EXPENSES_GRID_ID = "module-bancos:caja-chica:expenses";
+
 export default function CajaChicaPage() {
   const boxesGridRef = useRef<any>(null);
   const expensesGridRef = useRef<any>(null);
@@ -88,8 +91,14 @@ export default function CajaChicaPage() {
   const openSessionMut = useOpenSession();
   const closeSessionMut = useCloseSession();
   const addExpenseMut = useAddExpense();
+  const { ready: boxesLayoutReady } = useGridLayoutSync(BOXES_GRID_ID);
+  const { ready: expensesLayoutReady } = useGridLayoutSync(EXPENSES_GRID_ID);
+  const layoutReady = boxesLayoutReady && expensesLayoutReady;
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = boxesGridRef.current; if (!el || !registered) return;
@@ -138,7 +147,7 @@ export default function CajaChicaPage() {
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}><LocalAtmIcon sx={{ mr: 1, verticalAlign: "middle", fontSize: 20 }} />Cajas Chicas</Typography>
             <ZenttoFilterPanel filters={CAJA_CHICA_FILTERS} values={cajaFilterValues} onChange={setCajaFilterValues} searchPlaceholder="Buscar caja chica..." searchValue={cajaSearch} onSearchChange={setCajaSearch} />
-            <zentto-grid ref={boxesGridRef} height="350px" show-totals enable-create create-label="Nueva Caja" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+            <zentto-grid ref={boxesGridRef} grid-id={BOXES_GRID_ID} height="350px" show-totals enable-create create-label="Nueva Caja" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
 
@@ -171,7 +180,7 @@ export default function CajaChicaPage() {
               </Card>
               <Paper sx={{ p: 2 }}>
                 <Typography variant="subtitle1" fontWeight="bold" mb={1}>Gastos de la Sesión</Typography>
-                <zentto-grid ref={expensesGridRef} height="300px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+                <zentto-grid ref={expensesGridRef} grid-id={EXPENSES_GRID_ID} height="300px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
               </Paper>
             </Stack>
           ) : (

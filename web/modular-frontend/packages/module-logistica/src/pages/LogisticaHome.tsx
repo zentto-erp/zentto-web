@@ -215,6 +215,12 @@ const STATUS_COLORS: Record<string, string> = {
   VOIDED: "#f44336",
 };
 
+const GRID_IDS = {
+  gridRef: buildLogisticaGridId("logistica-home", "actividad"),
+  gridReceiptsRef: buildLogisticaGridId("logistica-home", "recepciones"),
+  gridDeliveriesRef: buildLogisticaGridId("logistica-home", "despachos"),
+} as const;
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function LogisticaHome({ basePath = "" }: { basePath?: string }) {
@@ -223,11 +229,14 @@ export default function LogisticaHome({ basePath = "" }: { basePath?: string }) 
   const gridRef = useRef<any>(null);
   const gridReceiptsRef = useRef<any>(null);
   const gridDeliveriesRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  const { ready: activityLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { ready: receiptsLayoutReady } = useGridLayoutSync(GRID_IDS.gridReceiptsRef);
+  const { ready: deliveriesLayoutReady } = useGridLayoutSync(GRID_IDS.gridDeliveriesRef);
+  useLogisticaGridId(gridRef, GRID_IDS.gridRef);
+  useLogisticaGridId(gridReceiptsRef, GRID_IDS.gridReceiptsRef);
+  useLogisticaGridId(gridDeliveriesRef, GRID_IDS.gridDeliveriesRef);
+  const layoutReady = activityLayoutReady && receiptsLayoutReady && deliveriesLayoutReady;
+  const { registered } = useLogisticaGridRegistration(layoutReady);
 
 const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
   const { data: receiptsMonthRaw, isLoading: loadingReceipts } = useReceiptsByMonth();

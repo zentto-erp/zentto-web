@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { Box, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useFacturasList, useDeleteFactura, useDetalleFactura } from "../../hooks/useFacturas";
 import { useTimezone } from "../../hooks/useTimezone";
+import { LAB_GRID_IDS } from "../../lib/zentto-grid-ids";
 
 // ─── SVG Icons ───────────────────────────────────────
 
@@ -55,11 +57,13 @@ export default function FacturasTable() {
   const [registered, setRegistered] = useState(false);
   const [anularOpen, setAnularOpen] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<string | null>(null);
+  const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.facturas);
 
   // Register web component
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // Fetch data
   const { data: facturas, isLoading } = useFacturasList({ page: 1, limit: 100 });
@@ -130,7 +134,7 @@ export default function FacturasTable() {
     return () => el.removeEventListener('action-click', handleAction);
   }, [registered, router]);
 
-  if (!registered) {
+  if (!layoutReady || !registered) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
   }
 
@@ -147,6 +151,8 @@ export default function FacturasTable() {
       {/* Grid nativo */}
       <zentto-grid
         ref={gridRef}
+        grid-id={LAB_GRID_IDS.facturas}
+        enable-configurator
         default-currency="VES"
         export-filename="facturas"
         height="calc(100vh - 180px)"

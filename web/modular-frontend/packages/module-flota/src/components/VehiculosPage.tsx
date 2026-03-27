@@ -27,6 +27,7 @@ import {
   type VehicleFilter,
 } from "../hooks/useFlota";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 function VehiculoDetailPanel({ row }: { row: Record<string, unknown> }) {
@@ -68,6 +69,7 @@ const statusLabels: Record<string, string> = {
   INACTIVE: "Inactivo",
 };
 
+const GRID_ID = "module-flota:vehiculos:list";
 
 export default function VehiculosPage() {
   const theme = useTheme();
@@ -93,13 +95,14 @@ export default function VehiculosPage() {
   const [notes, setNotes] = useState("");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useVehiclesList({
+  const { data, isLoading } = useVehiclesList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -278,6 +281,7 @@ const { data, isLoading } = useVehiclesList({
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="flota-vehiculos-list"
         height="calc(100vh - 200px)"
         enable-toolbar

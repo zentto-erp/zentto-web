@@ -32,6 +32,7 @@ import {
   type BOMFilter,
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 interface BOMLine {
@@ -67,6 +68,8 @@ const BOM_FILTERS: FilterFieldDef[] = [
   },
 ];
 
+const GRID_ID = "module-manufactura:bom:list";
+
 export default function BOMPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -85,13 +88,14 @@ export default function BOMPage() {
   const [lines, setLines] = useState<BOMLine[]>([emptyLine()]);
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useBOMList({
+  const { data, isLoading } = useBOMList({
     ...filter,
     search,
     page: paginationModel.page + 1,
@@ -238,6 +242,7 @@ const { data, isLoading } = useBOMList({
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="manufactura-bom-list"
         height="400px"
         enable-toolbar

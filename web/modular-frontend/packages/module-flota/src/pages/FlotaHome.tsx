@@ -28,7 +28,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useFlotaDashboard,
   useFleetAlerts,
@@ -147,6 +147,8 @@ const maintenanceCols: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = "module-flota:dashboard:maintenance";
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
@@ -154,11 +156,13 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
   const bp = basePath.replace(/\/+$/, "");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   // Register zentto-grid web component
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // Data hooks
   const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();
@@ -393,6 +397,7 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
         ) : maintRows.length > 0 ? (
           <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         height="400px"
         enable-toolbar
         enable-header-menu

@@ -22,7 +22,7 @@ import {
   Alert,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { formatCurrency } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
 import { ContextActionHeader, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 
@@ -36,6 +36,7 @@ import {
   type CreateAssetInput,
 } from "../hooks/useActivosFijos";
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const DEPRECIATION_METHODS = [
   { value: "STRAIGHT_LINE", label: "Linea recta" },
   { value: "DOUBLE_DECLINING", label: "Doble declinacion" },
@@ -97,10 +98,17 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("activos-fijos-list", "main"),
+} as const;
+
 export default function ActivosFijosListPage() {
   const router = useRouter();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [filter, setFilter] = useState<AssetFilter>({ page: 1, limit: 25 });
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState<CreateAssetInput>({ ...emptyForm });
@@ -123,10 +131,6 @@ export default function ActivosFijosListPage() {
       f.field === "categoryCode" ? { ...f, options: catOptions } : f
     );
   }, [categorias]);
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

@@ -17,7 +17,7 @@ import {
 
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useSavingsList,
   useEnrollSavings,
@@ -28,6 +28,7 @@ import {
   type LoanFilter,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -65,11 +66,12 @@ const LOAN_COLUMNS: ColumnDef[] = [
 
 
 const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+const SAVINGS_GRID_ID = buildNominaGridId("caja-ahorro", "members");
+const LOANS_GRID_ID = buildNominaGridId("caja-ahorro", "loans");
 
 export default function CajaAhorroPage() {
   const savingsGridRef = useRef<any>(null);
   const loansGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [tab, setTab] = useState(0);
   const [savingsFilter, setSavingsFilter] = useState<SavingsFilter>({ page: 1, limit: 25 });
   const [loanFilter, setLoanFilter] = useState<LoanFilter>({ page: 1, limit: 25 });
@@ -83,13 +85,14 @@ export default function CajaAhorroPage() {
   const enrollMutation = useEnrollSavings();
   const loanRequestMutation = useRequestLoan();
   const approveLoanMutation = useApproveLoan();
+  const { ready: savingsLayoutReady } = useGridLayoutSync(SAVINGS_GRID_ID);
+  const { ready: loansLayoutReady } = useGridLayoutSync(LOANS_GRID_ID);
+  const { registered } = useNominaGridRegistration(savingsLayoutReady && loansLayoutReady);
 
   const savingsRows = savingsData?.data ?? savingsData?.rows ?? [];
   const loanRows = loanData?.data ?? loanData?.rows ?? [];
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  useNominaGridId(savingsGridRef, SAVINGS_GRID_ID);
+  useNominaGridId(loansGridRef, LOANS_GRID_ID);
 
   // Savings grid
   useEffect(() => {

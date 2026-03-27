@@ -23,6 +23,7 @@ import {
 } from "../hooks/useCRMAutomation";
 import { usePipelineStages } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 /* ─── Trigger / Action labels & colors ───────────────────────── */
@@ -105,15 +106,12 @@ const emptyForm: RuleForm = {
   SortOrder: 0,
 };
 
+const GRID_ID = "module-crm:automation-rules:list";
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function AutomationRulesPage() {
-  
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
-
-const { data: rulesRaw, isLoading } = useAutomationRules();
+  const { data: rulesRaw, isLoading } = useAutomationRules();
   const upsertMutation = useUpsertRule();
   const deleteMutation = useDeleteRule();
 
@@ -132,6 +130,7 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
   const [form, setForm] = useState<RuleForm>(emptyForm);
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   // Stages for condition/action selects
   const { data: stagesRaw } = usePipelineStages(undefined);
@@ -139,6 +138,11 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
     if (!stagesRaw) return [];
     return Array.isArray(stagesRaw) ? stagesRaw : (stagesRaw as any)?.data ?? [];
   }, [stagesRaw]);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -475,6 +479,7 @@ const { data: rulesRaw, isLoading } = useAutomationRules();
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
           ref={gridRef}
+          grid-id={GRID_ID}
           export-filename="crm-automation-rules-list"
           height="calc(100vh - 200px)"
           enable-toolbar

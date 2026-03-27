@@ -21,6 +21,7 @@ import {
 import { DatePicker } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import {
   useTrainingList,
   useSaveTraining,
@@ -29,6 +30,7 @@ import {
   type TrainingInput,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const emptyForm: TrainingInput = {
   employeeCode: "", title: "", type: "", provider: "",
@@ -63,11 +65,12 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("capacitacion");
+
 
 
 export default function CapacitacionPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<TrainingFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -76,12 +79,11 @@ export default function CapacitacionPage() {
   const { data, isLoading } = useTrainingList(filter);
   const saveMutation = useSaveTraining();
   const deleteMutation = useDeleteTraining();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  useNominaGridId(gridRef, GRID_ID);
 
   useEffect(() => {
     const el = gridRef.current;

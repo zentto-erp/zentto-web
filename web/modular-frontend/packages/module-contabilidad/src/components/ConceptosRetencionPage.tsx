@@ -7,8 +7,9 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
-import { useCountries, useLookup } from "@zentto/shared-api";
+import { useGridLayoutSync, useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 
 
 const COLUMNS: ColumnDef[] = [
@@ -35,9 +36,16 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("conceptos-retencion", "main"),
+} as const;
+
 export default function ConceptosRetencionPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data: countries = [] } = useCountries();
   const { data: retTypes = [] } = useLookup('RETENTION_TYPE');
   const { data: supplierTypes = [] } = useLookup('SUPPLIER_TYPE');
@@ -54,8 +62,6 @@ export default function ConceptosRetencionPage() {
   const { data, isLoading } = useConceptosList(filter);
   const upsert = useConceptoUpsert();
   const rows = data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

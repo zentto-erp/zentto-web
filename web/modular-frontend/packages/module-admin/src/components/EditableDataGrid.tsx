@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { useScopedGridId } from '../lib/zentto-grid';
 
 type GridRow = Record<string, unknown>;
 
@@ -11,6 +13,7 @@ type GridRow = Record<string, unknown>;
 interface EditableDataGridProps {
   rows: GridRow[];
   columns: ColumnDef[];
+  gridId?: string;
   loading?: boolean;
   page: number;
   pageSize: number;
@@ -31,6 +34,7 @@ function defaultGetRowId(row: GridRow): string | number {
 export default function EditableDataGrid({
   rows,
   columns,
+  gridId,
   loading = false,
   page,
   pageSize,
@@ -46,10 +50,15 @@ export default function EditableDataGrid({
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const [localRows, setLocalRows] = useState<GridRow[]>(rows);
+  const scopedGridId = useScopedGridId(
+    gridId || `editable-grid-${columns.map((column) => column.field).join('-')}`
+  );
+  const { ready: layoutReady } = useGridLayoutSync(scopedGridId);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   useEffect(() => {
     setLocalRows(rows);
@@ -127,6 +136,7 @@ export default function EditableDataGrid({
       <Box sx={{ width: '100%', minHeight: 420 }}>
         <zentto-grid
           ref={gridRef}
+          grid-id={scopedGridId}
           default-currency="VES"
           height="400px"
           enable-toolbar

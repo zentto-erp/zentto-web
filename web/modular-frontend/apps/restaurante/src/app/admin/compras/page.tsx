@@ -24,7 +24,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useTimezone } from '@zentto/shared-auth';
-import { formatDateTime } from '@zentto/shared-api';
+import { formatDateTime, useGridLayoutSync } from '@zentto/shared-api';
 import { DatePicker } from '@zentto/shared-ui';
 import dayjs from 'dayjs';
 import {
@@ -45,6 +45,7 @@ import {
     useUpsertProductoAdminMutation,
     useUpdateCompraMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
 
 
 type CompraDetalleRow = CompraDetalleInput & { rowId: string };
@@ -55,6 +56,13 @@ export default function AdminComprasPage() {
     const detalleGridRef = useRef<any>(null);
     const detalleCompraGridRef = useRef<any>(null);
     const [registered, setRegistered] = useState(false);
+    const comprasGridId = useScopedGridId('compras-main');
+    const detalleDraftGridId = useScopedGridId('compras-detalle-draft');
+    const detalleExistenteGridId = useScopedGridId('compras-detalle-existente');
+    const { ready: comprasLayoutReady } = useGridLayoutSync(comprasGridId);
+    const { ready: detalleDraftLayoutReady } = useGridLayoutSync(detalleDraftGridId);
+    const { ready: detalleExistenteLayoutReady } = useGridLayoutSync(detalleExistenteGridId);
+    const layoutReady = comprasLayoutReady && detalleDraftLayoutReady && detalleExistenteLayoutReady;
 
     const { timeZone } = useTimezone();
     const [estado, setEstado] = useState('');
@@ -109,8 +117,9 @@ export default function AdminComprasPage() {
     const comprasRows = (data?.rows ?? []) as CompraRestauranteAdmin[];
 
     useEffect(() => {
+        if (!layoutReady) return;
         import('@zentto/datagrid').then(() => setRegistered(true));
-    }, []);
+    }, [layoutReady]);
 
     // --- Main compras grid columns ---
     const comprasColumns = useMemo<ColumnDef[]>(() => [
@@ -460,7 +469,7 @@ export default function AdminComprasPage() {
         setErrorMsg(null);
     };
 
-    if (!registered) {
+    if (!layoutReady || !registered) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
     }
 
@@ -505,6 +514,7 @@ export default function AdminComprasPage() {
 
             <zentto-grid
                 ref={gridRef}
+                grid-id={comprasGridId}
                 height="calc(100vh - 360px)"
                 enable-toolbar
                 enable-header-menu
@@ -700,6 +710,7 @@ export default function AdminComprasPage() {
 
                     <zentto-grid
                         ref={detalleGridRef}
+                        grid-id={detalleDraftGridId}
                         height="300px"
                         enable-toolbar
                         enable-header-menu
@@ -837,6 +848,7 @@ export default function AdminComprasPage() {
 
                             <zentto-grid
                                 ref={detalleCompraGridRef}
+                                grid-id={detalleExistenteGridId}
                                 height="300px"
                                 enable-toolbar
                                 enable-header-menu

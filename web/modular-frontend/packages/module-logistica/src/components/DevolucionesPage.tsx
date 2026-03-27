@@ -26,6 +26,8 @@ import {
   type ReturnFilter,
 } from "../hooks/useLogistica";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { buildLogisticaGridId, useLogisticaGridId, useLogisticaGridRegistration } from "./zenttoGridPersistence";
 
 
 interface ReturnLine {
@@ -63,6 +65,10 @@ const emptyLine = (): ReturnLine => ({
 });
 
 
+const GRID_IDS = {
+  gridRef: buildLogisticaGridId("devoluciones", "main"),
+} as const;
+
 export default function DevolucionesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -78,11 +84,10 @@ export default function DevolucionesPage() {
   const [returnReason, setReturnReason] = useState("");
   const [lines, setLines] = useState<ReturnLine[]>([emptyLine()]);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useLogisticaGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useLogisticaGridRegistration(layoutReady);
 
 const { data, isLoading } = useReturnsList({
     ...filter,

@@ -7,6 +7,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import { useToast } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useBancosList, useCreateBanco, useUpdateBanco, useDeleteBanco } from "../../hooks/useBancosAuxiliares";
 
 const EMPTY_FORM = { Nombre: "", Contacto: "", Direccion: "", Telefonos: "", Co_Usuario: "SUP" };
@@ -24,6 +25,8 @@ const COLUMNS: ColumnDef[] = [
     ],
   } as ColumnDef,
 ];
+
+const GRID_ID = "module-bancos:bancos:list";
 
 
 export default function BancosPage() {
@@ -44,8 +47,12 @@ export default function BancosPage() {
   const { showToast } = useToast();
   const saving = crear.isPending || actualizar.isPending;
   const rows = (data?.rows ?? data?.items ?? []) as Record<string, any>[];
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;
@@ -96,7 +103,7 @@ export default function BancosPage() {
       />
 
       <Box sx={{ minHeight: 400 }}>
-        <zentto-grid ref={gridRef} height="400px" enable-create create-label="Nuevo Banco" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+        <zentto-grid ref={gridRef} grid-id={GRID_ID} height="400px" enable-create create-label="Nuevo Banco" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Box>
 
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>

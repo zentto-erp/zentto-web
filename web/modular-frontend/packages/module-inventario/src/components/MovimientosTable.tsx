@@ -11,7 +11,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
@@ -62,6 +62,9 @@ const DETAIL_RENDERER = (row: any) => `
   </div>
 `;
 
+const ARTICULOS_GRID_ID = "module-inventario:movimientos:articulos";
+const MOVIMIENTOS_GRID_ID = "module-inventario:movimientos:list";
+
 export default function MovimientosTable() {
   const artGridRef = useRef<any>(null);
   const movGridRef = useRef<any>(null);
@@ -81,6 +84,9 @@ export default function MovimientosTable() {
   const artRows = (inventario?.rows ?? []) as Record<string, unknown>[];
 
   const debouncedArtSearch = useCallback(debounce((value: string) => setArtSearch(value), 400), []);
+  const { ready: articulosLayoutReady } = useGridLayoutSync(ARTICULOS_GRID_ID);
+  const { ready: movimientosLayoutReady } = useGridLayoutSync(MOVIMIENTOS_GRID_ID);
+  const layoutReady = articulosLayoutReady && movimientosLayoutReady;
 
   const { data: movimientos, isLoading } = useMovimientosList({
     search: search || undefined, productCode: selectedProductCode || undefined,
@@ -109,7 +115,10 @@ export default function MovimientosTable() {
     };
   });
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = artGridRef.current; if (!el || !registered) return;
@@ -152,7 +161,7 @@ export default function MovimientosTable() {
             <TextField placeholder="Buscar artículos..." onChange={(e) => debouncedArtSearch(e.target.value)} fullWidth sx={{ mb: 2 }}
               InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
             />
-            <zentto-grid ref={artGridRef} height="350px" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+            <zentto-grid ref={artGridRef} grid-id={ARTICULOS_GRID_ID} height="350px" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
 
@@ -172,7 +181,7 @@ export default function MovimientosTable() {
             defaultOpen
           />
 
-          <zentto-grid ref={movGridRef} height="500px" default-currency="VES" export-filename="movimientos-inventario" show-totals
+          <zentto-grid ref={movGridRef} grid-id={MOVIMIENTOS_GRID_ID} height="500px" default-currency="VES" export-filename="movimientos-inventario" show-totals
             enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-master-detail enable-configurator
           />
         </Grid>

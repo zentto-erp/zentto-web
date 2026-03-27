@@ -36,11 +36,12 @@ import {
   ViewColumn as ViewColumnIcon,
 } from "@mui/icons-material";
 import { useArticulosList, useDeleteArticulo, useArticuloFilterOptions } from "../../../hooks/useArticulos";
-import { formatCurrency, apiGet } from "@zentto/shared-api";
+import { formatCurrency, apiGet, useGridLayoutSync } from "@zentto/shared-api";
 import { useQuery } from "@tanstack/react-query";
 import { debounce } from "lodash";
 import type { ArticuloFilter } from "@zentto/shared-api/types";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useScopedGridId } from "../../../lib/zentto-grid";
 
 
 // ============ Componente selector reutilizable ============
@@ -82,10 +83,13 @@ export default function ArticulosTable() {
   const basePath = pathname.includes('/inventario/') ? '/inventario/articulos' : '/articulos';
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('articulos-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // ========== Estado del DataGrid ==========
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
@@ -604,6 +608,7 @@ export default function ArticulosTable() {
         {registered && (
           <zentto-grid
             ref={gridRef}
+            grid-id={gridId}
             default-currency="VES"
             export-filename="articulos"
             height="100%"

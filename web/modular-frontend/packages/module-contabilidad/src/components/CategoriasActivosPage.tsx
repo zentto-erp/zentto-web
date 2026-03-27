@@ -7,11 +7,13 @@ import {
   Tooltip, CircularProgress, Autocomplete,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useCategoriasList, useUpsertCategoria, type FixedAssetCategory,
 } from "../hooks/useActivosFijos";
 import { usePlanCuentas } from "../hooks/useContabilidad";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 
 
 const DEPRECIATION_METHODS = [
@@ -61,9 +63,16 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("categorias-activos", "main"),
+} as const;
+
 export default function CategoriasActivosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [openDialog, setOpenDialog] = useState(false);
@@ -79,8 +88,6 @@ export default function CategoriasActivosPage() {
   }));
 
   const rows = data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

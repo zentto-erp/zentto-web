@@ -6,6 +6,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import {
@@ -34,6 +35,7 @@ function parseCSVLines(csvText: string): any[] {
   return rows;
 }
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const ENTRY_COLUMNS: ColumnDef[] = [
   { field: "EntryDate", header: "Fecha", width: 100, type: "date" },
   { field: "EntryNumber", header: "N Asiento", width: 120 },
@@ -47,9 +49,16 @@ const CONCILIACION_FILTERS: FilterFieldDef[] = [
   { field: "fechaHasta", label: "Fecha hasta", type: "date" },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("conciliacion-bancaria", "main"),
+} as const;
+
 export default function ConciliacionBancariaPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [selectedNroCta, setSelectedNroCta] = useState<string>("");
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -75,8 +84,6 @@ export default function ConciliacionBancariaPage() {
   const movimientosSistema: any[] = detalle?.movimientosSistema ?? [];
   const extractoPendiente: any[] = detalle?.extractoPendiente ?? [];
   const asientos: any[] = asientosData?.rows ?? asientosData?.data ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

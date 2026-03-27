@@ -29,7 +29,7 @@ import { ConfirmDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useCompraById, useDetalleCompra, useIndicadoresCompra } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
-import { formatDate } from "@zentto/shared-api";
+import { formatDate, useGridLayoutSync } from "@zentto/shared-api";
 
 interface CompraDetailProps {
   numFact: string;
@@ -61,6 +61,8 @@ const COLUMNS: ColumnDef[] = [
   { field: "SUBTOTAL", header: "Total", width: 130, type: "number", currency: "VES", aggregation: "sum" },
 ];
 
+const GRID_ID = "module-compras:compra-detail:lineas";
+
 export default function CompraDetail({ numFact }: CompraDetailProps) {
   const router = useRouter();
   const { timeZone } = useTimezone();
@@ -71,6 +73,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
   const [anularOpen, setAnularOpen] = useState(false);
   const [registered, setRegistered] = useState(false);
   const gridRef = useRef<any>(null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   const row = (compra.data ?? null) as Record<string, any> | null;
   const detRows = (detalle.data ?? []) as CompraDetalleRow[];
@@ -107,8 +110,9 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
 
   // Register web component
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // Bind data to grid
   useEffect(() => {
@@ -276,13 +280,14 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
           Lineas de compra
         </Typography>
 
-        {!registered ? (
+        {!layoutReady || !registered ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         ) : (
           <zentto-grid
             ref={gridRef}
+            grid-id={GRID_ID}
             default-currency="VES"
             export-filename="compra-detalle"
             height="350px"

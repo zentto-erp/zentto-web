@@ -6,7 +6,7 @@ import {
   DialogActions, Stack, CircularProgress, Alert, Tab, Tabs,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { formatCurrency } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useInflationIndices, useUpsertInflationIndex, useMonetaryClassifications, useUpsertMonetaryClass,
@@ -19,6 +19,7 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
 }
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const INDICES_COLUMNS: ColumnDef[] = [
   { field: "PeriodCode", header: "Periodo", width: 120, sortable: true },
   { field: "IndexValue", header: "Valor Indice", width: 150, type: "number" },
@@ -59,13 +60,29 @@ const HISTORIAL_COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_IDS = {
+  indicesGridRef: buildContabilidadGridId("inflacion-ajuste", "indices"),
+  clasificacionGridRef: buildContabilidadGridId("inflacion-ajuste", "clasificacion"),
+  calcGridRef: buildContabilidadGridId("inflacion-ajuste", "calc"),
+  historialGridRef: buildContabilidadGridId("inflacion-ajuste", "historial"),
+} as const;
+
 export default function InflacionAjustePage() {
   const [tab, setTab] = useState(0);
   const indicesGridRef = useRef<any>(null);
   const clasificacionGridRef = useRef<any>(null);
   const calcGridRef = useRef<any>(null);
   const historialGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: indicesGridLayoutReady } = useGridLayoutSync(GRID_IDS.indicesGridRef);
+  const { ready: clasificacionGridLayoutReady } = useGridLayoutSync(GRID_IDS.clasificacionGridRef);
+  const { ready: calcGridLayoutReady } = useGridLayoutSync(GRID_IDS.calcGridRef);
+  const { ready: historialGridLayoutReady } = useGridLayoutSync(GRID_IDS.historialGridRef);
+  useContabilidadGridId(indicesGridRef, GRID_IDS.indicesGridRef);
+  useContabilidadGridId(clasificacionGridRef, GRID_IDS.clasificacionGridRef);
+  useContabilidadGridId(calcGridRef, GRID_IDS.calcGridRef);
+  useContabilidadGridId(historialGridRef, GRID_IDS.historialGridRef);
+  const layoutReady = indicesGridLayoutReady && clasificacionGridLayoutReady && calcGridLayoutReady && historialGridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
 
   // Tab 0: Indices INPC
   const currentYear = new Date().getFullYear();
@@ -100,8 +117,6 @@ export default function InflacionAjustePage() {
   const historialQuery = useInflationIndices("VE");
   const historialData = historialQuery.data as any;
   const historialRows = useMemo(() => { const raw = historialData?.adjustments ?? historialData?.data ?? []; return Array.isArray(raw) ? raw : []; }, [historialData]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   // Bind indices grid
   useEffect(() => {

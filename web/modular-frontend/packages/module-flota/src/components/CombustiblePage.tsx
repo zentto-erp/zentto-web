@@ -22,7 +22,7 @@ import Grid from "@mui/material/Grid";
 import {  DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useFuelLogsList,
   useCreateFuelLog,
@@ -35,6 +35,8 @@ const COMBUSTIBLE_FILTERS: FilterFieldDef[] = [
   { field: "from", label: "Fecha desde", type: "date" },
   { field: "to", label: "Fecha hasta", type: "date" },
 ];
+
+const GRID_ID = "module-flota:combustible:list";
 
 export default function CombustiblePage() {
   const theme = useTheme();
@@ -57,13 +59,14 @@ export default function CombustiblePage() {
   const [notes, setNotes] = useState("");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useFuelLogsList({
+  const { data, isLoading } = useFuelLogsList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -218,6 +221,7 @@ const { data, isLoading } = useFuelLogsList({
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="flota-combustible-list"
         height="400px"
         enable-toolbar

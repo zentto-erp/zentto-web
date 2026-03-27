@@ -73,8 +73,8 @@
     "@types/lodash": "^4.17.23"
   },
   "dependencies": {
-    "@zentto/datagrid": "^1.2.0",
-    "@zentto/datagrid-core": "^1.2.0",
+    "@zentto/datagrid": "^1.2.8",
+    "@zentto/datagrid-core": "^1.2.8",
     "qrcode-generator": "^2.0.4"
   }
 }

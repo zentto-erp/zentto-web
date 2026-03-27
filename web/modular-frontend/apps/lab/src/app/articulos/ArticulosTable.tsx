@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { Box, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useArticulosList, useDeleteArticulo } from "../../hooks/useArticulos";
+import { LAB_GRID_IDS } from "../../lib/zentto-grid-ids";
 
 // ─── SVG Icons ───────────────────────────────────────
 
@@ -64,11 +66,13 @@ export default function ArticulosTable() {
   const [registered, setRegistered] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState<string | null>(null);
+  const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.articulos);
 
   // Register web component
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // Fetch data (page 1, large limit since grid handles client-side pagination)
   const { data: articulosData, isLoading } = useArticulosList({ page: 1, limit: 200 });
@@ -133,7 +137,7 @@ export default function ArticulosTable() {
     return () => el.removeEventListener('action-click', handleAction);
   }, [registered, router]);
 
-  if (!registered) {
+  if (!layoutReady || !registered) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
   }
 
@@ -152,6 +156,8 @@ export default function ArticulosTable() {
       {/* Grid nativo */}
       <zentto-grid
         ref={gridRef}
+        grid-id={LAB_GRID_IDS.articulos}
+        enable-configurator
         default-currency="VES"
         export-filename="articulos"
         height="calc(100vh - 180px)"

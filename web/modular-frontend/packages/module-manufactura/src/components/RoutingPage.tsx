@@ -28,6 +28,7 @@ import {
   type RoutingRow,
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -60,6 +61,8 @@ interface RoutingPageProps {
   bomId: number;
 }
 
+const GRID_ID = "module-manufactura:routing:list";
+
 /* ─── Component ──────────────────────────────────────────── */
 
 export default function RoutingPage({ bomId }: RoutingPageProps) {
@@ -70,13 +73,14 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
   const [form, setForm] = useState<RoutingFormData>(emptyForm());
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data: routingRows, isLoading } = useRoutingList(bomId);
+  const { data: routingRows, isLoading } = useRoutingList(bomId);
   const { data: wcData } = useWorkCentersList({ limit: 500 });
   const upsertRouting = useUpsertRouting(bomId);
 
@@ -219,6 +223,7 @@ const { data: routingRows, isLoading } = useRoutingList(bomId);
       {/* Grid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="manufactura-routing-list"
         height="400px"
         enable-toolbar

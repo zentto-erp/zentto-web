@@ -39,6 +39,7 @@ import {
   useCreateStage,
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 /* ─── Tab panel helper ──────────────────────────────────────── */
@@ -65,6 +66,8 @@ const SCORING_FACTORS = [
   { name: "Notas agregadas", description: "Lead tiene notas o descripcion", weight: 5 },
 ];
 
+const STAGES_GRID_ID = "module-crm:settings:stages";
+
 /* ─── Main Component ────────────────────────────────────────── */
 
 export default function CRMSettingsPage() {
@@ -90,14 +93,10 @@ export default function CRMSettingsPage() {
   const [stageIsWon, setStageIsWon] = useState(false);
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: stagesLayoutReady } = useGridLayoutSync(STAGES_GRID_ID);
 
   // Data
-  
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
-
-const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
+  const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
   const pipelines: any[] = (pipelinesRaw as any)?.data ?? (pipelinesRaw as any)?.rows ?? pipelinesRaw ?? [];
 
   const { data: stagesRaw, isLoading: stagesLoading } = usePipelineStages(selectedPipeline);
@@ -105,6 +104,11 @@ const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
 
   const createPipeline = useCreatePipeline();
   const createStage = useCreateStage();
+
+  useEffect(() => {
+    if (!stagesLayoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [stagesLayoutReady]);
 
   // Auto-select first pipeline
   useEffect(() => {
@@ -393,6 +397,7 @@ const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
             ) : (
               <zentto-grid
         ref={gridRef}
+        grid-id={STAGES_GRID_ID}
         export-filename="crm-settings-stages"
         height="calc(100vh - 200px)"
         enable-toolbar

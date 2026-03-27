@@ -8,7 +8,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import Grid from "@mui/material/Grid2";
 import dayjs from "dayjs";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useToast, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
@@ -48,6 +48,9 @@ const COLS_MOVIMIENTOS: ColumnDef[] = [
 
 const CURRENCY_OPTIONS = ["VES", "USD", "EUR"];
 
+const CUENTAS_GRID_ID = "module-bancos:cuentas-bancarias:accounts";
+const MOVIMIENTOS_GRID_ID = "module-bancos:cuentas-bancarias:movimientos";
+
 
 export default function CuentasBancariasPage() {
   const ctasGridRef = useRef<any>(null);
@@ -84,8 +87,14 @@ export default function CuentasBancariasPage() {
 
   const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
   const movs = (movsData?.rows ?? []) as Record<string, any>[];
+  const { ready: cuentasLayoutReady } = useGridLayoutSync(CUENTAS_GRID_ID);
+  const { ready: movimientosLayoutReady } = useGridLayoutSync(MOVIMIENTOS_GRID_ID);
+  const layoutReady = cuentasLayoutReady && movimientosLayoutReady;
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // Cuentas grid
   useEffect(() => {
@@ -144,7 +153,7 @@ export default function CuentasBancariasPage() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}>Cuentas</Typography>
-            <zentto-grid ref={ctasGridRef} height="400px" show-totals enable-create create-label="Nueva cuenta" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+            <zentto-grid ref={ctasGridRef} grid-id={CUENTAS_GRID_ID} height="400px" show-totals enable-create create-label="Nueva cuenta" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
 
@@ -156,7 +165,7 @@ export default function CuentasBancariasPage() {
             </Stack>
             <ZenttoFilterPanel filters={MOVIMIENTOS_FILTERS} values={movFilterValues} onChange={(v) => { setMovFilterValues(v); setPage(1); }} searchPlaceholder="Buscar movimiento..." searchValue={movSearch} onSearchChange={(v) => { setMovSearch(v); setPage(1); }} />
             {nroCta && <Chip label={`Cuenta: ${nroCta}`} onDelete={() => setNroCta("")} color="primary" sx={{ mb: 1 }} />}
-            <zentto-grid ref={movsGridRef} height="400px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+            <zentto-grid ref={movsGridRef} grid-id={MOVIMIENTOS_GRID_ID} height="400px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
       </Grid>

@@ -22,11 +22,12 @@ import {
 } from "@mui/material";
 
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { useLookup } from "@zentto/shared-api";
+import { useGridLayoutSync, useLookup } from "@zentto/shared-api";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useConceptosList, useSaveConcepto, useDeleteConcepto, type ConceptoFilter, type ConceptoInput } from "../hooks/useNomina";
 import FormulaEditor from "./FormulaEditor";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "codigo", header: "Código", width: 100, sortable: true },
@@ -52,11 +53,12 @@ const emptyForm: ConceptoInput = {
   tipo: "ASIGNACION",
 };
 
+const GRID_ID = buildNominaGridId("conceptos");
+
 
 
 export default function ConceptosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -67,12 +69,11 @@ export default function ConceptosPage() {
   const saveMutation = useSaveConcepto();
   const deleteMutation = useDeleteConcepto();
   const { data: frequencies = [] } = useLookup('PAYROLL_FREQUENCY');
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

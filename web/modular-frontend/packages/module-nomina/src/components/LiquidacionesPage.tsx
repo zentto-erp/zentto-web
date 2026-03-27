@@ -6,7 +6,9 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useRouter } from "next/navigation";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useLiquidacionesList, useLiquidacionDetalle } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "liquidacionId", header: "ID", width: 100 },
@@ -28,22 +30,27 @@ const DETAIL_COLUMNS: ColumnDef[] = [
   { field: "monto", header: "Monto", width: 140, type: "number" },
 ];
 
+const LIQUIDACIONES_GRID_ID = buildNominaGridId("liquidaciones");
+const LIQUIDACIONES_DETAIL_GRID_ID = buildNominaGridId("liquidaciones", "detalle");
+
 
 
 export default function LiquidacionesPage() {
   const gridRef = useRef<any>(null);
   const detalleGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading } = useLiquidacionesList({ cedula: cedula || undefined });
   const detalle = useLiquidacionDetalle(selectedId);
+  const { ready: liquidacionesLayoutReady } = useGridLayoutSync(LIQUIDACIONES_GRID_ID);
+  const { ready: liquidacionesDetailLayoutReady } = useGridLayoutSync(LIQUIDACIONES_DETAIL_GRID_ID);
+  useNominaGridId(gridRef, LIQUIDACIONES_GRID_ID);
+  useNominaGridId(detalleGridRef, LIQUIDACIONES_DETAIL_GRID_ID);
+  const { registered } = useNominaGridRegistration(liquidacionesLayoutReady && liquidacionesDetailLayoutReady);
 
   const rows = Array.isArray(data) ? data : data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

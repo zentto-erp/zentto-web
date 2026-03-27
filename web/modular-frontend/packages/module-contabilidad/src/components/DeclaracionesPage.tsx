@@ -6,12 +6,13 @@ import {
   DialogActions, Stack, MenuItem, Select, InputLabel, FormControl, CircularProgress,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { useCountries } from "@zentto/shared-api";
+import { useGridLayoutSync, useCountries } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useDeclaracionesList, useCalcularDeclaracion, usePresentarDeclaracion, type DeclarationFilter,
 } from "../hooks/useFiscalTributaria";
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const DECLARATION_TYPES = [
   { value: "", label: "Todos" }, { value: "IVA", label: "IVA" },
   { value: "ISLR", label: "ISLR" }, { value: "IRPF", label: "IRPF" },
@@ -53,9 +54,16 @@ const COLUMNS: ColumnDef[] = [
 
 interface CalcForm { declarationType: string; periodCode: string; countryCode: string; }
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("declaraciones", "main"),
+} as const;
+
 export default function DeclaracionesPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data: countries = [] } = useCountries();
   const [filter, setFilter] = useState<DeclarationFilter>({ page: 1, limit: 25 });
   const [search, setSearch] = useState("");
@@ -67,8 +75,6 @@ export default function DeclaracionesPage() {
   const calcularMutation = useCalcularDeclaracion();
   const presentarMutation = usePresentarDeclaracion();
   const rows = data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

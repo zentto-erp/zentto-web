@@ -13,6 +13,7 @@ export { requestLogger } from './requestLogger';
 export { default as QueryProvider } from './QueryProvider';
 export { useStore } from './store';
 export { usePosStore } from './usePosStore';
+export { useGridLayoutSync } from './useGridLayoutSync';
 export type {
   PrinterConfig, KitchenPrinterConfig, PrinterStatus,
   CajaConfig, ClientePos, CartItem, VentaEnEspera,
@@ -42,6 +43,7 @@ export { useHydrateLocalizacion } from './useHydrateLocalizacion';
 export { useHydrateModuleSettings } from './useHydrateModuleSettings';
 export type { FrontendAddon } from './addons';
 export type { RequestLog } from './requestLogger';
+export type { GridLayoutSnapshot } from './types/grid-layout';
 
 // Usuarios hooks
 export {

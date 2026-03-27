@@ -30,6 +30,7 @@ import {
   type RoutingRow,
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 interface RoutingFormData {
@@ -52,6 +53,8 @@ const emptyForm = (): RoutingFormData => ({
   description: "",
 });
 
+const GRID_ID = "module-manufactura:rutas-produccion:list";
+
 export default function RutasProduccionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -61,14 +64,15 @@ export default function RutasProduccionPage() {
   const [form, setForm] = useState<RoutingFormData>(emptyForm());
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   // Data queries
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
+  const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
   const { data: routingRows, isLoading: routingLoading } = useRoutingList(selectedBomId);
   const { data: wcData } = useWorkCentersList({ limit: 500 });
   const upsertRouting = useUpsertRouting(selectedBomId);
@@ -239,6 +243,7 @@ const { data: bomData, isLoading: bomLoading } = useBOMList({ limit: 500 });
       {selectedBomId ? (
         <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="manufactura-rutas-produccion-list"
         height="400px"
         enable-toolbar

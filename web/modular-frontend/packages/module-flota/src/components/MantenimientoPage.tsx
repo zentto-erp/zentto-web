@@ -21,7 +21,7 @@ import Grid from "@mui/material/Grid";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useMaintenanceOrdersList,
   useCreateMaintenanceOrder,
@@ -46,6 +46,7 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
+const GRID_ID = "module-flota:mantenimiento:list";
 
 export default function MantenimientoPage() {
   const theme = useTheme();
@@ -71,13 +72,14 @@ export default function MantenimientoPage() {
   const [completedDate, setCompletedDate] = useState("");
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useMaintenanceOrdersList({
+  const { data, isLoading } = useMaintenanceOrdersList({
     ...filter,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -238,6 +240,7 @@ const { data, isLoading } = useMaintenanceOrdersList({
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="flota-mantenimiento-list"
         height="calc(100vh - 200px)"
         enable-toolbar

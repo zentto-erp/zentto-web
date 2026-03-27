@@ -17,7 +17,7 @@ import {
 import EditableDataGrid from "./EditableDataGrid";
 import { ContextActionHeader, DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import { toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 
 interface CuentaContable { id: string; codCuenta: string; descripcion: string; tipo: string; nivel: number; isNew?: boolean; }
@@ -33,13 +33,14 @@ const MAYOR_COLUMNS: ColumnDef[] = [
 
 function MayorAnaliticoDialog({ open, onClose, cuenta }: { open: boolean; onClose: () => void; cuenta: CuentaContable | null }) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { timeZone } = useTimezone();
   const [fechaDesde, setFechaDesde] = useState(toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone));
   const [fechaHasta, setFechaHasta] = useState(toDateOnly(new Date(), timeZone));
   const { data, isLoading } = useMayorAnalitico(cuenta?.codCuenta || "", fechaDesde, fechaHasta, open && !!cuenta?.codCuenta);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
@@ -75,12 +76,17 @@ const PLAN_MEJORADO_FILTERS: FilterFieldDef[] = [
   { field: "nivel", label: "Nivel", type: "select", options: [{ value: "1", label: "Nivel 1" }, { value: "2", label: "Nivel 2" }, { value: "3", label: "Nivel 3" }] },
 ];
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const EDITABLE_COLUMNS: ColumnDef[] = [
   { field: "codCuenta", header: "Codigo", width: 120, sortable: true },
   { field: "descripcion", header: "Descripcion", flex: 1, minWidth: 250, sortable: true },
   { field: "tipo", header: "Tipo", width: 100, sortable: true, groupable: true },
   { field: "nivel", header: "Nivel", width: 80, type: "number", sortable: true },
 ];
+
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("plan-cuentas-page-mejorado", "main"),
+} as const;
 
 export default function PlanCuentasPageMejorado() {
   const router = useRouter();

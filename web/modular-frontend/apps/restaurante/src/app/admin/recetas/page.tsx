@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import {
     ProductoMenuAdmin,
     RecetaItemAdmin,
@@ -32,11 +33,14 @@ import {
     useProductosAdminQuery,
     useUpsertRecetaItemMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
 
 
 export default function AdminRecetasPage() {
     const gridRef = useRef<any>(null);
     const [registered, setRegistered] = useState(false);
+    const gridId = useScopedGridId('recetas-main');
+    const { ready: layoutReady } = useGridLayoutSync(gridId);
     const { data: productosData, isLoading } = useProductosAdminQuery();
     const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoMenuAdmin | null>(null);
     const [inventarioId, setInventarioId] = useState('');
@@ -59,8 +63,9 @@ export default function AdminRecetasPage() {
     const loading = isLoading;
 
     useEffect(() => {
+        if (!layoutReady) return;
         import('@zentto/datagrid').then(() => setRegistered(true));
-    }, []);
+    }, [layoutReady]);
 
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'nombre', header: 'Plato o Bebida', flex: 1, minWidth: 280, sortable: true },
@@ -174,7 +179,7 @@ export default function AdminRecetasPage() {
         await deleteRecetaMutation.mutateAsync({ id: Number(item.id), productoId: Number(productoSeleccionado.id) });
     };
 
-    if (!registered) {
+    if (!layoutReady || !registered) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
     }
 
@@ -200,6 +205,7 @@ export default function AdminRecetasPage() {
             ) : (
                 <zentto-grid
                     ref={gridRef}
+                    grid-id={gridId}
                     height="calc(100vh - 320px)"
                     enable-toolbar
                     enable-header-menu

@@ -19,8 +19,10 @@ import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
 } from '@zentto/shared-api';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@zentto/shared-api';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useScopedGridId } from '@/lib/zentto-grid';
 
 
 // ─── Module labels ──────────────────────────────────────────
@@ -55,6 +57,8 @@ const USER_TYPES = [
 export default function UsuariosPage() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('usuarios-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
@@ -69,8 +73,9 @@ export default function UsuariosPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   if (!isAdmin) {
     return (
@@ -193,12 +198,13 @@ export default function UsuariosPage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>Error al cargar usuarios</Alert>}
 
-      {!registered ? (
+      {!layoutReady || !registered ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
       ) : (
         <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <zentto-grid
             ref={gridRef}
+            grid-id={gridId}
             height="calc(100vh - 280px)"
             enable-toolbar
             enable-header-menu

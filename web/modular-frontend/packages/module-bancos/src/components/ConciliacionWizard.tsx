@@ -21,7 +21,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SaveIcon from "@mui/icons-material/Save";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
@@ -55,6 +55,9 @@ const COLS_SISTEMA_DISPLAY: ColumnDef[] = [
   { field: "Monto", header: "Monto", width: 120, type: "number" },
 ];
 
+const EXTRACTO_GRID_ID = "module-bancos:conciliacion-wizard:extracto";
+const SISTEMA_GRID_ID = "module-bancos:conciliacion-wizard:sistema";
+
 export default function ConciliacionWizard() {
   const extractoGridRef = useRef<any>(null);
   const sistemaGridRef = useRef<any>(null);
@@ -83,6 +86,9 @@ export default function ConciliacionWizard() {
   const importarMut = useImportarExtracto();
   const conciliarMut = useConciliarMovimiento();
   const cerrarMut = useCerrarConciliacion();
+  const { ready: extractoLayoutReady } = useGridLayoutSync(EXTRACTO_GRID_ID);
+  const { ready: sistemaLayoutReady } = useGridLayoutSync(SISTEMA_GRID_ID);
+  const layoutReady = extractoLayoutReady && sistemaLayoutReady;
 
   const cuentaObj = useMemo(() => cuentas.find((c) => (c.Nro_Cta ?? c.nroCta ?? c.id) === nroCtaSeleccionada), [cuentas, nroCtaSeleccionada]);
   const cuentaKey = (c: CuentaRow) => c.Nro_Cta ?? c.nroCta ?? c.id;
@@ -91,7 +97,10 @@ export default function ConciliacionWizard() {
   const movSistemaConId = useMemo(() => movSistema.map((m: any, i: number) => ({ ...m, id: m.id ?? m.Mov_ID ?? i })) as any[], [movSistema]);
   const noConciliados = useMemo(() => movSistemaConId.filter((m: any) => !conciliadosIds.has(String(m.id))), [movSistemaConId, conciliadosIds]);
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // Bind step 3 grids
   useEffect(() => {
@@ -190,14 +199,14 @@ export default function ConciliacionWizard() {
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" gutterBottom>Movimientos del Extracto Bancario</Typography>
                 <Box sx={{ height: 350, bgcolor: "grey.50", borderRadius: 1 }}>
-                  <zentto-grid ref={extractoGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+                  <zentto-grid ref={extractoGridRef} grid-id={EXTRACTO_GRID_ID} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" gutterBottom>Movimientos del Sistema (sin conciliar)</Typography>
                 <Box sx={{ height: 350, bgcolor: "grey.50", borderRadius: 1 }}>
                   {movSistemaQuery.isLoading ? <Stack alignItems="center" justifyContent="center" height="100%"><CircularProgress size={32} /></Stack> : (
-                    <zentto-grid ref={sistemaGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+                    <zentto-grid ref={sistemaGridRef} grid-id={SISTEMA_GRID_ID} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
                   )}
                 </Box>
               </Grid>

@@ -7,8 +7,9 @@ import { Box, Typography } from "@mui/material";
 import { ConfirmDialog, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
 import { useTimezone } from "@zentto/shared-auth";
-import { toDateOnly } from "@zentto/shared-api";
+import { toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useScopedGridId } from "../../../lib/zentto-grid";
 
 
 const ABONO_FILTERS: FilterFieldDef[] = [
@@ -22,6 +23,8 @@ export default function AbonosTable() {
   const { timeZone } = useTimezone();
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('abonos-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -32,8 +35,9 @@ export default function AbonosTable() {
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -151,6 +155,7 @@ export default function AbonosTable() {
         {registered && (
           <zentto-grid
             ref={gridRef}
+            grid-id={gridId}
             default-currency="VES"
             export-filename="abonos"
             height="100%"

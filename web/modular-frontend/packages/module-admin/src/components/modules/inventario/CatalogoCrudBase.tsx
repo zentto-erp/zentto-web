@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { ContextActionHeader } from '@zentto/shared-ui';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { useScopedGridId } from '../../../lib/zentto-grid';
 
 
 export type CatalogField = {
@@ -195,6 +197,8 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const queryClient = useQueryClient();
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId(`${endpoint || title}-catalogo`);
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -202,8 +206,9 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],
@@ -416,6 +421,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
           {registered && (
             <zentto-grid
               ref={gridRef}
+              grid-id={gridId}
               default-currency="VES"
               height="100%"
               enable-toolbar

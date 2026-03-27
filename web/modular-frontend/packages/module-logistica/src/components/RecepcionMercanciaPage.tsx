@@ -30,6 +30,8 @@ import {
   type ReceiptFilter,
 } from "../hooks/useLogistica";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { buildLogisticaGridId, useLogisticaGridId, useLogisticaGridRegistration } from "./zenttoGridPersistence";
 
 
 interface ReceiptLine {
@@ -67,6 +69,10 @@ const emptyLine = (): ReceiptLine => ({
 });
 
 
+const GRID_IDS = {
+  gridRef: buildLogisticaGridId("recepcion-mercancia", "main"),
+} as const;
+
 export default function RecepcionMercanciaPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -83,11 +89,10 @@ export default function RecepcionMercanciaPage() {
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
   const [lines, setLines] = useState<ReceiptLine[]>([emptyLine()]);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useLogisticaGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useLogisticaGridRegistration(layoutReady);
 
 const { data, isLoading } = useReceiptsList({
     ...filter,

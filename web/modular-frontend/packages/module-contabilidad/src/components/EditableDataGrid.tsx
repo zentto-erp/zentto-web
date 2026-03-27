@@ -6,6 +6,8 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import AddIcon from "@mui/icons-material/Add";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 
 
 // ---- Tipos ----
@@ -28,6 +30,10 @@ export interface EditableDataGridProps<T extends { id?: string | number }> {
 }
 
 // ---- Componente Principal ----
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("editable-data-grid", "main"),
+} as const;
+
 export default function EditableDataGrid<T extends { id?: string | number }>({
   rows: initialRows,
   columns,
@@ -45,11 +51,9 @@ export default function EditableDataGrid<T extends { id?: string | number }>({
   defaultNewRow,
 }: EditableDataGridProps<T>) {
   const gridRef = React.useRef<any>(null);
-  const [registered, setRegistered] = React.useState(false);
-
-  React.useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(layoutReady);
 
   React.useEffect(() => {
     const el = gridRef.current;

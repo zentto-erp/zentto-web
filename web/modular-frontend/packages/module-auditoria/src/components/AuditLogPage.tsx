@@ -16,10 +16,11 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
-import { formatDateTime } from "@zentto/shared-api";
+import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
 
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
@@ -46,18 +47,16 @@ const AUDIT_FILTERS: FilterFieldDef[] = [
   { field: "fechaHasta", label: "Fecha hasta", type: "date" },
 ];
 
+const GRID_ID = buildAuditoriaGridId("audit-log", "list");
+
 export default function AuditLogPage() {
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<AuditLogFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
 
 const { data, isLoading } = useAuditLogs(filter);
   const detalle = useAuditLogDetail(selectedId);
@@ -156,6 +155,7 @@ const { data, isLoading } = useAuditLogs(filter);
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <zentto-grid
+        grid-id={GRID_ID}
         ref={gridRef}
         export-filename="auditoria-audit-log-list"
         height="calc(100vh - 280px)"

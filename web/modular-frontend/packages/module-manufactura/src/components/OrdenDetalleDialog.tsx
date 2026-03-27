@@ -40,6 +40,7 @@ import {
   type ReportOutputPayload,
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 // ── Status helpers ──────────────────────────────────────────────
 
@@ -383,6 +384,9 @@ export interface OrdenDetalleDialogProps {
   workOrderId: number | null;
 }
 
+const MATERIALS_GRID_ID = "module-manufactura:orden-detalle:materials";
+const OUTPUTS_GRID_ID = "module-manufactura:orden-detalle:outputs";
+
 export default function OrdenDetalleDialog({ open, onClose, workOrderId }: OrdenDetalleDialogProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -393,13 +397,16 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
   const materialsGridRef = useRef<any>(null);
   const outputsGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: materialsLayoutReady } = useGridLayoutSync(MATERIALS_GRID_ID);
+  const { ready: outputsLayoutReady } = useGridLayoutSync(OUTPUTS_GRID_ID);
+  const layoutReady = materialsLayoutReady && outputsLayoutReady;
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined);
+  const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined);
   const startOrder = useStartWorkOrder();
   const completeOrder = useCompleteWorkOrder();
   const cancelOrder = useCancelWorkOrder();
@@ -600,6 +607,7 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined)
               </Box>
               <zentto-grid
         ref={materialsGridRef}
+        grid-id={MATERIALS_GRID_ID}
         height="400px"
         enable-toolbar
         enable-header-menu
@@ -638,6 +646,7 @@ const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined)
               </Box>
               <zentto-grid
         ref={outputsGridRef}
+        grid-id={OUTPUTS_GRID_ID}
         height="400px"
         enable-toolbar
         enable-header-menu

@@ -24,6 +24,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
   useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
@@ -49,6 +50,8 @@ import { useAuth } from "@zentto/shared-auth";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useScopedGridId } from "@/lib/zentto-grid";
 
 const TurnstileCaptcha = dynamic(
   () => import("@zentto/shared-auth").then((m) => ({ default: m.TurnstileCaptcha })),
@@ -550,7 +553,7 @@ function ApplyPlanModal({
 
 // ─── Tab: Tenants ─────────────────────────────────────────────────────────────
 
-function TenantsTab({ masterKey }: { masterKey: string }) {
+function TenantsTab({ gridId, masterKey }: { gridId: string; masterKey: string }) {
   const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -675,6 +678,7 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
       </Stack>
       <zentto-grid
         ref={gridRef}
+        grid-id={gridId}
         height="600px"
         enable-toolbar
         enable-header-menu
@@ -700,7 +704,7 @@ function TenantsTab({ masterKey }: { masterKey: string }) {
 
 const MAX_DB_MB = 10240; // 10 GB referencia visual
 
-function RecursosTab({ masterKey }: { masterKey: string }) {
+function RecursosTab({ gridId, masterKey }: { gridId: string; masterKey: string }) {
   const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<ResourceRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -798,6 +802,7 @@ function RecursosTab({ masterKey }: { masterKey: string }) {
       </Stack>
       <zentto-grid
         ref={gridRef}
+        grid-id={gridId}
         height="600px"
         enable-toolbar
         enable-header-menu
@@ -814,7 +819,7 @@ function RecursosTab({ masterKey }: { masterKey: string }) {
 
 // ─── Tab: Cola de limpieza ────────────────────────────────────────────────────
 
-function CleanupTab({ masterKey }: { masterKey: string }) {
+function CleanupTab({ gridId, masterKey }: { gridId: string; masterKey: string }) {
   const [rows, setRows] = useState<CleanupRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
@@ -964,6 +969,7 @@ function CleanupTab({ masterKey }: { masterKey: string }) {
       </Stack>
       <zentto-grid
         ref={gridRef}
+        grid-id={gridId}
         height="600px"
         enable-toolbar
         enable-header-menu
@@ -990,7 +996,7 @@ function CleanupTab({ masterKey }: { masterKey: string }) {
 
 // ─── Tab: Respaldos ───────────────────────────────────────────────────────────
 
-function RespaldosTab({ masterKey }: { masterKey: string }) {
+function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string }) {
   const [rows, setRows] = useState<BackupRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1112,6 +1118,7 @@ function RespaldosTab({ masterKey }: { masterKey: string }) {
       </Stack>
       <zentto-grid
         ref={gridRef}
+        grid-id={gridId}
         height="600px"
         enable-toolbar
         enable-header-menu
@@ -1142,11 +1149,22 @@ export default function BackofficePage() {
   const [tab, setTab] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
+  const tenantsGridId = useScopedGridId('tenants-grid');
+  const recursosGridId = useScopedGridId('recursos-grid');
+  const cleanupGridId = useScopedGridId('cleanup-grid');
+  const respaldosGridId = useScopedGridId('respaldos-grid');
+  const { ready: tenantsReady } = useGridLayoutSync(tenantsGridId);
+  const { ready: recursosReady } = useGridLayoutSync(recursosGridId);
+  const { ready: cleanupReady } = useGridLayoutSync(cleanupGridId);
+  const { ready: respaldosReady } = useGridLayoutSync(respaldosGridId);
+  const layoutReady = tenantsReady && recursosReady && cleanupReady && respaldosReady;
+  const [registered, setRegistered] = useState(false);
 
   // Register zentto-grid web component
   useEffect(() => {
-    import("@zentto/datagrid").catch(() => {});
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true)).catch(() => {});
+  }, [layoutReady]);
 
   const isSysAdmin =
     (user as Record<string, unknown> | null)?.role === "SYSADMIN" ||
@@ -1202,6 +1220,19 @@ export default function BackofficePage() {
     );
   }
 
+  if (!layoutReady || !registered) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Stack direction="row" alignItems="center" gap={1} mb={2}>
@@ -1234,10 +1265,10 @@ export default function BackofficePage() {
         </Tabs>
       </Box>
 
-      {tab === 0 && <TenantsTab masterKey={token} />}
-      {tab === 1 && <RecursosTab masterKey={token} />}
-      {tab === 2 && <CleanupTab masterKey={token} />}
-      {tab === 3 && <RespaldosTab masterKey={token} />}
+      {tab === 0 && <TenantsTab gridId={tenantsGridId} masterKey={token} />}
+      {tab === 1 && <RecursosTab gridId={recursosGridId} masterKey={token} />}
+      {tab === 2 && <CleanupTab gridId={cleanupGridId} masterKey={token} />}
+      {tab === 3 && <RespaldosTab gridId={respaldosGridId} masterKey={token} />}
     </Box>
   );
 }

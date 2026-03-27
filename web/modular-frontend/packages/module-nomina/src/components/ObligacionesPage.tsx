@@ -10,11 +10,12 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import PublishIcon from "@mui/icons-material/Publish";
-import { formatCurrency, useCountries } from "@zentto/shared-api";
+import { formatCurrency, useCountries, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useObligationsList, useSaveObligation, useFilingsList, useGenerateFiling, useMarkFiled,
   type ObligationsFilter, type FilingsFilter, type SaveObligationInput, type GenerateFilingInput,
 } from "../hooks/useRRHH";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -49,11 +50,12 @@ const FIL_COLUMNS: ColumnDef[] = [
 
 const SVG_PUBLISH = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>';
 const SVG_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const OBLIGACIONES_GRID_ID = buildNominaGridId("obligaciones", "main");
+const DECLARACIONES_GRID_ID = buildNominaGridId("obligaciones", "declaraciones");
 
 export default function ObligacionesPage() {
   const oblGridRef = useRef<any>(null);
   const filGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { data: countries = [] } = useCountries();
   const [tab, setTab] = useState(0);
   const [oblFilter, setOblFilter] = useState<ObligationsFilter>({ page: 1, limit: 25 });
@@ -68,11 +70,14 @@ export default function ObligacionesPage() {
   const saveOblMutation = useSaveObligation();
   const generateFilMutation = useGenerateFiling();
   const markFiledMutation = useMarkFiled();
+  const { ready: obligacionesLayoutReady } = useGridLayoutSync(OBLIGACIONES_GRID_ID);
+  const { ready: declaracionesLayoutReady } = useGridLayoutSync(DECLARACIONES_GRID_ID);
+  const { registered } = useNominaGridRegistration(obligacionesLayoutReady && declaracionesLayoutReady);
 
   const oblRows = oblData?.data ?? oblData?.rows ?? [];
   const filRows = filData?.data ?? filData?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useNominaGridId(oblGridRef, OBLIGACIONES_GRID_ID);
+  useNominaGridId(filGridRef, DECLARACIONES_GRID_ID);
 
   useEffect(() => {
     const el = oblGridRef.current; if (!el || !registered) return;

@@ -7,16 +7,20 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import {
     AmbienteAdmin,
     useAmbientesAdminQuery,
     useUpsertAmbienteAdminMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
 
 
 export default function AdminAmbientesPage() {
     const gridRef = useRef<any>(null);
     const [registered, setRegistered] = useState(false);
+    const gridId = useScopedGridId('ambientes-main');
+    const { ready: layoutReady } = useGridLayoutSync(gridId);
     const { data: ambientesData, isLoading } = useAmbientesAdminQuery();
     const upsertAmbienteMutation = useUpsertAmbienteAdminMutation();
     const [open, setOpen] = useState(false);
@@ -26,8 +30,9 @@ export default function AdminAmbientesPage() {
     const loading = isLoading || upsertAmbienteMutation.isPending;
 
     useEffect(() => {
+        if (!layoutReady) return;
         import('@zentto/datagrid').then(() => setRegistered(true));
-    }, []);
+    }, [layoutReady]);
 
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'id', header: 'ID', width: 90, sortable: true },
@@ -92,7 +97,7 @@ export default function AdminAmbientesPage() {
         }
     };
 
-    if (!registered) {
+    if (!layoutReady || !registered) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
     }
 
@@ -116,6 +121,7 @@ export default function AdminAmbientesPage() {
             ) : (
                 <zentto-grid
                     ref={gridRef}
+                    grid-id={gridId}
                     height="calc(100vh - 240px)"
                     enable-toolbar
                     enable-header-menu

@@ -28,6 +28,7 @@ import {
   type LeadFilter,
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 const priorityColor: Record<string, "error" | "warning" | "info" | "default"> = {
@@ -61,6 +62,8 @@ const emptyLead = {
   stageId: "" as number | string,
 };
 
+const GRID_ID = "module-crm:leads:list";
+
 export default function LeadsPage() {
   const [filter, setFilter] = useState<LeadFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -68,13 +71,14 @@ export default function LeadsPage() {
   const [form, setForm] = useState(emptyLead);
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useLeadsList(filter);
+  const { data, isLoading } = useLeadsList(filter);
   const { data: pipelinesData } = usePipelinesList();
   const pipelines = pipelinesData?.data ?? pipelinesData?.rows ?? pipelinesData ?? [];
 
@@ -219,6 +223,7 @@ const { data, isLoading } = useLeadsList(filter);
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="crm-leads-list"
         height="calc(100vh - 200px)"
         enable-toolbar

@@ -7,12 +7,13 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import { useCountries } from "@zentto/shared-api";
+import { useGridLayoutSync, useCountries } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import {
   useGenerarLibroFiscal, useLibroFiscal, useResumenLibroFiscal, type TaxBookFilter,
 } from "../hooks/useFiscalTributaria";
 
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const BOOK_TYPES = [
   { value: "PURCHASE", label: "Compras" },
   { value: "SALES", label: "Ventas" },
@@ -40,10 +41,20 @@ const RESUMEN_COLUMNS: ColumnDef[] = [
   { field: "EntryCount", header: "Registros", width: 110, type: "number", aggregation: "sum" },
 ];
 
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("libro-fiscal", "main"),
+  resumenGridRef: buildContabilidadGridId("libro-fiscal", "resumen"),
+} as const;
+
 export default function LibroFiscalPage() {
   const gridRef = useRef<any>(null);
   const resumenGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { ready: resumenGridLayoutReady } = useGridLayoutSync(GRID_IDS.resumenGridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  useContabilidadGridId(resumenGridRef, GRID_IDS.resumenGridRef);
+  const layoutReady = gridLayoutReady && resumenGridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data: countries = [] } = useCountries();
   const [filter, setFilter] = useState<TaxBookFilter>({ bookType: "PURCHASE", periodCode: "", countryCode: "VE", page: 1, limit: 50 });
   const [search, setSearch] = useState("");
@@ -55,8 +66,6 @@ export default function LibroFiscalPage() {
 
   const rows = libroData?.rows ?? [];
   const resumenRows = resumenData?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;

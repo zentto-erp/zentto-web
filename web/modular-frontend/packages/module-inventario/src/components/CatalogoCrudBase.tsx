@@ -9,6 +9,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { ContextActionHeader } from '@zentto/shared-ui';
+import { useGridLayoutSync } from '@zentto/shared-api';
 
 export type CatalogField = { name: string; label?: string; required?: boolean; hidden?: boolean; readOnly?: boolean; };
 export type CatalogRow = Record<string, unknown>;
@@ -66,6 +67,15 @@ function mapColumnType(sqlType?: string): ColumnDef['type'] {
   return undefined;
 }
 
+function sanitizeGridSegment(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function buildCatalogGridId(endpoint: string, tableName?: string, schema?: string): string {
+  const subject = tableName || endpoint;
+  return `module-inventario:catalogo:${sanitizeGridSegment(schema || 'dbo')}:${sanitizeGridSegment(subject)}`;
+}
+
 
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const gridRef = useRef<any>(null);
@@ -77,6 +87,8 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const [editKey, setEditKey] = useState<string | number | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const gridId = useMemo(() => buildCatalogGridId(endpoint, tableName, schema), [endpoint, tableName, schema]);
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],
@@ -125,7 +137,10 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     } as ColumnDef,
   ], [keyField, metadataByColumn, resolvedFields]);
 
-  useEffect(() => { import('@zentto/datagrid').then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;
@@ -204,7 +219,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
             </Box>
 
             <Box sx={{ width: '100%', minHeight: 420 }}>
-              <zentto-grid ref={gridRef} height="420px"
+              <zentto-grid ref={gridRef} grid-id={gridId} height="420px"
                 enable-toolbar enable-header-menu enable-header-filters enable-clipboard
                 enable-quick-search enable-context-menu enable-status-bar enable-configurator
               />

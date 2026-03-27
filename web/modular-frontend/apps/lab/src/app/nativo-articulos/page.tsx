@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
 import type { ColumnDef, GridRow } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { LAB_GRID_IDS } from '../../lib/zentto-grid-ids';
 
 const COLUMNS: ColumnDef[] = [
   { field: 'codigo', header: 'Codigo', width: 120, sortable: true },
@@ -45,10 +47,12 @@ export default function NativoArticulosPage() {
   const [rows, setRows] = useState<GridRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.nativoArticulos);
 
   useEffect(() => {
+    if (!layoutReady) return;
     import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   useEffect(() => {
     async function fetchData() {
@@ -95,7 +99,7 @@ export default function NativoArticulosPage() {
     // Actions now defined as type:'actions' column in COLUMNS
   }, [rows, loading, registered]);
 
-  if (!registered) {
+  if (!layoutReady || !registered) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
   }
 
@@ -110,6 +114,7 @@ export default function NativoArticulosPage() {
 
       <zentto-grid
         ref={gridRef}
+        grid-id={LAB_GRID_IDS.nativoArticulos}
         default-currency="VES"
         export-filename="articulos-nativo"
         height="calc(100vh - 160px)"

@@ -29,6 +29,8 @@ import {
   type DeliveryFilter,
 } from "../hooks/useLogistica";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { buildLogisticaGridId, useLogisticaGridId, useLogisticaGridRegistration } from "./zenttoGridPersistence";
 
 
 function AlbaranDetailPanel({ row }: { row: Record<string, unknown> }) {
@@ -112,6 +114,10 @@ const emptyLine = (): DeliveryLine => ({
 });
 
 
+const GRID_IDS = {
+  gridRef: buildLogisticaGridId("albaranes", "main"),
+} as const;
+
 export default function AlbaranesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -130,11 +136,10 @@ export default function AlbaranesPage() {
   const [carrierId, setCarrierId] = useState("");
   const [lines, setLines] = useState<DeliveryLine[]>([emptyLine()]);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useLogisticaGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useLogisticaGridRegistration(layoutReady);
 
 const { data, isLoading } = useDeliveryNotesList({
     ...filter,

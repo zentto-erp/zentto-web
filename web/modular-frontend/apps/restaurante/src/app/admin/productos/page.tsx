@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import {
     CategoriaMenu,
     ProductoMenuAdmin,
@@ -14,11 +15,14 @@ import {
     useProductosAdminQuery,
     useUpsertProductoAdminMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
 
 
 export default function AdminProductosPage() {
     const gridRef = useRef<any>(null);
     const [registered, setRegistered] = useState(false);
+    const gridId = useScopedGridId('productos-main');
+    const { ready: layoutReady } = useGridLayoutSync(gridId);
     const { data: productosData, isLoading: isLoadingProductos } = useProductosAdminQuery();
     const { data: categoriasData, isLoading: isLoadingCategorias } = useCategoriasAdminQuery();
     const upsertProductoMutation = useUpsertProductoAdminMutation();
@@ -30,8 +34,9 @@ export default function AdminProductosPage() {
     const loading = isLoadingProductos || isLoadingCategorias;
 
     useEffect(() => {
+        if (!layoutReady) return;
         import('@zentto/datagrid').then(() => setRegistered(true));
-    }, []);
+    }, [layoutReady]);
 
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'codigo', header: 'Codigo', width: 130, sortable: true },
@@ -111,7 +116,7 @@ export default function AdminProductosPage() {
         }
     };
 
-    if (!registered) {
+    if (!layoutReady || !registered) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
     }
 
@@ -135,6 +140,7 @@ export default function AdminProductosPage() {
             ) : (
                 <zentto-grid
                     ref={gridRef}
+                    grid-id={gridId}
                     height="calc(100vh - 240px)"
                     enable-toolbar
                     enable-header-menu

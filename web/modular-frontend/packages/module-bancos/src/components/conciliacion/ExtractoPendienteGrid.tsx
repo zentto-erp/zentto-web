@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Box, Paper, Typography, IconButton, Tooltip, Stack } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import LinkIcon from "@mui/icons-material/Link";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 const COLUMNS: ColumnDef[] = [
   { field: "Fecha", header: "Fecha", width: 100 },
@@ -22,13 +23,19 @@ interface ExtractoPendienteGridProps {
   isConciliando?: boolean;
 }
 
+const GRID_ID = "module-bancos:conciliacion:extracto-pendiente";
+
 export default function ExtractoPendienteGrid({
   extracto, hasConciliacion, onSelectionChange, onConciliar, canConciliar = false, isConciliando = false,
 }: ExtractoPendienteGridProps) {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;
@@ -50,7 +57,7 @@ export default function ExtractoPendienteGrid({
       </Box>
 
       {hasConciliacion && extracto.length > 0 ? (
-        <zentto-grid ref={gridRef} height="300px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+        <zentto-grid ref={gridRef} grid-id={GRID_ID} height="300px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       ) : (
         <Box sx={{ p: 3, textAlign: "center" }}>
           <Typography color="text.secondary">{hasConciliacion ? "Sin extractos pendientes" : "Seleccione una conciliacion"}</Typography>

@@ -21,7 +21,7 @@ import {
 
 import type { ColumnDef } from "@zentto/datagrid-core";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 
 import {
   useTrustList,
@@ -29,6 +29,7 @@ import {
   useTrustSummary,
   type TrustFilter,
 } from "../hooks/useRRHH";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "employeeCode", header: "Código", width: 100, sortable: true },
@@ -46,10 +47,11 @@ const COLUMNS: ColumnDef[] = [
   },
 ];
 
+const GRID_ID = buildNominaGridId("fideicomiso");
+
 
 export default function FideicomisoPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const currentYear = new Date().getFullYear();
   const [filter, setFilter] = useState<TrustFilter>({ year: currentYear, page: 1, limit: 25 });
   const [calcOpen, setCalcOpen] = useState(false);
@@ -58,13 +60,12 @@ export default function FideicomisoPage() {
   const { data, isLoading } = useTrustList(filter);
   const calculateMutation = useCalculateTrust();
   const summaryQuery = useTrustSummary(filter.year ?? null, filter.quarter ?? null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
   const summaryData = summaryQuery.data;
-
-  useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
 
   useEffect(() => {
     const el = gridRef.current;

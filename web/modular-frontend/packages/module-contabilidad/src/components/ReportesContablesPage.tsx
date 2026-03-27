@@ -8,9 +8,10 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useLibroMayor, useBalanceComprobacion, useEstadoResultados, useBalanceGeneral, useLibroDiario } from "../hooks/useContabilidad";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box pt={2} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
@@ -52,6 +53,12 @@ const BALANCE_COLS: ColumnDef[] = [
   { field: "saldo", header: "Saldo", width: 140, type: "number", currency: "VES", aggregation: "sum" },
 ];
 
+const GRID_IDS = {
+  diarioGridRef: buildContabilidadGridId("reportes-contables", "diario"),
+  mayorGridRef: buildContabilidadGridId("reportes-contables", "mayor"),
+  balanceGridRef: buildContabilidadGridId("reportes-contables", "balance"),
+} as const;
+
 export default function ReportesContablesPage() {
   const { timeZone } = useTimezone();
   const [tab, setTab] = useState(0);
@@ -62,7 +69,14 @@ export default function ReportesContablesPage() {
   const diarioGridRef = useRef<any>(null);
   const mayorGridRef = useRef<any>(null);
   const balanceGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: diarioGridLayoutReady } = useGridLayoutSync(GRID_IDS.diarioGridRef);
+  const { ready: mayorGridLayoutReady } = useGridLayoutSync(GRID_IDS.mayorGridRef);
+  const { ready: balanceGridLayoutReady } = useGridLayoutSync(GRID_IDS.balanceGridRef);
+  useContabilidadGridId(diarioGridRef, GRID_IDS.diarioGridRef);
+  useContabilidadGridId(mayorGridRef, GRID_IDS.mayorGridRef);
+  useContabilidadGridId(balanceGridRef, GRID_IDS.balanceGridRef);
+  const layoutReady = diarioGridLayoutReady && mayorGridLayoutReady && balanceGridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
 
   const [fechaDesde, setFechaDesde] = useState(firstDay);
   const [fechaHasta, setFechaHasta] = useState(today);
@@ -74,8 +88,6 @@ export default function ReportesContablesPage() {
   const balance = useBalanceComprobacion(fechaDesde, fechaHasta, run && tab === 2);
   const resultado = useEstadoResultados(fechaDesde, fechaHasta, run && tab === 3);
   const balanceGral = useBalanceGeneral(fechaCorte, run && tab === 4);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   // Bind libro diario
   useEffect(() => {

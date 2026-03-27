@@ -5,12 +5,13 @@ import {
   Box, Typography, TextField, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   Stack, FormControl, InputLabel, Select, MenuItem, Alert, Switch, FormControlLabel,
 } from "@mui/material";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import { brandColors } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import { useBatchGrid, useBatchBulkUpdate, type BatchGridFilter } from "../hooks/useNominaBatch";
 import PayrollEmployeePanel from "./PayrollEmployeePanel";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "employeeCode", header: "Cédula", width: 110, sortable: true },
@@ -31,11 +32,11 @@ const COLUMNS: ColumnDef[] = [
 
 interface Props { batchId: number; }
 
+const GRID_ID = buildNominaGridId("payroll-batch");
 
 
 export default function PayrollBatchGrid({ batchId }: Props) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [filter, setFilter] = useState<BatchGridFilter>({ page: 1, limit: 50 });
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -44,6 +45,9 @@ export default function PayrollBatchGrid({ batchId }: Props) {
 
   const grid = useBatchGrid(batchId, { ...filter, onlyModified });
   const bulkUpdate = useBatchBulkUpdate();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const gridData = grid.data?.data ?? grid.data ?? { rows: [], total: 0 };
   const rows = Array.isArray(gridData) ? gridData : (gridData.rows ?? []);
@@ -53,8 +57,6 @@ export default function PayrollBatchGrid({ batchId }: Props) {
     await bulkUpdate.mutateAsync({ batchId, conceptCode: bulkData.conceptCode, conceptType: bulkData.conceptType, amount: bulkData.amount });
     setBulkOpen(false);
   }, [batchId, bulkData, bulkUpdate]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

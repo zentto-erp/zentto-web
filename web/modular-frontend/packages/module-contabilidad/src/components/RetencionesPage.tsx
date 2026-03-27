@@ -8,9 +8,10 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import { useCountries, useLookup } from "@zentto/shared-api";
+import { useGridLayoutSync, useCountries, useLookup } from "@zentto/shared-api";
 import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { useRetencionesList, useGenerarRetencion, type WithholdingFilter } from "../hooks/useFiscalTributaria";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 import ConceptosRetencionPage from "./ConceptosRetencionPage";
 import UnidadTributariaPage from "./UnidadTributariaPage";
 
@@ -46,7 +47,10 @@ const COLUMNS: ColumnDef[] = [
 
 function ComprobantesTab() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data: countries = [] } = useCountries();
   const { data: withholdingTypes = [] } = useLookup('RETENTION_TYPE');
   const [filter, setFilter] = useState<WithholdingFilter>({ page: 1, limit: 25 });
@@ -58,8 +62,6 @@ function ComprobantesTab() {
   const { data, isLoading } = useRetencionesList(filter);
   const generarMutation = useGenerarRetencion();
   const rows = data?.rows ?? [];
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -144,6 +146,10 @@ function ComprobantesTab() {
     </Box>
   );
 }
+
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("retenciones", "main"),
+} as const;
 
 export default function RetencionesPage() {
   const [tab, setTab] = useState(0);

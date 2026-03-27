@@ -11,7 +11,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import { useFuelMonthlyReport } from "../hooks/useFlota";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
@@ -32,6 +32,7 @@ const MONTHS = [
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - i);
+const GRID_ID = "module-flota:reportes:fuel-monthly";
 
 const columns: ColumnDef[] = [
   { field: "LicensePlate", header: "Placa", flex: 1, minWidth: 100 },
@@ -71,12 +72,14 @@ export default function ReportesPage() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
-  
-  useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-const { data, isLoading } = useFuelMonthlyReport(year, month);
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
+
+  const { data, isLoading } = useFuelMonthlyReport(year, month);
 
   const rows = (data?.rows ?? []).map((r, idx) => ({ id: r.VehicleId ?? idx, ...r }));
 
@@ -147,6 +150,7 @@ const { data, isLoading } = useFuelMonthlyReport(year, month);
         <CardContent>
           <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="flota-reportes-list"
         height="400px"
         enable-toolbar

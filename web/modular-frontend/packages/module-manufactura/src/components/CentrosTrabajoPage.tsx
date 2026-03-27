@@ -28,6 +28,7 @@ import {
   type WorkCenterFilter,
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 
 interface WorkCenterFormData {
@@ -58,6 +59,8 @@ const CENTROS_FILTERS: FilterFieldDef[] = [
   },
 ];
 
+const GRID_ID = "module-manufactura:centros-trabajo:list";
+
 export default function CentrosTrabajoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -70,13 +73,14 @@ export default function CentrosTrabajoPage() {
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-const { data, isLoading } = useWorkCentersList({
+  const { data, isLoading } = useWorkCentersList({
     search,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -206,6 +210,7 @@ const { data, isLoading } = useWorkCentersList({
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}
+        grid-id={GRID_ID}
         export-filename="manufactura-centros-trabajo-list"
         height="400px"
         enable-toolbar

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
 import { CheckoutForm, useCartStore } from '@zentto/module-ecommerce';
@@ -8,8 +9,13 @@ export default function CheckoutPage() {
     const router = useRouter();
     const items = useCartStore((s) => s.items);
 
+    useEffect(() => {
+        if (items.length === 0) {
+            router.replace('/carrito');
+        }
+    }, [items.length, router]);
+
     if (items.length === 0) {
-        router.push('/carrito');
         return null;
     }
 

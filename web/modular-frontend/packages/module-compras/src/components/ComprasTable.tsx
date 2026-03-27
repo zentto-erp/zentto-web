@@ -10,7 +10,7 @@ import { ConfirmDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useComprasList, useDeleteCompra } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
-import { apiGet, toDateOnly } from "@zentto/shared-api";
+import { apiGet, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useToast } from "@zentto/shared-ui";
 
 // Icon names resolved by zentto-grid's built-in icon system (v0.3.1+)
@@ -78,6 +78,8 @@ const DETAIL_COLUMNS: ColumnDef[] = [
   { field: "TotalAmount", header: "Total", width: 130, type: "number", currency: "VES", aggregation: "sum" },
 ];
 
+const GRID_ID = "module-compras:compras:list";
+
 // ─── Component ──────────────────────────────────────────────────────────────
 export default function ComprasTable() {
   const router = useRouter();
@@ -86,6 +88,7 @@ export default function ComprasTable() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
   const deleteMutation = useDeleteCompra();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   // Detail cache: documentNumber → detail rows
   const detailCache = useRef<Record<string, GridRow[]>>({});
@@ -130,8 +133,9 @@ export default function ComprasTable() {
 
   // Register web component
   useEffect(() => {
+    if (!layoutReady) return;
     import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+  }, [layoutReady]);
 
   // Fetch detail lines for a given document
   const fetchDetail = useCallback(
@@ -228,7 +232,7 @@ export default function ComprasTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {!registered ? (
+      {!layoutReady || !registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>
@@ -236,6 +240,7 @@ export default function ComprasTable() {
         <Box sx={{ flex: 1, minHeight: 0 }}>
           <zentto-grid
             ref={gridRef}
+            grid-id={GRID_ID}
             default-currency="VES"
             export-filename="compras-list"
             height="calc(100vh - 200px)"

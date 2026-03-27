@@ -38,6 +38,7 @@ import {
 } from "../hooks/useManufactura";
 import { brandColors } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -195,6 +196,9 @@ const recentBomCols: ColumnDef[] = [
   },
 ];
 
+const DASHBOARD_BOMS_GRID_ID = "module-manufactura:dashboard:boms";
+const DASHBOARD_ORDERS_GRID_ID = "module-manufactura:dashboard:orders";
+
 /* ─── Main Component ──────────────────────────────────────── */
 
 export default function ManufacturaHome({ basePath = "" }: { basePath?: string }) {
@@ -203,11 +207,15 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
   const bomGridRef = useRef<any>(null);
   const ordersGridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: dashboardBomsLayoutReady } = useGridLayoutSync(DASHBOARD_BOMS_GRID_ID);
+  const { ready: dashboardOrdersLayoutReady } = useGridLayoutSync(DASHBOARD_ORDERS_GRID_ID);
+  const layoutReady = dashboardBomsLayoutReady && dashboardOrdersLayoutReady;
 
   // Register zentto-grid web component
   useEffect(() => {
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // Data hooks
   const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();
@@ -466,6 +474,7 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
             ) : bomRows.length > 0 ? (
               <zentto-grid
         ref={bomGridRef}
+        grid-id={DASHBOARD_BOMS_GRID_ID}
         height="400px"
         enable-toolbar
         enable-header-menu
@@ -494,6 +503,7 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
             ) : recentRows.length > 0 ? (
               <zentto-grid
         ref={ordersGridRef}
+        grid-id={DASHBOARD_ORDERS_GRID_ID}
         height="400px"
         enable-toolbar
         enable-header-menu

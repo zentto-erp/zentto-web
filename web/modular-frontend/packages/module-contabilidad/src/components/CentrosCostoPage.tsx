@@ -17,7 +17,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import PivotTableChartIcon from "@mui/icons-material/PivotTableChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   useCentrosCostoList, useCreateCentroCosto, useUpdateCentroCosto, useDeleteCentroCosto,
@@ -132,7 +132,10 @@ const PNL_COLUMNS: ColumnDef[] = [
 
 function PnLByCostCenterTab() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const { timeZone } = useTimezone();
   const today = toDateOnly(new Date(), timeZone);
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
@@ -145,8 +148,6 @@ function PnLByCostCenterTab() {
     const items = data?.data ?? data?.rows ?? [];
     return items.map((r: any, i: number) => ({ ...r, id: i }));
   }, [data]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
@@ -218,8 +219,6 @@ function PivotTab() {
     });
     return result;
   }, [data]);
-
-  useEffect(() => { import("@zentto/datagrid").then(() => setRegistered(true)); }, []);
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered) return;
@@ -268,6 +267,10 @@ const CENTROS_COSTO_FILTERS: FilterFieldDef[] = [
     { value: "active", label: "Activo" }, { value: "inactive", label: "Inactivo" },
   ]},
 ];
+
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("centros-costo", "main"),
+} as const;
 
 export default function CentrosCostoPage() {
   const [search, setSearch] = useState("");
