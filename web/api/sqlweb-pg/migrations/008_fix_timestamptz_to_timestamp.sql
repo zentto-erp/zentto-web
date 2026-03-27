@@ -55,8 +55,8 @@ DROP FUNCTION IF EXISTS usp_bank_movement_listbyaccount(integer, integer, bigint
 \ir ../includes/sp/usp_ops.sql
 
 \echo '  [008] Registrando migración...'
-INSERT INTO public._migrations (id, description, applied_at)
-VALUES (8, 'fix_timestamptz_to_timestamp', NOW() AT TIME ZONE 'UTC')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO public._migrations (name, applied_at)
+VALUES ('008_fix_timestamptz_to_timestamp.sql', NOW() AT TIME ZONE 'UTC')
+ON CONFLICT (name) DO NOTHING;
 
 \echo '  [008] COMPLETO — TIMESTAMPTZ eliminado de todas las funciones usp_*'

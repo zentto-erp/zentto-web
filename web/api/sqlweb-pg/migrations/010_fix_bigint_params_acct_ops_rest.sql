@@ -43,8 +43,8 @@ DROP FUNCTION IF EXISTS usp_rest_admin_adjuststock(integer, numeric) CASCADE;
 \ir ../includes/sp/usp_rest_admin.sql
 
 \echo '  [010] Registrando migración...'
-INSERT INTO public._migrations (id, description, applied_at)
-VALUES (10, 'fix_bigint_params_acct_ops_rest', NOW() AT TIME ZONE 'UTC')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO public._migrations (name, applied_at)
+VALUES ('010_fix_bigint_params_acct_ops_rest.sql', NOW() AT TIME ZONE 'UTC')
+ON CONFLICT (name) DO NOTHING;
 
 \echo '  [010] COMPLETO — parámetros BIGINT corregidos en acct, ops, rest_admin'

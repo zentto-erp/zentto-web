@@ -46,8 +46,8 @@ DROP FUNCTION IF EXISTS spgetmovimientobancariobyid(bigint) CASCADE;
 \ir ../includes/sp/sp_bancos_conciliacion.sql
 
 \echo '  [009] Registrando migración...'
-INSERT INTO public._migrations (id, description, applied_at)
-VALUES (9, 'fix_bigint_entity_params', NOW() AT TIME ZONE 'UTC')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO public._migrations (name, applied_at)
+VALUES ('009_fix_bigint_entity_params.sql', NOW() AT TIME ZONE 'UTC')
+ON CONFLICT (name) DO NOTHING;
 
 \echo '  [009] COMPLETO — parámetros de entidades BIGINT corregidos'
