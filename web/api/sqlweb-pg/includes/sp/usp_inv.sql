@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS inv."ProductBinStock" (
 
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_BinStock"
     ON inv."ProductBinStock"("CompanyId", "ProductId", "WarehouseId",
-        COALESCE("ZoneId", 0), COALESCE("BinId", 0), COALESCE("LotId", 0));
+        COALESCE("BinId", 0), COALESCE("LotId", 0));
 
 -- ============================================================================
 --  Tabla: inv."InventoryValuationMethod"
