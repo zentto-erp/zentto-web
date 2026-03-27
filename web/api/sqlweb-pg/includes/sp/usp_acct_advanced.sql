@@ -756,7 +756,7 @@ $$;
 -- =============================================================================
 --  SP 9: usp_Acct_CostCenter_Insert
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Insert(INTEGER, VARCHAR(20), VARCHAR(200), VARCHAR(20), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Insert(INTEGER, VARCHAR(20), VARCHAR(200), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Insert(
     p_company_id  INTEGER,
     p_code        VARCHAR(20),
@@ -814,7 +814,7 @@ $$;
 -- =============================================================================
 --  SP 10: usp_Acct_CostCenter_Update
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Update(INTEGER, VARCHAR(20), VARCHAR(200), VARCHAR(20), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Update(INTEGER, VARCHAR(20), VARCHAR(200), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Update(
     p_company_id  INTEGER,
     p_code        VARCHAR(20),
@@ -878,7 +878,7 @@ $$;
 -- =============================================================================
 --  SP 11: usp_Acct_CostCenter_Delete
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Delete(INTEGER, VARCHAR(20), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Delete(INTEGER, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Delete(
     p_company_id INTEGER,
     p_code       VARCHAR(20),
