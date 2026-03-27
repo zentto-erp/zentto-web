@@ -174,7 +174,8 @@ DECLARE
     v_7d_ago  TIMESTAMP := (NOW() AT TIME ZONE 'UTC') - INTERVAL '7 days';
     v_30d_ago TIMESTAMP := (NOW() AT TIME ZONE 'UTC') - INTERVAL '30 days';
 BEGIN
-    -- Calcular e insertar scores en batch
+    -- Calcular e insertar scores en batch y devolver los resultados ordenados.
+    RETURN QUERY
     WITH lead_data AS (
         SELECT
             l."LeadId",
@@ -246,7 +247,6 @@ BEGIN
         FROM scored s
         RETURNING crm."LeadScore"."LeadId", crm."LeadScore"."Score"
     )
-    RETURN QUERY
     SELECT s."LeadId", s."LeadCode", s."ContactName", s.calculated_score
     FROM scored s
     ORDER BY s.calculated_score DESC;
