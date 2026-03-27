@@ -27,7 +27,7 @@ const SEED_MANIFESTS = [
 
 // ── Regex ────────────────────────────────────────────────────────────
 // \x5c = backslash character (avoid escaping issues in regex literals)
-const RE_INCLUDE = new RegExp('^\\\\i\\s+(.+)$');
+const RE_INCLUDE = new RegExp('^\\\\i(?:r)?\\s+(.+)$');
 const RE_ECHO = new RegExp('^\\\\echo\\s');
 const RE_EMPTY_OR_COMMENT = /^\s*$|^\s*--/;
 
