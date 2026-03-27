@@ -141,6 +141,7 @@ $$;
 
 -- 4. usp_pos_waitticket_recover
 DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(INT, INT, INT, INT, VARCHAR) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(INT, INT, BIGINT, INT, VARCHAR) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_company_id            INT,
@@ -149,7 +150,7 @@ CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_recovered_by_user_id  INT DEFAULT NULL,
     p_recovered_at_register VARCHAR(20) DEFAULT NULL
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE pos."WaitTicket"
@@ -161,7 +162,7 @@ BEGIN
     WHERE "CompanyId" = p_company_id
       AND "BranchId" = p_branch_id
       AND "WaitTicketId" = p_wait_ticket_id;
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+    RETURN QUERY SELECT 1::BIGINT, 'OK'::VARCHAR(500);
 END;
 $$;
 
@@ -203,13 +204,14 @@ $$;
 
 -- 6. usp_pos_waitticket_void
 DROP FUNCTION IF EXISTS usp_pos_waitticket_void(INT, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_pos_waitticket_void(INT, INT, BIGINT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_void(
     p_company_id     INT,
     p_branch_id      INT,
     p_wait_ticket_id BIGINT
 )
-RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+RETURNS TABLE("Resultado" BIGINT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE pos."WaitTicket"
@@ -218,7 +220,7 @@ BEGIN
       AND "BranchId" = p_branch_id
       AND "WaitTicketId" = p_wait_ticket_id
       AND "Status" = 'WAITING';
-    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+    RETURN QUERY SELECT 1::BIGINT, 'OK'::VARCHAR(500);
 END;
 $$;
 
