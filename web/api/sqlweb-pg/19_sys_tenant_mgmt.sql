@@ -128,28 +128,31 @@ ON CONFLICT ("CompanyCode") DO NOTHING;
 
 -- ─── SEED: TenantDatabase — BD demo apunta a la BD actual ────────────────────
 INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
-VALUES (0, 'DEMO', current_database(), TRUE)
-ON CONFLICT ("CompanyId") DO UPDATE SET "DbName" = EXCLUDED."DbName";
+VALUES (0, 'DEMO', current_database() || '_demo', TRUE)
+ON CONFLICT ("CompanyId") DO UPDATE
+SET "CompanyCode" = EXCLUDED."CompanyCode",
+    "DbName" = EXCLUDED."DbName",
+    "IsDemo" = EXCLUDED."IsDemo";
 
 -- TenantDatabase para la empresa DEFAULT (primer tenant real)
 INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
 SELECT c."CompanyId", c."CompanyCode", current_database(), FALSE
 FROM cfg."Company" c
 WHERE c."CompanyCode" = 'DEFAULT'
-  AND NOT EXISTS (
-    SELECT 1 FROM sys."TenantDatabase" t WHERE t."CompanyCode" = 'DEFAULT'
-  )
-ON CONFLICT ("CompanyId") DO NOTHING;
+ON CONFLICT ("CompanyId") DO UPDATE
+SET "CompanyCode" = EXCLUDED."CompanyCode",
+    "DbName" = EXCLUDED."DbName",
+    "IsDemo" = EXCLUDED."IsDemo";
 
 -- TenantDatabase para Zentto (tenant interno)
 INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
-SELECT c."CompanyId", c."CompanyCode", current_database(), FALSE
+SELECT c."CompanyId", c."CompanyCode", current_database() || '_zentto', FALSE
 FROM cfg."Company" c
 WHERE c."CompanyCode" = 'ZENTTO'
-  AND NOT EXISTS (
-    SELECT 1 FROM sys."TenantDatabase" t WHERE t."CompanyCode" = 'ZENTTO'
-  )
-ON CONFLICT ("CompanyId") DO NOTHING;
+ON CONFLICT ("CompanyId") DO UPDATE
+SET "CompanyCode" = EXCLUDED."CompanyCode",
+    "DbName" = EXCLUDED."DbName",
+    "IsDemo" = EXCLUDED."IsDemo";
 
 -- ─── SEED: sys.License — licencia INTERNAL LIFETIME para Zentto ──────────────
 INSERT INTO sys."License" (
