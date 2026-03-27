@@ -267,6 +267,7 @@ CREATE TABLE IF NOT EXISTS "RestaurantePedidoItems" (
 );
 
 -- SP Listar Mesas
+DROP FUNCTION IF EXISTS public.usp_rest_mesas_list(VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_mesas_list(
     p_ambiente_id VARCHAR(10) DEFAULT NULL
 )
@@ -301,6 +302,7 @@ END;
 $$;
 
 -- SP Abrir Pedido en mesa
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_abrir(INT, VARCHAR(100), VARCHAR(20), VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_abrir(
     p_mesa_id        INT,
     p_cliente_nombre VARCHAR(100) DEFAULT NULL,
@@ -327,6 +329,7 @@ END;
 $$;
 
 -- SP Agregar Item a Pedido
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_item_agregar(INT, VARCHAR(15), VARCHAR(200), NUMERIC(10,3), NUMERIC(18,2), NUMERIC(9,4), BOOLEAN, TEXT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_item_agregar(
     p_pedido_id       INT,
     p_producto_id     VARCHAR(15),
@@ -377,6 +380,7 @@ END;
 $$;
 
 -- SP Enviar comanda a cocina (marcar items como enviados)
+DROP FUNCTION IF EXISTS public.usp_rest_comanda_enviar(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_comanda_enviar(
     p_pedido_id INT
 )
@@ -396,6 +400,7 @@ END;
 $$;
 
 -- SP Cerrar pedido (mesa queda libre)
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_cerrar(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_cerrar(
     p_pedido_id INT
 )
@@ -417,6 +422,7 @@ END;
 $$;
 
 -- SP obtener pedido activo de una mesa (header)
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_header(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_get_by_mesa_header(
     p_mesa_id INT
 )
@@ -449,6 +455,7 @@ END;
 $$;
 
 -- SP obtener items del pedido activo de una mesa
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_items(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_get_by_mesa_items(
     p_mesa_id INT
 )
