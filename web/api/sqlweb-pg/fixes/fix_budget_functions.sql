@@ -133,6 +133,7 @@ GRANT EXECUTE ON FUNCTION public.usp_acct_budget_insert(integer, character varyi
 -- - Accept lines JSON with periodCode/amount format
 -- - Make p_budget_name and p_lines_json optional (DEFAULT NULL)
 DROP FUNCTION IF EXISTS public.usp_acct_budget_update(integer, integer, character varying, text, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_acct_budget_update(integer, integer, character varying, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_budget_update(
     p_company_id  integer,
     p_budget_id   integer,
