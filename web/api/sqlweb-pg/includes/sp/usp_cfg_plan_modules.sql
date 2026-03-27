@@ -5,6 +5,7 @@
 -- ============================================================
 
 -- SP: obtener módulos de un plan
+DROP FUNCTION IF EXISTS public.usp_cfg_plan_getmodules(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_plan_getmodules(p_plan VARCHAR)
 RETURNS TABLE("ModuleCode" VARCHAR, "SortOrder" SMALLINT)
 LANGUAGE plpgsql AS $$
@@ -26,9 +27,9 @@ BEGIN
   ELSE
     -- Fallback hardcoded por si la tabla está vacía
     RETURN QUERY
-      SELECT m.code::VARCHAR, m.sort::SMALLINT
-      FROM (
-        SELECT unnest(CASE p_plan
+      SELECT t.code::VARCHAR, t.ord::SMALLINT
+      FROM unnest(
+        CASE p_plan
           WHEN 'FREE' THEN ARRAY['dashboard','facturas','clientes','inventario','articulos','reportes']
           WHEN 'STARTER' THEN ARRAY['dashboard','facturas','abonos','cxc','clientes','compras','cxp',
                                     'cuentas-por-pagar','proveedores','inventario','articulos','pagos',
@@ -43,13 +44,14 @@ BEGIN
                                        'pos','restaurante','ecommerce','auditoria','logistica','crm',
                                        'shipping','manufactura','flota']
           ELSE ARRAY['dashboard']::TEXT[]
-        END) WITH ORDINALITY AS t(code, ord)
-      ) m(code, sort)
-      ORDER BY m.sort::SMALLINT;
+        END
+      ) WITH ORDINALITY AS t(code, ord)
+      ORDER BY t.ord::SMALLINT;
   END IF;
 END; $$;
 
 -- SP: aplicar módulos de un plan al usuario admin del tenant
+DROP FUNCTION IF EXISTS public.usp_cfg_plan_applymodules(INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_plan_applymodules(
   p_company_id INT,
   p_plan       VARCHAR
