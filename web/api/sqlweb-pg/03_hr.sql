@@ -3873,7 +3873,7 @@ $function$
 ;
 
 -- usp_hr_payroll_approvedraft
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_approvedraft(integer, integer, integer, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_approvedraft(integer, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_approvedraft(p_batch_id integer, p_approved_by integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -3928,7 +3928,7 @@ $function$
 ;
 
 -- usp_hr_payroll_batchaddline
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchaddline(integer, character varying, character varying, character varying, character varying, numeric, numeric, integer, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchaddline(integer, character varying, character varying, character varying, character varying, numeric, numeric, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchaddline(p_batch_id integer, p_employee_code character varying, p_concept_code character varying, p_concept_name character varying, p_concept_type character varying, p_quantity numeric, p_amount numeric, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -4021,7 +4021,7 @@ $function$
 ;
 
 -- usp_hr_payroll_batchbulkupdate
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchbulkupdate(integer, character varying, character varying, numeric, integer, text, integer, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchbulkupdate(integer, character varying, character varying, numeric, integer, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchbulkupdate(p_batch_id integer, p_concept_code character varying, p_concept_type character varying, p_amount numeric, p_user_id integer, p_employee_codes text DEFAULT NULL::text, OUT p_affected_count integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -4085,7 +4085,7 @@ $function$
 ;
 
 -- usp_hr_payroll_batchremoveline
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchremoveline(integer, integer, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchremoveline(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchremoveline(p_line_id integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -4223,7 +4223,7 @@ $function$
 ;
 
 -- usp_hr_payroll_generatedraft
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_generatedraft(integer, integer, character varying, date, date, integer, character varying, integer, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_generatedraft(integer, integer, character varying, date, date, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_generatedraft(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_from_date date, p_to_date date, p_user_id integer, p_department_filter character varying DEFAULT NULL::character varying, OUT p_batch_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -4928,7 +4928,7 @@ $function$
 ;
 
 -- usp_hr_payroll_processbatch
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_processbatch(integer, integer, integer, integer, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_processbatch(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_processbatch(p_batch_id integer, p_user_id integer, OUT p_procesados integer, OUT p_errores integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
@@ -5206,7 +5206,7 @@ $function$
 ;
 
 -- usp_hr_payroll_savedraftline
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_savedraftline(integer, numeric, numeric, integer, character varying, integer, text) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_payroll_savedraftline(integer, numeric, numeric, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_payroll_savedraftline(p_line_id integer, p_quantity numeric, p_amount numeric, p_user_id integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
