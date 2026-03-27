@@ -372,7 +372,7 @@ DROP FUNCTION IF EXISTS usp_crm_lead_update(INT, INT, VARCHAR, VARCHAR, VARCHAR,
 CREATE OR REPLACE FUNCTION usp_crm_lead_update(
     p_lead_id            INT,
     p_stage_id           INT DEFAULT NULL,
-    p_contact_name VARCHAR(200) DEFAULT NULL DEFAULT NULL,
+    p_contact_name       VARCHAR(200) DEFAULT NULL,
     p_company_name       VARCHAR(200) DEFAULT NULL,
     p_email              VARCHAR(200) DEFAULT NULL,
     p_phone              VARCHAR(60)  DEFAULT NULL,
