@@ -67,5 +67,5 @@ echo "╚═══════════════════════�
 
 if [ $ERRORS -gt 0 ]; then
   echo "⚠ Hubo errores — revisar logs arriba"
-  # No fallar el pipeline completo por errores en tenants individuales
+  exit 1
 fi

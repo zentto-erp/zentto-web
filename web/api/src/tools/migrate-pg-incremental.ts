@@ -1,12 +1,13 @@
 /**
  * migrate-pg-incremental.ts
  *
- * Ejecuta migraciones incrementales de PostgreSQL.
- * - Lee archivos .sql de sqlweb-pg/migrations/ ordenados por nombre
+ * [LEGACY] Ejecuta migraciones incrementales de PostgreSQL sobre sqlweb-pg/migrations.
+ * - La ruta can??nica de despliegue es web/api/migrations/postgres (goose)
+ * - Este script solo existe para recuperar fixes legacy mientras se absorben
  * - Registra cada migración aplicada en public._migrations
  * - Idempotente: salta migraciones ya aplicadas
  * - Para instalaciones nuevas: ejecutar run_all.sql primero, luego este script
- * - Para producción: ejecutar solo este script (aplica solo pendientes)
+ * - No usar como fuente principal para produccion nueva
  *
  * Uso:
  *   npm run db:migrate:pg:incremental

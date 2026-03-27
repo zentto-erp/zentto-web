@@ -24,6 +24,8 @@ COPY --from=builder /app/.npmrc ./
 
 # Contrato OpenAPI para Swagger UI
 COPY web/contracts/openapi.yaml ./contracts/openapi.yaml
+COPY web/api/migrations/postgres ./migrations/postgres
+COPY web/api/sqlweb-pg ./sqlweb-pg
 
 # Reinstalar solo dependencias de producción
 RUN npm ci --omit=dev

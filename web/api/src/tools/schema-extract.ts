@@ -364,7 +364,7 @@ async function main(): Promise<void> {
     console.log('Próximos pasos:');
     console.log('  1. Revisar sqlweb-pg/extracted/');
     console.log('  2. Los archivos 01_tables/ y 02_functions/ son la fuente de verdad');
-    console.log('  3. Cualquier cambio nuevo va en sqlweb-pg/migrations/NNN_descripcion.sql');
+    console.log('  3. Cualquier cambio nuevo va en migrations/postgres/NNNN_descripcion.sql');
     console.log('  4. git add + commit');
     console.log('══════════════════════════════════════════════════════');
     console.log('');

@@ -69,6 +69,10 @@ jobs:
         working-directory: web/api
         run: npx tsc -p tsconfig.build.json --noEmit
 
+      - name: Audit OpenAPI coverage
+        working-directory: web/api
+        run: npm run audit:openapi
+
   # ── Gate 2: SP Contract Tests (PostgreSQL) ──────────────────
   schema-tests:
     name: SP Contract Tests (bloqueante)
@@ -108,8 +112,14 @@ jobs:
         env:
           PGPASSWORD: test_password
         run: |
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -f sqlweb-pg/00_create_database.sql 2>/dev/null || true
-          cd sqlweb-pg && psql -h 127.0.0.1 -U zentto_app -d zentto_test -f run_all.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f sqlweb-pg/00_create_database.sql
+          cd sqlweb-pg
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run_all.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
+          cd ..
+          for file in migrations/postgres/*.sql; do
+            psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f "$file"
+          done
 
       - name: Run SP contract tests
         working-directory: web/api
@@ -330,6 +340,8 @@ jobs:
             docker compose -f docker-compose.prod.yml pull api
             docker rm -f zentto-api 2>/dev/null || true
             docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps api
+            sleep 8
+            curl -fsS http://127.0.0.1:4000/health >/dev/null
             docker image prune -f
             echo "✓ API desplegada: $(date -u)"
 

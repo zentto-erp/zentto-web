@@ -30,7 +30,7 @@ su -c "psql -d ${PG_DATABASE} -c 'GRANT CREATE ON SCHEMA acct, ap, ar, audit, cf
 HOTFIX_SQL="/opt/zentto/hotfix-sec-functions.sql"
 if [ -f "$HOTFIX_SQL" ]; then
   echo "→ Ejecutando hotfix SQL..."
-  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f ${HOTFIX_SQL}" postgres 2>&1
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=1 -f ${HOTFIX_SQL}" postgres 2>&1
   echo "✓ Hotfix SQL ejecutado"
 fi
 
@@ -65,10 +65,7 @@ fi
 
 # Ejecutar migraciones pendientes (solo las que vengan después de baseline)
 echo "→ Ejecutando goose up..."
-su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' up" postgres 2>&1 || {
-  echo "ERROR: goose up falló — ver errores arriba"
-  echo "→ Continuando con ownership..."
-}
+su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' up" postgres 2>&1
 
 echo ""
 echo "→ Estado de migraciones:"
@@ -88,9 +85,7 @@ if [ -f "$SEEDS_FILE" ]; then
   echo ""
   echo "→ Ejecutando seeds idempotentes (tipo: ${SEEDS_TYPE})..."
   cd "$SEEDS_DIR"
-  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f $(basename ${SEEDS_FILE})" postgres 2>&1 || {
-    echo "WARN: Algunos seeds tuvieron errores (ver arriba) — continuando..."
-  }
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=1 -f $(basename ${SEEDS_FILE})" postgres 2>&1
   echo "✓ Seeds ejecutados (${SEEDS_TYPE})"
 else
   echo "WARN: No se encontró ${SEEDS_FILE} — saltando seeds"
@@ -102,11 +97,61 @@ if [ -f "$FUNCTIONS_FILE" ]; then
   echo ""
   echo "-> Recreando TODAS las funciones PostgreSQL..."
   cd "$SEEDS_DIR"
-  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=0 -f run-functions.sql" postgres 2>&1 || {
-    echo "WARN: Algunas funciones tuvieron errores (ver arriba)"
-  }
+  su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=1 -f run-functions.sql" postgres 2>&1
   echo "OK Funciones recreadas"
 fi
+
+echo "-> Verificando contratos criticos de funciones..."
+cat <<'EOSQL' | su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=1" postgres 2>&1
+DO $$
+DECLARE
+  overload_count integer;
+  fn_name text;
+  required_functions text[] := ARRAY[
+    'usp_sec_user_authenticate',
+    'usp_cfg_resolvecontext',
+    'usp_cfg_fiscal_getconfig',
+    'usp_shipping_customer_register',
+    'usp_shipping_customer_login',
+    'usp_shipping_shipment_create',
+    'usp_shipping_shipment_list',
+    'usp_shipping_track',
+    'usp_sys_backup_create',
+    'usp_sys_backup_complete',
+    'usp_sys_backup_fail',
+    'usp_sys_backup_list',
+    'usp_sys_resource_audit',
+    'usp_sys_cleanup_scan',
+    'usp_sys_cleanup_list',
+    'usp_sys_cleanup_process'
+  ];
+BEGIN
+  SELECT COUNT(*) INTO overload_count
+  FROM (
+    SELECT p.proname
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname LIKE 'usp_%'
+    GROUP BY p.proname
+    HAVING COUNT(*) > 1
+  ) overloads;
+
+  IF overload_count > 0 THEN
+    RAISE EXCEPTION 'Hay % funciones usp_* con overloads duplicados', overload_count;
+  END IF;
+
+  FOREACH fn_name IN ARRAY required_functions LOOP
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = fn_name
+    ) THEN
+      RAISE EXCEPTION 'Falta la funcion critica %', fn_name;
+    END IF;
+  END LOOP;
+END $$;
+EOSQL
 
 # Ownership de todo → zentto_app
 echo "→ Transfiriendo ownership a zentto_app..."

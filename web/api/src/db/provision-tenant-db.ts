@@ -73,24 +73,23 @@ export async function provisionTenantDatabase(
       stdio: "inherit",
     });
     obs.audit("tenant.db.migrations.ok", { module: "provision-db", companyId, dbName });
-
-    // 4. Ejecutar seeds config + starter (via psql)
-    const seedsDir = process.env.SEEDS_DIR || "/opt/zentto/sqlweb-pg";
-    try {
-      execSync(
-        `PGPASSWORD="${pgPassword}" psql -U "${pgUser}" -h "${pgHost}" -p ${pgPort} -d "${dbName}" -v ON_ERROR_STOP=0 -f "${seedsDir}/run-seeds-config.sql"`,
-        { timeout: 120_000, stdio: "inherit", cwd: seedsDir },
-      );
-      execSync(
-        `PGPASSWORD="${pgPassword}" psql -U "${pgUser}" -h "${pgHost}" -p ${pgPort} -d "${dbName}" -v ON_ERROR_STOP=0 -f "${seedsDir}/run-seeds-starter.sql"`,
-        { timeout: 120_000, stdio: "inherit", cwd: seedsDir },
-      );
-      obs.audit("tenant.db.seeds.ok", { module: "provision-db", companyId, dbName });
-    } catch (seedErr: any) {
-      console.warn(`[provision] Seeds warning for ${dbName}:`, seedErr.message);
-      obs.error(`tenant.db.seeds.warning: ${seedErr.message}`, { companyId, dbName });
-      // No fallar por seeds — la BD ya tiene el schema
-    }
+    // 4. Re-crear funciones can??nicas + seeds config + starter
+    const seedsDir = process.env.SEEDS_DIR || "/app/sqlweb-pg";
+    obs.log("info", `[provision] Ejecutando funciones can??nicas en ${dbName}`, { companyId, seedsDir });
+    execSync(
+      `PGPASSWORD="${pgPassword}" psql -U "${pgUser}" -h "${pgHost}" -p ${pgPort} -d "${dbName}" -v ON_ERROR_STOP=1 -f "${seedsDir}/run-functions.sql"`,
+      { timeout: 300_000, stdio: "inherit", cwd: seedsDir },
+    );
+    obs.log("info", `[provision] Ejecutando seeds config/starter en ${dbName}`, { companyId, seedsDir });
+    execSync(
+      `PGPASSWORD="${pgPassword}" psql -U "${pgUser}" -h "${pgHost}" -p ${pgPort} -d "${dbName}" -v ON_ERROR_STOP=1 -f "${seedsDir}/run-seeds-config.sql"`,
+      { timeout: 120_000, stdio: "inherit", cwd: seedsDir },
+    );
+    execSync(
+      `PGPASSWORD="${pgPassword}" psql -U "${pgUser}" -h "${pgHost}" -p ${pgPort} -d "${dbName}" -v ON_ERROR_STOP=1 -f "${seedsDir}/run-seeds-starter.sql"`,
+      { timeout: 120_000, stdio: "inherit", cwd: seedsDir },
+    );
+    obs.audit("tenant.db.seeds.ok", { module: "provision-db", companyId, dbName });
 
     // 5. Registrar en sys.TenantDatabase (BD master)
     const masterPool = getMasterPool();

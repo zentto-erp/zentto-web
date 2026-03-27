@@ -7,6 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
+    "audit:openapi": "tsx src/tools/audit-openapi-coverage.ts",
     "db:governance:report": "tsx src/tools/db-governance-report.ts",
     "db:migrate:pg": "tsx src/tools/migrate-to-pg.ts",
     "db:migrate:pg:incremental": "tsx src/tools/migrate-pg-incremental.ts",
