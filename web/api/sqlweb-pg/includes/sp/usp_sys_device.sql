@@ -2,6 +2,8 @@
 -- sys.PushDevice — Registro de dispositivos móviles para push notifications
 -- ============================================================================
 
+CREATE SCHEMA IF NOT EXISTS sys;
+
 CREATE TABLE IF NOT EXISTS sys."PushDevice" (
     "DeviceId"      INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"     INT NOT NULL,
