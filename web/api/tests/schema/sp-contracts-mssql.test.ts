@@ -276,7 +276,7 @@ describe.skipIf(skipAll)("SP Contracts MSSQL — seed data", () => {
 // Test 6: SPs ejecutables (smoke test)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — smoke tests", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — smoke tests", () => {
   it("usp_Sys_HealthCheck se ejecuta sin error", async () => {
     const r = await pool.request().execute("dbo.usp_Sys_HealthCheck");
     expect(r.recordset.length).toBeGreaterThanOrEqual(1);
