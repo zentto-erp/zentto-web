@@ -8,9 +8,7 @@
 -- =============================================================
 -- 1) usp_hr_vacation_request_create
 -- =============================================================
-CREATE OR REPLACE FUNCTION usp_hr_vacation_request_create(
-    INT, INT, VARCHAR, DATE, DATE, INT, BOOLEAN, VARCHAR, JSONB
-);
+DROP FUNCTION IF EXISTS usp_hr_vacation_request_create(INT, INT, VARCHAR, DATE, DATE, INT, BOOLEAN, VARCHAR, JSONB) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_create(
     p_company_id    INT,
@@ -72,9 +70,7 @@ $fn$;
 -- =============================================================
 -- 2) usp_hr_vacation_request_list
 -- =============================================================
-CREATE OR REPLACE FUNCTION usp_hr_vacation_request_list(
-    INT, VARCHAR, VARCHAR, INT, INT
-);
+DROP FUNCTION IF EXISTS usp_hr_vacation_request_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_list(
     p_company_id    INT,
