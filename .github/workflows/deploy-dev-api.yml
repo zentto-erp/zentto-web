@@ -204,8 +204,19 @@ jobs:
             cp -f /opt/zentto-dev/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto-dev/goose-deploy.sh
             chmod +x /opt/zentto-dev/goose-deploy.sh
 
-            # Run migrations on zentto_dev database only (no tenants)
-            # SKIP_HOTFIX=1 avoids executing production hotfix files
+            # Check if DB is fresh (no tables) — bootstrap from sqlweb-pg first
+            TABLE_COUNT=$(sudo -u postgres psql -d zentto_dev -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema')")
+            if [ "$TABLE_COUNT" -lt "10" ]; then
+              echo "==> Fresh DB detected ($TABLE_COUNT tables) — running full bootstrap..."
+              cd /opt/zentto-dev/sqlweb-pg
+              sudo -u postgres psql -d zentto_dev -f run_all.sql || true
+              sudo -u postgres psql -d zentto_dev -f run-functions.sql || true
+              sudo -u postgres psql -d zentto_dev -f run-seeds-config.sql || true
+              sudo -u postgres psql -d zentto_dev -f run-seeds-starter.sql || true
+              echo "==> Bootstrap complete"
+            fi
+
+            # Run goose migrations on zentto_dev (incremental changes after baseline)
             PG_DATABASE=zentto_dev \
             GOOSE_DIR=/opt/zentto-dev/migrations/postgres \
             SEEDS_DIR=/opt/zentto-dev/sqlweb-pg \
