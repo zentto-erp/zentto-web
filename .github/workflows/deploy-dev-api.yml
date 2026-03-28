@@ -334,6 +334,7 @@ jobs:
             # Pull and restart dev API
             cd /opt/zentto-dev
             docker compose -f docker-compose.dev.yml pull api-dev
+            docker rm -f zentto-api-dev 2>/dev/null || true
             docker compose -f docker-compose.dev.yml up -d --force-recreate --no-deps api-dev
 
             # Health check
