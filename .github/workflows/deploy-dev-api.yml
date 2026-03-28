@@ -328,6 +328,9 @@ jobs:
             sed -i 's|^AUTH_REQUIRE_EMAIL_VERIFICATION=.*|AUTH_REQUIRE_EMAIL_VERIFICATION=false|' /opt/zentto-dev/.env.api
             sed -i 's|^AUTH_LOGIN_REQUIRE_CAPTCHA=.*|AUTH_LOGIN_REQUIRE_CAPTCHA=false|' /opt/zentto-dev/.env.api
 
+            # Cache URL — dev uses same cache container (shared network)
+            sed -i 's|^ZENTTO_CACHE_URL=.*|ZENTTO_CACHE_URL=http://zentto-cache:4100|' /opt/zentto-dev/.env.api
+
             # Login to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 

@@ -354,6 +354,11 @@ jobs:
                 || echo "GITHUB_WEBHOOK_SECRET=$GH_SUPPORT_WEBHOOK_SECRET" >> "$ENV_API"
             fi
 
+            # ── Zentto Cache URL (microservicio de caché) ──
+            grep -q '^ZENTTO_CACHE_URL=' "$ENV_API" \
+              && sed -i "s|^ZENTTO_CACHE_URL=.*|ZENTTO_CACHE_URL=http://zentto-cache:4100|" "$ENV_API" \
+              || echo "ZENTTO_CACHE_URL=http://zentto-cache:4100" >> "$ENV_API"
+
             # ── Directorio de backups en host ──
             mkdir -p /opt/zentto/backups
             chmod 755 /opt/zentto/backups
