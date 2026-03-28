@@ -14,7 +14,7 @@ services:
     image: ghcr.io/zentto-erp/zentto-web/api:dev
     container_name: zentto-api-dev
     ports:
-      - "4100:4000"
+      - "4200:4000"
     env_file:
       - /opt/zentto-dev/.env.api
     environment:
