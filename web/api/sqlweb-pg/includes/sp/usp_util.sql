@@ -927,7 +927,7 @@ $$;
 -- 9b. PAYMENT ENGINE: usp_pay_transaction_insert
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_pay_transaction_insert(VARCHAR(36), INT, INT, VARCHAR(30), INT, VARCHAR(50), VARCHAR(30), INT, VARCHAR(3), NUMERIC(18,2), VARCHAR(20), VARCHAR(20), VARCHAR(100), VARCHAR(50), TEXT, VARCHAR(500), VARCHAR(4), VARCHAR(20), VARCHAR(20), VARCHAR(10), VARCHAR(50), VARCHAR(50), VARCHAR(20), VARCHAR(45)) CASCADE;
-DROP FUNCTION IF EXISTS usp_pay_transaction_insert(
+CREATE OR REPLACE FUNCTION usp_pay_transaction_insert(
     p_transaction_uuid    VARCHAR(36),
     p_empresa_id          INT,
     p_sucursal_id         INT,

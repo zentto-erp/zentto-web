@@ -24,6 +24,21 @@ const SEED_MANIFESTS = [
   'run-seeds-starter.sql',
   'run-seeds-demo.sql',
 ];
+const LEGACY_FUNCTION_BUNDLES = new Set([
+  '01_sec.sql',
+  '02_cfg.sql',
+  '03_hr.sql',
+  '04_inventario.sql',
+  '05_master.sql',
+  '06_doc.sql',
+  '07_acct.sql',
+  '08_fin.sql',
+  '09_pos.sql',
+  '10_fiscal.sql',
+  '11_pay.sql',
+  '12_sys.sql',
+  '13_otros.sql',
+]);
 
 // ── Regex ────────────────────────────────────────────────────────────
 // \x5c = backslash character (avoid escaping issues in regex literals)
@@ -107,6 +122,23 @@ function isSeedScriptPath(relPath) {
   return /(^|\/)\d+_seed_[^/]+\.sql$/i.test(relPath) || /(^|\/)seed_[^/]+\.sql$/i.test(relPath);
 }
 
+function shouldSkipFunctionBlock(relPath) {
+  const normalized = relPath.replace(/\\/g, '/');
+  const baseName = path.posix.basename(normalized);
+
+  if (LEGACY_FUNCTION_BUNDLES.has(baseName)) {
+    return true;
+  }
+
+  if (!normalized.startsWith('includes/sp/')) {
+    return false;
+  }
+
+  // El bootstrap frio corre goose up y luego run-functions.sql.
+  // Dejamos en baseline solo DDL auxiliar requerido por el schema.
+  return !/^includes\/sp\/(create_|alter_)/i.test(normalized);
+}
+
 function collectSeedManagedPaths() {
   const excluded = new Set();
 
@@ -180,6 +212,10 @@ function main() {
 
     if (!stripped) continue;
     if (seedManagedPaths.has(path.resolve(block.path)) || isSeedScriptPath(relPath)) {
+      skipped++;
+      continue;
+    }
+    if (shouldSkipFunctionBlock(relPath)) {
       skipped++;
       continue;
     }
