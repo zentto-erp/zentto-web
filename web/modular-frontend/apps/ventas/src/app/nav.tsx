@@ -8,6 +8,7 @@ const Inventory2Icon = dynamic(() => import('@mui/icons-material/Inventory2'), {
 const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalance'), { ssr: false });
 const PaymentIcon = dynamic(() => import('@mui/icons-material/Payment'), { ssr: false });
 const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -29,6 +30,9 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         // — E-Commerce —
         nav.push({ kind: 'header', title: 'E-Commerce' });
         nav.push({ kind: 'page', segment: 'pedidos-ecommerce', title: 'Pedidos Pendientes', icon: <ShoppingCartIcon /> });
+
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
 
     return nav;

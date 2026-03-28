@@ -101,7 +101,7 @@ export default function AuditoriaReportesPage() {
       field: "CreatedAt",
       header: "Fecha",
       width: 160,
-      renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
+      renderCell: (value: unknown) => (value ? formatDateTime(value as string, { timeZone }) : "-"),
     },
     { field: "InvoiceNumber", header: "N° Factura", width: 140 },
     { field: "InvoiceType", header: "Tipo", width: 100 },
@@ -110,13 +110,13 @@ export default function AuditoriaReportesPage() {
       field: "SentToAuthority",
       header: "Enviado",
       width: 100,
-      renderCell: (p) => <Chip label={p.value ? "Sí" : "No"} size="small" color={p.value ? "success" : "default"} variant="outlined" />,
+      renderCell: ((value: unknown) => <Chip label={value ? "Sí" : "No"} size="small" color={value ? "success" : "default"} variant="outlined" />) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "AuthorityStatus",
       header: "Estado",
       width: 120,
-      renderCell: (p) => <Chip label={p.value ?? "N/A"} size="small" color={p.value === "ACCEPTED" ? "success" : "default"} variant="outlined" />,
+      renderCell: ((value: unknown) => <Chip label={(value as string) ?? "N/A"} size="small" color={value === "ACCEPTED" ? "success" : "default"} variant="outlined" />) as unknown as ColumnDef["renderCell"],
     },
   ];
 

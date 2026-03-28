@@ -40,6 +40,7 @@ export interface WorkCenterListResponse {
 
 export interface WorkOrderFilter {
   status?: string;
+  search?: string;
   fechaDesde?: string;
   fechaHasta?: string;
   page?: number;

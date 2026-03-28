@@ -74,10 +74,8 @@ export function buildPivotConfig(cfg: LabConfig, fields: FieldOption[]): PivotCo
     columnField: cfg.pivotColField,
     valueField: cfg.pivotValueField,
     aggregation: cfg.pivotAgg as any,
-    rowFieldHeader: fields.find((f) => f.value === cfg.pivotRowField)?.label || cfg.pivotRowField,
     showGrandTotals: cfg.pivotGrandTotals,
     showRowTotals: cfg.pivotRowTotals,
-    valueFormatter: (v) => new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(v),
   };
 }
 

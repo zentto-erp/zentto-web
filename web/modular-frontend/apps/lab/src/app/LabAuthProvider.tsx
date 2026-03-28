@@ -40,7 +40,7 @@ type AuthContextType = {
 
 // Strategy: We provide context via the same React context object from shared-auth.
 // shared-auth exports AuthContext as default.
-import AuthContext from "@zentto/shared-auth/src/AuthContext";
+import AuthContext from "@zentto/shared-auth/AuthContext";
 
 export function LabAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Record<string, any> | null>(null);

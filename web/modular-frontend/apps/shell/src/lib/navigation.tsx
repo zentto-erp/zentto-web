@@ -43,6 +43,7 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import EventIcon from '@mui/icons-material/Event';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PrintIcon from '@mui/icons-material/Print';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -55,6 +56,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     if (pathname === '/' || pathname === '/aplicaciones') {
         nav.push({ kind: 'header', title: 'ZENTTO' });
         nav.push({ kind: 'page', segment: '', title: 'Inicio / Aplicaciones', icon: <AppsIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
         nav.push({ kind: 'header', title: 'RECURSOS' });
         nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'soporte', title: 'Soporte Técnico', icon: <HelpIcon /> });
@@ -194,6 +197,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'manufactura/bom', title: 'Lista de Materiales (BOM)', icon: <InventoryIcon /> });
         nav.push({ kind: 'page', segment: 'manufactura/centros-trabajo', title: 'Centros de Trabajo', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'manufactura/ordenes', title: 'Ordenes de Produccion', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'manufactura/reportes', title: 'Reportes', icon: <PrintIcon /> });
         return nav;
     }
 
@@ -205,6 +210,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'flota/combustible', title: 'Combustible', icon: <PaymentIcon /> });
         nav.push({ kind: 'page', segment: 'flota/mantenimiento', title: 'Mantenimiento', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'flota/viajes', title: 'Viajes', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'flota/reportes', title: 'Reportes', icon: <PrintIcon /> });
         return nav;
     }
 
@@ -219,6 +226,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'shipping/rastreo', title: 'Rastrear', icon: <HistoryIcon /> });
         nav.push({ kind: 'header', title: 'CUENTA' });
         nav.push({ kind: 'page', segment: 'shipping/perfil', title: 'Mi Perfil', icon: <ManageAccountsIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'shipping/reportes', title: 'Reportes', icon: <PrintIcon /> });
         return nav;
     }
 

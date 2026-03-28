@@ -46,6 +46,8 @@ const SAVINGS_COLUMNS: ColumnDef[] = [
   },
 ];
 
+const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
 const LOAN_COLUMNS: ColumnDef[] = [
   { field: "employeeCode", header: "Código", width: 100, sortable: true },
   { field: "employeeName", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
@@ -64,8 +66,6 @@ const LOAN_COLUMNS: ColumnDef[] = [
   },
 ];
 
-
-const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
 const SAVINGS_GRID_ID = buildNominaGridId("caja-ahorro", "members");
 const LOANS_GRID_ID = buildNominaGridId("caja-ahorro", "loans");
 

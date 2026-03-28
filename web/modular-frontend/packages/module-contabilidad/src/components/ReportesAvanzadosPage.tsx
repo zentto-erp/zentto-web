@@ -49,16 +49,9 @@ function DrillDownDialog({ open, onClose, accountCode, accountName, fechaDesde, 
   open: boolean; onClose: () => void; accountCode: string; accountName?: string; fechaDesde: string; fechaHasta: string;
 }) {
   const gridRef = useRef<any>(null);
-    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
-  const { ready: agingCxCLayoutReady } = useGridLayoutSync(GRID_IDS.agingCxCRef);
-  const { ready: agingCxPLayoutReady } = useGridLayoutSync(GRID_IDS.agingCxPRef);
-  const { ready: taxLayoutReady } = useGridLayoutSync(GRID_IDS.taxRef);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
   useContabilidadGridId(gridRef, GRID_IDS.gridRef);
-  useContabilidadGridId(agingCxCRef, GRID_IDS.agingCxCRef);
-  useContabilidadGridId(agingCxPRef, GRID_IDS.agingCxPRef);
-  useContabilidadGridId(taxRef, GRID_IDS.taxRef);
-  const layoutReady = gridLayoutReady && agingCxCLayoutReady && agingCxPLayoutReady && taxLayoutReady;
-  const { registered } = useContabilidadGridRegistration(layoutReady);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const { data, isLoading } = useDrillDown(accountCode, fechaDesde, fechaHasta, open && !!accountCode);
   const rows: DrillDownRow[] = useMemo(() => { const items = data?.data ?? data?.rows ?? []; return items.map((r: any, i: number) => ({ ...r, id: i })); }, [data]);
   useEffect(() => {

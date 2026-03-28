@@ -1,6 +1,12 @@
-"use client";
-import { CRMReportsPage } from "@zentto/module-crm";
+'use client';
 
-export default function Page() {
-  return <CRMReportsPage />;
+import { ModuleReportsPage } from '@zentto/shared-reports';
+
+export default function ReportesPage() {
+  return (
+    <ModuleReportsPage
+      moduleId="crm"
+      moduleName="CRM"
+    />
+  );
 }

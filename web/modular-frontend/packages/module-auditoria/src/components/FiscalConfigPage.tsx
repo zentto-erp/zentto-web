@@ -26,8 +26,8 @@ import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGrid
 const taxRateColumns: ColumnDef[] = [
   { field: "code", header: "Código", flex: 1 },
   { field: "name", header: "Nombre", flex: 2 },
-  { field: "rate", header: "Tasa %", flex: 1, type: "number", renderCell: (p) => `${p.value}%` },
-  { field: "surchargeRate", header: "Recargo %", flex: 1, type: "number", renderCell: (p) => `${p.value ?? 0}%` },
+  { field: "rate", header: "Tasa %", flex: 1, type: "number", renderCell: (value: unknown) => `${value}%` },
+  { field: "surchargeRate", header: "Recargo %", flex: 1, type: "number", renderCell: (value: unknown) => `${value ?? 0}%` },
   {
     field: "actions",
     header: "Acciones",

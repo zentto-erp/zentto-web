@@ -10,6 +10,7 @@ const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr
 const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'), { ssr: false });
 const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
 const Inventory2Icon = dynamic(() => import('@mui/icons-material/Inventory2'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 
 export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -76,6 +77,9 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): Array<
             icon: <SettingsIcon />
         });
     }
+
+    nav.push({ kind: 'divider' });
+    nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
 
     return nav;
 }

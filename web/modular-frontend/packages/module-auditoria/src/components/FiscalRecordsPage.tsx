@@ -41,7 +41,7 @@ const { data, isLoading } = useFiscalRecords(filter);
       field: "CreatedAt",
       header: "Fecha",
       width: 160,
-      renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
+      renderCell: (value: unknown) => (value ? formatDateTime(value as string, { timeZone }) : "-"),
     },
     { field: "InvoiceNumber", header: "N° Factura", width: 140 },
     { field: "InvoiceType", header: "Tipo", width: 100 },
@@ -50,37 +50,37 @@ const { data, isLoading } = useFiscalRecords(filter);
       field: "RecordHash",
       header: "Hash",
       width: 180,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <span style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
-          {p.value ? String(p.value).substring(0, 20) + "..." : "-"}
+          {value ? String(value).substring(0, 20) + "..." : "-"}
         </span>
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "SentToAuthority",
       header: "Enviado",
       width: 100,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value ? "Sí" : "No"}
+          label={value ? "Sí" : "No"}
           size="small"
-          color={p.value ? "success" : "default"}
+          color={value ? "success" : "default"}
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "AuthorityStatus",
       header: "Estado",
       width: 120,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value ?? "N/A"}
+          label={(value as string) ?? "N/A"}
           size="small"
-          color={p.value === "ACCEPTED" ? "success" : p.value === "REJECTED" ? "error" : "default"}
+          color={value === "ACCEPTED" ? "success" : value === "REJECTED" ? "error" : "default"}
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "actions",

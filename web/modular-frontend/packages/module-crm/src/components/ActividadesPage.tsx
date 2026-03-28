@@ -32,7 +32,7 @@ import {
   type Activity,
   type ActivityFilter,
 } from "../hooks/useCRM";
-import type { ColumnDef } from "@zentto/datagrid-core";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 
 
 const typeConfig: Record<string, { icon: React.ReactNode; color: "primary" | "secondary" | "success" | "warning" | "info" }> = {
@@ -92,19 +92,19 @@ const { data, isLoading } = useActivitiesList(filter);
       field: "ActivityType",
       header: "Tipo",
       width: 130,
-      renderCell: (p) => {
-        const cfg = typeConfig[p.value] ?? typeConfig.TASK;
-        // Bind data to zentto-grid web component
+      renderCell: ((value: unknown) => {
+        const v = value as string;
+        const cfg = typeConfig[v] ?? typeConfig.TASK;
         return (
           <Chip
             icon={cfg.icon as React.ReactElement}
-            label={typeLabel[p.value] ?? p.value}
+            label={typeLabel[v] ?? v}
             size="small"
             color={cfg.color}
             variant="outlined"
           />
         );
-      },
+      }) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "DueDate",
@@ -115,18 +115,18 @@ const { data, isLoading } = useActivitiesList(filter);
       field: "IsCompleted",
       header: "Completada",
       width: 110,
-      renderCell: (p) => (
+      renderCell: ((value: unknown, row: GridRow) => (
         <Checkbox
-          checked={!!p.value}
+          checked={!!value}
           onChange={() => {
-            if (!p.value) {
-              completeActivity.mutate(p.row.ActivityId);
+            if (!value) {
+              completeActivity.mutate(row.ActivityId as number);
             }
           }}
-          disabled={!!p.value}
+          disabled={!!value}
           size="small"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "AssignedToName",

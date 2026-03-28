@@ -87,9 +87,9 @@ const { data, isLoading } = useDriversList({
       header: "Venc. Licencia",
       flex: 1,
       minWidth: 130,
-      renderCell: (params) => {
-        if (!params.value) return "-";
-        const d = new Date(params.value as string);
+      renderCell: (value: unknown) => {
+        if (!value) return "-";
+        const d = new Date(value as string);
         return d.toLocaleDateString("es");
       },
     },
@@ -98,14 +98,7 @@ const { data, isLoading } = useDriversList({
       field: "IsActive",
       header: "Activo",
       width: 90,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? "Si" : "No"}
-          size="small"
-          color={params.value ? "success" : "default"}
-          variant="outlined"
-        />
-      ),
+      type: "boolean",
     },
     {
       field: "actions",

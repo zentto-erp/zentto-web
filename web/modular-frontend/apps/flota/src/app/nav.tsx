@@ -5,6 +5,7 @@ import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import BuildIcon from '@mui/icons-material/Build';
 import RouteIcon from '@mui/icons-material/Route';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import PrintIcon from '@mui/icons-material/Print';
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -18,7 +19,7 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'mantenimiento', title: 'Mantenimiento', icon: <BuildIcon /> });
         nav.push({ kind: 'page', segment: 'viajes', title: 'Viajes', icon: <RouteIcon /> });
         nav.push({ kind: 'header', title: 'INFORMES' });
-        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <AssessmentIcon /> });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
     return nav;
 }

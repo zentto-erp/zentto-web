@@ -25,7 +25,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
     const [showContent, setShowContent] = useState(false);
 
     // Hidratar configuración general + crm desde BD al arrancar
-    useHydrateModuleSettings('crm', company?.companyId ?? 1);
+    useHydrateModuleSettings('general', company?.companyId ?? 1);
 
     useEffect(() => {
         if (!isLoading) {

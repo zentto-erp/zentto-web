@@ -133,7 +133,7 @@ function NotificationsTab({ gridId, isMobile }: { gridId: string; isMobile: bool
       width: 110,
       sortable: true,
       groupable: true,
-      statusColors: { info: 'info', success: 'success', warning: 'warning', error: 'error' },
+      statusColors: { info: 'info', success: 'success', warning: 'warning', error: 'error' } as Record<string, string>,
       statusVariant: 'filled',
     },
     { field: 'title', header: 'Titulo', flex: 1, minWidth: 180, sortable: true },

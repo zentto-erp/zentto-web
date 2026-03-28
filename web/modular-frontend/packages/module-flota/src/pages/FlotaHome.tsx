@@ -135,14 +135,14 @@ const maintenanceCols: ColumnDef[] = [
     field: "ScheduledDate",
     header: "Fecha",
     width: 100,
-    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+    renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
   },
   {
     field: "EstimatedCost",
     header: "Costo Est.",
     width: 100,
     type: "number",
-    valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
+    renderCell: (value: unknown) => formatCurrency(Number(value ?? 0)),
     mobileHide: true,
   },
 ];

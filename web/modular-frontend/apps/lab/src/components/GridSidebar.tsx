@@ -226,7 +226,7 @@ export default function ProductosTable() {
 
 // ─── Sidebar Tab Icons ──────────────────────────────
 
-const TAB_ICONS: Record<SidebarTab, React.ReactNode> = {
+const TAB_ICONS: Record<SidebarTab, React.ReactElement> = {
   columns: <ColumnsIcon fontSize="small" />,
   pivot: <PivotIcon fontSize="small" />,
   groups: <GroupIcon fontSize="small" />,

@@ -15,7 +15,10 @@ export type SettingsModule =
   | 'restaurante'
   | 'facturacion'
   | 'pagos'
-  | 'branding';
+  | 'branding'
+  | 'flota'
+  | 'manufactura'
+  | 'logistica';
 
 /** All settings grouped by module */
 export type AllSettings = Record<string, Record<string, unknown>>;

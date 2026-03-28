@@ -99,14 +99,14 @@ export default function ViajesPage() {
       header: "Fecha Salida",
       flex: 0.8,
       minWidth: 110,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "ArrivedAt",
       header: "Fecha Llegada",
       flex: 0.8,
       minWidth: 110,
-      valueFormatter: (value: unknown) => {
+      renderCell: (value: unknown) => {
         const v = String(value ?? "");
         return v ? v.slice(0, 10) : "--";
       },
@@ -115,23 +115,17 @@ export default function ViajesPage() {
       field: "Status",
       header: "Estado",
       width: 120,
-      renderCell: (params) => {
-        const status = String(params.value ?? "PLANNED");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        PLANNED: "info",
+        IN_TRANSIT: "warning",
+        COMPLETED: "success",
       },
     },
     {
       field: "DistanceKm",
       header: "Distancia",
       width: 100,
-      valueFormatter: (value: unknown) => {
+      renderCell: (value: unknown) => {
         const n = Number(value ?? 0);
         return n > 0 ? n.toLocaleString("es") + " km" : "--";
       },

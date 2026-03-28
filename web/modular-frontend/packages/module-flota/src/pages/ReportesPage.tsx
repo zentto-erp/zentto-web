@@ -45,7 +45,7 @@ const columns: ColumnDef[] = [
     minWidth: 120,
     type: "number",
     aggregation: "sum",
-    valueFormatter: (value: unknown) => Number(value ?? 0).toFixed(2),
+    renderCell: (value: unknown) => Number(value ?? 0).toFixed(2),
   },
   {
     field: "TotalCost",
@@ -54,7 +54,7 @@ const columns: ColumnDef[] = [
     minWidth: 130,
     type: "number",
     aggregation: "sum",
-    valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
+    renderCell: (value: unknown) => formatCurrency(Number(value ?? 0)),
   },
   {
     field: "AvgCostPerLiter",
@@ -63,7 +63,7 @@ const columns: ColumnDef[] = [
     minWidth: 140,
     type: "number",
     aggregation: "avg",
-    valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
+    renderCell: (value: unknown) => formatCurrency(Number(value ?? 0)),
   },
 ];
 

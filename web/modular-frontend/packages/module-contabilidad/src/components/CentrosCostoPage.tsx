@@ -19,6 +19,7 @@ import PivotTableChartIcon from "@mui/icons-material/PivotTableChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 import {
   useCentrosCostoList, useCreateCentroCosto, useUpdateCentroCosto, useDeleteCentroCosto,
   usePnLByCostCenter, type CentroCosto, type CentroCostoInput,

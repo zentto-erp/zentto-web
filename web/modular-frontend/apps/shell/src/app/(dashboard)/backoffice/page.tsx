@@ -984,11 +984,12 @@ function CleanupTab({ gridId, masterKey }: { gridId: string; masterKey: string }
         open={!!confirmAction}
         title="Confirmar accion"
         message={confirmAction?.label ?? ""}
-        onConfirm={() =>
-          confirmAction &&
-          handleAction(confirmAction.queueId, confirmAction.action)
-        }
-        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (confirmAction) {
+            return handleAction(confirmAction.queueId, confirmAction.action);
+          }
+        }}
+        onClose={() => setConfirmAction(null)}
       />
     </Box>
   );
@@ -1134,7 +1135,7 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
         title="Crear respaldo"
         message={`Crear un respaldo manual para ${backupTarget?.LegalName}? El proceso puede tardar algunos minutos.`}
         onConfirm={handleBackup}
-        onCancel={() => setBackupConfirmOpen(false)}
+        onClose={() => setBackupConfirmOpen(false)}
         confirmLabel={backupLoading ? "Creando..." : "Crear respaldo"}
       />
     </Box>
@@ -1144,7 +1145,7 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
 // ─── Pagina principal ─────────────────────────────────────────────────────────
 
 export default function BackofficePage() {
-  const { user } = useAuth();
+  const { isAdmin, isAuthenticated } = useAuth();
   const { token, save, clear, isSet } = useSessionToken();
   const [tab, setTab] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -1166,11 +1167,7 @@ export default function BackofficePage() {
     import("@zentto/datagrid").then(() => setRegistered(true)).catch(() => {});
   }, [layoutReady]);
 
-  const isSysAdmin =
-    (user as Record<string, unknown> | null)?.role === "SYSADMIN" ||
-    ((user as Record<string, unknown> | null)?.roles as string[] | undefined)?.includes(
-      "SYSADMIN"
-    );
+  const isSysAdmin = isAdmin;
 
   const loadDashboard = useCallback(async () => {
     if (!isSet) return;
@@ -1199,7 +1196,7 @@ export default function BackofficePage() {
     return <AuthModal onAuth={save} />;
   }
 
-  if (user && !isSysAdmin) {
+  if (isAuthenticated && !isSysAdmin) {
     return (
       <Box
         display="flex"

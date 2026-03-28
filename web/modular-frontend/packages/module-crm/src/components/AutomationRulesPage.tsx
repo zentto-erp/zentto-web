@@ -222,39 +222,39 @@ export default function AutomationRulesPage() {
       field: "TriggerEvent",
       header: "Trigger",
       width: 160,
-      renderCell: (params: any) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={TRIGGER_LABELS[params.value] ?? params.value}
-          color={TRIGGER_COLORS[params.value] ?? "default"}
+          label={TRIGGER_LABELS[value as string] ?? (value as string)}
+          color={TRIGGER_COLORS[value as string] ?? "default"}
           size="small"
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "ActionType",
       header: "Accion",
       width: 160,
-      renderCell: (params: any) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={ACTION_LABELS[params.value] ?? params.value}
-          color={ACTION_COLORS[params.value] ?? "primary"}
+          label={ACTION_LABELS[value as string] ?? (value as string)}
+          color={ACTION_COLORS[value as string] ?? "primary"}
           size="small"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "IsActive",
       header: "Activa",
       width: 100,
-      renderCell: (params: any) => (
+      renderCell: ((value: unknown) => (
         <Switch
-          checked={!!params.value}
+          checked={!!value}
           size="small"
           disabled
           color="success"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "SortOrder",

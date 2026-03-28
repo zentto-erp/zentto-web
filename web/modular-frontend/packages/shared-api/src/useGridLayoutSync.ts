@@ -189,7 +189,7 @@ export function useGridLayoutSync(gridId: string, options: UseGridLayoutSyncOpti
   const [ready, setReady] = useState(!remoteEnabled);
   const identityRef = useRef<GridLayoutIdentity | null>(null);
   const lastSerializedRef = useRef('');
-  const saveTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!remoteEnabled || typeof window === 'undefined') {
@@ -198,7 +198,7 @@ export function useGridLayoutSync(gridId: string, options: UseGridLayoutSyncOpti
     }
 
     let cancelled = false;
-    let pollTimer: ReturnType<typeof window.setInterval> | null = null;
+    let pollTimer: number | null = null;
 
     const schedulePush = (layout: GridLayoutSnapshot | null) => {
       if (!identityRef.current || !layout) return;

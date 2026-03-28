@@ -31,11 +31,11 @@ async function proxyToShell(req: NextRequest) {
 
   try {
     const headers = new Headers();
-    for (const [key, value] of req.headers.entries()) {
+    req.headers.forEach((value, key) => {
       if (['cookie', 'content-type', 'authorization', 'user-agent', 'accept'].includes(key.toLowerCase())) {
         headers.set(key, value);
       }
-    }
+    });
 
     const fetchOpts: RequestInit = {
       method: req.method,
@@ -51,11 +51,11 @@ async function proxyToShell(req: NextRequest) {
 
     // Forward response headers — skip encoding headers (fetch already decoded the body)
     const responseHeaders = new Headers();
-    for (const [key, value] of res.headers.entries()) {
+    res.headers.forEach((value, key) => {
       if (!STRIP_RESPONSE_HEADERS.has(key.toLowerCase())) {
         responseHeaders.append(key, value);
       }
-    }
+    });
 
     const body = await res.arrayBuffer();
     return new NextResponse(body, {

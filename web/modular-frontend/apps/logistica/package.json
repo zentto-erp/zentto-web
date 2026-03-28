@@ -9,10 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@zentto/module-logistica": "*",
-    "@zentto/shared-api": "*",
-    "@zentto/shared-auth": "*",
-    "@zentto/shared-ui": "*",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -22,6 +18,11 @@
     "@mui/system": "^6.4.6",
     "@mui/x-date-pickers": "^7.26.0",
     "@tanstack/react-query": "^5.64.1",
+    "@zentto/module-logistica": "*",
+    "@zentto/shared-api": "*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-reports": "*",
+    "@zentto/shared-ui": "*",
     "dayjs": "^1.11.13",
     "next": "16.2.0",
     "next-auth": "5.0.0-beta.25",

@@ -196,47 +196,47 @@ export default function CRMSettingsPage() {
       field: "Color",
       header: "Color",
       width: 100,
-      renderCell: (params: any) => (
+      renderCell: ((value: unknown) => (
         <Box
           sx={{
             width: 28,
             height: 28,
             borderRadius: 1,
-            bgcolor: params.value || "#ccc",
+            bgcolor: (value as string) || "#ccc",
             border: "1px solid rgba(0,0,0,0.2)",
           }}
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "Probability",
       header: "Probabilidad %",
       width: 130,
-      renderCell: (params: any) => `${params.value ?? 0}%`,
+      renderCell: (value: unknown) => `${value ?? 0}%`,
     },
     {
       field: "IsClosed",
       header: "Cerrada",
       width: 90,
-      renderCell: (params: any) => (
+      renderCell: ((value: unknown) => (
         <Chip
           size="small"
-          label={params.value ? "Si" : "No"}
-          color={params.value ? "warning" : "default"}
+          label={value ? "Si" : "No"}
+          color={value ? "warning" : "default"}
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "IsWon",
       header: "Ganada",
       width: 90,
-      renderCell: (params: any) => (
+      renderCell: ((value: unknown) => (
         <Chip
           size="small"
-          label={params.value ? "Si" : "No"}
-          color={params.value ? "success" : "default"}
+          label={value ? "Si" : "No"}
+          color={value ? "success" : "default"}
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "actions",

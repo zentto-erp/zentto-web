@@ -1,5 +1,8 @@
 "use client";
 
+// Web component type declarations (zentto-grid, report-viewer, report-designer)
+import './web-components';
+
 // Theme
 export { default as theme } from './theme';
 export { brandColors, createBrandedTheme, DEFAULT_BRANDING } from './theme';

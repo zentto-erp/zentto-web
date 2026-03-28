@@ -101,29 +101,24 @@ export default function MantenimientoPage() {
       header: "Fecha Programada",
       flex: 1,
       minWidth: 130,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "Status",
       header: "Estado",
       width: 130,
-      renderCell: (params) => {
-        const status = String(params.value ?? "SCHEDULED");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        SCHEDULED: "info",
+        IN_PROGRESS: "warning",
+        COMPLETED: "success",
+        CANCELLED: "error",
       },
     },
     {
       field: "EstimatedCost",
       header: "Costo Est.",
       width: 110,
-      valueFormatter: (value: unknown) => formatCurrency(Number(value ?? 0)),
+      renderCell: (value: unknown) => formatCurrency(Number(value ?? 0)),
     },
     {
       field: "actions",

@@ -107,24 +107,19 @@ const { data, isLoading } = useReturnsList({
       header: "Fecha",
       flex: 1,
       minWidth: 120,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     { field: "Reason", header: "Motivo", flex: 1.5, minWidth: 180 },
     {
       field: "Status",
       header: "Estado",
       width: 120,
-      renderCell: (params) => {
-        const status = String(params.value ?? "DRAFT");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        DRAFT: "#9e9e9e", PENDING: "#ff9800", APPROVED: "#2196f3",
+        COMPLETE: "#4caf50", REJECTED: "#f44336", VOIDED: "#f44336",
       },
+      statusVariant: "outlined",
+      renderCell: (value: unknown) => statusLabels[String(value ?? "DRAFT")] ?? String(value ?? "DRAFT"),
     },
     {
       field: "actions",

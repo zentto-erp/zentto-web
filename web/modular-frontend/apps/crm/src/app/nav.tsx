@@ -7,6 +7,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import PrintIcon from '@mui/icons-material/Print';
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -19,7 +20,7 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'actividades', title: 'Actividades', icon: <EventNoteIcon /> });
         nav.push({ kind: 'page', segment: 'timeline', title: 'Timeline', icon: <TimelineIcon /> });
         nav.push({ kind: 'page', segment: 'automatizaciones', title: 'Automatizaciones', icon: <SmartToyIcon /> });
-        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <AssessmentIcon /> });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
         nav.push({ kind: 'page', segment: 'configuracion', title: 'Configuracion', icon: <SettingsIcon /> });
     }
     return nav;

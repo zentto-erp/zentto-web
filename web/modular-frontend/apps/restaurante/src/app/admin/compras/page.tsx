@@ -146,9 +146,9 @@ export default function AdminComprasPage() {
     ], []);
 
     const mappedComprasRows = useMemo(() =>
-        comprasRows.map((r: ApiRow) => {
-            const proveedorId = String(r.proveedorId ?? r.ProveedorId ?? '').trim();
-            const proveedorNombre = String(r.proveedorNombre ?? r.ProveedorNombre ?? '').trim();
+        comprasRows.map((r: CompraRestauranteAdmin) => {
+            const proveedorId = String(r.proveedorId ?? '').trim();
+            const proveedorNombre = String(r.proveedorNombre ?? '').trim();
             const proveedorLabel = proveedorId && proveedorNombre
                 ? `${proveedorId} — ${proveedorNombre}`
                 : proveedorId || proveedorNombre || '';

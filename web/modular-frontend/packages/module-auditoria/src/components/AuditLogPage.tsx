@@ -70,7 +70,7 @@ const { data, isLoading } = useAuditLogs(filter);
       field: "CreatedAt",
       header: "Fecha",
       width: 160,
-      renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
+      renderCell: (value: unknown) => (value ? formatDateTime(value as string, { timeZone }) : "-"),
     },
     { field: "UserName", header: "Usuario", width: 120 },
     { field: "ModuleName", header: "Módulo", width: 120 },
@@ -78,14 +78,14 @@ const { data, isLoading } = useAuditLogs(filter);
       field: "ActionType",
       header: "Acción",
       width: 110,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value}
+          label={value as string}
           size="small"
-          color={ACTION_COLORS[p.value] ?? "default"}
+          color={ACTION_COLORS[value as string] ?? "default"}
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     { field: "EntityName", header: "Entidad", width: 130 },
     { field: "EntityId", header: "ID Entidad", width: 90 },

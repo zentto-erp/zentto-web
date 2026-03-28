@@ -90,16 +90,10 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
       width: 100,
       type: "number",
       aggregation: "sum",
-      renderCell: (params) => {
-        const val = Number(params.value ?? 0);
-        return (
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: 600, color: val > 0 ? "warning.main" : "success.main" }}
-          >
-            {val.toLocaleString("es")}
-          </Typography>
-        );
+      renderCell: (value: unknown) => {
+        const val = Number(value ?? 0);
+        const color = val > 0 ? "#ed6c02" : "#2e7d32";
+        return `<span style="font-weight:600;color:${color}">${val.toLocaleString("es")}</span>`;
       },
     },
     ...(canConsume ? [{
@@ -108,14 +102,14 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
       width: 120,
       sortable: false,
       filterable: false,
-      renderCell: (params: any) => {
-        const productId = Number(params.row.ProductId);
+      renderCell: ((_value: unknown, row: Record<string, unknown>) => {
+        const productId = Number(row.ProductId);
         return (
           <TextField
             size="small"
             type="number"
             value={quantities[productId] ?? ""}
-            onChange={(e) =>
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setQuantities((prev) => ({ ...prev, [productId]: e.target.value }))
             }
             placeholder="0"
@@ -123,8 +117,8 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
             inputProps={{ min: 0, step: 1 }}
           />
         );
-      },
-    }] : []),
+      }) as unknown as ColumnDef["renderCell"],
+    }] as ColumnDef[] : []),
   ];
 
   useEffect(() => {

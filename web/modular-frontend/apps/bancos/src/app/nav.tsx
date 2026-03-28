@@ -8,6 +8,7 @@ const AddCardIcon = dynamic(() => import('@mui/icons-material/AddCard'), { ssr: 
 const CompareArrowsIcon = dynamic(() => import('@mui/icons-material/CompareArrows'), { ssr: false });
 const PlaylistAddCheckIcon = dynamic(() => import('@mui/icons-material/PlaylistAddCheck'), { ssr: false });
 const LocalAtmIcon = dynamic(() => import('@mui/icons-material/LocalAtm'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
@@ -24,6 +25,9 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva conciliación', icon: <PlaylistAddCheckIcon /> });
         nav.push({ kind: 'page', segment: 'caja-chica', title: 'Caja chica', icon: <LocalAtmIcon /> });
     }
+
+    nav.push({ kind: 'divider' });
+    nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
 
     return nav;
 }

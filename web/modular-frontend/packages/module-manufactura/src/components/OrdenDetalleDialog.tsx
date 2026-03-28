@@ -444,7 +444,7 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
       header: "Costo Unit.",
       width: 110,
       type: "number",
-      valueFormatter: (value: unknown) => {
+      renderCell: (value: unknown) => {
         const n = Number(value ?? 0);
         return n.toFixed(2);
       },
@@ -468,7 +468,7 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
       field: "CreatedAt",
       header: "Fecha",
       width: 110,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
   ];
 

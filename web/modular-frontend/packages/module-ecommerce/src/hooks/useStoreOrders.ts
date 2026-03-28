@@ -45,6 +45,7 @@ export function useCheckout() {
         email: string;
         phone?: string;
         address?: string;
+        billingAddress?: string;
         fiscalId?: string;
       };
       items: Array<{
@@ -58,6 +59,7 @@ export function useCheckout() {
       }>;
       notes?: string;
       addressId?: number;
+      billingAddressId?: number;
       paymentMethodId?: number;
       paymentMethodType?: string;
     }) => storePost("/store/checkout", payload),

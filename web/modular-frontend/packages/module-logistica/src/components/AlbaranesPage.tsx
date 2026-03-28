@@ -162,23 +162,19 @@ const { data, isLoading } = useDeliveryNotesList({
       header: "Fecha",
       flex: 1,
       minWidth: 120,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "Status",
       header: "Estado",
       width: 130,
-      renderCell: (params) => {
-        const status = String(params.value ?? "DRAFT");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        DRAFT: "#9e9e9e", CONFIRMED: "#2196f3", PICKING: "#ff9800",
+        PACKED: "#9c27b0", DISPATCHED: "#1976d2", IN_TRANSIT: "#ff9800",
+        DELIVERED: "#4caf50", VOIDED: "#f44336",
       },
+      statusVariant: "outlined",
+      renderCell: (value: unknown) => statusLabels[String(value ?? "DRAFT")] ?? String(value ?? "DRAFT"),
     },
     { field: "CarrierName", header: "Transportista", flex: 1, minWidth: 140 },
     {

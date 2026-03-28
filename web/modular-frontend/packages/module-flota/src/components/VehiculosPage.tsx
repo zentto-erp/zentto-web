@@ -122,24 +122,15 @@ export default function VehiculosPage() {
       field: "VehicleType",
       header: "Tipo",
       width: 120,
-      renderCell: (params) => (
-        <Chip label={String(params.value ?? "")} size="small" variant="outlined" />
-      ),
     },
     {
       field: "Status",
       header: "Estado",
       width: 130,
-      renderCell: (params) => {
-        const status = String(params.value ?? "ACTIVE");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        ACTIVE: "success",
+        MAINTENANCE: "warning",
+        INACTIVE: "default",
       },
     },
     { field: "DefaultDriverId", header: "Conductor", flex: 1, minWidth: 120 },
@@ -147,7 +138,7 @@ export default function VehiculosPage() {
       field: "CurrentOdometer",
       header: "Kilometraje",
       width: 110,
-      valueFormatter: (value: unknown) => {
+      renderCell: (value: unknown) => {
         const n = Number(value ?? 0);
         return n.toLocaleString("es") + " km";
       },

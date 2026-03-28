@@ -4,6 +4,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import FactoryIcon from '@mui/icons-material/Factory';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BuildIcon from '@mui/icons-material/Build';
+import PrintIcon from '@mui/icons-material/Print';
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -15,6 +16,8 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'bom', title: 'Bill of Materials', icon: <AccountTreeIcon /> });
         nav.push({ kind: 'page', segment: 'centros-trabajo', title: 'Centros de Trabajo', icon: <FactoryIcon /> });
         nav.push({ kind: 'page', segment: 'ordenes', title: 'Ordenes de Produccion', icon: <BuildIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
     return nav;
 }

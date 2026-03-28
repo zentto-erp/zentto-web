@@ -28,7 +28,7 @@ import { ContextActionHeader } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
-import type { ColumnDef } from "@zentto/datagrid-core";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "../components/zenttoGridPersistence";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
@@ -48,24 +48,24 @@ const ACTION_ICONS: Record<string, React.ReactElement> = {
 };
 
 const logColumns: ColumnDef[] = [
-  { field: "CreatedAt", header: "Fecha", flex: 1.2, renderCell: (p) => p.value ? formatDateTime(p.value, {}) : "-" },
-  { field: "UserName", header: "Usuario", flex: 1, renderCell: (p) => p.value ?? "-" },
+  { field: "CreatedAt", header: "Fecha", flex: 1.2, renderCell: (value: unknown) => value ? formatDateTime(value as string, {}) : "-" },
+  { field: "UserName", header: "Usuario", flex: 1, renderCell: (value: unknown) => (value as string) ?? "-" },
   { field: "ModuleName", header: "Módulo", flex: 1 },
   {
     field: "ActionType",
     header: "Acción",
     flex: 1,
-    renderCell: (p) => (
+    renderCell: ((value: unknown) => (
       <Chip
-        icon={ACTION_ICONS[p.value as string]}
-        label={p.value}
+        icon={ACTION_ICONS[value as string]}
+        label={value as string}
         size="small"
-        color={ACTION_COLORS[p.value as string] ?? "default"}
+        color={ACTION_COLORS[value as string] ?? "default"}
         variant="outlined"
       />
-    ),
+    )) as unknown as ColumnDef["renderCell"],
   },
-  { field: "Summary", header: "Descripción", flex: 2, renderCell: (p) => p.value ?? `${p.row.EntityName} ${p.row.EntityId ?? ""}` },
+  { field: "Summary", header: "Descripción", flex: 2, renderCell: (value: unknown, row: GridRow) => (value as string) ?? `${row.EntityName} ${row.EntityId ?? ""}` },
 ];
 
 const RECENT_LOGS_GRID_ID = buildAuditoriaGridId("home", "recent-logs");

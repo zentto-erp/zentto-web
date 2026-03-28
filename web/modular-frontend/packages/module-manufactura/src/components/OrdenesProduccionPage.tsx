@@ -282,13 +282,13 @@ export default function OrdenesProduccionPage() {
       field: "PlannedStart",
       header: "Inicio",
       width: 110,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "PlannedEnd",
       header: "Fin",
       width: 110,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "actions",

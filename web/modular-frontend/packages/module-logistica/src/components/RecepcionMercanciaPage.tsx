@@ -115,23 +115,17 @@ const { data, isLoading } = useReceiptsList({
       header: "Fecha Recepcion",
       flex: 1,
       minWidth: 130,
-      valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+      renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     },
     {
       field: "Status",
       header: "Estado",
       width: 120,
-      renderCell: (params) => {
-        const status = String(params.value ?? "DRAFT");
-        return (
-          <Chip
-            label={statusLabels[status] ?? status}
-            size="small"
-            color={statusColors[status] ?? "default"}
-            variant="outlined"
-          />
-        );
+      statusColors: {
+        DRAFT: "#9e9e9e", PARTIAL: "#ff9800", COMPLETE: "#4caf50", VOIDED: "#f44336",
       },
+      statusVariant: "outlined",
+      renderCell: (value: unknown) => statusLabels[String(value ?? "DRAFT")] ?? String(value ?? "DRAFT"),
     },
     {
       field: "actions",

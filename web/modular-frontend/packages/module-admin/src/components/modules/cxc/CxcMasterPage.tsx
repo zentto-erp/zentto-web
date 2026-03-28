@@ -342,7 +342,7 @@ function EstadoCuentaTab({
         field: "tipoDoc",
         header: "Tipo",
         width: 100,
-        statusColors: { FACT: "primary", NC: "info", ND: "warning" },
+        statusColors: { FACT: "primary", NC: "info", ND: "warning" } as Record<string, string>,
         statusVariant: "outlined",
       },
       { field: "numDoc", header: "Documento", width: 150, sortable: true },

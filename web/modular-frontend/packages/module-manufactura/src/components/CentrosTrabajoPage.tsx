@@ -115,7 +115,7 @@ export default function CentrosTrabajoPage() {
         true: "success",
         false: "default",
       },
-      valueFormatter: (value: unknown) => value ? "Si" : "No",
+      renderCell: (value: unknown) => value ? "Si" : "No",
     },
     {
       field: "actions",

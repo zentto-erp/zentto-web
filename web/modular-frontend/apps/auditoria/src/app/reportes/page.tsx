@@ -1,7 +1,12 @@
 'use client';
-import React from 'react';
-import { AuditoriaReportesPage } from '@zentto/module-auditoria';
+
+import { ModuleReportsPage } from '@zentto/shared-reports';
 
 export default function ReportesPage() {
-    return <AuditoriaReportesPage />;
+  return (
+    <ModuleReportsPage
+      moduleId="auditoria"
+      moduleName="Auditoría"
+    />
+  );
 }

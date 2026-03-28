@@ -146,7 +146,7 @@ const recentOrderCols: ColumnDef[] = [
     width: 90,
     type: "number",
     aggregation: "sum",
-    valueFormatter: (value: unknown) => Number(value ?? 0).toLocaleString("es"),
+    renderCell: (value: unknown) => Number(value ?? 0).toLocaleString("es"),
     mobileHide: true,
   },
   {
@@ -155,7 +155,7 @@ const recentOrderCols: ColumnDef[] = [
     width: 90,
     type: "number",
     aggregation: "sum",
-    valueFormatter: (value: unknown) => Number(value ?? 0).toLocaleString("es"),
+    renderCell: (value: unknown) => Number(value ?? 0).toLocaleString("es"),
     mobileHide: true,
   },
   {

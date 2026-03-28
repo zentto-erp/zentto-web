@@ -117,7 +117,7 @@ export default function RutasProduccionPage() {
       header: "Descripcion",
       flex: 1,
       minWidth: 150,
-      renderCell: (params) => String(params.value ?? ""),
+      renderCell: (value: unknown) => String(value ?? ""),
     },
     {
       field: "actions",

@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.tsx",
     "./globals.css": "./src/globals.css",
-    "./theme": "./src/theme.ts"
+    "./theme": "./src/theme.ts",
+    "./web-components": "./src/web-components.ts"
   },
   "dependencies": {
     "@emotion/cache": "^11",

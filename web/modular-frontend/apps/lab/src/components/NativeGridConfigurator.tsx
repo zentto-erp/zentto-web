@@ -462,7 +462,7 @@ function CodePanel({ config, cssVars }: { config: NativeGridConfig; cssVars: str
     config.enableQuickSearch && 'enableQuickSearch',
     config.enableContextMenu && 'enableContextMenu',
     config.enableStatusBar && 'enableStatusBar',
-    config.enableRowSelection && 'enableRowSelection',
+    (config as any).enableRowSelection && 'enableRowSelection',
     config.enableGrouping && 'enableGrouping',
     config.enableMasterDetail && 'enableMasterDetail',
     config.enableImport && 'enableImport',

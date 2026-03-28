@@ -87,14 +87,7 @@ const { data, isLoading } = useCarriersList({
       field: "IsActive",
       header: "Activo",
       width: 90,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? "Si" : "No"}
-          size="small"
-          color={params.value ? "success" : "default"}
-          variant="outlined"
-        />
-      ),
+      type: "boolean",
     },
     {
       field: "actions",

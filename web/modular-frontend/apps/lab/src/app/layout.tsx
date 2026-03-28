@@ -1,5 +1,8 @@
 "use client";
 
+// Pull in web component JSX type declarations (zentto-grid, report-viewer, report-designer)
+import '@zentto/shared-ui/web-components';
+
 import React, { useState, useMemo } from "react";
 import {
   AppBar,

@@ -37,8 +37,13 @@ import {
   useDeliveryNotesList,
 } from "../hooks/useLogistica";
 import { brandColors } from "@zentto/shared-ui";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import {
+  buildLogisticaGridId,
+  useLogisticaGridId,
+  useLogisticaGridRegistration,
+} from "../components/zenttoGridPersistence";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -126,14 +131,9 @@ const activityCols: ColumnDef[] = [
     field: "ActivityType",
     header: "Tipo",
     width: 100,
-    renderCell: (params) => (
-      <Chip
-        label={params.value === "RECEIPT" ? "Recepcion" : "Despacho"}
-        size="small"
-        color={params.value === "RECEIPT" ? "info" : "success"}
-        variant="outlined"
-      />
-    ),
+    statusColors: { RECEIPT: "info", DELIVERY: "success" },
+    statusVariant: "outlined",
+    renderCell: (value: unknown) => value === "RECEIPT" ? "Recepcion" : "Despacho",
   },
   { field: "DocNumber", header: "Documento", flex: 1, minWidth: 120 },
   { field: "EntityName", header: "Entidad", flex: 1.2, minWidth: 130, mobileHide: true },
@@ -141,16 +141,14 @@ const activityCols: ColumnDef[] = [
     field: "ActivityDate",
     header: "Fecha",
     width: 100,
-    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+    renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
     mobileHide: true,
   },
   {
     field: "StatusLabel",
     header: "Estado",
     width: 110,
-    renderCell: (params) => (
-      <Chip label={String(params.value)} size="small" variant="outlined" />
-    ),
+    renderCell: (value: unknown) => String(value ?? ""),
   },
 ];
 
@@ -163,19 +161,14 @@ const recentReceiptCols: ColumnDef[] = [
     field: "ReceiptDate",
     header: "Fecha",
     width: 100,
-    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+    renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
   },
   {
     field: "Status",
     header: "Estado",
     width: 100,
-    renderCell: (params) => {
-      const s = String(params.value ?? "DRAFT");
-      const colors: Record<string, "default" | "warning" | "success" | "error"> = {
-        DRAFT: "default", PARTIAL: "warning", COMPLETE: "success", VOIDED: "error",
-      };
-      return <Chip label={s} size="small" color={colors[s] ?? "default"} variant="outlined" />;
-    },
+    statusColors: { DRAFT: "#9e9e9e", PARTIAL: "#ff9800", COMPLETE: "#4caf50", VOIDED: "#f44336" },
+    statusVariant: "outlined",
   },
 ];
 
@@ -186,20 +179,17 @@ const recentDeliveryCols: ColumnDef[] = [
     field: "DeliveryDate",
     header: "Fecha",
     width: 100,
-    valueFormatter: (value: unknown) => String(value ?? "").slice(0, 10),
+    renderCell: (value: unknown) => String(value ?? "").slice(0, 10),
   },
   {
     field: "Status",
     header: "Estado",
     width: 110,
-    renderCell: (params) => {
-      const s = String(params.value ?? "DRAFT");
-      const colors: Record<string, "default" | "warning" | "success" | "error" | "info"> = {
-        DRAFT: "default", CONFIRMED: "info", PICKING: "warning", PACKED: "warning",
-        DISPATCHED: "info", DELIVERED: "success", VOIDED: "error",
-      };
-      return <Chip label={s} size="small" color={colors[s] ?? "default"} variant="outlined" />;
+    statusColors: {
+      DRAFT: "#9e9e9e", CONFIRMED: "#2196f3", PICKING: "#ff9800", PACKED: "#ff9800",
+      DISPATCHED: "#1976d2", DELIVERED: "#4caf50", VOIDED: "#f44336",
     },
+    statusVariant: "outlined",
   },
 ];
 

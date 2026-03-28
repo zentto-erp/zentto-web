@@ -23,7 +23,7 @@ import {
   ExpandMore as ExpandIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material";
-import type { PivotConfig, RowGroupingConfig } from "@zentto/shared-ui";
+import type { PivotConfig, RowGroupingConfig } from "@zentto/datagrid-core";
 
 // ─── Campos disponibles para facturas ─────────────────────
 const FIELD_OPTIONS = [
@@ -95,11 +95,8 @@ export function buildPivotConfig(cfg: LabConfig): PivotConfig | undefined {
     columnField: cfg.pivotColField,
     valueField: cfg.pivotValueField,
     aggregation: cfg.pivotAgg as any,
-    rowFieldHeader: FIELD_OPTIONS.find((f) => f.value === cfg.pivotRowField)?.label || cfg.pivotRowField,
     showGrandTotals: cfg.pivotGrandTotals,
     showRowTotals: cfg.pivotRowTotals,
-    valueFormatter: (v) =>
-      new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(v),
   };
 }
 

@@ -21,6 +21,7 @@ const GavelIcon = dynamic(() => import('@mui/icons-material/Gavel'), { ssr: fals
 const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
 const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
 const PlayArrowIcon = dynamic(() => import('@mui/icons-material/PlayArrow'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 
 export function buildNominaNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -55,6 +56,9 @@ export function buildNominaNav(isAdmin: boolean, modulos: string[]): Array<Recor
         nav.push({ kind: 'page', segment: 'constantes', title: 'Constantes', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'feriados', title: 'Feriados', icon: <EventIcon /> });
         nav.push({ kind: 'page', segment: 'documentos', title: 'Plantillas de documentos', icon: <DescriptionIcon /> });
+
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
 
     return nav;

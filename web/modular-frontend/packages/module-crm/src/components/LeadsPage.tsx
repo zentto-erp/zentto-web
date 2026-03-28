@@ -103,31 +103,31 @@ export default function LeadsPage() {
       field: "EstimatedValue",
       header: "Valor Est.",
       width: 130,
-      renderCell: (p) => formatCurrency(p.value),
+      renderCell: (value: unknown) => formatCurrency(value as number),
     },
     {
       field: "Priority",
       header: "Prioridad",
       width: 110,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value === "HIGH" ? "Alta" : p.value === "MEDIUM" ? "Media" : "Baja"}
+          label={value === "HIGH" ? "Alta" : value === "MEDIUM" ? "Media" : "Baja"}
           size="small"
-          color={priorityColor[p.value] ?? "default"}
+          color={priorityColor[value as string] ?? "default"}
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "Status",
       header: "Estado",
       width: 110,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={statusLabel[p.value] ?? p.value}
+          label={statusLabel[value as string] ?? (value as string)}
           size="small"
-          color={statusColor[p.value] ?? "default"}
+          color={statusColor[value as string] ?? "default"}
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     { field: "Source", header: "Origen", width: 110 },
     { field: "AssignedToName", header: "Asignado a", width: 140 },

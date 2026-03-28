@@ -1,4 +1,5 @@
 import React from 'react';
+import dynamic from 'next/dynamic';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -11,6 +12,8 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
+
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -39,6 +42,9 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'catalogos/lineas', title: 'Líneas', icon: <ListIcon /> });
         nav.push({ kind: 'page', segment: 'catalogos/unidades', title: 'Unidades', icon: <StraightenIcon /> });
         nav.push({ kind: 'page', segment: 'catalogos/almacenes', title: 'Almacenes', icon: <WarehouseIcon /> });
+
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
 
     return nav;

@@ -19,6 +19,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import HomeIcon from "@mui/icons-material/Home";
 import GavelIcon from "@mui/icons-material/Gavel";
+import PrintIcon from "@mui/icons-material/Print";
 import { useShippingStore } from "../store/useShippingStore";
 
 interface Props {
@@ -51,6 +52,7 @@ export default function ShippingLayout({ children, onNavigate }: Props) {
     { label: "Mis Envíos", icon: <ListAltIcon />, path: "/envios" },
     { label: "Rastrear", icon: <SearchIcon />, path: "/rastreo" },
     { label: "Direcciones", icon: <LocationOnIcon />, path: "/perfil" },
+    { label: "Reportes", icon: <PrintIcon />, path: "/reportes" },
   ];
 
   return (
