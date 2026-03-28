@@ -175,7 +175,7 @@ jobs:
             PG_HBA=$(sudo -u postgres psql -tc "SHOW hba_file" | xargs)
             grep -q "zentto_dev" "$PG_HBA" 2>/dev/null || {
               echo "host    zentto_dev    zentto_app    172.18.0.0/16    scram-sha-256" >> "$PG_HBA"
-              sudo -u postgres pg_ctl reload -D "$(sudo -u postgres psql -tc 'SHOW data_directory' | xargs)"
+              systemctl reload postgresql
             }
 
             echo "==> Dev environment ready"
