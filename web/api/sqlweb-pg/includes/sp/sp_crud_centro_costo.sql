@@ -60,14 +60,15 @@ END;
 $func$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_centrocosto_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_centrocosto_getbycodigo(
     p_codigo VARCHAR(50)
 )
 RETURNS TABLE(
-    "Codigo"        VARCHAR(50),
-    "Descripcion"   VARCHAR(100),
-    "Presupuestado" VARCHAR(50),
-    "Saldo_Real"    VARCHAR(50)
+    "Codigo"        VARCHAR,
+    "Descripcion"   VARCHAR,
+    "Presupuestado" VARCHAR,
+    "Saldo_Real"    VARCHAR
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -83,6 +84,7 @@ END;
 $$;
 
 -- ---------- 3. Insert ----------
+DROP FUNCTION IF EXISTS usp_centrocosto_insert(JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_centrocosto_insert(
     p_row_json JSONB
 )
@@ -121,6 +123,7 @@ END;
 $$;
 
 -- ---------- 4. Update ----------
+DROP FUNCTION IF EXISTS usp_centrocosto_update(VARCHAR, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_centrocosto_update(
     p_codigo   VARCHAR(50),
     p_row_json JSONB
@@ -159,6 +162,7 @@ END;
 $$;
 
 -- ---------- 5. Delete ----------
+DROP FUNCTION IF EXISTS usp_centrocosto_delete(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_centrocosto_delete(
     p_codigo VARCHAR(50)
 )
