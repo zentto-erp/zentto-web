@@ -5,7 +5,7 @@ const nextConfig = {
   transpilePackages: [
     '@zentto/shared-ui',
     '@zentto/shared-auth',
-    '@zentto/shared-api',
+    '@zentto/shared-api', '@zentto/shared-reports',
     '@zentto/module-admin',
     '@zentto/datagrid',
     '@zentto/datagrid-core',

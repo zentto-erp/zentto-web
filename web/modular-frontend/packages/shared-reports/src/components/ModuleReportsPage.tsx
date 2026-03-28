@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import type { ReportLayout, DataSet } from '@zentto/report-core';
-import { renderToFullHtml } from '@zentto/report-core';
+import { renderToFullHtml, getTemplateById } from '@zentto/report-core';
 import { ReportViewer } from './ReportViewer';
 import { ReportDesigner } from './ReportDesigner';
 import { ReportSlotPicker } from './ReportSlotPicker';
@@ -68,7 +68,6 @@ export function ModuleReportsPage({
   const handleCustomize = useCallback((slot: ModuleReportSlot) => {
     const existing = customTemplates[slot.slotId];
     // Si hay custom, usar ese; sino cargar el default
-    const { getTemplateById } = require('@zentto/report-core');
     const template = getTemplateById(slot.defaultTemplateId);
     const layout = existing ?? template?.layout;
     if (layout) {

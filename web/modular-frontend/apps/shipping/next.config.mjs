@@ -3,7 +3,7 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   reactStrictMode: true,
   basePath: '/shipping',
-  transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/module-shipping'],
+  transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/shared-reports', '@zentto/module-shipping'],
 };
 
 export default nextConfig;
