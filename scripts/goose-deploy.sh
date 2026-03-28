@@ -27,11 +27,14 @@ echo "→ Aplicando grants de schemas..."
 su -c "psql -d ${PG_DATABASE} -c 'GRANT CREATE ON SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, hr, master, pay, pos, public, rest, sec, store TO zentto_app;'" postgres || true
 
 # Hotfix: ejecutar SQL directo para columnas/funciones faltantes
+# SKIP_HOTFIX=1 omite hotfixes (útil para entornos dev con BD nueva)
 HOTFIX_SQL="/opt/zentto/hotfix-sec-functions.sql"
-if [ -f "$HOTFIX_SQL" ]; then
+if [ "${SKIP_HOTFIX:-0}" != "1" ] && [ -f "$HOTFIX_SQL" ]; then
   echo "→ Ejecutando hotfix SQL..."
   su -c "psql -d ${PG_DATABASE} -v ON_ERROR_STOP=1 -f ${HOTFIX_SQL}" postgres 2>&1
   echo "✓ Hotfix SQL ejecutado"
+elif [ "${SKIP_HOTFIX:-0}" = "1" ]; then
+  echo "→ Hotfix SQL omitido (SKIP_HOTFIX=1)"
 fi
 
 # Debug: verificar funciones sec

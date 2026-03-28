@@ -205,10 +205,12 @@ jobs:
             chmod +x /opt/zentto-dev/goose-deploy.sh
 
             # Run migrations on zentto_dev database only (no tenants)
+            # SKIP_HOTFIX=1 avoids executing production hotfix files
             PG_DATABASE=zentto_dev \
             GOOSE_DIR=/opt/zentto-dev/migrations/postgres \
             SEEDS_DIR=/opt/zentto-dev/sqlweb-pg \
             SEEDS_TYPE=all \
+            SKIP_HOTFIX=1 \
             bash /opt/zentto-dev/goose-deploy.sh
 
             rm -rf /opt/zentto-dev/_deploy_tmp
