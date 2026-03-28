@@ -27,10 +27,7 @@ jobs:
               -d app.zentto.net \
               -d notify.zentto.net \
               -d notify-dash.zentto.net \
-              -d vault.zentto.net \
-              -d dev.zentto.net \
-              -d app.dev.zentto.net \
-              -d api.dev.zentto.net
+              -d vault.zentto.net
 
             echo "==> Recargando nginx..."
             nginx -t && systemctl reload nginx

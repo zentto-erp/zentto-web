@@ -58,8 +58,8 @@ jobs:
             NEXT_PUBLIC_API_URL=https://api.dev.zentto.net
             NEXT_PUBLIC_BACKEND_URL=https://api.dev.zentto.net
             NEXT_PUBLIC_SHELL_URL=https://app.dev.zentto.net
-            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}
-            NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=${{ secrets.PADDLE_CLIENT_TOKEN }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAACsUe-s-UNo9WDiI
+            NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_8c250213a8ec06eb59974f48296
 
   # ── 2. Deploy DEV container ────────────────────────────────────────
   deploy:
@@ -86,13 +86,14 @@ jobs:
           script: |
             set -e
 
-            # Ensure dev env file exists
-            touch /opt/zentto-dev/.env.frontend
+            # ── Mirror production .env.frontend → dev (same secrets, different URLs) ──
+            cp /opt/zentto/.env.frontend /opt/zentto-dev/.env.frontend
             chmod 600 /opt/zentto-dev/.env.frontend
 
-            # Sync AUTH_SECRET
-            grep -q "^AUTH_SECRET=" /opt/zentto-dev/.env.frontend || echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> /opt/zentto-dev/.env.frontend
-            sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=${{ secrets.AUTH_SECRET }}|" /opt/zentto-dev/.env.frontend
+            # Override URLs for dev
+            sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=https://app.dev.zentto.net|' /opt/zentto-dev/.env.frontend
+            sed -i 's|^BACKEND_URL=.*|BACKEND_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
+            sed -i 's|^API_URL=.*|API_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
 
             # Ensure PM2 config is in place
             mkdir -p /opt/zentto-dev/docker
@@ -112,4 +113,4 @@ jobs:
             ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
             nginx -t && systemctl reload nginx
 
-            echo "✅ Frontend DEV deployed → app.dev.zentto.net"
+            echo "✅ Frontend DEV deployed → app.dev.zentto.net (espejo de prod)"
