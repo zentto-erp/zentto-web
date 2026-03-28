@@ -126,12 +126,61 @@ jobs:
           cache-from: type=gha,scope=api-dev
           cache-to: type=gha,mode=max,scope=api-dev
 
-  # ── 4. Migrate DEV database ───────────────────────────────────────
+  # ── 4. Setup + Migrate DEV database ─────────────────────────────────
   migrate-pg:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup dev environment (idempotent)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "==> Setting up dev environment..."
+
+            # Create directories
+            mkdir -p /opt/zentto-dev/{migrations/postgres,sqlweb-pg,docker,nginx,logs}
+
+            # Create Docker volume
+            docker volume create zentto_api_storage_dev 2>/dev/null || true
+
+            # Create dev database if not exists
+            sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'zentto_dev'" | grep -q 1 || {
+              sudo -u postgres psql -c "CREATE DATABASE zentto_dev OWNER zentto_app;"
+              echo "  DB zentto_dev created"
+            }
+
+            # Extensions
+            sudo -u postgres psql -d zentto_dev -c "
+              CREATE EXTENSION IF NOT EXISTS pgcrypto;
+              CREATE EXTENSION IF NOT EXISTS unaccent;
+              CREATE EXTENSION IF NOT EXISTS pg_trgm;
+              CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+              CREATE EXTENSION IF NOT EXISTS btree_gin;
+            "
+
+            # Schemas + grants
+            for schema in acct ap ar audit cfg doc fin fiscal hr master pay pos public rest sec store inv logistics crm mfg fleet zsys; do
+              sudo -u postgres psql -d zentto_dev -c "
+                CREATE SCHEMA IF NOT EXISTS $schema;
+                GRANT ALL ON SCHEMA $schema TO zentto_app;
+              " 2>/dev/null || true
+            done
+
+            # pg_hba.conf for zentto_dev
+            PG_HBA=$(sudo -u postgres psql -tc "SHOW hba_file" | xargs)
+            grep -q "zentto_dev" "$PG_HBA" 2>/dev/null || {
+              echo "host    zentto_dev    zentto_app    172.18.0.0/16    scram-sha-256" >> "$PG_HBA"
+              sudo -u postgres pg_ctl reload -D "$(sudo -u postgres psql -tc 'SHOW data_directory' | xargs)"
+            }
+
+            echo "==> Dev environment ready"
+
       - name: Copy migrations to server
         uses: appleboy/scp-action@v0.1.7
         with:
