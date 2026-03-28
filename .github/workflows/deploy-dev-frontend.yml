@@ -23,9 +23,29 @@ concurrency:
   group: deploy-dev-frontend
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
+env:
+  REPO: zentto-erp/zentto-web
+
 jobs:
+  # ── 0. Make repo public for GHCR access ────────────────────────────
+  set-public:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"visibility":"public"}' | grep -o '"visibility":"[^"]*"' || true
+
   # ── 1. Build Docker image (:dev tag) ───────────────────────────────
   build:
+    needs: set-public
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -79,37 +99,51 @@ jobs:
 
       - name: Deploy Frontend dev container
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN
           script: |
             set -e
 
-            # Ensure dev env file exists
-            touch /opt/zentto-dev/.env.frontend
+            # Mirror production .env.frontend → dev
+            cp /opt/zentto/.env.frontend /opt/zentto-dev/.env.frontend
             chmod 600 /opt/zentto-dev/.env.frontend
+            sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=https://app.dev.zentto.net|' /opt/zentto-dev/.env.frontend
+            sed -i 's|^BACKEND_URL=.*|BACKEND_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
+            sed -i 's|^API_URL=.*|API_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
 
-            # Sync AUTH_SECRET
-            grep -q "^AUTH_SECRET=" /opt/zentto-dev/.env.frontend || echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> /opt/zentto-dev/.env.frontend
-            sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=${{ secrets.AUTH_SECRET }}|" /opt/zentto-dev/.env.frontend
-
-            # Ensure PM2 config is in place
+            # PM2 config
             mkdir -p /opt/zentto-dev/docker
             cp -f /opt/zentto-dev/docker/pm2.config.cjs /opt/zentto-dev/docker/pm2.config.cjs 2>/dev/null || true
 
-            # Login to GHCR
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u zentto-erp --password-stdin
-
-            # Pull and restart dev frontend
+            # Login + deploy
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            docker stop zentto-frontend-dev 2>/dev/null || true
+            docker rm -f zentto-frontend-dev 2>/dev/null || true
             cd /opt/zentto-dev
             docker compose -f docker-compose.dev.yml pull frontend-dev
-            docker compose -f docker-compose.dev.yml up -d --force-recreate --no-deps frontend-dev
+            docker compose -f docker-compose.dev.yml up -d --no-deps frontend-dev
 
-            # Update nginx
+            # Nginx
             cp -f /opt/zentto-dev/nginx/zentto-dev.conf /etc/nginx/sites-available/zentto-dev.conf
             cp -f /opt/zentto-dev/nginx/zentto-proxy.conf /etc/nginx/zentto-proxy.conf
             ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
             nginx -t && systemctl reload nginx
-
             echo "✅ Frontend DEV deployed → app.dev.zentto.net"
+
+  # ── 3. Restore repo to private ─────────────────────────────────────
+  set-private:
+    if: always()
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"visibility":"private"}' | grep -o '"visibility":"[^"]*"' || true
