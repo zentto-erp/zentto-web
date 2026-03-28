@@ -106,7 +106,7 @@ END $$;
 --    Genera un borrador de nÃ³mina en lote para todos los empleados activos.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(
+CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_company_id        INTEGER,
     p_branch_id         INTEGER,
     p_payroll_code      VARCHAR(15),
@@ -218,7 +218,7 @@ $$;
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(BIGINT, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(
+CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
     p_line_id   BIGINT,
     p_quantity  NUMERIC(18,4),
     p_amount    NUMERIC(18,4),
@@ -1032,7 +1032,7 @@ $$;
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(BIGINT, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(
+CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
     p_batch_id       BIGINT,
     p_concept_code   VARCHAR(20),
     p_concept_type   VARCHAR(15),

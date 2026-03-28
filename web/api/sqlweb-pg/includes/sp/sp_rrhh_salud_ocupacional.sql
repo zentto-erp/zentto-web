@@ -35,7 +35,7 @@
 -- 1. usp_HR_OccHealth_Create
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Create(INTEGER, CHAR(2), VARCHAR(25), BIGINT, VARCHAR(24), VARCHAR(200), TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, VARCHAR(100), VARCHAR(500), VARCHAR(500), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Create(
+CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Create(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
     p_record_type               VARCHAR(25),
@@ -114,7 +114,7 @@ $$;
 -- 2. usp_HR_OccHealth_Update
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Update(INTEGER, INTEGER, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, DATE, VARCHAR(100), VARCHAR(15), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Update(
+CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Update(
     p_occupational_health_id        INTEGER,
     p_company_id                    INTEGER,
     p_reported_date                 TIMESTAMP       DEFAULT NULL,
@@ -363,7 +363,7 @@ $$;
 -- 5. usp_HR_MedExam_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(
+CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_Save(
     p_medical_exam_id   INTEGER         DEFAULT NULL,
     p_company_id        INTEGER         DEFAULT NULL,
     p_employee_id       BIGINT          DEFAULT NULL,
@@ -603,7 +603,7 @@ $$;
 -- 8. usp_HR_MedOrder_Create
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Create(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, VARCHAR(500), VARCHAR(200), TEXT, NUMERIC(18,2), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Create(
+CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Create(
     p_company_id    INTEGER,
     p_employee_id   BIGINT          DEFAULT NULL,
     p_employee_code VARCHAR(24)     DEFAULT NULL,
@@ -660,7 +660,7 @@ $$;
 -- 9. usp_HR_MedOrder_Approve
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Approve(INTEGER, INTEGER, VARCHAR(15), NUMERIC(18,2), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Approve(
+CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Approve(
     p_medical_order_id  INTEGER,
     p_company_id        INTEGER,
     p_action            VARCHAR(15),
@@ -808,7 +808,7 @@ $$;
 -- 11. usp_HR_Training_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(
+CREATE OR REPLACE FUNCTION public.usp_HR_Training_Save(
     p_training_record_id    INTEGER         DEFAULT NULL,
     p_company_id            INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -1062,7 +1062,7 @@ $$;
 -- 14. usp_HR_Committee_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN, INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(
+CREATE OR REPLACE FUNCTION public.usp_HR_Committee_Save(
     p_safety_committee_id   INTEGER         DEFAULT NULL,
     p_company_id            INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -1128,7 +1128,7 @@ $$;
 -- 15. usp_HR_Committee_AddMember
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_AddMember(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(25), DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Committee_AddMember(
+CREATE OR REPLACE FUNCTION public.usp_HR_Committee_AddMember(
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
     p_employee_id           BIGINT          DEFAULT NULL,
@@ -1196,7 +1196,7 @@ $$;
 -- 16. usp_HR_Committee_RemoveMember
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RemoveMember(INTEGER, INTEGER, INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Committee_RemoveMember(
+CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RemoveMember(
     p_member_id             INTEGER,
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
@@ -1252,7 +1252,7 @@ $$;
 -- 17. usp_HR_Committee_RecordMeeting
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RecordMeeting(INTEGER, INTEGER, TIMESTAMP, VARCHAR(500), TEXT, TEXT, INTEGER, VARCHAR(500)) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_HR_Committee_RecordMeeting(
+CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RecordMeeting(
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
     p_meeting_date          TIMESTAMP,
@@ -1426,7 +1426,7 @@ $$;
 -- =============================================================================
 
 -- Internal alias for usp_HR_OccHealth_Create (avoids overload ambiguity)
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create_internal(
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
     p_record_type               VARCHAR(25),
