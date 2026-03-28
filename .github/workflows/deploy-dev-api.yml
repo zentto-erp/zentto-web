@@ -331,9 +331,13 @@ jobs:
             # Login to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-            # Pull and restart dev API
+            # Stop and remove existing dev API container (release port 4100)
+            docker stop zentto-api-dev 2>/dev/null || true
+            docker rm -f zentto-api-dev 2>/dev/null || true
+            sleep 2
+
+            # Pull and start dev API
             cd /opt/zentto-dev
-            docker compose -f docker-compose.dev.yml down api-dev 2>/dev/null || true
             docker compose -f docker-compose.dev.yml pull api-dev
             docker compose -f docker-compose.dev.yml up -d --no-deps api-dev
 
