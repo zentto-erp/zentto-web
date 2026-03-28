@@ -204,7 +204,27 @@ jobs:
             cp -f /opt/zentto-dev/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto-dev/goose-deploy.sh
             chmod +x /opt/zentto-dev/goose-deploy.sh
 
-            # Check if DB is fresh (no tables) — bootstrap from sqlweb-pg first
+            # Check if goose thinks all migrations are applied
+            GOOSE_MAX=$(ls /opt/zentto-dev/migrations/postgres/*.sql 2>/dev/null | wc -l)
+            GOOSE_APPLIED=$(sudo -u postgres psql -d zentto_dev -tAc "SELECT count(*) FROM public.goose_db_version WHERE is_applied=TRUE" 2>/dev/null || echo "0")
+
+            # If goose is out of sync (partial state from failed deploys), drop and recreate
+            if [ "$GOOSE_APPLIED" -gt "0" ] && [ "$GOOSE_APPLIED" -lt "$GOOSE_MAX" ]; then
+              echo "==> DB in inconsistent state (goose: $GOOSE_APPLIED/$GOOSE_MAX) — recreating..."
+              sudo -u postgres psql -c "DROP DATABASE IF EXISTS zentto_dev;"
+              sudo -u postgres psql -c "CREATE DATABASE zentto_dev OWNER zentto_app;"
+              sudo -u postgres psql -d zentto_dev -c "
+                CREATE EXTENSION IF NOT EXISTS pgcrypto;
+                CREATE EXTENSION IF NOT EXISTS unaccent;
+                CREATE EXTENSION IF NOT EXISTS pg_trgm;
+                CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+                CREATE EXTENSION IF NOT EXISTS btree_gin;
+              "
+              for schema in acct ap ar audit cfg doc fin fiscal hr master pay pos public rest sec store inv logistics crm mfg fleet zsys; do
+                sudo -u postgres psql -d zentto_dev -c "CREATE SCHEMA IF NOT EXISTS $schema; GRANT ALL ON SCHEMA $schema TO zentto_app;" 2>/dev/null || true
+              done
+            fi
+
             TABLE_COUNT=$(sudo -u postgres psql -d zentto_dev -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema')")
             if [ "$TABLE_COUNT" -lt "10" ]; then
               echo "==> Fresh DB detected ($TABLE_COUNT tables) — running full bootstrap..."
