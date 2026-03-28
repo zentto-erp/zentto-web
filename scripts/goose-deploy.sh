@@ -137,6 +137,18 @@ BEGIN
   ) overloads;
 
   IF overload_count > 0 THEN
+    RAISE NOTICE 'Funciones con overloads duplicados:';
+    FOR fn_name IN
+      SELECT p.proname || ' (' || COUNT(*) || ' versiones)'
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname LIKE 'usp_%'
+      GROUP BY p.proname
+      HAVING COUNT(*) > 1
+      ORDER BY p.proname
+    LOOP
+      RAISE NOTICE '  - %', fn_name;
+    END LOOP;
     RAISE EXCEPTION 'Hay % funciones usp_* con overloads duplicados', overload_count;
   END IF;
 
