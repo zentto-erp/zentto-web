@@ -95,7 +95,7 @@ jobs:
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
           curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
           chmod +x /usr/local/bin/goose
-          bash ../scripts/migrate.sh up
+          bash ../../scripts/migrate.sh up
           cd sqlweb-pg
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
           psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
