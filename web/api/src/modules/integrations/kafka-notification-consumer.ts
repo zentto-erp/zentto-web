@@ -168,6 +168,20 @@ const EVENT_NOTIFICATION_MAP: Record<string, NotificationConfig> = {
   },
 
   // --- BACKUPS ---
+  // --- SOPORTE ---
+  'support.ticket.created': {
+    tipo: 'WARNING',
+    titulo: 'Nuevo ticket de soporte',
+    mensaje: (data) => `Ticket #${data.ticketNumber || ''} (${data.type || 'bug'}) — ${data.module || 'general'} — ${data.companyName || ''}`,
+    ruta: '/backoffice',
+    crearTarea: true,
+    tarea: {
+      titulo: (data) => `Revisar ticket #${data.ticketNumber || ''} — ${data.severity === 'critico' ? 'URGENTE' : data.module || 'general'}`,
+      color: '#d32f2f',
+    },
+  },
+
+  // --- RESPALDOS ---
   'backup.complete': {
     tipo: 'SUCCESS',
     titulo: 'Respaldo completado',

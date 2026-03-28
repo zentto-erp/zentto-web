@@ -21,9 +21,13 @@ import "dotenv/config";
 // Conexión
 // ────────────────────────────────────────────────────────────────────────────
 
-let pool: sql.ConnectionPool;
+// Skip all MSSQL tests when MSSQL_SERVER is not set (CI environment)
+const skipAll = !process.env.MSSQL_SERVER && !process.env.MSSQL_PASSWORD;
+
+let pool: sql.ConnectionPool | undefined;
 
 beforeAll(async () => {
+  if (skipAll) return;
   pool = await sql.connect({
     server: process.env.MSSQL_SERVER ?? "DELLXEONE31545",
     database: process.env.MSSQL_DATABASE ?? "zentto_dev",
@@ -39,7 +43,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await pool.close();
+  if (pool) await pool.close();
 });
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -105,7 +109,7 @@ async function spExists(name: string): Promise<boolean> {
 // Test 1: DB bootstrapped
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — DB bootstrapped", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — DB bootstrapped", () => {
   it("debe tener al menos 100 tablas", async () => {
     const count = await getTableCount();
     expect(count, `Solo hay ${count} tablas`).toBeGreaterThanOrEqual(100);
@@ -126,7 +130,7 @@ describe("SP Contracts MSSQL — DB bootstrapped", () => {
 // Test 2: Tablas canónicas críticas
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — tablas canónicas", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — tablas canónicas", () => {
   const criticalTables = [
     ["sec", "User"],
     ["sec", "Role"],
@@ -186,7 +190,7 @@ describe("SP Contracts MSSQL — tablas canónicas", () => {
 // Test 3: SPs críticos existen
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — SPs críticos", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — SPs críticos", () => {
   const criticalSPs = [
     "usp_Sec_User_Authenticate",
     "usp_Sec_User_GetType",
@@ -213,7 +217,7 @@ describe("SP Contracts MSSQL — SPs críticos", () => {
 // Test 4: Conteo general de SPs
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — conteo de SPs", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — conteo de SPs", () => {
   it("debe tener al menos 200 stored procedures", async () => {
     const procs = await getAllProcedures();
     expect(
@@ -243,7 +247,7 @@ describe("SP Contracts MSSQL — conteo de SPs", () => {
 // Test 5: Seed data
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — seed data", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — seed data", () => {
   it("debe tener al menos 1 usuario", async () => {
     const r = await pool.request().query("SELECT COUNT(*) AS c FROM sec.[User]");
     expect(r.recordset[0].c).toBeGreaterThanOrEqual(1);
@@ -269,7 +273,7 @@ describe("SP Contracts MSSQL — seed data", () => {
 // Test 6: SPs ejecutables (smoke test)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe("SP Contracts MSSQL — smoke tests", () => {
+describe.skipIf(skipAll)("SP Contracts MSSQL — smoke tests", () => {
   it("usp_Sys_HealthCheck se ejecuta sin error", async () => {
     const r = await pool.request().execute("dbo.usp_Sys_HealthCheck");
     expect(r.recordset.length).toBeGreaterThanOrEqual(1);

@@ -23,9 +23,29 @@ concurrency:
   group: deploy-dev-api
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
+env:
+  REPO: zentto-erp/zentto-web
+
 jobs:
+  # ── 0. Make repo public for GHCR access ────────────────────────────
+  set-public:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"visibility":"public"}' | grep -o '"visibility":"[^"]*"' || true
+
   # ── 1. Type check ──────────────────────────────────────────────────
   type-check:
+    needs: set-public
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,23 +69,17 @@ jobs:
         working-directory: web/api
     services:
       postgres:
-        image: postgres:16
+        image: public.ecr.aws/docker/library/postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: zentto_app
+          POSTGRES_PASSWORD: test_password
           POSTGRES_DB: zentto_test
-        ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
+          --health-cmd pg_isready
+          --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
-    env:
-      PG_HOST: localhost
-      PG_PORT: 5432
-      PG_USER: postgres
-      PG_PASSWORD: postgres
-      PG_DATABASE: zentto_test
+          --health-retries 5
+        ports: ['5432:5432']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,32 +89,37 @@ jobs:
           cache-dependency-path: web/api/package-lock.json
       - run: npm ci
 
-      - name: Bootstrap PG extensions
+      - name: Bootstrap schema (goose-style cold bootstrap)
+        env:
+          PGPASSWORD: test_password
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+          DB_TYPE: postgres
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -c "
-            CREATE EXTENSION IF NOT EXISTS pgcrypto;
-            CREATE EXTENSION IF NOT EXISTS unaccent;
-            CREATE EXTENSION IF NOT EXISTS pg_trgm;
-            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
-            CREATE EXTENSION IF NOT EXISTS btree_gin;
-          "
-
-      - name: Download goose
-        run: |
-          curl -fsSL https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64 -o /usr/local/bin/goose
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
+          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
           chmod +x /usr/local/bin/goose
-
-      - name: Run migrations
-        run: bash ../../scripts/migrate.sh up
-
-      - name: Load functions + seeds
-        working-directory: web/api/sqlweb-pg
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -f run-functions.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -f run-seeds-config.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -f run-seeds-starter.sql
+          bash ../../scripts/migrate.sh up
+          cd sqlweb-pg
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
 
       - name: Run schema contract tests
+        env:
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+          PG_DATABASE: zentto_test
+          DB_TYPE: postgres
         run: npm run test:schema
 
   # ── 3. Build Docker image (:dev tag) ───────────────────────────────
@@ -126,12 +145,61 @@ jobs:
           cache-from: type=gha,scope=api-dev
           cache-to: type=gha,mode=max,scope=api-dev
 
-  # ── 4. Migrate DEV database ───────────────────────────────────────
+  # ── 4. Setup + Migrate DEV database ─────────────────────────────────
   migrate-pg:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup dev environment (idempotent)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "==> Setting up dev environment..."
+
+            # Create directories
+            mkdir -p /opt/zentto-dev/{migrations/postgres,sqlweb-pg,docker,nginx,logs}
+
+            # Create Docker volume
+            docker volume create zentto_api_storage_dev 2>/dev/null || true
+
+            # Create dev database if not exists
+            sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'zentto_dev'" | grep -q 1 || {
+              sudo -u postgres psql -c "CREATE DATABASE zentto_dev OWNER zentto_app;"
+              echo "  DB zentto_dev created"
+            }
+
+            # Extensions
+            sudo -u postgres psql -d zentto_dev -c "
+              CREATE EXTENSION IF NOT EXISTS pgcrypto;
+              CREATE EXTENSION IF NOT EXISTS unaccent;
+              CREATE EXTENSION IF NOT EXISTS pg_trgm;
+              CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+              CREATE EXTENSION IF NOT EXISTS btree_gin;
+            "
+
+            # Schemas + grants
+            for schema in acct ap ar audit cfg doc fin fiscal hr master pay pos public rest sec store inv logistics crm mfg fleet zsys; do
+              sudo -u postgres psql -d zentto_dev -c "
+                CREATE SCHEMA IF NOT EXISTS $schema;
+                GRANT ALL ON SCHEMA $schema TO zentto_app;
+              " 2>/dev/null || true
+            done
+
+            # pg_hba.conf for zentto_dev
+            PG_HBA=$(sudo -u postgres psql -tc "SHOW hba_file" | xargs)
+            grep -q "zentto_dev" "$PG_HBA" 2>/dev/null || {
+              echo "host    zentto_dev    zentto_app    172.18.0.0/16    scram-sha-256" >> "$PG_HBA"
+              systemctl reload postgresql
+            }
+
+            echo "==> Dev environment ready"
+
       - name: Copy migrations to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -156,11 +224,63 @@ jobs:
             cp -f /opt/zentto-dev/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto-dev/goose-deploy.sh
             chmod +x /opt/zentto-dev/goose-deploy.sh
 
-            # Run migrations on zentto_dev database only (no tenants)
+            # Check if goose thinks all migrations are applied
+            GOOSE_MAX=$(ls /opt/zentto-dev/migrations/postgres/*.sql 2>/dev/null | wc -l)
+            GOOSE_APPLIED=$(sudo -u postgres psql -d zentto_dev -tAc "SELECT count(*) FROM public.goose_db_version WHERE is_applied=TRUE" 2>/dev/null || echo "0")
+
+            # If goose is out of sync (partial state from failed deploys), drop and recreate
+            if [ "$GOOSE_APPLIED" -gt "0" ] && [ "$GOOSE_APPLIED" -lt "$GOOSE_MAX" ]; then
+              echo "==> DB in inconsistent state (goose: $GOOSE_APPLIED/$GOOSE_MAX) — recreating..."
+              sudo -u postgres psql -c "DROP DATABASE IF EXISTS zentto_dev;"
+              sudo -u postgres psql -c "CREATE DATABASE zentto_dev OWNER zentto_app;"
+              sudo -u postgres psql -d zentto_dev -c "
+                CREATE EXTENSION IF NOT EXISTS pgcrypto;
+                CREATE EXTENSION IF NOT EXISTS unaccent;
+                CREATE EXTENSION IF NOT EXISTS pg_trgm;
+                CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+                CREATE EXTENSION IF NOT EXISTS btree_gin;
+              "
+              for schema in acct ap ar audit cfg doc fin fiscal hr master pay pos public rest sec store inv logistics crm mfg fleet zsys; do
+                sudo -u postgres psql -d zentto_dev -c "CREATE SCHEMA IF NOT EXISTS $schema; GRANT ALL ON SCHEMA $schema TO zentto_app;" 2>/dev/null || true
+              done
+            fi
+
+            TABLE_COUNT=$(sudo -u postgres psql -d zentto_dev -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema')")
+            if [ "$TABLE_COUNT" -lt "10" ]; then
+              echo "==> Fresh DB detected ($TABLE_COUNT tables) — running full bootstrap..."
+              cd /opt/zentto-dev/sqlweb-pg
+              sudo -u postgres psql -d zentto_dev -f run_all.sql || true
+              sudo -u postgres psql -d zentto_dev -f run-functions.sql || true
+              sudo -u postgres psql -d zentto_dev -f run-seeds-config.sql || true
+              sudo -u postgres psql -d zentto_dev -f run-seeds-starter.sql || true
+
+              # Mark ALL existing goose migrations as applied (bootstrap already includes them)
+              echo "==> Marking all migrations as applied..."
+              sudo -u postgres psql -d zentto_dev -c "
+                CREATE TABLE IF NOT EXISTS public.goose_db_version (
+                  id SERIAL PRIMARY KEY,
+                  version_id BIGINT NOT NULL,
+                  is_applied BOOLEAN NOT NULL,
+                  tstamp TIMESTAMP DEFAULT NOW()
+                );
+                INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (0, TRUE) ON CONFLICT DO NOTHING;
+              "
+              GOOSE_DIR=/opt/zentto-dev/migrations/postgres
+              for f in $(ls "$GOOSE_DIR"/*.sql | sort); do
+                VER=$(basename "$f" | grep -o '^[0-9]*')
+                VER_INT=$((10#$VER))  # Remove leading zeros
+                sudo -u postgres psql -d zentto_dev -c \
+                  "INSERT INTO public.goose_db_version (version_id, is_applied) VALUES ($VER_INT, TRUE) ON CONFLICT DO NOTHING;" 2>/dev/null || true
+              done
+              echo "==> Bootstrap + mark complete"
+            fi
+
+            # Run goose migrations on zentto_dev (only new ones after last marked)
             PG_DATABASE=zentto_dev \
             GOOSE_DIR=/opt/zentto-dev/migrations/postgres \
             SEEDS_DIR=/opt/zentto-dev/sqlweb-pg \
             SEEDS_TYPE=all \
+            SKIP_HOTFIX=1 \
             bash /opt/zentto-dev/goose-deploy.sh
 
             rm -rf /opt/zentto-dev/_deploy_tmp
@@ -183,35 +303,47 @@ jobs:
 
       - name: Deploy API dev container
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN
           script: |
             set -e
 
-            # Ensure dev env file exists
-            touch /opt/zentto-dev/.env.api
+            # ── Mirror production .env.api → dev (same secrets, different DB/URLs) ──
+            cp /opt/zentto/.env.api /opt/zentto-dev/.env.api
             chmod 600 /opt/zentto-dev/.env.api
 
-            # Sync critical env vars for dev
-            grep -q "^DB_TYPE=" /opt/zentto-dev/.env.api || echo "DB_TYPE=postgres" >> /opt/zentto-dev/.env.api
-            grep -q "^PG_DATABASE=" /opt/zentto-dev/.env.api || echo "PG_DATABASE=zentto_dev" >> /opt/zentto-dev/.env.api
-            grep -q "^PG_HOST=" /opt/zentto-dev/.env.api || echo "PG_HOST=172.18.0.1" >> /opt/zentto-dev/.env.api
-            grep -q "^PORT=" /opt/zentto-dev/.env.api || echo "PORT=4000" >> /opt/zentto-dev/.env.api
-            grep -q "^NODE_ENV=" /opt/zentto-dev/.env.api || echo "NODE_ENV=development" >> /opt/zentto-dev/.env.api
+            # Override only what differs for dev
+            sed -i 's|^PG_DATABASE=.*|PG_DATABASE=zentto_dev|' /opt/zentto-dev/.env.api
+            sed -i 's|^NODE_ENV=.*|NODE_ENV=development|' /opt/zentto-dev/.env.api
+            sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=https://dev.zentto.net,https://app.dev.zentto.net|' /opt/zentto-dev/.env.api
+            sed -i 's|^AUTH_PUBLIC_URL=.*|AUTH_PUBLIC_URL=https://dev.zentto.net|' /opt/zentto-dev/.env.api
+            sed -i 's|^STORE_URL=.*|STORE_URL=https://app.dev.zentto.net|' /opt/zentto-dev/.env.api
+
+            # Dev-friendly auth settings
+            sed -i 's|^AUTH_REQUIRE_EMAIL_VERIFICATION=.*|AUTH_REQUIRE_EMAIL_VERIFICATION=false|' /opt/zentto-dev/.env.api
+            sed -i 's|^AUTH_LOGIN_REQUIRE_CAPTCHA=.*|AUTH_LOGIN_REQUIRE_CAPTCHA=false|' /opt/zentto-dev/.env.api
 
             # Login to GHCR
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u zentto-erp --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-            # Pull and restart dev API
+            # Stop and remove existing dev API container (release port 4100)
+            docker stop zentto-api-dev 2>/dev/null || true
+            docker rm -f zentto-api-dev 2>/dev/null || true
+            sleep 2
+
+            # Pull and start dev API
             cd /opt/zentto-dev
             docker compose -f docker-compose.dev.yml pull api-dev
-            docker compose -f docker-compose.dev.yml up -d --force-recreate --no-deps api-dev
+            docker compose -f docker-compose.dev.yml up -d --no-deps api-dev
 
             # Health check
             sleep 5
-            curl -fsS http://127.0.0.1:4100/health || echo "⚠️ Health check failed — check logs"
+            curl -fsS http://127.0.0.1:4200/health || echo "⚠️ Health check failed — check logs"
 
             # Update nginx
             cp -f /opt/zentto-dev/nginx/zentto-dev.conf /etc/nginx/sites-available/zentto-dev.conf
@@ -219,4 +351,6 @@ jobs:
             ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
             nginx -t && systemctl reload nginx
 
-            echo "✅ API DEV deployed → api.dev.zentto.net"
+            echo "✅ API DEV deployed → api.dev.zentto.net (espejo de prod con BD zentto_dev)"
+
+  # set-private omitido — los workflows de prod manejan la visibilidad del repo

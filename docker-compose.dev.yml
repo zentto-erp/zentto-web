@@ -3,7 +3,7 @@
 #
 #  Rama: developer
 #  URLs: app.dev.zentto.net / api.dev.zentto.net
-#  Puertos: API 4100, Frontend 3100-3115
+#  Puertos: API 4200, Frontend 3200-3215
 #  BD: zentto_dev (PostgreSQL separada de producción)
 #  Imágenes: ghcr.io/zentto-erp/zentto-web/api:dev
 #            ghcr.io/zentto-erp/zentto-web/frontend:dev
@@ -14,7 +14,7 @@ services:
     image: ghcr.io/zentto-erp/zentto-web/api:dev
     container_name: zentto-api-dev
     ports:
-      - "4100:4000"
+      - "4200:4000"
     env_file:
       - /opt/zentto-dev/.env.api
     environment:
@@ -31,7 +31,7 @@ services:
     image: ghcr.io/zentto-erp/zentto-web/frontend:dev
     container_name: zentto-frontend-dev
     ports:
-      - "3100-3115:3000-3015"
+      - "3200-3215:3000-3015"
     env_file:
       - /opt/zentto-dev/.env.frontend
     environment:

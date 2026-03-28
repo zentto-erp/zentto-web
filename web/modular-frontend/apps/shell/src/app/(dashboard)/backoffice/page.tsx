@@ -42,6 +42,8 @@ import {
   CheckCircle as CheckIcon,
   Visibility as ViewIcon,
   PlayArrow as ApplyIcon,
+  BugReport as BugIcon,
+  SmartToy as SmartToyIcon,
 } from "@mui/icons-material";
 import {
   ConfirmDialog,
@@ -50,7 +52,7 @@ import { useAuth } from "@zentto/shared-auth";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { useGridLayoutSync } from "@zentto/shared-api";
+import { useGridLayoutSync, apiGet } from "@zentto/shared-api";
 import { useScopedGridId } from "@/lib/zentto-grid";
 
 const TurnstileCaptcha = dynamic(
@@ -65,6 +67,12 @@ interface DashboardData {
   MRR: number;
   TotalDbMB: number;
   CleanupPending: number;
+  // Support ticket stats
+  TicketsOpen?: number;
+  TicketsClosed?: number;
+  TicketsUrgent?: number;
+  TicketsAiPending?: number;
+  TicketsAiResolved?: number;
 }
 
 interface TenantRow {
@@ -434,12 +442,22 @@ function DashboardCards({
       value: data?.CleanupPending ?? "—",
       icon: <WarningIcon fontSize="large" color="warning" />,
     },
+    {
+      label: "Tickets Abiertos",
+      value: data?.TicketsOpen ?? "—",
+      icon: <BugIcon fontSize="large" color="error" />,
+    },
+    {
+      label: "IA Resueltos",
+      value: data?.TicketsAiResolved ?? "—",
+      icon: <SmartToyIcon fontSize="large" color="success" />,
+    },
   ];
 
   return (
     <Grid container spacing={2} mb={3}>
       {cards.map((c) => (
-        <Grid key={c.label} size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid key={c.label} size={{ xs: 6, sm: 4, md: 2 }}>
           <Card variant="outlined">
             <CardContent>
               <Stack
@@ -1259,6 +1277,7 @@ export default function BackofficePage() {
           <Tab label="Recursos" />
           <Tab label="Cola de limpieza" />
           <Tab label="Respaldos" />
+          <Tab label="Soporte" />
         </Tabs>
       </Box>
 
@@ -1266,6 +1285,123 @@ export default function BackofficePage() {
       {tab === 1 && <RecursosTab gridId={recursosGridId} masterKey={token} />}
       {tab === 2 && <CleanupTab gridId={cleanupGridId} masterKey={token} />}
       {tab === 3 && <RespaldosTab gridId={respaldosGridId} masterKey={token} />}
+      {tab === 4 && <SoporteTab />}
+    </Box>
+  );
+}
+
+// ─── Soporte Tab ────────────────────────────────────────────────────────────
+
+function SoporteTab() {
+  const [state, setState] = useState<"open" | "closed">("open");
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiGet(`/v1/support/tickets?state=${state}&scope=all`);
+      setTickets(res?.tickets || []);
+      setStats(res?.stats || null);
+    } catch { /* */ }
+    setLoading(false);
+  }, [state]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const statCards = stats ? [
+    { label: "Total", value: stats.total, color: "#1a73e8" },
+    { label: "Bugs", value: stats.bugs, color: "#d32f2f" },
+    { label: "Features", value: stats.features, color: "#1976d2" },
+    { label: "Urgentes", value: stats.urgent, color: "#ff5722" },
+    { label: "IA en progreso", value: stats.aiPending, color: "#ff9800" },
+    { label: "IA resueltos", value: stats.aiFixed, color: "#2e7d32" },
+  ] : [];
+
+  return (
+    <Box>
+      {stats && (
+        <Grid container spacing={1.5} sx={{ mb: 3 }}>
+          {statCards.map((s) => (
+            <Grid key={s.label} size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card>
+                <CardContent sx={{ textAlign: "center", py: 1.5 }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: s.color }}>
+                    {s.value}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {s.label}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+        <Button
+          variant={state === "open" ? "contained" : "outlined"}
+          size="small"
+          onClick={() => setState("open")}
+        >
+          Abiertos
+        </Button>
+        <Button
+          variant={state === "closed" ? "contained" : "outlined"}
+          size="small"
+          onClick={() => setState("closed")}
+        >
+          Cerrados
+        </Button>
+        <IconButton onClick={load} size="small">
+          <RefreshIcon />
+        </IconButton>
+      </Stack>
+
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
+
+      {!loading && tickets.length === 0 && (
+        <Alert severity="info">No hay tickets {state === "open" ? "abiertos" : "cerrados"}</Alert>
+      )}
+
+      {tickets.map((t: any) => (
+        <Card key={t.number} sx={{ mb: 1 }}>
+          <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Typography fontWeight={700} sx={{ minWidth: 50 }}>#{t.number}</Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography fontWeight={600} noWrap>{t.title}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t.company || "—"} · {t.email || "—"} · {t.module || "general"} · {new Date(t.createdAt).toLocaleDateString("es")}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                {t.labels?.map((l: string) => (
+                  <Chip
+                    key={l}
+                    label={l}
+                    size="small"
+                    color={
+                      l === "bug" || l === "urgent" ? "error" :
+                      l === "ai-fix" ? "warning" :
+                      l === "ai-pr" ? "success" :
+                      l === "feature" ? "info" : "default"
+                    }
+                    variant={l.startsWith("modulo:") ? "outlined" : "filled"}
+                  />
+                ))}
+              </Stack>
+              <Tooltip title="Ver en GitHub">
+                <IconButton size="small" onClick={() => window.open(t.url, "_blank")}>
+                  <ViewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </CardContent>
+        </Card>
+      ))}
     </Box>
   );
 }

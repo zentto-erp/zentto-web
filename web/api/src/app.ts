@@ -73,6 +73,7 @@ import { comprasAnalyticsRouter } from "./modules/compras/analytics.routes.js";
 import { ventasAnalyticsRouter } from "./modules/ventas/analytics.routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
+import { githubSupportWebhookRouter } from "./modules/webhooks/github-support.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
 import devicesRouter from "./modules/devices/routes.js";
 import zohoRouter from "./modules/integrations/zoho.routes.js";
@@ -181,6 +182,7 @@ export async function createApp() {
   });
   // Webhooks externos — ANTES de express.json() para preservar raw body
   app.use("/api/webhooks", paddleWebhookRouter);
+  app.use("/api/webhooks", githubSupportWebhookRouter);
   app.use("/v1/billing/webhook", billingWebhookHandler);
 
   app.use(express.json({ limit: "2mb" }));
