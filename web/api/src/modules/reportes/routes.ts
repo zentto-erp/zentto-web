@@ -266,3 +266,183 @@ reportesRouter.post("/render", async (req: Request, res: Response) => {
         res.status(502).json({ success: false, message: error?.message });
     }
 });
+
+// ═══════════════════════════════════════════════════════════════
+// ZENTTO REPORT ENGINE — Saved Report Layouts
+// Proxy to zentto-cache for report persistence
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// ZENTTO PDF ENGINE — Proxy to pdf-engine service
+// ═══════════════════════════════════════════════════════════════
+
+const PDF_ENGINE_URL = process.env.PDF_ENGINE_URL || "http://localhost:5050";
+
+// POST /v1/reportes/pdf — generate PDF from layout + data
+// Query params: ?format=base64 returns JSON { pdf: "base64string", filename: "..." }
+//               ?format=binary (default) returns raw PDF bytes
+reportesRouter.post("/pdf", async (req: Request, res: Response) => {
+    try {
+        const resp = await safeFetch(
+            `${PDF_ENGINE_URL}/render/pdf`,
+            { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) },
+            30000,
+        );
+        if (!resp.ok) {
+            const err = await resp.text().catch(() => "PDF generation failed");
+            return res.status(resp.status).json({ error: err });
+        }
+        const buffer = await resp.arrayBuffer();
+        const renderTime = resp.headers.get("x-render-time-ms");
+        const filename = `${req.body?.layout?.name || 'report'}.pdf`;
+
+        // Base64 format for external API consumers
+        if (req.query.format === 'base64') {
+            const base64 = Buffer.from(buffer).toString('base64');
+            return res.json({
+                pdf: base64,
+                filename,
+                mimeType: 'application/pdf',
+                sizeBytes: buffer.byteLength,
+                renderTimeMs: renderTime ? parseInt(renderTime) : undefined,
+            });
+        }
+
+        // Binary format (default) for browser download
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+        if (renderTime) res.setHeader("X-Render-Time-Ms", renderTime);
+        res.send(Buffer.from(buffer));
+    } catch (err: any) {
+        res.status(502).json({ error: err?.message || "PDF engine unavailable" });
+    }
+});
+
+const CACHE_URL = process.env.ZENTTO_CACHE_URL || "http://localhost:4100";
+const CACHE_KEY = process.env.ZENTTO_CACHE_KEY || "";
+
+function cacheHeaders(req: Request): Record<string, string> {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (CACHE_KEY) headers["x-app-key"] = CACHE_KEY;
+    return headers;
+}
+
+function cacheQuery(req: Request): string {
+    const companyId = (req as any).companyId || (req as any).jwt?.companyId || "1";
+    const userId = (req as any).jwt?.sub || "anonymous";
+    return `companyId=${companyId}&userId=${userId}`;
+}
+
+// GET /v1/reportes/saved — list saved reports
+reportesRouter.get("/saved", async (req: Request, res: Response) => {
+    try {
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates?${cacheQuery(req)}`,
+            { headers: cacheHeaders(req) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "cache_error" });
+        const ids: string[] = await resp.json();
+        const reports = await Promise.all(ids.map(async (id) => {
+            try {
+                const r = await safeFetch(
+                    `${CACHE_URL}/v1/report-templates/${id}?${cacheQuery(req)}`,
+                    { headers: cacheHeaders(req) },
+                    5000,
+                );
+                if (!r.ok) return null;
+                const d = await r.json();
+                return { id, name: d.template?.layout?.name || id, updatedAt: d.updatedAt };
+            } catch { return null; }
+        }));
+        res.json({ data: reports.filter(Boolean) });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
+
+// GET /v1/reportes/saved/:id
+reportesRouter.get("/saved/:id", async (req: Request, res: Response) => {
+    try {
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates/${req.params.id}?${cacheQuery(req)}`,
+            { headers: cacheHeaders(req) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "not_found" });
+        const d = await resp.json();
+        res.json({ layout: d.template?.layout, sampleData: d.template?.sampleData });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
+
+// PUT /v1/reportes/saved/:id
+reportesRouter.put("/saved/:id", async (req: Request, res: Response) => {
+    try {
+        const body = {
+            companyId: String((req as any).companyId || (req as any).jwt?.companyId || "1"),
+            userId: String((req as any).jwt?.sub || "anonymous"),
+            template: req.body,
+        };
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates/${req.params.id}`,
+            { method: "PUT", headers: cacheHeaders(req), body: JSON.stringify(body) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "save_failed" });
+        res.json({ ok: true, id: req.params.id });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
+
+// GET /v1/reportes/public — list public/company-wide reports
+reportesRouter.get("/public", async (req: Request, res: Response) => {
+    try {
+        const companyId = (req as any).companyId || (req as any).jwt?.companyId || "1";
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates/public?companyId=${companyId}`,
+            { headers: cacheHeaders(req) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "cache_error" });
+        const data = await resp.json();
+        res.json({ data: data || [] });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
+
+// PUT /v1/reportes/public/:id — save a public/company-wide report
+reportesRouter.put("/public/:id", async (req: Request, res: Response) => {
+    try {
+        const companyId = String((req as any).companyId || (req as any).jwt?.companyId || "1");
+        const userId = String((req as any).jwt?.sub || "anonymous");
+        const body = { companyId, userId, template: req.body };
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates/public/${req.params.id}`,
+            { method: "PUT", headers: cacheHeaders(req), body: JSON.stringify(body) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "save_failed" });
+        res.json({ ok: true, id: req.params.id });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
+
+// DELETE /v1/reportes/saved/:id
+reportesRouter.delete("/saved/:id", async (req: Request, res: Response) => {
+    try {
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates/${req.params.id}?${cacheQuery(req)}`,
+            { method: "DELETE", headers: cacheHeaders(req) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "delete_failed" });
+        res.json({ ok: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
