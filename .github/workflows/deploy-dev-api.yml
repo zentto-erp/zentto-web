@@ -303,15 +303,17 @@ jobs:
 
       - name: Deploy API dev container
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN
           script: |
             set -e
 
             # ── Mirror production .env.api → dev (same secrets, different DB/URLs) ──
-            # Start from production as base
             cp /opt/zentto/.env.api /opt/zentto-dev/.env.api
             chmod 600 /opt/zentto-dev/.env.api
 
@@ -327,7 +329,7 @@ jobs:
             sed -i 's|^AUTH_LOGIN_REQUIRE_CAPTCHA=.*|AUTH_LOGIN_REQUIRE_CAPTCHA=false|' /opt/zentto-dev/.env.api
 
             # Login to GHCR
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u zentto-erp --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Pull and restart dev API
             cd /opt/zentto-dev
