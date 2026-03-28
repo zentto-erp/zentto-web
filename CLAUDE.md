@@ -44,7 +44,7 @@
 | ---------- | ---- | --- |
 | **Migraciones goose** | `web/api/migrations/postgres/` | **Fuente de verdad** para cambios incrementales |
 | **Functions PL/pgSQL** | `web/api/sqlweb-pg/includes/sp/` | Definiciones de funciones + seeds |
-| **SQL Server (legacy)** | `web/api/sqlweb/includes/sp/` | Solo referencia — NO se usa en produccion |
+| **SQL Server (activo)** | `web/api/sqlweb/includes/sp/` | **OBLIGATORIO mantener actualizado** — clientes pueden usar SQL Server |
 
 ### PostgreSQL (produccion)
 
@@ -53,25 +53,32 @@
 - Scripts: `web/api/sqlweb-pg/`
 - Deploy: `scripts/goose-deploy.sh` (migraciones goose)
 
-### SQL Server (solo referencia local)
+### SQL Server (activo — clientes en produccion)
 
-- Servidor: `DELLXEONE31545`
+- Servidor local: `DELLXEONE31545`
 - Base: `DatqBoxWeb`
 - Scripts: `web/api/sqlweb/includes/sp/` (165 SPs en T-SQL)
-- **NO se usa en produccion** — solo referencia para futuras migraciones
+- **Clientes reales usan SQL Server** — OBLIGATORIO mantener al dia
+- Todo SP/funcion nuevo en PostgreSQL DEBE tener su equivalente T-SQL en `sqlweb/`
+- El switch `DB_TYPE=sqlserver` en `.env` activa SQL Server en la API
 
 ### REGLA CRITICA: Todo cambio de BD va como migracion goose
 
 **NUNCA editar sqlweb-pg/ directamente para deploys.** Todo cambio va como:
 
 1. Migración goose: `web/api/migrations/postgres/NNNNN_descripcion.sql`
-2. Actualizar funciones en: `web/api/sqlweb-pg/includes/sp/` (referencia local)
-3. Deploy: `scripts/goose-deploy.sh` ejecuta `goose up`
+2. Actualizar funciones en: `web/api/sqlweb-pg/includes/sp/` (PostgreSQL)
+3. Actualizar equivalente en: `web/api/sqlweb/includes/sp/` (SQL Server T-SQL)
+4. Deploy: `scripts/goose-deploy.sh` ejecuta `goose up`
 
-| Accion            | Archivo                                          |
-| ----------------- | ------------------------------------------------ |
-| Nuevo SP/funcion  | Migración goose + `sqlweb-pg/includes/sp/usp_*.sql` |
-| Nueva tabla       | Migración goose con DDL                          |
+| Accion            | PostgreSQL (`sqlweb-pg/`)                        | SQL Server (`sqlweb/`)             |
+| ----------------- | ------------------------------------------------ | ---------------------------------- |
+| Nuevo SP/funcion  | Migración goose + `includes/sp/usp_*.sql`        | `includes/sp/usp_*.sql` (T-SQL)   |
+| Nueva tabla       | Migración goose con DDL                          | DDL en archivo correspondiente     |
+| Seed data         | `includes/sp/seed_*.sql`                         | `includes/sp/seed_*.sql`           |
+| Cambio de esquema | Migración goose con ALTER                        | Script ALTER verificable           |
+
+**Si solo actualizas UN motor, el otro queda roto. No hay excepciones.**
 | Seed data         | Migración goose o `sqlweb-pg/includes/sp/seed_*.sql` |
 | Cambio de esquema | Migración goose con ALTER verificable            |
 
