@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Fix: CHAR→VARCHAR casts, BIGINT→INT mismatches, missing p_company_id params,
 -- wrong table/schema references across multiple functions
 
@@ -317,5 +318,6 @@ BEGIN
 END;
 $fn$;
 
+-- +goose StatementEnd
 -- +goose Down
 -- No rollback needed — these are type-safety fixes
