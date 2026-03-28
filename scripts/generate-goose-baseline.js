@@ -130,6 +130,10 @@ function shouldSkipFunctionBlock(relPath) {
     return true;
   }
 
+  if (normalized.startsWith('tools/')) {
+    return true;
+  }
+
   if (LEGACY_FUNCTION_BUNDLES.has(baseName)) {
     return true;
   }
