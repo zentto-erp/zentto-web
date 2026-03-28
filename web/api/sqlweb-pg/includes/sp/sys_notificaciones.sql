@@ -67,6 +67,7 @@ END;
 $$;
 
 -- usp_Sys_Notificacion_MarkRead
+DROP FUNCTION IF EXISTS usp_sys_notificacion_markread(text) CASCADE;
 DROP FUNCTION IF EXISTS usp_sys_notificacion_markread(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_notificacion_markread(
     p_ids_csv VARCHAR

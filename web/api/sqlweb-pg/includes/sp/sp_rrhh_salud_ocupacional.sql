@@ -1553,6 +1553,7 @@ $$;
 -- Service wrapper: usp_HR_MedExam_Save
 -- Service sends: p_company_id, p_branch_id, p_exam_id, p_employee_code,
 --                p_exam_type, p_exam_date, p_result, p_notes, p_next_due_date, p_user_id
+DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, DATE, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
     p_company_id    INTEGER,
@@ -1610,6 +1611,7 @@ $$;
 -- Service wrapper: usp_HR_Training_Save
 -- Service sends: p_company_id, p_branch_id, p_training_id, p_name, p_description,
 --                p_start_date, p_end_date, p_instructor, p_hours, p_participants, p_user_id
+DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_training_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, VARCHAR, NUMERIC, VARCHAR, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
     p_company_id    INTEGER,
@@ -1666,6 +1668,7 @@ $$;
 -- Service wrapper: usp_HR_Committee_Save
 -- Service sends: p_company_id, p_branch_id, p_committee_id, p_name,
 --                p_committee_type, p_start_date, p_end_date, p_user_id
+DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_committee_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
     p_company_id     INTEGER,

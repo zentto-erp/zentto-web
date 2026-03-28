@@ -590,6 +590,7 @@ $$;
 -- =============================================================================
 -- 7. usp_HR_Trust_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetSummary(
     p_company_id    INTEGER,
