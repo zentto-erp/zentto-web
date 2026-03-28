@@ -21,28 +21,25 @@ import "dotenv/config";
 // Conexión
 // ────────────────────────────────────────────────────────────────────────────
 
+// Skip all MSSQL tests when MSSQL_SERVER is not set (CI environment)
+const skipAll = !process.env.MSSQL_SERVER && !process.env.MSSQL_PASSWORD;
+
 let pool: sql.ConnectionPool | undefined;
-let skipAll = false;
 
 beforeAll(async () => {
-  try {
-    pool = await sql.connect({
-      server: process.env.MSSQL_SERVER ?? "DELLXEONE31545",
-      database: process.env.MSSQL_DATABASE ?? "zentto_dev",
-      user: process.env.MSSQL_USER ?? "sa",
-      password: process.env.MSSQL_PASSWORD ?? "1234",
-      options: {
-        encrypt: false,
-        trustServerCertificate: true,
-      },
-      connectionTimeout: 10000,
-      requestTimeout: 30000,
-    });
-  } catch {
-    // SQL Server not available (CI environment) — skip all tests gracefully
-    skipAll = true;
-    console.warn("⚠️ SQL Server not available — MSSQL tests will be skipped");
-  }
+  if (skipAll) return;
+  pool = await sql.connect({
+    server: process.env.MSSQL_SERVER ?? "DELLXEONE31545",
+    database: process.env.MSSQL_DATABASE ?? "zentto_dev",
+    user: process.env.MSSQL_USER ?? "sa",
+    password: process.env.MSSQL_PASSWORD ?? "1234",
+    options: {
+      encrypt: false,
+      trustServerCertificate: true,
+    },
+    connectionTimeout: 10000,
+    requestTimeout: 30000,
+  });
 });
 
 afterAll(async () => {
