@@ -286,12 +286,13 @@ $fn$;
 -- Save function ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â p_country_code CHARÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢VARCHAR
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(INT, VARCHAR, VARCHAR, VARCHAR, CHARACTER, TEXT, VARCHAR, BOOLEAN) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(INT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, VARCHAR, BOOLEAN) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     p_company_id INT, p_template_code VARCHAR, p_template_name VARCHAR,
     p_template_type VARCHAR, p_country_code VARCHAR, p_content_md TEXT,
     p_payroll_code VARCHAR DEFAULT NULL, p_is_default BOOLEAN DEFAULT FALSE,
     OUT p_resultado INT, OUT p_mensaje TEXT
 )
+RETURNS RECORD
 LANGUAGE plpgsql AS $fn$
 DECLARE v_id BIGINT;
 BEGIN
