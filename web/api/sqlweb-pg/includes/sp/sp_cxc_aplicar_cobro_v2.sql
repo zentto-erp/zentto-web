@@ -5,9 +5,7 @@
 -- Entrada arrays por JSONB (reemplazo de XML en SQL Server)
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION usp_cxc_aplicar_cobro(
-    VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB
-);
+DROP FUNCTION IF EXISTS usp_cxc_aplicar_cobro(VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_cxc_aplicar_cobro(
     p_request_id       VARCHAR(100),
