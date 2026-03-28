@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Fix: TIMESTAMPTZ→TIMESTAMP casts in pettycash functions + ambiguous column in committee meetings
 
 -- 1. usp_fin_pettycash_session_getactive — add ::TIMESTAMP casts
@@ -125,6 +126,7 @@ BEGIN
 END;
 $$;
 
+-- +goose StatementEnd
 -- +goose Down
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_getactive(INTEGER) CASCADE;
