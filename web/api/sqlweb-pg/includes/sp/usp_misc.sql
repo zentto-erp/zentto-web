@@ -1976,3 +1976,55 @@ BEGIN
     ORDER BY sl."SettlementProcessLineId";
 END;
 $$;
+
+-- -----------------------------------------------------------------------------
+--  usp_HR_Payroll_DeleteConcept — soft-delete (IsActive = FALSE)
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION usp_hr_payroll_deleteconcept(
+    p_company_id   INT,
+    p_concept_code VARCHAR(20)
+)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE hr."PayrollConcept"
+    SET "IsActive" = FALSE,
+        "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
+    WHERE "CompanyId" = p_company_id
+      AND "ConceptCode" = p_concept_code
+      AND "IsActive" = TRUE;
+
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT -1, 'Concepto no encontrado o ya desactivado'::VARCHAR(500);
+        RETURN;
+    END IF;
+
+    RETURN QUERY SELECT 1, 'Concepto desactivado'::VARCHAR(500);
+END;
+$$;
+
+-- -----------------------------------------------------------------------------
+--  usp_HR_Payroll_DeleteConstant — soft-delete (IsActive = FALSE)
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION usp_hr_payroll_deleteconstant(
+    p_company_id    INT,
+    p_constant_code VARCHAR(50)
+)
+RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE hr."PayrollConstant"
+    SET "IsActive" = FALSE,
+        "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
+    WHERE "CompanyId" = p_company_id
+      AND "ConstantCode" = p_constant_code
+      AND "IsActive" = TRUE;
+
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT -1, 'Constante no encontrada o ya desactivada'::VARCHAR(500);
+        RETURN;
+    END IF;
+
+    RETURN QUERY SELECT 1, 'Constante desactivada'::VARCHAR(500);
+END;
+$$;

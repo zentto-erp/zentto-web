@@ -4,7 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
-const BASE = "/api/v1/inventario";
+const BASE = "/v1/inventario-avanzado";
 const QK_LOTS = "inv-lots";
 const QK_SERIALS = "inv-serials";
 const QK_WAREHOUSES = "inv-warehouses";

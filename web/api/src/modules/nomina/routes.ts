@@ -102,6 +102,16 @@ nominaRouter.post("/conceptos", async (req, res) => {
   }
 });
 
+// DELETE /v1/nomina/conceptos/:codigo - Desactivar concepto (soft-delete)
+nominaRouter.delete("/conceptos/:codigo", async (req, res) => {
+  try {
+    const result = await nominaService.deleteConcepto(req.params.codigo);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // POST /v1/nomina/procesar-empleado - Procesar nómina de un empleado
 nominaRouter.post("/procesar-empleado", async (req, res) => {
   const parsed = procesarEmpleadoSchema.safeParse(req.body);
@@ -592,6 +602,16 @@ nominaRouter.post("/constantes", async (req, res) => {
 
   try {
     const result = await nominaService.saveConstante(parsed.data);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// DELETE /v1/nomina/constantes/:codigo - Desactivar constante (soft-delete)
+nominaRouter.delete("/constantes/:codigo", async (req, res) => {
+  try {
+    const result = await nominaService.deleteConstante(req.params.codigo);
     res.status(result.success ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
