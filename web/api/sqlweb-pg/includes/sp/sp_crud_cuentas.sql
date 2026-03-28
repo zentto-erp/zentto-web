@@ -75,6 +75,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_cuentas_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cuentas_getbycodigo(
     p_cod_cuenta VARCHAR(50)
 )

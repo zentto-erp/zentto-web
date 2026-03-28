@@ -54,6 +54,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_clases_getbycodigo(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_clases_getbycodigo(
     p_codigo INT
 )

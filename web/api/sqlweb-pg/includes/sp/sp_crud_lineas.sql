@@ -45,6 +45,7 @@ END;
 $$;
 
 -- GET BY CODIGO
+DROP FUNCTION IF EXISTS usp_lineas_getbycodigo(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_lineas_getbycodigo(
     p_codigo INT
 )

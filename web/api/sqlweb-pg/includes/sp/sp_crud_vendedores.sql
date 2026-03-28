@@ -99,25 +99,26 @@ END;
 $func$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_vendedores_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_vendedores_getbycodigo(
     p_codigo VARCHAR(10)
 )
 RETURNS TABLE(
-    "Codigo" VARCHAR(10),
-    "Nombre" VARCHAR(100),
+    "Codigo" VARCHAR,
+    "Nombre" VARCHAR,
     "Comision" DOUBLE PRECISION,
     "Status" BOOLEAN,
     "IsActive" BOOLEAN,
     "IsDeleted" BOOLEAN,
     "CompanyId" INT,
-    "SellerCode" VARCHAR(10),
-    "SellerName" VARCHAR(100),
+    "SellerCode" VARCHAR,
+    "SellerName" VARCHAR,
     "Commission" DOUBLE PRECISION,
-    "Direccion" VARCHAR(255),
-    "Telefonos" VARCHAR(60),
-    "Email" VARCHAR(100),
-    "Tipo" VARCHAR(50),
-    "Clave" VARCHAR(50),
+    "Direccion" VARCHAR,
+    "Telefonos" VARCHAR,
+    "Email" VARCHAR,
+    "Tipo" VARCHAR,
+    "Clave" VARCHAR,
     "RangoVentasUno" DOUBLE PRECISION,
     "ComisionVentasUno" DOUBLE PRECISION,
     "RangoVentasDos" DOUBLE PRECISION,

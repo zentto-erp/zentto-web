@@ -51,6 +51,7 @@ END;
 $$;
 
 -- GET BY CODIGO
+DROP FUNCTION IF EXISTS usp_tipos_getbycodigo(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_tipos_getbycodigo(
     p_codigo INT
 )
