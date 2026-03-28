@@ -213,10 +213,29 @@ jobs:
               sudo -u postgres psql -d zentto_dev -f run-functions.sql || true
               sudo -u postgres psql -d zentto_dev -f run-seeds-config.sql || true
               sudo -u postgres psql -d zentto_dev -f run-seeds-starter.sql || true
-              echo "==> Bootstrap complete"
+
+              # Mark ALL existing goose migrations as applied (bootstrap already includes them)
+              echo "==> Marking all migrations as applied..."
+              sudo -u postgres psql -d zentto_dev -c "
+                CREATE TABLE IF NOT EXISTS public.goose_db_version (
+                  id SERIAL PRIMARY KEY,
+                  version_id BIGINT NOT NULL,
+                  is_applied BOOLEAN NOT NULL,
+                  tstamp TIMESTAMP DEFAULT NOW()
+                );
+                INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (0, TRUE) ON CONFLICT DO NOTHING;
+              "
+              GOOSE_DIR=/opt/zentto-dev/migrations/postgres
+              for f in $(ls "$GOOSE_DIR"/*.sql | sort); do
+                VER=$(basename "$f" | grep -o '^[0-9]*')
+                VER_INT=$((10#$VER))  # Remove leading zeros
+                sudo -u postgres psql -d zentto_dev -c \
+                  "INSERT INTO public.goose_db_version (version_id, is_applied) VALUES ($VER_INT, TRUE) ON CONFLICT DO NOTHING;" 2>/dev/null || true
+              done
+              echo "==> Bootstrap + mark complete"
             fi
 
-            # Run goose migrations on zentto_dev (incremental changes after baseline)
+            # Run goose migrations on zentto_dev (only new ones after last marked)
             PG_DATABASE=zentto_dev \
             GOOSE_DIR=/opt/zentto-dev/migrations/postgres \
             SEEDS_DIR=/opt/zentto-dev/sqlweb-pg \
