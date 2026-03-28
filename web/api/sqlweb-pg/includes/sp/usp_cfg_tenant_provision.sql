@@ -8,9 +8,7 @@
 -- evitar ambigÃ¼edad con columnas homÃ³nimas de las tablas en PL/pgSQL.
 -- El caller TS lee "NewCompanyId" y "NewUserId".
 -- ============================================================
-CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_Provision(
-  VARCHAR, VARCHAR, VARCHAR, CHAR(2), CHAR(3), VARCHAR, VARCHAR, VARCHAR, VARCHAR
-) CASCADE;
+DROP FUNCTION IF EXISTS usp_Cfg_Tenant_Provision(VARCHAR, VARCHAR, VARCHAR, CHAR(2), CHAR(3), VARCHAR, VARCHAR, VARCHAR, VARCHAR) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_Provision(
   p_company_code            VARCHAR(20),

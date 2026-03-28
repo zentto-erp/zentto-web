@@ -66,9 +66,7 @@ $$;
 -- usp_sys_Subscription_Upsert
 -- Crea o actualiza una suscripcion de Paddle
 -- ============================================================
-CREATE OR REPLACE FUNCTION usp_sys_Subscription_Upsert(
-  INT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
-) CASCADE;
+DROP FUNCTION IF EXISTS usp_sys_Subscription_Upsert(INT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_Subscription_Upsert(
   p_company_id              INT           DEFAULT NULL,
   p_paddle_subscription_id  VARCHAR(100)  DEFAULT NULL,
