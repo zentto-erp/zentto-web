@@ -23,9 +23,29 @@ concurrency:
   group: deploy-dev-api
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
+env:
+  REPO: zentto-erp/zentto-web
+
 jobs:
+  # ── 0. Make repo public for GHCR access ────────────────────────────
+  set-public:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"visibility":"public"}' | grep -o '"visibility":"[^"]*"' || true
+
   # ── 1. Type check ──────────────────────────────────────────────────
   type-check:
+    needs: set-public
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -325,3 +345,16 @@ jobs:
             nginx -t && systemctl reload nginx
 
             echo "✅ API DEV deployed → api.dev.zentto.net (espejo de prod con BD zentto_dev)"
+
+  # ── 6. Restore repo to private ─────────────────────────────────────
+  set-private:
+    if: always()
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"visibility":"private"}' | grep -o '"visibility":"[^"]*"' || true
