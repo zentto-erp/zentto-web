@@ -353,15 +353,4 @@ jobs:
 
             echo "✅ API DEV deployed → api.dev.zentto.net (espejo de prod con BD zentto_dev)"
 
-  # ── 6. Restore repo to private ─────────────────────────────────────
-  set-private:
-    if: always()
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          curl -sS -X PATCH \
-            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ env.REPO }} \
-            -d '{"visibility":"private"}' | grep -o '"visibility":"[^"]*"' || true
+  # set-private omitido — los workflows de prod manejan la visibilidad del repo
