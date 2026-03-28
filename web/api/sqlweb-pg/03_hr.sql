@@ -1,6 +1,6 @@
 -- sp_nomina_calcular_antiguedad
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_antiguedad(character varying, character varying, date) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_antiguedad(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_antiguedad(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -43,7 +43,7 @@ $function$
 
 -- sp_nomina_calcular_antiguedad_compat
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_antiguedad_compat(character varying, character varying, date) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_antiguedad_compat(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_antiguedad_compat(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -60,7 +60,7 @@ $function$
 
 -- sp_nomina_calcular_concepto
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_concepto(character varying, character varying, character varying, character varying, numeric, numeric, numeric, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_concepto(p_session_id character varying, p_cedula character varying, p_co_concepto character varying, p_co_nomina character varying, p_cantidad numeric DEFAULT NULL::numeric, OUT p_monto numeric, OUT p_total numeric, OUT p_descripcion character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_concepto(p_session_id character varying, p_cedula character varying, p_co_concepto character varying, p_co_nomina character varying, p_cantidad numeric DEFAULT NULL::numeric, OUT p_monto numeric, OUT p_total numeric, OUT p_descripcion character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -102,7 +102,7 @@ $function$
 
 -- sp_nomina_calcular_dias_vacaciones
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_dias_vacaciones(character varying, character varying, date, numeric, numeric) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_dias_vacaciones(p_session_id character varying, p_cedula character varying, p_fecha_retiro date DEFAULT NULL::date, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_dias_vacaciones(p_session_id character varying, p_cedula character varying, p_fecha_retiro date DEFAULT NULL::date, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -149,7 +149,7 @@ $function$
 
 -- sp_nomina_calcular_liquidacion
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_liquidacion(character varying, character varying, date, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_liquidacion(p_liquidacion_id character varying, p_cedula character varying, p_fecha_retiro date, p_causa_retiro character varying DEFAULT 'RENUNCIA'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_liquidacion(p_liquidacion_id character varying, p_cedula character varying, p_fecha_retiro date, p_causa_retiro character varying DEFAULT 'RENUNCIA'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -267,7 +267,7 @@ $function$
 
 -- sp_nomina_calcular_prestaciones_regimen
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_prestaciones_regimen(character varying, character varying, integer, integer, numeric, numeric, numeric) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_prestaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_adicionales integer, p_salario_integral numeric, OUT p_prestaciones numeric, OUT p_intereses numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_prestaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_adicionales integer, p_salario_integral numeric, OUT p_prestaciones numeric, OUT p_intereses numeric)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -295,7 +295,7 @@ $function$
 
 -- sp_nomina_calcular_salarios_promedio
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_salarios_promedio(character varying, character varying, date, date) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_salarios_promedio(p_session_id character varying, p_cedula character varying, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_salarios_promedio(p_session_id character varying, p_cedula character varying, p_fecha_desde date, p_fecha_hasta date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -326,7 +326,7 @@ $function$
 
 -- sp_nomina_calcular_utilidades_regimen
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_utilidades_regimen(character varying, character varying, integer, numeric, numeric) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_utilidades_regimen(p_session_id character varying, p_regimen character varying, p_dias_trabajados_ano integer, p_salario_normal numeric, OUT p_utilidades numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_utilidades_regimen(p_session_id character varying, p_regimen character varying, p_dias_trabajados_ano integer, p_salario_normal numeric, OUT p_utilidades numeric)
  RETURNS numeric
  LANGUAGE plpgsql
 AS $function$
@@ -360,7 +360,7 @@ $function$
 
 -- sp_nomina_calcular_vacaciones_regimen
 DROP FUNCTION IF EXISTS public.sp_nomina_calcular_vacaciones_regimen(character varying, character varying, integer, integer, numeric, numeric, numeric) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_vacaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_periodo integer DEFAULT 12, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric, OUT p_dias_bono_post_vacacional numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_vacaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_periodo integer DEFAULT 12, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric, OUT p_dias_bono_post_vacacional numeric)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -387,7 +387,7 @@ $function$
 
 -- sp_nomina_cargar_constantes
 DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes(p_session_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cargar_constantes(p_session_id character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -418,7 +418,7 @@ $function$
 
 -- sp_nomina_cargar_constantes_desde_concepto_legal
 DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes_desde_concepto_legal(character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes_desde_concepto_legal(p_session_id character varying, p_convencion character varying DEFAULT 'LOT'::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cargar_constantes_desde_concepto_legal(p_session_id character varying, p_convencion character varying DEFAULT 'LOT'::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -433,7 +433,7 @@ $function$
 
 -- sp_nomina_cargar_constantes_regimen
 DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes_regimen(character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes_regimen(p_session_id character varying, p_regimen character varying DEFAULT 'LOT'::character varying, p_tipo_nomina character varying DEFAULT 'MENSUAL'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cargar_constantes_regimen(p_session_id character varying, p_regimen character varying DEFAULT 'LOT'::character varying, p_tipo_nomina character varying DEFAULT 'MENSUAL'::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -476,7 +476,7 @@ $function$
 
 -- sp_nomina_cerrar
 DROP FUNCTION IF EXISTS public.sp_nomina_cerrar(character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_cerrar(p_nomina character varying, p_cedula character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cerrar(p_nomina character varying, p_cedula character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -515,7 +515,7 @@ $function$
 
 -- sp_nomina_concepto_save
 DROP FUNCTION IF EXISTS public.sp_nomina_concepto_save(character varying, character varying, character varying, text, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, double precision) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_concepto_save(p_co_concept character varying, p_co_nomina character varying, p_nb_concepto character varying, p_formula text DEFAULT NULL::text, p_sobre character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_uso character varying DEFAULT NULL::character varying, p_bonificable character varying DEFAULT NULL::character varying, p_antiguedad character varying DEFAULT NULL::character varying, p_contable character varying DEFAULT NULL::character varying, p_aplica character varying DEFAULT 'S'::character varying, p_defecto double precision DEFAULT NULL::double precision)
+CREATE OR REPLACE FUNCTION public.sp_nomina_concepto_save(p_co_concept character varying, p_co_nomina character varying, p_nb_concepto character varying, p_formula text DEFAULT NULL::text, p_sobre character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_uso character varying DEFAULT NULL::character varying, p_bonificable character varying DEFAULT NULL::character varying, p_antiguedad character varying DEFAULT NULL::character varying, p_contable character varying DEFAULT NULL::character varying, p_aplica character varying DEFAULT 'S'::character varying, p_defecto double precision DEFAULT NULL::double precision)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -595,7 +595,7 @@ $function$
 
 -- sp_nomina_conceptos_legales_list
 DROP FUNCTION IF EXISTS public.sp_nomina_conceptos_legales_list(character varying, character varying, character varying, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_conceptos_legales_list(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_activo boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_nomina_conceptos_legales_list(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_activo boolean DEFAULT true)
  RETURNS TABLE("Id" bigint, "Convencion" character varying, "TipoCalculo" character varying, "CO_CONCEPT" character varying, "NB_CONCEPTO" character varying, "Formula" character varying, "SOBRE" character varying, "TIPO" character varying, "BONIFICABLE" character varying, "LOTTT_Articulo" character varying, "CCP_Clausula" character varying, "Orden" integer, "Activo" boolean, "CO_NOMINA" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -629,7 +629,7 @@ $function$
 
 -- sp_nomina_conceptos_list
 DROP FUNCTION IF EXISTS public.sp_nomina_conceptos_list(character varying, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_conceptos_list(p_co_nomina character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_conceptos_list(p_co_nomina character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Codigo" character varying, "CodigoNomina" character varying, "Nombre" character varying, "Formula" character varying, "Sobre" character varying, "Clase" character varying, "Tipo" character varying, "Uso" character varying, "Bonificable" character varying, "Antiguedad" character varying, "Contable" character varying, "Aplica" character varying, "Defecto" double precision, "Convencion" character varying, "TipoCalculo" character varying, "Orden" integer, "Activo" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -691,7 +691,7 @@ $function$
 
 -- sp_nomina_constante_save
 DROP FUNCTION IF EXISTS public.sp_nomina_constante_save(character varying, character varying, double precision, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_constante_save(p_codigo character varying, p_nombre character varying DEFAULT NULL::character varying, p_valor double precision DEFAULT NULL::double precision, p_origen character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_constante_save(p_codigo character varying, p_nombre character varying DEFAULT NULL::character varying, p_valor double precision DEFAULT NULL::double precision, p_origen character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -746,7 +746,7 @@ $function$
 
 -- sp_nomina_constantes_list
 DROP FUNCTION IF EXISTS public.sp_nomina_constantes_list(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_constantes_list(p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_constantes_list(p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Codigo" character varying, "Nombre" character varying, "Valor" numeric, "Origen" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -782,7 +782,7 @@ $function$
 
 -- sp_nomina_evaluar_formula
 DROP FUNCTION IF EXISTS public.sp_nomina_evaluar_formula(character varying, text, numeric, text) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_evaluar_formula(p_session_id character varying, p_formula text, OUT p_resultado numeric, OUT p_formula_resuelta text)
+CREATE OR REPLACE FUNCTION public.sp_nomina_evaluar_formula(p_session_id character varying, p_formula text, OUT p_resultado numeric, OUT p_formula_resuelta text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -818,7 +818,7 @@ $function$
 
 -- sp_nomina_get
 DROP FUNCTION IF EXISTS public.sp_nomina_get(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_get(p_nomina character varying, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get(p_nomina character varying, p_cedula character varying)
  RETURNS TABLE("PayrollRunId" bigint, "NOMINA" character varying, "CEDULA" character varying, "NombreEmpleado" character varying, "FECHA" timestamp without time zone, "INICIO" date, "HASTA" date, "ASIGNACION" numeric, "DEDUCCION" numeric, "TOTAL" numeric, "CERRADA" boolean, "TipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -855,7 +855,7 @@ $function$
 
 -- sp_nomina_get_lines
 DROP FUNCTION IF EXISTS public.sp_nomina_get_lines(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_get_lines(p_nomina character varying, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_lines(p_nomina character varying, p_cedula character varying)
  RETURNS TABLE("PayrollRunLineId" bigint, "CO_CONCEPTO" character varying, "NombreConcepto" character varying, "TIPO" character varying, "CANTIDAD" numeric, "MONTO" numeric, "Total" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -893,7 +893,7 @@ $function$
 
 -- sp_nomina_get_liquidacion_header
 DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_header(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_header(p_liquidacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_liquidacion_header(p_liquidacion_id character varying)
  RETURNS TABLE("SettlementProcessId" bigint, "SettlementCode" character varying, "Cedula" character varying, "NombreEmpleado" character varying, "RetirementDate" date, "RetirementCause" character varying, "TotalAmount" numeric, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -919,7 +919,7 @@ $function$
 
 -- sp_nomina_get_liquidacion_lines
 DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_lines(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_lines(p_liquidacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_liquidacion_lines(p_liquidacion_id character varying)
  RETURNS TABLE("SettlementProcessLineId" bigint, "ConceptCode" character varying, "ConceptName" character varying, "Amount" numeric, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -941,7 +941,7 @@ $function$
 
 -- sp_nomina_get_liquidacion_totals
 DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_totals(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_totals(p_liquidacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_liquidacion_totals(p_liquidacion_id character varying)
  RETURNS TABLE("TotalAsignaciones" numeric, "TotalDeducciones" numeric, "TotalNeto" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -960,7 +960,7 @@ $function$
 
 -- sp_nomina_get_scope
 DROP FUNCTION IF EXISTS public.sp_nomina_get_scope(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_get_scope(OUT p_company_id integer, OUT p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_scope(OUT p_company_id integer, OUT p_branch_id integer)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -991,7 +991,7 @@ $function$
 
 -- sp_nomina_limpiar_variables
 DROP FUNCTION IF EXISTS public.sp_nomina_limpiar_variables(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_limpiar_variables(p_session_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_limpiar_variables(p_session_id character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -1003,7 +1003,7 @@ $function$
 
 -- sp_nomina_limpiar_variables_compat
 DROP FUNCTION IF EXISTS public.sp_nomina_limpiar_variables_compat(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_limpiar_variables_compat(p_session_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_limpiar_variables_compat(p_session_id character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -1015,7 +1015,7 @@ $function$
 
 -- sp_nomina_liquidaciones_list
 DROP FUNCTION IF EXISTS public.sp_nomina_liquidaciones_list(character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_liquidaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_liquidaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "SettlementProcessId" bigint, "Liquidacion" character varying, "Cedula" character varying, "NombreEmpleado" character varying, "FechaRetiro" date, "CausaRetiro" character varying, "TotalLiquidacion" numeric, "FechaCalculo" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -1058,7 +1058,7 @@ $function$
 
 -- sp_nomina_list
 DROP FUNCTION IF EXISTS public.sp_nomina_list(character varying, character varying, date, date, boolean, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_list(p_nomina character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_list(p_nomina character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "PayrollRunId" bigint, "NOMINA" character varying, "CEDULA" character varying, "NOMBRE" character varying, "FECHA" timestamp without time zone, "INICIO" date, "HASTA" date, "ASIGNACION" numeric, "DEDUCCION" numeric, "TOTAL" numeric, "CERRADA" boolean, "TipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1113,7 +1113,7 @@ $function$
 
 -- sp_nomina_preparar_variables_base
 DROP FUNCTION IF EXISTS public.sp_nomina_preparar_variables_base(character varying, character varying, character varying, date, date) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_preparar_variables_base(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_preparar_variables_base(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -1167,7 +1167,7 @@ $function$
 
 -- sp_nomina_preparar_variables_regimen
 DROP FUNCTION IF EXISTS public.sp_nomina_preparar_variables_regimen(character varying, character varying, character varying, character varying, character varying, date, date) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_preparar_variables_regimen(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_tipo_nomina character varying, p_regimen character varying DEFAULT NULL::character varying, p_fecha_inicio date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_preparar_variables_regimen(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_tipo_nomina character varying, p_regimen character varying DEFAULT NULL::character varying, p_fecha_inicio date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -1184,7 +1184,7 @@ $function$
 
 -- sp_nomina_procesar_empleado
 DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado(character varying, character varying, date, date, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_empleado(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1335,7 +1335,7 @@ $function$
 
 -- sp_nomina_procesar_empleado_concepto_legal
 DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado_concepto_legal(character varying, character varying, date, date, character varying, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado_concepto_legal(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_empleado_concepto_legal(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1353,7 +1353,7 @@ $function$
 
 -- sp_nomina_procesar_empleado_regimen
 DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado_regimen(character varying, character varying, date, date, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado_regimen(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_regimen character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_empleado_regimen(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_regimen character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1384,7 +1384,7 @@ $function$
 
 -- sp_nomina_procesar_nomina
 DROP FUNCTION IF EXISTS public.sp_nomina_procesar_nomina(character varying, date, date, character varying, boolean, integer, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_nomina(p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, p_solo_activos boolean DEFAULT true, OUT p_procesados integer, OUT p_errores integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_nomina(p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, p_solo_activos boolean DEFAULT true, OUT p_procesados integer, OUT p_errores integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1430,7 +1430,7 @@ $function$
 
 -- sp_nomina_procesar_vacaciones
 DROP FUNCTION IF EXISTS public.sp_nomina_procesar_vacaciones(character varying, character varying, date, date, date, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_vacaciones(p_vacacion_id character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_fecha_reintegro date DEFAULT NULL::date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_vacaciones(p_vacacion_id character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_fecha_reintegro date DEFAULT NULL::date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1554,7 +1554,7 @@ $function$
 
 -- sp_nomina_reemplazar_variables
 DROP FUNCTION IF EXISTS public.sp_nomina_reemplazar_variables(character varying, text) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_reemplazar_variables(p_session_id character varying, p_formula text)
+CREATE OR REPLACE FUNCTION public.sp_nomina_reemplazar_variables(p_session_id character varying, p_formula text)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -1578,7 +1578,7 @@ $function$
 
 -- sp_nomina_set_variable
 DROP FUNCTION IF EXISTS public.sp_nomina_set_variable(character varying, character varying, numeric, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_set_variable(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_set_variable(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -1595,7 +1595,7 @@ $function$
 
 -- sp_nomina_set_variable_compat
 DROP FUNCTION IF EXISTS public.sp_nomina_set_variable_compat(character varying, character varying, numeric, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_set_variable_compat(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_set_variable_compat(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -1612,7 +1612,7 @@ $function$
 
 -- sp_nomina_vacaciones_get
 DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_get(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_get(p_vacacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_vacaciones_get(p_vacacion_id character varying)
  RETURNS TABLE("VacationProcessId" bigint, "VacationCode" character varying, "CompanyId" integer, "BranchId" integer, "EmployeeCode" character varying, "EmployeeName" character varying, "StartDate" date, "EndDate" date, "ReintegrationDate" date, "ProcessDate" timestamp without time zone, "TotalAmount" numeric, "CalculatedAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -1640,7 +1640,7 @@ $function$
 
 -- sp_nomina_vacaciones_get_lines
 DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_get_lines(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_get_lines(p_vacacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_vacaciones_get_lines(p_vacacion_id character varying)
  RETURNS TABLE("VacationProcessLineId" bigint, "VacationProcessId" bigint, "ConceptCode" character varying, "ConceptName" character varying, "Quantity" numeric, "Amount" numeric, "Total" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -1664,7 +1664,7 @@ $function$
 
 -- sp_nomina_vacaciones_list
 DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_list(character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_vacaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "VacationProcessId" bigint, "Vacacion" character varying, "Cedula" character varying, "NombreEmpleado" character varying, "Inicio" date, "Hasta" date, "Reintegro" date, "Fecha_Calculo" timestamp without time zone, "Total" numeric, "TotalCalculado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -1709,7 +1709,7 @@ $function$
 
 -- sp_nomina_validar_formulas_concepto_legal
 DROP FUNCTION IF EXISTS public.sp_nomina_validar_formulas_concepto_legal(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_nomina_validar_formulas_concepto_legal(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_validar_formulas_concepto_legal(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "CO_CONCEPT" character varying, "NB_CONCEPTO" character varying, "FORMULA" character varying, "Error" character varying, "EsValida" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -1774,7 +1774,7 @@ $function$
 
 -- usp_empleados_delete
 DROP FUNCTION IF EXISTS public.usp_empleados_delete(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_empleados_delete(p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_empleados_delete(p_cedula character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1796,7 +1796,7 @@ $function$
 
 -- usp_empleados_getbycedula
 DROP FUNCTION IF EXISTS public.usp_empleados_getbycedula(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_empleados_getbycedula(p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_empleados_getbycedula(p_cedula character varying)
  RETURNS TABLE("CEDULA" character varying, "GRUPO" character varying, "NOMBRE" character varying, "DIRECCION" character varying, "TELEFONO" character varying, "NACIMIENTO" timestamp without time zone, "CARGO" character varying, "NOMINA" character varying, "SUELDO" double precision, "INGRESO" timestamp without time zone, "RETIRO" timestamp without time zone, "STATUS" character varying, "COMISION" double precision, "UTILIDAD" double precision, "CO_Usuario" character varying, "SEXO" character varying, "NACIONALIDAD" character varying, "Autoriza" boolean, "Apodo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1830,7 +1830,7 @@ $function$
 
 -- usp_empleados_insert
 DROP FUNCTION IF EXISTS public.usp_empleados_insert(jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_empleados_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_empleados_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1887,7 +1887,7 @@ $function$
 
 -- usp_empleados_list
 DROP FUNCTION IF EXISTS public.usp_empleados_list(character varying, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_empleados_list(p_search character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_empleados_list(p_search character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "CEDULA" character varying, "GRUPO" character varying, "NOMBRE" character varying, "DIRECCION" character varying, "TELEFONO" character varying, "NACIMIENTO" timestamp without time zone, "CARGO" character varying, "NOMINA" character varying, "SUELDO" double precision, "INGRESO" timestamp without time zone, "RETIRO" timestamp without time zone, "STATUS" character varying, "COMISION" double precision, "UTILIDAD" double precision, "CO_Usuario" character varying, "SEXO" character varying, "NACIONALIDAD" character varying, "Autoriza" boolean, "Apodo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1950,7 +1950,7 @@ $function$
 
 -- usp_empleados_update
 DROP FUNCTION IF EXISTS public.usp_empleados_update(character varying, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_empleados_update(p_cedula character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_empleados_update(p_cedula character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1987,7 +1987,7 @@ $function$
 
 -- usp_hr_committee_addmember
 DROP FUNCTION IF EXISTS public.usp_hr_committee_addmember(integer, integer, bigint, character varying, character varying, character varying, date, date, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_committee_addmember(p_safety_committee_id integer, p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_role character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_addmember(p_safety_committee_id integer, p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_role character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -1997,7 +1997,7 @@ BEGIN
 
     IF p_role NOT IN ('PRESIDENT','SECRETARY','DELEGATE','EMPLOYER_REP') THEN
         p_resultado := -1;
-        p_mensaje   := 'Rol no vÃ¡lido.';
+        p_mensaje   := 'Rol no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
@@ -2006,7 +2006,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'ComitÃ© no encontrado.';
+        p_mensaje   := 'ComitÃƒÂ© no encontrado.';
         RETURN;
     END IF;
 
@@ -2017,7 +2017,7 @@ BEGIN
           AND ("EndDate" IS NULL OR "EndDate" >= p_start_date)
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya es miembro activo de este comitÃ©.';
+        p_mensaje   := 'El empleado ya es miembro activo de este comitÃƒÂ©.';
         RETURN;
     END IF;
 
@@ -2032,7 +2032,7 @@ BEGIN
         )
         RETURNING "MemberId" INTO p_resultado;
 
-        p_mensaje := 'Miembro agregado exitosamente al comitÃ©.';
+        p_mensaje := 'Miembro agregado exitosamente al comitÃƒÂ©.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -2044,7 +2044,7 @@ $function$
 
 -- usp_hr_committee_getmeetings
 DROP FUNCTION IF EXISTS public.usp_hr_committee_getmeetings(integer, integer, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_committee_getmeetings(p_safety_committee_id integer, p_company_id integer, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_getmeetings(p_safety_committee_id integer, p_company_id integer, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MeetingId" integer, "SafetyCommitteeId" integer, "MeetingDate" date, "MinutesUrl" character varying, "TopicsSummary" character varying, "ActionItems" character varying, "CreatedAt" timestamp without time zone, "CommitteeName" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -2053,7 +2053,7 @@ BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
-    -- Verificar que el comitÃ© pertenece a la empresa
+    -- Verificar que el comitÃƒÂ© pertenece a la empresa
     IF NOT EXISTS (
         SELECT 1 FROM hr."SafetyCommittee"
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
@@ -2085,7 +2085,7 @@ $function$
 
 -- usp_hr_committee_list
 DROP FUNCTION IF EXISTS public.usp_hr_committee_list(integer, character, boolean, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_committee_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "SafetyCommitteeId" integer, "CompanyId" integer, "CountryCode" character, "CommitteeName" character varying, "FormationDate" date, "MeetingFrequency" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "ActiveMemberCount" bigint, "TotalMeetings" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -2126,7 +2126,7 @@ $function$
 
 -- usp_hr_committee_recordmeeting
 DROP FUNCTION IF EXISTS public.usp_hr_committee_recordmeeting(integer, integer, timestamp without time zone, character varying, text, text, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_committee_recordmeeting(p_safety_committee_id integer, p_company_id integer, p_meeting_date timestamp without time zone, p_minutes_url character varying DEFAULT NULL::character varying, p_topics_summary text DEFAULT NULL::text, p_action_items text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_recordmeeting(p_safety_committee_id integer, p_company_id integer, p_meeting_date timestamp without time zone, p_minutes_url character varying DEFAULT NULL::character varying, p_topics_summary text DEFAULT NULL::text, p_action_items text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2139,7 +2139,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'ComitÃ© no encontrado.';
+        p_mensaje   := 'ComitÃƒÂ© no encontrado.';
         RETURN;
     END IF;
 
@@ -2155,7 +2155,7 @@ BEGIN
         )
         RETURNING "MeetingId" INTO p_resultado;
 
-        p_mensaje := 'ReuniÃ³n registrada exitosamente.';
+        p_mensaje := 'ReuniÃƒÂ³n registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -2167,7 +2167,7 @@ $function$
 
 -- usp_hr_committee_removemember
 DROP FUNCTION IF EXISTS public.usp_hr_committee_removemember(integer, integer, integer, date, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_committee_removemember(p_member_id integer, p_safety_committee_id integer, p_company_id integer, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_removemember(p_member_id integer, p_safety_committee_id integer, p_company_id integer, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2184,7 +2184,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'ComitÃ© no encontrado.';
+        p_mensaje   := 'ComitÃƒÂ© no encontrado.';
         RETURN;
     END IF;
 
@@ -2193,7 +2193,7 @@ BEGIN
         WHERE "MemberId" = p_member_id AND "SafetyCommitteeId" = p_safety_committee_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Miembro no encontrado en este comitÃ©.';
+        p_mensaje   := 'Miembro no encontrado en este comitÃƒÂ©.';
         RETURN;
     END IF;
 
@@ -2204,7 +2204,7 @@ BEGIN
           AND "SafetyCommitteeId" = p_safety_committee_id;
 
         p_resultado := p_member_id;
-        p_mensaje   := 'Miembro removido del comitÃ© exitosamente.';
+        p_mensaje   := 'Miembro removido del comitÃƒÂ© exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -2216,7 +2216,7 @@ $function$
 
 -- usp_hr_committee_save
 DROP FUNCTION IF EXISTS public.usp_hr_committee_save(integer, integer, character, character varying, date, character varying, boolean, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_committee_save(p_safety_committee_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_committee_name character varying DEFAULT NULL::character varying, p_formation_date date DEFAULT NULL::date, p_meeting_frequency character varying DEFAULT 'MONTHLY'::character varying, p_is_active boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(p_safety_committee_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_committee_name character varying DEFAULT NULL::character varying, p_formation_date date DEFAULT NULL::date, p_meeting_frequency character varying DEFAULT 'MONTHLY'::character varying, p_is_active boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2237,14 +2237,14 @@ BEGIN
             )
             RETURNING "SafetyCommitteeId" INTO p_resultado;
 
-            p_mensaje := 'ComitÃ© de seguridad creado exitosamente.';
+            p_mensaje := 'ComitÃƒÂ© de seguridad creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."SafetyCommittee"
                 WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'ComitÃ© no encontrado.';
+                p_mensaje   := 'ComitÃƒÂ© no encontrado.';
                 RETURN;
             END IF;
 
@@ -2259,7 +2259,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_safety_committee_id;
-            p_mensaje   := 'ComitÃ© de seguridad actualizado exitosamente.';
+            p_mensaje   := 'ComitÃƒÂ© de seguridad actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -2272,7 +2272,7 @@ $function$
 
 -- usp_hr_documenttemplate_delete
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_delete(integer, character varying, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_delete(p_company_id integer, p_template_code character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_delete(p_company_id integer, p_template_code character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2313,7 +2313,7 @@ $function$
 
 -- usp_hr_documenttemplate_get
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_get(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_get(p_company_id integer, p_template_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(p_company_id integer, p_template_code character varying)
  RETURNS TABLE("TemplateId" bigint, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character varying, "PayrollCode" character varying, "ContentMD" text, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -2342,7 +2342,7 @@ $function$
 -- usp_hr_documenttemplate_list
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(integer, character, character varying) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(integer, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(p_company_id integer, p_country_code character varying DEFAULT NULL, p_template_type character varying DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(p_company_id integer, p_country_code character varying DEFAULT NULL, p_template_type character varying DEFAULT NULL)
  RETURNS TABLE("TemplateId" bigint, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character varying, "PayrollCode" character varying, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -2372,7 +2372,7 @@ $function$
 -- usp_hr_documenttemplate_save
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(integer, character varying, character varying, character varying, character, text, character varying, boolean, integer, text) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(integer, character varying, character varying, character varying, character varying, text, character varying, boolean, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(p_company_id integer, p_template_code character varying, p_template_name character varying, p_template_type character varying, p_country_code character varying, p_content_md text, p_payroll_code character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(p_company_id integer, p_template_code character varying, p_template_name character varying, p_template_type character varying, p_country_code character varying, p_content_md text, p_payroll_code character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2422,7 +2422,7 @@ $function$
 
 -- usp_hr_employee_count
 DROP FUNCTION IF EXISTS public.usp_hr_employee_count(integer, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_count(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_count(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying)
  RETURNS TABLE(total bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -2442,7 +2442,7 @@ $function$
 
 -- usp_hr_employee_delete
 DROP FUNCTION IF EXISTS public.usp_hr_employee_delete(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_delete(p_company_id integer, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_delete(p_company_id integer, p_cedula character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -2457,7 +2457,7 @@ $function$
 
 -- usp_hr_employee_existsbycode
 DROP FUNCTION IF EXISTS public.usp_hr_employee_existsbycode(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_existsbycode(p_company_id integer, p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_existsbycode(p_company_id integer, p_code character varying)
  RETURNS TABLE("EmployeeId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -2473,7 +2473,7 @@ $function$
 
 -- usp_hr_employee_getbycode
 DROP FUNCTION IF EXISTS public.usp_hr_employee_getbycode(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_getbycode(p_company_id integer, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_getbycode(p_company_id integer, p_cedula character varying)
  RETURNS TABLE("EmployeeCode" character varying, "EmployeeName" character varying, "FiscalId" character varying, "HireDate" date, "TerminationDate" date, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -2506,7 +2506,7 @@ $function$
 
 -- usp_hr_employee_insert
 DROP FUNCTION IF EXISTS public.usp_hr_employee_insert(integer, character varying, character varying, character varying, date, date, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_insert(p_company_id integer, p_code character varying, p_name character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_insert(p_company_id integer, p_code character varying, p_name character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT true)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -2521,7 +2521,7 @@ $function$
 
 -- usp_hr_employee_list
 DROP FUNCTION IF EXISTS public.usp_hr_employee_list(integer, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("EmployeeCode" character varying, "EmployeeName" character varying, "FiscalId" character varying, "HireDate" date, "TerminationDate" date, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -2544,7 +2544,7 @@ $function$
 
 -- usp_hr_employee_update
 DROP FUNCTION IF EXISTS public.usp_hr_employee_update(integer, character varying, character varying, character varying, date, date, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employee_update(p_company_id integer, p_cedula character varying, p_name character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT NULL::boolean)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_update(p_company_id integer, p_cedula character varying, p_name character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT NULL::boolean)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -2565,7 +2565,7 @@ $function$
 
 -- usp_hr_employeeobligation_disenroll
 DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_disenroll(integer, date, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_disenroll(p_employee_obligation_id integer, p_disenrollment_date date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employeeobligation_disenroll(p_employee_obligation_id integer, p_disenrollment_date date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2583,19 +2583,19 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'No se encontrÃ³ la inscripciÃ³n indicada.';
+        p_mensaje   := 'No se encontrÃƒÂ³ la inscripciÃƒÂ³n indicada.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVE' THEN
         p_resultado := -2;
-        p_mensaje   := 'La inscripciÃ³n no estÃ¡ activa. Estado actual: ' || v_current_status;
+        p_mensaje   := 'La inscripciÃƒÂ³n no estÃƒÂ¡ activa. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
     IF p_disenrollment_date < v_enroll_date THEN
         p_resultado := -3;
-        p_mensaje   := 'La fecha de retiro no puede ser anterior a la fecha de inscripciÃ³n.';
+        p_mensaje   := 'La fecha de retiro no puede ser anterior a la fecha de inscripciÃƒÂ³n.';
         RETURN;
     END IF;
 
@@ -2619,7 +2619,7 @@ $function$
 
 -- usp_hr_employeeobligation_enroll
 DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_enroll(bigint, integer, character varying, character varying, integer, date, numeric, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_enroll(p_employee_id bigint, p_legal_obligation_id integer, p_affiliation_number character varying DEFAULT NULL::character varying, p_institution_code character varying DEFAULT NULL::character varying, p_risk_level_id integer DEFAULT NULL::integer, p_enrollment_date date DEFAULT NULL::date, p_custom_rate numeric DEFAULT NULL::numeric, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employeeobligation_enroll(p_employee_id bigint, p_legal_obligation_id integer, p_affiliation_number character varying DEFAULT NULL::character varying, p_institution_code character varying DEFAULT NULL::character varying, p_risk_level_id integer DEFAULT NULL::integer, p_enrollment_date date DEFAULT NULL::date, p_custom_rate numeric DEFAULT NULL::numeric, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2632,7 +2632,7 @@ BEGIN
         WHERE "LegalObligationId" = p_legal_obligation_id AND "IsActive" = TRUE
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La obligaciÃ³n legal no existe o no estÃ¡ activa.';
+        p_mensaje   := 'La obligaciÃƒÂ³n legal no existe o no estÃƒÂ¡ activa.';
         RETURN;
     END IF;
 
@@ -2643,7 +2643,7 @@ BEGIN
           AND "Status"              = 'ACTIVE'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene una inscripciÃ³n activa en esta obligaciÃ³n.';
+        p_mensaje   := 'El empleado ya tiene una inscripciÃƒÂ³n activa en esta obligaciÃƒÂ³n.';
         RETURN;
     END IF;
 
@@ -2653,7 +2653,7 @@ BEGIN
           AND "LegalObligationId"     = p_legal_obligation_id
     ) THEN
         p_resultado := -3;
-        p_mensaje   := 'El nivel de riesgo indicado no corresponde a esta obligaciÃ³n.';
+        p_mensaje   := 'El nivel de riesgo indicado no corresponde a esta obligaciÃƒÂ³n.';
         RETURN;
     END IF;
 
@@ -2669,7 +2669,7 @@ BEGIN
         )
         RETURNING "EmployeeObligationId" INTO p_resultado;
 
-        p_mensaje := 'Empleado inscrito exitosamente en la obligaciÃ³n.';
+        p_mensaje := 'Empleado inscrito exitosamente en la obligaciÃƒÂ³n.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -2681,7 +2681,7 @@ $function$
 
 -- usp_hr_employeeobligation_getbyemployee
 DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_getbyemployee(bigint, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_getbyemployee(p_employee_id bigint, p_status_filter character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employeeobligation_getbyemployee(p_employee_id bigint, p_status_filter character varying DEFAULT NULL::character varying)
  RETURNS TABLE(p_total_count bigint, "EmployeeObligationId" integer, "EmployeeId" bigint, "LegalObligationId" integer, "CountryCode" character, "Code" character varying, "ObligationName" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "AffiliationNumber" character varying, "InstitutionCode" character varying, "RiskLevelId" integer, "RiskLevel" smallint, "RiskDescription" character varying, "EnrollmentDate" date, "DisenrollmentDate" date, "Status" character varying, "CustomRate" numeric, "EffectiveEmployerRate" numeric, "EffectiveEmployeeRate" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -2725,7 +2725,7 @@ $function$
 
 -- usp_hr_filing_generate
 DROP FUNCTION IF EXISTS public.usp_hr_filing_generate(integer, integer, date, date, date, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_filing_generate(p_company_id integer, p_legal_obligation_id integer, p_filing_period_start date, p_filing_period_end date, p_due_date date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_generate(p_company_id integer, p_legal_obligation_id integer, p_filing_period_start date, p_filing_period_end date, p_due_date date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -2746,7 +2746,7 @@ BEGIN
         WHERE "LegalObligationId" = p_legal_obligation_id AND "IsActive" = TRUE
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La obligaciÃ³n legal no existe o no estÃ¡ activa.';
+        p_mensaje   := 'La obligaciÃƒÂ³n legal no existe o no estÃƒÂ¡ activa.';
         RETURN;
     END IF;
 
@@ -2759,13 +2759,13 @@ BEGIN
           AND "Status"             <> 'REJECTED'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe una declaraciÃ³n para este perÃ­odo y obligaciÃ³n.';
+        p_mensaje   := 'Ya existe una declaraciÃƒÂ³n para este perÃƒÂ­odo y obligaciÃƒÂ³n.';
         RETURN;
     END IF;
 
     IF p_filing_period_end < p_filing_period_start THEN
         p_resultado := -3;
-        p_mensaje   := 'La fecha fin del perÃ­odo no puede ser anterior a la fecha inicio.';
+        p_mensaje   := 'La fecha fin del perÃƒÂ­odo no puede ser anterior a la fecha inicio.';
         RETURN;
     END IF;
 
@@ -2876,7 +2876,7 @@ BEGIN
         WHERE "ObligationFilingId" = v_filing_id;
 
         p_resultado := v_filing_id;
-        p_mensaje   := 'DeclaraciÃ³n generada exitosamente con ' || v_emp_count::TEXT || ' empleado(s).';
+        p_mensaje   := 'DeclaraciÃƒÂ³n generada exitosamente con ' || v_emp_count::TEXT || ' empleado(s).';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -2888,7 +2888,7 @@ $function$
 
 -- usp_hr_filing_getsummary
 DROP FUNCTION IF EXISTS public.usp_hr_filing_getsummary(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_filing_getsummary(p_obligation_filing_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_getsummary(p_obligation_filing_id integer)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -2956,7 +2956,7 @@ $function$
 
 -- usp_hr_filing_list
 DROP FUNCTION IF EXISTS public.usp_hr_filing_list(integer, integer, character, character varying, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_filing_list(p_company_id integer DEFAULT NULL::integer, p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_status character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_list(p_company_id integer DEFAULT NULL::integer, p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_status character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "ObligationFilingId" integer, "CompanyId" integer, "LegalObligationId" integer, "CountryCode" character, "ObligationCode" character varying, "ObligationName" character varying, "InstitutionName" character varying, "FilingPeriodStart" date, "FilingPeriodEnd" date, "DueDate" date, "FiledDate" date, "ConfirmationNumber" character varying, "TotalEmployerAmount" numeric, "TotalEmployeeAmount" numeric, "TotalAmount" numeric, "EmployeeCount" integer, "Status" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -3002,7 +3002,7 @@ $function$
 
 -- usp_hr_filing_markfiled
 DROP FUNCTION IF EXISTS public.usp_hr_filing_markfiled(integer, date, character varying, integer, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_filing_markfiled(p_obligation_filing_id integer, p_filed_date date DEFAULT NULL::date, p_confirmation_number character varying DEFAULT NULL::character varying, p_filed_by_user_id integer DEFAULT NULL::integer, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_markfiled(p_obligation_filing_id integer, p_filed_date date DEFAULT NULL::date, p_confirmation_number character varying DEFAULT NULL::character varying, p_filed_by_user_id integer DEFAULT NULL::integer, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3019,7 +3019,7 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'No se encontrÃ³ la declaraciÃ³n indicada.';
+        p_mensaje   := 'No se encontrÃƒÂ³ la declaraciÃƒÂ³n indicada.';
         RETURN;
     END IF;
 
@@ -3045,7 +3045,7 @@ BEGIN
         WHERE "ObligationFilingId" = p_obligation_filing_id;
 
         p_resultado := p_obligation_filing_id;
-        p_mensaje   := 'DeclaraciÃ³n marcada como presentada exitosamente.';
+        p_mensaje   := 'DeclaraciÃƒÂ³n marcada como presentada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -3057,7 +3057,7 @@ $function$
 
 -- usp_hr_legalconcept_list
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(integer, character varying, character varying, character varying, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_solo_activos boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_solo_activos boolean DEFAULT true)
  RETURNS TABLE(id bigint, convencion character varying, "tipoCalculo" character varying, "coConcept" character varying, "nbConcepto" character varying, formula character varying, sobre character varying, tipo character varying, bonificable character varying, "lotttArticulo" character varying, "ccpClausula" character varying, orden integer, activo boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -3084,7 +3084,7 @@ $function$
 
 -- usp_hr_legalconcept_listconventions
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_listconventions(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_listconventions(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_listconventions(p_company_id integer)
  RETURNS TABLE("Convencion" character varying, "TotalConceptos" bigint, "ConceptosMensual" bigint, "ConceptosVacaciones" bigint, "ConceptosLiquidacion" bigint, "OrdenInicio" integer, "OrdenFin" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -3110,7 +3110,7 @@ $function$
 
 -- usp_hr_legalconcept_validateformulas
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_validateformulas(integer, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_validateformulas(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_validateformulas(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("coConcept" character varying, "nbConcepto" character varying, formula character varying, "defaultValue" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -3131,7 +3131,7 @@ $function$
 
 -- usp_hr_medexam_getpending
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_getpending(integer, date, integer, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_getpending(p_company_id integer, p_as_of_date date DEFAULT NULL::date, p_days_ahead integer DEFAULT 30, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_getpending(p_company_id integer, p_as_of_date date DEFAULT NULL::date, p_days_ahead integer DEFAULT 30, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MedicalExamId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ExamType" character varying, "ExamDate" date, "NextDueDate" date, "Result" character varying, "Restrictions" character varying, "PhysicianName" character varying, "ClinicName" character varying, "IsOverdue" boolean, "DaysUntilDue" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -3177,7 +3177,7 @@ $function$
 
 -- usp_hr_medexam_list
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(integer, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(p_company_id integer, p_exam_type character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_list(p_company_id integer, p_exam_type character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MedicalExamId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ExamType" character varying, "ExamDate" date, "NextDueDate" date, "Result" character varying, "Restrictions" character varying, "PhysicianName" character varying, "ClinicName" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -3220,7 +3220,7 @@ $function$
 
 -- usp_hr_medexam_save
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(integer, integer, bigint, character varying, character varying, character varying, date, date, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(p_medical_exam_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_exam_type character varying DEFAULT NULL::character varying, p_exam_date date DEFAULT NULL::date, p_next_due_date date DEFAULT NULL::date, p_result character varying DEFAULT 'PENDING'::character varying, p_restrictions character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_clinic_name character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(p_medical_exam_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_exam_type character varying DEFAULT NULL::character varying, p_exam_date date DEFAULT NULL::date, p_next_due_date date DEFAULT NULL::date, p_result character varying DEFAULT 'PENDING'::character varying, p_restrictions character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_clinic_name character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3230,13 +3230,13 @@ BEGIN
 
     IF p_exam_type NOT IN ('PRE_EMPLOYMENT','PERIODIC','POST_VACATION','EXIT','SPECIAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de examen no vÃ¡lido.';
+        p_mensaje   := 'Tipo de examen no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_result NOT IN ('FIT','FIT_WITH_RESTRICTIONS','UNFIT','PENDING') THEN
         p_resultado := -1;
-        p_mensaje   := 'Resultado de examen no vÃ¡lido.';
+        p_mensaje   := 'Resultado de examen no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
@@ -3257,14 +3257,14 @@ BEGIN
             )
             RETURNING "MedicalExamId" INTO p_resultado;
 
-            p_mensaje := 'Examen mÃ©dico creado exitosamente.';
+            p_mensaje := 'Examen mÃƒÂ©dico creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."MedicalExam"
                 WHERE "MedicalExamId" = p_medical_exam_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Examen mÃ©dico no encontrado.';
+                p_mensaje   := 'Examen mÃƒÂ©dico no encontrado.';
                 RETURN;
             END IF;
 
@@ -3287,7 +3287,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_medical_exam_id;
-            p_mensaje   := 'Examen mÃ©dico actualizado exitosamente.';
+            p_mensaje   := 'Examen mÃƒÂ©dico actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -3300,7 +3300,7 @@ $function$
 
 -- usp_hr_medorder_approve
 DROP FUNCTION IF EXISTS public.usp_hr_medorder_approve(integer, integer, character varying, numeric, integer, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_approve(p_medical_order_id integer, p_company_id integer, p_action character varying, p_approved_amount numeric DEFAULT NULL::numeric, p_approved_by integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_medorder_approve(p_medical_order_id integer, p_company_id integer, p_action character varying, p_approved_amount numeric DEFAULT NULL::numeric, p_approved_by integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3310,7 +3310,7 @@ BEGIN
 
     IF p_action NOT IN ('APROBADA','RECHAZADA') THEN
         p_resultado := -1;
-        p_mensaje   := 'AcciÃ³n no vÃ¡lida. Use APROBADA o RECHAZADA.';
+        p_mensaje   := 'AcciÃƒÂ³n no vÃƒÂ¡lida. Use APROBADA o RECHAZADA.';
         RETURN;
     END IF;
 
@@ -3319,7 +3319,7 @@ BEGIN
         WHERE "MedicalOrderId" = p_medical_order_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Orden mÃ©dica no encontrada.';
+        p_mensaje   := 'Orden mÃƒÂ©dica no encontrada.';
         RETURN;
     END IF;
 
@@ -3329,7 +3329,7 @@ BEGIN
           AND "Status" = 'PENDIENTE'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La orden no estÃ¡ en estado PENDIENTE.';
+        p_mensaje   := 'La orden no estÃƒÂ¡ en estado PENDIENTE.';
         RETURN;
     END IF;
 
@@ -3349,8 +3349,8 @@ BEGIN
 
         p_resultado := p_medical_order_id;
         p_mensaje   := CASE WHEN p_action = 'APROBADA'
-                            THEN 'Orden mÃ©dica aprobada exitosamente.'
-                            ELSE 'Orden mÃ©dica rechazada.' END;
+                            THEN 'Orden mÃƒÂ©dica aprobada exitosamente.'
+                            ELSE 'Orden mÃƒÂ©dica rechazada.' END;
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -3362,7 +3362,7 @@ $function$
 
 -- usp_hr_medorder_create
 DROP FUNCTION IF EXISTS public.usp_hr_medorder_create(integer, bigint, character varying, character varying, character varying, date, character varying, character varying, text, numeric, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_create(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_order_type character varying DEFAULT NULL::character varying, p_order_date date DEFAULT NULL::date, p_diagnosis character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_prescriptions text DEFAULT NULL::text, p_estimated_cost numeric DEFAULT NULL::numeric, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_medorder_create(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_order_type character varying DEFAULT NULL::character varying, p_order_date date DEFAULT NULL::date, p_diagnosis character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_prescriptions text DEFAULT NULL::text, p_estimated_cost numeric DEFAULT NULL::numeric, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3372,7 +3372,7 @@ BEGIN
 
     IF p_order_type NOT IN ('MEDICAL','PHARMACY','LAB','REFERRAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de orden no vÃ¡lido.';
+        p_mensaje   := 'Tipo de orden no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
@@ -3392,7 +3392,7 @@ BEGIN
         )
         RETURNING "MedicalOrderId" INTO p_resultado;
 
-        p_mensaje := 'Orden mÃ©dica creada exitosamente.';
+        p_mensaje := 'Orden mÃƒÂ©dica creada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -3404,7 +3404,7 @@ $function$
 
 -- usp_hr_medorder_list
 DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(integer, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(p_company_id integer, p_order_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_medorder_list(p_company_id integer, p_order_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MedicalOrderId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OrderType" character varying, "OrderDate" date, "Diagnosis" character varying, "PhysicianName" character varying, "Prescriptions" character varying, "EstimatedCost" numeric, "ApprovedAmount" numeric, "Status" character varying, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "DocumentUrl" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -3450,7 +3450,7 @@ $function$
 
 -- usp_hr_obligation_getbycountry
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(character, date) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(p_country_code character, p_as_of_date date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.usp_hr_obligation_getbycountry(p_country_code character, p_as_of_date date DEFAULT NULL::date)
  RETURNS TABLE("LegalObligationId" integer, "CountryCode" character, "Code" character varying, "Name" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "SalaryCap" numeric, "SalaryCapUnit" character varying, "EmployerRate" numeric, "EmployeeRate" numeric, "RateVariableByRisk" boolean, "FilingFrequency" character varying, "FilingDeadlineRule" character varying, "EffectiveFrom" date, "EffectiveTo" date, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3490,7 +3490,7 @@ $function$
 
 -- usp_hr_obligation_list
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(character, character varying, boolean, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(p_country_code character DEFAULT NULL::bpchar, p_obligation_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT NULL::boolean, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_obligation_list(p_country_code character DEFAULT NULL::bpchar, p_obligation_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT NULL::boolean, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "LegalObligationId" integer, "CountryCode" character, "Code" character varying, "Name" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "SalaryCap" numeric, "SalaryCapUnit" character varying, "EmployerRate" numeric, "EmployeeRate" numeric, "RateVariableByRisk" boolean, "FilingFrequency" character varying, "FilingDeadlineRule" character varying, "EffectiveFrom" date, "EffectiveTo" date, "IsActive" boolean, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3534,7 +3534,7 @@ $function$
 
 -- usp_hr_obligation_save
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_save(integer, character, character varying, character varying, character varying, character varying, character varying, numeric, character varying, numeric, numeric, boolean, character varying, character varying, date, date, boolean, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_save(p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_institution_name character varying DEFAULT NULL::character varying, p_obligation_type character varying DEFAULT NULL::character varying, p_calculation_basis character varying DEFAULT NULL::character varying, p_salary_cap numeric DEFAULT NULL::numeric, p_salary_cap_unit character varying DEFAULT NULL::character varying, p_employer_rate numeric DEFAULT 0, p_employee_rate numeric DEFAULT 0, p_rate_variable_by_risk boolean DEFAULT false, p_filing_frequency character varying DEFAULT NULL::character varying, p_filing_deadline_rule character varying DEFAULT NULL::character varying, p_effective_from date DEFAULT NULL::date, p_effective_to date DEFAULT NULL::date, p_is_active boolean DEFAULT true, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_obligation_save(p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_institution_name character varying DEFAULT NULL::character varying, p_obligation_type character varying DEFAULT NULL::character varying, p_calculation_basis character varying DEFAULT NULL::character varying, p_salary_cap numeric DEFAULT NULL::numeric, p_salary_cap_unit character varying DEFAULT NULL::character varying, p_employer_rate numeric DEFAULT 0, p_employee_rate numeric DEFAULT 0, p_rate_variable_by_risk boolean DEFAULT false, p_filing_frequency character varying DEFAULT NULL::character varying, p_filing_deadline_rule character varying DEFAULT NULL::character varying, p_effective_from date DEFAULT NULL::date, p_effective_to date DEFAULT NULL::date, p_is_active boolean DEFAULT true, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3545,31 +3545,31 @@ BEGIN
     -- Validaciones
     IF p_country_code IS NULL OR LENGTH(TRIM(p_country_code)) = 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'El cÃ³digo de paÃ­s es obligatorio.';
+        p_mensaje   := 'El cÃƒÂ³digo de paÃƒÂ­s es obligatorio.';
         RETURN;
     END IF;
 
     IF p_code IS NULL OR LENGTH(TRIM(p_code)) = 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'El cÃ³digo de obligaciÃ³n es obligatorio.';
+        p_mensaje   := 'El cÃƒÂ³digo de obligaciÃƒÂ³n es obligatorio.';
         RETURN;
     END IF;
 
     IF p_obligation_type NOT IN ('CONTRIBUTION','TAX_WITHHOLDING','REPORTING','REGISTRATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de obligaciÃ³n no vÃ¡lido. Use: CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION.';
+        p_mensaje   := 'Tipo de obligaciÃƒÂ³n no vÃƒÂ¡lido. Use: CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION.';
         RETURN;
     END IF;
 
     IF p_calculation_basis NOT IN ('NORMAL_SALARY','INTEGRAL_SALARY','GROSS_PAYROLL','TAXABLE_INCOME','FIXED_AMOUNT') THEN
         p_resultado := -1;
-        p_mensaje   := 'Base de cÃ¡lculo no vÃ¡lida.';
+        p_mensaje   := 'Base de cÃƒÂ¡lculo no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
     IF p_filing_frequency NOT IN ('MONTHLY','QUARTERLY','ANNUAL','REALTIME') THEN
         p_resultado := -1;
-        p_mensaje   := 'Frecuencia de presentaciÃ³n no vÃ¡lida.';
+        p_mensaje   := 'Frecuencia de presentaciÃƒÂ³n no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
@@ -3583,7 +3583,7 @@ BEGIN
                   AND "EffectiveFrom" = p_effective_from
             ) THEN
                 p_resultado := -2;
-                p_mensaje   := 'Ya existe una obligaciÃ³n con ese cÃ³digo y fecha de vigencia para el paÃ­s indicado.';
+                p_mensaje   := 'Ya existe una obligaciÃƒÂ³n con ese cÃƒÂ³digo y fecha de vigencia para el paÃƒÂ­s indicado.';
                 RETURN;
             END IF;
 
@@ -3603,12 +3603,12 @@ BEGIN
             )
             RETURNING "LegalObligationId" INTO p_resultado;
 
-            p_mensaje := 'ObligaciÃ³n legal creada exitosamente.';
+            p_mensaje := 'ObligaciÃƒÂ³n legal creada exitosamente.';
 
         ELSE
             IF NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "LegalObligationId" = p_legal_obligation_id) THEN
                 p_resultado := -3;
-                p_mensaje   := 'No se encontrÃ³ la obligaciÃ³n legal con el ID indicado.';
+                p_mensaje   := 'No se encontrÃƒÂ³ la obligaciÃƒÂ³n legal con el ID indicado.';
                 RETURN;
             END IF;
 
@@ -3621,7 +3621,7 @@ BEGIN
                   AND "LegalObligationId" <> p_legal_obligation_id
             ) THEN
                 p_resultado := -2;
-                p_mensaje   := 'Ya existe otra obligaciÃ³n con ese cÃ³digo y fecha de vigencia para el paÃ­s indicado.';
+                p_mensaje   := 'Ya existe otra obligaciÃƒÂ³n con ese cÃƒÂ³digo y fecha de vigencia para el paÃƒÂ­s indicado.';
                 RETURN;
             END IF;
 
@@ -3647,7 +3647,7 @@ BEGIN
             WHERE "LegalObligationId" = p_legal_obligation_id;
 
             p_resultado := p_legal_obligation_id;
-            p_mensaje   := 'ObligaciÃ³n legal actualizada exitosamente.';
+            p_mensaje   := 'ObligaciÃƒÂ³n legal actualizada exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -3660,7 +3660,7 @@ $function$
 
 -- usp_hr_occhealth_create
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(integer, character, character varying, bigint, character varying, character varying, timestamp without time zone, timestamp without time zone, timestamp without time zone, character varying, character varying, integer, character varying, text, character varying, character varying, date, character varying, character varying, character varying, integer, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(p_company_id integer, p_country_code character, p_record_type character varying, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_occurrence_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_report_deadline timestamp without time zone DEFAULT NULL::timestamp without time zone, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(p_company_id integer, p_country_code character, p_record_type character varying, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_occurrence_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_report_deadline timestamp without time zone DEFAULT NULL::timestamp without time zone, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3670,13 +3670,13 @@ BEGIN
 
     IF p_record_type NOT IN ('ACCIDENT','DISEASE','NEAR_MISS','INSPECTION','RISK_NOTIFICATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de registro no vÃ¡lido.';
+        p_mensaje   := 'Tipo de registro no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no vÃ¡lida.';
+        p_mensaje   := 'Severidad no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
@@ -3715,7 +3715,7 @@ $function$
 
 -- usp_hr_occhealth_get
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_get(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_get(p_occupational_health_id integer, p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_get(p_occupational_health_id integer, p_company_id integer)
  RETURNS TABLE("OccupationalHealthId" integer, "CompanyId" integer, "CountryCode" character, "RecordType" character varying, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OccurrenceDate" timestamp without time zone, "ReportDeadline" timestamp without time zone, "ReportedDate" timestamp without time zone, "Severity" character varying, "BodyPartAffected" character varying, "DaysLost" integer, "Location" character varying, "Description" character varying, "RootCause" character varying, "CorrectiveAction" character varying, "InvestigationDueDate" date, "InvestigationCompletedDate" date, "InstitutionReference" character varying, "Status" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -3757,7 +3757,7 @@ $function$
 
 -- usp_hr_occhealth_list
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(integer, character varying, character varying, character varying, character, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(p_company_id integer, p_record_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_list(p_company_id integer, p_record_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "OccupationalHealthId" integer, "CompanyId" integer, "CountryCode" character, "RecordType" character varying, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OccurrenceDate" timestamp without time zone, "ReportDeadline" timestamp without time zone, "ReportedDate" timestamp without time zone, "Severity" character varying, "BodyPartAffected" character varying, "DaysLost" integer, "Location" character varying, "Description" character varying, "RootCause" character varying, "CorrectiveAction" character varying, "InvestigationDueDate" date, "InvestigationCompletedDate" date, "InstitutionReference" character varying, "Status" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -3811,7 +3811,7 @@ $function$
 
 -- usp_hr_occhealth_update
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_update(integer, integer, timestamp without time zone, character varying, character varying, integer, character varying, text, character varying, character varying, date, date, character varying, character varying, character varying, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_update(p_occupational_health_id integer, p_company_id integer, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_investigation_completed_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_update(p_occupational_health_id integer, p_company_id integer, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_investigation_completed_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3830,13 +3830,13 @@ BEGIN
 
     IF p_status IS NOT NULL AND p_status NOT IN ('OPEN','REPORTED','INVESTIGATING','CLOSED') THEN
         p_resultado := -1;
-        p_mensaje   := 'Estado no vÃ¡lido.';
+        p_mensaje   := 'Estado no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no vÃ¡lida.';
+        p_mensaje   := 'Severidad no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
@@ -3874,7 +3874,7 @@ $function$
 
 -- usp_hr_payroll_approvedraft
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_approvedraft(integer, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_approvedraft(p_batch_id integer, p_approved_by integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_approvedraft(p_batch_id integer, p_approved_by integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3901,10 +3901,10 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Verificar que el lote tiene lÃ­neas
+    -- Verificar que el lote tiene lÃƒÂ­neas
     IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatchLine" WHERE "BatchId" = p_batch_id) THEN
         p_resultado := -3;
-        p_mensaje   := 'No se puede aprobar un lote sin lÃ­neas.';
+        p_mensaje   := 'No se puede aprobar un lote sin lÃƒÂ­neas.';
         RETURN;
     END IF;
 
@@ -3929,7 +3929,7 @@ $function$
 
 -- usp_hr_payroll_batchaddline
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchaddline(integer, character varying, character varying, character varying, character varying, numeric, numeric, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchaddline(p_batch_id integer, p_employee_code character varying, p_concept_code character varying, p_concept_name character varying, p_concept_type character varying, p_quantity numeric, p_amount numeric, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchaddline(p_batch_id integer, p_employee_code character varying, p_concept_code character varying, p_concept_name character varying, p_concept_type character varying, p_quantity numeric, p_amount numeric, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3946,7 +3946,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -3959,7 +3959,7 @@ BEGIN
     LIMIT 1;
 
     IF v_employee_name IS NULL THEN
-        -- Intentar obtener de lÃ­neas existentes del batch
+        -- Intentar obtener de lÃƒÂ­neas existentes del batch
         SELECT bl."EmployeeName", bl."EmployeeId"
         INTO v_employee_name, v_employee_id
         FROM hr."PayrollBatchLine" bl
@@ -4010,7 +4010,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'LÃ­nea agregada correctamente.';
+        p_mensaje   := 'LÃƒÂ­nea agregada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -4022,7 +4022,7 @@ $function$
 
 -- usp_hr_payroll_batchbulkupdate
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchbulkupdate(integer, character varying, character varying, numeric, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchbulkupdate(p_batch_id integer, p_concept_code character varying, p_concept_type character varying, p_amount numeric, p_user_id integer, p_employee_codes text DEFAULT NULL::text, OUT p_affected_count integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchbulkupdate(p_batch_id integer, p_concept_code character varying, p_concept_type character varying, p_amount numeric, p_user_id integer, p_employee_codes text DEFAULT NULL::text, OUT p_affected_count integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4039,12 +4039,12 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
     BEGIN
-        -- Actualizar lÃ­neas existentes que coincidan
+        -- Actualizar lÃƒÂ­neas existentes que coincidan
         UPDATE hr."PayrollBatchLine" bl
         SET "Amount"     = p_amount,
             "Total"      = bl."Quantity" * p_amount,
@@ -4074,7 +4074,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := p_affected_count::TEXT || ' lÃ­neas actualizadas.';
+        p_mensaje   := p_affected_count::TEXT || ' lÃƒÂ­neas actualizadas.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -4086,7 +4086,7 @@ $function$
 
 -- usp_hr_payroll_batchremoveline
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchremoveline(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchremoveline(p_line_id integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchremoveline(p_line_id integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4105,7 +4105,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'LÃƒÂ­nea no encontrada o el lote no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -4123,7 +4123,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'LÃ­nea eliminada correctamente.';
+        p_mensaje   := 'LÃƒÂ­nea eliminada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -4135,7 +4135,7 @@ $function$
 
 -- usp_hr_payroll_closerun
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_closerun(integer, character varying, character varying, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_closerun(p_company_id integer, p_payroll_code character varying, p_employee_code character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_closerun(p_company_id integer, p_payroll_code character varying, p_employee_code character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4166,7 +4166,7 @@ $function$
 
 -- usp_hr_payroll_ensureemployee
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_ensureemployee(integer, character varying, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_ensureemployee(p_company_id integer, p_document character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_ensureemployee(p_company_id integer, p_document character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("employeeId" bigint, "employeeCode" character varying, "employeeName" character varying, "hireDate" date)
  LANGUAGE plpgsql
 AS $function$
@@ -4206,7 +4206,7 @@ $function$
 
 -- usp_hr_payroll_ensuretype
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_ensuretype(integer, character varying, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_ensuretype(p_company_id integer, p_payroll_code character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_ensuretype(p_company_id integer, p_payroll_code character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -4224,7 +4224,7 @@ $function$
 
 -- usp_hr_payroll_generatedraft
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_generatedraft(integer, integer, character varying, date, date, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_generatedraft(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_from_date date, p_to_date date, p_user_id integer, p_department_filter character varying DEFAULT NULL::character varying, OUT p_batch_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_generatedraft(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_from_date date, p_to_date date, p_user_id integer, p_department_filter character varying DEFAULT NULL::character varying, OUT p_batch_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4235,14 +4235,14 @@ BEGIN
     p_mensaje   := '';
     p_batch_id  := 0;
 
-    -- Validaciones bÃ¡sicas
+    -- Validaciones bÃƒÂ¡sicas
     IF p_from_date >= p_to_date THEN
         p_resultado := -1;
         p_mensaje   := 'La fecha desde debe ser menor que la fecha hasta.';
         RETURN;
     END IF;
 
-    -- Verificar que no exista un batch BORRADOR duplicado para el mismo perÃ­odo
+    -- Verificar que no exista un batch BORRADOR duplicado para el mismo perÃƒÂ­odo
     IF EXISTS (
         SELECT 1 FROM hr."PayrollBatch"
         WHERE "CompanyId"   = p_company_id
@@ -4253,7 +4253,7 @@ BEGIN
           AND "Status"      = 'BORRADOR'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un borrador de nÃ³mina para este perÃ­odo y tipo.';
+        p_mensaje   := 'Ya existe un borrador de nÃƒÂ³mina para este perÃƒÂ­odo y tipo.';
         RETURN;
     END IF;
 
@@ -4269,7 +4269,7 @@ BEGIN
         )
         RETURNING "BatchId" INTO p_batch_id;
 
-        -- Insertar lÃ­neas por cada empleado activo + cada concepto activo de la nÃ³mina
+        -- Insertar lÃƒÂ­neas por cada empleado activo + cada concepto activo de la nÃƒÂ³mina
         INSERT INTO hr."PayrollBatchLine" (
             "BatchId", "EmployeeId", "EmployeeCode", "EmployeeName",
             "ConceptCode", "ConceptName", "ConceptType",
@@ -4322,7 +4322,7 @@ $function$
 
 -- usp_hr_payroll_getconstant
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getconstant(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getconstant(p_company_id integer, p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getconstant(p_company_id integer, p_code character varying)
  RETURNS TABLE(value numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4341,7 +4341,7 @@ $function$
 
 -- usp_hr_payroll_getdraftgrid
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftgrid(integer, character varying, character varying, boolean, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftgrid(p_batch_id integer, p_search character varying DEFAULT NULL::character varying, p_department character varying DEFAULT NULL::character varying, p_only_modified boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftgrid(p_batch_id integer, p_search character varying DEFAULT NULL::character varying, p_department character varying DEFAULT NULL::character varying, p_only_modified boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "EmployeeId" bigint, "DepartmentCode" character varying, "DepartmentName" character varying, "PositionName" character varying, "TotalGross" numeric, "TotalDeductions" numeric, "TotalNet" numeric, "HasModified" bigint, "ConceptCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -4392,7 +4392,7 @@ $function$
 
 -- usp_hr_payroll_getdraftsummary_alerts
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_alerts(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_alerts(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_alerts(p_batch_id integer)
  RETURNS TABLE("AlertType" character varying, "EmployeeCode" character varying, "EmployeeName" character varying, "AlertMessage" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4409,7 +4409,7 @@ BEGIN
             'SIN_ASIGNACIONES'::TEXT                               AS "AlertType",
             bl."EmployeeCode",
             bl."EmployeeName",
-            'El empleado no tiene conceptos de asignaciÃ³n.'::TEXT  AS "AlertMessage"
+            'El empleado no tiene conceptos de asignaciÃƒÂ³n.'::TEXT  AS "AlertMessage"
         FROM hr."PayrollBatchLine" bl
         WHERE bl."BatchId" = p_batch_id
         GROUP BY bl."EmployeeCode", bl."EmployeeName"
@@ -4434,7 +4434,7 @@ BEGIN
 
         UNION ALL
 
-        -- LÃ­neas con monto cero
+        -- LÃƒÂ­neas con monto cero
         SELECT
             'MONTO_CERO'::TEXT AS "AlertType",
             bl."EmployeeCode",
@@ -4453,7 +4453,7 @@ $function$
 
 -- usp_hr_payroll_getdraftsummary_bydept
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_bydept(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_bydept(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_bydept(p_batch_id integer)
  RETURNS TABLE("DepartmentCode" character varying, "DepartmentName" character varying, "EmployeeCount" bigint, "DeptGross" numeric, "DeptDeductions" numeric, "DeptNet" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4475,7 +4475,7 @@ $function$
 
 -- usp_hr_payroll_getdraftsummary_header
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_header(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_header(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_header(p_batch_id integer)
  RETURNS TABLE("BatchId" integer, "CompanyId" integer, "BranchId" integer, "PayrollCode" character varying, "FromDate" date, "ToDate" date, "Status" character varying, "TotalEmployees" integer, "TotalGross" numeric, "TotalDeductions" numeric, "TotalNet" numeric, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "PrevBatchId" integer, "PrevTotalGross" numeric, "PrevTotalDeductions" numeric, "PrevTotalNet" numeric, "NetChangePercent" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4528,7 +4528,7 @@ $function$
 
 -- usp_hr_payroll_getemployeelines
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getemployeelines(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getemployeelines(p_batch_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getemployeelines(p_batch_id integer, p_employee_code character varying)
  RETURNS TABLE("LineId" integer, "BatchId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ConceptCode" character varying, "ConceptName" character varying, "ConceptType" character varying, "Quantity" numeric, "Amount" numeric, "Total" numeric, "IsModified" boolean, "Notes" character varying, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -4565,7 +4565,7 @@ $function$
 
 -- usp_hr_payroll_getrunheader
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getrunheader(integer, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getrunheader(p_company_id integer, p_payroll_code character varying, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getrunheader(p_company_id integer, p_payroll_code character varying, p_employee_code character varying)
  RETURNS TABLE("runId" bigint, nomina character varying, cedula character varying, "nombreEmpleado" character varying, cargo character varying, "fechaProceso" date, "fechaInicio" date, "fechaHasta" date, "totalAsignaciones" numeric, "totalDeducciones" numeric, "totalNeto" numeric, cerrada boolean, "tipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4589,7 +4589,7 @@ $function$
 
 -- usp_hr_payroll_getrunlines
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getrunlines(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getrunlines(p_run_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getrunlines(p_run_id bigint)
  RETURNS TABLE("coConcepto" character varying, "nombreConcepto" character varying, "tipoConcepto" character varying, cantidad numeric, monto numeric, total numeric, descripcion character varying, "cuentaContable" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4608,7 +4608,7 @@ $function$
 
 -- usp_hr_payroll_getsettlementheader
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getsettlementheader(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getsettlementheader(p_company_id integer, p_settlement_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getsettlementheader(p_company_id integer, p_settlement_code character varying)
  RETURNS TABLE(id bigint, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4624,7 +4624,7 @@ $function$
 
 -- usp_hr_payroll_getsettlementlines
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getsettlementlines(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getsettlementlines(p_settlement_process_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getsettlementlines(p_settlement_process_id bigint)
  RETURNS TABLE(codigo character varying, nombre character varying, monto numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4640,7 +4640,7 @@ $function$
 
 -- usp_hr_payroll_getvacationheader
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getvacationheader(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getvacationheader(p_company_id integer, p_vacation_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getvacationheader(p_company_id integer, p_vacation_code character varying)
  RETURNS TABLE(id bigint, vacacion character varying, cedula character varying, "nombreEmpleado" character varying, inicio date, hasta date, reintegro date, "fechaCalculo" date, total numeric, "totalCalculado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4660,7 +4660,7 @@ $function$
 
 -- usp_hr_payroll_getvacationlines
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getvacationlines(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getvacationlines(p_vacation_process_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getvacationlines(p_vacation_process_id bigint)
  RETURNS TABLE(codigo character varying, nombre character varying, monto numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4676,7 +4676,7 @@ $function$
 
 -- usp_hr_payroll_listactiveemployees
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listactiveemployees(integer, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listactiveemployees(p_company_id integer, p_solo_activos boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listactiveemployees(p_company_id integer, p_solo_activos boolean DEFAULT true)
  RETURNS TABLE("employeeCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4694,7 +4694,7 @@ $function$
 
 -- usp_hr_payroll_listbatches
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listbatches(integer, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listbatches(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 25)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listbatches(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 25)
  RETURNS TABLE(p_total_count bigint, "BatchId" integer, "CompanyId" integer, "BranchId" integer, "PayrollCode" character varying, "FromDate" date, "ToDate" date, "Status" character varying, "TotalEmployees" integer, "TotalGross" numeric, "TotalDeductions" numeric, "TotalNet" numeric, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -4731,7 +4731,7 @@ $function$
 
 -- usp_hr_payroll_listconcepts
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listconcepts(integer, character varying, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listconcepts(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listconcepts(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, codigo character varying, "codigoNomina" character varying, nombre character varying, formula character varying, sobre character varying, clase character varying, tipo character varying, uso character varying, bonificable character varying, "esAntiguedad" character varying, "cuentaContable" character varying, aplica character varying, "valorDefecto" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4772,7 +4772,7 @@ $function$
 
 -- usp_hr_payroll_listconstants
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listconstants(integer, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listconstants(p_company_id integer, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listconstants(p_company_id integer, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, codigo character varying, nombre character varying, valor numeric, origen character varying, activo boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -4798,7 +4798,7 @@ $function$
 
 -- usp_hr_payroll_listruns
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listruns(integer, character varying, character varying, date, date, boolean, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listruns(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listruns(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, nomina character varying, cedula character varying, "nombreEmpleado" character varying, cargo character varying, "fechaProceso" date, "fechaInicio" date, "fechaHasta" date, "totalAsignaciones" numeric, "totalDeducciones" numeric, "totalNeto" numeric, cerrada boolean, "tipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4836,7 +4836,7 @@ $function$
 
 -- usp_hr_payroll_listsettlements
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listsettlements(integer, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listsettlements(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listsettlements(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, liquidacion character varying, cedula character varying, "nombreEmpleado" character varying, "fechaRetiro" date, "causaRetiro" character varying, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4864,7 +4864,7 @@ $function$
 
 -- usp_hr_payroll_listvacations
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_listvacations(integer, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listvacations(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listvacations(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, vacacion character varying, cedula character varying, "nombreEmpleado" character varying, inicio date, hasta date, reintegro date, "fechaCalculo" date, total numeric, "totalCalculado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4893,7 +4893,7 @@ $function$
 
 -- usp_hr_payroll_loadconceptsforrun
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_loadconceptsforrun(integer, character varying, character varying, character varying, character varying, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_loadconceptsforrun(p_company_id integer, p_payroll_code character varying, p_concept_type character varying DEFAULT NULL::character varying, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_solo_legales boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_loadconceptsforrun(p_company_id integer, p_payroll_code character varying, p_concept_type character varying DEFAULT NULL::character varying, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_solo_legales boolean DEFAULT false)
  RETURNS TABLE("conceptCode" character varying, "conceptName" character varying, "conceptType" character varying, "defaultValue" numeric, formula character varying, "accountingAccountCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4929,7 +4929,7 @@ $function$
 
 -- usp_hr_payroll_processbatch
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_processbatch(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_processbatch(p_batch_id integer, p_user_id integer, OUT p_procesados integer, OUT p_errores integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_processbatch(p_batch_id integer, p_user_id integer, OUT p_procesados integer, OUT p_errores integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4992,7 +4992,7 @@ BEGIN
             WHERE "BatchId" = p_batch_id
             GROUP BY "EmployeeCode"
         LOOP
-            -- Construir JSON de lÃ­neas para este empleado
+            -- Construir JSON de lÃƒÂ­neas para este empleado
             SELECT json_agg(
                 json_build_object(
                     'code',        "ConceptCode",
@@ -5085,7 +5085,7 @@ $function$
 
 -- usp_hr_payroll_resolveuser
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_resolveuser(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_resolveuser(p_user_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_resolveuser(p_user_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -5112,7 +5112,7 @@ $function$
 
 -- usp_hr_payroll_saveconcept
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_saveconcept(integer, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean, boolean, character varying, boolean, numeric, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_saveconcept(p_company_id integer, p_payroll_code character varying, p_concept_code character varying, p_concept_name character varying, p_formula character varying DEFAULT NULL::character varying, p_base_expression character varying DEFAULT NULL::character varying, p_concept_class character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT 'ASIGNACION'::character varying, p_usage_type character varying DEFAULT NULL::character varying, p_is_bonifiable boolean DEFAULT false, p_is_seniority boolean DEFAULT false, p_accounting_account_code character varying DEFAULT NULL::character varying, p_applies_flag boolean DEFAULT true, p_default_value numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_saveconcept(p_company_id integer, p_payroll_code character varying, p_concept_code character varying, p_concept_name character varying, p_formula character varying DEFAULT NULL::character varying, p_base_expression character varying DEFAULT NULL::character varying, p_concept_class character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT 'ASIGNACION'::character varying, p_usage_type character varying DEFAULT NULL::character varying, p_is_bonifiable boolean DEFAULT false, p_is_seniority boolean DEFAULT false, p_accounting_account_code character varying DEFAULT NULL::character varying, p_applies_flag boolean DEFAULT true, p_default_value numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5169,7 +5169,7 @@ $function$
 
 -- usp_hr_payroll_saveconstant
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_saveconstant(integer, character varying, character varying, numeric, character varying, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_saveconstant(p_company_id integer, p_code character varying, p_name character varying DEFAULT NULL::character varying, p_value numeric DEFAULT NULL::numeric, p_source_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_saveconstant(p_company_id integer, p_code character varying, p_name character varying DEFAULT NULL::character varying, p_value numeric DEFAULT NULL::numeric, p_source_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5207,7 +5207,7 @@ $function$
 
 -- usp_hr_payroll_savedraftline
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_savedraftline(integer, numeric, numeric, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_savedraftline(p_line_id integer, p_quantity numeric, p_amount numeric, p_user_id integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_savedraftline(p_line_id integer, p_quantity numeric, p_amount numeric, p_user_id integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5217,7 +5217,7 @@ BEGIN
     p_resultado := 0;
     p_mensaje   := '';
 
-    -- Validar que la lÃ­nea existe y pertenece a un batch en BORRADOR
+    -- Validar que la lÃƒÂ­nea existe y pertenece a un batch en BORRADOR
     SELECT bl."BatchId"
     INTO v_batch_id
     FROM hr."PayrollBatchLine" bl
@@ -5227,7 +5227,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'LÃƒÂ­nea no encontrada o el lote no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -5251,7 +5251,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'LÃ­nea actualizada correctamente.';
+        p_mensaje   := 'LÃƒÂ­nea actualizada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -5263,7 +5263,7 @@ $function$
 
 -- usp_hr_payroll_upsertrun
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertrun(integer, integer, character varying, bigint, character varying, character varying, date, date, numeric, numeric, numeric, character varying, integer, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5340,7 +5340,7 @@ $function$
 
 -- usp_hr_payroll_upsertrun
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertrun(integer, integer, character varying, bigint, character varying, character varying, date, date, numeric, numeric, numeric, character varying, integer, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5417,7 +5417,7 @@ $function$
 
 -- usp_hr_payroll_upsertsettlement
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertsettlement(integer, integer, character varying, bigint, character varying, character varying, date, character varying, numeric, numeric, numeric, numeric, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertsettlement(p_company_id integer, p_branch_id integer, p_settlement_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_retirement_date date, p_retirement_cause character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_prestaciones numeric DEFAULT 0, p_vac_pendientes numeric DEFAULT 0, p_bono_salida numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertsettlement(p_company_id integer, p_branch_id integer, p_settlement_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_retirement_date date, p_retirement_cause character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_prestaciones numeric DEFAULT 0, p_vac_pendientes numeric DEFAULT 0, p_bono_salida numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5469,7 +5469,7 @@ $function$
 
 -- usp_hr_payroll_upsertvacation
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertvacation(integer, integer, character varying, bigint, character varying, character varying, date, date, date, numeric, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertvacation(p_company_id integer, p_branch_id integer, p_vacation_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_start_date date, p_end_date date, p_reintegration_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertvacation(p_company_id integer, p_branch_id integer, p_vacation_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_start_date date, p_end_date date, p_reintegration_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5523,7 +5523,7 @@ $function$
 
 -- usp_hr_profitsharing_approve
 DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_approve(integer, integer, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_approve(p_profit_sharing_id integer, p_approved_by integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_approve(p_profit_sharing_id integer, p_approved_by integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5564,7 +5564,7 @@ $function$
 
 -- usp_hr_profitsharing_generate
 DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_generate(integer, integer, integer, integer, numeric, integer, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_generate(p_company_id integer, p_branch_id integer, p_fiscal_year integer, p_days_granted integer, p_total_company_profits numeric DEFAULT NULL::numeric, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_generate(p_company_id integer, p_branch_id integer, p_fiscal_year integer, p_days_granted integer, p_total_company_profits numeric DEFAULT NULL::numeric, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5580,7 +5580,7 @@ BEGIN
 
     IF p_days_granted < 30 OR p_days_granted > 120 THEN
         p_resultado := -1;
-        p_mensaje   := 'Los dÃ­as otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
+        p_mensaje   := 'Los dÃƒÂ­as otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
         RETURN;
     END IF;
 
@@ -5590,7 +5590,7 @@ BEGIN
           AND "Status" IN ('CALCULADA','PROCESADA','CERRADA')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cÃ¡lculo de utilidades procesado para este aÃ±o fiscal.';
+        p_mensaje   := 'Ya existe un cÃƒÂ¡lculo de utilidades procesado para este aÃƒÂ±o fiscal.';
         RETURN;
     END IF;
 
@@ -5733,7 +5733,7 @@ $function$
 
 -- usp_hr_profitsharing_getsummary
 DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_getsummary(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_getsummary(p_profit_sharing_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_getsummary(p_profit_sharing_id integer)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -5791,7 +5791,7 @@ $function$
 
 -- usp_hr_profitsharing_list
 DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_list(integer, integer, integer, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_list(p_company_id integer, p_branch_id integer DEFAULT NULL::integer, p_fiscal_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_list(p_company_id integer, p_branch_id integer DEFAULT NULL::integer, p_fiscal_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "ProfitSharingId" integer, "CompanyId" integer, "BranchId" integer, "FiscalYear" integer, "DaysGranted" integer, "TotalCompanyProfits" numeric, "Status" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone, "TotalEmployees" bigint, "TotalNet" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5826,7 +5826,7 @@ $function$
 
 -- usp_hr_savings_approveloan
 DROP FUNCTION IF EXISTS public.usp_hr_savings_approveloan(integer, boolean, integer, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_approveloan(p_loan_id integer, p_approved boolean, p_approved_by integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_approveloan(p_loan_id integer, p_approved boolean, p_approved_by integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5846,13 +5846,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'PrÃ©stamo no encontrado.';
+        p_mensaje   := 'PrÃƒÂ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'SOLICITADO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden aprobar/rechazar prÃ©stamos en estado SOLICITADO. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden aprobar/rechazar prÃƒÂ©stamos en estado SOLICITADO. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -5885,12 +5885,12 @@ BEGIN
                 'PRESTAMO',
                 v_loan_amount,
                 v_cur_balance,
-                'Desembolso prÃ©stamo #' || p_loan_id::TEXT,
+                'Desembolso prÃƒÂ©stamo #' || p_loan_id::TEXT,
                 'Aprobado por usuario ' || p_approved_by::TEXT,
                 (NOW() AT TIME ZONE 'UTC')
             );
 
-            p_mensaje := 'PrÃ©stamo aprobado y desembolsado exitosamente.';
+            p_mensaje := 'PrÃƒÂ©stamo aprobado y desembolsado exitosamente.';
         ELSE
             UPDATE hr."SavingsLoan"
             SET "Status"    = 'RECHAZADO',
@@ -5899,7 +5899,7 @@ BEGIN
                 "UpdatedAt"  = (NOW() AT TIME ZONE 'UTC')
             WHERE "LoanId" = p_loan_id;
 
-            p_mensaje := 'PrÃ©stamo rechazado.';
+            p_mensaje := 'PrÃƒÂ©stamo rechazado.';
         END IF;
 
         p_resultado := p_loan_id;
@@ -5914,7 +5914,7 @@ $function$
 
 -- usp_hr_savings_enroll
 DROP FUNCTION IF EXISTS public.usp_hr_savings_enroll(integer, bigint, character varying, character varying, numeric, numeric, date, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_enroll(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_employee_contribution numeric DEFAULT NULL::numeric, p_employer_match numeric DEFAULT NULL::numeric, p_enrollment_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_enroll(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_employee_contribution numeric DEFAULT NULL::numeric, p_employer_match numeric DEFAULT NULL::numeric, p_enrollment_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5927,7 +5927,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "EmployeeCode" = p_employee_code AND "Status" = 'ACTIVO'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya estÃ¡ inscrito en la caja de ahorro.';
+        p_mensaje   := 'El empleado ya estÃƒÂ¡ inscrito en la caja de ahorro.';
         RETURN;
     END IF;
 
@@ -5961,7 +5961,7 @@ $function$
 
 -- usp_hr_savings_getbalance
 DROP FUNCTION IF EXISTS public.usp_hr_savings_getbalance(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_getbalance(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_getbalance(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -6012,7 +6012,7 @@ $function$
 
 -- usp_hr_savings_list
 DROP FUNCTION IF EXISTS public.usp_hr_savings_list(integer, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_list(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_list(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "SavingsFundId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "EmployeeContribution" numeric, "EmployerMatch" numeric, "EnrollmentDate" date, "Status" character varying, "CreatedAt" timestamp without time zone, "CurrentBalance" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -6046,7 +6046,7 @@ $function$
 
 -- usp_hr_savings_loanlist
 DROP FUNCTION IF EXISTS public.usp_hr_savings_loanlist(integer, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_loanlist(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_loanlist(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "LoanId" integer, "SavingsFundId" integer, "EmployeeCode" character varying, "EmployeeName" character varying, "RequestDate" date, "ApprovedDate" date, "LoanAmount" numeric, "InterestRate" numeric, "TotalPayable" numeric, "MonthlyPayment" numeric, "InstallmentsTotal" integer, "InstallmentsPaid" integer, "OutstandingBalance" numeric, "Status" character varying, "ApprovedBy" integer, "Notes" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6084,7 +6084,7 @@ $function$
 
 -- usp_hr_savings_processloanpayment
 DROP FUNCTION IF EXISTS public.usp_hr_savings_processloanpayment(integer, numeric, date, integer, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_processloanpayment(p_loan_id integer, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_date date DEFAULT NULL::date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_processloanpayment(p_loan_id integer, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_date date DEFAULT NULL::date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6109,13 +6109,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'PrÃ©stamo no encontrado.';
+        p_mensaje   := 'PrÃƒÂ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden registrar pagos en prÃ©stamos ACTIVOS. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden registrar pagos en prÃƒÂ©stamos ACTIVOS. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -6156,15 +6156,15 @@ BEGIN
             'PAGO_PRESTAMO',
             p_payment_amount,
             v_cur_balance,
-            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' prÃ©stamo #' || p_loan_id::TEXT,
+            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' prÃƒÂ©stamo #' || p_loan_id::TEXT,
             p_payroll_batch_id,
-            CASE WHEN v_outstanding <= 0 THEN 'PrÃ©stamo liquidado' ELSE NULL END,
+            CASE WHEN v_outstanding <= 0 THEN 'PrÃƒÂ©stamo liquidado' ELSE NULL END,
             (NOW() AT TIME ZONE 'UTC')
         );
 
         p_resultado := p_loan_id;
         IF v_outstanding <= 0 THEN
-            p_mensaje := 'PrÃ©stamo liquidado exitosamente.';
+            p_mensaje := 'PrÃƒÂ©stamo liquidado exitosamente.';
         ELSE
             p_mensaje := 'Pago registrado. Saldo pendiente: ' || v_outstanding::TEXT;
         END IF;
@@ -6179,7 +6179,7 @@ $function$
 
 -- usp_hr_savings_processmonthly
 DROP FUNCTION IF EXISTS public.usp_hr_savings_processmonthly(integer, date, integer, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_processmonthly(p_company_id integer, p_process_date date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_processmonthly(p_company_id integer, p_process_date date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6268,7 +6268,7 @@ $function$
 
 -- usp_hr_savings_requestloan
 DROP FUNCTION IF EXISTS public.usp_hr_savings_requestloan(integer, character varying, numeric, numeric, integer, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_savings_requestloan(p_company_id integer, p_employee_code character varying, p_loan_amount numeric, p_interest_rate numeric DEFAULT 0, p_installments_total integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_requestloan(p_company_id integer, p_employee_code character varying, p_loan_amount numeric, p_interest_rate numeric DEFAULT 0, p_installments_total integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6295,19 +6295,19 @@ BEGIN
         WHERE "SavingsFundId" = v_fund_id AND "Status" IN ('SOLICITADO','APROBADO','ACTIVO')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene un prÃ©stamo activo o pendiente.';
+        p_mensaje   := 'El empleado ya tiene un prÃƒÂ©stamo activo o pendiente.';
         RETURN;
     END IF;
 
     IF p_loan_amount <= 0 THEN
         p_resultado := -3;
-        p_mensaje   := 'El monto del prÃ©stamo debe ser mayor a cero.';
+        p_mensaje   := 'El monto del prÃƒÂ©stamo debe ser mayor a cero.';
         RETURN;
     END IF;
 
     IF p_installments_total <= 0 THEN
         p_resultado := -4;
-        p_mensaje   := 'El nÃºmero de cuotas debe ser mayor a cero.';
+        p_mensaje   := 'El nÃƒÂºmero de cuotas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -6330,7 +6330,7 @@ BEGIN
         )
         RETURNING "LoanId" INTO p_resultado;
 
-        p_mensaje := 'Solicitud de prÃ©stamo registrada exitosamente.';
+        p_mensaje := 'Solicitud de prÃƒÂ©stamo registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -6342,7 +6342,7 @@ $function$
 
 -- usp_hr_training_getemployeecertifications
 DROP FUNCTION IF EXISTS public.usp_hr_training_getemployeecertifications(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_training_getemployeecertifications(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_training_getemployeecertifications(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE("TrainingRecordId" integer, "CompanyId" integer, "CountryCode" character, "TrainingType" character varying, "Title" character varying, "Provider" character varying, "StartDate" date, "EndDate" date, "DurationHours" numeric, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "CertificateNumber" character varying, "CertificateUrl" character varying, "Result" character varying, "IsRegulatory" boolean, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6380,7 +6380,7 @@ $function$
 
 -- usp_hr_training_list
 DROP FUNCTION IF EXISTS public.usp_hr_training_list(integer, character varying, character varying, character, boolean, character varying, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_training_list(p_company_id integer, p_training_type character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_is_regulatory boolean DEFAULT NULL::boolean, p_result character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_training_list(p_company_id integer, p_training_type character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_is_regulatory boolean DEFAULT NULL::boolean, p_result character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "TrainingRecordId" integer, "CompanyId" integer, "CountryCode" character, "TrainingType" character varying, "Title" character varying, "Provider" character varying, "StartDate" date, "EndDate" date, "DurationHours" numeric, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "CertificateNumber" character varying, "CertificateUrl" character varying, "Result" character varying, "IsRegulatory" boolean, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6428,7 +6428,7 @@ $function$
 
 -- usp_hr_training_save
 DROP FUNCTION IF EXISTS public.usp_hr_training_save(integer, integer, character, character varying, character varying, character varying, date, date, numeric, bigint, character varying, character varying, character varying, character varying, character varying, boolean, character varying, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_training_save(p_training_record_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_training_type character varying DEFAULT NULL::character varying, p_title character varying DEFAULT NULL::character varying, p_provider character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, p_duration_hours numeric DEFAULT NULL::numeric, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_certificate_number character varying DEFAULT NULL::character varying, p_certificate_url character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_is_regulatory boolean DEFAULT false, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_training_save(p_training_record_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_training_type character varying DEFAULT NULL::character varying, p_title character varying DEFAULT NULL::character varying, p_provider character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, p_duration_hours numeric DEFAULT NULL::numeric, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_certificate_number character varying DEFAULT NULL::character varying, p_certificate_url character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_is_regulatory boolean DEFAULT false, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6438,19 +6438,19 @@ BEGIN
 
     IF p_training_type NOT IN ('SAFETY','REGULATORY','TECHNICAL','APPRENTICESHIP','INDUCTION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de capacitaciÃ³n no vÃ¡lido.';
+        p_mensaje   := 'Tipo de capacitaciÃƒÂ³n no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_result IS NOT NULL AND p_result NOT IN ('PASSED','FAILED','IN_PROGRESS','ATTENDED') THEN
         p_resultado := -1;
-        p_mensaje   := 'Resultado no vÃ¡lido.';
+        p_mensaje   := 'Resultado no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_duration_hours <= 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'La duraciÃ³n en horas debe ser mayor a cero.';
+        p_mensaje   := 'La duraciÃƒÂ³n en horas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -6473,14 +6473,14 @@ BEGIN
             )
             RETURNING "TrainingRecordId" INTO p_resultado;
 
-            p_mensaje := 'Registro de capacitaciÃ³n creado exitosamente.';
+            p_mensaje := 'Registro de capacitaciÃƒÂ³n creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."TrainingRecord"
                 WHERE "TrainingRecordId" = p_training_record_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Registro de capacitaciÃ³n no encontrado.';
+                p_mensaje   := 'Registro de capacitaciÃƒÂ³n no encontrado.';
                 RETURN;
             END IF;
 
@@ -6506,7 +6506,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_training_record_id;
-            p_mensaje   := 'Registro de capacitaciÃ³n actualizado exitosamente.';
+            p_mensaje   := 'Registro de capacitaciÃƒÂ³n actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -6519,7 +6519,7 @@ $function$
 
 -- usp_hr_trust_calculatequarter
 DROP FUNCTION IF EXISTS public.usp_hr_trust_calculatequarter(integer, integer, smallint, numeric, integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_trust_calculatequarter(p_company_id integer, p_fiscal_year integer, p_quarter smallint, p_interest_rate numeric DEFAULT 0, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_calculatequarter(p_company_id integer, p_fiscal_year integer, p_quarter smallint, p_interest_rate numeric DEFAULT 0, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6541,7 +6541,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "FiscalYear" = p_fiscal_year AND "Quarter" = p_quarter
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cÃ¡lculo para el trimestre ' || p_quarter::TEXT || ' del aÃ±o ' || p_fiscal_year::TEXT || '.';
+        p_mensaje   := 'Ya existe un cÃƒÂ¡lculo para el trimestre ' || p_quarter::TEXT || ' del aÃƒÂ±o ' || p_fiscal_year::TEXT || '.';
         RETURN;
     END IF;
 
@@ -6570,7 +6570,7 @@ BEGIN
                 ORDER BY pr."CreatedAt" DESC LIMIT 1
             ), 0) / 30.0, 2) AS "DailySalary",
             15 AS "DaysDeposited",
-            -- BonusDays: 2 dÃ­as por cada aÃ±o despuÃ©s del primero, max 30, solo en Q4
+            -- BonusDays: 2 dÃƒÂ­as por cada aÃƒÂ±o despuÃƒÂ©s del primero, max 30, solo en Q4
             CASE
                 WHEN p_quarter = 4
                  AND DATE_PART('year', v_year_end_str::DATE) - DATE_PART('year', e."HireDate") > 1
@@ -6679,7 +6679,7 @@ $function$
 
 -- usp_hr_trust_getemployeebalance
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getemployeebalance(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_trust_getemployeebalance(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_getemployeebalance(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -6727,7 +6727,7 @@ $function$
 
 -- usp_hr_trust_getsummary
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(integer, integer, smallint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(p_company_id integer, p_fiscal_year integer, p_quarter smallint)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_getsummary(p_company_id integer, p_fiscal_year integer, p_quarter smallint)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -6774,7 +6774,7 @@ $function$
 
 -- usp_hr_trust_list
 DROP FUNCTION IF EXISTS public.usp_hr_trust_list(integer, integer, smallint, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_trust_list(p_company_id integer, p_fiscal_year integer DEFAULT NULL::integer, p_quarter smallint DEFAULT NULL::smallint, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_list(p_company_id integer, p_fiscal_year integer DEFAULT NULL::integer, p_quarter smallint DEFAULT NULL::smallint, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "TrustId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "FiscalYear" integer, "Quarter" smallint, "DailySalary" numeric, "DaysDeposited" integer, "BonusDays" integer, "DepositAmount" numeric, "InterestRate" numeric, "InterestAmount" numeric, "AccumulatedBalance" numeric, "Status" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6811,7 +6811,7 @@ $function$
 
 -- usp_hr_vacation_request_approve
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_approve(bigint, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_approve(p_request_id bigint, p_approved_by character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_approve(p_request_id bigint, p_approved_by character varying)
  RETURNS TABLE("RequestId" bigint, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6839,7 +6839,7 @@ $function$
 
 -- usp_hr_vacation_request_cancel
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_cancel(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_cancel(p_request_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_cancel(p_request_id bigint)
  RETURNS TABLE("RequestId" bigint, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6865,7 +6865,7 @@ $function$
 
 -- usp_hr_vacation_request_create
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_create(integer, integer, character varying, date, date, integer, boolean, character varying, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_create(p_company_id integer, p_branch_id integer, p_employee_code character varying, p_start_date date, p_end_date date, p_total_days integer, p_is_partial boolean, p_notes character varying, p_days jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_create(p_company_id integer, p_branch_id integer, p_employee_code character varying, p_start_date date, p_end_date date, p_total_days integer, p_is_partial boolean, p_notes character varying, p_days jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("RequestId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -6912,7 +6912,7 @@ $function$
 
 -- usp_hr_vacation_request_get
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get(p_request_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_get(p_request_id bigint)
  RETURNS TABLE("RequestId" bigint, "CompanyId" integer, "BranchId" integer, "EmployeeCode" character varying, "EmployeeName" character varying, "RequestDate" character varying, "StartDate" character varying, "EndDate" character varying, "TotalDays" integer, "IsPartial" boolean, "Status" character varying, "Notes" character varying, "ApprovedBy" character varying, "ApprovalDate" timestamp without time zone, "RejectionReason" character varying, "VacationId" bigint, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6948,7 +6948,7 @@ $function$
 
 -- usp_hr_vacation_request_get_available_days
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get_available_days(integer, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get_available_days(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_get_available_days(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE("DiasBase" integer, "AnosServicio" integer, "DiasAdicionales" integer, "DiasDisponibles" integer, "DiasTomados" integer, "DiasPendientes" integer, "DiasSaldo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -7019,7 +7019,7 @@ $function$
 
 -- usp_hr_vacation_request_get_days
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get_days(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get_days(p_request_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_get_days(p_request_id bigint)
  RETURNS TABLE("DayId" bigint, "RequestId" bigint, "SelectedDate" character varying, "DayType" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -7039,7 +7039,7 @@ $function$
 
 -- usp_hr_vacation_request_list
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_list(integer, character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_list(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_list(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("RequestId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "RequestDate" character varying, "StartDate" character varying, "EndDate" character varying, "TotalDays" integer, "IsPartial" boolean, "Status" character varying, "ApprovedBy" character varying, "Notes" character varying, "RejectionReason" character varying, "CreatedAt" timestamp without time zone, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -7085,7 +7085,7 @@ $function$
 
 -- usp_hr_vacation_request_process
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_process(bigint, bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_process(p_request_id bigint, p_vacation_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_process(p_request_id bigint, p_vacation_id bigint)
  RETURNS TABLE("RequestId" bigint, "Status" character varying, "VacationId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -7112,7 +7112,7 @@ $function$
 
 -- usp_hr_vacation_request_reject
 DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_reject(bigint, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_reject(p_request_id bigint, p_approved_by character varying, p_rejection_reason character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_reject(p_request_id bigint, p_approved_by character varying, p_rejection_reason character varying)
  RETURNS TABLE("RequestId" bigint, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$

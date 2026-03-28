@@ -1,7 +1,7 @@
 -- ============================================================
 -- sp_CxC_Documentos_List
 -- ============================================================
-DROP FUNCTION IF EXISTS public."sp_CxC_Documentos_List"(p_codcliente character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public."sp_CxC_Documentos_List"(p_codcliente character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("codCliente" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -38,7 +38,7 @@ $function$
 -- ============================================================
 -- sp_CxP_Documentos_List
 -- ============================================================
-DROP FUNCTION IF EXISTS public."sp_CxP_Documentos_List"(p_codproveedor character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public."sp_CxP_Documentos_List"(p_codproveedor character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("codProveedor" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -75,7 +75,7 @@ $function$
 -- ============================================================
 -- sp_anular_compra_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_compra_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_compra_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "codProveedor" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -126,7 +126,7 @@ BEGIN
     WHERE "NUM_FACT" = p_num_fact;
 
     -- ============================================
-    -- 4. Revertir master."Product" â€” restar lo que se habia sumado
+    -- 4. Revertir master."Product" Ã¢â‚¬â€ restar lo que se habia sumado
     -- ============================================
     CREATE TEMP TABLE _detalles_compra_anul (
         "CODIGO"   VARCHAR(60),
@@ -224,7 +224,7 @@ $function$
 -- ============================================================
 -- sp_anular_documento_compra_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_documento_compra_tx(p_num_fact character varying, p_tipo_operacion character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_documento_compra_tx(p_num_fact character varying, p_tipo_operacion character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -256,7 +256,7 @@ $function$
 -- ============================================================
 -- sp_anular_documento_compra_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_documento_compra_tx(p_num_doc character varying, p_tipo_operacion character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying, p_revertir_inventario boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_anular_documento_compra_tx(p_num_doc character varying, p_tipo_operacion character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying, p_revertir_inventario boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, mensaje character varying, "inventarioRevertido" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -366,7 +366,7 @@ $function$
 -- ============================================================
 -- sp_anular_documento_venta_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_documento_venta_tx(p_num_fact character varying, p_tipo_operacion character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_documento_venta_tx(p_num_fact character varying, p_tipo_operacion character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -401,7 +401,7 @@ $function$
 -- ============================================================
 -- sp_anular_documento_venta_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_documento_venta_tx(p_num_doc character varying, p_tipo_operacion character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying, p_revertir_inventario boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_anular_documento_venta_tx(p_num_doc character varying, p_tipo_operacion character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying, p_revertir_inventario boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, mensaje character varying, "inventarioRevertido" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -510,7 +510,7 @@ $function$
 -- ============================================================
 -- sp_anular_factura_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_factura_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_factura_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "codCliente" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -635,7 +635,7 @@ $function$
 -- ============================================================
 -- sp_anular_pedido_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_pedido_tx(p_num_pedido character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_pedido_tx(p_num_pedido character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numPedido" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -704,7 +704,7 @@ $function$
 -- ============================================================
 -- sp_anular_presupuesto_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_anular_presupuesto_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_presupuesto_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "codCliente" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -834,7 +834,7 @@ $function$
 -- ============================================================
 -- sp_cerrar_conciliacion
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_cerrar_conciliacion(p_conciliacion_id integer, p_saldo_final_banco numeric, p_observaciones character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_cerrar_conciliacion(p_conciliacion_id integer, p_saldo_final_banco numeric, p_observaciones character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, diferencia numeric, estado character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -867,7 +867,7 @@ $function$
 -- ============================================================
 -- sp_cerrarmesinventario
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_cerrarmesinventario(p_periodo character varying)
+CREATE OR REPLACE FUNCTION public.sp_cerrarmesinventario(p_periodo character varying)
  RETURNS TABLE("ProductosCerrados" integer, "Periodo" character varying, "FechaCierre" date)
  LANGUAGE plpgsql
 AS $function$
@@ -955,7 +955,7 @@ $function$
 -- ============================================================
 -- sp_conciliacion_get_detalle_sistema
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_conciliacion_get_detalle_sistema(p_conciliacion_id integer)
+CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_detalle_sistema(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Conciliacion_ID" integer, "Tipo_Origen" character varying, "MovCuentas_ID" integer, "Extracto_ID" integer, "Fecha" timestamp without time zone, "Descripcion" character varying, "Referencia" character varying, "Debito" numeric, "Credito" numeric, "Conciliado" boolean, "Nro_Ref" character varying, "MovFecha" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -977,7 +977,7 @@ $function$
 -- ============================================================
 -- sp_conciliacion_get_extracto_pendiente
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_conciliacion_get_extracto_pendiente(p_conciliacion_id integer)
+CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_extracto_pendiente(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha" timestamp without time zone, "Descripcion" character varying, "Referencia" character varying, "Tipo" character varying, "Monto" numeric, "Saldo" numeric, "Conciliado" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -1007,7 +1007,7 @@ $function$
 -- ============================================================
 -- sp_conciliacion_get_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_conciliacion_get_header(p_conciliacion_id integer)
+CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_header(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha_Desde" timestamp without time zone, "Fecha_Hasta" timestamp without time zone, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Banco" character varying, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1029,7 +1029,7 @@ $function$
 -- ============================================================
 -- sp_conciliacion_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_conciliacion_list(p_nro_cta character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_conciliacion_list(p_nro_cta character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ID" integer, "Nro_Cta" character varying, "Fecha_Desde" timestamp without time zone, "Fecha_Hasta" timestamp without time zone, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Co_Usuario" character varying, "Fecha_Creacion" timestamp without time zone, "Fecha_Cierre" timestamp without time zone, "Banco" character varying, "Pendientes" bigint, "Conciliados" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1066,7 +1066,7 @@ $function$
 -- ============================================================
 -- sp_conciliar_movimientos
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_conciliar_movimientos(p_conciliacion_id integer, p_movimiento_sistema_id integer, p_extracto_id integer DEFAULT NULL::integer, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_conciliar_movimientos(p_conciliacion_id integer, p_movimiento_sistema_id integer, p_extracto_id integer DEFAULT NULL::integer, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1131,7 +1131,7 @@ $function$
 -- ============================================================
 -- sp_crear_conciliacion
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_crear_conciliacion(p_nro_cta character varying, p_fecha_desde timestamp without time zone, p_fecha_hasta timestamp without time zone, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_crear_conciliacion(p_nro_cta character varying, p_fecha_desde timestamp without time zone, p_fecha_hasta timestamp without time zone, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE("conciliacionId" integer, "saldoInicial" numeric, "saldoFinal" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -1198,7 +1198,7 @@ $function$
 -- ============================================================
 -- sp_documentoscompra_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_documentoscompra_get(p_num_doc character varying, p_tipo_operacion character varying)
+CREATE OR REPLACE FUNCTION public.sp_documentoscompra_get(p_num_doc character varying, p_tipo_operacion character varying)
  RETURNS TABLE(result_set integer, data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -1231,7 +1231,7 @@ $function$
 -- ============================================================
 -- sp_documentoscompra_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_documentoscompra_list(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_cod_proveedor character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_documentoscompra_list(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_cod_proveedor character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ID" integer, "NUM_DOC" character varying, "SERIALTIPO" character varying, "TIPO_OPERACION" character varying, "COD_PROVEEDOR" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "FECHA_VENCE" timestamp without time zone, "FECHA_RECIBO" timestamp without time zone, "HORA" character varying, "SUBTOTAL" double precision, "MONTO_GRA" double precision, "MONTO_EXE" double precision, "EXENTO" double precision, "IVA" double precision, "ALICUOTA" double precision, "TOTAL" double precision, "ANULADA" integer, "CANCELADA" character varying, "RECIBIDA" character varying, "DOC_ORIGEN" character varying, "NUM_CONTROL" character varying, "LEGAL" integer, "CONCEPTO" character varying, "OBSERV" character varying, "ALMACEN" character varying, "IVA_RETENIDO" double precision, "ISLR" character varying, "MONTO_ISLR" double precision, "COD_USUARIO" character varying, "FECHA_REPORTE" timestamp without time zone, "ESTADO" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1293,7 +1293,7 @@ $function$
 -- ============================================================
 -- sp_documentoscompra_list_legacy
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_documentoscompra_list_legacy(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_cod_proveedor character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_documentoscompra_list_legacy(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_cod_proveedor character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "NUM_FACT" character varying, "COD_PROVEEDOR" character varying, "TIPO_OPERACION" character varying, "FECHA" timestamp without time zone, "NOMBRE" character varying, "RIF" character varying, "TOTAL" numeric, "COD_USUARIO" character varying, "ANULADA" integer, "ESTADO" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1334,7 +1334,7 @@ $function$
 -- ============================================================
 -- sp_documentosventa_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_documentosventa_get(p_num_doc character varying, p_tipo_operacion character varying)
+CREATE OR REPLACE FUNCTION public.sp_documentosventa_get(p_num_doc character varying, p_tipo_operacion character varying)
  RETURNS TABLE(result_set integer, data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -1367,7 +1367,7 @@ $function$
 -- ============================================================
 -- sp_documentosventa_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_documentosventa_list(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_documentosventa_list(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ID" integer, "NUM_DOC" character varying, "SERIALTIPO" character varying, "TIPO_OPERACION" character varying, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "FECHA_VENCE" timestamp without time zone, "HORA" character varying, "SUBTOTAL" double precision, "MONTO_GRA" double precision, "MONTO_EXE" double precision, "IVA" double precision, "ALICUOTA" double precision, "TOTAL" double precision, "DESCUENTO" double precision, "ANULADA" integer, "CANCELADA" character varying, "FACTURADA" character varying, "ENTREGADA" character varying, "DOC_ORIGEN" character varying, "TIPO_DOC_ORIGEN" character varying, "NUM_CONTROL" character varying, "LEGAL" integer, "OBSERV" character varying, "VENDEDOR" character varying, "MONEDA" character varying, "TASA_CAMBIO" double precision, "COD_USUARIO" character varying, "FECHA_REPORTE" timestamp without time zone, "ESTADO" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1426,7 +1426,7 @@ $function$
 -- ============================================================
 -- sp_documentosventa_list_legacy
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_documentosventa_list_legacy(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_documentosventa_list_legacy(p_tipo_operacion character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_desde date DEFAULT NULL::date, p_hasta date DEFAULT NULL::date, p_anulada boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "NUM_FACT" character varying, "SERIALTIPO" character varying, "Tipo_Orden" character varying, "TIPO_OPERACION" character varying, "CODIGO" character varying, "FECHA" timestamp without time zone, "TOTAL" numeric, "COD_USUARIO" character varying, "OBSERV" character varying, "CANCELADA" character varying, "FECHA_ANULA" timestamp without time zone, "ESTADO" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1504,7 +1504,7 @@ $function$
 -- ============================================================
 -- sp_emitir_compra_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_compra_tx(p_compra_json jsonb, p_detalle_json jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxp boolean DEFAULT true, p_actualizar_saldos_proveedor boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_emitir_compra_tx(p_compra_json jsonb, p_detalle_json jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxp boolean DEFAULT true, p_actualizar_saldos_proveedor boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer, "inventoryUpdated" boolean, "cxpGenerated" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -1577,7 +1577,7 @@ BEGIN
 
     SELECT COUNT(*) INTO v_detalle_rows FROM jsonb_array_elements(p_detalle_json);
 
-    -- 3. Actualizar master."Product" â€” Ingreso
+    -- 3. Actualizar master."Product" Ã¢â‚¬â€ Ingreso
     IF p_actualizar_inventario THEN
         -- Insertar en MovInvent (historial)
         INSERT INTO "MovInvent" (
@@ -1617,7 +1617,7 @@ BEGIN
          WHERE p."ProductCode" = agg.cod_serv;
     END IF;
 
-    -- 4. Generar CxP (si es credito) â€” tabla legacy "P_Pagar"
+    -- 4. Generar CxP (si es credito) Ã¢â‚¬â€ tabla legacy "P_Pagar"
     IF p_generar_cxp AND v_tipo = 'CREDITO' AND v_total > 0 THEN
         -- Obtener saldo previo del proveedor
         SELECT COALESCE("SALDO", 0) INTO v_saldo_previo
@@ -1672,7 +1672,7 @@ $function$
 -- ============================================================
 -- sp_emitir_cotizacion_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_cotizacion_tx(p_cotizacion_json jsonb, p_detalle_json jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_emitir_cotizacion_tx(p_cotizacion_json jsonb, p_detalle_json jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -1764,7 +1764,7 @@ $function$
 -- ============================================================
 -- sp_emitir_documento_compra_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_documento_compra_tx(p_tipo_operacion character varying, p_doc_json jsonb, p_detalle_json jsonb, p_pagos_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying, p_actualizar_inventario boolean DEFAULT true, p_generar_cxp boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_emitir_documento_compra_tx(p_tipo_operacion character varying, p_doc_json jsonb, p_detalle_json jsonb, p_pagos_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying, p_actualizar_inventario boolean DEFAULT true, p_generar_cxp boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, total double precision, lineas bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -2009,7 +2009,7 @@ $function$
 -- ============================================================
 -- sp_emitir_documento_venta_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_documento_venta_tx(p_tipo_operacion character varying, p_doc_json jsonb, p_detalle_json jsonb, p_pagos_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_emitir_documento_venta_tx(p_tipo_operacion character varying, p_doc_json jsonb, p_detalle_json jsonb, p_pagos_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "tipoOperacion" character varying, total double precision, lineas bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -2254,7 +2254,7 @@ $function$
 -- ============================================================
 -- sp_emitir_factura_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_factura_tx(p_factura_json jsonb, p_detalle_json jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true, p_actualizar_saldos_cliente boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_emitir_factura_tx(p_factura_json jsonb, p_detalle_json jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true, p_actualizar_saldos_cliente boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer, "montoEfectivo" numeric, "montoCheque" numeric, "montoTarjeta" numeric, "saldoPendiente" numeric, abono numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -2514,7 +2514,7 @@ $function$
 -- ============================================================
 -- sp_emitir_pedido_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_pedido_tx(p_pedido_json jsonb, p_detalle_json jsonb, p_actualizar_inventario boolean DEFAULT true, p_cod_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_emitir_pedido_tx(p_pedido_json jsonb, p_detalle_json jsonb, p_actualizar_inventario boolean DEFAULT true, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "numPedido" character varying, "detalleRows" integer, "inventoryUpdated" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -2650,7 +2650,7 @@ $function$
 -- ============================================================
 -- sp_emitir_presupuesto_tx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_emitir_presupuesto_tx(p_presupuesto_json jsonb, p_detalle_json jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true, p_actualizar_saldos_cliente boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_emitir_presupuesto_tx(p_presupuesto_json jsonb, p_detalle_json jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_actualizar_inventario boolean DEFAULT true, p_generar_cxc boolean DEFAULT true, p_actualizar_saldos_cliente boolean DEFAULT true)
  RETURNS TABLE(ok boolean, "numFact" character varying, "detalleRows" integer, "montoEfectivo" numeric, "montoCheque" numeric, "montoTarjeta" numeric, "saldoPendiente" numeric, abono numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -2899,7 +2899,7 @@ $function$
 -- ============================================================
 -- sp_generar_ajuste_bancario
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_generar_ajuste_bancario(p_conciliacion_id integer, p_tipo_ajuste character varying, p_monto numeric, p_descripcion character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_generar_ajuste_bancario(p_conciliacion_id integer, p_tipo_ajuste character varying, p_monto numeric, p_descripcion character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -2957,7 +2957,7 @@ $function$
 -- ============================================================
 -- sp_generar_movimiento_bancario
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_generar_movimiento_bancario(p_nro_cta character varying, p_tipo character varying, p_nro_ref character varying, p_beneficiario character varying, p_monto numeric, p_concepto character varying, p_categoria character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, p_documento_relacionado character varying DEFAULT NULL::character varying, p_tipo_doc_rel character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_generar_movimiento_bancario(p_nro_cta character varying, p_tipo character varying, p_nro_ref character varying, p_beneficiario character varying, p_monto numeric, p_concepto character varying, p_categoria character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, p_documento_relacionado character varying DEFAULT NULL::character varying, p_tipo_doc_rel character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok boolean, "movimientoId" integer, "saldoNuevo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -3036,7 +3036,7 @@ $function$
 -- ============================================================
 -- sp_get_movimiento_bancario_by_id
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_get_movimiento_bancario_by_id(p_movimiento_id integer)
+CREATE OR REPLACE FUNCTION public.sp_get_movimiento_bancario_by_id(p_movimiento_id integer)
  RETURNS TABLE(id integer, "BankAccountId" integer, "Fecha" timestamp without time zone, "Tipo" character varying, "MovementSign" character varying, "Monto" numeric, "NetAmount" numeric, "Nro_Ref" character varying, "Beneficiario" character varying, "Concepto" character varying, "Categoria" character varying, "Documento_Relacionado" character varying, "Tipo_Doc_Rel" character varying, "Saldo" numeric, "IsReconciled" boolean, "CreatedAt" timestamp without time zone, "Nro_Cta" character varying, "CuentaDescripcion" character varying, "SaldoActual" numeric, "BancoNombre" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3074,7 +3074,7 @@ $function$
 -- ============================================================
 -- sp_importar_extracto
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_importar_extracto(p_extracto_json jsonb, p_nro_cta character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_importar_extracto(p_extracto_json jsonb, p_nro_cta character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "registrosImportados" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -3112,7 +3112,7 @@ $function$
 -- ============================================================
 -- sp_movunidades
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_movunidades(p_periodo character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_solo_estructura boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.sp_movunidades(p_periodo character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_solo_estructura boolean DEFAULT false)
  RETURNS TABLE("FilasInsertadas" integer, "Periodo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3346,7 +3346,7 @@ $function$
 -- ============================================================
 -- sp_movunidadesmes
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_movunidadesmes(p_periodo character varying, p_cerrar_mes_anterior boolean DEFAULT true, p_refrescar_siguiente boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.sp_movunidadesmes(p_periodo character varying, p_cerrar_mes_anterior boolean DEFAULT true, p_refrescar_siguiente boolean DEFAULT false)
  RETURNS TABLE("FilasInsertadas" integer, "Periodo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3389,7 +3389,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_antiguedad
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_antiguedad(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_antiguedad(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -3433,7 +3433,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_antiguedad_compat
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_antiguedad_compat(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_antiguedad_compat(p_session_id character varying, p_cedula character varying, p_fecha_calculo date DEFAULT NULL::date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -3451,7 +3451,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_concepto
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_concepto(p_session_id character varying, p_cedula character varying, p_co_concepto character varying, p_co_nomina character varying, p_cantidad numeric DEFAULT NULL::numeric, OUT p_monto numeric, OUT p_total numeric, OUT p_descripcion character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_concepto(p_session_id character varying, p_cedula character varying, p_co_concepto character varying, p_co_nomina character varying, p_cantidad numeric DEFAULT NULL::numeric, OUT p_monto numeric, OUT p_total numeric, OUT p_descripcion character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3494,7 +3494,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_dias_vacaciones
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_dias_vacaciones(p_session_id character varying, p_cedula character varying, p_fecha_retiro date DEFAULT NULL::date, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_dias_vacaciones(p_session_id character varying, p_cedula character varying, p_fecha_retiro date DEFAULT NULL::date, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3542,7 +3542,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_liquidacion
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_liquidacion(p_liquidacion_id character varying, p_cedula character varying, p_fecha_retiro date, p_causa_retiro character varying DEFAULT 'RENUNCIA'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_liquidacion(p_liquidacion_id character varying, p_cedula character varying, p_fecha_retiro date, p_causa_retiro character varying DEFAULT 'RENUNCIA'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3661,7 +3661,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_prestaciones_regimen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_prestaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_adicionales integer, p_salario_integral numeric, OUT p_prestaciones numeric, OUT p_intereses numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_prestaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_adicionales integer, p_salario_integral numeric, OUT p_prestaciones numeric, OUT p_intereses numeric)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3690,7 +3690,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_salarios_promedio
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_salarios_promedio(p_session_id character varying, p_cedula character varying, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_salarios_promedio(p_session_id character varying, p_cedula character varying, p_fecha_desde date, p_fecha_hasta date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -3722,7 +3722,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_utilidades_regimen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_utilidades_regimen(p_session_id character varying, p_regimen character varying, p_dias_trabajados_ano integer, p_salario_normal numeric, OUT p_utilidades numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_utilidades_regimen(p_session_id character varying, p_regimen character varying, p_dias_trabajados_ano integer, p_salario_normal numeric, OUT p_utilidades numeric)
  RETURNS numeric
  LANGUAGE plpgsql
 AS $function$
@@ -3757,7 +3757,7 @@ $function$
 -- ============================================================
 -- sp_nomina_calcular_vacaciones_regimen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_calcular_vacaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_periodo integer DEFAULT 12, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric, OUT p_dias_bono_post_vacacional numeric)
+CREATE OR REPLACE FUNCTION public.sp_nomina_calcular_vacaciones_regimen(p_session_id character varying, p_regimen character varying, p_anios_servicio integer, p_meses_periodo integer DEFAULT 12, OUT p_dias_vacaciones numeric, OUT p_dias_bono_vacacional numeric, OUT p_dias_bono_post_vacacional numeric)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -3785,7 +3785,7 @@ $function$
 -- ============================================================
 -- sp_nomina_cargar_constantes
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes(p_session_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cargar_constantes(p_session_id character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -3817,7 +3817,7 @@ $function$
 -- ============================================================
 -- sp_nomina_cargar_constantes_desde_concepto_legal
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes_desde_concepto_legal(p_session_id character varying, p_convencion character varying DEFAULT 'LOT'::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cargar_constantes_desde_concepto_legal(p_session_id character varying, p_convencion character varying DEFAULT 'LOT'::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -3833,7 +3833,7 @@ $function$
 -- ============================================================
 -- sp_nomina_cargar_constantes_regimen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_cargar_constantes_regimen(p_session_id character varying, p_regimen character varying DEFAULT 'LOT'::character varying, p_tipo_nomina character varying DEFAULT 'MENSUAL'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cargar_constantes_regimen(p_session_id character varying, p_regimen character varying DEFAULT 'LOT'::character varying, p_tipo_nomina character varying DEFAULT 'MENSUAL'::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -3877,7 +3877,7 @@ $function$
 -- ============================================================
 -- sp_nomina_cerrar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_cerrar(p_nomina character varying, p_cedula character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_cerrar(p_nomina character varying, p_cedula character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3917,7 +3917,7 @@ $function$
 -- ============================================================
 -- sp_nomina_concepto_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_concepto_save(p_co_concept character varying, p_co_nomina character varying, p_nb_concepto character varying, p_formula text DEFAULT NULL::text, p_sobre character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_uso character varying DEFAULT NULL::character varying, p_bonificable character varying DEFAULT NULL::character varying, p_antiguedad character varying DEFAULT NULL::character varying, p_contable character varying DEFAULT NULL::character varying, p_aplica character varying DEFAULT 'S'::character varying, p_defecto double precision DEFAULT NULL::double precision)
+CREATE OR REPLACE FUNCTION public.sp_nomina_concepto_save(p_co_concept character varying, p_co_nomina character varying, p_nb_concepto character varying, p_formula text DEFAULT NULL::text, p_sobre character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_uso character varying DEFAULT NULL::character varying, p_bonificable character varying DEFAULT NULL::character varying, p_antiguedad character varying DEFAULT NULL::character varying, p_contable character varying DEFAULT NULL::character varying, p_aplica character varying DEFAULT 'S'::character varying, p_defecto double precision DEFAULT NULL::double precision)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -3998,7 +3998,7 @@ $function$
 -- ============================================================
 -- sp_nomina_conceptos_legales_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_conceptos_legales_list(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_activo boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.sp_nomina_conceptos_legales_list(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_activo boolean DEFAULT true)
  RETURNS TABLE("Id" bigint, "Convencion" character varying, "TipoCalculo" character varying, "CO_CONCEPT" character varying, "NB_CONCEPTO" character varying, "Formula" character varying, "SOBRE" character varying, "TIPO" character varying, "BONIFICABLE" character varying, "LOTTT_Articulo" character varying, "CCP_Clausula" character varying, "Orden" integer, "Activo" boolean, "CO_NOMINA" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4033,7 +4033,7 @@ $function$
 -- ============================================================
 -- sp_nomina_conceptos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_conceptos_list(p_co_nomina character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_conceptos_list(p_co_nomina character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Codigo" character varying, "CodigoNomina" character varying, "Nombre" character varying, "Formula" character varying, "Sobre" character varying, "Clase" character varying, "Tipo" character varying, "Uso" character varying, "Bonificable" character varying, "Antiguedad" character varying, "Contable" character varying, "Aplica" character varying, "Defecto" double precision, "Convencion" character varying, "TipoCalculo" character varying, "Orden" integer, "Activo" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -4096,7 +4096,7 @@ $function$
 -- ============================================================
 -- sp_nomina_constante_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_constante_save(p_codigo character varying, p_nombre character varying DEFAULT NULL::character varying, p_valor double precision DEFAULT NULL::double precision, p_origen character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_constante_save(p_codigo character varying, p_nombre character varying DEFAULT NULL::character varying, p_valor double precision DEFAULT NULL::double precision, p_origen character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4152,7 +4152,7 @@ $function$
 -- ============================================================
 -- sp_nomina_constantes_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_constantes_list(p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_constantes_list(p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Codigo" character varying, "Nombre" character varying, "Valor" numeric, "Origen" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -4189,7 +4189,7 @@ $function$
 -- ============================================================
 -- sp_nomina_evaluar_formula
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_evaluar_formula(p_session_id character varying, p_formula text, OUT p_resultado numeric, OUT p_formula_resuelta text)
+CREATE OR REPLACE FUNCTION public.sp_nomina_evaluar_formula(p_session_id character varying, p_formula text, OUT p_resultado numeric, OUT p_formula_resuelta text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4226,7 +4226,7 @@ $function$
 -- ============================================================
 -- sp_nomina_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_get(p_nomina character varying, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get(p_nomina character varying, p_cedula character varying)
  RETURNS TABLE("PayrollRunId" bigint, "NOMINA" character varying, "CEDULA" character varying, "NombreEmpleado" character varying, "FECHA" timestamp without time zone, "INICIO" date, "HASTA" date, "ASIGNACION" numeric, "DEDUCCION" numeric, "TOTAL" numeric, "CERRADA" boolean, "TipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4264,7 +4264,7 @@ $function$
 -- ============================================================
 -- sp_nomina_get_lines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_get_lines(p_nomina character varying, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_lines(p_nomina character varying, p_cedula character varying)
  RETURNS TABLE("PayrollRunLineId" bigint, "CO_CONCEPTO" character varying, "NombreConcepto" character varying, "TIPO" character varying, "CANTIDAD" numeric, "MONTO" numeric, "Total" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4303,7 +4303,7 @@ $function$
 -- ============================================================
 -- sp_nomina_get_liquidacion_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_header(p_liquidacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_liquidacion_header(p_liquidacion_id character varying)
  RETURNS TABLE("SettlementProcessId" bigint, "SettlementCode" character varying, "Cedula" character varying, "NombreEmpleado" character varying, "RetirementDate" date, "RetirementCause" character varying, "TotalAmount" numeric, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -4330,7 +4330,7 @@ $function$
 -- ============================================================
 -- sp_nomina_get_liquidacion_lines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_lines(p_liquidacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_liquidacion_lines(p_liquidacion_id character varying)
  RETURNS TABLE("SettlementProcessLineId" bigint, "ConceptCode" character varying, "ConceptName" character varying, "Amount" numeric, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -4353,7 +4353,7 @@ $function$
 -- ============================================================
 -- sp_nomina_get_liquidacion_totals
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_get_liquidacion_totals(p_liquidacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_liquidacion_totals(p_liquidacion_id character varying)
  RETURNS TABLE("TotalAsignaciones" numeric, "TotalDeducciones" numeric, "TotalNeto" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -4373,7 +4373,7 @@ $function$
 -- ============================================================
 -- sp_nomina_get_scope
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_get_scope(OUT p_company_id integer, OUT p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.sp_nomina_get_scope(OUT p_company_id integer, OUT p_branch_id integer)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4405,7 +4405,7 @@ $function$
 -- ============================================================
 -- sp_nomina_limpiar_variables
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_limpiar_variables(p_session_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_limpiar_variables(p_session_id character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -4418,7 +4418,7 @@ $function$
 -- ============================================================
 -- sp_nomina_limpiar_variables_compat
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_limpiar_variables_compat(p_session_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_limpiar_variables_compat(p_session_id character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -4431,7 +4431,7 @@ $function$
 -- ============================================================
 -- sp_nomina_liquidaciones_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_liquidaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_liquidaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "SettlementProcessId" bigint, "Liquidacion" character varying, "Cedula" character varying, "NombreEmpleado" character varying, "FechaRetiro" date, "CausaRetiro" character varying, "TotalLiquidacion" numeric, "FechaCalculo" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -4475,7 +4475,7 @@ $function$
 -- ============================================================
 -- sp_nomina_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_list(p_nomina character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_list(p_nomina character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "PayrollRunId" bigint, "NOMINA" character varying, "CEDULA" character varying, "NOMBRE" character varying, "FECHA" timestamp without time zone, "INICIO" date, "HASTA" date, "ASIGNACION" numeric, "DEDUCCION" numeric, "TOTAL" numeric, "CERRADA" boolean, "TipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -4531,7 +4531,7 @@ $function$
 -- ============================================================
 -- sp_nomina_preparar_variables_base
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_preparar_variables_base(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_preparar_variables_base(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -4586,7 +4586,7 @@ $function$
 -- ============================================================
 -- sp_nomina_preparar_variables_regimen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_preparar_variables_regimen(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_tipo_nomina character varying, p_regimen character varying DEFAULT NULL::character varying, p_fecha_inicio date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.sp_nomina_preparar_variables_regimen(p_session_id character varying, p_cedula character varying, p_nomina character varying, p_tipo_nomina character varying, p_regimen character varying DEFAULT NULL::character varying, p_fecha_inicio date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -4604,7 +4604,7 @@ $function$
 -- ============================================================
 -- sp_nomina_procesar_empleado
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_empleado(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4756,7 +4756,7 @@ $function$
 -- ============================================================
 -- sp_nomina_procesar_empleado_concepto_legal
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado_concepto_legal(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_empleado_concepto_legal(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT 'MENSUAL'::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4775,7 +4775,7 @@ $function$
 -- ============================================================
 -- sp_nomina_procesar_empleado_regimen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_empleado_regimen(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_regimen character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_empleado_regimen(p_nomina character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_regimen character varying DEFAULT NULL::character varying, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4807,7 +4807,7 @@ $function$
 -- ============================================================
 -- sp_nomina_procesar_nomina
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_nomina(p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, p_solo_activos boolean DEFAULT true, OUT p_procesados integer, OUT p_errores integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_nomina(p_nomina character varying, p_fecha_inicio date, p_fecha_hasta date, p_co_usuario character varying DEFAULT 'API'::character varying, p_solo_activos boolean DEFAULT true, OUT p_procesados integer, OUT p_errores integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4854,7 +4854,7 @@ $function$
 -- ============================================================
 -- sp_nomina_procesar_vacaciones
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_procesar_vacaciones(p_vacacion_id character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_fecha_reintegro date DEFAULT NULL::date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_procesar_vacaciones(p_vacacion_id character varying, p_cedula character varying, p_fecha_inicio date, p_fecha_hasta date, p_fecha_reintegro date DEFAULT NULL::date, p_co_usuario character varying DEFAULT 'API'::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -4979,7 +4979,7 @@ $function$
 -- ============================================================
 -- sp_nomina_reemplazar_variables
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_reemplazar_variables(p_session_id character varying, p_formula text)
+CREATE OR REPLACE FUNCTION public.sp_nomina_reemplazar_variables(p_session_id character varying, p_formula text)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -5004,7 +5004,7 @@ $function$
 -- ============================================================
 -- sp_nomina_set_variable
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_set_variable(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_set_variable(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -5022,7 +5022,7 @@ $function$
 -- ============================================================
 -- sp_nomina_set_variable_compat
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_set_variable_compat(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_set_variable_compat(p_session_id character varying, p_variable character varying, p_valor numeric, p_descripcion character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -5040,7 +5040,7 @@ $function$
 -- ============================================================
 -- sp_nomina_vacaciones_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_get(p_vacacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_vacaciones_get(p_vacacion_id character varying)
  RETURNS TABLE("VacationProcessId" bigint, "VacationCode" character varying, "CompanyId" integer, "BranchId" integer, "EmployeeCode" character varying, "EmployeeName" character varying, "StartDate" date, "EndDate" date, "ReintegrationDate" date, "ProcessDate" timestamp without time zone, "TotalAmount" numeric, "CalculatedAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5069,7 +5069,7 @@ $function$
 -- ============================================================
 -- sp_nomina_vacaciones_get_lines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_get_lines(p_vacacion_id character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_vacaciones_get_lines(p_vacacion_id character varying)
  RETURNS TABLE("VacationProcessLineId" bigint, "VacationProcessId" bigint, "ConceptCode" character varying, "ConceptName" character varying, "Quantity" numeric, "Amount" numeric, "Total" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5094,7 +5094,7 @@ $function$
 -- ============================================================
 -- sp_nomina_vacaciones_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_vacaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.sp_nomina_vacaciones_list(p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "VacationProcessId" bigint, "Vacacion" character varying, "Cedula" character varying, "NombreEmpleado" character varying, "Inicio" date, "Hasta" date, "Reintegro" date, "Fecha_Calculo" timestamp without time zone, "Total" numeric, "TotalCalculado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5140,7 +5140,7 @@ $function$
 -- ============================================================
 -- sp_nomina_validar_formulas_concepto_legal
 -- ============================================================
-DROP FUNCTION IF EXISTS public.sp_nomina_validar_formulas_concepto_legal(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.sp_nomina_validar_formulas_concepto_legal(p_convencion character varying DEFAULT NULL::character varying, p_tipo_calculo character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "CO_CONCEPT" character varying, "NB_CONCEPTO" character varying, "FORMULA" character varying, "Error" character varying, "EsValida" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -5206,7 +5206,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Ajuste_Crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Ajuste_Crear"(p_fecha date, p_tipoajuste character varying, p_referencia character varying DEFAULT NULL::character varying, p_motivo character varying DEFAULT ''::character varying, p_codusuario character varying DEFAULT NULL::character varying, p_detallejson jsonb DEFAULT '[]'::jsonb, OUT p_asientoid bigint, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Ajuste_Crear"(p_fecha date, p_tipoajuste character varying, p_referencia character varying DEFAULT NULL::character varying, p_motivo character varying DEFAULT ''::character varying, p_codusuario character varying DEFAULT NULL::character varying, p_detallejson jsonb DEFAULT '[]'::jsonb, OUT p_asientoid bigint, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5233,7 +5233,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Asiento_Anular
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asiento_Anular"(p_asientoid bigint, p_motivo character varying, p_codusuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Anular"(p_asientoid bigint, p_motivo character varying, p_codusuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5259,7 +5259,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Asiento_Crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asiento_Crear"(p_fecha date, p_tipoasiento character varying, p_referencia character varying DEFAULT NULL::character varying, p_concepto character varying DEFAULT ''::character varying, p_moneda character varying DEFAULT 'VES'::character varying, p_tasa numeric DEFAULT 1, p_origenmodulo character varying DEFAULT NULL::character varying, p_origendocumento character varying DEFAULT NULL::character varying, p_codusuario character varying DEFAULT NULL::character varying, p_detallejson jsonb DEFAULT '[]'::jsonb, OUT p_asientoid bigint, OUT p_numeroasiento character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Crear"(p_fecha date, p_tipoasiento character varying, p_referencia character varying DEFAULT NULL::character varying, p_concepto character varying DEFAULT ''::character varying, p_moneda character varying DEFAULT 'VES'::character varying, p_tasa numeric DEFAULT 1, p_origenmodulo character varying DEFAULT NULL::character varying, p_origendocumento character varying DEFAULT NULL::character varying, p_codusuario character varying DEFAULT NULL::character varying, p_detallejson jsonb DEFAULT '[]'::jsonb, OUT p_asientoid bigint, OUT p_numeroasiento character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5324,7 +5324,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Asiento_Get
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asiento_Get"(p_asientoid bigint)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Get"(p_asientoid bigint)
  RETURNS TABLE("AsientoId" bigint, "NumeroAsiento" character varying, "Fecha" date, "TipoAsiento" character varying, "Referencia" character varying, "Concepto" character varying, "Moneda" character varying, "Tasa" numeric, "TotalDebe" numeric, "TotalHaber" numeric, "Estado" character varying, "OrigenModulo" character varying, "CodUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5354,7 +5354,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Asientos_List
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Asientos_List"(p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_tipoasiento character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_origenmodulo character varying DEFAULT NULL::character varying, p_origendocumento character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asientos_List"(p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_tipoasiento character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_origenmodulo character varying DEFAULT NULL::character varying, p_origendocumento character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("AsientoId" bigint, "NumeroAsiento" character varying, "Fecha" date, "TipoAsiento" character varying, "Referencia" character varying, "Concepto" character varying, "Moneda" character varying, "Tasa" numeric, "TotalDebe" numeric, "TotalHaber" numeric, "Estado" character varying, "OrigenModulo" character varying, "CodUsuario" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -5405,7 +5405,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Balance_Comprobacion
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Balance_Comprobacion"(p_fechadesde date, p_fechahasta date)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Balance_Comprobacion"(p_fechadesde date, p_fechahasta date)
  RETURNS TABLE("CodCuenta" character varying, "Descripcion" character varying, "Debe" numeric, "Haber" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5431,7 +5431,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Balance_General
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Balance_General"(p_fechacorte date)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Balance_General"(p_fechacorte date)
  RETURNS TABLE("Tipo" character, "CodCuenta" character varying, "Descripcion" character varying, "Debe" numeric, "Haber" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5460,7 +5460,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Depreciacion_Generar
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Depreciacion_Generar"(p_periodo character varying, p_codusuario character varying DEFAULT NULL::character varying, p_centrocosto character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Depreciacion_Generar"(p_periodo character varying, p_codusuario character varying DEFAULT NULL::character varying, p_centrocosto character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5474,7 +5474,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Estado_Resultados
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Estado_Resultados"(p_fechadesde date, p_fechahasta date)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Estado_Resultados"(p_fechadesde date, p_fechahasta date)
  RETURNS TABLE("Tipo" character, "CodCuenta" character varying, "Descripcion" character varying, "Debe" numeric, "Haber" numeric, "SaldoResultado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5502,7 +5502,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Libro_Mayor
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Libro_Mayor"(p_fechadesde date, p_fechahasta date)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Libro_Mayor"(p_fechadesde date, p_fechahasta date)
  RETURNS TABLE("CodCuenta" character varying, "Descripcion" character varying, "Debe" numeric, "Haber" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5528,7 +5528,7 @@ $function$
 -- ============================================================
 -- usp_Contabilidad_Mayor_Analitico
 -- ============================================================
-DROP FUNCTION IF EXISTS public."usp_Contabilidad_Mayor_Analitico"(p_codcuenta character varying, p_fechadesde date, p_fechahasta date)
+CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Mayor_Analitico"(p_codcuenta character varying, p_fechadesde date, p_fechahasta date)
  RETURNS TABLE("AsientoId" integer, "Fecha" date, "Referencia" character varying, "Concepto" character varying, "Descripcion" character varying, "Debe" numeric, "Haber" numeric, "SaldoAcumulado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -5556,7 +5556,7 @@ $function$
 -- ============================================================
 -- usp_acct_account_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_account_delete(p_company_id integer, p_account_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_account_delete(p_company_id integer, p_account_code character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5604,7 +5604,7 @@ $function$
 -- ============================================================
 -- usp_acct_account_exists
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_account_exists(p_company_id integer, p_account_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_account_exists(p_company_id integer, p_account_code character varying)
  RETURNS TABLE(ok integer)
  LANGUAGE plpgsql
 AS $function$
@@ -5623,7 +5623,7 @@ $function$
 -- ============================================================
 -- usp_acct_account_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_account_get(p_company_id integer, p_account_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_account_get(p_company_id integer, p_account_code character varying)
  RETURNS SETOF acct."Account"
  LANGUAGE plpgsql
 AS $function$
@@ -5642,7 +5642,7 @@ $function$
 -- ============================================================
 -- usp_acct_account_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_account_insert(p_company_id integer, p_account_code character varying, p_account_name character varying, p_account_type character varying DEFAULT 'A'::character varying, p_account_level integer DEFAULT NULL::integer, p_parent_account_id integer DEFAULT NULL::integer, p_allows_posting boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_acct_account_insert(p_company_id integer, p_account_code character varying, p_account_name character varying, p_account_type character varying DEFAULT 'A'::character varying, p_account_level integer DEFAULT NULL::integer, p_parent_account_id integer DEFAULT NULL::integer, p_allows_posting boolean DEFAULT true)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5711,7 +5711,7 @@ $function$
 -- ============================================================
 -- usp_acct_account_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_account_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_account_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("AccountId" integer, "AccountCode" character varying, "AccountName" character varying, "AccountType" character varying, "AccountLevel" integer, "AllowsPosting" boolean, "IsActive" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -5756,7 +5756,7 @@ $function$
 -- ============================================================
 -- usp_acct_account_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_account_update(p_company_id integer, p_account_code character varying, p_account_name character varying DEFAULT NULL::character varying, p_account_type character varying DEFAULT NULL::character varying, p_account_level integer DEFAULT NULL::integer, p_allows_posting boolean DEFAULT NULL::boolean)
+CREATE OR REPLACE FUNCTION public.usp_acct_account_update(p_company_id integer, p_account_code character varying, p_account_name character varying DEFAULT NULL::character varying, p_account_type character varying DEFAULT NULL::character varying, p_account_level integer DEFAULT NULL::integer, p_allows_posting boolean DEFAULT NULL::boolean)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -5793,7 +5793,7 @@ $function$
 -- ============================================================
 -- usp_acct_accountmonetaryclass_autoclassify
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_accountmonetaryclass_autoclassify(p_company_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_accountmonetaryclass_autoclassify(p_company_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5866,7 +5866,7 @@ $function$
 -- ============================================================
 -- usp_acct_accountmonetaryclass_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_accountmonetaryclass_list(p_company_id integer, p_classification character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_accountmonetaryclass_list(p_company_id integer, p_classification character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying)
  RETURNS TABLE(p_total_count bigint, "AccountMonetaryClassId" integer, "AccountId" bigint, "AccountCode" character varying, "AccountName" character varying, "AccountType" character, "AccountLevel" smallint, "AllowsPosting" boolean, "Classification" character varying, "SubClassification" character varying, "ReexpressionAccountId" bigint, "IsActive" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -5901,7 +5901,7 @@ $function$
 -- ============================================================
 -- usp_acct_accountmonetaryclass_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_accountmonetaryclass_upsert(p_company_id integer, p_account_id bigint, p_classification character varying, p_sub_classification character varying DEFAULT NULL::character varying, p_reexpression_account_id bigint DEFAULT NULL::bigint, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_accountmonetaryclass_upsert(p_company_id integer, p_account_id bigint, p_classification character varying, p_sub_classification character varying DEFAULT NULL::character varying, p_reexpression_account_id bigint DEFAULT NULL::bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5948,7 +5948,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_delete(p_company_id integer, p_budget_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_delete(p_company_id integer, p_budget_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -5978,7 +5978,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_get(p_company_id integer, p_budget_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_get(p_company_id integer, p_budget_id integer)
  RETURNS TABLE("BudgetId" integer, "BudgetName" character varying, "FiscalYear" smallint, "CostCenterCode" character varying, "Status" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6003,7 +6003,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_getlines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_getlines(p_budget_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_getlines(p_budget_id integer)
  RETURNS TABLE("BudgetLineId" bigint, "AccountCode" character varying, "AccountName" character varying, "Month01" numeric, "Month02" numeric, "Month03" numeric, "Month04" numeric, "Month05" numeric, "Month06" numeric, "Month07" numeric, "Month08" numeric, "Month09" numeric, "Month10" numeric, "Month11" numeric, "Month12" numeric, "AnnualTotal" numeric, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6028,7 +6028,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_insert(p_company_id integer, p_name character varying, p_fiscal_year smallint, p_cost_center_code character varying DEFAULT NULL::character varying, p_lines_json text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_insert(p_company_id integer, p_name character varying, p_fiscal_year smallint, p_cost_center_code character varying DEFAULT NULL::character varying, p_lines_json text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6083,7 +6083,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_list(p_company_id integer, p_fiscal_year smallint DEFAULT NULL::smallint, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_list(p_company_id integer, p_fiscal_year smallint DEFAULT NULL::smallint, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "BudgetId" integer, "BudgetName" character varying, "FiscalYear" smallint, "CostCenterCode" character varying, "Status" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6126,7 +6126,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_update(p_company_id integer, p_budget_id integer, p_name character varying, p_lines_json text, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_update(p_company_id integer, p_budget_id integer, p_name character varying, p_lines_json text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6185,7 +6185,7 @@ $function$
 -- ============================================================
 -- usp_acct_budget_variance
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_budget_variance(p_company_id integer, p_budget_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_budget_variance(p_company_id integer, p_budget_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("AccountCode" character varying, "AccountName" character varying, "BudgetAmount" numeric, "ActualAmount" numeric, "Variance" numeric, "VariancePct" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -6225,7 +6225,7 @@ $function$
 -- ============================================================
 -- usp_acct_costcenter_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_delete(p_company_id integer, p_code character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_delete(p_company_id integer, p_code character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6273,7 +6273,7 @@ $function$
 -- ============================================================
 -- usp_acct_costcenter_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_get(p_company_id integer, p_cost_center_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_get(p_company_id integer, p_cost_center_code character varying)
  RETURNS TABLE("CostCenterId" integer, "CostCenterCode" character varying, "CostCenterName" character varying, "ParentCostCenterId" integer, "ParentCode" character varying, "ParentName" character varying, "Level" smallint, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6301,7 +6301,7 @@ $function$
 -- ============================================================
 -- usp_acct_costcenter_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_insert(p_company_id integer, p_code character varying, p_name character varying, p_parent_code character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_insert(p_company_id integer, p_code character varying, p_name character varying, p_parent_code character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6352,7 +6352,7 @@ $function$
 -- ============================================================
 -- usp_acct_costcenter_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "CostCenterId" integer, "CostCenterCode" character varying, "CostCenterName" character varying, "ParentCostCenterId" integer, "Level" smallint, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -6395,7 +6395,7 @@ $function$
 -- ============================================================
 -- usp_acct_costcenter_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_costcenter_update(p_company_id integer, p_code character varying, p_name character varying, p_parent_code character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_costcenter_update(p_company_id integer, p_code character varying, p_name character varying, p_parent_code character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6452,7 +6452,7 @@ $function$
 -- ============================================================
 -- usp_acct_dashboard_resumen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_dashboard_resumen(p_company_id bigint, p_branch_id bigint, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_dashboard_resumen(p_company_id bigint, p_branch_id bigint, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("totalIngresos" numeric, "totalGastos" numeric, "margenPorcentaje" numeric, "cuentasPorPagar" numeric, "totalAsientos" integer, "totalCuentas" integer, "totalAnulados" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -6530,7 +6530,7 @@ $function$
 -- ============================================================
 -- usp_acct_documentlink_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_documentlink_upsert(p_company_id integer, p_branch_id integer, p_module character varying, p_document_type character varying, p_origin_document character varying, p_journal_entry_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_acct_documentlink_upsert(p_company_id integer, p_branch_id integer, p_module character varying, p_document_type character varying, p_origin_document character varying, p_journal_entry_id bigint)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6568,7 +6568,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_findbyorigin
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_findbyorigin(p_company_id integer, p_branch_id integer, p_module character varying, p_origin_document character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_findbyorigin(p_company_id integer, p_branch_id integer, p_module character varying, p_origin_document character varying)
  RETURNS TABLE("asientoId" bigint, "numeroAsiento" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6591,7 +6591,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_get(p_company_id integer, p_branch_id integer, p_asiento_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_get(p_company_id integer, p_branch_id integer, p_asiento_id bigint)
  RETURNS TABLE("asientoId" bigint, "numeroAsiento" character varying, fecha date, "tipoAsiento" character varying, referencia character varying, concepto character varying, moneda character varying, tasa numeric, "totalDebe" numeric, "totalHaber" numeric, estado character varying, "origenModulo" character varying, "origenDocumento" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -6625,7 +6625,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_getdetail
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_getdetail(p_company_id integer, p_branch_id integer, p_asiento_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_getdetail(p_company_id integer, p_branch_id integer, p_asiento_id bigint)
  RETURNS TABLE("detalleId" bigint, renglon integer, "codCuenta" character varying, "nombreCuenta" character varying, descripcion character varying, "centroCosto" character varying, "auxiliarTipo" character varying, "auxiliarCodigo" character varying, documento character varying, debe numeric, haber numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -6657,7 +6657,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_insert(p_company_id integer, p_branch_id integer, p_entry_number character varying, p_entry_date date, p_period_code character varying, p_entry_type character varying, p_reference_number character varying DEFAULT NULL::character varying, p_concept character varying DEFAULT ''::character varying, p_currency_code character DEFAULT 'VES'::bpchar, p_exchange_rate numeric DEFAULT 1.0, p_total_debit numeric DEFAULT 0, p_total_credit numeric DEFAULT 0, p_source_module character varying DEFAULT NULL::character varying, p_source_document_no character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_insert(p_company_id integer, p_branch_id integer, p_entry_number character varying, p_entry_date date, p_period_code character varying, p_entry_type character varying, p_reference_number character varying DEFAULT NULL::character varying, p_concept character varying DEFAULT ''::character varying, p_currency_code character DEFAULT 'VES'::bpchar, p_exchange_rate numeric DEFAULT 1.0, p_total_debit numeric DEFAULT 0, p_total_credit numeric DEFAULT 0, p_source_module character varying DEFAULT NULL::character varying, p_source_document_no character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("AsientoId" bigint, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6760,7 +6760,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_tipo_asiento character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_origen_modulo character varying DEFAULT NULL::character varying, p_origen_documento character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_tipo_asiento character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_origen_modulo character varying DEFAULT NULL::character varying, p_origen_documento character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("asientoId" bigint, "numeroAsiento" character varying, fecha date, "tipoAsiento" character varying, referencia character varying, concepto character varying, moneda character varying, tasa numeric, "totalDebe" numeric, "totalHaber" numeric, estado character varying, "origenModulo" character varying, "origenDocumento" character varying, "CreatedAt" timestamp without time zone, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -6817,7 +6817,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_resolveidbysource
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_resolveidbysource(p_company_id integer, p_branch_id integer, p_module character varying, p_origin_document character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_resolveidbysource(p_company_id integer, p_branch_id integer, p_module character varying, p_origin_document character varying)
  RETURNS TABLE("journalEntryId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -6839,7 +6839,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_reverse
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_reverse(p_company_id integer, p_entry_id integer, p_fecha date, p_user_id integer, p_motivo character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_reverse(p_company_id integer, p_entry_id integer, p_fecha date, p_user_id integer, p_motivo character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -6928,7 +6928,7 @@ $function$
 -- ============================================================
 -- usp_acct_entry_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_entry_void(p_company_id integer, p_branch_id integer, p_asiento_id bigint, p_motivo character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_entry_void(p_company_id integer, p_branch_id integer, p_asiento_id bigint, p_motivo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -6978,7 +6978,7 @@ $function$
 -- ============================================================
 -- usp_acct_equitymovement_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_delete(p_company_id integer, p_equity_movement_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_delete(p_company_id integer, p_equity_movement_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7007,7 +7007,7 @@ $function$
 -- ============================================================
 -- usp_acct_equitymovement_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_insert(p_company_id integer, p_branch_id integer, p_fiscal_year smallint, p_account_code character varying, p_movement_type character varying, p_movement_date date, p_amount numeric, p_journal_entry_id bigint DEFAULT NULL::bigint, p_description character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_insert(p_company_id integer, p_branch_id integer, p_fiscal_year smallint, p_account_code character varying, p_movement_type character varying, p_movement_date date, p_amount numeric, p_journal_entry_id bigint DEFAULT NULL::bigint, p_description character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7053,7 +7053,7 @@ $function$
 -- ============================================================
 -- usp_acct_equitymovement_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_list(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
+CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_list(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
  RETURNS TABLE(p_total_count bigint, "EquityMovementId" bigint, "AccountId" bigint, "AccountCode" character varying, "AccountName" character varying, "MovementType" character varying, "MovementDate" date, "Amount" numeric, "JournalEntryId" bigint, "Description" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -7092,7 +7092,7 @@ $function$
 -- ============================================================
 -- usp_acct_equitymovement_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_equitymovement_update(p_company_id integer, p_equity_movement_id integer, p_movement_type character varying DEFAULT NULL::character varying, p_movement_date date DEFAULT NULL::date, p_amount numeric DEFAULT NULL::numeric, p_description character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_equitymovement_update(p_company_id integer, p_equity_movement_id integer, p_movement_type character varying DEFAULT NULL::character varying, p_movement_date date DEFAULT NULL::date, p_amount numeric DEFAULT NULL::numeric, p_description character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7126,7 +7126,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_addimprovement
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_addimprovement(p_company_id integer, p_asset_id bigint, p_improvement_date date, p_description character varying, p_amount numeric, p_additional_life_months integer DEFAULT 0, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_addimprovement(p_company_id integer, p_asset_id bigint, p_improvement_date date, p_description character varying, p_amount numeric, p_additional_life_months integer DEFAULT 0, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7173,7 +7173,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_calculatedepreciation
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_calculatedepreciation(p_company_id integer, p_branch_id integer, p_period_code character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_preview boolean DEFAULT false, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text, OUT p_entries_generated integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_calculatedepreciation(p_company_id integer, p_branch_id integer, p_period_code character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_preview boolean DEFAULT false, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text, OUT p_entries_generated integer)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7295,7 +7295,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_depreciationhistory
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_depreciationhistory(p_company_id integer, p_asset_id bigint, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_depreciationhistory(p_company_id integer, p_asset_id bigint, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "DepreciationId" bigint, "AssetId" bigint, "PeriodCode" character varying, "DepreciationDate" date, "Amount" numeric, "AccumulatedDepreciation" numeric, "BookValue" numeric, "JournalEntryId" bigint, "Status" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -7332,7 +7332,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_dispose
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_dispose(p_company_id integer, p_asset_id bigint, p_disposal_date date, p_disposal_amount numeric DEFAULT 0, p_disposal_reason character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_dispose(p_company_id integer, p_asset_id bigint, p_disposal_date date, p_disposal_amount numeric DEFAULT 0, p_disposal_reason character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7372,7 +7372,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_get(p_company_id integer, p_asset_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_get(p_company_id integer, p_asset_id bigint)
  RETURNS SETOF record
  LANGUAGE plpgsql
 AS $function$
@@ -7402,7 +7402,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_insert(p_company_id integer, p_branch_id integer, p_asset_code character varying, p_description character varying, p_category_id integer, p_acquisition_date date, p_acquisition_cost numeric, p_residual_value numeric DEFAULT 0, p_useful_life_months integer DEFAULT NULL::integer, p_depreciation_method character varying DEFAULT 'STRAIGHT_LINE'::character varying, p_asset_account_code character varying DEFAULT NULL::character varying, p_deprec_account_code character varying DEFAULT NULL::character varying, p_expense_account_code character varying DEFAULT NULL::character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_location character varying DEFAULT NULL::character varying, p_serial_number character varying DEFAULT NULL::character varying, p_units_capacity integer DEFAULT NULL::integer, p_currency_code character varying DEFAULT 'VES'::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_asset_id bigint, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_insert(p_company_id integer, p_branch_id integer, p_asset_code character varying, p_description character varying, p_category_id integer, p_acquisition_date date, p_acquisition_cost numeric, p_residual_value numeric DEFAULT 0, p_useful_life_months integer DEFAULT NULL::integer, p_depreciation_method character varying DEFAULT 'STRAIGHT_LINE'::character varying, p_asset_account_code character varying DEFAULT NULL::character varying, p_deprec_account_code character varying DEFAULT NULL::character varying, p_expense_account_code character varying DEFAULT NULL::character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_location character varying DEFAULT NULL::character varying, p_serial_number character varying DEFAULT NULL::character varying, p_units_capacity integer DEFAULT NULL::integer, p_currency_code character varying DEFAULT 'VES'::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_asset_id bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7447,7 +7447,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_list(p_company_id integer, p_branch_id integer DEFAULT NULL::integer, p_category_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_list(p_company_id integer, p_branch_id integer DEFAULT NULL::integer, p_category_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "AssetId" bigint, "AssetCode" character varying, "Description" character varying, "BranchId" integer, "CategoryId" integer, "CategoryCode" character varying, "CategoryName" character varying, "AcquisitionDate" date, "AcquisitionCost" numeric, "ResidualValue" numeric, "UsefulLifeMonths" integer, "DepreciationMethod" character varying, "Status" character varying, "CostCenterCode" character varying, "Location" character varying, "SerialNumber" character varying, "CurrencyCode" character varying, "AccumulatedDepreciation" numeric, "BookValue" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -7510,7 +7510,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_report_book
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_report_book(p_company_id integer, p_branch_id integer, p_fecha_corte date, p_category_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_report_book(p_company_id integer, p_branch_id integer, p_fecha_corte date, p_category_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("AssetCode" character varying, "Description" character varying, "CategoryName" character varying, "AcquisitionDate" date, "AcquisitionCost" numeric, "AccumulatedDepreciation" numeric, "BookValue" numeric, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -7550,7 +7550,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_report_bycategory
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_report_bycategory(p_company_id integer, p_branch_id integer, p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_report_bycategory(p_company_id integer, p_branch_id integer, p_fecha_corte date)
  RETURNS TABLE("CategoryCode" character varying, "CategoryName" character varying, "AssetCount" bigint, "TotalAcquisitionCost" numeric, "TotalAccumulatedDepreciation" numeric, "TotalBookValue" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -7589,7 +7589,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_report_depreciationschedule
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_report_depreciationschedule(p_company_id integer, p_asset_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_report_depreciationschedule(p_company_id integer, p_asset_id bigint)
  RETURNS TABLE("AssetCode" character varying, "Description" character varying, "MonthNumber" integer, "PeriodCode" character varying, "DepreciationDate" date, "MonthlyAmount" numeric, "AccumulatedDepreciation" numeric, "BookValue" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -7667,7 +7667,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_revalue
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_revalue(p_company_id integer, p_asset_id bigint, p_revaluation_date date, p_index_factor numeric, p_country_code character varying, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_revalue(p_company_id integer, p_asset_id bigint, p_revaluation_date date, p_index_factor numeric, p_country_code character varying, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7727,7 +7727,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedasset_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedasset_update(p_company_id integer, p_asset_id bigint, p_description character varying DEFAULT NULL::character varying, p_location character varying DEFAULT NULL::character varying, p_serial_number character varying DEFAULT NULL::character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedasset_update(p_company_id integer, p_asset_id bigint, p_description character varying DEFAULT NULL::character varying, p_location character varying DEFAULT NULL::character varying, p_serial_number character varying DEFAULT NULL::character varying, p_cost_center_code character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7767,7 +7767,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedassetcategory_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedassetcategory_get(p_company_id integer, p_category_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedassetcategory_get(p_company_id integer, p_category_code character varying)
  RETURNS SETOF acct."FixedAssetCategory"
  LANGUAGE plpgsql
 AS $function$
@@ -7786,7 +7786,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedassetcategory_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedassetcategory_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedassetcategory_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "CategoryId" integer, "CategoryCode" character varying, "CategoryName" character varying, "DefaultUsefulLifeMonths" integer, "DefaultDepreciationMethod" character varying, "DefaultResidualPercent" numeric, "DefaultAssetAccountCode" character varying, "DefaultDeprecAccountCode" character varying, "DefaultExpenseAccountCode" character varying, "CountryCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -7828,7 +7828,7 @@ $function$
 -- ============================================================
 -- usp_acct_fixedassetcategory_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_fixedassetcategory_upsert(p_company_id integer, p_category_code character varying, p_category_name character varying, p_default_useful_life_months integer, p_default_depreciation_method character varying DEFAULT 'STRAIGHT_LINE'::character varying, p_default_residual_percent numeric DEFAULT 0, p_default_asset_account_code character varying DEFAULT NULL::character varying, p_default_deprec_account_code character varying DEFAULT NULL::character varying, p_default_expense_account_code character varying DEFAULT NULL::character varying, p_country_code character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_fixedassetcategory_upsert(p_company_id integer, p_category_code character varying, p_category_name character varying, p_default_useful_life_months integer, p_default_depreciation_method character varying DEFAULT 'STRAIGHT_LINE'::character varying, p_default_residual_percent numeric DEFAULT 0, p_default_asset_account_code character varying DEFAULT NULL::character varying, p_default_deprec_account_code character varying DEFAULT NULL::character varying, p_default_expense_account_code character varying DEFAULT NULL::character varying, p_country_code character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -7878,7 +7878,7 @@ $function$
 -- ============================================================
 -- usp_acct_inflation_calculate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_inflation_calculate(p_company_id integer, p_branch_id integer, p_period_code character, p_fiscal_year smallint, p_user_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_inflation_calculate(p_company_id integer, p_branch_id integer, p_period_code character, p_fiscal_year smallint, p_user_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8049,7 +8049,7 @@ $function$
 -- ============================================================
 -- usp_acct_inflation_post
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_inflation_post(p_company_id integer, p_adjustment_id integer, p_user_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_inflation_post(p_company_id integer, p_adjustment_id integer, p_user_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8184,7 +8184,7 @@ $function$
 -- ============================================================
 -- usp_acct_inflation_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_inflation_void(p_company_id integer, p_adjustment_id integer, p_motivo character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_inflation_void(p_company_id integer, p_adjustment_id integer, p_motivo character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8232,7 +8232,7 @@ $function$
 -- ============================================================
 -- usp_acct_inflationindex_bulkload
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_inflationindex_bulkload(p_company_id integer, p_country_code character, p_index_name character varying, p_json_data text, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_inflationindex_bulkload(p_company_id integer, p_country_code character, p_index_name character varying, p_json_data text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8273,7 +8273,7 @@ $function$
 -- ============================================================
 -- usp_acct_inflationindex_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_inflationindex_list(p_company_id integer, p_country_code character DEFAULT 'VE'::bpchar, p_index_name character varying DEFAULT 'INPC'::character varying, p_year_from smallint DEFAULT NULL::smallint, p_year_to smallint DEFAULT NULL::smallint)
+CREATE OR REPLACE FUNCTION public.usp_acct_inflationindex_list(p_company_id integer, p_country_code character DEFAULT 'VE'::bpchar, p_index_name character varying DEFAULT 'INPC'::character varying, p_year_from smallint DEFAULT NULL::smallint, p_year_to smallint DEFAULT NULL::smallint)
  RETURNS TABLE(p_total_count bigint, "InflationIndexId" integer, "CountryCode" character, "IndexName" character varying, "PeriodCode" character, "IndexValue" numeric, "SourceReference" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -8302,7 +8302,7 @@ $function$
 -- ============================================================
 -- usp_acct_inflationindex_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_inflationindex_upsert(p_company_id integer, p_country_code character, p_index_name character varying, p_period_code character, p_index_value numeric, p_source_reference character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_inflationindex_upsert(p_company_id integer, p_country_code character, p_index_name character varying, p_period_code character, p_index_value numeric, p_source_reference character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8367,7 +8367,7 @@ $function$
 -- ============================================================
 -- usp_acct_period_checklist
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_period_checklist(p_company_id integer, p_period_code character)
+CREATE OR REPLACE FUNCTION public.usp_acct_period_checklist(p_company_id integer, p_period_code character)
  RETURNS TABLE("ItemName" character varying, "ItemCount" integer, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -8433,7 +8433,7 @@ $function$
 -- ============================================================
 -- usp_acct_period_close
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_period_close(p_company_id integer, p_period_code character, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_period_close(p_company_id integer, p_period_code character, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8490,7 +8490,7 @@ $function$
 -- ============================================================
 -- usp_acct_period_ensureyear
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_period_ensureyear(p_company_id integer, p_year smallint, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_period_ensureyear(p_company_id integer, p_year smallint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8552,7 +8552,7 @@ $function$
 -- ============================================================
 -- usp_acct_period_generateclosingentries
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(p_company_id integer, p_period_code character, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_period_generateclosingentries(p_company_id integer, p_period_code character, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8715,7 +8715,7 @@ $function$
 -- ============================================================
 -- usp_acct_period_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_period_list(p_company_id integer, p_year smallint DEFAULT NULL::smallint, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_period_list(p_company_id integer, p_year smallint DEFAULT NULL::smallint, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "FiscalPeriodId" integer, "PeriodCode" character, "PeriodName" character varying, "YearCode" smallint, "MonthCode" smallint, "StartDate" date, "EndDate" date, "Status" character varying, "ClosedAt" timestamp without time zone, "ClosedByUserId" integer, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -8759,7 +8759,7 @@ $function$
 -- ============================================================
 -- usp_acct_period_reopen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(p_company_id integer, p_period_code character, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_period_reopen(p_company_id integer, p_period_code character, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8807,7 +8807,7 @@ $function$
 -- ============================================================
 -- usp_acct_policy_load
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_policy_load(p_company_id integer, p_module character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_policy_load(p_company_id integer, p_module character varying)
  RETURNS TABLE("Proceso" character varying, "Naturaleza" character varying, "CuentaContable" character varying, "CentroCostoDefault" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -8832,7 +8832,7 @@ $function$
 -- ============================================================
 -- usp_acct_pos_getheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_pos_getheader(p_sale_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_pos_getheader(p_sale_ticket_id integer)
  RETURNS TABLE(id integer, "numFactura" character varying, "fechaVenta" timestamp without time zone, "metodoPago" character varying, "codUsuario" character varying, subtotal numeric, impuestos numeric, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -8858,7 +8858,7 @@ $function$
 -- ============================================================
 -- usp_acct_pos_gettaxsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_pos_gettaxsummary(p_sale_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_pos_gettaxsummary(p_sale_ticket_id integer)
  RETURNS TABLE("taxRate" numeric, "baseAmount" numeric, "taxAmount" numeric, "totalAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -8879,7 +8879,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_delete(p_company_id integer, p_recurring_entry_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_delete(p_company_id integer, p_recurring_entry_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -8909,7 +8909,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_execute
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_execute(p_company_id integer, p_recurring_entry_id integer, p_execution_date date, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_execute(p_company_id integer, p_recurring_entry_id integer, p_execution_date date, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -9047,7 +9047,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_get(p_company_id integer, p_recurring_entry_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_get(p_company_id integer, p_recurring_entry_id integer)
  RETURNS TABLE("RecurringEntryId" integer, "TemplateName" character varying, "Frequency" character varying, "NextExecutionDate" date, "LastExecutedDate" date, "TimesExecuted" integer, "MaxExecutions" integer, "TipoAsiento" character varying, "Concepto" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -9075,7 +9075,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_getdue
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_getdue(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_getdue(p_company_id integer)
  RETURNS TABLE("RecurringEntryId" integer, "TemplateName" character varying, "Frequency" character varying, "NextExecutionDate" date, "LastExecutedDate" date, "TimesExecuted" integer, "MaxExecutions" integer, "TipoAsiento" character varying, "Concepto" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -9104,7 +9104,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_getlines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_getlines(p_recurring_entry_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_getlines(p_recurring_entry_id integer)
  RETURNS TABLE("LineId" integer, "AccountCode" character varying, "AccountName" character varying, "Description" character varying, "CostCenterCode" character varying, "Debit" numeric, "Credit" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9128,7 +9128,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_insert(p_company_id integer, p_template_name character varying, p_frequency character varying, p_next_execution_date date, p_tipo_asiento character varying, p_concepto character varying, p_max_executions integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_insert(p_company_id integer, p_template_name character varying, p_frequency character varying, p_next_execution_date date, p_tipo_asiento character varying, p_concepto character varying, p_max_executions integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -9192,7 +9192,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_list(p_company_id integer, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_list(p_company_id integer, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "RecurringEntryId" integer, "TemplateName" character varying, "Frequency" character varying, "NextExecutionDate" date, "LastExecutedDate" date, "TimesExecuted" integer, "MaxExecutions" integer, "TipoAsiento" character varying, "Concepto" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -9235,7 +9235,7 @@ $function$
 -- ============================================================
 -- usp_acct_recurringentry_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_update(p_company_id integer, p_recurring_entry_id integer, p_template_name character varying, p_frequency character varying, p_next_execution_date date, p_concepto character varying, p_max_executions integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_update(p_company_id integer, p_recurring_entry_id integer, p_template_name character varying, p_frequency character varying, p_next_execution_date date, p_concepto character varying, p_max_executions integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -9286,7 +9286,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_agingcxc
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_agingcxc(p_company_id integer, p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_agingcxc(p_company_id integer, p_fecha_corte date)
  RETURNS TABLE("EntityCode" character varying, "EntityType" character varying, "Current_0_30" numeric, "Days_31_60" numeric, "Days_61_90" numeric, "Days_90_Plus" numeric, "Total" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9318,7 +9318,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_agingcxp
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_agingcxp(p_company_id integer, p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_agingcxp(p_company_id integer, p_fecha_corte date)
  RETURNS TABLE("EntityCode" character varying, "EntityType" character varying, "Current_0_30" numeric, "Days_31_60" numeric, "Days_61_90" numeric, "Days_90_Plus" numeric, "Total" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9350,7 +9350,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_balancecompmultiperiod
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_balancecompmultiperiod(p_company_id integer, p_periodos character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_balancecompmultiperiod(p_company_id integer, p_periodos character varying)
  RETURNS TABLE("AccountCode" character varying, "AccountName" character varying, "AccountType" character, "PeriodCode" character varying, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9397,7 +9397,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_balancecomprobacion
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_balancecomprobacion(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_balancecomprobacion(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("codCuenta" character varying, cuenta character varying, "totalDebe" numeric, "totalHaber" numeric, saldo numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9427,7 +9427,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_balancegeneral
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_balancegeneral(p_company_id integer, p_branch_id integer, p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_balancegeneral(p_company_id integer, p_branch_id integer, p_fecha_corte date)
  RETURNS TABLE("codCuenta" character varying, cuenta character varying, tipo character varying, "totalDebe" numeric, "totalHaber" numeric, saldo numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9462,7 +9462,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_balancereexpresado
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_balancereexpresado(p_company_id integer, p_branch_id integer, p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_balancereexpresado(p_company_id integer, p_branch_id integer, p_fecha_corte date)
  RETURNS TABLE("AccountCode" character varying, "AccountName" character varying, "AccountType" character, "AccountLevel" smallint, "historicalBalance" numeric, classification character varying, "adjustedBalance" numeric, "adjustmentAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9545,7 +9545,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_cashflow
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_cashflow(p_company_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_cashflow(p_company_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("Category" character varying, "AccountCode" character varying, "AccountName" character varying, "Amount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9589,7 +9589,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_drilldown
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_drilldown(p_company_id integer, p_account_code character varying, p_fecha_desde date, p_fecha_hasta date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_drilldown(p_company_id integer, p_account_code character varying, p_fecha_desde date, p_fecha_hasta date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "EntryId" bigint, "EntryDate" date, "EntryNumber" character varying, "EntryType" character varying, "Concept" character varying, "Status" character varying, "LineDescription" character varying, "Debit" numeric, "Credit" numeric, "CostCenterCode" character varying, "RunningBalance" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9666,7 +9666,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_equitychanges
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_equitychanges(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_equitychanges(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
  RETURNS TABLE("AccountCode" character varying, "AccountName" character varying, "saldoInicial" numeric, capital numeric, reservas numeric, resultados numeric, dividendos numeric, "ajusteInflacion" numeric, "otrosIntegrales" numeric, "saldoFinal" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9772,7 +9772,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_equitychanges_totals
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_equitychanges_totals(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_equitychanges_totals(p_company_id integer, p_branch_id integer, p_fiscal_year smallint)
  RETURNS TABLE("totalSaldoInicial" numeric, "totalCapital" numeric, "totalReservas" numeric, "totalResultados" numeric, "totalDividendos" numeric, "totalAjusteInflacion" numeric, "totalOtrosIntegrales" numeric, "totalSaldoFinal" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9798,7 +9798,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_estadoresultados
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_estadoresultados(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_estadoresultados(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("codCuenta" character varying, cuenta character varying, tipo character varying, "totalDebe" numeric, "totalHaber" numeric, monto numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9834,7 +9834,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_financialratios
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_financialratios(p_company_id integer, p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_financialratios(p_company_id integer, p_fecha_corte date)
  RETURNS TABLE("RatioName" character varying, "RatioValue" numeric, "Category" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -9919,7 +9919,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_librodiario
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_librodiario(p_company_id bigint, p_branch_id bigint, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_librodiario(p_company_id bigint, p_branch_id bigint, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE(fecha character varying, "asientoId" bigint, "numeroAsiento" character varying, "tipoAsiento" character varying, concepto character varying, estado character varying, renglon integer, "codCuenta" character varying, "descripcionCuenta" character varying, "descripcionLinea" character varying, debe numeric, haber numeric, "centroCosto" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -9956,7 +9956,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_libromayor
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_libromayor(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_libromayor(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE(fecha date, "numeroAsiento" character varying, "codCuenta" character varying, cuenta character varying, descripcion character varying, debe numeric, haber numeric, saldo numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -9992,7 +9992,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_mayoranalitico
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_mayoranalitico(p_company_id integer, p_branch_id integer, p_cod_cuenta character varying, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_mayoranalitico(p_company_id integer, p_branch_id integer, p_cod_cuenta character varying, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE(fecha date, "numeroAsiento" character varying, renglon integer, descripcion character varying, debe numeric, haber numeric, saldo numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -10026,7 +10026,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_pnlbycostcenter
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_pnlbycostcenter(p_company_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_pnlbycostcenter(p_company_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("CostCenterCode" character varying, "CostCenterName" character varying, "AccountCode" character varying, "AccountName" character varying, "AccountType" character, "TotalDebit" numeric, "TotalCredit" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -10067,7 +10067,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_pnlmultiperiod
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_pnlmultiperiod(p_company_id integer, p_periodos character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_pnlmultiperiod(p_company_id integer, p_periodos character varying)
  RETURNS TABLE("AccountCode" character varying, "AccountName" character varying, "AccountType" character, "PeriodCode" character varying, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -10117,7 +10117,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_reme
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_reme(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_reme(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("InflationAdjustmentId" integer, "PeriodCode" character, "AdjustmentDate" date, "inpcInicio" numeric, "inpcFin" numeric, "factorReexpresion" numeric, "inflacionAcumulada" numeric, reme numeric, "totalAjustes" numeric, "Status" character varying, "JournalEntryId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -10147,7 +10147,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_reme_detail
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_reme_detail(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_reme_detail(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("AccountCode" character varying, "AccountName" character varying, "Classification" character varying, "HistoricalBalance" numeric, "ReexpressionFactor" numeric, "AdjustedBalance" numeric, "AdjustmentAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -10183,7 +10183,7 @@ $function$
 -- ============================================================
 -- usp_acct_report_taxsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_report_taxsummary(p_company_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_acct_report_taxsummary(p_company_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("TaxAccountCode" character varying, "TaxType" character varying, "DebitTotal" numeric, "CreditTotal" numeric, "TaxAmount" numeric, "BaseAmount" numeric, "TotalAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -10237,7 +10237,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_delete(p_company_id integer, p_report_template_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_delete(p_company_id integer, p_report_template_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -10268,7 +10268,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_get(p_company_id integer, p_report_template_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_get(p_company_id integer, p_report_template_id integer)
  RETURNS SETOF record
  LANGUAGE plpgsql
 AS $function$
@@ -10289,7 +10289,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_get_variables
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_get_variables(p_report_template_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_get_variables(p_report_template_id integer)
  RETURNS TABLE("VariableId" integer, "VariableName" character varying, "VariableType" character varying, "DataSource" character varying, "DefaultValue" character varying, "Description" character varying, "SortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -10307,7 +10307,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_report_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_report_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(p_total_count bigint, "ReportTemplateId" integer, "CountryCode" character, "ReportCode" character varying, "ReportName" character varying, "LegalFramework" character varying, "LegalReference" character varying, "IsDefault" boolean, "Version" integer, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -10337,7 +10337,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_render
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_render(p_company_id integer, p_report_template_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_fecha_corte date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_render(p_company_id integer, p_report_template_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_fecha_corte date DEFAULT NULL::date)
  RETURNS TABLE("ReportTemplateId" integer, "CountryCode" character, "ReportCode" character varying, "ReportName" character varying, "LegalFramework" character varying, "LegalReference" character varying, "TemplateContent" character varying, "HeaderJson" character varying, "FooterJson" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10357,7 +10357,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_render_company
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_render_company(p_company_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_fecha_corte date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_render_company(p_company_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_fecha_corte date DEFAULT NULL::date)
  RETURNS TABLE("CompanyId" integer, "CompanyCode" character varying, "companyName" character varying, "companyRIF" character varying, "companyNIF" character varying, "companyAddress" character varying, "companyCountry" character, "reportDate" date, "fechaDesde" date, "fechaHasta" date, currency character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10384,7 +10384,7 @@ $function$
 -- ============================================================
 -- usp_acct_reporttemplate_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_reporttemplate_upsert(p_company_id integer, p_report_template_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_report_code character varying DEFAULT NULL::character varying, p_report_name character varying DEFAULT NULL::character varying, p_legal_framework character varying DEFAULT NULL::character varying, p_legal_reference character varying DEFAULT NULL::character varying, p_template_content text DEFAULT NULL::text, p_header_json text DEFAULT NULL::text, p_footer_json text DEFAULT NULL::text, p_user_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_acct_reporttemplate_upsert(p_company_id integer, p_report_template_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_report_code character varying DEFAULT NULL::character varying, p_report_name character varying DEFAULT NULL::character varying, p_legal_framework character varying DEFAULT NULL::character varying, p_legal_reference character varying DEFAULT NULL::character varying, p_template_content text DEFAULT NULL::text, p_header_json text DEFAULT NULL::text, p_footer_json text DEFAULT NULL::text, p_user_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -10440,7 +10440,7 @@ $function$
 -- ============================================================
 -- usp_acct_rest_getheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_rest_getheader(p_order_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_rest_getheader(p_order_ticket_id integer)
  RETURNS TABLE(id integer, total numeric, "fechaCierre" timestamp without time zone, "codUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10463,7 +10463,7 @@ $function$
 -- ============================================================
 -- usp_acct_rest_gettaxsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_rest_gettaxsummary(p_order_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_rest_gettaxsummary(p_order_ticket_id integer)
  RETURNS TABLE("taxRate" numeric, "baseAmount" numeric, "taxAmount" numeric, "totalAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -10525,7 +10525,7 @@ $function$
 -- ============================================================
 -- usp_acct_seedplancuentas
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_acct_seedplancuentas(p_company_id integer, p_system_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_acct_seedplancuentas(p_company_id integer, p_system_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10628,7 +10628,7 @@ $function$
 -- ============================================================
 -- usp_almacen_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_almacen_delete(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_almacen_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10656,7 +10656,7 @@ $function$
 -- ============================================================
 -- usp_almacen_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_almacen_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_almacen_getbycodigo(p_codigo character varying)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "WarehouseCode" character varying, "Description" character varying, "WarehouseType" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10682,7 +10682,7 @@ $function$
 -- ============================================================
 -- usp_almacen_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_almacen_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_almacen_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10731,7 +10731,7 @@ $function$
 -- ============================================================
 -- usp_almacen_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_almacen_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_almacen_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "WarehouseCode" character varying, "Description" character varying, "WarehouseType" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -10786,7 +10786,7 @@ $function$
 -- ============================================================
 -- usp_almacen_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_almacen_update(p_codigo character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_almacen_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10823,7 +10823,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_apply
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_apply(p_payable_document_id bigint, p_amount numeric, p_payment_reference character varying DEFAULT NULL::character varying, p_apply_date date DEFAULT NULL::date, p_updated_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_apply(p_payable_document_id bigint, p_amount numeric, p_payment_reference character varying DEFAULT NULL::character varying, p_apply_date date DEFAULT NULL::date, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "ApplicationId" bigint, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10905,7 +10905,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_get(p_application_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_get(p_application_id bigint)
  RETURNS TABLE("PayableApplicationId" bigint, "PayableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "IssueDate" date, "DueDate" date, "CurrencyCode" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "PaidFlag" boolean, "DocumentStatus" character varying, "DocumentNotes" character varying, "SupplierId" bigint, "SupplierCode" character varying, "SupplierName" character varying, "SupplierFiscalId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10943,7 +10943,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_getbycontext
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_getbycontext(p_application_id bigint, p_company_id integer, p_branch_id integer, p_currency_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_getbycontext(p_application_id bigint, p_company_id integer, p_branch_id integer, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -10985,7 +10985,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_list(p_supplier_id bigint DEFAULT NULL::bigint, p_document_type character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_list(p_supplier_id bigint DEFAULT NULL::bigint, p_document_type character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("PayableApplicationId" bigint, "PayableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "DocumentStatus" character varying, "SupplierId" bigint, "SupplierCode" character varying, "SupplierName" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -11038,7 +11038,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_listbycontext
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_listbycontext(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_listbycontext(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -11113,7 +11113,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_resolve
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_resolve(p_company_id integer, p_branch_id integer, p_document_number character varying, p_supplier_code character varying DEFAULT NULL::character varying, p_document_type character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_resolve(p_company_id integer, p_branch_id integer, p_document_number character varying, p_supplier_code character varying DEFAULT NULL::character varying, p_document_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("PayableDocumentId" bigint, "PendingAmount" numeric, "TotalAmount" numeric, "SupplierId" bigint, "CurrencyCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11142,7 +11142,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_reverse
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_reverse(p_application_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_reverse(p_application_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11212,7 +11212,7 @@ $function$
 -- ============================================================
 -- usp_ap_application_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_application_update(p_application_id bigint, p_amount numeric DEFAULT NULL::numeric, p_apply_date date DEFAULT NULL::date, p_payment_reference character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_application_update(p_application_id bigint, p_amount numeric DEFAULT NULL::numeric, p_apply_date date DEFAULT NULL::date, p_payment_reference character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok integer, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11308,7 +11308,7 @@ $function$
 -- ============================================================
 -- usp_ap_balance_getbysupplier
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_balance_getbysupplier(p_cod_proveedor character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_balance_getbysupplier(p_cod_proveedor character varying)
  RETURNS TABLE("saldoTotal" numeric, saldo30 numeric, saldo60 numeric, saldo90 numeric, saldo91 numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -11330,7 +11330,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_applypayment
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_applypayment(p_cod_proveedor character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_pago character varying DEFAULT NULL::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_applypayment(p_cod_proveedor character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_pago character varying DEFAULT NULL::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11419,7 +11419,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_applypayment
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_applypayment(p_cod_proveedor character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_pago character varying DEFAULT NULL::character varying, p_documentos_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_applypayment(p_cod_proveedor character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_pago character varying DEFAULT NULL::character varying, p_documentos_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11522,7 +11522,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_create(p_codigo character varying, p_document_type character varying DEFAULT 'COMPRA'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_currency_code character varying DEFAULT 'USD'::character varying, p_total_amount numeric DEFAULT 0, p_pending_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_create(p_codigo character varying, p_document_type character varying DEFAULT 'COMPRA'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_currency_code character varying DEFAULT 'USD'::character varying, p_total_amount numeric DEFAULT 0, p_pending_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11573,7 +11573,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_getbyid(p_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_getbyid(p_id bigint)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11594,7 +11594,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_getpending
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_getpending(p_cod_proveedor character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_getpending(p_cod_proveedor character varying)
  RETURNS TABLE("tipoDoc" character varying, "numDoc" character varying, fecha date, pendiente numeric, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -11619,7 +11619,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_list(p_cod_proveedor character varying DEFAULT NULL::character varying, p_tipo_doc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_list(p_cod_proveedor character varying DEFAULT NULL::character varying, p_tipo_doc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "codProveedor" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11662,7 +11662,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_listfull
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_listfull(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_listfull(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11720,7 +11720,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_update(p_id bigint, p_document_type character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT NULL::numeric, p_pending_amount numeric DEFAULT NULL::numeric, p_status character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_update(p_id bigint, p_document_type character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT NULL::numeric, p_pending_amount numeric DEFAULT NULL::numeric, p_status character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11746,7 +11746,7 @@ $function$
 -- ============================================================
 -- usp_ap_payable_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ap_payable_void(p_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_ap_payable_void(p_id bigint)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11766,7 +11766,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_apply
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_apply(p_receivable_document_id bigint, p_amount numeric, p_payment_reference character varying DEFAULT NULL::character varying, p_apply_date date DEFAULT NULL::date, p_updated_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_apply(p_receivable_document_id bigint, p_amount numeric, p_payment_reference character varying DEFAULT NULL::character varying, p_apply_date date DEFAULT NULL::date, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "ApplicationId" bigint, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11848,7 +11848,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_get(p_application_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_get(p_application_id bigint)
  RETURNS TABLE("ReceivableApplicationId" bigint, "ReceivableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "IssueDate" date, "DueDate" date, "CurrencyCode" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "PaidFlag" boolean, "DocumentStatus" character varying, "DocumentNotes" character varying, "CustomerId" bigint, "CustomerCode" character varying, "CustomerName" character varying, "CustomerFiscalId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11886,7 +11886,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_getbycontext
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_getbycontext(p_application_id bigint, p_company_id integer, p_branch_id integer, p_currency_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_getbycontext(p_application_id bigint, p_company_id integer, p_branch_id integer, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -11928,7 +11928,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_list(p_customer_id bigint DEFAULT NULL::bigint, p_document_type character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_list(p_customer_id bigint DEFAULT NULL::bigint, p_document_type character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("ReceivableApplicationId" bigint, "ReceivableDocumentId" bigint, "ApplyDate" date, "AppliedAmount" numeric, "PaymentReference" character varying, "CreatedAt" timestamp without time zone, "DocumentNumber" character varying, "DocumentType" character varying, "TotalAmount" numeric, "PendingAmount" numeric, "DocumentStatus" character varying, "CustomerId" bigint, "CustomerCode" character varying, "CustomerName" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -11981,7 +11981,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_listbycontext
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_listbycontext(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_listbycontext(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Id" bigint, "ApplicationId" bigint, "DocumentoId" bigint, "CODIGO" character varying, "Codigo" character varying, "NOMBRE" character varying, "TIPO_DOC" character varying, "TipoDoc" character varying, "DOCUMENTO" character varying, "Num_fact" character varying, "FECHA" date, "Fecha" date, "MONTO" numeric, "Monto" numeric, "MONEDA" character varying, "REFERENCIA" character varying, "Concepto" character varying, "PENDIENTE" numeric, "TOTAL" numeric, "ESTADO_DOC" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -12054,7 +12054,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_resolve
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_resolve(p_company_id integer, p_branch_id integer, p_document_number character varying, p_customer_code character varying DEFAULT NULL::character varying, p_document_type character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_resolve(p_company_id integer, p_branch_id integer, p_document_number character varying, p_customer_code character varying DEFAULT NULL::character varying, p_document_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ReceivableDocumentId" bigint, "PendingAmount" numeric, "TotalAmount" numeric, "CustomerId" bigint, "CurrencyCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12083,7 +12083,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_reverse
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_reverse(p_application_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_reverse(p_application_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer, "NewPending" numeric, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12153,7 +12153,7 @@ $function$
 -- ============================================================
 -- usp_ar_application_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_application_update(p_application_id bigint, p_amount numeric DEFAULT NULL::numeric, p_apply_date date DEFAULT NULL::date, p_payment_reference character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_application_update(p_application_id bigint, p_amount numeric DEFAULT NULL::numeric, p_apply_date date DEFAULT NULL::date, p_payment_reference character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok integer, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12258,7 +12258,7 @@ $function$
 -- ============================================================
 -- usp_ar_balance_getbycustomer
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_balance_getbycustomer(p_cod_cliente character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_balance_getbycustomer(p_cod_cliente character varying)
  RETURNS TABLE("saldoTotal" numeric, saldo30 numeric, saldo60 numeric, saldo90 numeric, saldo91 numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -12280,7 +12280,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_applypayment
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_applypayment(p_cod_cliente character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_recibo character varying DEFAULT NULL::character varying, p_documentos_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_applypayment(p_cod_cliente character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_recibo character varying DEFAULT NULL::character varying, p_documentos_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12388,7 +12388,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_applypayment
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_applypayment(p_cod_cliente character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_recibo character varying DEFAULT NULL::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_applypayment(p_cod_cliente character varying, p_fecha date DEFAULT NULL::date, p_request_id character varying DEFAULT NULL::character varying, p_num_recibo character varying DEFAULT NULL::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12477,7 +12477,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_create(p_codigo character varying, p_document_type character varying DEFAULT 'FACT'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_currency_code character varying DEFAULT 'USD'::character varying, p_total_amount numeric DEFAULT 0, p_pending_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_create(p_codigo character varying, p_document_type character varying DEFAULT 'FACT'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_currency_code character varying DEFAULT 'USD'::character varying, p_total_amount numeric DEFAULT 0, p_pending_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12528,7 +12528,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_getbyid(p_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_getbyid(p_id bigint)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12549,7 +12549,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_getpending
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_getpending(p_cod_cliente character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_getpending(p_cod_cliente character varying)
  RETURNS TABLE("tipoDoc" character varying, "numDoc" character varying, fecha date, pendiente numeric, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -12574,7 +12574,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_list(p_cod_cliente character varying DEFAULT NULL::character varying, p_tipo_doc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_list(p_cod_cliente character varying DEFAULT NULL::character varying, p_tipo_doc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "codCliente" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12617,7 +12617,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_listfull
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_listfull(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_listfull(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, id bigint, codigo character varying, nombre character varying, tipo character varying, documento character varying, fecha date, "fechaVence" date, total numeric, pendiente numeric, estado character varying, moneda character varying, observacion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12667,7 +12667,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_update(p_id bigint, p_document_type character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT NULL::numeric, p_pending_amount numeric DEFAULT NULL::numeric, p_status character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_update(p_id bigint, p_document_type character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_issue_date date DEFAULT NULL::date, p_due_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT NULL::numeric, p_pending_amount numeric DEFAULT NULL::numeric, p_status character varying DEFAULT NULL::character varying, p_currency_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12693,7 +12693,7 @@ $function$
 -- ============================================================
 -- usp_ar_receivable_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_ar_receivable_void(p_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_ar_receivable_void(p_id bigint)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12713,7 +12713,7 @@ $function$
 -- ============================================================
 -- usp_audit_dashboard_topmodulos
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_dashboard_topmodulos(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_audit_dashboard_topmodulos(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("ModuleName" character varying, "Total" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -12736,7 +12736,7 @@ $function$
 -- ============================================================
 -- usp_audit_dashboard_totales
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_dashboard_totales(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_audit_dashboard_totales(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("totalLogs" bigint, "totalCreates" bigint, "totalUpdates" bigint, "totalDeletes" bigint, "totalVoids" bigint, "totalLogins" bigint, "logsUltimas24h" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -12763,7 +12763,7 @@ $function$
 -- ============================================================
 -- usp_audit_dashboard_ultimoslogs
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_dashboard_ultimoslogs(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_audit_dashboard_ultimoslogs(p_company_id integer, p_branch_id integer, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("AuditLogId" bigint, "CreatedAt" timestamp without time zone, "UserName" character varying, "ModuleName" character varying, "ActionType" character varying, "EntityName" character varying, "Summary" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12790,7 +12790,7 @@ $function$
 -- ============================================================
 -- usp_audit_fiscalrecord_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_fiscalrecord_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_audit_fiscalrecord_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "FiscalRecordId" integer, "InvoiceId" integer, "InvoiceNumber" character varying, "InvoiceDate" date, "InvoiceType" character varying, "RecordHash" character varying, "SentToAuthority" boolean, "AuthorityStatus" character varying, "CountryCode" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -12843,7 +12843,7 @@ $function$
 -- ============================================================
 -- usp_audit_log_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_log_getbyid(p_audit_log_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_audit_log_getbyid(p_audit_log_id bigint)
  RETURNS TABLE("AuditLogId" bigint, "CompanyId" integer, "BranchId" integer, "UserId" integer, "UserName" character varying, "ModuleName" character varying, "EntityName" character varying, "EntityId" character varying, "ActionType" character varying, "Summary" character varying, "OldValues" character varying, "NewValues" character varying, "IpAddress" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -12872,7 +12872,7 @@ $function$
 -- ============================================================
 -- usp_audit_log_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_log_insert(p_company_id integer, p_branch_id integer, p_user_id integer DEFAULT NULL::integer, p_user_name character varying DEFAULT NULL::character varying, p_module_name character varying DEFAULT NULL::character varying, p_entity_name character varying DEFAULT NULL::character varying, p_entity_id character varying DEFAULT NULL::character varying, p_action_type character varying DEFAULT NULL::character varying, p_summary character varying DEFAULT NULL::character varying, p_old_values text DEFAULT NULL::text, p_new_values text DEFAULT NULL::text, p_ip_address character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_audit_log_insert(p_company_id integer, p_branch_id integer, p_user_id integer DEFAULT NULL::integer, p_user_name character varying DEFAULT NULL::character varying, p_module_name character varying DEFAULT NULL::character varying, p_entity_name character varying DEFAULT NULL::character varying, p_entity_id character varying DEFAULT NULL::character varying, p_action_type character varying DEFAULT NULL::character varying, p_summary character varying DEFAULT NULL::character varying, p_old_values text DEFAULT NULL::text, p_new_values text DEFAULT NULL::text, p_ip_address character varying DEFAULT NULL::character varying)
  RETURNS TABLE("AuditLogId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -12899,7 +12899,7 @@ $function$
 -- ============================================================
 -- usp_audit_log_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_audit_log_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_module_name character varying DEFAULT NULL::character varying, p_user_name character varying DEFAULT NULL::character varying, p_action_type character varying DEFAULT NULL::character varying, p_entity_name character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_audit_log_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_module_name character varying DEFAULT NULL::character varying, p_user_name character varying DEFAULT NULL::character varying, p_action_type character varying DEFAULT NULL::character varying, p_entity_name character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "AuditLogId" bigint, "CompanyId" integer, "BranchId" integer, "UserId" integer, "UserName" character varying, "ModuleName" character varying, "EntityName" character varying, "EntityId" character varying, "ActionType" character varying, "Summary" character varying, "IpAddress" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -12956,7 +12956,7 @@ $function$
 -- ============================================================
 -- usp_bancos_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bancos_delete(p_nombre character varying)
+CREATE OR REPLACE FUNCTION public.usp_bancos_delete(p_nombre character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12980,7 +12980,7 @@ $function$
 -- ============================================================
 -- usp_bancos_getbynombre
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bancos_getbynombre(p_nombre character varying)
+CREATE OR REPLACE FUNCTION public.usp_bancos_getbynombre(p_nombre character varying)
  RETURNS TABLE("Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -12996,7 +12996,7 @@ $function$
 -- ============================================================
 -- usp_bancos_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bancos_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_bancos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13031,7 +13031,7 @@ $function$
 -- ============================================================
 -- usp_bancos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bancos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_bancos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying, "Co_Usuario" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -13077,7 +13077,7 @@ $function$
 -- ============================================================
 -- usp_bancos_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bancos_update(p_nombre character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_bancos_update(p_nombre character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13106,7 +13106,7 @@ $function$
 -- ============================================================
 -- usp_bank_account_getbynumber
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_account_getbynumber(p_company_id integer, p_nro_cta character varying)
+CREATE OR REPLACE FUNCTION public.usp_bank_account_getbynumber(p_company_id integer, p_nro_cta character varying)
  RETURNS TABLE("bankAccountId" bigint, "nroCta" character varying, "bankName" character varying, balance numeric, "availableBalance" numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13120,7 +13120,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_account_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_account_list(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_account_list(p_company_id integer)
  RETURNS TABLE("Nro_Cta" character varying, "Banco" character varying, "Descripcion" character varying, "Moneda" character varying, "Saldo" numeric, "Saldo_Disponible" numeric, "BancoNombre" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13135,7 +13135,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_movement_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_movement_create(p_bank_account_id bigint, p_movement_type character varying, p_movement_sign smallint, p_amount numeric, p_net_amount numeric, p_reference_no character varying DEFAULT NULL::character varying, p_beneficiary character varying DEFAULT NULL::character varying, p_concept character varying DEFAULT NULL::character varying, p_category_code character varying DEFAULT NULL::character varying, p_related_document_no character varying DEFAULT NULL::character varying, p_related_document_type character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_movement_create(p_bank_account_id bigint, p_movement_type character varying, p_movement_sign smallint, p_amount numeric, p_net_amount numeric, p_reference_no character varying DEFAULT NULL::character varying, p_beneficiary character varying DEFAULT NULL::character varying, p_concept character varying DEFAULT NULL::character varying, p_category_code character varying DEFAULT NULL::character varying, p_related_document_no character varying DEFAULT NULL::character varying, p_related_document_type character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "movementId" integer, "newBalance" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -13167,7 +13167,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_movement_listbyaccount
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_movement_listbyaccount(p_company_id integer, p_nro_cta character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_bank_movement_listbyaccount(p_company_id integer, p_nro_cta character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(id bigint, "Nro_Cta" character varying, "Fecha" timestamp with time zone, "Tipo" character varying, "Nro_Ref" character varying, "Beneficiario" character varying, "Monto" numeric, "MontoNeto" numeric, "Concepto" character varying, "Categoria" character varying, "Documento_Relacionado" character varying, "Tipo_Doc_Rel" character varying, "SaldoPosterior" numeric, "Conciliado" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -13194,7 +13194,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_close
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_close(p_id integer, p_bank_closing numeric, p_notes character varying DEFAULT NULL::character varying, p_closed_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_close(p_id integer, p_bank_closing numeric, p_notes character varying DEFAULT NULL::character varying, p_closed_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, diferencia numeric, estado character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13228,7 +13228,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_create(p_company_id integer, p_branch_id integer, p_bank_account_id bigint, p_from_date date, p_to_date date, p_opening numeric, p_closing numeric, p_created_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_create(p_company_id integer, p_branch_id integer, p_bank_account_id bigint, p_from_date date, p_to_date date, p_opening numeric, p_closing numeric, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13246,7 +13246,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_getaccountnobyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getaccountnobyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getaccountnobyid(p_id integer)
  RETURNS TABLE("accountNo" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13259,7 +13259,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getbyid(p_company_id integer, p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getbyid(p_company_id integer, p_id integer)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha_Desde" character varying, "Fecha_Hasta" character varying, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Banco" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13277,7 +13277,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_getnettotal
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getnettotal(p_bank_account_id bigint, p_from_date date, p_to_date date)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getnettotal(p_bank_account_id bigint, p_from_date date, p_to_date date)
  RETURNS TABLE("netTotal" numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13289,7 +13289,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_getopenforaccount
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getopenforaccount(p_company_id integer, p_bank_account_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getopenforaccount(p_company_id integer, p_bank_account_id bigint)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13302,7 +13302,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_getpendingstatements
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getpendingstatements(p_id integer)
  RETURNS TABLE(id bigint, "Fecha" timestamp with time zone, "Descripcion" character varying, "Referencia" character varying, "Tipo" character varying, "Monto" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13316,7 +13316,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_getsystemmovements
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getsystemmovements(p_id integer)
  RETURNS TABLE(id bigint, "Fecha" timestamp with time zone, "Tipo" character varying, "Nro_Ref" character varying, "Beneficiario" character varying, "Concepto" character varying, "Monto" numeric, "MontoNeto" numeric, "SaldoPosterior" numeric, "Conciliado" boolean)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13332,7 +13332,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_list(p_company_id integer, p_nro_cta character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_list(p_company_id integer, p_nro_cta character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("ID" integer, "Nro_Cta" character varying, "Fecha_Desde" character varying, "Fecha_Hasta" character varying, "Saldo_Inicial_Sistema" numeric, "Saldo_Final_Sistema" numeric, "Saldo_Inicial_Banco" numeric, "Saldo_Final_Banco" numeric, "Diferencia" numeric, "Estado" character varying, "Observaciones" character varying, "Banco" character varying, "Pendientes" bigint, "Conciliados" bigint, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -13365,7 +13365,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_reconciliation_matchmovement
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_matchmovement(p_reconciliation_id bigint, p_movement_id bigint, p_statement_id bigint DEFAULT NULL::bigint, p_matched_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_matchmovement(p_reconciliation_id bigint, p_movement_id bigint, p_statement_id bigint DEFAULT NULL::bigint, p_matched_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13430,7 +13430,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_resolveuserid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_resolveuserid(p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_bank_resolveuserid(p_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -13441,7 +13441,7 @@ END; $function$
 -- ============================================================
 -- usp_bank_statementline_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_bank_statementline_insert(p_reconciliation_id bigint, p_statement_date timestamp with time zone, p_description_text character varying DEFAULT NULL::character varying, p_reference_no character varying DEFAULT NULL::character varying, p_entry_type character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT NULL::numeric, p_balance numeric DEFAULT NULL::numeric, p_created_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_statementline_insert(p_reconciliation_id bigint, p_statement_date timestamp with time zone, p_description_text character varying DEFAULT NULL::character varying, p_reference_no character varying DEFAULT NULL::character varying, p_entry_type character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT NULL::numeric, p_balance numeric DEFAULT NULL::numeric, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13459,7 +13459,7 @@ END; $function$
 -- ============================================================
 -- usp_categorias_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_categorias_delete(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_categorias_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13482,7 +13482,7 @@ $function$
 -- ============================================================
 -- usp_categorias_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_categorias_getbycodigo(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_categorias_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Nombre" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13498,7 +13498,7 @@ $function$
 -- ============================================================
 -- usp_categorias_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_categorias_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_categorias_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -13524,7 +13524,7 @@ $function$
 -- ============================================================
 -- usp_categorias_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_categorias_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_categorias_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Codigo" integer, "Nombre" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13568,7 +13568,7 @@ $function$
 -- ============================================================
 -- usp_categorias_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_categorias_update(p_codigo integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_categorias_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13595,7 +13595,7 @@ $function$
 -- ============================================================
 -- usp_centrocosto_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_centrocosto_delete(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_centrocosto_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13618,7 +13618,7 @@ $function$
 -- ============================================================
 -- usp_centrocosto_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_centrocosto_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_centrocosto_getbycodigo(p_codigo character varying)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Presupuestado" character varying, "Saldo_Real" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13638,7 +13638,7 @@ $function$
 -- ============================================================
 -- usp_centrocosto_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_centrocosto_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_centrocosto_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13675,7 +13675,7 @@ $function$
 -- ============================================================
 -- usp_centrocosto_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_centrocosto_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_centrocosto_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Presupuestado" character varying, "Saldo_Real" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -13723,7 +13723,7 @@ $function$
 -- ============================================================
 -- usp_centrocosto_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_centrocosto_update(p_codigo character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_centrocosto_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13759,7 +13759,7 @@ $function$
 -- ============================================================
 -- usp_cfg_appsetting_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_list(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_list(p_company_id integer)
  RETURNS TABLE("SettingId" bigint, "Module" character varying, "SettingKey" character varying, "SettingValue" character varying, "ValueType" character varying, "Description" character varying, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -13778,7 +13778,7 @@ $function$
 -- ============================================================
 -- usp_cfg_appsetting_listbymodule
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listbymodule(p_company_id integer, p_module character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_listbymodule(p_company_id integer, p_module character varying)
  RETURNS TABLE("SettingId" bigint, "Module" character varying, "SettingKey" character varying, "SettingValue" character varying, "ValueType" character varying, "Description" character varying, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -13798,7 +13798,7 @@ $function$
 -- ============================================================
 -- usp_cfg_appsetting_listmodules
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listmodules(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_listmodules(p_company_id integer)
  RETURNS TABLE("Module" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13832,7 +13832,7 @@ $function$
 -- ============================================================
 -- usp_cfg_appsetting_listwithmeta
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listwithmeta(p_company_id integer, p_module character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_listwithmeta(p_company_id integer, p_module character varying DEFAULT NULL::character varying)
  RETURNS TABLE("SettingId" bigint, "Module" character varying, "SettingKey" character varying, "SettingValue" character varying, "ValueType" character varying, "Description" character varying, "IsReadOnly" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -13852,7 +13852,7 @@ $function$
 -- ============================================================
 -- usp_cfg_appsetting_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_upsert(p_company_id integer, p_module character varying, p_setting_key character varying, p_setting_value text, p_value_type character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_upsert(p_company_id integer, p_module character varying, p_setting_key character varying, p_setting_value text, p_value_type character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -13882,7 +13882,7 @@ $function$
 -- ============================================================
 -- usp_cfg_country_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_country_get(p_country_code character)
+CREATE OR REPLACE FUNCTION public.usp_cfg_country_get(p_country_code character)
  RETURNS TABLE("CountryCode" character, "CountryName" character varying, "CurrencyCode" character, "TaxAuthorityCode" character varying, "FiscalIdName" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -13906,7 +13906,7 @@ $function$
 -- ============================================================
 -- usp_cfg_country_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_country_list(p_active_only boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_cfg_country_list(p_active_only boolean DEFAULT true)
  RETURNS TABLE("CountryCode" character, "CountryName" character varying, "CurrencyCode" character, "TaxAuthorityCode" character varying, "FiscalIdName" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -13931,7 +13931,7 @@ $function$
 -- ============================================================
 -- usp_cfg_country_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -13951,7 +13951,7 @@ BEGIN
             WHERE "CountryCode" = p_country_code;
 
             p_resultado := 0;
-            p_mensaje   := 'PaÃ­s actualizado correctamente.';
+            p_mensaje   := 'PaÃƒÂ­s actualizado correctamente.';
         ELSE
             INSERT INTO cfg."Country" (
                 "CountryCode", "CountryName", "CurrencyCode",
@@ -13966,7 +13966,7 @@ BEGIN
             );
 
             p_resultado := 0;
-            p_mensaje   := 'PaÃ­s creado correctamente.';
+            p_mensaje   := 'PaÃƒÂ­s creado correctamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -13980,7 +13980,7 @@ $function$
 -- ============================================================
 -- usp_cfg_country_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_currency_symbol character varying, p_reference_currency character, p_reference_currency_symbol character varying, p_default_exchange_rate numeric, p_prices_include_tax boolean, p_special_tax_rate numeric, p_special_tax_enabled boolean, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_timezone_iana character varying, p_phone_prefix character varying, p_sort_order integer, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_currency_symbol character varying, p_reference_currency character, p_reference_currency_symbol character varying, p_default_exchange_rate numeric, p_prices_include_tax boolean, p_special_tax_rate numeric, p_special_tax_enabled boolean, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_timezone_iana character varying, p_phone_prefix character varying, p_sort_order integer, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -14010,7 +14010,7 @@ BEGIN
             WHERE "CountryCode" = p_country_code;
 
             p_resultado := 0;
-            p_mensaje   := 'PaÃ­s actualizado correctamente.';
+            p_mensaje   := 'PaÃƒÂ­s actualizado correctamente.';
         ELSE
             INSERT INTO cfg."Country" (
                 "CountryCode", "CountryName", "CurrencyCode", "CurrencySymbol",
@@ -14029,7 +14029,7 @@ BEGIN
             );
 
             p_resultado := 0;
-            p_mensaje   := 'PaÃ­s creado correctamente.';
+            p_mensaje   := 'PaÃƒÂ­s creado correctamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -14043,7 +14043,7 @@ $function$
 -- ============================================================
 -- usp_cfg_entityimage_link
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_link(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_media_asset_id integer, p_role_code character varying DEFAULT NULL::character varying, p_sort_order integer DEFAULT 0, p_is_primary boolean DEFAULT false, p_actor_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_link(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_media_asset_id integer, p_role_code character varying DEFAULT NULL::character varying, p_sort_order integer DEFAULT 0, p_is_primary boolean DEFAULT false, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("entityImageId" integer, "entityType" character varying, "entityId" integer, "mediaAssetId" integer, "roleCode" character varying, "sortOrder" integer, "isPrimary" boolean, "publicUrl" character varying, "mimeType" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14079,7 +14079,7 @@ $function$
 -- ============================================================
 -- usp_cfg_entityimage_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_list(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_list(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer)
  RETURNS TABLE("entityImageId" integer, "entityType" character varying, "entityId" integer, "mediaAssetId" integer, "roleCode" character varying, "sortOrder" integer, "isPrimary" boolean, "publicUrl" character varying, "originalFileName" character varying, "mimeType" character varying, "fileSizeBytes" bigint, "altText" character varying, "createdAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -14097,7 +14097,7 @@ $function$
 -- ============================================================
 -- usp_cfg_entityimage_setprimary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_setprimary(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_setprimary(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(affected integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14118,7 +14118,7 @@ $function$
 -- ============================================================
 -- usp_cfg_entityimage_unlink
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_unlink(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_unlink(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14149,7 +14149,7 @@ $function$
 -- ============================================================
 -- usp_cfg_exchangerate_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_exchangerate_upsert(p_rate_date date, p_tasa_usd numeric, p_tasa_eur numeric, p_source_name character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_exchangerate_upsert(p_rate_date date, p_tasa_usd numeric, p_tasa_eur numeric, p_source_name character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -14172,7 +14172,7 @@ $function$
 -- ============================================================
 -- usp_cfg_fiscal_getconfig
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_getconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_getconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
  RETURNS TABLE("EmpresaId" integer, "SucursalId" integer, "CountryCode" character varying, "Currency" character varying, "TaxRegime" character varying, "DefaultTaxCode" character varying, "DefaultTaxRate" numeric, "FiscalPrinterEnabled" boolean, "PrinterBrand" character varying, "PrinterPort" character varying, "VerifactuEnabled" boolean, "VerifactuMode" character varying, "CertificatePath" character varying, "CertificatePassword" character varying, "AEATEndpoint" character varying, "SenderNIF" character varying, "SenderRIF" character varying, "SoftwareId" character varying, "SoftwareName" character varying, "SoftwareVersion" character varying, "PosEnabled" boolean, "RestaurantEnabled" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -14200,7 +14200,7 @@ $function$
 -- ============================================================
 -- usp_cfg_fiscal_getlatestrecord
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_getlatestrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_getlatestrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
  RETURNS TABLE("Id" bigint, "InvoiceId" integer, "CountryCode" character varying, "InvoiceType" character varying, "XmlContent" character varying, "RecordHash" character varying, "PreviousRecordHash" character varying, "DigitalSignature" character varying, "QRCodeData" character varying, "SentToAuthority" boolean, "AuthorityResponse" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -14262,7 +14262,7 @@ $function$
 -- ============================================================
 -- usp_cfg_fiscal_infercountry
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_infercountry(p_empresa_id integer, p_sucursal_id integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_infercountry(p_empresa_id integer, p_sucursal_id integer)
  RETURNS TABLE("CountryCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14282,7 +14282,7 @@ $function$
 -- ============================================================
 -- usp_cfg_fiscal_insertrecord
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_insertrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_invoice_id integer, p_invoice_type character varying, p_invoice_number character varying, p_invoice_date timestamp without time zone, p_recipient_id character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_record_hash character varying DEFAULT NULL::character varying, p_previous_record_hash character varying DEFAULT NULL::character varying, p_xml_content text DEFAULT NULL::text, p_digital_signature text DEFAULT NULL::text, p_qr_code_data text DEFAULT NULL::text, p_sent_to_authority boolean DEFAULT false, p_sent_at timestamp without time zone DEFAULT NULL::timestamp without time zone, p_authority_response text DEFAULT NULL::text, p_authority_status character varying DEFAULT NULL::character varying, p_fiscal_printer_serial character varying DEFAULT NULL::character varying, p_fiscal_control_number character varying DEFAULT NULL::character varying, p_z_report_number integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_insertrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_invoice_id integer, p_invoice_type character varying, p_invoice_number character varying, p_invoice_date timestamp without time zone, p_recipient_id character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_record_hash character varying DEFAULT NULL::character varying, p_previous_record_hash character varying DEFAULT NULL::character varying, p_xml_content text DEFAULT NULL::text, p_digital_signature text DEFAULT NULL::text, p_qr_code_data text DEFAULT NULL::text, p_sent_to_authority boolean DEFAULT false, p_sent_at timestamp without time zone DEFAULT NULL::timestamp without time zone, p_authority_response text DEFAULT NULL::text, p_authority_status character varying DEFAULT NULL::character varying, p_fiscal_printer_serial character varying DEFAULT NULL::character varying, p_fiscal_control_number character varying DEFAULT NULL::character varying, p_z_report_number integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -14311,7 +14311,7 @@ $function$
 -- ============================================================
 -- usp_cfg_fiscal_upsertconfig
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_upsertconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_currency character varying, p_tax_regime character varying, p_default_tax_code character varying, p_default_tax_rate numeric, p_fiscal_printer_enabled boolean, p_printer_brand character varying DEFAULT NULL::character varying, p_printer_port character varying DEFAULT NULL::character varying, p_verifactu_enabled boolean DEFAULT false, p_verifactu_mode character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_certificate_password character varying DEFAULT NULL::character varying, p_aeat_endpoint character varying DEFAULT NULL::character varying, p_sender_nif character varying DEFAULT NULL::character varying, p_sender_rif character varying DEFAULT NULL::character varying, p_software_id character varying DEFAULT NULL::character varying, p_software_name character varying DEFAULT NULL::character varying, p_software_version character varying DEFAULT NULL::character varying, p_pos_enabled boolean DEFAULT false, p_restaurant_enabled boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_upsertconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_currency character varying, p_tax_regime character varying, p_default_tax_code character varying, p_default_tax_rate numeric, p_fiscal_printer_enabled boolean, p_printer_brand character varying DEFAULT NULL::character varying, p_printer_port character varying DEFAULT NULL::character varying, p_verifactu_enabled boolean DEFAULT false, p_verifactu_mode character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_certificate_password character varying DEFAULT NULL::character varying, p_aeat_endpoint character varying DEFAULT NULL::character varying, p_sender_nif character varying DEFAULT NULL::character varying, p_sender_rif character varying DEFAULT NULL::character varying, p_software_id character varying DEFAULT NULL::character varying, p_software_name character varying DEFAULT NULL::character varying, p_software_version character varying DEFAULT NULL::character varying, p_pos_enabled boolean DEFAULT false, p_restaurant_enabled boolean DEFAULT false)
  RETURNS TABLE("Affected" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14363,7 +14363,7 @@ $function$
 -- ============================================================
 -- usp_cfg_mediaasset_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_getbyid(p_company_id integer, p_branch_id integer, p_media_asset_id integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_mediaasset_getbyid(p_company_id integer, p_branch_id integer, p_media_asset_id integer)
  RETURNS TABLE("mediaAssetId" integer, "storageKey" character varying, "publicUrl" character varying, "mimeType" character varying, "originalFileName" character varying, "fileSizeBytes" bigint, "isActive" boolean, "isDeleted" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -14380,7 +14380,7 @@ $function$
 -- ============================================================
 -- usp_cfg_mediaasset_getbystoragekey
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_getbystoragekey(p_company_id integer, p_branch_id integer, p_storage_key character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_mediaasset_getbystoragekey(p_company_id integer, p_branch_id integer, p_storage_key character varying)
  RETURNS TABLE("mediaAssetId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14397,7 +14397,7 @@ $function$
 -- ============================================================
 -- usp_cfg_mediaasset_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_insert(p_company_id integer, p_branch_id integer, p_storage_key character varying, p_public_url character varying, p_original_file_name character varying DEFAULT NULL::character varying, p_mime_type character varying DEFAULT NULL::character varying, p_file_extension character varying DEFAULT NULL::character varying, p_file_size_bytes bigint DEFAULT 0, p_checksum_sha256 character varying DEFAULT NULL::character varying, p_alt_text character varying DEFAULT NULL::character varying, p_actor_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_mediaasset_insert(p_company_id integer, p_branch_id integer, p_storage_key character varying, p_public_url character varying, p_original_file_name character varying DEFAULT NULL::character varying, p_mime_type character varying DEFAULT NULL::character varying, p_file_extension character varying DEFAULT NULL::character varying, p_file_size_bytes bigint DEFAULT 0, p_checksum_sha256 character varying DEFAULT NULL::character varying, p_alt_text character varying DEFAULT NULL::character varying, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("mediaAssetId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14421,7 +14421,7 @@ $function$
 -- ============================================================
 -- usp_cfg_resolvecontext
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cfg_resolvecontext(p_user_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_cfg_resolvecontext(p_user_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("CompanyId" integer, "BranchId" integer, "UserId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14498,7 +14498,7 @@ $function$
 -- ============================================================
 -- usp_clases_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clases_delete(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_clases_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14521,7 +14521,7 @@ $function$
 -- ============================================================
 -- usp_clases_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clases_getbycodigo(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_clases_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14539,7 +14539,7 @@ $function$
 -- ============================================================
 -- usp_clases_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clases_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_clases_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14564,7 +14564,7 @@ $function$
 -- ============================================================
 -- usp_clases_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clases_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_clases_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14610,7 +14610,7 @@ $function$
 -- ============================================================
 -- usp_clases_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clases_update(p_codigo integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_clases_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14639,7 +14639,7 @@ $function$
 -- ============================================================
 -- usp_clientes_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clientes_delete(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_clientes_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14667,7 +14667,7 @@ $function$
 -- ============================================================
 -- usp_clientes_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clientes_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_clientes_getbycodigo(p_codigo character varying)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "CustomerCode" character varying, "CustomerName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Telefono" character varying, "Contacto" character varying, "SalespersonCode" character varying, "PriceListCode" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -14709,7 +14709,7 @@ $function$
 -- ============================================================
 -- usp_clientes_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clientes_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_clientes_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14787,7 +14787,7 @@ $function$
 -- ============================================================
 -- usp_clientes_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clientes_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_clientes_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "CustomerCode" character varying, "CustomerName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Telefono" character varying, "Contacto" character varying, "SalespersonCode" character varying, "PriceListCode" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14860,7 +14860,7 @@ $function$
 -- ============================================================
 -- usp_clientes_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_clientes_update(p_codigo character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_clientes_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -14913,7 +14913,7 @@ $function$
 -- ============================================================
 -- usp_compras_getbynumfact
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_compras_getbynumfact(p_num_fact character varying)
+CREATE OR REPLACE FUNCTION public.usp_compras_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "COD_PROVEEDOR" character varying, "NOMBRE" character varying, "RIF" character varying, "TIPO" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -14938,7 +14938,7 @@ $function$
 -- ============================================================
 -- usp_compras_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_compras_list(p_search character varying DEFAULT NULL::character varying, p_proveedor character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_compras_list(p_search character varying DEFAULT NULL::character varying, p_proveedor character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "COD_PROVEEDOR" character varying, "NOMBRE" character varying, "RIF" character varying, "TIPO" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -14997,7 +14997,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_ajuste_crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_ajuste_crear(p_fecha date, p_tipo_ajuste character varying, p_referencia character varying DEFAULT NULL::character varying, p_motivo character varying DEFAULT ''::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_ajuste_crear(p_fecha date, p_tipo_ajuste character varying, p_referencia character varying DEFAULT NULL::character varying, p_motivo character varying DEFAULT ''::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("AsientoId" bigint, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15039,7 +15039,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_asiento_anular
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_asiento_anular(p_asiento_id bigint, p_motivo character varying, p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_anular(p_asiento_id bigint, p_motivo character varying, p_cod_usuario character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15067,7 +15067,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_asiento_crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_asiento_crear(p_fecha date, p_tipo_asiento character varying, p_referencia character varying DEFAULT NULL::character varying, p_concepto character varying DEFAULT ''::character varying, p_moneda character varying DEFAULT 'VES'::character varying, p_tasa numeric DEFAULT 1, p_origen_modulo character varying DEFAULT NULL::character varying, p_origen_documento character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_crear(p_fecha date, p_tipo_asiento character varying, p_referencia character varying DEFAULT NULL::character varying, p_concepto character varying DEFAULT ''::character varying, p_moneda character varying DEFAULT 'VES'::character varying, p_tasa numeric DEFAULT 1, p_origen_modulo character varying DEFAULT NULL::character varying, p_origen_documento character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("AsientoId" bigint, "NumeroAsiento" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15193,7 +15193,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_asiento_get_detalle
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_asiento_get_detalle(p_asiento_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_get_detalle(p_asiento_id bigint)
  RETURNS TABLE("Id" bigint, "AsientoId" bigint, "Renglon" integer, "CodCuenta" character varying, "Descripcion" character varying, "CentroCosto" character varying, "AuxiliarTipo" character varying, "AuxiliarCodigo" character varying, "Documento" character varying, "Debe" numeric, "Haber" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15212,7 +15212,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_asiento_get_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_asiento_get_header(p_asiento_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_get_header(p_asiento_id bigint)
  RETURNS TABLE("Id" bigint, "NumeroAsiento" character varying, "Fecha" date, "Periodo" character varying, "TipoAsiento" character varying, "Referencia" character varying, "Concepto" character varying, "Moneda" character varying, "Tasa" numeric, "TotalDebe" numeric, "TotalHaber" numeric, "Estado" character varying, "OrigenModulo" character varying, "OrigenDocumento" character varying, "CodUsuario" character varying, "FechaCreacion" timestamp without time zone, "FechaAnulacion" timestamp without time zone, "UsuarioAnulacion" character varying, "MotivoAnulacion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15232,7 +15232,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_asientos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_asientos_list(p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_tipo_asiento character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_origen_modulo character varying DEFAULT NULL::character varying, p_origen_documento character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_asientos_list(p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_tipo_asiento character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_origen_modulo character varying DEFAULT NULL::character varying, p_origen_documento character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Id" bigint, "NumeroAsiento" character varying, "Fecha" date, "Periodo" character varying, "TipoAsiento" character varying, "Referencia" character varying, "Concepto" character varying, "Moneda" character varying, "Tasa" numeric, "TotalDebe" numeric, "TotalHaber" numeric, "Estado" character varying, "OrigenModulo" character varying, "OrigenDocumento" character varying, "CodUsuario" character varying, "FechaCreacion" timestamp without time zone, "FechaAnulacion" timestamp without time zone, "UsuarioAnulacion" character varying, "MotivoAnulacion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15292,7 +15292,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_balance_comprobacion
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_balance_comprobacion(p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_balance_comprobacion(p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("CodCuenta" character varying, "CuentaDescripcion" character varying, "TotalDebe" numeric, "TotalHaber" numeric, "SaldoDeudor" numeric, "SaldoAcreedor" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15325,7 +15325,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_balance_general
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_balance_general(p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_balance_general(p_fecha_corte date)
  RETURNS TABLE("Grupo" character varying, "CodCuenta" character varying, "CuentaDescripcion" character varying, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15363,7 +15363,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_balance_general_resumen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_balance_general_resumen(p_fecha_corte date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_balance_general_resumen(p_fecha_corte date)
  RETURNS TABLE("TotalActivos" numeric, "TotalPasivos" numeric, "TotalPatrimonio" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15384,7 +15384,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_depreciacion_generar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_depreciacion_generar(p_periodo character varying, p_cod_usuario character varying, p_centro_costo character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_depreciacion_generar(p_periodo character varying, p_cod_usuario character varying, p_centro_costo character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15490,7 +15490,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_estado_resultados
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_estado_resultados(p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_estado_resultados(p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("Grupo" character varying, "CodCuenta" character varying, "CuentaDescripcion" character varying, "Debe" numeric, "Haber" numeric, "Neto" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15534,7 +15534,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_estado_resultados_resumen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_estado_resultados_resumen(p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_estado_resultados_resumen(p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("TotalIngresos" numeric, "TotalCostos" numeric, "TotalGastos" numeric, "ResultadoNeto" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15560,7 +15560,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_libro_mayor
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_libro_mayor(p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_libro_mayor(p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("CodCuenta" character varying, "CuentaDescripcion" character varying, "Debe" numeric, "Haber" numeric, "Saldo" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15586,7 +15586,7 @@ $function$
 -- ============================================================
 -- usp_contabilidad_mayor_analitico
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_contabilidad_mayor_analitico(p_cod_cuenta character varying, p_fecha_desde date, p_fecha_hasta date)
+CREATE OR REPLACE FUNCTION public.usp_contabilidad_mayor_analitico(p_cod_cuenta character varying, p_fecha_desde date, p_fecha_hasta date)
  RETURNS TABLE("Fecha" date, "NumeroAsiento" character varying, "Referencia" character varying, "Concepto" character varying, "Renglon" integer, "CodCuenta" character varying, "CuentaDescripcion" character varying, "CentroCosto" character varying, "AuxiliarTipo" character varying, "AuxiliarCodigo" character varying, "Documento" character varying, "Debe" numeric, "Haber" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15620,7 +15620,7 @@ $function$
 -- ============================================================
 -- usp_cotizacion_getbynumfact
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cotizacion_getbynumfact(p_num_fact character varying)
+CREATE OR REPLACE FUNCTION public.usp_cotizacion_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -15644,7 +15644,7 @@ $function$
 -- ============================================================
 -- usp_cotizacion_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cotizacion_list(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_cotizacion_list(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("NUM_FACT" character varying, "FECHA" date, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "MONTO" numeric, "IVA" numeric, "TOTAL" numeric, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -15696,7 +15696,7 @@ $function$
 -- ============================================================
 -- usp_cuentas_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cuentas_delete(p_cod_cuenta character varying)
+CREATE OR REPLACE FUNCTION public.usp_cuentas_delete(p_cod_cuenta character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15719,7 +15719,7 @@ $function$
 -- ============================================================
 -- usp_cuentas_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cuentas_getbycodigo(p_cod_cuenta character varying)
+CREATE OR REPLACE FUNCTION public.usp_cuentas_getbycodigo(p_cod_cuenta character varying)
  RETURNS TABLE("COD_CUENTA" character varying, "DESCRIPCION" character varying, "TIPO" character varying, "PRESUPUESTO" integer, "SALDO" integer, "COD_USUARIO" character varying, grupo character varying, "LINEA" character varying, "USO" character varying, "Nivel" integer, "Porcentaje" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -15746,7 +15746,7 @@ $function$
 -- ============================================================
 -- usp_cuentas_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cuentas_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_cuentas_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15795,7 +15795,7 @@ $function$
 -- ============================================================
 -- usp_cuentas_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cuentas_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_cuentas_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "COD_CUENTA" character varying, "DESCRIPCION" character varying, "TIPO" character varying, "PRESUPUESTO" integer, "SALDO" integer, "COD_USUARIO" character varying, grupo character varying, "LINEA" character varying, "USO" character varying, "Nivel" integer, "Porcentaje" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -15851,7 +15851,7 @@ $function$
 -- ============================================================
 -- usp_cuentas_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cuentas_update(p_cod_cuenta character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_cuentas_update(p_cod_cuenta character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -15884,7 +15884,7 @@ $function$
 -- ============================================================
 -- usp_cxc_aplicar_cobro
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cxc_aplicar_cobro(p_request_id character varying, p_cod_cliente character varying, p_fecha character varying, p_monto_total numeric, p_cod_usuario character varying, p_observaciones character varying DEFAULT ''::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_cxc_aplicar_cobro(p_request_id character varying, p_cod_cliente character varying, p_fecha character varying, p_monto_total numeric, p_cod_usuario character varying, p_observaciones character varying DEFAULT ''::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("NumRecibo" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -16098,7 +16098,7 @@ $function$
 -- ============================================================
 -- usp_cxp_aplicar_pago
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_cxp_aplicar_pago(p_request_id character varying, p_cod_proveedor character varying, p_fecha character varying, p_monto_total numeric, p_cod_usuario character varying, p_observaciones character varying DEFAULT ''::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_cxp_aplicar_pago(p_request_id character varying, p_cod_proveedor character varying, p_fecha character varying, p_monto_total numeric, p_cod_usuario character varying, p_observaciones character varying DEFAULT ''::character varying, p_documentos_json jsonb DEFAULT NULL::jsonb, p_formas_pago_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("NumPago" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -16312,7 +16312,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_convertorder
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_convertorder(p_num_doc_orden character varying, p_num_doc_compra character varying, p_compra_override_json jsonb DEFAULT NULL::jsonb, p_detalle_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_convertorder(p_num_doc_orden character varying, p_num_doc_compra character varying, p_compra_override_json jsonb DEFAULT NULL::jsonb, p_detalle_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, orden character varying, compra character varying, "detalleRows" integer, "formasPagoRows" integer, "pendingAmount" double precision, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -16566,7 +16566,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_get(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_get(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("PurchaseDocumentId" bigint, "DocumentNumber" character varying, "SerialType" character varying, "DocumentType" character varying, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "IssueDate" timestamp without time zone, "DueDate" timestamp without time zone, "ReceiptDate" timestamp without time zone, "PaymentDate" timestamp without time zone, "DocumentTime" character varying, "SubTotal" double precision, "TaxableAmount" double precision, "ExemptAmount" double precision, "TaxAmount" double precision, "TaxRate" double precision, "TotalAmount" double precision, "DiscountAmount" double precision, "IsVoided" boolean, "IsPaid" character varying, "IsReceived" character varying, "IsLegal" boolean, "OriginDocumentNumber" character varying, "ControlNumber" character varying, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "RetainedTax" double precision, "IsrCode" character varying, "IsrAmount" double precision, "IsrSubjectCode" character varying, "IsrSubjectAmount" double precision, "RetentionRate" double precision, "ImportAmount" double precision, "ImportTax" double precision, "ImportBase" double precision, "FreightAmount" double precision, "Notes" character varying, "Concept" character varying, "OrderNumber" character varying, "ReceivedBy" character varying, "WarehouseCode" character varying, "CurrencyCode" character varying, "ExchangeRate" double precision, "UsdAmount" double precision, "UserCode" character varying, "ShortUserCode" character varying, "ReportDate" timestamp without time zone, "HostName" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -16637,7 +16637,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_getdetail
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_getdetail(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_getdetail(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("LineId" bigint, "DocumentNumber" character varying, "DocumentType" character varying, "LineNumber" integer, "ProductCode" character varying, "Description" character varying, "Quantity" double precision, "UnitPrice" double precision, "UnitCost" double precision, "SubTotal" double precision, "DiscountAmount" double precision, "TotalAmount" double precision, "TaxRate" double precision, "TaxAmount" double precision, "IsVoided" boolean, "IsDeleted" boolean, "UserCode" character varying, "LineDate" timestamp without time zone, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -16676,7 +16676,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_getindicadores
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_getindicadores(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_getindicadores(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("IsVoided" boolean, "IsPaid" character varying, "IsReceived" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -16697,7 +16697,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_getpayments
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_getpayments(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_getpayments(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS TABLE("PaymentId" bigint, "DocumentNumber" character varying, "DocumentType" character varying, "PaymentMethod" character varying, "BankCode" character varying, "PaymentNumber" character varying, "Amount" double precision, "PaymentDate" timestamp without time zone, "DueDate" timestamp without time zone, "ReferenceNumber" character varying, "UserCode" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -16729,7 +16729,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_list(p_tipo_operacion character varying DEFAULT 'COMPRA'::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_list(p_tipo_operacion character varying DEFAULT 'COMPRA'::character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("PurchaseDocumentId" bigint, "DocumentNumber" character varying, "SerialType" character varying, "DocumentType" character varying, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "IssueDate" timestamp without time zone, "DueDate" timestamp without time zone, "ReceiptDate" timestamp without time zone, "PaymentDate" timestamp without time zone, "DocumentTime" character varying, "SubTotal" double precision, "TaxableAmount" double precision, "ExemptAmount" double precision, "TaxAmount" double precision, "TaxRate" double precision, "TotalAmount" double precision, "DiscountAmount" double precision, "IsVoided" boolean, "IsPaid" character varying, "IsReceived" character varying, "IsLegal" boolean, "OriginDocumentNumber" character varying, "ControlNumber" character varying, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "RetainedTax" double precision, "IsrCode" character varying, "IsrAmount" double precision, "IsrSubjectCode" character varying, "IsrSubjectAmount" double precision, "RetentionRate" double precision, "ImportAmount" double precision, "ImportTax" double precision, "ImportBase" double precision, "FreightAmount" double precision, "Notes" character varying, "Concept" character varying, "OrderNumber" character varying, "ReceivedBy" character varying, "WarehouseCode" character varying, "CurrencyCode" character varying, "ExchangeRate" double precision, "UsdAmount" double precision, "UserCode" character varying, "ShortUserCode" character varying, "ReportDate" timestamp without time zone, "HostName" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -16829,7 +16829,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_receiveorder
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_receiveorder(p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_receiveorder(p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -16879,7 +16879,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_upsert(p_tipo_operacion character varying, p_header_json jsonb, p_detail_json jsonb, p_payments_json jsonb DEFAULT NULL::jsonb, p_doc_origen character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_upsert(p_tipo_operacion character varying, p_header_json jsonb, p_detail_json jsonb, p_payments_json jsonb DEFAULT NULL::jsonb, p_doc_origen character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "detalleRows" integer, "formasPagoRows" integer, "pendingAmount" double precision, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -17141,7 +17141,7 @@ $function$
 -- ============================================================
 -- usp_doc_purchasedocument_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_purchasedocument_void(p_tipo_operacion character varying, p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_void(p_tipo_operacion character varying, p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "codProveedor" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -17259,7 +17259,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_get(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_get(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS SETOF doc."SalesDocument"
  LANGUAGE plpgsql
 AS $function$
@@ -17278,7 +17278,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_getdetail
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_getdetail(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_getdetail(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS SETOF doc."SalesDocumentLine"
  LANGUAGE plpgsql
 AS $function$
@@ -17297,7 +17297,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_getpayments
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_getpayments(p_tipo_operacion character varying, p_num_doc character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_getpayments(p_tipo_operacion character varying, p_num_doc character varying)
  RETURNS SETOF doc."SalesDocumentPayment"
  LANGUAGE plpgsql
 AS $function$
@@ -17315,7 +17315,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_invoicefromorder
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_invoicefromorder(p_num_doc_pedido character varying, p_num_doc_factura character varying, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_invoicefromorder(p_num_doc_pedido character varying, p_num_doc_factura character varying, p_formas_pago_json jsonb DEFAULT NULL::jsonb, p_cod_usuario character varying DEFAULT 'API'::character varying)
  RETURNS TABLE(ok boolean, pedido character varying, factura character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -17485,7 +17485,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_list(p_tipo_operacion character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_list(p_tipo_operacion character varying, p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("SalesDocumentId" bigint, "DocumentNumber" character varying, "SerialType" character varying, "FiscalMemoryNumber" character varying, "OperationType" character varying, "CustomerCode" character varying, "CustomerName" character varying, "FiscalId" character varying, "DocumentDate" timestamp without time zone, "DueDate" timestamp without time zone, "DocumentTime" character varying, "SubTotal" numeric, "TaxableAmount" numeric, "ExemptAmount" numeric, "TaxAmount" numeric, "TaxRate" numeric, "TotalAmount" numeric, "DiscountAmount" numeric, "IsVoided" boolean, "IsPaid" character varying, "IsInvoiced" character varying, "IsDelivered" character varying, "OriginDocumentNumber" character varying, "OriginDocumentType" character varying, "ControlNumber" character varying, "IsLegal" character varying, "IsPrinted" boolean, "Notes" character varying, "Concept" character varying, "PaymentTerms" character varying, "ShipToAddress" character varying, "SellerCode" character varying, "DepartmentCode" character varying, "LocationCode" character varying, "CurrencyCode" character varying, "ExchangeRate" numeric, "UserCode" character varying, "ReportDate" timestamp without time zone, "HostName" character varying, "VehiclePlate" character varying, "Mileage" numeric, "TollAmount" numeric, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone, "IsDeleted" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -17575,7 +17575,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_upsert(p_tipo_operacion character varying, p_header_json jsonb, p_detail_json jsonb, p_payments_json jsonb DEFAULT NULL::jsonb, p_doc_origen character varying DEFAULT NULL::character varying, p_tipo_doc_origen character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_upsert(p_tipo_operacion character varying, p_header_json jsonb, p_detail_json jsonb, p_payments_json jsonb DEFAULT NULL::jsonb, p_doc_origen character varying DEFAULT NULL::character varying, p_tipo_doc_origen character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok boolean, "numDoc" character varying, "detalleRows" integer, "formasPagoRows" integer, "pendingAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -17908,7 +17908,7 @@ $function$
 -- ============================================================
 -- usp_doc_salesdocument_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_doc_salesdocument_void(p_tipo_operacion character varying, p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_void(p_tipo_operacion character varying, p_num_doc character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "codCliente" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18025,7 +18025,7 @@ $function$
 -- ============================================================
 -- usp_empleados_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_empleados_delete(p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_empleados_delete(p_cedula character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18048,7 +18048,7 @@ $function$
 -- ============================================================
 -- usp_empleados_getbycedula
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_empleados_getbycedula(p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_empleados_getbycedula(p_cedula character varying)
  RETURNS TABLE("CEDULA" character varying, "GRUPO" character varying, "NOMBRE" character varying, "DIRECCION" character varying, "TELEFONO" character varying, "NACIMIENTO" timestamp without time zone, "CARGO" character varying, "NOMINA" character varying, "SUELDO" double precision, "INGRESO" timestamp without time zone, "RETIRO" timestamp without time zone, "STATUS" character varying, "COMISION" double precision, "UTILIDAD" double precision, "CO_Usuario" character varying, "SEXO" character varying, "NACIONALIDAD" character varying, "Autoriza" boolean, "Apodo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18083,7 +18083,7 @@ $function$
 -- ============================================================
 -- usp_empleados_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_empleados_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_empleados_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18141,7 +18141,7 @@ $function$
 -- ============================================================
 -- usp_empleados_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_empleados_list(p_search character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_empleados_list(p_search character varying DEFAULT NULL::character varying, p_grupo character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "CEDULA" character varying, "GRUPO" character varying, "NOMBRE" character varying, "DIRECCION" character varying, "TELEFONO" character varying, "NACIMIENTO" timestamp without time zone, "CARGO" character varying, "NOMINA" character varying, "SUELDO" double precision, "INGRESO" timestamp without time zone, "RETIRO" timestamp without time zone, "STATUS" character varying, "COMISION" double precision, "UTILIDAD" double precision, "CO_Usuario" character varying, "SEXO" character varying, "NACIONALIDAD" character varying, "Autoriza" boolean, "Apodo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18205,7 +18205,7 @@ $function$
 -- ============================================================
 -- usp_empleados_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_empleados_update(p_cedula character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_empleados_update(p_cedula character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18265,7 +18265,7 @@ $function$
 -- ============================================================
 -- usp_empresa_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_empresa_update(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_empresa_update(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18294,7 +18294,7 @@ $function$
 -- ============================================================
 -- usp_facturas_getbynumfact
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_facturas_getbynumfact(p_num_fact character varying)
+CREATE OR REPLACE FUNCTION public.usp_facturas_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("Id" integer, "DocumentNumber" character varying, "OperationType" character varying, "DocumentDate" timestamp without time zone, "UserCode" character varying, "ClientCode" character varying, "ClientName" character varying, "SubTotal" numeric, "TaxAmount" numeric, "TotalAmount" numeric, "Currency" character varying, "ExchangeRate" numeric, "Notes" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -18328,7 +18328,7 @@ $function$
 -- ============================================================
 -- usp_facturas_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_facturas_list(p_num_fact character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_from date DEFAULT NULL::date, p_to date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_facturas_list(p_num_fact character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_from date DEFAULT NULL::date, p_to date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Id" integer, "DocumentNumber" character varying, "OperationType" character varying, "DocumentDate" timestamp without time zone, "UserCode" character varying, "ClientCode" character varying, "ClientName" character varying, "SubTotal" numeric, "TaxAmount" numeric, "TotalAmount" numeric, "Currency" character varying, "ExchangeRate" numeric, "Notes" character varying, "IsDeleted" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -18389,7 +18389,7 @@ $function$
 -- ============================================================
 -- usp_feriados_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_feriados_delete(p_fecha date)
+CREATE OR REPLACE FUNCTION public.usp_feriados_delete(p_fecha date)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18412,7 +18412,7 @@ $function$
 -- ============================================================
 -- usp_feriados_getbyfecha
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_feriados_getbyfecha(p_fecha date)
+CREATE OR REPLACE FUNCTION public.usp_feriados_getbyfecha(p_fecha date)
  RETURNS TABLE("Fecha" date, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18430,7 +18430,7 @@ $function$
 -- ============================================================
 -- usp_feriados_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_feriados_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_feriados_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18464,7 +18464,7 @@ $function$
 -- ============================================================
 -- usp_feriados_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_feriados_list(p_search character varying DEFAULT NULL::character varying, p_anio integer DEFAULT NULL::integer, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_feriados_list(p_search character varying DEFAULT NULL::character varying, p_anio integer DEFAULT NULL::integer, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Fecha" date, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18509,7 +18509,7 @@ $function$
 -- ============================================================
 -- usp_feriados_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_feriados_update(p_fecha date, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_feriados_update(p_fecha date, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18534,7 +18534,7 @@ $function$
 -- ============================================================
 -- usp_fin_bank_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_bank_delete(p_company_id integer, p_bank_name character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_bank_delete(p_company_id integer, p_bank_name character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Success" boolean, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18557,7 +18557,7 @@ $function$
 -- ============================================================
 -- usp_fin_bank_getbyname
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_bank_getbyname(p_company_id integer, p_bank_name character varying)
+CREATE OR REPLACE FUNCTION public.usp_fin_bank_getbyname(p_company_id integer, p_bank_name character varying)
  RETURNS TABLE("Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18574,7 +18574,7 @@ $function$
 -- ============================================================
 -- usp_fin_bank_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_bank_insert(p_company_id integer, p_bank_code character varying, p_bank_name character varying, p_contact_name character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_phones character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_bank_insert(p_company_id integer, p_bank_code character varying, p_bank_name character varying, p_contact_name character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_phones character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Success" boolean, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18595,7 +18595,7 @@ $function$
 -- ============================================================
 -- usp_fin_bank_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_bank_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_fin_bank_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18619,7 +18619,7 @@ $function$
 -- ============================================================
 -- usp_fin_bank_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_bank_update(p_company_id integer, p_bank_name character varying, p_contact_name character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_phones character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_bank_update(p_company_id integer, p_bank_name character varying, p_contact_name character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_phones character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Success" boolean, "Message" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18646,7 +18646,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_box_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_box_create(p_company_id integer, p_branch_id integer, p_name character varying, p_account_code character varying DEFAULT NULL::character varying, p_max_amount numeric DEFAULT 0, p_responsible character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_box_create(p_company_id integer, p_branch_id integer, p_name character varying, p_account_code character varying DEFAULT NULL::character varying, p_max_amount numeric DEFAULT 0, p_responsible character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18686,7 +18686,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_box_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_box_list(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_box_list(p_company_id integer)
  RETURNS TABLE("Id" integer, "CompanyId" integer, "BranchId" integer, "Name" character varying, "AccountCode" character varying, "MaxAmount" numeric, "CurrentBalance" numeric, "Responsible" character varying, "Status" character varying, "CreatedAt" timestamp with time zone, "CreatedByUserId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -18706,7 +18706,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_expense_add
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_expense_add(p_session_id integer, p_box_id integer, p_category character varying, p_description character varying, p_amount numeric, p_beneficiary character varying DEFAULT NULL::character varying, p_receipt_number character varying DEFAULT NULL::character varying, p_account_code character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_expense_add(p_session_id integer, p_box_id integer, p_category character varying, p_description character varying, p_amount numeric, p_beneficiary character varying DEFAULT NULL::character varying, p_receipt_number character varying DEFAULT NULL::character varying, p_account_code character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18775,7 +18775,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_expense_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_expense_list(p_box_id integer, p_session_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_expense_list(p_box_id integer, p_session_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "SessionId" integer, "BoxId" integer, "Category" character varying, "Description" character varying, "Amount" numeric, "Beneficiary" character varying, "ReceiptNumber" character varying, "AccountCode" character varying, "CreatedAt" timestamp with time zone, "CreatedByUserId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -18796,7 +18796,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_session_close
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_close(p_box_id integer, p_closed_by_user_id integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_close(p_box_id integer, p_closed_by_user_id integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18846,7 +18846,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_session_getactive
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_getactive(p_box_id integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_getactive(p_box_id integer)
  RETURNS TABLE("Id" integer, "BoxId" integer, "OpeningAmount" numeric, "ClosingAmount" numeric, "TotalExpenses" numeric, "Status" character varying, "OpenedAt" timestamp with time zone, "ClosedAt" timestamp with time zone, "OpenedByUserId" integer, "ClosedByUserId" integer, "Notes" character varying, "AvailableBalance" numeric, "ExpenseCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -18868,7 +18868,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_session_open
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_open(p_box_id integer, p_opening_amount numeric, p_opened_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_open(p_box_id integer, p_opening_amount numeric, p_opened_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -18924,7 +18924,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_summary_box
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_summary_box(p_box_id integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_summary_box(p_box_id integer)
  RETURNS TABLE("Id" integer, "CompanyId" integer, "BranchId" integer, "Name" character varying, "AccountCode" character varying, "MaxAmount" numeric, "CurrentBalance" numeric, "Responsible" character varying, "Status" character varying, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -18943,7 +18943,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_summary_categories
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_summary_categories(p_box_id integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_summary_categories(p_box_id integer)
  RETURNS TABLE("Category" character varying, "ExpenseCount" bigint, "TotalAmount" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -18966,7 +18966,7 @@ $function$
 -- ============================================================
 -- usp_fin_pettycash_summary_session
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fin_pettycash_summary_session(p_box_id integer)
+CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_summary_session(p_box_id integer)
  RETURNS TABLE("SessionId" integer, "OpeningAmount" numeric, "TotalExpenses" numeric, "AvailableBalance" numeric, "OpenedAt" timestamp with time zone, "OpenedByUserId" integer, "ExpenseCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -18990,7 +18990,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_declaration_amend
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_amend(p_company_id integer, p_declaration_id bigint, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_amend(p_company_id integer, p_declaration_id bigint, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19031,7 +19031,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_declaration_calculate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_calculate(p_company_id integer, p_declaration_type character varying, p_period_code character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_declaration_id bigint, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_calculate(p_company_id integer, p_declaration_type character varying, p_period_code character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_declaration_id bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19159,7 +19159,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_declaration_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_get(p_company_id integer, p_declaration_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_get(p_company_id integer, p_declaration_id bigint)
  RETURNS TABLE("DeclarationId" bigint, "CompanyId" integer, "BranchId" integer, "CountryCode" character varying, "DeclarationType" character varying, "PeriodCode" character varying, "PeriodStart" date, "PeriodEnd" date, "SalesBase" numeric, "SalesTax" numeric, "PurchasesBase" numeric, "PurchasesTax" numeric, "TaxableBase" numeric, "TaxAmount" numeric, "WithholdingsCredit" numeric, "PreviousBalance" numeric, "NetPayable" numeric, "Status" character varying, "SubmittedAt" timestamp without time zone, "SubmittedFile" character varying, "AuthorityResponse" character varying, "PaidAt" timestamp without time zone, "PaymentReference" character varying, "JournalEntryId" bigint, "Notes" character varying, "CreatedBy" character varying, "UpdatedBy" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19184,7 +19184,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_declaration_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_list(p_company_id integer, p_declaration_type character varying DEFAULT NULL::character varying, p_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_list(p_company_id integer, p_declaration_type character varying DEFAULT NULL::character varying, p_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "DeclarationId" bigint, "CompanyId" integer, "BranchId" integer, "CountryCode" character varying, "DeclarationType" character varying, "PeriodCode" character varying, "PeriodStart" date, "PeriodEnd" date, "SalesBase" numeric, "SalesTax" numeric, "PurchasesBase" numeric, "PurchasesTax" numeric, "TaxableBase" numeric, "TaxAmount" numeric, "WithholdingsCredit" numeric, "PreviousBalance" numeric, "NetPayable" numeric, "Status" character varying, "SubmittedAt" timestamp without time zone, "SubmittedFile" character varying, "AuthorityResponse" character varying, "PaidAt" timestamp without time zone, "PaymentReference" character varying, "JournalEntryId" bigint, "Notes" character varying, "CreatedBy" character varying, "UpdatedBy" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19217,7 +19217,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_declaration_submit
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_submit(p_company_id integer, p_declaration_id bigint, p_cod_usuario character varying, p_file_path text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_declaration_submit(p_company_id integer, p_declaration_id bigint, p_cod_usuario character varying, p_file_path text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19260,7 +19260,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_export_declaration
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_export_declaration(p_company_id integer, p_declaration_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_export_declaration(p_company_id integer, p_declaration_id bigint)
  RETURNS TABLE("DeclarationId" bigint, "CompanyId" integer, "BranchId" integer, "CountryCode" character varying, "DeclarationType" character varying, "PeriodCode" character varying, "PeriodStart" date, "PeriodEnd" date, "SalesBase" numeric, "SalesTax" numeric, "PurchasesBase" numeric, "PurchasesTax" numeric, "TaxableBase" numeric, "TaxAmount" numeric, "WithholdingsCredit" numeric, "PreviousBalance" numeric, "NetPayable" numeric, "Status" character varying, "SubmittedAt" timestamp without time zone, "SubmittedFile" character varying, "AuthorityResponse" character varying, "PaidAt" timestamp without time zone, "PaymentReference" character varying, "JournalEntryId" bigint, "Notes" character varying, "CreatedBy" character varying, "UpdatedBy" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19284,7 +19284,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_export_taxbook
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_export_taxbook(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_export_taxbook(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying)
  RETURNS TABLE("EntryId" bigint, "CompanyId" integer, "BookType" character varying, "PeriodCode" character varying, "EntryDate" date, "DocumentNumber" character varying, "DocumentType" character varying, "ControlNumber" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "TaxableBase" numeric, "ExemptAmount" numeric, "TaxRate" numeric, "TaxAmount" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "TotalAmount" numeric, "SourceDocumentId" bigint, "SourceModule" character varying, "CountryCode" character varying, "DeclarationId" bigint, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19310,7 +19310,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_taxbook_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_taxbook_list(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 100)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_taxbook_list(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 100)
  RETURNS TABLE(p_total_count bigint, "EntryId" bigint, "CompanyId" integer, "BookType" character varying, "PeriodCode" character varying, "EntryDate" date, "DocumentNumber" character varying, "DocumentType" character varying, "ControlNumber" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "TaxableBase" numeric, "ExemptAmount" numeric, "TaxRate" numeric, "TaxAmount" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "TotalAmount" numeric, "SourceDocumentId" bigint, "SourceModule" character varying, "CountryCode" character varying, "DeclarationId" bigint, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19342,7 +19342,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_taxbook_populate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_taxbook_populate(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_taxbook_populate(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19469,7 +19469,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_taxbook_summary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_taxbook_summary(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_taxbook_summary(p_company_id integer, p_book_type character varying, p_period_code character varying, p_country_code character varying)
  RETURNS TABLE("TaxRate" numeric, "TaxableBase" numeric, "ExemptAmount" numeric, "TaxAmount" numeric, "WithholdingAmount" numeric, "TotalAmount" numeric, "EntryCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -19496,7 +19496,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_withholding_generate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_withholding_generate(p_company_id integer, p_document_id bigint, p_withholding_type character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_voucher_id bigint, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_withholding_generate(p_company_id integer, p_document_id bigint, p_withholding_type character varying, p_country_code character varying, p_cod_usuario character varying, OUT p_voucher_id bigint, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19588,7 +19588,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_withholding_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_withholding_get(p_company_id integer, p_voucher_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_withholding_get(p_company_id integer, p_voucher_id bigint)
  RETURNS TABLE("VoucherId" bigint, "CompanyId" integer, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "WithholdingType" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "DocumentNumber" character varying, "DocumentDate" date, "TaxableBase" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "PeriodCode" character varying, "Status" character varying, "CountryCode" character varying, "JournalEntryId" bigint, "CreatedBy" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19611,7 +19611,7 @@ $function$
 -- ============================================================
 -- usp_fiscal_withholding_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_fiscal_withholding_list(p_company_id integer, p_withholding_type character varying DEFAULT NULL::character varying, p_period_code character varying DEFAULT NULL::character varying, p_country_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_fiscal_withholding_list(p_company_id integer, p_withholding_type character varying DEFAULT NULL::character varying, p_period_code character varying DEFAULT NULL::character varying, p_country_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "VoucherId" bigint, "CompanyId" integer, "VoucherNumber" character varying, "VoucherDate" timestamp without time zone, "WithholdingType" character varying, "ThirdPartyId" character varying, "ThirdPartyName" character varying, "DocumentNumber" character varying, "DocumentDate" date, "TaxableBase" numeric, "WithholdingRate" numeric, "WithholdingAmount" numeric, "PeriodCode" character varying, "Status" character varying, "CountryCode" character varying, "JournalEntryId" bigint, "CreatedBy" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -19642,7 +19642,7 @@ $function$
 -- ============================================================
 -- usp_governance_capturesnapshot
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_governance_capturesnapshot(p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_governance_capturesnapshot(p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "SnapshotAt" timestamp without time zone, "TotalTables" integer, "TablesWithoutPK" integer, "TablesWithoutCreatedAt" integer, "TablesWithoutUpdatedAt" integer, "TablesWithoutCreatedBy" integer, "TablesWithoutDateColumns" integer, "DuplicateNameCandidatePairs" integer, "SimilarityCandidatePairs" integer, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -19684,7 +19684,7 @@ $function$
 -- ============================================================
 -- usp_grupos_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_grupos_delete(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_grupos_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -19707,7 +19707,7 @@ $function$
 -- ============================================================
 -- usp_grupos_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_grupos_getbycodigo(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_grupos_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying, "Co_Usuario" character varying, "Porcentaje" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -19727,7 +19727,7 @@ $function$
 -- ============================================================
 -- usp_grupos_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_grupos_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_grupos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -19762,7 +19762,7 @@ $function$
 -- ============================================================
 -- usp_grupos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_grupos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_grupos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Codigo" integer, "Descripcion" character varying, "Co_Usuario" character varying, "Porcentaje" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -19800,7 +19800,7 @@ $function$
 -- ============================================================
 -- usp_grupos_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_grupos_update(p_codigo integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_grupos_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -19841,7 +19841,7 @@ $function$
 -- ============================================================
 -- usp_hr_committee_addmember
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_committee_addmember(p_safety_committee_id integer, p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_role character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_addmember(p_safety_committee_id integer, p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_role character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19851,7 +19851,7 @@ BEGIN
 
     IF p_role NOT IN ('PRESIDENT','SECRETARY','DELEGATE','EMPLOYER_REP') THEN
         p_resultado := -1;
-        p_mensaje   := 'Rol no vÃ¡lido.';
+        p_mensaje   := 'Rol no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
@@ -19860,7 +19860,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'ComitÃ© no encontrado.';
+        p_mensaje   := 'ComitÃƒÂ© no encontrado.';
         RETURN;
     END IF;
 
@@ -19871,7 +19871,7 @@ BEGIN
           AND ("EndDate" IS NULL OR "EndDate" >= p_start_date)
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya es miembro activo de este comitÃ©.';
+        p_mensaje   := 'El empleado ya es miembro activo de este comitÃƒÂ©.';
         RETURN;
     END IF;
 
@@ -19886,7 +19886,7 @@ BEGIN
         )
         RETURNING "MemberId" INTO p_resultado;
 
-        p_mensaje := 'Miembro agregado exitosamente al comitÃ©.';
+        p_mensaje := 'Miembro agregado exitosamente al comitÃƒÂ©.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -19899,7 +19899,7 @@ $function$
 -- ============================================================
 -- usp_hr_committee_getmeetings
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_committee_getmeetings(p_safety_committee_id integer, p_company_id integer, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_getmeetings(p_safety_committee_id integer, p_company_id integer, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MeetingId" integer, "SafetyCommitteeId" integer, "MeetingDate" date, "MinutesUrl" character varying, "TopicsSummary" character varying, "ActionItems" character varying, "CreatedAt" timestamp without time zone, "CommitteeName" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -19908,7 +19908,7 @@ BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
-    -- Verificar que el comitÃ© pertenece a la empresa
+    -- Verificar que el comitÃƒÂ© pertenece a la empresa
     IF NOT EXISTS (
         SELECT 1 FROM hr."SafetyCommittee"
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
@@ -19941,7 +19941,7 @@ $function$
 -- ============================================================
 -- usp_hr_committee_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_committee_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "SafetyCommitteeId" integer, "CompanyId" integer, "CountryCode" character, "CommitteeName" character varying, "FormationDate" date, "MeetingFrequency" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "ActiveMemberCount" bigint, "TotalMeetings" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -19983,7 +19983,7 @@ $function$
 -- ============================================================
 -- usp_hr_committee_recordmeeting
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_committee_recordmeeting(p_safety_committee_id integer, p_company_id integer, p_meeting_date timestamp without time zone, p_minutes_url character varying DEFAULT NULL::character varying, p_topics_summary text DEFAULT NULL::text, p_action_items text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_recordmeeting(p_safety_committee_id integer, p_company_id integer, p_meeting_date timestamp without time zone, p_minutes_url character varying DEFAULT NULL::character varying, p_topics_summary text DEFAULT NULL::text, p_action_items text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -19996,7 +19996,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'ComitÃ© no encontrado.';
+        p_mensaje   := 'ComitÃƒÂ© no encontrado.';
         RETURN;
     END IF;
 
@@ -20012,7 +20012,7 @@ BEGIN
         )
         RETURNING "MeetingId" INTO p_resultado;
 
-        p_mensaje := 'ReuniÃ³n registrada exitosamente.';
+        p_mensaje := 'ReuniÃƒÂ³n registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -20025,7 +20025,7 @@ $function$
 -- ============================================================
 -- usp_hr_committee_removemember
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_committee_removemember(p_member_id integer, p_safety_committee_id integer, p_company_id integer, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_removemember(p_member_id integer, p_safety_committee_id integer, p_company_id integer, p_end_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20042,7 +20042,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'ComitÃ© no encontrado.';
+        p_mensaje   := 'ComitÃƒÂ© no encontrado.';
         RETURN;
     END IF;
 
@@ -20051,7 +20051,7 @@ BEGIN
         WHERE "MemberId" = p_member_id AND "SafetyCommitteeId" = p_safety_committee_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Miembro no encontrado en este comitÃ©.';
+        p_mensaje   := 'Miembro no encontrado en este comitÃƒÂ©.';
         RETURN;
     END IF;
 
@@ -20062,7 +20062,7 @@ BEGIN
           AND "SafetyCommitteeId" = p_safety_committee_id;
 
         p_resultado := p_member_id;
-        p_mensaje   := 'Miembro removido del comitÃ© exitosamente.';
+        p_mensaje   := 'Miembro removido del comitÃƒÂ© exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -20075,7 +20075,7 @@ $function$
 -- ============================================================
 -- usp_hr_committee_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_committee_save(p_safety_committee_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_committee_name character varying DEFAULT NULL::character varying, p_formation_date date DEFAULT NULL::date, p_meeting_frequency character varying DEFAULT 'MONTHLY'::character varying, p_is_active boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(p_safety_committee_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_committee_name character varying DEFAULT NULL::character varying, p_formation_date date DEFAULT NULL::date, p_meeting_frequency character varying DEFAULT 'MONTHLY'::character varying, p_is_active boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20096,14 +20096,14 @@ BEGIN
             )
             RETURNING "SafetyCommitteeId" INTO p_resultado;
 
-            p_mensaje := 'ComitÃ© de seguridad creado exitosamente.';
+            p_mensaje := 'ComitÃƒÂ© de seguridad creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."SafetyCommittee"
                 WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'ComitÃ© no encontrado.';
+                p_mensaje   := 'ComitÃƒÂ© no encontrado.';
                 RETURN;
             END IF;
 
@@ -20118,7 +20118,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_safety_committee_id;
-            p_mensaje   := 'ComitÃ© de seguridad actualizado exitosamente.';
+            p_mensaje   := 'ComitÃƒÂ© de seguridad actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -20132,7 +20132,7 @@ $function$
 -- ============================================================
 -- usp_hr_documenttemplate_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_delete(p_company_id integer, p_template_code character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_delete(p_company_id integer, p_template_code character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20174,7 +20174,7 @@ $function$
 -- ============================================================
 -- usp_hr_documenttemplate_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_get(p_company_id integer, p_template_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(p_company_id integer, p_template_code character varying)
  RETURNS TABLE("TemplateId" integer, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character, "PayrollCode" character varying, "ContentMD" character varying, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -20203,7 +20203,7 @@ $function$
 -- ============================================================
 -- usp_hr_documenttemplate_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_template_type character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_template_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("TemplateId" integer, "TemplateCode" character varying, "TemplateName" character varying, "TemplateType" character varying, "CountryCode" character, "PayrollCode" character varying, "IsDefault" boolean, "IsSystem" boolean, "IsActive" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -20233,7 +20233,7 @@ $function$
 -- ============================================================
 -- usp_hr_documenttemplate_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(p_company_id integer, p_template_code character varying, p_template_name character varying, p_template_type character varying, p_country_code character, p_content_md text, p_payroll_code character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(p_company_id integer, p_template_code character varying, p_template_name character varying, p_template_type character varying, p_country_code character, p_content_md text, p_payroll_code character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT true, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20284,7 +20284,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_count
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_count(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_count(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying)
  RETURNS TABLE(total bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -20305,7 +20305,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_delete(p_company_id integer, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_delete(p_company_id integer, p_cedula character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -20321,7 +20321,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_existsbycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_existsbycode(p_company_id integer, p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_existsbycode(p_company_id integer, p_code character varying)
  RETURNS TABLE("EmployeeId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -20338,7 +20338,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_getbycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_getbycode(p_company_id integer, p_cedula character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_getbycode(p_company_id integer, p_cedula character varying)
  RETURNS TABLE("EmployeeCode" character varying, "EmployeeName" character varying, "FiscalId" character varying, "HireDate" date, "TerminationDate" date, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -20373,7 +20373,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_insert(p_company_id integer, p_code character varying, p_name character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_insert(p_company_id integer, p_code character varying, p_name character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT true)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -20389,7 +20389,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_list(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("EmployeeCode" character varying, "EmployeeName" character varying, "FiscalId" character varying, "HireDate" date, "TerminationDate" date, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -20413,7 +20413,7 @@ $function$
 -- ============================================================
 -- usp_hr_employee_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employee_update(p_company_id integer, p_cedula character varying, p_name character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT NULL::boolean)
+CREATE OR REPLACE FUNCTION public.usp_hr_employee_update(p_company_id integer, p_cedula character varying, p_name character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_hire_date date DEFAULT NULL::date, p_termination_date date DEFAULT NULL::date, p_is_active boolean DEFAULT NULL::boolean)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -20435,7 +20435,7 @@ $function$
 -- ============================================================
 -- usp_hr_employeeobligation_disenroll
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_disenroll(p_employee_obligation_id integer, p_disenrollment_date date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employeeobligation_disenroll(p_employee_obligation_id integer, p_disenrollment_date date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20453,19 +20453,19 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'No se encontrÃ³ la inscripciÃ³n indicada.';
+        p_mensaje   := 'No se encontrÃƒÂ³ la inscripciÃƒÂ³n indicada.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVE' THEN
         p_resultado := -2;
-        p_mensaje   := 'La inscripciÃ³n no estÃ¡ activa. Estado actual: ' || v_current_status;
+        p_mensaje   := 'La inscripciÃƒÂ³n no estÃƒÂ¡ activa. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
     IF p_disenrollment_date < v_enroll_date THEN
         p_resultado := -3;
-        p_mensaje   := 'La fecha de retiro no puede ser anterior a la fecha de inscripciÃ³n.';
+        p_mensaje   := 'La fecha de retiro no puede ser anterior a la fecha de inscripciÃƒÂ³n.';
         RETURN;
     END IF;
 
@@ -20490,7 +20490,7 @@ $function$
 -- ============================================================
 -- usp_hr_employeeobligation_enroll
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_enroll(p_employee_id bigint, p_legal_obligation_id integer, p_affiliation_number character varying DEFAULT NULL::character varying, p_institution_code character varying DEFAULT NULL::character varying, p_risk_level_id integer DEFAULT NULL::integer, p_enrollment_date date DEFAULT NULL::date, p_custom_rate numeric DEFAULT NULL::numeric, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employeeobligation_enroll(p_employee_id bigint, p_legal_obligation_id integer, p_affiliation_number character varying DEFAULT NULL::character varying, p_institution_code character varying DEFAULT NULL::character varying, p_risk_level_id integer DEFAULT NULL::integer, p_enrollment_date date DEFAULT NULL::date, p_custom_rate numeric DEFAULT NULL::numeric, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20503,7 +20503,7 @@ BEGIN
         WHERE "LegalObligationId" = p_legal_obligation_id AND "IsActive" = TRUE
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La obligaciÃ³n legal no existe o no estÃ¡ activa.';
+        p_mensaje   := 'La obligaciÃƒÂ³n legal no existe o no estÃƒÂ¡ activa.';
         RETURN;
     END IF;
 
@@ -20514,7 +20514,7 @@ BEGIN
           AND "Status"              = 'ACTIVE'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene una inscripciÃ³n activa en esta obligaciÃ³n.';
+        p_mensaje   := 'El empleado ya tiene una inscripciÃƒÂ³n activa en esta obligaciÃƒÂ³n.';
         RETURN;
     END IF;
 
@@ -20524,7 +20524,7 @@ BEGIN
           AND "LegalObligationId"     = p_legal_obligation_id
     ) THEN
         p_resultado := -3;
-        p_mensaje   := 'El nivel de riesgo indicado no corresponde a esta obligaciÃ³n.';
+        p_mensaje   := 'El nivel de riesgo indicado no corresponde a esta obligaciÃƒÂ³n.';
         RETURN;
     END IF;
 
@@ -20540,7 +20540,7 @@ BEGIN
         )
         RETURNING "EmployeeObligationId" INTO p_resultado;
 
-        p_mensaje := 'Empleado inscrito exitosamente en la obligaciÃ³n.';
+        p_mensaje := 'Empleado inscrito exitosamente en la obligaciÃƒÂ³n.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -20553,7 +20553,7 @@ $function$
 -- ============================================================
 -- usp_hr_employeeobligation_getbyemployee
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_employeeobligation_getbyemployee(p_employee_id bigint, p_status_filter character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_employeeobligation_getbyemployee(p_employee_id bigint, p_status_filter character varying DEFAULT NULL::character varying)
  RETURNS TABLE(p_total_count bigint, "EmployeeObligationId" integer, "EmployeeId" bigint, "LegalObligationId" integer, "CountryCode" character, "Code" character varying, "ObligationName" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "AffiliationNumber" character varying, "InstitutionCode" character varying, "RiskLevelId" integer, "RiskLevel" smallint, "RiskDescription" character varying, "EnrollmentDate" date, "DisenrollmentDate" date, "Status" character varying, "CustomRate" numeric, "EffectiveEmployerRate" numeric, "EffectiveEmployeeRate" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -20598,7 +20598,7 @@ $function$
 -- ============================================================
 -- usp_hr_filing_generate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_filing_generate(p_company_id integer, p_legal_obligation_id integer, p_filing_period_start date, p_filing_period_end date, p_due_date date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_generate(p_company_id integer, p_legal_obligation_id integer, p_filing_period_start date, p_filing_period_end date, p_due_date date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20619,7 +20619,7 @@ BEGIN
         WHERE "LegalObligationId" = p_legal_obligation_id AND "IsActive" = TRUE
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La obligaciÃ³n legal no existe o no estÃ¡ activa.';
+        p_mensaje   := 'La obligaciÃƒÂ³n legal no existe o no estÃƒÂ¡ activa.';
         RETURN;
     END IF;
 
@@ -20632,13 +20632,13 @@ BEGIN
           AND "Status"             <> 'REJECTED'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe una declaraciÃ³n para este perÃ­odo y obligaciÃ³n.';
+        p_mensaje   := 'Ya existe una declaraciÃƒÂ³n para este perÃƒÂ­odo y obligaciÃƒÂ³n.';
         RETURN;
     END IF;
 
     IF p_filing_period_end < p_filing_period_start THEN
         p_resultado := -3;
-        p_mensaje   := 'La fecha fin del perÃ­odo no puede ser anterior a la fecha inicio.';
+        p_mensaje   := 'La fecha fin del perÃƒÂ­odo no puede ser anterior a la fecha inicio.';
         RETURN;
     END IF;
 
@@ -20749,7 +20749,7 @@ BEGIN
         WHERE "ObligationFilingId" = v_filing_id;
 
         p_resultado := v_filing_id;
-        p_mensaje   := 'DeclaraciÃ³n generada exitosamente con ' || v_emp_count::TEXT || ' empleado(s).';
+        p_mensaje   := 'DeclaraciÃƒÂ³n generada exitosamente con ' || v_emp_count::TEXT || ' empleado(s).';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -20762,7 +20762,7 @@ $function$
 -- ============================================================
 -- usp_hr_filing_getsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_filing_getsummary(p_obligation_filing_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_getsummary(p_obligation_filing_id integer)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -20831,7 +20831,7 @@ $function$
 -- ============================================================
 -- usp_hr_filing_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_filing_list(p_company_id integer DEFAULT NULL::integer, p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_status character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_list(p_company_id integer DEFAULT NULL::integer, p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_status character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "ObligationFilingId" integer, "CompanyId" integer, "LegalObligationId" integer, "CountryCode" character, "ObligationCode" character varying, "ObligationName" character varying, "InstitutionName" character varying, "FilingPeriodStart" date, "FilingPeriodEnd" date, "DueDate" date, "FiledDate" date, "ConfirmationNumber" character varying, "TotalEmployerAmount" numeric, "TotalEmployeeAmount" numeric, "TotalAmount" numeric, "EmployeeCount" integer, "Status" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -20878,7 +20878,7 @@ $function$
 -- ============================================================
 -- usp_hr_filing_markfiled
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_filing_markfiled(p_obligation_filing_id integer, p_filed_date date DEFAULT NULL::date, p_confirmation_number character varying DEFAULT NULL::character varying, p_filed_by_user_id integer DEFAULT NULL::integer, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_markfiled(p_obligation_filing_id integer, p_filed_date date DEFAULT NULL::date, p_confirmation_number character varying DEFAULT NULL::character varying, p_filed_by_user_id integer DEFAULT NULL::integer, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -20895,7 +20895,7 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'No se encontrÃ³ la declaraciÃ³n indicada.';
+        p_mensaje   := 'No se encontrÃƒÂ³ la declaraciÃƒÂ³n indicada.';
         RETURN;
     END IF;
 
@@ -20921,7 +20921,7 @@ BEGIN
         WHERE "ObligationFilingId" = p_obligation_filing_id;
 
         p_resultado := p_obligation_filing_id;
-        p_mensaje   := 'DeclaraciÃ³n marcada como presentada exitosamente.';
+        p_mensaje   := 'DeclaraciÃƒÂ³n marcada como presentada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -20934,7 +20934,7 @@ $function$
 -- ============================================================
 -- usp_hr_legalconcept_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_solo_activos boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_solo_activos boolean DEFAULT true)
  RETURNS TABLE(id bigint, convencion character varying, "tipoCalculo" character varying, "coConcept" character varying, "nbConcepto" character varying, formula character varying, sobre character varying, tipo character varying, bonificable character varying, "lotttArticulo" character varying, "ccpClausula" character varying, orden integer, activo boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -20962,7 +20962,7 @@ $function$
 -- ============================================================
 -- usp_hr_legalconcept_listconventions
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_listconventions(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_listconventions(p_company_id integer)
  RETURNS TABLE("Convencion" character varying, "TotalConceptos" bigint, "ConceptosMensual" bigint, "ConceptosVacaciones" bigint, "ConceptosLiquidacion" bigint, "OrdenInicio" integer, "OrdenFin" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -20989,7 +20989,7 @@ $function$
 -- ============================================================
 -- usp_hr_legalconcept_validateformulas
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_validateformulas(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_validateformulas(p_company_id integer, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("coConcept" character varying, "nbConcepto" character varying, formula character varying, "defaultValue" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -21011,7 +21011,7 @@ $function$
 -- ============================================================
 -- usp_hr_medexam_getpending
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_getpending(p_company_id integer, p_as_of_date date DEFAULT NULL::date, p_days_ahead integer DEFAULT 30, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_getpending(p_company_id integer, p_as_of_date date DEFAULT NULL::date, p_days_ahead integer DEFAULT 30, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MedicalExamId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ExamType" character varying, "ExamDate" date, "NextDueDate" date, "Result" character varying, "Restrictions" character varying, "PhysicianName" character varying, "ClinicName" character varying, "IsOverdue" boolean, "DaysUntilDue" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -21058,7 +21058,7 @@ $function$
 -- ============================================================
 -- usp_hr_medexam_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(p_company_id integer, p_exam_type character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_list(p_company_id integer, p_exam_type character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MedicalExamId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ExamType" character varying, "ExamDate" date, "NextDueDate" date, "Result" character varying, "Restrictions" character varying, "PhysicianName" character varying, "ClinicName" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -21102,7 +21102,7 @@ $function$
 -- ============================================================
 -- usp_hr_medexam_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(p_medical_exam_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_exam_type character varying DEFAULT NULL::character varying, p_exam_date date DEFAULT NULL::date, p_next_due_date date DEFAULT NULL::date, p_result character varying DEFAULT 'PENDING'::character varying, p_restrictions character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_clinic_name character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(p_medical_exam_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_exam_type character varying DEFAULT NULL::character varying, p_exam_date date DEFAULT NULL::date, p_next_due_date date DEFAULT NULL::date, p_result character varying DEFAULT 'PENDING'::character varying, p_restrictions character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_clinic_name character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21112,13 +21112,13 @@ BEGIN
 
     IF p_exam_type NOT IN ('PRE_EMPLOYMENT','PERIODIC','POST_VACATION','EXIT','SPECIAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de examen no vÃ¡lido.';
+        p_mensaje   := 'Tipo de examen no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_result NOT IN ('FIT','FIT_WITH_RESTRICTIONS','UNFIT','PENDING') THEN
         p_resultado := -1;
-        p_mensaje   := 'Resultado de examen no vÃ¡lido.';
+        p_mensaje   := 'Resultado de examen no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
@@ -21139,14 +21139,14 @@ BEGIN
             )
             RETURNING "MedicalExamId" INTO p_resultado;
 
-            p_mensaje := 'Examen mÃ©dico creado exitosamente.';
+            p_mensaje := 'Examen mÃƒÂ©dico creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."MedicalExam"
                 WHERE "MedicalExamId" = p_medical_exam_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Examen mÃ©dico no encontrado.';
+                p_mensaje   := 'Examen mÃƒÂ©dico no encontrado.';
                 RETURN;
             END IF;
 
@@ -21169,7 +21169,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_medical_exam_id;
-            p_mensaje   := 'Examen mÃ©dico actualizado exitosamente.';
+            p_mensaje   := 'Examen mÃƒÂ©dico actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -21183,7 +21183,7 @@ $function$
 -- ============================================================
 -- usp_hr_medorder_approve
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_approve(p_medical_order_id integer, p_company_id integer, p_action character varying, p_approved_amount numeric DEFAULT NULL::numeric, p_approved_by integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_medorder_approve(p_medical_order_id integer, p_company_id integer, p_action character varying, p_approved_amount numeric DEFAULT NULL::numeric, p_approved_by integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21193,7 +21193,7 @@ BEGIN
 
     IF p_action NOT IN ('APROBADA','RECHAZADA') THEN
         p_resultado := -1;
-        p_mensaje   := 'AcciÃ³n no vÃ¡lida. Use APROBADA o RECHAZADA.';
+        p_mensaje   := 'AcciÃƒÂ³n no vÃƒÂ¡lida. Use APROBADA o RECHAZADA.';
         RETURN;
     END IF;
 
@@ -21202,7 +21202,7 @@ BEGIN
         WHERE "MedicalOrderId" = p_medical_order_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Orden mÃ©dica no encontrada.';
+        p_mensaje   := 'Orden mÃƒÂ©dica no encontrada.';
         RETURN;
     END IF;
 
@@ -21212,7 +21212,7 @@ BEGIN
           AND "Status" = 'PENDIENTE'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La orden no estÃ¡ en estado PENDIENTE.';
+        p_mensaje   := 'La orden no estÃƒÂ¡ en estado PENDIENTE.';
         RETURN;
     END IF;
 
@@ -21232,8 +21232,8 @@ BEGIN
 
         p_resultado := p_medical_order_id;
         p_mensaje   := CASE WHEN p_action = 'APROBADA'
-                            THEN 'Orden mÃ©dica aprobada exitosamente.'
-                            ELSE 'Orden mÃ©dica rechazada.' END;
+                            THEN 'Orden mÃƒÂ©dica aprobada exitosamente.'
+                            ELSE 'Orden mÃƒÂ©dica rechazada.' END;
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -21246,7 +21246,7 @@ $function$
 -- ============================================================
 -- usp_hr_medorder_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_create(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_order_type character varying DEFAULT NULL::character varying, p_order_date date DEFAULT NULL::date, p_diagnosis character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_prescriptions text DEFAULT NULL::text, p_estimated_cost numeric DEFAULT NULL::numeric, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_medorder_create(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_order_type character varying DEFAULT NULL::character varying, p_order_date date DEFAULT NULL::date, p_diagnosis character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_prescriptions text DEFAULT NULL::text, p_estimated_cost numeric DEFAULT NULL::numeric, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21256,7 +21256,7 @@ BEGIN
 
     IF p_order_type NOT IN ('MEDICAL','PHARMACY','LAB','REFERRAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de orden no vÃ¡lido.';
+        p_mensaje   := 'Tipo de orden no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
@@ -21276,7 +21276,7 @@ BEGIN
         )
         RETURNING "MedicalOrderId" INTO p_resultado;
 
-        p_mensaje := 'Orden mÃ©dica creada exitosamente.';
+        p_mensaje := 'Orden mÃƒÂ©dica creada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -21289,7 +21289,7 @@ $function$
 -- ============================================================
 -- usp_hr_medorder_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(p_company_id integer, p_order_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_medorder_list(p_company_id integer, p_order_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "MedicalOrderId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OrderType" character varying, "OrderDate" date, "Diagnosis" character varying, "PhysicianName" character varying, "Prescriptions" character varying, "EstimatedCost" numeric, "ApprovedAmount" numeric, "Status" character varying, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "DocumentUrl" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -21336,7 +21336,7 @@ $function$
 -- ============================================================
 -- usp_hr_obligation_getbycountry
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(p_country_code character, p_as_of_date date DEFAULT NULL::date)
+CREATE OR REPLACE FUNCTION public.usp_hr_obligation_getbycountry(p_country_code character, p_as_of_date date DEFAULT NULL::date)
  RETURNS TABLE("LegalObligationId" integer, "CountryCode" character, "Code" character varying, "Name" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "SalaryCap" numeric, "SalaryCapUnit" character varying, "EmployerRate" numeric, "EmployeeRate" numeric, "RateVariableByRisk" boolean, "FilingFrequency" character varying, "FilingDeadlineRule" character varying, "EffectiveFrom" date, "EffectiveTo" date, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -21377,7 +21377,7 @@ $function$
 -- ============================================================
 -- usp_hr_obligation_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(p_country_code character DEFAULT NULL::bpchar, p_obligation_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT NULL::boolean, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_obligation_list(p_country_code character DEFAULT NULL::bpchar, p_obligation_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT NULL::boolean, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "LegalObligationId" integer, "CountryCode" character, "Code" character varying, "Name" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "SalaryCap" numeric, "SalaryCapUnit" character varying, "EmployerRate" numeric, "EmployeeRate" numeric, "RateVariableByRisk" boolean, "FilingFrequency" character varying, "FilingDeadlineRule" character varying, "EffectiveFrom" date, "EffectiveTo" date, "IsActive" boolean, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -21422,7 +21422,7 @@ $function$
 -- ============================================================
 -- usp_hr_obligation_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_save(p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_institution_name character varying DEFAULT NULL::character varying, p_obligation_type character varying DEFAULT NULL::character varying, p_calculation_basis character varying DEFAULT NULL::character varying, p_salary_cap numeric DEFAULT NULL::numeric, p_salary_cap_unit character varying DEFAULT NULL::character varying, p_employer_rate numeric DEFAULT 0, p_employee_rate numeric DEFAULT 0, p_rate_variable_by_risk boolean DEFAULT false, p_filing_frequency character varying DEFAULT NULL::character varying, p_filing_deadline_rule character varying DEFAULT NULL::character varying, p_effective_from date DEFAULT NULL::date, p_effective_to date DEFAULT NULL::date, p_is_active boolean DEFAULT true, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_obligation_save(p_legal_obligation_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_institution_name character varying DEFAULT NULL::character varying, p_obligation_type character varying DEFAULT NULL::character varying, p_calculation_basis character varying DEFAULT NULL::character varying, p_salary_cap numeric DEFAULT NULL::numeric, p_salary_cap_unit character varying DEFAULT NULL::character varying, p_employer_rate numeric DEFAULT 0, p_employee_rate numeric DEFAULT 0, p_rate_variable_by_risk boolean DEFAULT false, p_filing_frequency character varying DEFAULT NULL::character varying, p_filing_deadline_rule character varying DEFAULT NULL::character varying, p_effective_from date DEFAULT NULL::date, p_effective_to date DEFAULT NULL::date, p_is_active boolean DEFAULT true, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21433,31 +21433,31 @@ BEGIN
     -- Validaciones
     IF p_country_code IS NULL OR LENGTH(TRIM(p_country_code)) = 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'El cÃ³digo de paÃ­s es obligatorio.';
+        p_mensaje   := 'El cÃƒÂ³digo de paÃƒÂ­s es obligatorio.';
         RETURN;
     END IF;
 
     IF p_code IS NULL OR LENGTH(TRIM(p_code)) = 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'El cÃ³digo de obligaciÃ³n es obligatorio.';
+        p_mensaje   := 'El cÃƒÂ³digo de obligaciÃƒÂ³n es obligatorio.';
         RETURN;
     END IF;
 
     IF p_obligation_type NOT IN ('CONTRIBUTION','TAX_WITHHOLDING','REPORTING','REGISTRATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de obligaciÃ³n no vÃ¡lido. Use: CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION.';
+        p_mensaje   := 'Tipo de obligaciÃƒÂ³n no vÃƒÂ¡lido. Use: CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION.';
         RETURN;
     END IF;
 
     IF p_calculation_basis NOT IN ('NORMAL_SALARY','INTEGRAL_SALARY','GROSS_PAYROLL','TAXABLE_INCOME','FIXED_AMOUNT') THEN
         p_resultado := -1;
-        p_mensaje   := 'Base de cÃ¡lculo no vÃ¡lida.';
+        p_mensaje   := 'Base de cÃƒÂ¡lculo no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
     IF p_filing_frequency NOT IN ('MONTHLY','QUARTERLY','ANNUAL','REALTIME') THEN
         p_resultado := -1;
-        p_mensaje   := 'Frecuencia de presentaciÃ³n no vÃ¡lida.';
+        p_mensaje   := 'Frecuencia de presentaciÃƒÂ³n no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
@@ -21471,7 +21471,7 @@ BEGIN
                   AND "EffectiveFrom" = p_effective_from
             ) THEN
                 p_resultado := -2;
-                p_mensaje   := 'Ya existe una obligaciÃ³n con ese cÃ³digo y fecha de vigencia para el paÃ­s indicado.';
+                p_mensaje   := 'Ya existe una obligaciÃƒÂ³n con ese cÃƒÂ³digo y fecha de vigencia para el paÃƒÂ­s indicado.';
                 RETURN;
             END IF;
 
@@ -21491,12 +21491,12 @@ BEGIN
             )
             RETURNING "LegalObligationId" INTO p_resultado;
 
-            p_mensaje := 'ObligaciÃ³n legal creada exitosamente.';
+            p_mensaje := 'ObligaciÃƒÂ³n legal creada exitosamente.';
 
         ELSE
             IF NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "LegalObligationId" = p_legal_obligation_id) THEN
                 p_resultado := -3;
-                p_mensaje   := 'No se encontrÃ³ la obligaciÃ³n legal con el ID indicado.';
+                p_mensaje   := 'No se encontrÃƒÂ³ la obligaciÃƒÂ³n legal con el ID indicado.';
                 RETURN;
             END IF;
 
@@ -21509,7 +21509,7 @@ BEGIN
                   AND "LegalObligationId" <> p_legal_obligation_id
             ) THEN
                 p_resultado := -2;
-                p_mensaje   := 'Ya existe otra obligaciÃ³n con ese cÃ³digo y fecha de vigencia para el paÃ­s indicado.';
+                p_mensaje   := 'Ya existe otra obligaciÃƒÂ³n con ese cÃƒÂ³digo y fecha de vigencia para el paÃƒÂ­s indicado.';
                 RETURN;
             END IF;
 
@@ -21535,7 +21535,7 @@ BEGIN
             WHERE "LegalObligationId" = p_legal_obligation_id;
 
             p_resultado := p_legal_obligation_id;
-            p_mensaje   := 'ObligaciÃ³n legal actualizada exitosamente.';
+            p_mensaje   := 'ObligaciÃƒÂ³n legal actualizada exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -21549,7 +21549,7 @@ $function$
 -- ============================================================
 -- usp_hr_occhealth_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(p_company_id integer, p_country_code character, p_record_type character varying, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_occurrence_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_report_deadline timestamp without time zone DEFAULT NULL::timestamp without time zone, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(p_company_id integer, p_country_code character, p_record_type character varying, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_occurrence_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_report_deadline timestamp without time zone DEFAULT NULL::timestamp without time zone, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21559,13 +21559,13 @@ BEGIN
 
     IF p_record_type NOT IN ('ACCIDENT','DISEASE','NEAR_MISS','INSPECTION','RISK_NOTIFICATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de registro no vÃ¡lido.';
+        p_mensaje   := 'Tipo de registro no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no vÃ¡lida.';
+        p_mensaje   := 'Severidad no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
@@ -21605,7 +21605,7 @@ $function$
 -- ============================================================
 -- usp_hr_occhealth_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_get(p_occupational_health_id integer, p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_get(p_occupational_health_id integer, p_company_id integer)
  RETURNS TABLE("OccupationalHealthId" integer, "CompanyId" integer, "CountryCode" character, "RecordType" character varying, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OccurrenceDate" timestamp without time zone, "ReportDeadline" timestamp without time zone, "ReportedDate" timestamp without time zone, "Severity" character varying, "BodyPartAffected" character varying, "DaysLost" integer, "Location" character varying, "Description" character varying, "RootCause" character varying, "CorrectiveAction" character varying, "InvestigationDueDate" date, "InvestigationCompletedDate" date, "InstitutionReference" character varying, "Status" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -21648,7 +21648,7 @@ $function$
 -- ============================================================
 -- usp_hr_occhealth_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(p_company_id integer, p_record_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_list(p_company_id integer, p_record_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "OccupationalHealthId" integer, "CompanyId" integer, "CountryCode" character, "RecordType" character varying, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OccurrenceDate" timestamp without time zone, "ReportDeadline" timestamp without time zone, "ReportedDate" timestamp without time zone, "Severity" character varying, "BodyPartAffected" character varying, "DaysLost" integer, "Location" character varying, "Description" character varying, "RootCause" character varying, "CorrectiveAction" character varying, "InvestigationDueDate" date, "InvestigationCompletedDate" date, "InstitutionReference" character varying, "Status" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -21703,7 +21703,7 @@ $function$
 -- ============================================================
 -- usp_hr_occhealth_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_update(p_occupational_health_id integer, p_company_id integer, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_investigation_completed_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_update(p_occupational_health_id integer, p_company_id integer, p_reported_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_severity character varying DEFAULT NULL::character varying, p_body_part_affected character varying DEFAULT NULL::character varying, p_days_lost integer DEFAULT NULL::integer, p_location character varying DEFAULT NULL::character varying, p_description text DEFAULT NULL::text, p_root_cause character varying DEFAULT NULL::character varying, p_corrective_action character varying DEFAULT NULL::character varying, p_investigation_due_date date DEFAULT NULL::date, p_investigation_completed_date date DEFAULT NULL::date, p_institution_reference character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21722,13 +21722,13 @@ BEGIN
 
     IF p_status IS NOT NULL AND p_status NOT IN ('OPEN','REPORTED','INVESTIGATING','CLOSED') THEN
         p_resultado := -1;
-        p_mensaje   := 'Estado no vÃ¡lido.';
+        p_mensaje   := 'Estado no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no vÃ¡lida.';
+        p_mensaje   := 'Severidad no vÃƒÂ¡lida.';
         RETURN;
     END IF;
 
@@ -21767,7 +21767,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_approvedraft
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_approvedraft(p_batch_id integer, p_approved_by integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_approvedraft(p_batch_id integer, p_approved_by integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21794,10 +21794,10 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Verificar que el lote tiene lÃ­neas
+    -- Verificar que el lote tiene lÃƒÂ­neas
     IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatchLine" WHERE "BatchId" = p_batch_id) THEN
         p_resultado := -3;
-        p_mensaje   := 'No se puede aprobar un lote sin lÃ­neas.';
+        p_mensaje   := 'No se puede aprobar un lote sin lÃƒÂ­neas.';
         RETURN;
     END IF;
 
@@ -21823,7 +21823,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_batchaddline
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchaddline(p_batch_id integer, p_employee_code character varying, p_concept_code character varying, p_concept_name character varying, p_concept_type character varying, p_quantity numeric, p_amount numeric, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchaddline(p_batch_id integer, p_employee_code character varying, p_concept_code character varying, p_concept_name character varying, p_concept_type character varying, p_quantity numeric, p_amount numeric, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21840,7 +21840,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -21853,7 +21853,7 @@ BEGIN
     LIMIT 1;
 
     IF v_employee_name IS NULL THEN
-        -- Intentar obtener de lÃ­neas existentes del batch
+        -- Intentar obtener de lÃƒÂ­neas existentes del batch
         SELECT bl."EmployeeName", bl."EmployeeId"
         INTO v_employee_name, v_employee_id
         FROM hr."PayrollBatchLine" bl
@@ -21904,7 +21904,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'LÃ­nea agregada correctamente.';
+        p_mensaje   := 'LÃƒÂ­nea agregada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -21917,7 +21917,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_batchbulkupdate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchbulkupdate(p_batch_id integer, p_concept_code character varying, p_concept_type character varying, p_amount numeric, p_user_id integer, p_employee_codes text DEFAULT NULL::text, OUT p_affected_count integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchbulkupdate(p_batch_id integer, p_concept_code character varying, p_concept_type character varying, p_amount numeric, p_user_id integer, p_employee_codes text DEFAULT NULL::text, OUT p_affected_count integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -21934,12 +21934,12 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
     BEGIN
-        -- Actualizar lÃ­neas existentes que coincidan
+        -- Actualizar lÃƒÂ­neas existentes que coincidan
         UPDATE hr."PayrollBatchLine" bl
         SET "Amount"     = p_amount,
             "Total"      = bl."Quantity" * p_amount,
@@ -21969,7 +21969,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := p_affected_count::TEXT || ' lÃ­neas actualizadas.';
+        p_mensaje   := p_affected_count::TEXT || ' lÃƒÂ­neas actualizadas.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -21982,7 +21982,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_batchremoveline
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_batchremoveline(p_line_id integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_batchremoveline(p_line_id integer, p_user_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -22001,7 +22001,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'LÃƒÂ­nea no encontrada o el lote no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -22019,7 +22019,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'LÃ­nea eliminada correctamente.';
+        p_mensaje   := 'LÃƒÂ­nea eliminada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -22032,7 +22032,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_closerun
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_closerun(p_company_id integer, p_payroll_code character varying, p_employee_code character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_closerun(p_company_id integer, p_payroll_code character varying, p_employee_code character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22064,7 +22064,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_ensureemployee
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_ensureemployee(p_company_id integer, p_document character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_ensureemployee(p_company_id integer, p_document character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("employeeId" bigint, "employeeCode" character varying, "employeeName" character varying, "hireDate" date)
  LANGUAGE plpgsql
 AS $function$
@@ -22105,7 +22105,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_ensuretype
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_ensuretype(p_company_id integer, p_payroll_code character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_ensuretype(p_company_id integer, p_payroll_code character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -22124,7 +22124,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_generatedraft
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_generatedraft(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_from_date date, p_to_date date, p_user_id integer, p_department_filter character varying DEFAULT NULL::character varying, OUT p_batch_id integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_generatedraft(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_from_date date, p_to_date date, p_user_id integer, p_department_filter character varying DEFAULT NULL::character varying, OUT p_batch_id integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -22135,14 +22135,14 @@ BEGIN
     p_mensaje   := '';
     p_batch_id  := 0;
 
-    -- Validaciones bÃ¡sicas
+    -- Validaciones bÃƒÂ¡sicas
     IF p_from_date >= p_to_date THEN
         p_resultado := -1;
         p_mensaje   := 'La fecha desde debe ser menor que la fecha hasta.';
         RETURN;
     END IF;
 
-    -- Verificar que no exista un batch BORRADOR duplicado para el mismo perÃ­odo
+    -- Verificar que no exista un batch BORRADOR duplicado para el mismo perÃƒÂ­odo
     IF EXISTS (
         SELECT 1 FROM hr."PayrollBatch"
         WHERE "CompanyId"   = p_company_id
@@ -22153,7 +22153,7 @@ BEGIN
           AND "Status"      = 'BORRADOR'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un borrador de nÃ³mina para este perÃ­odo y tipo.';
+        p_mensaje   := 'Ya existe un borrador de nÃƒÂ³mina para este perÃƒÂ­odo y tipo.';
         RETURN;
     END IF;
 
@@ -22169,7 +22169,7 @@ BEGIN
         )
         RETURNING "BatchId" INTO p_batch_id;
 
-        -- Insertar lÃ­neas por cada empleado activo + cada concepto activo de la nÃ³mina
+        -- Insertar lÃƒÂ­neas por cada empleado activo + cada concepto activo de la nÃƒÂ³mina
         INSERT INTO hr."PayrollBatchLine" (
             "BatchId", "EmployeeId", "EmployeeCode", "EmployeeName",
             "ConceptCode", "ConceptName", "ConceptType",
@@ -22223,7 +22223,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getconstant
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getconstant(p_company_id integer, p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getconstant(p_company_id integer, p_code character varying)
  RETURNS TABLE(value numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22243,7 +22243,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getdraftgrid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftgrid(p_batch_id integer, p_search character varying DEFAULT NULL::character varying, p_department character varying DEFAULT NULL::character varying, p_only_modified boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftgrid(p_batch_id integer, p_search character varying DEFAULT NULL::character varying, p_department character varying DEFAULT NULL::character varying, p_only_modified boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "EmployeeId" bigint, "DepartmentCode" character varying, "DepartmentName" character varying, "PositionName" character varying, "TotalGross" numeric, "TotalDeductions" numeric, "TotalNet" numeric, "HasModified" bigint, "ConceptCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -22295,7 +22295,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getdraftsummary_alerts
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_alerts(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_alerts(p_batch_id integer)
  RETURNS TABLE("AlertType" character varying, "EmployeeCode" character varying, "EmployeeName" character varying, "AlertMessage" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22312,7 +22312,7 @@ BEGIN
             'SIN_ASIGNACIONES'::TEXT                               AS "AlertType",
             bl."EmployeeCode",
             bl."EmployeeName",
-            'El empleado no tiene conceptos de asignaciÃ³n.'::TEXT  AS "AlertMessage"
+            'El empleado no tiene conceptos de asignaciÃƒÂ³n.'::TEXT  AS "AlertMessage"
         FROM hr."PayrollBatchLine" bl
         WHERE bl."BatchId" = p_batch_id
         GROUP BY bl."EmployeeCode", bl."EmployeeName"
@@ -22337,7 +22337,7 @@ BEGIN
 
         UNION ALL
 
-        -- LÃ­neas con monto cero
+        -- LÃƒÂ­neas con monto cero
         SELECT
             'MONTO_CERO'::TEXT AS "AlertType",
             bl."EmployeeCode",
@@ -22357,7 +22357,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getdraftsummary_bydept
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_bydept(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_bydept(p_batch_id integer)
  RETURNS TABLE("DepartmentCode" character varying, "DepartmentName" character varying, "EmployeeCount" bigint, "DeptGross" numeric, "DeptDeductions" numeric, "DeptNet" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22380,7 +22380,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getdraftsummary_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_header(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_header(p_batch_id integer)
  RETURNS TABLE("BatchId" integer, "CompanyId" integer, "BranchId" integer, "PayrollCode" character varying, "FromDate" date, "ToDate" date, "Status" character varying, "TotalEmployees" integer, "TotalGross" numeric, "TotalDeductions" numeric, "TotalNet" numeric, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "PrevBatchId" integer, "PrevTotalGross" numeric, "PrevTotalDeductions" numeric, "PrevTotalNet" numeric, "NetChangePercent" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22434,7 +22434,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getemployeelines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getemployeelines(p_batch_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getemployeelines(p_batch_id integer, p_employee_code character varying)
  RETURNS TABLE("LineId" integer, "BatchId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ConceptCode" character varying, "ConceptName" character varying, "ConceptType" character varying, "Quantity" numeric, "Amount" numeric, "Total" numeric, "IsModified" boolean, "Notes" character varying, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -22472,7 +22472,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getrunheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getrunheader(p_company_id integer, p_payroll_code character varying, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getrunheader(p_company_id integer, p_payroll_code character varying, p_employee_code character varying)
  RETURNS TABLE("runId" bigint, nomina character varying, cedula character varying, "nombreEmpleado" character varying, cargo character varying, "fechaProceso" date, "fechaInicio" date, "fechaHasta" date, "totalAsignaciones" numeric, "totalDeducciones" numeric, "totalNeto" numeric, cerrada boolean, "tipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22497,7 +22497,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getrunlines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getrunlines(p_run_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getrunlines(p_run_id bigint)
  RETURNS TABLE("coConcepto" character varying, "nombreConcepto" character varying, "tipoConcepto" character varying, cantidad numeric, monto numeric, total numeric, descripcion character varying, "cuentaContable" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22517,7 +22517,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getsettlementheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getsettlementheader(p_company_id integer, p_settlement_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getsettlementheader(p_company_id integer, p_settlement_code character varying)
  RETURNS TABLE(id bigint, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22534,7 +22534,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getsettlementlines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getsettlementlines(p_settlement_process_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getsettlementlines(p_settlement_process_id bigint)
  RETURNS TABLE(codigo character varying, nombre character varying, monto numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22551,7 +22551,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getvacationheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getvacationheader(p_company_id integer, p_vacation_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getvacationheader(p_company_id integer, p_vacation_code character varying)
  RETURNS TABLE(id bigint, vacacion character varying, cedula character varying, "nombreEmpleado" character varying, inicio date, hasta date, reintegro date, "fechaCalculo" date, total numeric, "totalCalculado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22572,7 +22572,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_getvacationlines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getvacationlines(p_vacation_process_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getvacationlines(p_vacation_process_id bigint)
  RETURNS TABLE(codigo character varying, nombre character varying, monto numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22589,7 +22589,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listactiveemployees
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listactiveemployees(p_company_id integer, p_solo_activos boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listactiveemployees(p_company_id integer, p_solo_activos boolean DEFAULT true)
  RETURNS TABLE("employeeCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22608,7 +22608,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listbatches
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listbatches(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 25)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listbatches(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 25)
  RETURNS TABLE(p_total_count bigint, "BatchId" integer, "CompanyId" integer, "BranchId" integer, "PayrollCode" character varying, "FromDate" date, "ToDate" date, "Status" character varying, "TotalEmployees" integer, "TotalGross" numeric, "TotalDeductions" numeric, "TotalNet" numeric, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -22646,7 +22646,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listconcepts
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listconcepts(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listconcepts(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT NULL::character varying, p_search character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, codigo character varying, "codigoNomina" character varying, nombre character varying, formula character varying, sobre character varying, clase character varying, tipo character varying, uso character varying, bonificable character varying, "esAntiguedad" character varying, "cuentaContable" character varying, aplica character varying, "valorDefecto" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22688,7 +22688,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listconstants
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listconstants(p_company_id integer, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listconstants(p_company_id integer, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, codigo character varying, nombre character varying, valor numeric, origen character varying, activo boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -22715,7 +22715,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listruns
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listruns(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listruns(p_company_id integer, p_payroll_code character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_solo_abiertas boolean DEFAULT false, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, nomina character varying, cedula character varying, "nombreEmpleado" character varying, cargo character varying, "fechaProceso" date, "fechaInicio" date, "fechaHasta" date, "totalAsignaciones" numeric, "totalDeducciones" numeric, "totalNeto" numeric, cerrada boolean, "tipoNomina" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22754,7 +22754,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listsettlements
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listsettlements(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listsettlements(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, liquidacion character varying, cedula character varying, "nombreEmpleado" character varying, "fechaRetiro" date, "causaRetiro" character varying, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22783,7 +22783,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_listvacations
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_listvacations(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_listvacations(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, vacacion character varying, cedula character varying, "nombreEmpleado" character varying, inicio date, hasta date, reintegro date, "fechaCalculo" date, total numeric, "totalCalculado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -22813,7 +22813,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_loadconceptsforrun
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_loadconceptsforrun(p_company_id integer, p_payroll_code character varying, p_concept_type character varying DEFAULT NULL::character varying, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_solo_legales boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_loadconceptsforrun(p_company_id integer, p_payroll_code character varying, p_concept_type character varying DEFAULT NULL::character varying, p_convention_code character varying DEFAULT NULL::character varying, p_calculation_type character varying DEFAULT NULL::character varying, p_solo_legales boolean DEFAULT false)
  RETURNS TABLE("conceptCode" character varying, "conceptName" character varying, "conceptType" character varying, "defaultValue" numeric, formula character varying, "accountingAccountCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -22850,7 +22850,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_processbatch
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_processbatch(p_batch_id integer, p_user_id integer, OUT p_procesados integer, OUT p_errores integer, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_processbatch(p_batch_id integer, p_user_id integer, OUT p_procesados integer, OUT p_errores integer, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -22913,7 +22913,7 @@ BEGIN
             WHERE "BatchId" = p_batch_id
             GROUP BY "EmployeeCode"
         LOOP
-            -- Construir JSON de lÃ­neas para este empleado
+            -- Construir JSON de lÃƒÂ­neas para este empleado
             SELECT json_agg(
                 json_build_object(
                     'code',        "ConceptCode",
@@ -23008,7 +23008,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_resolveuser
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_resolveuser(p_user_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_resolveuser(p_user_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -23036,7 +23036,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_saveconcept
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_saveconcept(p_company_id integer, p_payroll_code character varying, p_concept_code character varying, p_concept_name character varying, p_formula character varying DEFAULT NULL::character varying, p_base_expression character varying DEFAULT NULL::character varying, p_concept_class character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT 'ASIGNACION'::character varying, p_usage_type character varying DEFAULT NULL::character varying, p_is_bonifiable boolean DEFAULT false, p_is_seniority boolean DEFAULT false, p_accounting_account_code character varying DEFAULT NULL::character varying, p_applies_flag boolean DEFAULT true, p_default_value numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_saveconcept(p_company_id integer, p_payroll_code character varying, p_concept_code character varying, p_concept_name character varying, p_formula character varying DEFAULT NULL::character varying, p_base_expression character varying DEFAULT NULL::character varying, p_concept_class character varying DEFAULT NULL::character varying, p_concept_type character varying DEFAULT 'ASIGNACION'::character varying, p_usage_type character varying DEFAULT NULL::character varying, p_is_bonifiable boolean DEFAULT false, p_is_seniority boolean DEFAULT false, p_accounting_account_code character varying DEFAULT NULL::character varying, p_applies_flag boolean DEFAULT true, p_default_value numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23094,7 +23094,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_saveconstant
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_saveconstant(p_company_id integer, p_code character varying, p_name character varying DEFAULT NULL::character varying, p_value numeric DEFAULT NULL::numeric, p_source_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_saveconstant(p_company_id integer, p_code character varying, p_name character varying DEFAULT NULL::character varying, p_value numeric DEFAULT NULL::numeric, p_source_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23133,7 +23133,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_savedraftline
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_savedraftline(p_line_id integer, p_quantity numeric, p_amount numeric, p_user_id integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_savedraftline(p_line_id integer, p_quantity numeric, p_amount numeric, p_user_id integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje text)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -23143,7 +23143,7 @@ BEGIN
     p_resultado := 0;
     p_mensaje   := '';
 
-    -- Validar que la lÃ­nea existe y pertenece a un batch en BORRADOR
+    -- Validar que la lÃƒÂ­nea existe y pertenece a un batch en BORRADOR
     SELECT bl."BatchId"
     INTO v_batch_id
     FROM hr."PayrollBatchLine" bl
@@ -23153,7 +23153,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
+        p_mensaje   := 'LÃƒÂ­nea no encontrada o el lote no estÃƒÂ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -23177,7 +23177,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'LÃ­nea actualizada correctamente.';
+        p_mensaje   := 'LÃƒÂ­nea actualizada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -23190,7 +23190,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_upsertrun
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23268,7 +23268,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_upsertrun
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertrun(p_company_id integer, p_branch_id integer, p_payroll_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_from_date date, p_to_date date, p_total_assignments numeric, p_total_deductions numeric, p_net_total numeric, p_payroll_type_name character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer, p_lines_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23346,7 +23346,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_upsertsettlement
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertsettlement(p_company_id integer, p_branch_id integer, p_settlement_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_retirement_date date, p_retirement_cause character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_prestaciones numeric DEFAULT 0, p_vac_pendientes numeric DEFAULT 0, p_bono_salida numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertsettlement(p_company_id integer, p_branch_id integer, p_settlement_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_retirement_date date, p_retirement_cause character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_prestaciones numeric DEFAULT 0, p_vac_pendientes numeric DEFAULT 0, p_bono_salida numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23399,7 +23399,7 @@ $function$
 -- ============================================================
 -- usp_hr_payroll_upsertvacation
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_upsertvacation(p_company_id integer, p_branch_id integer, p_vacation_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_start_date date, p_end_date date, p_reintegration_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_upsertvacation(p_company_id integer, p_branch_id integer, p_vacation_code character varying, p_employee_id bigint, p_employee_code character varying, p_employee_name character varying, p_start_date date, p_end_date date, p_reintegration_date date DEFAULT NULL::date, p_total_amount numeric DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23454,7 +23454,7 @@ $function$
 -- ============================================================
 -- usp_hr_profitsharing_approve
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_approve(p_profit_sharing_id integer, p_approved_by integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_approve(p_profit_sharing_id integer, p_approved_by integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -23496,7 +23496,7 @@ $function$
 -- ============================================================
 -- usp_hr_profitsharing_generate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_generate(p_company_id integer, p_branch_id integer, p_fiscal_year integer, p_days_granted integer, p_total_company_profits numeric DEFAULT NULL::numeric, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_generate(p_company_id integer, p_branch_id integer, p_fiscal_year integer, p_days_granted integer, p_total_company_profits numeric DEFAULT NULL::numeric, p_created_by integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -23512,7 +23512,7 @@ BEGIN
 
     IF p_days_granted < 30 OR p_days_granted > 120 THEN
         p_resultado := -1;
-        p_mensaje   := 'Los dÃ­as otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
+        p_mensaje   := 'Los dÃƒÂ­as otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
         RETURN;
     END IF;
 
@@ -23522,7 +23522,7 @@ BEGIN
           AND "Status" IN ('CALCULADA','PROCESADA','CERRADA')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cÃ¡lculo de utilidades procesado para este aÃ±o fiscal.';
+        p_mensaje   := 'Ya existe un cÃƒÂ¡lculo de utilidades procesado para este aÃƒÂ±o fiscal.';
         RETURN;
     END IF;
 
@@ -23666,7 +23666,7 @@ $function$
 -- ============================================================
 -- usp_hr_profitsharing_getsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_getsummary(p_profit_sharing_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_getsummary(p_profit_sharing_id integer)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -23725,7 +23725,7 @@ $function$
 -- ============================================================
 -- usp_hr_profitsharing_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_list(p_company_id integer, p_branch_id integer DEFAULT NULL::integer, p_fiscal_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_list(p_company_id integer, p_branch_id integer DEFAULT NULL::integer, p_fiscal_year integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "ProfitSharingId" integer, "CompanyId" integer, "BranchId" integer, "FiscalYear" integer, "DaysGranted" integer, "TotalCompanyProfits" numeric, "Status" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone, "TotalEmployees" bigint, "TotalNet" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -23761,7 +23761,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_approveloan
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_approveloan(p_loan_id integer, p_approved boolean, p_approved_by integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_approveloan(p_loan_id integer, p_approved boolean, p_approved_by integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -23781,13 +23781,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'PrÃ©stamo no encontrado.';
+        p_mensaje   := 'PrÃƒÂ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'SOLICITADO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden aprobar/rechazar prÃ©stamos en estado SOLICITADO. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden aprobar/rechazar prÃƒÂ©stamos en estado SOLICITADO. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -23820,12 +23820,12 @@ BEGIN
                 'PRESTAMO',
                 v_loan_amount,
                 v_cur_balance,
-                'Desembolso prÃ©stamo #' || p_loan_id::TEXT,
+                'Desembolso prÃƒÂ©stamo #' || p_loan_id::TEXT,
                 'Aprobado por usuario ' || p_approved_by::TEXT,
                 (NOW() AT TIME ZONE 'UTC')
             );
 
-            p_mensaje := 'PrÃ©stamo aprobado y desembolsado exitosamente.';
+            p_mensaje := 'PrÃƒÂ©stamo aprobado y desembolsado exitosamente.';
         ELSE
             UPDATE hr."SavingsLoan"
             SET "Status"    = 'RECHAZADO',
@@ -23834,7 +23834,7 @@ BEGIN
                 "UpdatedAt"  = (NOW() AT TIME ZONE 'UTC')
             WHERE "LoanId" = p_loan_id;
 
-            p_mensaje := 'PrÃ©stamo rechazado.';
+            p_mensaje := 'PrÃƒÂ©stamo rechazado.';
         END IF;
 
         p_resultado := p_loan_id;
@@ -23850,7 +23850,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_enroll
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_enroll(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_employee_contribution numeric DEFAULT NULL::numeric, p_employer_match numeric DEFAULT NULL::numeric, p_enrollment_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_enroll(p_company_id integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_employee_contribution numeric DEFAULT NULL::numeric, p_employer_match numeric DEFAULT NULL::numeric, p_enrollment_date date DEFAULT NULL::date, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -23863,7 +23863,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "EmployeeCode" = p_employee_code AND "Status" = 'ACTIVO'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya estÃ¡ inscrito en la caja de ahorro.';
+        p_mensaje   := 'El empleado ya estÃƒÂ¡ inscrito en la caja de ahorro.';
         RETURN;
     END IF;
 
@@ -23898,7 +23898,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_getbalance
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_getbalance(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_getbalance(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -23950,7 +23950,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_list(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_list(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "SavingsFundId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "EmployeeContribution" numeric, "EmployerMatch" numeric, "EnrollmentDate" date, "Status" character varying, "CreatedAt" timestamp without time zone, "CurrentBalance" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -23985,7 +23985,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_loanlist
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_loanlist(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_loanlist(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "LoanId" integer, "SavingsFundId" integer, "EmployeeCode" character varying, "EmployeeName" character varying, "RequestDate" date, "ApprovedDate" date, "LoanAmount" numeric, "InterestRate" numeric, "TotalPayable" numeric, "MonthlyPayment" numeric, "InstallmentsTotal" integer, "InstallmentsPaid" integer, "OutstandingBalance" numeric, "Status" character varying, "ApprovedBy" integer, "Notes" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -24024,7 +24024,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_processloanpayment
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_processloanpayment(p_loan_id integer, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_date date DEFAULT NULL::date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_processloanpayment(p_loan_id integer, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_date date DEFAULT NULL::date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -24049,13 +24049,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'PrÃ©stamo no encontrado.';
+        p_mensaje   := 'PrÃƒÂ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden registrar pagos en prÃ©stamos ACTIVOS. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden registrar pagos en prÃƒÂ©stamos ACTIVOS. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -24096,15 +24096,15 @@ BEGIN
             'PAGO_PRESTAMO',
             p_payment_amount,
             v_cur_balance,
-            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' prÃ©stamo #' || p_loan_id::TEXT,
+            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' prÃƒÂ©stamo #' || p_loan_id::TEXT,
             p_payroll_batch_id,
-            CASE WHEN v_outstanding <= 0 THEN 'PrÃ©stamo liquidado' ELSE NULL END,
+            CASE WHEN v_outstanding <= 0 THEN 'PrÃƒÂ©stamo liquidado' ELSE NULL END,
             (NOW() AT TIME ZONE 'UTC')
         );
 
         p_resultado := p_loan_id;
         IF v_outstanding <= 0 THEN
-            p_mensaje := 'PrÃ©stamo liquidado exitosamente.';
+            p_mensaje := 'PrÃƒÂ©stamo liquidado exitosamente.';
         ELSE
             p_mensaje := 'Pago registrado. Saldo pendiente: ' || v_outstanding::TEXT;
         END IF;
@@ -24120,7 +24120,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_processmonthly
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_processmonthly(p_company_id integer, p_process_date date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_processmonthly(p_company_id integer, p_process_date date, p_payroll_batch_id integer DEFAULT NULL::integer, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -24210,7 +24210,7 @@ $function$
 -- ============================================================
 -- usp_hr_savings_requestloan
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_savings_requestloan(p_company_id integer, p_employee_code character varying, p_loan_amount numeric, p_interest_rate numeric DEFAULT 0, p_installments_total integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_savings_requestloan(p_company_id integer, p_employee_code character varying, p_loan_amount numeric, p_interest_rate numeric DEFAULT 0, p_installments_total integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -24237,19 +24237,19 @@ BEGIN
         WHERE "SavingsFundId" = v_fund_id AND "Status" IN ('SOLICITADO','APROBADO','ACTIVO')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene un prÃ©stamo activo o pendiente.';
+        p_mensaje   := 'El empleado ya tiene un prÃƒÂ©stamo activo o pendiente.';
         RETURN;
     END IF;
 
     IF p_loan_amount <= 0 THEN
         p_resultado := -3;
-        p_mensaje   := 'El monto del prÃ©stamo debe ser mayor a cero.';
+        p_mensaje   := 'El monto del prÃƒÂ©stamo debe ser mayor a cero.';
         RETURN;
     END IF;
 
     IF p_installments_total <= 0 THEN
         p_resultado := -4;
-        p_mensaje   := 'El nÃºmero de cuotas debe ser mayor a cero.';
+        p_mensaje   := 'El nÃƒÂºmero de cuotas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -24272,7 +24272,7 @@ BEGIN
         )
         RETURNING "LoanId" INTO p_resultado;
 
-        p_mensaje := 'Solicitud de prÃ©stamo registrada exitosamente.';
+        p_mensaje := 'Solicitud de prÃƒÂ©stamo registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -24285,7 +24285,7 @@ $function$
 -- ============================================================
 -- usp_hr_training_getemployeecertifications
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_training_getemployeecertifications(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_training_getemployeecertifications(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE("TrainingRecordId" integer, "CompanyId" integer, "CountryCode" character, "TrainingType" character varying, "Title" character varying, "Provider" character varying, "StartDate" date, "EndDate" date, "DurationHours" numeric, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "CertificateNumber" character varying, "CertificateUrl" character varying, "Result" character varying, "IsRegulatory" boolean, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -24324,7 +24324,7 @@ $function$
 -- ============================================================
 -- usp_hr_training_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_training_list(p_company_id integer, p_training_type character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_is_regulatory boolean DEFAULT NULL::boolean, p_result character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_training_list(p_company_id integer, p_training_type character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_is_regulatory boolean DEFAULT NULL::boolean, p_result character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "TrainingRecordId" integer, "CompanyId" integer, "CountryCode" character, "TrainingType" character varying, "Title" character varying, "Provider" character varying, "StartDate" date, "EndDate" date, "DurationHours" numeric, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "CertificateNumber" character varying, "CertificateUrl" character varying, "Result" character varying, "IsRegulatory" boolean, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -24373,7 +24373,7 @@ $function$
 -- ============================================================
 -- usp_hr_training_save
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_training_save(p_training_record_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_training_type character varying DEFAULT NULL::character varying, p_title character varying DEFAULT NULL::character varying, p_provider character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, p_duration_hours numeric DEFAULT NULL::numeric, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_certificate_number character varying DEFAULT NULL::character varying, p_certificate_url character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_is_regulatory boolean DEFAULT false, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_training_save(p_training_record_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_country_code character DEFAULT NULL::bpchar, p_training_type character varying DEFAULT NULL::character varying, p_title character varying DEFAULT NULL::character varying, p_provider character varying DEFAULT NULL::character varying, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, p_duration_hours numeric DEFAULT NULL::numeric, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_certificate_number character varying DEFAULT NULL::character varying, p_certificate_url character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_is_regulatory boolean DEFAULT false, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -24383,19 +24383,19 @@ BEGIN
 
     IF p_training_type NOT IN ('SAFETY','REGULATORY','TECHNICAL','APPRENTICESHIP','INDUCTION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de capacitaciÃ³n no vÃ¡lido.';
+        p_mensaje   := 'Tipo de capacitaciÃƒÂ³n no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_result IS NOT NULL AND p_result NOT IN ('PASSED','FAILED','IN_PROGRESS','ATTENDED') THEN
         p_resultado := -1;
-        p_mensaje   := 'Resultado no vÃ¡lido.';
+        p_mensaje   := 'Resultado no vÃƒÂ¡lido.';
         RETURN;
     END IF;
 
     IF p_duration_hours <= 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'La duraciÃ³n en horas debe ser mayor a cero.';
+        p_mensaje   := 'La duraciÃƒÂ³n en horas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -24418,14 +24418,14 @@ BEGIN
             )
             RETURNING "TrainingRecordId" INTO p_resultado;
 
-            p_mensaje := 'Registro de capacitaciÃ³n creado exitosamente.';
+            p_mensaje := 'Registro de capacitaciÃƒÂ³n creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."TrainingRecord"
                 WHERE "TrainingRecordId" = p_training_record_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Registro de capacitaciÃ³n no encontrado.';
+                p_mensaje   := 'Registro de capacitaciÃƒÂ³n no encontrado.';
                 RETURN;
             END IF;
 
@@ -24451,7 +24451,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_training_record_id;
-            p_mensaje   := 'Registro de capacitaciÃ³n actualizado exitosamente.';
+            p_mensaje   := 'Registro de capacitaciÃƒÂ³n actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -24465,7 +24465,7 @@ $function$
 -- ============================================================
 -- usp_hr_trust_calculatequarter
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_trust_calculatequarter(p_company_id integer, p_fiscal_year integer, p_quarter smallint, p_interest_rate numeric DEFAULT 0, OUT p_resultado integer, OUT p_mensaje character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_calculatequarter(p_company_id integer, p_fiscal_year integer, p_quarter smallint, p_interest_rate numeric DEFAULT 0, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -24487,7 +24487,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "FiscalYear" = p_fiscal_year AND "Quarter" = p_quarter
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cÃ¡lculo para el trimestre ' || p_quarter::TEXT || ' del aÃ±o ' || p_fiscal_year::TEXT || '.';
+        p_mensaje   := 'Ya existe un cÃƒÂ¡lculo para el trimestre ' || p_quarter::TEXT || ' del aÃƒÂ±o ' || p_fiscal_year::TEXT || '.';
         RETURN;
     END IF;
 
@@ -24516,7 +24516,7 @@ BEGIN
                 ORDER BY pr."CreatedAt" DESC LIMIT 1
             ), 0) / 30.0, 2) AS "DailySalary",
             15 AS "DaysDeposited",
-            -- BonusDays: 2 dÃ­as por cada aÃ±o despuÃ©s del primero, max 30, solo en Q4
+            -- BonusDays: 2 dÃƒÂ­as por cada aÃƒÂ±o despuÃƒÂ©s del primero, max 30, solo en Q4
             CASE
                 WHEN p_quarter = 4
                  AND DATE_PART('year', v_year_end_str::DATE) - DATE_PART('year', e."HireDate") > 1
@@ -24626,7 +24626,7 @@ $function$
 -- ============================================================
 -- usp_hr_trust_getemployeebalance
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_trust_getemployeebalance(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_getemployeebalance(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -24675,7 +24675,7 @@ $function$
 -- ============================================================
 -- usp_hr_trust_getsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(p_company_id integer, p_fiscal_year integer, p_quarter smallint)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_getsummary(p_company_id integer, p_fiscal_year integer, p_quarter smallint)
  RETURNS TABLE(result_type character varying, row_data jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -24723,7 +24723,7 @@ $function$
 -- ============================================================
 -- usp_hr_trust_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_trust_list(p_company_id integer, p_fiscal_year integer DEFAULT NULL::integer, p_quarter smallint DEFAULT NULL::smallint, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_trust_list(p_company_id integer, p_fiscal_year integer DEFAULT NULL::integer, p_quarter smallint DEFAULT NULL::smallint, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(p_total_count bigint, "TrustId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "FiscalYear" integer, "Quarter" smallint, "DailySalary" numeric, "DaysDeposited" integer, "BonusDays" integer, "DepositAmount" numeric, "InterestRate" numeric, "InterestAmount" numeric, "AccumulatedBalance" numeric, "Status" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -24761,7 +24761,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_approve
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_approve(p_request_id bigint, p_approved_by character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_approve(p_request_id bigint, p_approved_by character varying)
  RETURNS TABLE("RequestId" bigint, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -24790,7 +24790,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_cancel
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_cancel(p_request_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_cancel(p_request_id bigint)
  RETURNS TABLE("RequestId" bigint, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -24817,7 +24817,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_create(p_company_id integer, p_branch_id integer, p_employee_code character varying, p_start_date date, p_end_date date, p_total_days integer, p_is_partial boolean, p_notes character varying, p_days jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_create(p_company_id integer, p_branch_id integer, p_employee_code character varying, p_start_date date, p_end_date date, p_total_days integer, p_is_partial boolean, p_notes character varying, p_days jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("RequestId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -24865,7 +24865,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get(p_request_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_get(p_request_id bigint)
  RETURNS TABLE("RequestId" bigint, "CompanyId" integer, "BranchId" integer, "EmployeeCode" character varying, "EmployeeName" character varying, "RequestDate" character varying, "StartDate" character varying, "EndDate" character varying, "TotalDays" integer, "IsPartial" boolean, "Status" character varying, "Notes" character varying, "ApprovedBy" character varying, "ApprovalDate" timestamp without time zone, "RejectionReason" character varying, "VacationId" bigint, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -24902,7 +24902,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_get_available_days
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get_available_days(p_company_id integer, p_employee_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_get_available_days(p_company_id integer, p_employee_code character varying)
  RETURNS TABLE("DiasBase" integer, "AnosServicio" integer, "DiasAdicionales" integer, "DiasDisponibles" integer, "DiasTomados" integer, "DiasPendientes" integer, "DiasSaldo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -24974,7 +24974,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_get_days
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_get_days(p_request_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_get_days(p_request_id bigint)
  RETURNS TABLE("DayId" bigint, "RequestId" bigint, "SelectedDate" character varying, "DayType" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -24995,7 +24995,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_list(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_list(p_company_id integer, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("RequestId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "RequestDate" character varying, "StartDate" character varying, "EndDate" character varying, "TotalDays" integer, "IsPartial" boolean, "Status" character varying, "ApprovedBy" character varying, "Notes" character varying, "RejectionReason" character varying, "CreatedAt" timestamp without time zone, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -25042,7 +25042,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_process
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_process(p_request_id bigint, p_vacation_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_process(p_request_id bigint, p_vacation_id bigint)
  RETURNS TABLE("RequestId" bigint, "Status" character varying, "VacationId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -25070,7 +25070,7 @@ $function$
 -- ============================================================
 -- usp_hr_vacation_request_reject
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_hr_vacation_request_reject(p_request_id bigint, p_approved_by character varying, p_rejection_reason character varying)
+CREATE OR REPLACE FUNCTION public.usp_hr_vacation_request_reject(p_request_id bigint, p_approved_by character varying, p_rejection_reason character varying)
  RETURNS TABLE("RequestId" bigint, "Status" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25100,7 +25100,7 @@ $function$
 -- ============================================================
 -- usp_inv_movement_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_inv_movement_getbyid(p_id integer)
  RETURNS TABLE("MovementId" integer, "Codigo" character varying, "Product" character varying, "Documento" character varying, "Tipo" character varying, "Fecha" timestamp with time zone, "Quantity" numeric, "UnitCost" numeric, "TotalCost" numeric, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -25113,7 +25113,7 @@ END; $function$
 -- ============================================================
 -- usp_inv_movement_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inv_movement_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_inv_movement_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("MovementId" integer, "Codigo" character varying, "Product" character varying, "Documento" character varying, "Tipo" character varying, "Fecha" timestamp with time zone, "Quantity" numeric, "UnitCost" numeric, "TotalCost" numeric, "Notes" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -25139,7 +25139,7 @@ $function$
 -- ============================================================
 -- usp_inv_movement_listperiodsummary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inv_movement_listperiodsummary(p_periodo character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_inv_movement_listperiodsummary(p_periodo character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("SummaryId" integer, "Periodo" character varying, "Codigo" character varying, "OpeningQty" numeric, "InboundQty" numeric, "OutboundQty" numeric, "ClosingQty" numeric, fecha timestamp with time zone, "IsClosed" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -25160,7 +25160,7 @@ END; $function$
 -- ============================================================
 -- usp_inventario_cacheload
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_cacheload(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_inventario_cacheload(p_company_id integer)
  RETURNS TABLE("ProductId" bigint, "ProductCode" character varying, "ProductName" character varying, "CategoryCode" character varying, "UnitCode" character varying, "SalesPrice" numeric, "CostPrice" numeric, "DefaultTaxRate" numeric, "StockQty" numeric, "IsService" boolean, "IsDeleted" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -25180,7 +25180,7 @@ $function$
 -- ============================================================
 -- usp_inventario_dashboard
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_dashboard(p_company_id integer DEFAULT 1)
+CREATE OR REPLACE FUNCTION public.usp_inventario_dashboard(p_company_id integer DEFAULT 1)
  RETURNS TABLE("TotalArticulos" bigint, "BajoStock" bigint, "TotalCategorias" bigint, "ValorInventario" numeric, "MovimientosMes" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -25217,7 +25217,7 @@ $function$
 -- ============================================================
 -- usp_inventario_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_delete(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_inventario_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25246,7 +25246,7 @@ $function$
 -- ============================================================
 -- usp_inventario_getbycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_getbycode(p_company_id integer, p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_inventario_getbycode(p_company_id integer, p_codigo character varying)
  RETURNS TABLE("ProductId" bigint, "ProductCode" character varying, "ProductName" character varying, "CategoryCode" character varying, "UnitCode" character varying, "SalesPrice" numeric, "CostPrice" numeric, "DefaultTaxRate" numeric, "StockQty" numeric, "IsService" boolean, "IsDeleted" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -25266,7 +25266,7 @@ $function$
 -- ============================================================
 -- usp_inventario_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_inventario_getbycodigo(p_codigo character varying)
  RETURNS TABLE("ProductId" integer, "ProductCode" character varying, "Referencia" character varying, "Categoria" character varying, "Marca" character varying, "Tipo" character varying, "Unidad" character varying, "Clase" character varying, "ProductName" character varying, "StockQty" double precision, "VENTA" double precision, "MINIMO" double precision, "MAXIMO" double precision, "CostPrice" double precision, "SalesPrice" double precision, "PORCENTAJE" double precision, "UBICACION" character varying, "Co_Usuario" character varying, "Linea" character varying, "N_PARTE" character varying, "Barra" character varying, "IsService" boolean, "IsActive" boolean, "CompanyId" integer, "CODIGO" character varying, "DESCRIPCION" character varying, "EXISTENCIA" double precision, "PRECIO" double precision, "COSTO" double precision, "Servicio" boolean, "DescripcionCompleta" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25320,7 +25320,7 @@ $function$
 -- ============================================================
 -- usp_inventario_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_inventario_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25390,7 +25390,7 @@ $function$
 -- ============================================================
 -- usp_inventario_libroinventario
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_libroinventario(p_company_id integer DEFAULT 1, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_product_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_inventario_libroinventario(p_company_id integer DEFAULT 1, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_product_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("CODIGO" character varying, "DESCRIPCION" character varying, "DescripcionCompleta" character varying, "StockInicial" numeric, "Entradas" numeric, "Salidas" numeric, "StockFinal" numeric, "CostoUnitario" numeric, "Unidad" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25436,7 +25436,7 @@ $function$
 -- ============================================================
 -- usp_inventario_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_marca character varying DEFAULT NULL::character varying, p_linea character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_inventario_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_marca character varying DEFAULT NULL::character varying, p_linea character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ProductId" integer, "ProductCode" character varying, "Referencia" character varying, "Categoria" character varying, "Marca" character varying, "Tipo" character varying, "Unidad" character varying, "Clase" character varying, "ProductName" character varying, "StockQty" double precision, "VENTA" double precision, "MINIMO" double precision, "MAXIMO" double precision, "CostPrice" double precision, "SalesPrice" double precision, "PORCENTAJE" double precision, "UBICACION" character varying, "Co_Usuario" character varying, "Linea" character varying, "N_PARTE" character varying, "Barra" character varying, "IsService" boolean, "IsActive" boolean, "CompanyId" integer, "CODIGO" character varying, "DESCRIPCION" character varying, "EXISTENCIA" double precision, "PRECIO" double precision, "COSTO" double precision, "Servicio" boolean, "DescripcionCompleta" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25534,7 +25534,7 @@ $function$
 -- ============================================================
 -- usp_inventario_movimiento_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_movimiento_insert(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT 0, p_unit_cost numeric DEFAULT 0, p_document_ref character varying DEFAULT NULL::character varying, p_warehouse_from character varying DEFAULT NULL::character varying, p_warehouse_to character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_inventario_movimiento_insert(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT 0, p_unit_cost numeric DEFAULT 0, p_document_ref character varying DEFAULT NULL::character varying, p_warehouse_from character varying DEFAULT NULL::character varying, p_warehouse_to character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25638,7 +25638,7 @@ $function$
 -- ============================================================
 -- usp_inventario_movimiento_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_movimiento_list(p_company_id integer DEFAULT 1, p_search character varying DEFAULT NULL::character varying, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_warehouse_code character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_inventario_movimiento_list(p_company_id integer DEFAULT 1, p_search character varying DEFAULT NULL::character varying, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_warehouse_code character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "MovementId" integer, "ProductCode" character varying, "ProductName" character varying, "MovementType" character varying, "MovementDate" date, "Quantity" numeric, "UnitCost" numeric, "TotalCost" numeric, "DocumentRef" character varying, "WarehouseFrom" character varying, "WarehouseTo" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "CreatedByUserId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -25692,7 +25692,7 @@ $function$
 -- ============================================================
 -- usp_inventario_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_inventario_update(p_codigo character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_inventario_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25739,7 +25739,7 @@ $function$
 -- ============================================================
 -- usp_lineas_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_lineas_delete(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_lineas_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25763,7 +25763,7 @@ $function$
 -- ============================================================
 -- usp_lineas_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_lineas_getbycodigo(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_lineas_getbycodigo(p_codigo integer)
  RETURNS TABLE("CODIGO" integer, "DESCRIPCION" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25779,7 +25779,7 @@ $function$
 -- ============================================================
 -- usp_lineas_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_lineas_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_lineas_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -25805,7 +25805,7 @@ $function$
 -- ============================================================
 -- usp_lineas_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_lineas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_lineas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("CODIGO" integer, "DESCRIPCION" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -25842,7 +25842,7 @@ $function$
 -- ============================================================
 -- usp_lineas_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_lineas_update(p_codigo integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_lineas_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25872,7 +25872,7 @@ $function$
 -- ============================================================
 -- usp_marcas_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_marcas_delete(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_marcas_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25896,7 +25896,7 @@ $function$
 -- ============================================================
 -- usp_marcas_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_marcas_getbycodigo(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_marcas_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -25912,7 +25912,7 @@ $function$
 -- ============================================================
 -- usp_marcas_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_marcas_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_marcas_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -25935,7 +25935,7 @@ $function$
 -- ============================================================
 -- usp_marcas_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_marcas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_marcas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -25974,7 +25974,7 @@ $function$
 -- ============================================================
 -- usp_marcas_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_marcas_update(p_codigo integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_marcas_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -26000,7 +26000,7 @@ $function$
 -- ============================================================
 -- usp_master_customer_updatebalance
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_master_customer_updatebalance(p_customer_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_master_customer_updatebalance(p_customer_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26026,7 +26026,7 @@ $function$
 -- ============================================================
 -- usp_master_generic_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_master_generic_list(p_schema_name character varying, p_table_name character varying, p_search character varying DEFAULT NULL::character varying, p_sort_column character varying DEFAULT 'id'::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_master_generic_list(p_schema_name character varying, p_table_name character varying, p_search character varying DEFAULT NULL::character varying, p_sort_column character varying DEFAULT 'id'::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "JsonRow" jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -26069,7 +26069,7 @@ $function$
 -- ============================================================
 -- usp_master_supplier_updatebalance
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_master_supplier_updatebalance(p_supplier_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_master_supplier_updatebalance(p_supplier_id bigint, p_updated_by_user_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26095,7 +26095,7 @@ $function$
 -- ============================================================
 -- usp_moneda_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_moneda_delete(p_nombre character varying)
+CREATE OR REPLACE FUNCTION public.usp_moneda_delete(p_nombre character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -26119,7 +26119,7 @@ $function$
 -- ============================================================
 -- usp_moneda_getbynombre
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_moneda_getbynombre(p_nombre character varying)
+CREATE OR REPLACE FUNCTION public.usp_moneda_getbynombre(p_nombre character varying)
  RETURNS TABLE("Nombre" character varying, "Simbolo" character varying, "Tasa_Local" double precision, "Local_Tasa" double precision, "Local" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -26135,7 +26135,7 @@ $function$
 -- ============================================================
 -- usp_moneda_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_moneda_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_moneda_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -26172,7 +26172,7 @@ $function$
 -- ============================================================
 -- usp_moneda_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_moneda_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_moneda_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Nombre" character varying, "Simbolo" character varying, "Tasa_Local" double precision, "Local_Tasa" double precision, "Local" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -26218,7 +26218,7 @@ $function$
 -- ============================================================
 -- usp_moneda_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_moneda_update(p_nombre character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_moneda_update(p_nombre character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -26252,7 +26252,7 @@ $function$
 -- ============================================================
 -- usp_pay_acceptedmethod_deactivate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_deactivate(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_deactivate(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26267,7 +26267,7 @@ $function$
 -- ============================================================
 -- usp_pay_acceptedmethod_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_list(p_company_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_applies_to_pos boolean DEFAULT NULL::boolean, p_applies_to_web boolean DEFAULT NULL::boolean, p_applies_to_restaurant boolean DEFAULT NULL::boolean)
+CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_list(p_company_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_applies_to_pos boolean DEFAULT NULL::boolean, p_applies_to_web boolean DEFAULT NULL::boolean, p_applies_to_restaurant boolean DEFAULT NULL::boolean)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "PaymentMethodId" integer, "MethodCode" character varying, "MethodName" character varying, "MethodCategory" character varying, "IconName" character varying, "ProviderId" integer, "ProviderCode" character varying, "ProviderName" character varying, "AppliesToPOS" boolean, "AppliesToWeb" boolean, "AppliesToRestaurant" boolean, "MinAmount" numeric, "MaxAmount" numeric, "CommissionPct" numeric, "CommissionFixed" numeric, "SortOrder" integer, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -26296,7 +26296,7 @@ $function$
 -- ============================================================
 -- usp_pay_acceptedmethod_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_upsert(p_company_id integer, p_branch_id integer, p_payment_method_id integer, p_provider_id integer DEFAULT NULL::integer, p_applies_to_pos boolean DEFAULT true, p_applies_to_web boolean DEFAULT true, p_applies_to_restaurant boolean DEFAULT true, p_min_amount numeric DEFAULT NULL::numeric, p_max_amount numeric DEFAULT NULL::numeric, p_commission_pct numeric DEFAULT NULL::numeric, p_commission_fixed numeric DEFAULT NULL::numeric, p_sort_order integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_upsert(p_company_id integer, p_branch_id integer, p_payment_method_id integer, p_provider_id integer DEFAULT NULL::integer, p_applies_to_pos boolean DEFAULT true, p_applies_to_web boolean DEFAULT true, p_applies_to_restaurant boolean DEFAULT true, p_min_amount numeric DEFAULT NULL::numeric, p_max_amount numeric DEFAULT NULL::numeric, p_commission_pct numeric DEFAULT NULL::numeric, p_commission_fixed numeric DEFAULT NULL::numeric, p_sort_order integer DEFAULT 0)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26329,7 +26329,7 @@ $function$
 -- ============================================================
 -- usp_pay_cardreader_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "StationId" character varying, "DeviceName" character varying, "DeviceType" character varying, "ConnectionType" character varying, "ConnectionConfig" character varying, "ProviderId" integer, "IsActive" boolean, "LastSeenAt" timestamp with time zone, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -26349,7 +26349,7 @@ $function$
 -- ============================================================
 -- usp_pay_cardreader_listbycompany
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_listbycompany(p_company_id integer, p_branch_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_listbycompany(p_company_id integer, p_branch_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "StationId" character varying, "DeviceName" character varying, "DeviceType" character varying, "ConnectionType" character varying, "ConnectionConfig" character varying, "ProviderId" integer, "IsActive" boolean, "LastSeenAt" timestamp with time zone, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -26371,7 +26371,7 @@ $function$
 -- ============================================================
 -- usp_pay_cardreader_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_upsert(p_device_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT 0, p_station_id character varying DEFAULT 'DEFAULT'::character varying, p_device_name character varying DEFAULT NULL::character varying, p_device_type character varying DEFAULT NULL::character varying, p_connection_type character varying DEFAULT 'USB'::character varying, p_connection_config character varying DEFAULT NULL::character varying, p_provider_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_upsert(p_device_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT 0, p_station_id character varying DEFAULT 'DEFAULT'::character varying, p_device_name character varying DEFAULT NULL::character varying, p_device_type character varying DEFAULT NULL::character varying, p_connection_type character varying DEFAULT 'USB'::character varying, p_connection_config character varying DEFAULT NULL::character varying, p_provider_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26404,7 +26404,7 @@ $function$
 -- ============================================================
 -- usp_pay_companyconfig_deactivate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_deactivate(p_company_id integer, p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_deactivate(p_company_id integer, p_provider_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26423,7 +26423,7 @@ $function$
 -- ============================================================
 -- usp_pay_companyconfig_deactivatebyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_deactivatebyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_deactivatebyid(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26439,7 +26439,7 @@ $function$
 -- ============================================================
 -- usp_pay_companyconfig_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "CountryCode" character varying, "ProviderId" integer, "ProviderCode" character varying, "ProviderName" character varying, "ProviderType" character varying, "Environment" character varying, "AutoCapture" boolean, "AllowRefunds" boolean, "MaxRefundDays" integer, "IsActive" boolean, "CreatedAt" timestamp with time zone, "UpdatedAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -26460,7 +26460,7 @@ $function$
 -- ============================================================
 -- usp_pay_companyconfig_listbycompany
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_listbycompany(p_company_id integer, p_branch_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_listbycompany(p_company_id integer, p_branch_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Id" integer, "EmpresaId" integer, "SucursalId" integer, "CountryCode" character varying, "ProviderId" integer, "ProviderCode" character varying, "ProviderName" character varying, "ProviderType" character varying, "Environment" character varying, "ClientId" character varying, "ClientSecret" character varying, "MerchantId" character varying, "TerminalId" character varying, "IntegratorId" character varying, "CertificatePath" character varying, "ExtraConfig" character varying, "AutoCapture" boolean, "AllowRefunds" boolean, "MaxRefundDays" integer, "IsActive" boolean, "CreatedAt" timestamp with time zone, "UpdatedAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -26485,7 +26485,7 @@ $function$
 -- ============================================================
 -- usp_pay_companyconfig_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_upsert(p_company_id integer, p_provider_code character varying, p_is_active boolean DEFAULT true, p_config_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_upsert(p_company_id integer, p_provider_code character varying, p_is_active boolean DEFAULT true, p_config_json text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26521,7 +26521,7 @@ $function$
 -- ============================================================
 -- usp_pay_companyconfig_upsertfull
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_upsertfull(p_company_id integer, p_branch_id integer DEFAULT 0, p_country_code character DEFAULT NULL::bpchar, p_provider_code character varying DEFAULT NULL::character varying, p_environment character varying DEFAULT 'sandbox'::character varying, p_client_id character varying DEFAULT NULL::character varying, p_client_secret character varying DEFAULT NULL::character varying, p_merchant_id character varying DEFAULT NULL::character varying, p_terminal_id character varying DEFAULT NULL::character varying, p_integrator_id character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_extra_config text DEFAULT NULL::text, p_auto_capture boolean DEFAULT true, p_allow_refunds boolean DEFAULT true, p_max_refund_days integer DEFAULT 30)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_upsertfull(p_company_id integer, p_branch_id integer DEFAULT 0, p_country_code character DEFAULT NULL::bpchar, p_provider_code character varying DEFAULT NULL::character varying, p_environment character varying DEFAULT 'sandbox'::character varying, p_client_id character varying DEFAULT NULL::character varying, p_client_secret character varying DEFAULT NULL::character varying, p_merchant_id character varying DEFAULT NULL::character varying, p_terminal_id character varying DEFAULT NULL::character varying, p_integrator_id character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_extra_config text DEFAULT NULL::text, p_auto_capture boolean DEFAULT true, p_allow_refunds boolean DEFAULT true, p_max_refund_days integer DEFAULT 30)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26571,7 +26571,7 @@ $function$
 -- ============================================================
 -- usp_pay_method_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_method_list(p_country_code character DEFAULT NULL::bpchar)
+CREATE OR REPLACE FUNCTION public.usp_pay_method_list(p_country_code character DEFAULT NULL::bpchar)
  RETURNS TABLE("Id" integer, "Code" character varying, "Name" character varying, "Category" character varying, "CountryCode" character varying, "IconName" character varying, "RequiresGateway" boolean, "IsActive" boolean, "SortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -26593,7 +26593,7 @@ $function$
 -- ============================================================
 -- usp_pay_method_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_method_upsert(p_method_code character varying, p_method_name character varying, p_country_code character DEFAULT NULL::bpchar, p_method_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_pay_method_upsert(p_method_code character varying, p_method_name character varying, p_country_code character DEFAULT NULL::bpchar, p_method_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT true)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26612,7 +26612,7 @@ $function$
 -- ============================================================
 -- usp_pay_provider_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_provider_get(p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_provider_get(p_provider_code character varying)
  RETURNS TABLE("Id" integer, "Code" character varying, "Name" character varying, "CountryCode" character varying, "ProviderType" character varying, "BaseUrlSandbox" character varying, "BaseUrlProd" character varying, "AuthType" character varying, "DocsUrl" character varying, "LogoUrl" character varying, "IsActive" boolean, "CreatedAt" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -26632,7 +26632,7 @@ $function$
 -- ============================================================
 -- usp_pay_provider_getcapabilities
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_provider_getcapabilities(p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_provider_getcapabilities(p_provider_code character varying)
  RETURNS TABLE("ProviderCode" character varying, "ProviderName" character varying, "ProviderType" character varying, "CapabilityId" integer, "Capability" character varying, "PaymentMethod" character varying, "EndpointPath" character varying, "HttpMethod" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -26672,7 +26672,7 @@ $function$
 -- ============================================================
 -- usp_pay_transaction_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_transaction_insert(p_transaction_uuid character varying, p_empresa_id integer, p_sucursal_id integer, p_source_type character varying, p_source_id integer DEFAULT NULL::integer, p_source_number character varying DEFAULT NULL::character varying, p_payment_method_code character varying DEFAULT NULL::character varying, p_provider_id integer DEFAULT NULL::integer, p_currency character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT 0, p_trx_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_gateway_trx_id character varying DEFAULT NULL::character varying, p_gateway_auth_code character varying DEFAULT NULL::character varying, p_gateway_response text DEFAULT NULL::text, p_gateway_message character varying DEFAULT NULL::character varying, p_card_last_four character varying DEFAULT NULL::character varying, p_card_brand character varying DEFAULT NULL::character varying, p_mobile_number character varying DEFAULT NULL::character varying, p_bank_code character varying DEFAULT NULL::character varying, p_payment_ref character varying DEFAULT NULL::character varying, p_station_id character varying DEFAULT NULL::character varying, p_cashier_id character varying DEFAULT NULL::character varying, p_ip_address character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_transaction_insert(p_transaction_uuid character varying, p_empresa_id integer, p_sucursal_id integer, p_source_type character varying, p_source_id integer DEFAULT NULL::integer, p_source_number character varying DEFAULT NULL::character varying, p_payment_method_code character varying DEFAULT NULL::character varying, p_provider_id integer DEFAULT NULL::integer, p_currency character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT 0, p_trx_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_gateway_trx_id character varying DEFAULT NULL::character varying, p_gateway_auth_code character varying DEFAULT NULL::character varying, p_gateway_response text DEFAULT NULL::text, p_gateway_message character varying DEFAULT NULL::character varying, p_card_last_four character varying DEFAULT NULL::character varying, p_card_brand character varying DEFAULT NULL::character varying, p_mobile_number character varying DEFAULT NULL::character varying, p_bank_code character varying DEFAULT NULL::character varying, p_payment_ref character varying DEFAULT NULL::character varying, p_station_id character varying DEFAULT NULL::character varying, p_cashier_id character varying DEFAULT NULL::character varying, p_ip_address character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26703,7 +26703,7 @@ $function$
 -- ============================================================
 -- usp_pay_transaction_resolveconfig
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_transaction_resolveconfig(p_empresa_id integer, p_sucursal_id integer, p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_transaction_resolveconfig(p_empresa_id integer, p_sucursal_id integer, p_provider_code character varying)
  RETURNS SETOF pay."CompanyPaymentConfig"
  LANGUAGE plpgsql
 AS $function$
@@ -26723,7 +26723,7 @@ $function$
 -- ============================================================
 -- usp_pay_transaction_search
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_transaction_search(p_empresa_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_provider_code character varying DEFAULT NULL::character varying, p_source_type character varying DEFAULT NULL::character varying, p_source_number character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_date_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_date_to timestamp without time zone DEFAULT NULL::timestamp without time zone, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_pay_transaction_search(p_empresa_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_provider_code character varying DEFAULT NULL::character varying, p_source_type character varying DEFAULT NULL::character varying, p_source_number character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_date_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_date_to timestamp without time zone DEFAULT NULL::timestamp without time zone, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS SETOF pay."Transactions"
  LANGUAGE plpgsql
 AS $function$
@@ -26749,7 +26749,7 @@ $function$
 -- ============================================================
 -- usp_pay_transaction_searchcount
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_transaction_searchcount(p_empresa_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_provider_code character varying DEFAULT NULL::character varying, p_source_type character varying DEFAULT NULL::character varying, p_source_number character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_date_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_date_to timestamp without time zone DEFAULT NULL::timestamp without time zone)
+CREATE OR REPLACE FUNCTION public.usp_pay_transaction_searchcount(p_empresa_id integer, p_sucursal_id integer DEFAULT NULL::integer, p_provider_code character varying DEFAULT NULL::character varying, p_source_type character varying DEFAULT NULL::character varying, p_source_number character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_date_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_date_to timestamp without time zone DEFAULT NULL::timestamp without time zone)
  RETURNS TABLE(total bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -26773,7 +26773,7 @@ $function$
 -- ============================================================
 -- usp_pay_transaction_updatestatus
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pay_transaction_updatestatus(p_transaction_uuid character varying, p_status character varying, p_gateway_trx_id character varying DEFAULT NULL::character varying, p_gateway_auth_code character varying DEFAULT NULL::character varying, p_gateway_response text DEFAULT NULL::text, p_gateway_message character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_transaction_updatestatus(p_transaction_uuid character varying, p_status character varying, p_gateway_trx_id character varying DEFAULT NULL::character varying, p_gateway_auth_code character varying DEFAULT NULL::character varying, p_gateway_response text DEFAULT NULL::text, p_gateway_message character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26793,7 +26793,7 @@ $function$
 -- ============================================================
 -- usp_pedidos_getbynumfact
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pedidos_getbynumfact(p_num_fact character varying)
+CREATE OR REPLACE FUNCTION public.usp_pedidos_getbynumfact(p_num_fact character varying)
  RETURNS TABLE("NUM_FACT" character varying, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "SUBTOTAL" numeric, "IMPUESTO" numeric, "TOTAL" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -26817,7 +26817,7 @@ $function$
 -- ============================================================
 -- usp_pedidos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pedidos_list(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_pedidos_list(p_search character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("NUM_FACT" character varying, "CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "FECHA" timestamp without time zone, "SUBTOTAL" numeric, "IMPUESTO" numeric, "TOTAL" numeric, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -26892,7 +26892,7 @@ $function$
 -- ============================================================
 -- usp_pos_category_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_category_list(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_category_list(p_company_id integer)
  RETURNS TABLE(id character varying, nombre character varying, "productCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -26915,7 +26915,7 @@ $function$
 -- ============================================================
 -- usp_pos_clientes_search
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_clientes_search(p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.usp_pos_clientes_search(p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE(id character varying, codigo character varying, nombre character varying, rif character varying, telefono character varying, email character varying, direccion character varying, "tipoPrecio" character varying, credito numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -26948,7 +26948,7 @@ $function$
 -- ============================================================
 -- usp_pos_customer_search
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_customer_search(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.usp_pos_customer_search(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, rif character varying, telefono character varying, email character varying, direccion character varying, "tipoPrecio" character varying, credito numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -26971,7 +26971,7 @@ $function$
 -- ============================================================
 -- usp_pos_espera_anular
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_espera_anular(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_espera_anular(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -26984,7 +26984,7 @@ $function$
 -- ============================================================
 -- usp_pos_espera_crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_espera_crear(p_caja_id character varying, p_estacion_nombre character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_cliente_id character varying DEFAULT NULL::character varying, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_tipo_precio character varying DEFAULT 'Detal'::character varying, p_motivo character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_pos_espera_crear(p_caja_id character varying, p_estacion_nombre character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_cliente_id character varying DEFAULT NULL::character varying, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_tipo_precio character varying DEFAULT 'Detal'::character varying, p_motivo character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("EsperaId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -27056,7 +27056,7 @@ $function$
 -- ============================================================
 -- usp_pos_espera_recuperar_detalle
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_espera_recuperar_detalle(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_espera_recuperar_detalle(p_id integer)
  RETURNS TABLE(id integer, "productoId" character varying, codigo character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, descuento numeric, iva numeric, subtotal numeric, orden integer)
  LANGUAGE plpgsql
 AS $function$
@@ -27076,7 +27076,7 @@ $function$
 -- ============================================================
 -- usp_pos_espera_recuperar_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_espera_recuperar_header(p_id integer, p_recuperado_por character varying DEFAULT NULL::character varying, p_recuperado_en character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_espera_recuperar_header(p_id integer, p_recuperado_por character varying DEFAULT NULL::character varying, p_recuperado_en character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, "cajaId" character varying, "clienteId" character varying, "clienteNombre" character varying, "clienteRif" character varying, "tipoPrecio" character varying, motivo character varying, subtotal numeric, descuento numeric, impuestos numeric, total numeric, "fechaCreacion" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -27105,7 +27105,7 @@ $function$
 -- ============================================================
 -- usp_pos_fiscalcorrelative_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_fiscalcorrelative_list(p_company_id integer, p_branch_id integer, p_caja_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_fiscalcorrelative_list(p_company_id integer, p_branch_id integer, p_caja_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE(tipo character varying, "cajaId" character varying, "serialFiscal" character varying, "correlativoActual" integer, descripcion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27135,7 +27135,7 @@ $function$
 -- ============================================================
 -- usp_pos_fiscalcorrelative_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_fiscalcorrelative_upsert(p_company_id integer, p_branch_id integer, p_caja_id character varying, p_serial_fiscal character varying, p_correlativo_actual integer DEFAULT 0, p_descripcion character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_fiscalcorrelative_upsert(p_company_id integer, p_branch_id integer, p_caja_id character varying, p_serial_fiscal character varying, p_correlativo_actual integer DEFAULT 0, p_descripcion character varying DEFAULT ''::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27172,7 +27172,7 @@ $function$
 -- ============================================================
 -- usp_pos_loadcountrytaxrates
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_loadcountrytaxrates(p_country_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_loadcountrytaxrates(p_country_code character varying)
  RETURNS TABLE("taxCode" character varying, rate numeric, "isDefault" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -27190,7 +27190,7 @@ $function$
 -- ============================================================
 -- usp_pos_product_getbycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_product_getbycode(p_company_id integer, p_branch_id integer, p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_product_getbycode(p_company_id integer, p_branch_id integer, p_codigo character varying)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, imagen character varying, "precioDetal" numeric, existencia numeric, categoria character varying, iva numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -27231,7 +27231,7 @@ $function$
 -- ============================================================
 -- usp_pos_product_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_product_list(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_pos_product_list(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, imagen character varying, "precioDetal" numeric, existencia numeric, categoria character varying, iva numeric, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -27285,7 +27285,7 @@ $function$
 -- ============================================================
 -- usp_pos_producto_get_by_codigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_producto_get_by_codigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_producto_get_by_codigo(p_codigo character varying)
  RETURNS TABLE(id character varying, codigo character varying, nombre character varying, "precioDetal" numeric, "precioMayor" numeric, "precioDistribuidor" numeric, existencia numeric, categoria character varying, iva numeric, barra character varying, referencia character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27324,7 +27324,7 @@ $function$
 -- ============================================================
 -- usp_pos_productos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_productos_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_almacen_id character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_pos_productos_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_almacen_id character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, id character varying, codigo character varying, nombre character varying, "precioDetal" numeric, "precioMayor" numeric, "precioDistribuidor" numeric, existencia numeric, categoria character varying, iva numeric, barra character varying, referencia character varying, "esServicio" boolean, "costoPromedio" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -27385,7 +27385,7 @@ $function$
 -- ============================================================
 -- usp_pos_report_cajas
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_report_cajas(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date)
+CREATE OR REPLACE FUNCTION public.usp_pos_report_cajas(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date)
  RETURNS TABLE("cajaId" character varying, transacciones bigint, total numeric, "serialFiscal" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27418,7 +27418,7 @@ $function$
 -- ============================================================
 -- usp_pos_report_formaspago
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_report_formaspago(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_report_formaspago(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("metodoPago" character varying, transacciones bigint, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -27441,7 +27441,7 @@ $function$
 -- ============================================================
 -- usp_pos_report_productostop
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_report_productostop(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.usp_pos_report_productostop(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE("productoId" integer, codigo character varying, nombre character varying, cantidad numeric, total numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -27464,7 +27464,7 @@ $function$
 -- ============================================================
 -- usp_pos_report_resumen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_report_resumen(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_report_resumen(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("totalVentas" numeric, transacciones bigint, "productosVendidos" numeric, "productosDiferentes" bigint, "ticketPromedio" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -27499,7 +27499,7 @@ $function$
 -- ============================================================
 -- usp_pos_report_ventas
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_report_ventas(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 200)
+CREATE OR REPLACE FUNCTION public.usp_pos_report_ventas(p_company_id integer, p_branch_id integer, p_from_date date, p_to_date date, p_caja_id character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 200)
  RETURNS TABLE(id integer, "numFactura" character varying, fecha timestamp with time zone, cliente character varying, "cajaId" character varying, total numeric, estado character varying, "metodoPago" character varying, "tramaFiscal" character varying, "serialFiscal" character varying, "correlativoFiscal" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -27540,7 +27540,7 @@ $function$
 -- ============================================================
 -- usp_pos_resolvecustomerbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_resolvecustomerbyid(p_company_id integer, p_id_input character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_resolvecustomerbyid(p_company_id integer, p_id_input character varying)
  RETURNS TABLE("customerId" bigint, "customerCode" character varying, "customerName" character varying, "fiscalId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27563,7 +27563,7 @@ $function$
 -- ============================================================
 -- usp_pos_resolvecustomerbyrif
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_resolvecustomerbyrif(p_company_id integer, p_rif character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_resolvecustomerbyrif(p_company_id integer, p_rif character varying)
  RETURNS TABLE("customerId" bigint, "customerCode" character varying, "customerName" character varying, "fiscalId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27606,7 +27606,7 @@ $function$
 -- ============================================================
 -- usp_pos_resolveproduct
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_resolveproduct(p_company_id integer, p_identifier character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_resolveproduct(p_company_id integer, p_identifier character varying)
  RETURNS TABLE("productId" bigint, "productCode" character varying, "productName" character varying, "defaultTaxCode" character varying, "defaultTaxRate" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -27631,7 +27631,7 @@ $function$
 -- ============================================================
 -- usp_pos_resolveuserid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_resolveuserid(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_resolveuserid(p_user_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -27650,7 +27650,7 @@ $function$
 -- ============================================================
 -- usp_pos_saleticket_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_saleticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_invoice_number character varying, p_cash_register_code character varying, p_sold_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_payment_method character varying DEFAULT NULL::character varying, p_fiscal_payload text DEFAULT NULL::text, p_wait_ticket_id integer DEFAULT NULL::integer, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_pos_saleticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_invoice_number character varying, p_cash_register_code character varying, p_sold_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_payment_method character varying DEFAULT NULL::character varying, p_fiscal_payload text DEFAULT NULL::text, p_wait_ticket_id integer DEFAULT NULL::integer, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27679,7 +27679,7 @@ $function$
 -- ============================================================
 -- usp_pos_saleticketline_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_saleticketline_insert(p_sale_ticket_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_discount_amount numeric DEFAULT 0, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_supervisor_approval_id integer DEFAULT NULL::integer, p_line_meta_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_pos_saleticketline_insert(p_sale_ticket_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_discount_amount numeric DEFAULT 0, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_supervisor_approval_id integer DEFAULT NULL::integer, p_line_meta_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27708,7 +27708,7 @@ $function$
 -- ============================================================
 -- usp_pos_venta_crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_venta_crear(p_num_factura character varying, p_caja_id character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_cliente_id character varying DEFAULT NULL::character varying, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_tipo_precio character varying DEFAULT 'Detal'::character varying, p_metodo_pago character varying DEFAULT NULL::character varying, p_trama_fiscal text DEFAULT NULL::text, p_espera_origen_id integer DEFAULT NULL::integer, p_detalle_json jsonb DEFAULT '[]'::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_pos_venta_crear(p_num_factura character varying, p_caja_id character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_cliente_id character varying DEFAULT NULL::character varying, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_tipo_precio character varying DEFAULT 'Detal'::character varying, p_metodo_pago character varying DEFAULT NULL::character varying, p_trama_fiscal text DEFAULT NULL::text, p_espera_origen_id integer DEFAULT NULL::integer, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("VentaId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -27750,7 +27750,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticket_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_cash_register_code character varying, p_station_name character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_reason character varying DEFAULT NULL::character varying, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_cash_register_code character varying, p_station_name character varying DEFAULT NULL::character varying, p_created_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_reason character varying DEFAULT NULL::character varying, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27779,7 +27779,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticket_getheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_getheader(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_getheader(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer)
  RETURNS TABLE(id integer, "cajaId" character varying, "estacionNombre" character varying, "clienteId" character varying, "clienteNombre" character varying, "clienteRif" character varying, "tipoPrecio" character varying, motivo character varying, subtotal numeric, impuestos numeric, total numeric, estado character varying, "fechaCreacion" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -27798,7 +27798,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticket_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, "cajaId" character varying, "estacionNombre" character varying, "clienteNombre" character varying, motivo character varying, total numeric, "fechaCreacion" timestamp with time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -27816,7 +27816,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticket_recover
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_recover(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer, p_recovered_by_user_id integer DEFAULT NULL::integer, p_recovered_at_register character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_recover(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer, p_recovered_by_user_id integer DEFAULT NULL::integer, p_recovered_at_register character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27837,7 +27837,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticket_void
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_void(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_void(p_company_id integer, p_branch_id integer, p_wait_ticket_id integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27855,7 +27855,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticketline_getitems
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_getitems(p_wait_ticket_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticketline_getitems(p_wait_ticket_id integer)
  RETURNS TABLE(id integer, "productoId" character varying, codigo character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, descuento numeric, iva numeric, subtotal numeric, total numeric, "supervisorApprovalId" integer, "lineMetaJson" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27879,7 +27879,7 @@ $function$
 -- ============================================================
 -- usp_pos_waitticketline_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_insert(p_wait_ticket_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_discount_amount numeric DEFAULT 0, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_supervisor_approval_id integer DEFAULT NULL::integer, p_line_meta_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticketline_insert(p_wait_ticket_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_discount_amount numeric DEFAULT 0, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_supervisor_approval_id integer DEFAULT NULL::integer, p_line_meta_json text DEFAULT NULL::text)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27905,7 +27905,7 @@ $function$
 -- ============================================================
 -- usp_proveedores_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_proveedores_delete(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_proveedores_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27931,7 +27931,7 @@ $function$
 -- ============================================================
 -- usp_proveedores_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_proveedores_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_proveedores_getbycodigo(p_codigo character varying)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Direccion1" character varying, "Sucursal" character varying, "Telefono" character varying, "Fax" character varying, "Contacto" character varying, "VENDEDOR" character varying, "ESTADO" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision, "ListaPrecio" integer, "Notas" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27978,7 +27978,7 @@ $function$
 -- ============================================================
 -- usp_proveedores_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_proveedores_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_proveedores_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28049,7 +28049,7 @@ $function$
 -- ============================================================
 -- usp_proveedores_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_proveedores_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_proveedores_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Direccion1" character varying, "Sucursal" character varying, "Telefono" character varying, "Fax" character varying, "Contacto" character varying, "VENDEDOR" character varying, "ESTADO" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision, "ListaPrecio" integer, "Notas" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -28128,7 +28128,7 @@ $function$
 -- ============================================================
 -- usp_proveedores_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_proveedores_update(p_codigo character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_proveedores_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28181,7 +28181,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_adjuststock
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_adjuststock(p_product_id integer, p_delta_qty numeric)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_adjuststock(p_product_id integer, p_delta_qty numeric)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -28201,7 +28201,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_ambiente_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_ambiente_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_ambiente_list(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, nombre character varying, color character varying, orden integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28224,7 +28224,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_ambiente_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_ambiente_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_nombre character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_ambiente_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_nombre character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28261,7 +28261,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_categoria_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_categoria_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_categoria_list(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, nombre character varying, descripcion character varying, color character varying, orden integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28285,7 +28285,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_categoria_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_categoria_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_nombre character varying DEFAULT NULL::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_categoria_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_nombre character varying DEFAULT NULL::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28325,7 +28325,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_componente_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_componente_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT NULL::integer, p_nombre character varying DEFAULT NULL::character varying, p_obligatorio boolean DEFAULT false, p_orden integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_componente_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT NULL::integer, p_nombre character varying DEFAULT NULL::character varying, p_obligatorio boolean DEFAULT false, p_orden integer DEFAULT 0)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28357,7 +28357,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_getdetalle_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
  RETURNS TABLE(id integer, "numCompra" character varying, "proveedorId" character varying, "proveedorNombre" character varying, "fechaCompra" timestamp with time zone, estado character varying, subtotal numeric, iva numeric, total numeric, observaciones character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28387,7 +28387,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_getdetalle_lines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_lines(p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_lines(p_compra_id integer)
  RETURNS TABLE(id integer, "compraId" integer, "inventarioId" character varying, descripcion character varying, cantidad numeric, "precioUnit" numeric, subtotal numeric, iva numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -28413,7 +28413,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_getnextseq
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getnextseq(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getnextseq(p_company_id integer, p_branch_id integer)
  RETURNS TABLE(seq bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -28430,7 +28430,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_insert(p_company_id integer, p_branch_id integer, p_purchase_number character varying, p_supplier_id integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_insert(p_company_id integer, p_branch_id integer, p_purchase_number character varying, p_supplier_id integer DEFAULT NULL::integer, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28455,7 +28455,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_list(p_company_id integer, p_branch_id integer, p_status character varying DEFAULT NULL::character varying, p_from_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_to_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_list(p_company_id integer, p_branch_id integer, p_status character varying DEFAULT NULL::character varying, p_from_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_to_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS TABLE(id integer, "numCompra" character varying, "proveedorId" character varying, "proveedorNombre" character varying, "fechaCompra" timestamp with time zone, estado character varying, subtotal numeric, iva numeric, total numeric, observaciones character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28487,7 +28487,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_recalctotals
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_recalctotals(p_purchase_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_recalctotals(p_purchase_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -28517,7 +28517,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compra_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_update(p_compra_id integer, p_supplier_id integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_update(p_compra_id integer, p_supplier_id integer DEFAULT NULL::integer, p_status character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -28535,7 +28535,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compralinea_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compralinea_delete(p_compra_id integer, p_detalle_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compralinea_delete(p_compra_id integer, p_detalle_id integer)
  RETURNS TABLE("ingredientProductId" integer, quantity numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -28558,7 +28558,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compralinea_getprev
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compralinea_getprev(p_id integer, p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compralinea_getprev(p_id integer, p_compra_id integer)
  RETURNS TABLE("ingredientProductId" integer, quantity numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -28576,7 +28576,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_compralinea_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compralinea_upsert(p_id integer DEFAULT 0, p_compra_id integer DEFAULT NULL::integer, p_ingredient_product_id integer DEFAULT NULL::integer, p_descripcion character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_tax_rate_percent numeric DEFAULT 16, p_subtotal numeric DEFAULT NULL::numeric)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compralinea_upsert(p_id integer DEFAULT 0, p_compra_id integer DEFAULT NULL::integer, p_ingredient_product_id integer DEFAULT NULL::integer, p_descripcion character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_tax_rate_percent numeric DEFAULT 16, p_subtotal numeric DEFAULT NULL::numeric)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28616,7 +28616,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_insumo_search
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_insumo_search(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 30)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_insumo_search(p_company_id integer, p_branch_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 30)
  RETURNS TABLE(codigo character varying, descripcion character varying, imagen character varying, unidad character varying, existencia numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -28659,7 +28659,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_opcion_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_opcion_upsert(p_id integer DEFAULT 0, p_componente_id integer DEFAULT NULL::integer, p_nombre character varying DEFAULT NULL::character varying, p_precio_extra numeric DEFAULT 0, p_orden integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_opcion_upsert(p_id integer DEFAULT 0, p_componente_id integer DEFAULT NULL::integer, p_nombre character varying DEFAULT NULL::character varying, p_precio_extra numeric DEFAULT 0, p_orden integer DEFAULT 0)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28691,7 +28691,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_producto_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_delete(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_delete(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -28708,7 +28708,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_producto_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_get(p_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_get(p_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, "categoriaId" integer, precio numeric, "costoEstimado" numeric, iva numeric, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, "articuloInventarioId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28755,7 +28755,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_producto_get_componentes
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_get_componentes(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_get_componentes(p_id integer)
  RETURNS TABLE(id integer, nombre character varying, obligatorio boolean, orden integer, "opcionId" integer, "opcionNombre" character varying, "precioExtra" numeric, "opcionOrden" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28784,7 +28784,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_producto_get_receta
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_get_receta(p_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_get_receta(p_id integer, p_branch_id integer)
  RETURNS TABLE(id integer, "productoId" integer, "inventarioId" character varying, descripcion character varying, imagen character varying, cantidad numeric, unidad character varying, comentario character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28824,7 +28824,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_producto_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_list(p_company_id integer, p_branch_id integer, p_menu_category_id integer DEFAULT NULL::integer, p_search character varying DEFAULT NULL::character varying, p_solo_disponibles boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_list(p_company_id integer, p_branch_id integer, p_menu_category_id integer DEFAULT NULL::integer, p_search character varying DEFAULT NULL::character varying, p_solo_disponibles boolean DEFAULT true)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, "categoriaId" integer, "categoriaNombre" character varying, precio numeric, "costoEstimado" numeric, iva numeric, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, "articuloInventarioId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28876,7 +28876,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_producto_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_producto_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_menu_category_id integer DEFAULT NULL::integer, p_price numeric DEFAULT 0, p_estimated_cost numeric DEFAULT 0, p_tax_rate_percent numeric DEFAULT 16, p_is_composite boolean DEFAULT false, p_prep_minutes integer DEFAULT 0, p_image_url character varying DEFAULT NULL::character varying, p_is_daily_suggestion boolean DEFAULT false, p_is_available boolean DEFAULT true, p_inventory_product_id integer DEFAULT NULL::integer, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_producto_upsert(p_id integer DEFAULT 0, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_code character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_menu_category_id integer DEFAULT NULL::integer, p_price numeric DEFAULT 0, p_estimated_cost numeric DEFAULT 0, p_tax_rate_percent numeric DEFAULT 16, p_is_composite boolean DEFAULT false, p_prep_minutes integer DEFAULT 0, p_image_url character varying DEFAULT NULL::character varying, p_is_daily_suggestion boolean DEFAULT false, p_is_available boolean DEFAULT true, p_inventory_product_id integer DEFAULT NULL::integer, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -28929,7 +28929,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_proveedor_search
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_proveedor_search(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_proveedor_search(p_company_id integer, p_search character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 20)
  RETURNS TABLE(id bigint, codigo character varying, nombre character varying, rif character varying, telefono character varying, direccion character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -28961,7 +28961,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_receta_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_receta_delete(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_receta_delete(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -28977,7 +28977,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_receta_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_receta_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT NULL::integer, p_ingredient_product_id integer DEFAULT NULL::integer, p_quantity numeric DEFAULT NULL::numeric, p_unit_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_receta_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT NULL::integer, p_ingredient_product_id integer DEFAULT NULL::integer, p_quantity numeric DEFAULT NULL::numeric, p_unit_code character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29011,7 +29011,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_resolvemenucategory
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_resolvemenucategory(p_menu_category_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_resolvemenucategory(p_menu_category_id integer)
  RETURNS TABLE(id integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29028,7 +29028,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_resolveproduct
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_resolveproduct(p_company_id integer, p_key character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_resolveproduct(p_company_id integer, p_key character varying)
  RETURNS TABLE("productId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -29052,7 +29052,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_resolvesupplier
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_resolvesupplier(p_company_id integer, p_key character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_resolvesupplier(p_company_id integer, p_key character varying)
  RETURNS TABLE("supplierId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -29076,7 +29076,7 @@ $function$
 -- ============================================================
 -- usp_rest_admin_syncmenuproductimage
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_admin_syncmenuproductimage(p_company_id integer, p_branch_id integer, p_menu_product_id integer, p_storage_key character varying, p_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_syncmenuproductimage(p_company_id integer, p_branch_id integer, p_menu_product_id integer, p_storage_key character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -29150,7 +29150,7 @@ $function$
 -- ============================================================
 -- usp_rest_ambiente_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_ambiente_upsert(p_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_color character varying DEFAULT '#4CAF50'::character varying, p_orden integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_rest_ambiente_upsert(p_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_color character varying DEFAULT '#4CAF50'::character varying, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29188,7 +29188,7 @@ $function$
 -- ============================================================
 -- usp_rest_categoria_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_categoria_upsert(p_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_rest_categoria_upsert(p_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_color character varying DEFAULT NULL::character varying, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29227,7 +29227,7 @@ $function$
 -- ============================================================
 -- usp_rest_comanda_enviar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_comanda_enviar(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_comanda_enviar(p_pedido_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -29249,7 +29249,7 @@ $function$
 -- ============================================================
 -- usp_rest_componente_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_componente_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_obligatorio boolean DEFAULT false, p_orden integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_rest_componente_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_obligatorio boolean DEFAULT false, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29272,7 +29272,7 @@ $function$
 -- ============================================================
 -- usp_rest_compra_crear
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_compra_crear(p_proveedor_id character varying DEFAULT NULL::character varying, p_observaciones character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_rest_compra_crear(p_proveedor_id character varying DEFAULT NULL::character varying, p_observaciones character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying, p_detalle_json jsonb DEFAULT '[]'::jsonb)
  RETURNS TABLE("CompraId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29316,7 +29316,7 @@ $function$
 -- ============================================================
 -- usp_rest_compras_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_compras_list(p_estado character varying DEFAULT NULL::character varying, p_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_to timestamp without time zone DEFAULT NULL::timestamp without time zone)
+CREATE OR REPLACE FUNCTION public.usp_rest_compras_list(p_estado character varying DEFAULT NULL::character varying, p_from timestamp without time zone DEFAULT NULL::timestamp without time zone, p_to timestamp without time zone DEFAULT NULL::timestamp without time zone)
  RETURNS TABLE(id integer, "numCompra" character varying, "proveedorId" character varying, "proveedorNombre" character varying, "fechaCompra" timestamp without time zone, "fechaRecepcion" timestamp without time zone, estado character varying, subtotal numeric, iva numeric, total numeric, observaciones character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29343,7 +29343,7 @@ $function$
 -- ============================================================
 -- usp_rest_diningtable_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_diningtable_getbyid(p_company_id integer, p_branch_id integer, p_mesa_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_diningtable_getbyid(p_company_id integer, p_branch_id integer, p_mesa_id integer)
  RETURNS TABLE(id integer, "tableNumber" character varying, "tableName" character varying, capacity integer, "ambienteId" character varying, ambiente character varying, "posicionX" numeric, "posicionY" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -29362,7 +29362,7 @@ $function$
 -- ============================================================
 -- usp_rest_diningtable_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_diningtable_list(p_company_id integer, p_branch_id integer, p_ambiente_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_diningtable_list(p_company_id integer, p_branch_id integer, p_ambiente_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, numero character varying, nombre character varying, capacidad integer, "ambienteId" character varying, ambiente character varying, "posicionX" numeric, "posicionY" numeric, estado character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29396,7 +29396,7 @@ $function$
 -- ============================================================
 -- usp_rest_mesas_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_mesas_list(p_ambiente_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_mesas_list(p_ambiente_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, numero integer, nombre character varying, capacidad integer, "ambienteId" character varying, ambiente character varying, "posicionX" integer, "posicionY" integer, estado character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29423,7 +29423,7 @@ $function$
 -- ============================================================
 -- usp_rest_opcion_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_opcion_upsert(p_id integer DEFAULT 0, p_componente_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_precio_extra numeric DEFAULT 0, p_orden integer DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_rest_opcion_upsert(p_id integer DEFAULT 0, p_componente_id integer DEFAULT 0, p_nombre character varying DEFAULT ''::character varying, p_precio_extra numeric DEFAULT 0, p_orden integer DEFAULT 0)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29446,7 +29446,7 @@ $function$
 -- ============================================================
 -- usp_rest_orderticket_checkpriorvoid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_checkpriorvoid(p_pedido_id integer, p_item_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_checkpriorvoid(p_pedido_id integer, p_item_id integer)
  RETURNS TABLE("alreadyVoided" integer)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29459,7 +29459,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_close
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_close(p_pedido_id integer, p_closed_by_user_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_close(p_pedido_id integer, p_closed_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29473,7 +29473,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_table_number character varying, p_opened_by_user_id integer DEFAULT NULL::integer, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_table_number character varying, p_opened_by_user_id integer DEFAULT NULL::integer, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29492,7 +29492,7 @@ $function$
 -- ============================================================
 -- usp_rest_orderticket_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getbyid(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getbyid(p_pedido_id integer)
  RETURNS TABLE("orderId" integer, "companyId" integer, "branchId" integer, "countryCode" character varying, status character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29504,7 +29504,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_getbymesaheader
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getbymesaheader(p_company_id integer, p_branch_id integer, p_table_number character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getbymesaheader(p_company_id integer, p_branch_id integer, p_table_number character varying)
  RETURNS TABLE(id integer, "clienteNombre" character varying, "clienteRif" character varying, estado character varying, total numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29518,7 +29518,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_getheaderforclose
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
  RETURNS TABLE(id integer, "empresaId" integer, "sucursalId" integer, "countryCode" character varying, "mesaId" integer, "clienteNombre" character varying, "clienteRif" character varying, estado character varying, total numeric, "fechaCierre" timestamp with time zone, "codUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29536,7 +29536,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_getopenbytable
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getopenbytable(p_company_id integer, p_branch_id integer, p_table_number character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getopenbytable(p_company_id integer, p_branch_id integer, p_table_number character varying)
  RETURNS TABLE(id integer, status character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29554,7 +29554,7 @@ $function$
 -- ============================================================
 -- usp_rest_orderticket_infercountrycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_infercountrycode(p_empresa_id integer, p_sucursal_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_infercountrycode(p_empresa_id integer, p_sucursal_id integer)
  RETURNS TABLE("countryCode" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29567,7 +29567,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_recalctotals
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_recalctotals(p_order_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_recalctotals(p_order_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -29583,7 +29583,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_sendtokitchen
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_sendtokitchen(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_sendtokitchen(p_pedido_id integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29596,7 +29596,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticket_updatetimestamp
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_updatetimestamp(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_updatetimestamp(p_pedido_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29607,7 +29607,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticketline_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_getbyid(p_pedido_id integer, p_item_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_getbyid(p_pedido_id integer, p_item_id integer)
  RETURNS TABLE("itemId" integer, "lineNumber" integer, "countryCode" character varying, "productId" integer, "productCode" character varying, nombre character varying, cantidad numeric, "unitPrice" numeric, "taxCode" character varying, "taxRate" numeric, "netAmount" numeric, "taxAmount" numeric, "totalAmount" numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29622,7 +29622,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticketline_getbypedido
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_getbypedido(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_getbypedido(p_pedido_id integer)
  RETURNS TABLE(id integer, "productoId" character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, subtotal numeric, iva numeric, "taxCode" character varying, impuesto numeric, total numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29637,7 +29637,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticketline_getfiscalbreakdown
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id integer)
  RETURNS TABLE("itemId" integer, "productoId" character varying, nombre character varying, quantity numeric, "unitPrice" numeric, "baseAmount" numeric, "taxCode" character varying, "taxRate" numeric, "taxAmount" numeric, "totalAmount" numeric)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29650,7 +29650,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticketline_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_insert(p_order_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying, p_supervisor_approval_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_insert(p_order_id integer, p_line_number integer, p_country_code character varying, p_product_id integer DEFAULT NULL::integer, p_product_code character varying DEFAULT NULL::character varying, p_product_name character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT NULL::numeric, p_unit_price numeric DEFAULT NULL::numeric, p_tax_code character varying DEFAULT NULL::character varying, p_tax_rate numeric DEFAULT NULL::numeric, p_net_amount numeric DEFAULT NULL::numeric, p_tax_amount numeric DEFAULT NULL::numeric, p_total_amount numeric DEFAULT NULL::numeric, p_notes character varying DEFAULT NULL::character varying, p_supervisor_approval_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29670,7 +29670,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_orderticketline_nextlinenumber
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_orderticketline_nextlinenumber(p_order_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticketline_nextlinenumber(p_order_id integer)
  RETURNS TABLE("nextLine" integer)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -29681,7 +29681,7 @@ END; $function$
 -- ============================================================
 -- usp_rest_pedido_abrir
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_pedido_abrir(p_mesa_id integer, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_pedido_abrir(p_mesa_id integer, p_cliente_nombre character varying DEFAULT NULL::character varying, p_cliente_rif character varying DEFAULT NULL::character varying, p_cod_usuario character varying DEFAULT NULL::character varying)
  RETURNS TABLE("PedidoId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29705,7 +29705,7 @@ $function$
 -- ============================================================
 -- usp_rest_pedido_cerrar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_pedido_cerrar(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_pedido_cerrar(p_pedido_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -29729,7 +29729,7 @@ $function$
 -- ============================================================
 -- usp_rest_pedido_get_by_mesa_header
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_header(p_mesa_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_pedido_get_by_mesa_header(p_mesa_id integer)
  RETURNS TABLE(id integer, "mesaId" integer, "clienteNombre" character varying, "clienteRif" character varying, estado character varying, total numeric, comentarios character varying, "fechaApertura" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -29755,7 +29755,7 @@ $function$
 -- ============================================================
 -- usp_rest_pedido_get_by_mesa_items
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_items(p_mesa_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_pedido_get_by_mesa_items(p_mesa_id integer)
  RETURNS TABLE(id integer, "pedidoId" integer, "productoId" character varying, nombre character varying, cantidad numeric, "precioUnitario" numeric, subtotal numeric, iva numeric, estado character varying, "esCompuesto" boolean, componentes character varying, comentarios character varying, "enviadoACocina" boolean, "horaEnvio" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -29787,7 +29787,7 @@ $function$
 -- ============================================================
 -- usp_rest_pedido_item_agregar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_pedido_item_agregar(p_pedido_id integer, p_producto_id character varying, p_nombre character varying, p_cantidad numeric, p_precio_unitario numeric, p_iva numeric DEFAULT NULL::numeric, p_es_compuesto boolean DEFAULT false, p_componentes text DEFAULT NULL::text, p_comentarios character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_pedido_item_agregar(p_pedido_id integer, p_producto_id character varying, p_nombre character varying, p_cantidad numeric, p_precio_unitario numeric, p_iva numeric DEFAULT NULL::numeric, p_es_compuesto boolean DEFAULT false, p_componentes text DEFAULT NULL::text, p_comentarios character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ItemId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29830,7 +29830,7 @@ $function$
 -- ============================================================
 -- usp_rest_producto_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_producto_delete(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_producto_delete(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -29843,7 +29843,7 @@ $function$
 -- ============================================================
 -- usp_rest_producto_get
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_producto_get(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_producto_get(p_id integer)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, precio numeric, "categoriaId" integer, categoria character varying, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, iva numeric, "costoEstimado" numeric, "articuloInventarioId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29866,7 +29866,7 @@ $function$
 -- ============================================================
 -- usp_rest_producto_get_componentes
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_producto_get_componentes(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_producto_get_componentes(p_id integer)
  RETURNS TABLE(id integer, nombre character varying, obligatorio boolean, orden integer, "opcionId" integer, "opcionNombre" character varying, "precioExtra" numeric, "opcionOrden" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29886,7 +29886,7 @@ $function$
 -- ============================================================
 -- usp_rest_producto_get_receta
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_producto_get_receta(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_producto_get_receta(p_id integer)
  RETURNS TABLE(id integer, "inventarioId" character varying, "inventarioNombre" character varying, cantidad numeric, unidad character varying, comentario character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -29906,7 +29906,7 @@ $function$
 -- ============================================================
 -- usp_rest_producto_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_producto_upsert(p_id integer DEFAULT 0, p_codigo character varying DEFAULT ''::character varying, p_nombre character varying DEFAULT ''::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_categoria_id integer DEFAULT NULL::integer, p_precio numeric DEFAULT 0, p_costo_estimado numeric DEFAULT 0, p_iva numeric DEFAULT 16, p_es_compuesto boolean DEFAULT false, p_tiempo_preparacion integer DEFAULT 0, p_imagen character varying DEFAULT NULL::character varying, p_es_sugerencia_del_dia boolean DEFAULT false, p_disponible boolean DEFAULT true, p_articulo_inventario_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_producto_upsert(p_id integer DEFAULT 0, p_codigo character varying DEFAULT ''::character varying, p_nombre character varying DEFAULT ''::character varying, p_descripcion character varying DEFAULT NULL::character varying, p_categoria_id integer DEFAULT NULL::integer, p_precio numeric DEFAULT 0, p_costo_estimado numeric DEFAULT 0, p_iva numeric DEFAULT 16, p_es_compuesto boolean DEFAULT false, p_tiempo_preparacion integer DEFAULT 0, p_imagen character varying DEFAULT NULL::character varying, p_es_sugerencia_del_dia boolean DEFAULT false, p_disponible boolean DEFAULT true, p_articulo_inventario_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29937,7 +29937,7 @@ $function$
 -- ============================================================
 -- usp_rest_productos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_productos_list(p_categoria_id integer DEFAULT NULL::integer, p_search character varying DEFAULT NULL::character varying, p_solo_disponibles boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.usp_rest_productos_list(p_categoria_id integer DEFAULT NULL::integer, p_search character varying DEFAULT NULL::character varying, p_solo_disponibles boolean DEFAULT true)
  RETURNS TABLE(id integer, codigo character varying, nombre character varying, descripcion character varying, precio numeric, "categoriaId" integer, categoria character varying, "esCompuesto" boolean, "tiempoPreparacion" integer, imagen character varying, "esSugerenciaDelDia" boolean, disponible boolean, iva numeric, "costoEstimado" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -29972,7 +29972,7 @@ $function$
 -- ============================================================
 -- usp_rest_receta_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_rest_receta_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT 0, p_inventario_id character varying DEFAULT ''::character varying, p_cantidad numeric DEFAULT 0, p_unidad character varying DEFAULT NULL::character varying, p_comentario character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_rest_receta_upsert(p_id integer DEFAULT 0, p_producto_id integer DEFAULT 0, p_inventario_id character varying DEFAULT ''::character varying, p_cantidad numeric DEFAULT 0, p_unidad character varying DEFAULT NULL::character varying, p_comentario character varying DEFAULT NULL::character varying)
  RETURNS TABLE("ResultId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -29995,7 +29995,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_consumetoken
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_consumetoken(p_token_hash character varying, p_token_type character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_consumetoken(p_token_hash character varying, p_token_type character varying)
  RETURNS TABLE("UserCode" character varying, "EmailNormalized" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30017,7 +30017,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_emailexists
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_emailexists(p_email_normalized character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_emailexists(p_email_normalized character varying)
  RETURNS TABLE("existsFlag" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30031,7 +30031,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_getloginsecuritystate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_getloginsecuritystate(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_getloginsecuritystate(p_user_code character varying)
  RETURNS TABLE("IsRegistrationPending" boolean, "EmailVerifiedAtUtc" timestamp without time zone, "LockoutUntilUtc" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -30046,7 +30046,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_invalidatetokens
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_invalidatetokens(p_user_code character varying, p_token_type character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_invalidatetokens(p_user_code character varying, p_token_type character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30061,7 +30061,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_registerloginfailure
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_registerloginfailure(p_user_code character varying, p_ip character varying DEFAULT NULL::character varying, p_max_attempts integer DEFAULT 5, p_lockout_minutes integer DEFAULT 15)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_registerloginfailure(p_user_code character varying, p_ip character varying DEFAULT NULL::character varying, p_max_attempts integer DEFAULT 5, p_lockout_minutes integer DEFAULT 15)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30084,7 +30084,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_registerloginsuccess
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_registerloginsuccess(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_registerloginsuccess(p_user_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30099,7 +30099,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_registeruser
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_registeruser(p_user_code character varying, p_password_hash character varying, p_nombre character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_registeruser(p_user_code character varying, p_password_hash character varying, p_nombre character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30113,7 +30113,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_resetlockout
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_resetlockout(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_resetlockout(p_user_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30131,7 +30131,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_resolvebyidentifier
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_resolvebyidentifier(p_user_code character varying, p_email_normalized character varying, p_is_email boolean)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_resolvebyidentifier(p_user_code character varying, p_email_normalized character varying, p_is_email boolean)
  RETURNS TABLE("UserCode" character varying, "Email" character varying, "EmailNormalized" character varying, "IsRegistrationPending" boolean, "EmailVerifiedAtUtc" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -30149,7 +30149,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_updatepassword
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_updatepassword(p_user_code character varying, p_password_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_updatepassword(p_user_code character varying, p_password_hash character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30162,7 +30162,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_userexistslegacy
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_userexistslegacy(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_userexistslegacy(p_user_code character varying)
  RETURNS TABLE("existsFlag" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30176,7 +30176,7 @@ $function$
 -- ============================================================
 -- usp_sec_auth_verifyemail
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_auth_verifyemail(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_verifyemail(p_user_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30192,7 +30192,7 @@ $function$
 -- ============================================================
 -- usp_sec_authidentity_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_authidentity_upsert(p_user_code character varying, p_email character varying, p_email_normalized character varying, p_pending boolean)
+CREATE OR REPLACE FUNCTION public.usp_sec_authidentity_upsert(p_user_code character varying, p_email character varying, p_email_normalized character varying, p_pending boolean)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30237,7 +30237,7 @@ $function$
 -- ============================================================
 -- usp_sec_authtoken_issue
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_authtoken_issue(p_user_code character varying, p_token_type character varying, p_token_hash character varying, p_email_normalized character varying, p_ttl_minutes integer, p_ip character varying DEFAULT NULL::character varying, p_user_agent character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_authtoken_issue(p_user_code character varying, p_token_type character varying, p_token_hash character varying, p_email_normalized character varying, p_ttl_minutes integer, p_ip character varying DEFAULT NULL::character varying, p_user_agent character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30251,7 +30251,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_biometric_deactivate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_deactivate(p_supervisor_user character varying, p_credential_hash character varying, p_actor_user character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_deactivate(p_supervisor_user character varying, p_credential_hash character varying, p_actor_user character varying)
  RETURNS TABLE("biometricCredentialId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -30272,7 +30272,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_biometric_enroll
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_enroll(p_supervisor_user character varying, p_credential_hash character varying, p_credential_id character varying, p_credential_label character varying DEFAULT NULL::character varying, p_device_info character varying DEFAULT NULL::character varying, p_actor_user character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_enroll(p_supervisor_user character varying, p_credential_hash character varying, p_credential_id character varying, p_credential_label character varying DEFAULT NULL::character varying, p_device_info character varying DEFAULT NULL::character varying, p_actor_user character varying DEFAULT NULL::character varying)
  RETURNS TABLE("biometricCredentialId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -30311,7 +30311,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_biometric_hasactive
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_hasactive(p_supervisor_user character varying, p_credential_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_hasactive(p_supervisor_user character varying, p_credential_hash character varying)
  RETURNS TABLE("biometricCredentialId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -30330,7 +30330,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_biometric_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_list(p_supervisor_user character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_list(p_supervisor_user character varying DEFAULT ''::character varying)
  RETURNS TABLE("biometricCredentialId" bigint, "supervisorUserCode" character varying, "credentialId" character varying, "credentialLabel" character varying, "deviceInfo" character varying, "isActive" boolean, "lastValidatedAtUtc" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30352,7 +30352,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_biometric_touch
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_touch(p_supervisor_user character varying, p_credential_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_touch(p_supervisor_user character varying, p_credential_hash character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30370,7 +30370,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_getrecord
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_getrecord(p_supervisor_user character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_getrecord(p_supervisor_user character varying)
  RETURNS TABLE("codUsuario" character varying, nombre character varying, tipo character varying, "isAdmin" boolean, "canDelete" boolean, "passwordHash" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30387,7 +30387,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_override_consume
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_override_consume(p_override_id integer, p_module_code character varying, p_action_code character varying, p_consumed_by_user character varying DEFAULT NULL::character varying, p_source_document_id integer DEFAULT NULL::integer, p_source_line_id integer DEFAULT NULL::integer, p_reversal_line_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_override_consume(p_override_id integer, p_module_code character varying, p_action_code character varying, p_consumed_by_user character varying DEFAULT NULL::character varying, p_source_document_id integer DEFAULT NULL::integer, p_source_line_id integer DEFAULT NULL::integer, p_reversal_line_id integer DEFAULT NULL::integer)
  RETURNS TABLE("overrideId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30412,7 +30412,7 @@ $function$
 -- ============================================================
 -- usp_sec_supervisor_override_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_override_create(p_module_code character varying, p_action_code character varying, p_status character varying, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_requested_by_user character varying DEFAULT NULL::character varying, p_supervisor_user_code character varying DEFAULT NULL::character varying, p_reason character varying DEFAULT NULL::character varying, p_payload_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_override_create(p_module_code character varying, p_action_code character varying, p_status character varying, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_requested_by_user character varying DEFAULT NULL::character varying, p_supervisor_user_code character varying DEFAULT NULL::character varying, p_reason character varying DEFAULT NULL::character varying, p_payload_json text DEFAULT NULL::text)
  RETURNS TABLE("overrideId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30438,7 +30438,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_authenticate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_authenticate(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_authenticate(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" character varying, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -30466,7 +30466,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_checkexists
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_checkexists(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_checkexists(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30483,7 +30483,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_ensuredefaultcompanyaccess
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_ensuredefaultcompanyaccess(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_ensuredefaultcompanyaccess(p_cod_usuario character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30524,7 +30524,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_getavatar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_getavatar(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getavatar(p_cod_usuario character varying)
  RETURNS TABLE("Avatar" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30541,7 +30541,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_getcompanyaccesses
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
  RETURNS TABLE("companyId" integer, "companyCode" character varying, "companyName" character varying, "branchId" integer, "branchCode" character varying, "branchName" character varying, "countryCode" character varying, "timeZone" character varying, "isDefault" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -30584,7 +30584,7 @@ BEGIN
         a."CompanyId", a."BranchId";
 
 EXCEPTION WHEN OTHERS THEN
-    -- Si la tabla no existe, retornar vacÃ­o
+    -- Si la tabla no existe, retornar vacÃƒÂ­o
     RETURN;
 END;
 $function$
@@ -30593,7 +30593,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_getmoduleaccess
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_getmoduleaccess(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getmoduleaccess(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Modulo" character varying, "Permitido" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -30609,7 +30609,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_gettype
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_gettype(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_gettype(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Tipo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30671,7 +30671,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_resolvebycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_resolvebycode(p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_resolvebycode(p_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30685,7 +30685,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_resolvebycodeactive
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_resolvebycodeactive(p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_resolvebycodeactive(p_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30701,7 +30701,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_setavatar
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_setavatar(p_cod_usuario character varying, p_avatar text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_setavatar(p_cod_usuario character varying, p_avatar text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30717,7 +30717,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_setmoduleaccess
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_setmoduleaccess(p_cod_usuario character varying, p_modules_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_setmoduleaccess(p_cod_usuario character varying, p_modules_json jsonb)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30739,7 +30739,7 @@ $function$
 -- ============================================================
 -- usp_sec_user_updatepassword
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sec_user_updatepassword(p_cod_usuario character varying, p_password_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_updatepassword(p_cod_usuario character varying, p_password_hash character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -30756,7 +30756,7 @@ $function$
 -- ============================================================
 -- usp_store_address_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_address_delete(p_address_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_address_delete(p_address_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30779,7 +30779,7 @@ $function$
 -- ============================================================
 -- usp_store_address_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_address_list(p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_address_list(p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("AddressId" integer, "Label" character varying, "RecipientName" character varying, "Phone" character varying, "AddressLine" character varying, "City" character varying, "State" character varying, "ZipCode" character varying, "Country" character varying, "Instructions" character varying, "IsDefault" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -30799,7 +30799,7 @@ $function$
 -- ============================================================
 -- usp_store_address_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_address_upsert(p_address_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_label character varying DEFAULT NULL::character varying, p_recipient_name character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_city character varying DEFAULT NULL::character varying, p_state character varying DEFAULT NULL::character varying, p_zip_code character varying DEFAULT NULL::character varying, p_country character varying DEFAULT 'Venezuela'::character varying, p_instructions character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.usp_store_address_upsert(p_address_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_label character varying DEFAULT NULL::character varying, p_recipient_name character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address_line character varying DEFAULT NULL::character varying, p_city character varying DEFAULT NULL::character varying, p_state character varying DEFAULT NULL::character varying, p_zip_code character varying DEFAULT NULL::character varying, p_country character varying DEFAULT 'Venezuela'::character varying, p_instructions character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT false)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NewId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30856,7 +30856,7 @@ $function$
 -- ============================================================
 -- usp_store_brand_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_brand_list(p_company_id integer DEFAULT 1)
+CREATE OR REPLACE FUNCTION public.usp_store_brand_list(p_company_id integer DEFAULT 1)
  RETURNS TABLE(code character varying, name character varying, "productCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -30878,7 +30878,7 @@ $function$
 -- ============================================================
 -- usp_store_category_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_category_list(p_company_id integer DEFAULT 1)
+CREATE OR REPLACE FUNCTION public.usp_store_category_list(p_company_id integer DEFAULT 1)
  RETURNS TABLE(code character varying, name character varying, "productCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -30908,7 +30908,7 @@ $function$
 -- ============================================================
 -- usp_store_customer_findorcreate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_customer_findorcreate(p_company_id integer DEFAULT 1, p_email character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_customer_findorcreate(p_company_id integer DEFAULT 1, p_email character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("CustomerCode" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30950,7 +30950,7 @@ $function$
 -- ============================================================
 -- usp_store_customer_login
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_customer_login(p_email character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_customer_login(p_email character varying)
  RETURNS TABLE("UserId" integer, "Email" character varying, "displayName" character varying, "passwordHash" character varying, "isActive" boolean, "customerCode" character varying, "customerName" character varying, phone character varying, address character varying, "fiscalId" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -30978,7 +30978,7 @@ $function$
 -- ============================================================
 -- usp_store_customer_register
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_customer_register(p_company_id integer DEFAULT 1, p_email character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_password_hash character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_customer_register(p_company_id integer DEFAULT 1, p_email character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_password_hash character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31012,7 +31012,7 @@ $function$
 -- ============================================================
 -- usp_store_industrytemplate_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_industrytemplate_list(p_company_id integer DEFAULT 1)
+CREATE OR REPLACE FUNCTION public.usp_store_industrytemplate_list(p_company_id integer DEFAULT 1)
  RETURNS TABLE(id integer, code character varying, name character varying, description character varying, "iconName" character varying, "sortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31037,7 +31037,7 @@ $function$
 -- ============================================================
 -- usp_store_industrytemplate_listattributes
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_industrytemplate_listattributes(p_company_id integer DEFAULT 1)
+CREATE OR REPLACE FUNCTION public.usp_store_industrytemplate_listattributes(p_company_id integer DEFAULT 1)
  RETURNS TABLE("templateCode" character varying, key character varying, label character varying, "dataType" character varying, "isRequired" boolean, "defaultValue" character varying, "listOptions" character varying, "displayGroup" character varying, "sortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31065,7 +31065,7 @@ $function$
 -- ============================================================
 -- usp_store_order_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_order_create(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_email character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_items_json jsonb DEFAULT NULL::jsonb, p_address_id integer DEFAULT NULL::integer, p_payment_method_id integer DEFAULT NULL::integer, p_payment_method_type character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_order_create(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_email character varying DEFAULT NULL::character varying, p_fiscal_id character varying DEFAULT NULL::character varying, p_phone character varying DEFAULT NULL::character varying, p_address character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_items_json jsonb DEFAULT NULL::jsonb, p_address_id integer DEFAULT NULL::integer, p_payment_method_id integer DEFAULT NULL::integer, p_payment_method_type character varying DEFAULT NULL::character varying)
  RETURNS TABLE("OrderNumber" character varying, "OrderToken" character varying, "Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31164,7 +31164,7 @@ $function$
 -- ============================================================
 -- usp_store_order_getbynumber
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_order_getbynumber(p_company_id integer DEFAULT 1, p_order_number character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_order_getbynumber(p_company_id integer DEFAULT 1, p_order_number character varying DEFAULT NULL::character varying)
  RETURNS TABLE("orderNumber" character varying, "orderDate" date, "customerCode" character varying, "customerName" character varying, "fiscalId" character varying, subtotal numeric, "taxAmount" numeric, "totalAmount" numeric, "discountAmount" numeric, "isInvoiced" character varying, "isDelivered" character varying, notes character varying, "createdAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -31185,7 +31185,7 @@ $function$
 -- ============================================================
 -- usp_store_order_getbynumber_lines
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_order_getbynumber_lines(p_order_number character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_order_getbynumber_lines(p_order_number character varying DEFAULT NULL::character varying)
  RETURNS TABLE("lineNumber" integer, "productCode" character varying, "productName" character varying, quantity numeric, "unitPrice" numeric, subtotal numeric, "taxRate" numeric, "taxAmount" numeric, "lineTotal" numeric)
  LANGUAGE plpgsql
 AS $function$
@@ -31204,7 +31204,7 @@ $function$
 -- ============================================================
 -- usp_store_order_getbytoken
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_order_getbytoken(p_company_id integer DEFAULT 1, p_token character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_order_getbytoken(p_company_id integer DEFAULT 1, p_token character varying DEFAULT NULL::character varying)
  RETURNS TABLE("orderNumber" character varying, "orderDate" date, "customerCode" character varying, "customerName" character varying, "fiscalId" character varying, subtotal numeric, "taxAmount" numeric, "totalAmount" numeric, "discountAmount" numeric, "isInvoiced" character varying, "isDelivered" character varying, notes character varying, "createdAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -31227,7 +31227,7 @@ $function$
 -- ============================================================
 -- usp_store_order_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_order_list(p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.usp_store_order_list(p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 20)
  RETURNS TABLE("TotalCount" bigint, "orderNumber" character varying, "orderDate" date, "customerName" character varying, subtotal numeric, "taxAmount" numeric, "totalAmount" numeric, "isInvoiced" character varying, "isDelivered" character varying, notes character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31256,7 +31256,7 @@ $function$
 -- ============================================================
 -- usp_store_paymentmethod_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_paymentmethod_delete(p_payment_method_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_paymentmethod_delete(p_payment_method_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31279,7 +31279,7 @@ $function$
 -- ============================================================
 -- usp_store_paymentmethod_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_paymentmethod_list(p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_paymentmethod_list(p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("PaymentMethodId" integer, "MethodType" character varying, "Label" character varying, "BankName" character varying, "AccountPhone" character varying, "AccountNumber" character varying, "AccountEmail" character varying, "HolderName" character varying, "HolderFiscalId" character varying, "CardType" character varying, "CardLast4" character varying, "CardExpiry" character varying, "IsDefault" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -31301,7 +31301,7 @@ $function$
 -- ============================================================
 -- usp_store_paymentmethod_upsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_paymentmethod_upsert(p_payment_method_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_method_type character varying DEFAULT NULL::character varying, p_label character varying DEFAULT NULL::character varying, p_bank_name character varying DEFAULT NULL::character varying, p_account_phone character varying DEFAULT NULL::character varying, p_account_number character varying DEFAULT NULL::character varying, p_account_email character varying DEFAULT NULL::character varying, p_holder_name character varying DEFAULT NULL::character varying, p_holder_fiscal_id character varying DEFAULT NULL::character varying, p_card_type character varying DEFAULT NULL::character varying, p_card_last4 character varying DEFAULT NULL::character varying, p_card_expiry character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.usp_store_paymentmethod_upsert(p_payment_method_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT 1, p_customer_code character varying DEFAULT NULL::character varying, p_method_type character varying DEFAULT NULL::character varying, p_label character varying DEFAULT NULL::character varying, p_bank_name character varying DEFAULT NULL::character varying, p_account_phone character varying DEFAULT NULL::character varying, p_account_number character varying DEFAULT NULL::character varying, p_account_email character varying DEFAULT NULL::character varying, p_holder_name character varying DEFAULT NULL::character varying, p_holder_fiscal_id character varying DEFAULT NULL::character varying, p_card_type character varying DEFAULT NULL::character varying, p_card_last4 character varying DEFAULT NULL::character varying, p_card_expiry character varying DEFAULT NULL::character varying, p_is_default boolean DEFAULT false)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NewId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31364,7 +31364,7 @@ $function$
 -- ============================================================
 -- usp_store_product_getattributes
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_getattributes(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_getattributes(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(key character varying, label character varying, "dataType" character varying, "displayGroup" character varying, "valueText" character varying, "valueNumber" numeric, "valueDate" date, "valueBoolean" boolean, "sortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31399,7 +31399,7 @@ $function$
 -- ============================================================
 -- usp_store_product_getbycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_getbycode(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_getbycode(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id bigint, code character varying, name character varying, "fullDescription" character varying, "shortDescription" character varying, "longDescription" character varying, category character varying, "categoryName" character varying, "brandCode" character varying, "brandName" character varying, price numeric, "compareAtPrice" numeric, "costPrice" numeric, stock numeric, "isService" boolean, "unitCode" character varying, "taxRate" numeric, "weightKg" numeric, "widthCm" numeric, "heightCm" numeric, "depthCm" numeric, "warrantyMonths" integer, "barCode" character varying, slug character varying, "avgRating" double precision, "reviewCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31457,7 +31457,7 @@ $function$
 -- ============================================================
 -- usp_store_product_gethighlights
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_gethighlights(p_company_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_gethighlights(p_company_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(text character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31476,7 +31476,7 @@ $function$
 -- ============================================================
 -- usp_store_product_getimages
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_getimages(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_getimages(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, url character varying, role character varying, "isPrimary" boolean, "sortOrder" integer, "altText" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31508,7 +31508,7 @@ $function$
 -- ============================================================
 -- usp_store_product_getspecs
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_getspecs(p_company_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_getspecs(p_company_id integer DEFAULT 1, p_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("group" character varying, key character varying, value character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31529,7 +31529,7 @@ $function$
 -- ============================================================
 -- usp_store_product_getvariantoptions
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_getvariantoptions(p_company_id integer DEFAULT 1, p_parent_product_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_getvariantoptions(p_company_id integer DEFAULT 1, p_parent_product_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(code character varying, "groupCode" character varying, "groupName" character varying, "displayType" character varying, "optionCode" character varying, "optionLabel" character varying, "colorHex" character varying, "imageUrl" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31560,7 +31560,7 @@ $function$
 -- ============================================================
 -- usp_store_product_getvariants
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_getvariants(p_company_id integer DEFAULT 1, p_parent_product_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_product_getvariants(p_company_id integer DEFAULT 1, p_parent_product_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("variantId" integer, code character varying, name character varying, sku character varying, price numeric, "priceDelta" numeric, stock numeric, "isDefault" boolean, "sortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31594,7 +31594,7 @@ $function$
 -- ============================================================
 -- usp_store_product_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_product_list(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_search character varying DEFAULT NULL::character varying, p_category character varying DEFAULT NULL::character varying, p_brand character varying DEFAULT NULL::character varying, p_price_min numeric DEFAULT NULL::numeric, p_price_max numeric DEFAULT NULL::numeric, p_min_rating integer DEFAULT NULL::integer, p_in_stock_only boolean DEFAULT true, p_sort_by character varying DEFAULT 'name'::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 24)
+CREATE OR REPLACE FUNCTION public.usp_store_product_list(p_company_id integer DEFAULT 1, p_branch_id integer DEFAULT 1, p_search character varying DEFAULT NULL::character varying, p_category character varying DEFAULT NULL::character varying, p_brand character varying DEFAULT NULL::character varying, p_price_min numeric DEFAULT NULL::numeric, p_price_max numeric DEFAULT NULL::numeric, p_min_rating integer DEFAULT NULL::integer, p_in_stock_only boolean DEFAULT true, p_sort_by character varying DEFAULT 'name'::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 24)
  RETURNS TABLE("TotalCount" bigint, id bigint, code character varying, name character varying, "fullDescription" character varying, "shortDescription" character varying, category character varying, "categoryName" character varying, "brandCode" character varying, "brandName" character varying, price numeric, "compareAtPrice" numeric, stock numeric, "isService" boolean, "taxRate" numeric, "imageUrl" character varying, "avgRating" double precision, "reviewCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31703,7 +31703,7 @@ $function$
 -- ============================================================
 -- usp_store_review_create
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_review_create(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_rating integer DEFAULT NULL::integer, p_title character varying DEFAULT NULL::character varying, p_comment character varying DEFAULT NULL::character varying, p_reviewer_name character varying DEFAULT 'Cliente'::character varying, p_reviewer_email character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_review_create(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_rating integer DEFAULT NULL::integer, p_title character varying DEFAULT NULL::character varying, p_comment character varying DEFAULT NULL::character varying, p_reviewer_name character varying DEFAULT 'Cliente'::character varying, p_reviewer_email character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -31729,7 +31729,7 @@ $function$
 -- ============================================================
 -- usp_store_review_list_items
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_review_list_items(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 20)
+CREATE OR REPLACE FUNCTION public.usp_store_review_list_items(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 20)
  RETURNS TABLE(id integer, rating integer, title character varying, comment character varying, "reviewerName" character varying, "isVerified" boolean, "createdAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -31751,7 +31751,7 @@ $function$
 -- ============================================================
 -- usp_store_review_list_summary
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_review_list_summary(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_review_list_summary(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("avgRating" double precision, "totalCount" bigint, star1 bigint, star2 bigint, star3 bigint, star4 bigint, star5 bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -31773,7 +31773,7 @@ $function$
 -- ============================================================
 -- usp_store_variantgroup_getoptions
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_variantgroup_getoptions(p_company_id integer DEFAULT 1, p_group_code character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_store_variantgroup_getoptions(p_company_id integer DEFAULT 1, p_group_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE(id integer, code character varying, label character varying, "colorHex" character varying, "imageUrl" character varying, "sortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31802,7 +31802,7 @@ $function$
 -- ============================================================
 -- usp_store_variantgroup_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_store_variantgroup_list(p_company_id integer DEFAULT 1)
+CREATE OR REPLACE FUNCTION public.usp_store_variantgroup_list(p_company_id integer DEFAULT 1)
  RETURNS TABLE(id integer, code character varying, name character varying, "displayType" character varying, "sortOrder" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31826,7 +31826,7 @@ $function$
 -- ============================================================
 -- usp_sys_genericdelete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_genericdelete(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sys_genericdelete(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
  RETURNS TABLE("rowsAffected" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31854,7 +31854,7 @@ $function$
 -- ============================================================
 -- usp_sys_genericgetbykey
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_genericgetbykey(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sys_genericgetbykey(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
  RETURNS SETOF jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -31878,7 +31878,7 @@ $function$
 -- ============================================================
 -- usp_sys_genericinsert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_genericinsert(p_schema_name character varying, p_table_name character varying, p_data_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sys_genericinsert(p_schema_name character varying, p_table_name character varying, p_data_json jsonb)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -31914,7 +31914,7 @@ $function$
 -- ============================================================
 -- usp_sys_genericlist
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_genericlist(p_schema_name character varying, p_table_name character varying, p_sort_column character varying DEFAULT 'id'::character varying, p_sort_dir character varying DEFAULT 'ASC'::character varying, p_offset integer DEFAULT 0, p_page_size integer DEFAULT 50, p_filters_json jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sys_genericlist(p_schema_name character varying, p_table_name character varying, p_sort_column character varying DEFAULT 'id'::character varying, p_sort_dir character varying DEFAULT 'ASC'::character varying, p_offset integer DEFAULT 0, p_page_size integer DEFAULT 50, p_filters_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("TotalCount" bigint, "JsonRow" jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -31951,7 +31951,7 @@ $function$
 -- ============================================================
 -- usp_sys_genericupdate
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_genericupdate(p_schema_name character varying, p_table_name character varying, p_key_json jsonb, p_data_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sys_genericupdate(p_schema_name character varying, p_table_name character varying, p_key_json jsonb, p_data_json jsonb)
  RETURNS TABLE("rowsAffected" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -31998,7 +31998,7 @@ $function$
 -- ============================================================
 -- usp_sys_gettablecolumns
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_gettablecolumns(p_schema_name character varying, p_table_name character varying)
+CREATE OR REPLACE FUNCTION public.usp_sys_gettablecolumns(p_schema_name character varying, p_table_name character varying)
  RETURNS TABLE("COLUMN_NAME" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32016,7 +32016,7 @@ $function$
 -- ============================================================
 -- usp_sys_headerdetailtx
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_headerdetailtx(p_header_table character varying, p_detail_table character varying, p_header_json jsonb, p_details_json jsonb, p_link_fields_csv character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sys_headerdetailtx(p_header_table character varying, p_detail_table character varying, p_header_json jsonb, p_details_json jsonb, p_link_fields_csv character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok integer, "detailRows" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -32113,7 +32113,7 @@ $function$
 -- ============================================================
 -- usp_sys_mensaje_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_mensaje_list(p_destinatario_id character varying)
+CREATE OR REPLACE FUNCTION public.usp_sys_mensaje_list(p_destinatario_id character varying)
  RETURNS TABLE("Id" integer, "RemitenteId" character varying, "RemitenteNombre" character varying, "Asunto" character varying, "Cuerpo" character varying, "Leido" boolean, "FechaEnvio" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -32132,7 +32132,7 @@ $function$
 -- ============================================================
 -- usp_sys_mensaje_markread
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_mensaje_markread(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_sys_mensaje_markread(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -32277,7 +32277,7 @@ $function$
 -- ============================================================
 -- usp_sys_notificacion_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_notificacion_list(p_usuario_id character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sys_notificacion_list(p_usuario_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" integer, "Tipo" character varying, "Titulo" character varying, "Mensaje" character varying, "Leido" boolean, "FechaCreacion" timestamp without time zone, "RutaNavegacion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32296,7 +32296,7 @@ $function$
 -- ============================================================
 -- usp_sys_notificacion_markread
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_notificacion_markread(p_ids_csv text)
+CREATE OR REPLACE FUNCTION public.usp_sys_notificacion_markread(p_ids_csv text)
  RETURNS TABLE("AffectedCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -32317,7 +32317,7 @@ $function$
 -- ============================================================
 -- usp_sys_tarea_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_tarea_list(p_asignado_a character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sys_tarea_list(p_asignado_a character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" integer, "Titulo" character varying, "Descripcion" character varying, "Progreso" integer, "Color" character varying, "AsignadoA" character varying, "FechaVencimiento" date, "Completado" boolean, "FechaCreacion" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -32338,7 +32338,7 @@ $function$
 -- ============================================================
 -- usp_sys_tarea_toggle
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_sys_tarea_toggle(p_id integer, p_completado boolean, p_progress integer)
+CREATE OR REPLACE FUNCTION public.usp_sys_tarea_toggle(p_id integer, p_completado boolean, p_progress integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -32354,7 +32354,7 @@ $function$
 -- ============================================================
 -- usp_tax_retention_count
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tax_retention_count(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_tax_retention_count(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying)
  RETURNS TABLE(total bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -32372,7 +32372,7 @@ $function$
 -- ============================================================
 -- usp_tax_retention_getbycode
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tax_retention_getbycode(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_tax_retention_getbycode(p_codigo character varying)
  RETURNS TABLE("RetentionId" integer, "Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "Porcentaje" numeric, "Pais" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -32390,7 +32390,7 @@ $function$
 -- ============================================================
 -- usp_tax_retention_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tax_retention_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_tax_retention_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("RetentionId" integer, "Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "Porcentaje" numeric, "Pais" character varying, "IsActive" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -32412,7 +32412,7 @@ $function$
 -- ============================================================
 -- usp_tipos_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tipos_delete(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_tipos_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32436,7 +32436,7 @@ $function$
 -- ============================================================
 -- usp_tipos_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tipos_getbycodigo(p_codigo integer)
+CREATE OR REPLACE FUNCTION public.usp_tipos_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Nombre" character varying, "Categoria" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32452,7 +32452,7 @@ $function$
 -- ============================================================
 -- usp_tipos_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tipos_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_tipos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -32482,7 +32482,7 @@ $function$
 -- ============================================================
 -- usp_tipos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tipos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_tipos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" integer, "Nombre" character varying, "Categoria" character varying, "Co_Usuario" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -32523,7 +32523,7 @@ $function$
 -- ============================================================
 -- usp_tipos_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_tipos_update(p_codigo integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_tipos_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32559,7 +32559,7 @@ $function$
 -- ============================================================
 -- usp_unidades_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_unidades_delete(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_unidades_delete(p_id integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32583,7 +32583,7 @@ $function$
 -- ============================================================
 -- usp_unidades_getbyid
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_unidades_getbyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_unidades_getbyid(p_id integer)
  RETURNS TABLE("Id" integer, "Unidad" character varying, "Cantidad" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -32599,7 +32599,7 @@ $function$
 -- ============================================================
 -- usp_unidades_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_unidades_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_unidades_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -32626,7 +32626,7 @@ $function$
 -- ============================================================
 -- usp_unidades_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_unidades_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_unidades_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Id" integer, "Unidad" character varying, "Cantidad" double precision, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -32666,7 +32666,7 @@ $function$
 -- ============================================================
 -- usp_unidades_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_unidades_update(p_id integer, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_unidades_update(p_id integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32696,7 +32696,7 @@ $function$
 -- ============================================================
 -- usp_usuarios_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_usuarios_delete(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_delete(p_cod_usuario character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32725,7 +32725,7 @@ $function$
 -- ============================================================
 -- usp_usuarios_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_usuarios_getbycodigo(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_getbycodigo(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" boolean, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean, "IsAdmin" boolean, "Avatar" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32754,7 +32754,7 @@ $function$
 -- ============================================================
 -- usp_usuarios_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_usuarios_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32804,7 +32804,7 @@ $function$
 -- ============================================================
 -- usp_usuarios_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_usuarios_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" boolean, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean, "IsAdmin" boolean, "Avatar" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32860,7 +32860,7 @@ $function$
 -- ============================================================
 -- usp_usuarios_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_usuarios_update(p_cod_usuario character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_update(p_cod_usuario character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32897,7 +32897,7 @@ $function$
 -- ============================================================
 -- usp_vehiculos_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vehiculos_delete(p_placa character varying)
+CREATE OR REPLACE FUNCTION public.usp_vehiculos_delete(p_placa character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32920,7 +32920,7 @@ $function$
 -- ============================================================
 -- usp_vehiculos_getbyplaca
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vehiculos_getbyplaca(p_placa character varying)
+CREATE OR REPLACE FUNCTION public.usp_vehiculos_getbyplaca(p_placa character varying)
  RETURNS TABLE("Placa" character varying, "Cedula" character varying, "Marca" character varying, "Anio" character varying, "Cauchos" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32936,7 +32936,7 @@ $function$
 -- ============================================================
 -- usp_vehiculos_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vehiculos_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_vehiculos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -32971,7 +32971,7 @@ $function$
 -- ============================================================
 -- usp_vehiculos_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vehiculos_list(p_search character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_vehiculos_list(p_search character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Placa" character varying, "Cedula" character varying, "Marca" character varying, "Anio" character varying, "Cauchos" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -33017,7 +33017,7 @@ $function$
 -- ============================================================
 -- usp_vehiculos_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vehiculos_update(p_placa character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_vehiculos_update(p_placa character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -33046,7 +33046,7 @@ $function$
 -- ============================================================
 -- usp_vendedores_delete
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vendedores_delete(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_vendedores_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -33072,7 +33072,7 @@ $function$
 -- ============================================================
 -- usp_vendedores_getbycodigo
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_vendedores_getbycodigo(p_codigo character varying)
  RETURNS TABLE("Codigo" character varying, "Nombre" character varying, "Comision" double precision, "Status" boolean, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SellerCode" character varying, "SellerName" character varying, "Commission" double precision, "Direccion" character varying, "Telefonos" character varying, "Email" character varying, "Tipo" character varying, "Clave" character varying, "RangoVentasUno" double precision, "ComisionVentasUno" double precision, "RangoVentasDos" double precision, "ComisionVentasDos" double precision, "RangoVentasTres" double precision, "ComisionVentasTres" double precision, "RangoVentasCuatro" double precision, "ComisionVentasCuatro" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -33112,7 +33112,7 @@ $function$
 -- ============================================================
 -- usp_vendedores_insert
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vendedores_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_vendedores_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -33186,7 +33186,7 @@ $function$
 -- ============================================================
 -- usp_vendedores_list
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vendedores_list(p_search character varying DEFAULT NULL::character varying, p_status boolean DEFAULT NULL::boolean, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_vendedores_list(p_search character varying DEFAULT NULL::character varying, p_status boolean DEFAULT NULL::boolean, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" character varying, "Nombre" character varying, "Comision" double precision, "Status" boolean, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SellerCode" character varying, "SellerName" character varying, "Commission" double precision, "Direccion" character varying, "Telefonos" character varying, "Email" character varying, "Tipo" character varying, "Clave" character varying, "RangoVentasUno" double precision, "ComisionVentasUno" double precision, "RangoVentasDos" double precision, "ComisionVentasDos" double precision, "RangoVentasTres" double precision, "ComisionVentasTres" double precision, "RangoVentasCuatro" double precision, "ComisionVentasCuatro" double precision, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -33258,7 +33258,7 @@ $function$
 -- ============================================================
 -- usp_vendedores_update
 -- ============================================================
-DROP FUNCTION IF EXISTS public.usp_vendedores_update(p_codigo character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_vendedores_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

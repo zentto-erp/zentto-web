@@ -1,12 +1,12 @@
 -- +goose Up
--- Recrear funciones sec que dependen de columnas aÃ±adidas en 00003.
+-- Recrear funciones sec que dependen de columnas aÃƒÂ±adidas en 00003.
 -- Las funciones existentes pueden estar "rotas" si fueron compiladas
 -- antes de que las columnas existieran.
 
 -- +goose StatementBegin
--- Recrear usp_sec_user_listcompanyaccesses (versiÃ³n con parÃ¡metro)
+-- Recrear usp_sec_user_listcompanyaccesses (versiÃƒÂ³n con parÃƒÂ¡metro)
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses(VARCHAR);
-DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses(p_cod_usuario VARCHAR)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_listcompanyaccesses(p_cod_usuario VARCHAR)
 RETURNS TABLE(
   "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
   "branchId" INT, "branchCode" VARCHAR, "branchName" VARCHAR,
@@ -52,7 +52,7 @@ $$;
 -- +goose StatementEnd
 
 -- +goose StatementBegin
--- Recrear usp_sec_user_listcompanyaccesses_default (versiÃ³n sin parÃ¡metro)
+-- Recrear usp_sec_user_listcompanyaccesses_default (versiÃƒÂ³n sin parÃƒÂ¡metro)
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses_default();
 CREATE OR REPLACE FUNCTION public.usp_sec_user_listcompanyaccesses_default()
 RETURNS TABLE(
@@ -95,5 +95,5 @@ $$;
 -- +goose StatementEnd
 
 -- +goose Down
--- Las funciones se mantienen (se sobreescribirÃ¡n en futuras migraciones)
+-- Las funciones se mantienen (se sobreescribirÃƒÂ¡n en futuras migraciones)
 SELECT 1;

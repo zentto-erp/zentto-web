@@ -1,10 +1,10 @@
 -- Fix: usp_cfg_appsetting_* functions
 -- cfg."AppSetting"."SettingId" is INT (not BIGINT)
 -- cfg."AppSetting"."SettingValue" is TEXT (not VARCHAR)
--- The 02_cfg.sql FASE-6 version declares them wrong â†’ 500 on /v1/settings
+-- The 02_cfg.sql FASE-6 version declares them wrong Ã¢â€ â€™ 500 on /v1/settings
 
 DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_list(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_list(p_company_id integer)
 RETURNS TABLE(
     "SettingId"    INT,
     "Module"       CHARACTER VARYING,

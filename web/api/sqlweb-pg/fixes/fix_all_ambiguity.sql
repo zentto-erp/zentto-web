@@ -152,7 +152,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_sys_mensaje_list(VARCHAR) TO zentto_app;
 
--- 6. usp_acct_account_list â€” alias a. en todas las columnas + ParentAccountId
+-- 6. usp_acct_account_list Ã¢â‚¬â€ alias a. en todas las columnas + ParentAccountId
 DROP FUNCTION IF EXISTS usp_acct_account_list(integer, character varying, character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_account_list(
   p_company_id INT,
@@ -194,7 +194,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_account_list(INT,VARCHAR,VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 7. usp_acct_period_list â€” alias fp. en todas las columnas
+-- 7. usp_acct_period_list Ã¢â‚¬â€ alias fp. en todas las columnas
 DROP FUNCTION IF EXISTS usp_acct_period_list(integer, smallint, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_period_list(
   p_company_id INT, p_year SMALLINT DEFAULT NULL, p_status VARCHAR DEFAULT NULL,
@@ -226,7 +226,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_period_list(INT,SMALLINT,VARCHAR,INT,INT) TO zentto_app;
 
--- 8. usp_acct_recurringentry_list â€” columnas reales de la tabla
+-- 8. usp_acct_recurringentry_list Ã¢â‚¬â€ columnas reales de la tabla
 DROP FUNCTION IF EXISTS usp_acct_recurringentry_list(integer, boolean, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_recurringentry_list(
   p_company_id INT, p_is_active BOOLEAN DEFAULT NULL,
@@ -257,9 +257,9 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_recurringentry_list(INT,BOOLEAN,INT,INT) TO zentto_app;
 
--- 9. usp_acct_recurringentry_getdue â€” columnas reales
+-- 9. usp_acct_recurringentry_getdue Ã¢â‚¬â€ columnas reales
 DROP FUNCTION IF EXISTS usp_acct_recurringentry_getdue(integer) CASCADE;
-DROP FUNCTION IF EXISTS usp_acct_recurringentry_getdue(p_company_id INT)
+CREATE OR REPLACE FUNCTION usp_acct_recurringentry_getdue(p_company_id INT)
 RETURNS TABLE(
   "RecurringEntryId" INT, "TemplateName" VARCHAR, "TipoAsiento" VARCHAR,
   "Concepto" VARCHAR, "Frequency" VARCHAR, "NextExecutionDate" DATE
@@ -275,7 +275,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_recurringentry_getdue(INT) TO zentto_app;
 
--- 10. usp_acct_fixedassetcategory_list â€” alias fac. en CategoryCode/CategoryName
+-- 10. usp_acct_fixedassetcategory_list Ã¢â‚¬â€ alias fac. en CategoryCode/CategoryName
 DROP FUNCTION IF EXISTS usp_acct_fixedassetcategory_list(integer, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_fixedassetcategory_list(
   p_company_id INT, p_search VARCHAR DEFAULT NULL,
@@ -314,7 +314,7 @@ END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_fixedassetcategory_list(INT,VARCHAR,INT,INT) TO zentto_app;
 
 -- ============================================================
--- FISCAL FUNCTIONS â€” fix column ambiguity (alias tbe/td/wv)
+-- FISCAL FUNCTIONS Ã¢â‚¬â€ fix column ambiguity (alias tbe/td/wv)
 -- ============================================================
 
 -- 11. usp_fiscal_taxbook_list
@@ -619,10 +619,10 @@ END; $$;
 GRANT EXECUTE ON FUNCTION usp_fiscal_export_taxbook(INT,VARCHAR,VARCHAR,VARCHAR) TO zentto_app;
 
 -- ============================================================
--- NUEVAS CORRECCIONES â€” Ambiguedad + type mismatch + cast bug
+-- NUEVAS CORRECCIONES Ã¢â‚¬â€ Ambiguedad + type mismatch + cast bug
 -- ============================================================
 
--- 17. usp_acct_equitymovement_list â€” alias em. elimina ambiguedad; tipos corregidos
+-- 17. usp_acct_equitymovement_list Ã¢â‚¬â€ alias em. elimina ambiguedad; tipos corregidos
 DROP FUNCTION IF EXISTS usp_acct_equitymovement_list(integer, integer, smallint) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_equitymovement_list(
   p_company_id  INT,
@@ -671,7 +671,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_equitymovement_list(INT,INT,SMALLINT) TO zentto_app;
 
--- 18. usp_acct_inflationindex_list â€” alias ii. elimina ambiguedad
+-- 18. usp_acct_inflationindex_list Ã¢â‚¬â€ alias ii. elimina ambiguedad
 DROP FUNCTION IF EXISTS usp_acct_inflationindex_list(integer, character, character varying, smallint, smallint) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_inflationindex_list(
   p_company_id   INT,
@@ -711,7 +711,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_inflationindex_list(INT,CHARACTER,VARCHAR,SMALLINT,SMALLINT) TO zentto_app;
 
--- 19. usp_acct_accountmonetaryclass_list â€” fix type mismatch: AccountLevel INT vs SMALLINT
+-- 19. usp_acct_accountmonetaryclass_list Ã¢â‚¬â€ fix type mismatch: AccountLevel INT vs SMALLINT
 DROP FUNCTION IF EXISTS usp_acct_accountmonetaryclass_list(integer, character varying, character varying) CASCADE;
 DROP FUNCTION IF EXISTS usp_acct_accountmonetaryclass_list(
   p_company_id     INT,
@@ -759,7 +759,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_acct_accountmonetaryclass_list(INT,VARCHAR,VARCHAR) TO zentto_app;
 
--- 20. usp_tax_retention_list â€” fix type mismatch: CountryCode CHAR(2) cast a VARCHAR
+-- 20. usp_tax_retention_list Ã¢â‚¬â€ fix type mismatch: CountryCode CHAR(2) cast a VARCHAR
 DROP FUNCTION IF EXISTS usp_tax_retention_list(character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_tax_retention_list(
   p_search VARCHAR DEFAULT NULL,
@@ -793,7 +793,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_tax_retention_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 21. usp_almacen_list â€” fix cast bug ::character varying en aritmetica
+-- 21. usp_almacen_list Ã¢â‚¬â€ fix cast bug ::character varying en aritmetica
 DROP FUNCTION IF EXISTS usp_almacen_list(character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_almacen_list(
   p_search VARCHAR DEFAULT NULL,
@@ -855,7 +855,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_almacen_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 22. usp_bancos_list â€” fix cast bug ::character varying en aritmetica
+-- 22. usp_bancos_list Ã¢â‚¬â€ fix cast bug ::character varying en aritmetica
 DROP FUNCTION IF EXISTS usp_bancos_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_bancos_list(
   p_search VARCHAR DEFAULT NULL,
@@ -900,7 +900,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_bancos_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 23. usp_categorias_list â€” fix cast bug
+-- 23. usp_categorias_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_categorias_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_categorias_list(
   p_search VARCHAR DEFAULT NULL,
@@ -942,7 +942,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_categorias_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 24. usp_centrocosto_list â€” fix cast bug
+-- 24. usp_centrocosto_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_centrocosto_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_centrocosto_list(
   p_search VARCHAR DEFAULT NULL,
@@ -986,7 +986,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_centrocosto_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 25. usp_clases_list â€” fix cast bug
+-- 25. usp_clases_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_clases_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_clases_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1027,7 +1027,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_clases_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 26. usp_compras_list â€” fix cast bug
+-- 26. usp_compras_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_compras_list(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_compras_list(
   p_search      VARCHAR DEFAULT NULL,
@@ -1088,7 +1088,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_compras_list(VARCHAR,VARCHAR,VARCHAR,DATE,DATE,INT,INT) TO zentto_app;
 
--- 27. usp_cotizacion_list â€” fix cast bug
+-- 27. usp_cotizacion_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_cotizacion_list(character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_cotizacion_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1139,7 +1139,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_cotizacion_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 28. usp_facturas_list â€” fix cast bug + col mismatch (Idâ†’DocumentId, ClientCodeâ†’CustomerCode, etc.)
+-- 28. usp_facturas_list Ã¢â‚¬â€ fix cast bug + col mismatch (IdÃ¢â€ â€™DocumentId, ClientCodeÃ¢â€ â€™CustomerCode, etc.)
 DROP FUNCTION IF EXISTS usp_facturas_list(character varying, character varying, date, date, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_facturas_list(
   p_num_fact    VARCHAR DEFAULT NULL,
@@ -1217,7 +1217,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_facturas_list(VARCHAR,VARCHAR,DATE,DATE,INT,INT) TO zentto_app;
 
--- 29. usp_feriados_list â€” fix cast bug
+-- 29. usp_feriados_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_feriados_list(character varying, integer, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_feriados_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1261,7 +1261,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_feriados_list(VARCHAR,INT,INT,INT) TO zentto_app;
 
--- 30. usp_lineas_list â€” fix cast bug
+-- 30. usp_lineas_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_lineas_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_lineas_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1298,7 +1298,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_lineas_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 31. usp_marcas_list â€” fix cast bug
+-- 31. usp_marcas_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_marcas_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_marcas_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1336,7 +1336,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_marcas_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 32. usp_moneda_list â€” fix cast bug
+-- 32. usp_moneda_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_moneda_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_moneda_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1379,7 +1379,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_moneda_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 33. usp_pedidos_list â€” fix cast bug
+-- 33. usp_pedidos_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_pedidos_list(character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_pedidos_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1428,7 +1428,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_pedidos_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 34. usp_tipos_list â€” fix cast bug
+-- 34. usp_tipos_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_tipos_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_tipos_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1469,7 +1469,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_tipos_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 35. usp_unidades_list â€” fix cast bug
+-- 35. usp_unidades_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_unidades_list(character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_unidades_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1508,7 +1508,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_unidades_list(VARCHAR,INT,INT) TO zentto_app;
 
--- 36. usp_usuarios_list â€” fix cast bug; Avatar es TEXT en sec."User"
+-- 36. usp_usuarios_list Ã¢â‚¬â€ fix cast bug; Avatar es TEXT en sec."User"
 DROP FUNCTION IF EXISTS usp_usuarios_list(character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_usuarios_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1578,7 +1578,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_usuarios_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 37. usp_vehiculos_list â€” fix cast bug
+-- 37. usp_vehiculos_list Ã¢â‚¬â€ fix cast bug
 DROP FUNCTION IF EXISTS usp_vehiculos_list(character varying, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_vehiculos_list(
   p_search VARCHAR DEFAULT NULL,
@@ -1625,7 +1625,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_vehiculos_list(VARCHAR,VARCHAR,INT,INT) TO zentto_app;
 
--- 38. usp_vendedores_list â€” fix cast bug + col mismatch vs master."Seller" real schema
+-- 38. usp_vendedores_list Ã¢â‚¬â€ fix cast bug + col mismatch vs master."Seller" real schema
 DROP FUNCTION IF EXISTS usp_vendedores_list(character varying, boolean, character varying, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS usp_vendedores_list(
   p_search VARCHAR  DEFAULT NULL,
@@ -1698,7 +1698,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_vendedores_list(VARCHAR,BOOLEAN,VARCHAR,INT,INT) TO zentto_app;
 
--- 17. usp_fiscal_declaration_get â€” AuthorityResponse TEXT fix + aliases
+-- 17. usp_fiscal_declaration_get Ã¢â‚¬â€ AuthorityResponse TEXT fix + aliases
 DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_get(integer, bigint) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_fiscal_declaration_get(
   p_company_id     INT,
@@ -1755,9 +1755,9 @@ GRANT EXECUTE ON FUNCTION usp_fiscal_declaration_get(INT,BIGINT) TO zentto_app;
 -- Fix bancos: CHAR vs VARCHAR, TIMESTAMP vs TIMESTAMPTZ
 -- ============================================================
 
--- usp_bank_account_list: CurrencyCode CHAR(3) â†’ ::VARCHAR cast
+-- usp_bank_account_list: CurrencyCode CHAR(3) Ã¢â€ â€™ ::VARCHAR cast
 DROP FUNCTION IF EXISTS public.usp_bank_account_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_bank_account_list(p_company_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_account_list(p_company_id integer)
 RETURNS TABLE(
   "Nro_Cta" character varying, "Banco" character varying,
   "Descripcion" character varying, "Moneda" character varying,
@@ -1776,7 +1776,7 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION usp_bank_account_list(integer) TO zentto_app;
 
--- usp_bank_movement_listbyaccount: TIMESTAMPTZ â†’ TIMESTAMP fix
+-- usp_bank_movement_listbyaccount: TIMESTAMPTZ Ã¢â€ â€™ TIMESTAMP fix
 DROP FUNCTION IF EXISTS public.usp_bank_movement_listbyaccount(integer, character varying, date, date, integer, integer) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_bank_movement_listbyaccount(
   p_company_id integer, p_nro_cta character varying,
@@ -1832,7 +1832,7 @@ GRANT EXECUTE ON FUNCTION usp_bank_movement_listbyaccount(integer,varchar,date,d
 -- Tabla: fin.BankStatementLine.StatementDate -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getpendingstatements(p_id integer)
   RETURNS TABLE(
     id            bigint,
     "Fecha"       timestamp without time zone,
@@ -1859,7 +1859,7 @@ $function$;
 -- Tabla: fin.BankMovement.MovementDate -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getsystemmovements(p_id integer)
   RETURNS TABLE(
     id              bigint,
     "Fecha"         timestamp without time zone,
@@ -1891,7 +1891,7 @@ $function$;
 -- Tabla: master.InventoryMovement.CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_inv_movement_getbyid(p_id integer)
   RETURNS TABLE(
     "MovementId"  integer,
     "Codigo"      character varying,
@@ -2007,7 +2007,7 @@ $function$;
 -- Tabla: pay.CardReaderDevices.LastSeenAt, CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"               integer,
     "EmpresaId"        integer,
@@ -2080,7 +2080,7 @@ $function$;
 -- Tabla: pay.CompanyPaymentConfig.CreatedAt, UpdatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"            integer,
     "EmpresaId"     integer,
@@ -2170,7 +2170,7 @@ $function$;
 -- Tabla: pay.PaymentProviders.CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_provider_get(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_provider_get(p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_provider_get(p_provider_code character varying)
   RETURNS TABLE(
     "Id"             integer,
     "Code"           character varying,
@@ -2305,7 +2305,7 @@ $function$;
 -- Tabla: pos.WaitTicket.CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
   RETURNS TABLE(
     id               integer,
     "cajaId"         character varying,
@@ -2334,7 +2334,7 @@ $function$;
 -- Tabla: rest.Purchase.PurchaseDate -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
   RETURNS TABLE(
     id                integer,
     "numCompra"       character varying,
@@ -2429,7 +2429,7 @@ $function$;
 -- Tabla: rest.OrderTicket.ClosedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
   RETURNS TABLE(
     id               integer,
     "empresaId"      integer,
@@ -2477,7 +2477,7 @@ $function$;
 
 -- 1. usp_inv_movement_getbyid
 DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_inv_movement_getbyid(p_id integer)
   RETURNS TABLE(
     "MovementId"  bigint,
     "Codigo"      character varying,
@@ -2598,7 +2598,7 @@ $function$;
 -- Firma exacta: (p_id integer)
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getpendingstatements(p_id integer)
   RETURNS TABLE(
     id            bigint,
     "Fecha"       timestamp without time zone,
@@ -2624,7 +2624,7 @@ $function$;
 -- Firma exacta: (p_id integer)
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getsystemmovements(p_id integer)
   RETURNS TABLE(
     id               bigint,
     "Fecha"          timestamp without time zone,
@@ -2663,7 +2663,7 @@ $function$;
 -- pay.CardReaderDevices: Id=int4, LastSeenAt=timestamp(notz), CreatedAt=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"               integer,
     "EmpresaId"        integer,
@@ -2737,7 +2737,7 @@ $function$;
 -- pay.CompanyPaymentConfig: CreatedAt/UpdatedAt = timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"            integer,
     "EmpresaId"     integer,
@@ -2828,7 +2828,7 @@ $function$;
 -- pay.PaymentProviders: CreatedAt=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_provider_get(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_provider_get(p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_provider_get(p_provider_code character varying)
   RETURNS TABLE(
     "Id"             integer,
     "Code"           character varying,
@@ -2964,7 +2964,7 @@ $function$;
 -- pos.WaitTicket: WaitTicketId=bigint, CreatedAt=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
   RETURNS TABLE(
     id               bigint,
     "cajaId"         character varying,
@@ -2993,7 +2993,7 @@ $function$;
 -- rest.Purchase: PurchaseId=bigint, PurchaseDate=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
   RETURNS TABLE(
     id                bigint,
     "numCompra"       character varying,
@@ -3091,7 +3091,7 @@ $function$;
 -- rest.OrderTicket: CountryCode=CHAR(2) -> ::VARCHAR
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
   RETURNS TABLE(
     id               bigint,
     "empresaId"      integer,

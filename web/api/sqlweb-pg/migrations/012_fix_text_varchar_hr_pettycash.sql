@@ -5,7 +5,7 @@
 -- y restaura implementaciones public.* de pettycash eliminadas por 011.
 --
 -- Problemas corregidos:
---   A) public.* de pettycash eliminados por el DO block de migraciÃ³n 011
+--   A) public.* de pettycash eliminados por el DO block de migraciÃƒÂ³n 011
 --   B) usp_hr_legalconcept_list: CASE WHEN retorna TEXT, declarado VARCHAR
 --   C) usp_hr_profitsharing_getsummary: 'HEADER'::TEXT / 'DETAIL'::TEXT
 --   D) usp_hr_filing_getsummary: 'HEADER'::TEXT / 'DETAIL'::TEXT
@@ -21,14 +21,14 @@
 
 \echo '  [012] Restaurando implementaciones public.* de pettycash...'
 
--- â”€â”€ A) Pettycash: restaurar public.* eliminados por migration 011 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
--- La migration 011 eliminÃ³ los OIDs mÃ­nimos de todas las funciones con nombre
--- duplicado, lo cual borrÃ³ los public.* ya que fueron creados antes que los fin.*
+-- Ã¢â€â‚¬Ã¢â€â‚¬ A) Pettycash: restaurar public.* eliminados por migration 011 Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+-- La migration 011 eliminÃƒÂ³ los OIDs mÃƒÂ­nimos de todas las funciones con nombre
+-- duplicado, lo cual borrÃƒÂ³ los public.* ya que fueron creados antes que los fin.*
 \ir ../includes/sp/usp_fin_pettycash.sql
 
 \echo '  [012] Corrigiendo TEXT vs VARCHAR en funciones HR...'
 
--- â”€â”€ B) usp_hr_legalconcept_list: CASE WHEN devuelve TEXT, tabla espera VARCHAR â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ B) usp_hr_legalconcept_list: CASE WHEN devuelve TEXT, tabla espera VARCHAR Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(integer, character varying, character varying, character varying, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id        INTEGER,
@@ -80,9 +80,9 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ C) usp_hr_profitsharing_getsummary: 'HEADER'/'DETAIL'::TEXT â†’ VARCHAR â”€â”€â”€â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ C) usp_hr_profitsharing_getsummary: 'HEADER'/'DETAIL'::TEXT Ã¢â€ â€™ VARCHAR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_getsummary(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_profitsharing_getsummary(p_profit_sharing_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_profitsharing_getsummary(p_profit_sharing_id integer)
 RETURNS TABLE(result_type character varying, row_data jsonb)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -136,9 +136,9 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ D) usp_hr_filing_getsummary: 'HEADER'/'DETAIL'::TEXT â†’ VARCHAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ D) usp_hr_filing_getsummary: 'HEADER'/'DETAIL'::TEXT Ã¢â€ â€™ VARCHAR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_filing_getsummary(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_hr_filing_getsummary(p_obligation_filing_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_filing_getsummary(p_obligation_filing_id integer)
 RETURNS TABLE(result_type character varying, row_data jsonb)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -202,7 +202,7 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ E) usp_hr_trust_getemployeebalance: 'BALANCE'/'HISTORY'::TEXT â†’ VARCHAR â”€â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ E) usp_hr_trust_getemployeebalance: 'BALANCE'/'HISTORY'::TEXT Ã¢â€ â€™ VARCHAR Ã¢â€â‚¬Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getemployeebalance(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_trust_getemployeebalance(
     p_company_id    INTEGER,
@@ -251,7 +251,7 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ F) usp_hr_trust_getsummary: 'SUMMARY'/'DETAIL'::TEXT â†’ VARCHAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ F) usp_hr_trust_getsummary: 'SUMMARY'/'DETAIL'::TEXT Ã¢â€ â€™ VARCHAR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(integer, integer, smallint) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_trust_getsummary(
     p_company_id    INTEGER,
@@ -300,7 +300,7 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ G) usp_hr_savings_getbalance: 'FUND'/'TRANSACTION'::TEXT â†’ VARCHAR â”€â”€â”€â”€â”€â”€â”€â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ G) usp_hr_savings_getbalance: 'FUND'/'TRANSACTION'::TEXT Ã¢â€ â€™ VARCHAR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_savings_getbalance(integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_savings_getbalance(
     p_company_id    INTEGER,
@@ -352,7 +352,7 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ H) usp_hr_occhealth_get: "Description" es TEXT en tabla, declarado VARCHAR â”€
+-- Ã¢â€â‚¬Ã¢â€â‚¬ H) usp_hr_occhealth_get: "Description" es TEXT en tabla, declarado VARCHAR Ã¢â€â‚¬
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_get(integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_get(
     p_occupational_health_id    INTEGER,
@@ -422,7 +422,7 @@ BEGIN
 END;
 $$;
 
--- â”€â”€ I) usp_hr_committee_getmeetings: TEXT â†’ VARCHAR para TopicsSummary/ActionItems
+-- Ã¢â€â‚¬Ã¢â€â‚¬ I) usp_hr_committee_getmeetings: TEXT Ã¢â€ â€™ VARCHAR para TopicsSummary/ActionItems
 DROP FUNCTION IF EXISTS public.usp_hr_committee_getmeetings(integer, integer, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_getmeetings(
     p_safety_committee_id   INTEGER,
@@ -449,7 +449,7 @@ BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
-    -- Verificar que el comitÃ© pertenece a la empresa
+    -- Verificar que el comitÃƒÂ© pertenece a la empresa
     IF NOT EXISTS (
         SELECT 1 FROM hr."SafetyCommittee"
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
@@ -478,9 +478,9 @@ BEGIN
 END;
 $$;
 
-\echo '  [012] Registrando migraciÃ³n...'
+\echo '  [012] Registrando migraciÃƒÂ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('012_fix_text_varchar_hr_pettycash', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [012] COMPLETO â€” TEXTâ†’VARCHAR y pettycash restaurados'
+\echo '  [012] COMPLETO Ã¢â‚¬â€ TEXTÃ¢â€ â€™VARCHAR y pettycash restaurados'

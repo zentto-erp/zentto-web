@@ -1,6 +1,6 @@
 -- usp_pay_acceptedmethod_deactivate
 DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_deactivate(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_acceptedmethod_deactivate(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pay_acceptedmethod_deactivate(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$

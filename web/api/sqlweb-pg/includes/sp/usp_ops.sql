@@ -1015,7 +1015,7 @@ $$;
 -- usp_Rest_OrderTicket_GetById
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
 RETURNS TABLE("orderId" BIGINT,"companyId" INT,"branchId" INT,"countryCode" VARCHAR,"status" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT ot."OrderTicketId",ot."CompanyId",ot."BranchId",
@@ -1026,7 +1026,7 @@ END; $$;
 -- usp_Rest_OrderTicketLine_NextLineNumber
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(p_order_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_nextlinenumber(p_order_id BIGINT)
 RETURNS TABLE("nextLine" INT)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT COALESCE(MAX("LineNumber"),0)+1 FROM rest."OrderTicketLine" WHERE "OrderTicketId"=p_order_id;
@@ -1066,7 +1066,7 @@ END; $$;
 -- usp_Rest_OrderTicket_RecalcTotals
 DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(p_order_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_recalctotals(p_order_id BIGINT)
 RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE v_net NUMERIC(18,2); v_tax NUMERIC(18,2); v_total NUMERIC(18,2);
 BEGIN
@@ -1079,7 +1079,7 @@ END; $$;
 -- usp_Rest_OrderTicket_CheckPriorVoid
 DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(BIGINT, BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(p_pedido_id BIGINT, p_item_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_checkpriorvoid(p_pedido_id BIGINT, p_item_id BIGINT)
 RETURNS TABLE("alreadyVoided" INT) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT 1 FROM sec."SupervisorOverride"
     WHERE "ModuleCode"='RESTAURANTE' AND "ActionCode"='ORDER_LINE_VOID' AND "Status"='CONSUMED'
@@ -1089,7 +1089,7 @@ END; $$;
 -- usp_Rest_OrderTicketLine_GetById
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(BIGINT, BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(p_pedido_id BIGINT, p_item_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbyid(p_pedido_id BIGINT, p_item_id BIGINT)
 RETURNS TABLE("itemId" BIGINT,"lineNumber" INT,"countryCode" VARCHAR,"productId" BIGINT,
     "productCode" VARCHAR,"nombre" VARCHAR,"cantidad" NUMERIC,"unitPrice" NUMERIC,
     "taxCode" VARCHAR,"taxRate" NUMERIC,"netAmount" NUMERIC,"taxAmount" NUMERIC,"totalAmount" NUMERIC)
@@ -1105,7 +1105,7 @@ END; $$;
 -- usp_Rest_OrderTicket_SendToKitchen
 DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_sendtokitchen(p_pedido_id BIGINT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$ BEGIN
     UPDATE rest."OrderTicket" SET "Status"=CASE WHEN "Status"='OPEN' THEN 'SENT' ELSE "Status" END,
         "UpdatedAt"=NOW() AT TIME ZONE 'UTC' WHERE "OrderTicketId"=p_pedido_id;
@@ -1114,7 +1114,7 @@ END; $$;
 
 -- usp_Rest_OrderTicket_InferCountryCode
 DROP FUNCTION IF EXISTS usp_rest_orderticket_infercountrycode(INT, INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_infercountrycode(p_empresa_id INT, p_sucursal_id INT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_infercountrycode(p_empresa_id INT, p_sucursal_id INT)
 RETURNS TABLE("countryCode" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT cc."CountryCode"::VARCHAR FROM fiscal."CountryConfig" cc
     WHERE cc."CompanyId"=p_empresa_id AND cc."BranchId"=p_sucursal_id AND cc."IsActive"=TRUE
@@ -1124,7 +1124,7 @@ END; $$;
 -- usp_Rest_OrderTicket_GetHeaderForClose
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_getheaderforclose(p_pedido_id BIGINT)
 RETURNS TABLE("id" BIGINT,"empresaId" INT,"sucursalId" INT,"countryCode" VARCHAR,"mesaId" BIGINT,
     "clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC,
     "fechaCierre" TIMESTAMP,"codUsuario" VARCHAR)
@@ -1144,7 +1144,7 @@ END; $$;
 -- usp_Rest_OrderTicket_Close
 DROP FUNCTION IF EXISTS usp_rest_orderticket_close(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_close(BIGINT, INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_close(p_pedido_id BIGINT, p_closed_by_user_id INT DEFAULT NULL)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_close(p_pedido_id BIGINT, p_closed_by_user_id INT DEFAULT NULL)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$ BEGIN
     UPDATE rest."OrderTicket" SET "Status"='CLOSED',"ClosedByUserId"=p_closed_by_user_id,
         "ClosedAt"=NOW() AT TIME ZONE 'UTC',"UpdatedAt"=NOW() AT TIME ZONE 'UTC'
@@ -1155,7 +1155,7 @@ END; $$;
 -- usp_Rest_OrderTicketLine_GetFiscalBreakdown
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id BIGINT)
 RETURNS TABLE("itemId" BIGINT,"productoId" VARCHAR,"nombre" VARCHAR,"quantity" NUMERIC,
     "unitPrice" NUMERIC,"baseAmount" NUMERIC,"taxCode" VARCHAR,"taxRate" NUMERIC,
     "taxAmount" NUMERIC,"totalAmount" NUMERIC)
@@ -1169,7 +1169,7 @@ END; $$;
 
 -- usp_Rest_OrderTicket_GetByMesaHeader
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbymesaheader(INT, INT, VARCHAR(20)) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_getbymesaheader(p_company_id INT,p_branch_id INT,p_table_number VARCHAR(20))
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbymesaheader(p_company_id INT,p_branch_id INT,p_table_number VARCHAR(20))
 RETURNS TABLE("id" BIGINT,"clienteNombre" VARCHAR,"clienteRif" VARCHAR,"estado" VARCHAR,"total" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT ot."OrderTicketId",
@@ -1183,7 +1183,7 @@ END; $$;
 -- usp_Rest_OrderTicketLine_GetByPedido
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbypedido(p_pedido_id BIGINT)
 RETURNS TABLE("id" BIGINT,"productoId" VARCHAR,"nombre" VARCHAR,"cantidad" NUMERIC,
     "precioUnitario" NUMERIC,"subtotal" NUMERIC,"iva" NUMERIC,"taxCode" VARCHAR,
     "impuesto" NUMERIC,"total" NUMERIC)
@@ -1199,7 +1199,7 @@ END; $$;
 -- usp_Rest_OrderTicket_UpdateTimestamp
 DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_updatetimestamp(p_pedido_id BIGINT)
 RETURNS VOID LANGUAGE plpgsql AS $$ BEGIN
     UPDATE rest."OrderTicket" SET "UpdatedAt"=NOW() AT TIME ZONE 'UTC' WHERE "OrderTicketId"=p_pedido_id;
 END; $$;
@@ -1209,7 +1209,7 @@ END; $$;
 --  SECCION 5: MOVIMIENTO INVENTARIO
 -- =============================================================================
 
--- usp_Movinvent_List (legacy master.InventoryMovement Ã¢â‚¬â€ renombrado para evitar conflicto con usp_inv_movement_list de inv.StockMovement)
+-- usp_Movinvent_List (legacy master.InventoryMovement ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â renombrado para evitar conflicto con usp_inv_movement_list de inv.StockMovement)
 DROP FUNCTION IF EXISTS usp_movinvent_list(VARCHAR(200), VARCHAR(50), INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_inv_movement_list(VARCHAR(200), VARCHAR(50), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_movinvent_list(
@@ -1245,7 +1245,7 @@ $$;
 
 -- usp_Inv_Movement_GetById
 DROP FUNCTION IF EXISTS usp_inv_movement_getbyid(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_inv_movement_getbyid(p_id INT)
+CREATE OR REPLACE FUNCTION usp_inv_movement_getbyid(p_id INT)
 RETURNS TABLE("MovementId" BIGINT,"Codigo" VARCHAR,"Product" VARCHAR,"Documento" VARCHAR,
     "Tipo" VARCHAR,"Fecha" TIMESTAMP,"Quantity" NUMERIC,"UnitCost" NUMERIC,"TotalCost" NUMERIC,"Notes" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1296,14 +1296,14 @@ END; $$;
 
 -- usp_Bank_ResolveUserId
 DROP FUNCTION IF EXISTS usp_bank_resolveuserid(VARCHAR(60)) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_resolveuserid(p_code VARCHAR(60))
+CREATE OR REPLACE FUNCTION usp_bank_resolveuserid(p_code VARCHAR(60))
 RETURNS TABLE("userId" INT) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT u."UserId" FROM sec."User" u WHERE UPPER(u."UserCode")=UPPER(p_code) ORDER BY u."UserId" LIMIT 1;
 END; $$;
 
 -- usp_Bank_Account_GetByNumber
 DROP FUNCTION IF EXISTS usp_bank_account_getbynumber(INT, VARCHAR(40)) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_account_getbynumber(p_company_id INT, p_nro_cta VARCHAR(40))
+CREATE OR REPLACE FUNCTION usp_bank_account_getbynumber(p_company_id INT, p_nro_cta VARCHAR(40))
 RETURNS TABLE("bankAccountId" BIGINT,"nroCta" VARCHAR,"bankName" VARCHAR,"balance" NUMERIC,"availableBalance" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT ba."BankAccountId",ba."AccountNumber",b."BankName",ba."Balance",ba."AvailableBalance"
@@ -1350,7 +1350,7 @@ END; $$;
 
 -- usp_Bank_Reconciliation_GetNetTotal
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getnettotal(BIGINT, DATE, DATE) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_reconciliation_getnettotal(p_bank_account_id BIGINT, p_from_date DATE, p_to_date DATE)
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getnettotal(p_bank_account_id BIGINT, p_from_date DATE, p_to_date DATE)
 RETURNS TABLE("netTotal" NUMERIC) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT COALESCE(SUM("NetAmount"),0) FROM fin."BankMovement"
     WHERE "BankAccountId"=p_bank_account_id AND ("MovementDate")::DATE BETWEEN p_from_date AND p_to_date;
@@ -1413,7 +1413,7 @@ END; $$;
 
 -- usp_Bank_Reconciliation_GetById
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getbyid(INT, INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_reconciliation_getbyid(p_company_id INT, p_id INT)
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getbyid(p_company_id INT, p_id INT)
 RETURNS TABLE("ID" INT,"Nro_Cta" VARCHAR,"Fecha_Desde" VARCHAR,"Fecha_Hasta" VARCHAR,
     "Saldo_Inicial_Sistema" NUMERIC,"Saldo_Final_Sistema" NUMERIC,"Saldo_Inicial_Banco" NUMERIC,
     "Saldo_Final_Banco" NUMERIC,"Diferencia" NUMERIC,"Estado" VARCHAR,"Observaciones" VARCHAR,"Banco" VARCHAR)
@@ -1430,7 +1430,7 @@ END; $$;
 
 -- usp_Bank_Reconciliation_GetSystemMovements
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getsystemmovements(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_reconciliation_getsystemmovements(p_id INT)
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getsystemmovements(p_id INT)
 RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMP,"Tipo" VARCHAR,"Nro_Ref" VARCHAR,
     "Beneficiario" VARCHAR,"Concepto" VARCHAR,"Monto" NUMERIC,"MontoNeto" NUMERIC,
     "SaldoPosterior" NUMERIC,"Conciliado" BOOLEAN)
@@ -1445,7 +1445,7 @@ END; $$;
 
 -- usp_Bank_Reconciliation_GetPendingStatements
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getpendingstatements(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_reconciliation_getpendingstatements(p_id INT)
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getpendingstatements(p_id INT)
 RETURNS TABLE("id" BIGINT,"Fecha" TIMESTAMP,"Descripcion" VARCHAR,"Referencia" VARCHAR,
     "Tipo" VARCHAR,"Monto" NUMERIC,"Saldo" NUMERIC)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1457,7 +1457,7 @@ END; $$;
 
 -- usp_Bank_Reconciliation_GetOpenForAccount
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getopenforaccount(INT, BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_reconciliation_getopenforaccount(p_company_id INT, p_bank_account_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getopenforaccount(p_company_id INT, p_bank_account_id BIGINT)
 RETURNS TABLE("id" INT) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT br."BankReconciliationId" FROM fin."BankReconciliation" br
     WHERE br."CompanyId"=p_company_id AND br."BankAccountId"=p_bank_account_id AND br."Status"='OPEN'
@@ -1536,7 +1536,7 @@ END; $$;
 
 -- usp_Bank_Reconciliation_GetAccountNoById
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getaccountnobyid(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_reconciliation_getaccountnobyid(p_id INT)
+CREATE OR REPLACE FUNCTION usp_bank_reconciliation_getaccountnobyid(p_id INT)
 RETURNS TABLE("accountNo" VARCHAR) LANGUAGE plpgsql AS $$ BEGIN
     RETURN QUERY SELECT ba."AccountNumber" FROM fin."BankReconciliation" r
     INNER JOIN fin."BankAccount" ba ON ba."BankAccountId"=r."BankAccountId"
@@ -1579,7 +1579,7 @@ END; $$;
 
 -- usp_Bank_Account_List
 DROP FUNCTION IF EXISTS usp_bank_account_list(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_bank_account_list(p_company_id INT)
+CREATE OR REPLACE FUNCTION usp_bank_account_list(p_company_id INT)
 RETURNS TABLE("BankAccountId" BIGINT,"BankId" BIGINT,"Nro_Cta" VARCHAR,"Banco" VARCHAR,"Descripcion" VARCHAR,"Moneda" VARCHAR,
     "Saldo" NUMERIC,"Saldo_Disponible" NUMERIC,"BancoNombre" VARCHAR)
 LANGUAGE plpgsql AS $$ BEGIN
@@ -1649,7 +1649,7 @@ END; $$;
 
 -- =============================================================================
 -- usp_Bank_Reconciliation_GetLinkedEntries
--- Obtiene asientos contables vinculados a una conciliaciÃƒÂ³n bancaria.
+-- Obtiene asientos contables vinculados a una conciliaciÃƒÆ’Ã‚Â³n bancaria.
 -- Busca por: BankMovement.JournalEntryId + acct.DocumentLink(BANCOS/CONCILIACION).
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_bank_reconciliation_getlinkedentries(BIGINT) CASCADE;
@@ -1727,7 +1727,7 @@ LANGUAGE plpgsql AS $$
 DECLARE v_id BIGINT;
 BEGIN
     IF EXISTS (SELECT 1 FROM fin."BankAccount" WHERE "CompanyId"=p_company_id AND "AccountNumber"=p_account_number) THEN
-        RETURN QUERY SELECT FALSE, 'Ya existe una cuenta con ese nÃƒÂºmero'::VARCHAR, 0::BIGINT;
+        RETURN QUERY SELECT FALSE, 'Ya existe una cuenta con ese nÃƒÆ’Ã‚Âºmero'::VARCHAR, 0::BIGINT;
         RETURN;
     END IF;
 

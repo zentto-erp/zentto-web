@@ -14,7 +14,7 @@
 -- Firma exacta: (p_id integer)
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getpendingstatements(p_id integer)
   RETURNS TABLE(
     id            bigint,
     "Fecha"       timestamp without time zone,
@@ -40,7 +40,7 @@ $function$;
 -- Firma exacta: (p_id integer)
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getsystemmovements(p_id integer)
   RETURNS TABLE(
     id               bigint,
     "Fecha"          timestamp without time zone,

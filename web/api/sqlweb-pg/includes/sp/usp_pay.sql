@@ -327,7 +327,7 @@ $$;
 --  8b: usp_pay_companyconfig_deactivatebyid
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_pay_companyconfig_deactivatebyid(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_pay_companyconfig_deactivatebyid(p_id INT)
+CREATE OR REPLACE FUNCTION usp_pay_companyconfig_deactivatebyid(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -430,7 +430,7 @@ $$;
 --  10b: usp_pay_acceptedmethod_deactivate
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_deactivate(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_deactivate(p_id INT)
+CREATE OR REPLACE FUNCTION usp_pay_acceptedmethod_deactivate(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN

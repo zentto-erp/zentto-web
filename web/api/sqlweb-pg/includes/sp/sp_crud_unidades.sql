@@ -58,7 +58,7 @@ $$;
 
 -- GET BY ID
 DROP FUNCTION IF EXISTS usp_unidades_getbyid(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_getbyid(p_id INT)
+CREATE OR REPLACE FUNCTION usp_unidades_getbyid(p_id INT)
 RETURNS TABLE("Id" INT, "Unidad" VARCHAR, "Cantidad" DOUBLE PRECISION)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -71,7 +71,7 @@ $$;
 
 -- INSERT
 DROP FUNCTION IF EXISTS usp_unidades_insert(JSONB) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_insert(p_row_json JSONB)
+CREATE OR REPLACE FUNCTION usp_unidades_insert(p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500), "NuevoId" INT)
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -97,7 +97,7 @@ $$;
 
 -- UPDATE
 DROP FUNCTION IF EXISTS usp_unidades_update(INT, JSONB) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_update(p_id INT, p_row_json JSONB)
+CREATE OR REPLACE FUNCTION usp_unidades_update(p_id INT, p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -115,7 +115,7 @@ $$;
 
 -- DELETE
 DROP FUNCTION IF EXISTS usp_unidades_delete(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_delete(p_id INT)
+CREATE OR REPLACE FUNCTION usp_unidades_delete(p_id INT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN

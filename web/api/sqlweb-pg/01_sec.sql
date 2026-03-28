@@ -1,6 +1,6 @@
 -- usp_sec_auth_consumetoken
 DROP FUNCTION IF EXISTS public.usp_sec_auth_consumetoken(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_consumetoken(p_token_hash character varying, p_token_type character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_consumetoken(p_token_hash character varying, p_token_type character varying)
  RETURNS TABLE("UserCode" character varying, "EmailNormalized" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -21,7 +21,7 @@ $function$
 
 -- usp_sec_auth_emailexists
 DROP FUNCTION IF EXISTS public.usp_sec_auth_emailexists(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_emailexists(p_email_normalized character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_emailexists(p_email_normalized character varying)
  RETURNS TABLE("existsFlag" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -34,7 +34,7 @@ $function$
 
 -- usp_sec_auth_getloginsecuritystate
 DROP FUNCTION IF EXISTS public.usp_sec_auth_getloginsecuritystate(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_getloginsecuritystate(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_getloginsecuritystate(p_user_code character varying)
  RETURNS TABLE("IsRegistrationPending" boolean, "EmailVerifiedAtUtc" timestamp without time zone, "LockoutUntilUtc" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -48,7 +48,7 @@ $function$
 
 -- usp_sec_auth_invalidatetokens
 DROP FUNCTION IF EXISTS public.usp_sec_auth_invalidatetokens(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_invalidatetokens(p_user_code character varying, p_token_type character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_invalidatetokens(p_user_code character varying, p_token_type character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -62,7 +62,7 @@ $function$
 
 -- usp_sec_auth_registerloginfailure
 DROP FUNCTION IF EXISTS public.usp_sec_auth_registerloginfailure(character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_registerloginfailure(p_user_code character varying, p_ip character varying DEFAULT NULL::character varying, p_max_attempts integer DEFAULT 5, p_lockout_minutes integer DEFAULT 15)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_registerloginfailure(p_user_code character varying, p_ip character varying DEFAULT NULL::character varying, p_max_attempts integer DEFAULT 5, p_lockout_minutes integer DEFAULT 15)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -84,7 +84,7 @@ $function$
 
 -- usp_sec_auth_registerloginsuccess
 DROP FUNCTION IF EXISTS public.usp_sec_auth_registerloginsuccess(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_registerloginsuccess(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_registerloginsuccess(p_user_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -98,7 +98,7 @@ $function$
 
 -- usp_sec_auth_registeruser
 DROP FUNCTION IF EXISTS public.usp_sec_auth_registeruser(character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_registeruser(p_user_code character varying, p_password_hash character varying, p_nombre character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_registeruser(p_user_code character varying, p_password_hash character varying, p_nombre character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -111,7 +111,7 @@ $function$
 
 -- usp_sec_auth_resetlockout
 DROP FUNCTION IF EXISTS public.usp_sec_auth_resetlockout(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_resetlockout(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_resetlockout(p_user_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -128,7 +128,7 @@ $function$
 
 -- usp_sec_auth_resolvebyidentifier
 DROP FUNCTION IF EXISTS public.usp_sec_auth_resolvebyidentifier(character varying, character varying, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_resolvebyidentifier(p_user_code character varying, p_email_normalized character varying, p_is_email boolean)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_resolvebyidentifier(p_user_code character varying, p_email_normalized character varying, p_is_email boolean)
  RETURNS TABLE("UserCode" character varying, "Email" character varying, "EmailNormalized" character varying, "IsRegistrationPending" boolean, "EmailVerifiedAtUtc" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -145,7 +145,7 @@ $function$
 
 -- usp_sec_auth_updatepassword
 DROP FUNCTION IF EXISTS public.usp_sec_auth_updatepassword(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_updatepassword(p_user_code character varying, p_password_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_updatepassword(p_user_code character varying, p_password_hash character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -157,7 +157,7 @@ $function$
 
 -- usp_sec_auth_userexistslegacy
 DROP FUNCTION IF EXISTS public.usp_sec_auth_userexistslegacy(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_userexistslegacy(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_userexistslegacy(p_user_code character varying)
  RETURNS TABLE("existsFlag" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -170,7 +170,7 @@ $function$
 
 -- usp_sec_auth_verifyemail
 DROP FUNCTION IF EXISTS public.usp_sec_auth_verifyemail(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_auth_verifyemail(p_user_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_auth_verifyemail(p_user_code character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -185,7 +185,7 @@ $function$
 
 -- usp_sec_authidentity_upsert
 DROP FUNCTION IF EXISTS public.usp_sec_authidentity_upsert(character varying, character varying, character varying, boolean) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_authidentity_upsert(p_user_code character varying, p_email character varying, p_email_normalized character varying, p_pending boolean)
+CREATE OR REPLACE FUNCTION public.usp_sec_authidentity_upsert(p_user_code character varying, p_email character varying, p_email_normalized character varying, p_pending boolean)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -228,7 +228,7 @@ $function$
 
 -- usp_sec_authtoken_issue
 DROP FUNCTION IF EXISTS public.usp_sec_authtoken_issue(character varying, character varying, character varying, character varying, integer, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_authtoken_issue(p_user_code character varying, p_token_type character varying, p_token_hash character varying, p_email_normalized character varying, p_ttl_minutes integer, p_ip character varying DEFAULT NULL::character varying, p_user_agent character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_authtoken_issue(p_user_code character varying, p_token_type character varying, p_token_hash character varying, p_email_normalized character varying, p_ttl_minutes integer, p_ip character varying DEFAULT NULL::character varying, p_user_agent character varying DEFAULT NULL::character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -241,7 +241,7 @@ $function$
 
 -- usp_sec_supervisor_biometric_deactivate
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_deactivate(character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_deactivate(p_supervisor_user character varying, p_credential_hash character varying, p_actor_user character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_deactivate(p_supervisor_user character varying, p_credential_hash character varying, p_actor_user character varying)
  RETURNS TABLE("biometricCredentialId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -261,7 +261,7 @@ $function$
 
 -- usp_sec_supervisor_biometric_enroll
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_enroll(character varying, character varying, character varying, character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_enroll(p_supervisor_user character varying, p_credential_hash character varying, p_credential_id character varying, p_credential_label character varying DEFAULT NULL::character varying, p_device_info character varying DEFAULT NULL::character varying, p_actor_user character varying DEFAULT NULL::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_enroll(p_supervisor_user character varying, p_credential_hash character varying, p_credential_id character varying, p_credential_label character varying DEFAULT NULL::character varying, p_device_info character varying DEFAULT NULL::character varying, p_actor_user character varying DEFAULT NULL::character varying)
  RETURNS TABLE("biometricCredentialId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -299,7 +299,7 @@ $function$
 
 -- usp_sec_supervisor_biometric_hasactive
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_hasactive(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_hasactive(p_supervisor_user character varying, p_credential_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_hasactive(p_supervisor_user character varying, p_credential_hash character varying)
  RETURNS TABLE("biometricCredentialId" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -317,7 +317,7 @@ $function$
 
 -- usp_sec_supervisor_biometric_list
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_list(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_list(p_supervisor_user character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_list(p_supervisor_user character varying DEFAULT ''::character varying)
  RETURNS TABLE("biometricCredentialId" bigint, "supervisorUserCode" character varying, "credentialId" character varying, "credentialLabel" character varying, "deviceInfo" character varying, "isActive" boolean, "lastValidatedAtUtc" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -338,7 +338,7 @@ $function$
 
 -- usp_sec_supervisor_biometric_touch
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_touch(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_biometric_touch(p_supervisor_user character varying, p_credential_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_biometric_touch(p_supervisor_user character varying, p_credential_hash character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -355,7 +355,7 @@ $function$
 
 -- usp_sec_supervisor_getrecord
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_getrecord(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_getrecord(p_supervisor_user character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_getrecord(p_supervisor_user character varying)
  RETURNS TABLE("codUsuario" character varying, nombre character varying, tipo character varying, "isAdmin" boolean, "canDelete" boolean, "passwordHash" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -371,7 +371,7 @@ $function$
 
 -- usp_sec_supervisor_override_consume
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_override_consume(integer, character varying, character varying, character varying, integer, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_override_consume(p_override_id integer, p_module_code character varying, p_action_code character varying, p_consumed_by_user character varying DEFAULT NULL::character varying, p_source_document_id integer DEFAULT NULL::integer, p_source_line_id integer DEFAULT NULL::integer, p_reversal_line_id integer DEFAULT NULL::integer)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_override_consume(p_override_id integer, p_module_code character varying, p_action_code character varying, p_consumed_by_user character varying DEFAULT NULL::character varying, p_source_document_id integer DEFAULT NULL::integer, p_source_line_id integer DEFAULT NULL::integer, p_reversal_line_id integer DEFAULT NULL::integer)
  RETURNS TABLE("overrideId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -395,7 +395,7 @@ $function$
 
 -- usp_sec_supervisor_override_create
 DROP FUNCTION IF EXISTS public.usp_sec_supervisor_override_create(character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_supervisor_override_create(p_module_code character varying, p_action_code character varying, p_status character varying, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_requested_by_user character varying DEFAULT NULL::character varying, p_supervisor_user_code character varying DEFAULT NULL::character varying, p_reason character varying DEFAULT NULL::character varying, p_payload_json text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_sec_supervisor_override_create(p_module_code character varying, p_action_code character varying, p_status character varying, p_company_id integer DEFAULT NULL::integer, p_branch_id integer DEFAULT NULL::integer, p_requested_by_user character varying DEFAULT NULL::character varying, p_supervisor_user_code character varying DEFAULT NULL::character varying, p_reason character varying DEFAULT NULL::character varying, p_payload_json text DEFAULT NULL::text)
  RETURNS TABLE("overrideId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -420,7 +420,7 @@ $function$
 
 -- usp_sec_user_authenticate
 DROP FUNCTION IF EXISTS public.usp_sec_user_authenticate(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_authenticate(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_authenticate(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" character varying, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -447,7 +447,7 @@ $function$
 
 -- usp_sec_user_checkexists
 DROP FUNCTION IF EXISTS public.usp_sec_user_checkexists(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_checkexists(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_checkexists(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -463,7 +463,7 @@ $function$
 
 -- usp_sec_user_ensuredefaultcompanyaccess
 DROP FUNCTION IF EXISTS public.usp_sec_user_ensuredefaultcompanyaccess(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_ensuredefaultcompanyaccess(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_ensuredefaultcompanyaccess(p_cod_usuario character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -503,7 +503,7 @@ $function$
 
 -- usp_sec_user_getavatar
 DROP FUNCTION IF EXISTS public.usp_sec_user_getavatar(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_getavatar(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getavatar(p_cod_usuario character varying)
  RETURNS TABLE("Avatar" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -519,7 +519,7 @@ $function$
 
 -- usp_sec_user_getcompanyaccesses
 DROP FUNCTION IF EXISTS public.usp_sec_user_getcompanyaccesses(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
  RETURNS TABLE("companyId" integer, "companyCode" character varying, "companyName" character varying, "branchId" integer, "branchCode" character varying, "branchName" character varying, "countryCode" character varying, "timeZone" character varying, "isDefault" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -562,7 +562,7 @@ BEGIN
         a."CompanyId", a."BranchId";
 
 EXCEPTION WHEN OTHERS THEN
-    -- Si la tabla no existe, retornar vacÃ­o
+    -- Si la tabla no existe, retornar vacÃƒÂ­o
     RETURN;
 END;
 $function$
@@ -570,7 +570,7 @@ $function$
 
 -- usp_sec_user_getmoduleaccess
 DROP FUNCTION IF EXISTS public.usp_sec_user_getmoduleaccess(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_getmoduleaccess(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getmoduleaccess(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Modulo" character varying, "Permitido" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -585,7 +585,7 @@ $function$
 
 -- usp_sec_user_gettype
 DROP FUNCTION IF EXISTS public.usp_sec_user_gettype(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_gettype(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_gettype(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Tipo" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -645,7 +645,7 @@ $function$
 
 -- usp_sec_user_resolvebycode
 DROP FUNCTION IF EXISTS public.usp_sec_user_resolvebycode(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_resolvebycode(p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_resolvebycode(p_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -658,7 +658,7 @@ $function$
 
 -- usp_sec_user_resolvebycodeactive
 DROP FUNCTION IF EXISTS public.usp_sec_user_resolvebycodeactive(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_resolvebycodeactive(p_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_resolvebycodeactive(p_code character varying)
  RETURNS TABLE("userId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -673,7 +673,7 @@ $function$
 
 -- usp_sec_user_setavatar
 DROP FUNCTION IF EXISTS public.usp_sec_user_setavatar(character varying, text) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_setavatar(p_cod_usuario character varying, p_avatar text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_setavatar(p_cod_usuario character varying, p_avatar text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -688,7 +688,7 @@ $function$
 
 -- usp_sec_user_setmoduleaccess
 DROP FUNCTION IF EXISTS public.usp_sec_user_setmoduleaccess(character varying, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_setmoduleaccess(p_cod_usuario character varying, p_modules_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_setmoduleaccess(p_cod_usuario character varying, p_modules_json jsonb)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -709,7 +709,7 @@ $function$
 
 -- usp_sec_user_updatepassword
 DROP FUNCTION IF EXISTS public.usp_sec_user_updatepassword(character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_sec_user_updatepassword(p_cod_usuario character varying, p_password_hash character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_updatepassword(p_cod_usuario character varying, p_password_hash character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -725,7 +725,7 @@ $function$
 
 -- usp_usuarios_delete
 DROP FUNCTION IF EXISTS public.usp_usuarios_delete(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_usuarios_delete(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_delete(p_cod_usuario character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -753,7 +753,7 @@ $function$
 
 -- usp_usuarios_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_usuarios_getbycodigo(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_usuarios_getbycodigo(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_getbycodigo(p_cod_usuario character varying)
  RETURNS TABLE("Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" boolean, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean, "IsAdmin" boolean, "Avatar" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -781,7 +781,7 @@ $function$
 
 -- usp_usuarios_insert
 DROP FUNCTION IF EXISTS public.usp_usuarios_insert(jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_usuarios_insert(p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -830,7 +830,7 @@ $function$
 
 -- usp_usuarios_list
 DROP FUNCTION IF EXISTS public.usp_usuarios_list(character varying, character varying, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_usuarios_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" boolean, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean, "IsAdmin" boolean, "Avatar" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -885,7 +885,7 @@ $function$
 
 -- usp_usuarios_update
 DROP FUNCTION IF EXISTS public.usp_usuarios_update(character varying, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_usuarios_update(p_cod_usuario character varying, p_row_json jsonb)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_update(p_cod_usuario character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

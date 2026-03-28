@@ -1,6 +1,6 @@
 -- sp_conciliacion_get_detalle_sistema
 DROP FUNCTION IF EXISTS public.sp_conciliacion_get_detalle_sistema(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_conciliacion_get_detalle_sistema(p_conciliacion_id integer)
+CREATE OR REPLACE FUNCTION public.sp_conciliacion_get_detalle_sistema(p_conciliacion_id integer)
  RETURNS TABLE("ID" integer, "Conciliacion_ID" integer, "Tipo_Origen" character varying, "MovCuentas_ID" integer, "Extracto_ID" integer, "Fecha" timestamp without time zone, "Descripcion" character varying, "Referencia" character varying, "Debito" numeric, "Credito" numeric, "Conciliado" boolean, "Nro_Ref" character varying, "MovFecha" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$

@@ -130,7 +130,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_categorias_delete(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_categorias_delete(p_codigo INT)
+CREATE OR REPLACE FUNCTION usp_categorias_delete(p_codigo INT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -195,7 +195,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_marcas_getbycodigo(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_marcas_getbycodigo(p_codigo INT)
+CREATE OR REPLACE FUNCTION usp_marcas_getbycodigo(p_codigo INT)
 RETURNS TABLE("Codigo" INT, "Descripcion" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -207,7 +207,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_marcas_insert(JSONB) CASCADE;
-DROP FUNCTION IF EXISTS usp_marcas_insert(p_row_json JSONB)
+CREATE OR REPLACE FUNCTION usp_marcas_insert(p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500), "NuevoCodigo" INT)
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -231,7 +231,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_marcas_update(INT, JSONB) CASCADE;
-DROP FUNCTION IF EXISTS usp_marcas_update(p_codigo INT, p_row_json JSONB)
+CREATE OR REPLACE FUNCTION usp_marcas_update(p_codigo INT, p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -247,7 +247,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_marcas_delete(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_marcas_delete(p_codigo INT)
+CREATE OR REPLACE FUNCTION usp_marcas_delete(p_codigo INT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -315,7 +315,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_unidades_getbyid(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_getbyid(p_id INT)
+CREATE OR REPLACE FUNCTION usp_unidades_getbyid(p_id INT)
 RETURNS TABLE("Id" INT, "Unidad" VARCHAR, "Cantidad" DOUBLE PRECISION)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -327,7 +327,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_unidades_insert(JSONB) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_insert(p_row_json JSONB)
+CREATE OR REPLACE FUNCTION usp_unidades_insert(p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500), "NuevoId" INT)
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -352,7 +352,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_unidades_update(INT, JSONB) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_update(p_id INT, p_row_json JSONB)
+CREATE OR REPLACE FUNCTION usp_unidades_update(p_id INT, p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -369,7 +369,7 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS usp_unidades_delete(INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_unidades_delete(p_id INT)
+CREATE OR REPLACE FUNCTION usp_unidades_delete(p_id INT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN

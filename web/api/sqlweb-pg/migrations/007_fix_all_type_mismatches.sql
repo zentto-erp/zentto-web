@@ -1,7 +1,7 @@
 -- ============================================================
 -- 007_fix_all_type_mismatches.sql
 -- Corrige desajustes de tipos entre funciones y tablas reales.
--- Generado automÃ¡ticamente comparando pg_proc vs information_schema.
+-- Generado automÃƒÂ¡ticamente comparando pg_proc vs information_schema.
 -- ============================================================
 -- Total de desajustes reales corregidos: 27 funciones / 37 columnas
 -- Falsos positivos descartados: 10 (valores calculados o tipo correcto en tabla fuente)
@@ -14,7 +14,7 @@
 -- ============================================================
 DROP FUNCTION IF EXISTS public.sp_get_movimiento_bancario_by_id(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.sp_get_movimiento_bancario_by_id(p_movimiento_id integer)
+CREATE OR REPLACE FUNCTION public.sp_get_movimiento_bancario_by_id(p_movimiento_id integer)
  RETURNS TABLE(
    id                       bigint,
    "BankAccountId"          bigint,
@@ -184,7 +184,7 @@ $function$;
 -- ============================================================
 DROP FUNCTION IF EXISTS public.usp_audit_log_getbyid(bigint) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_audit_log_getbyid(p_audit_log_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_audit_log_getbyid(p_audit_log_id bigint)
  RETURNS TABLE(
    "AuditLogId"  bigint,
    "CompanyId"   integer,
@@ -730,7 +730,7 @@ $function$;
 -- ============================================================
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary(p_batch_id integer)
  RETURNS TABLE(
    "BatchId"            bigint,
    "CompanyId"          integer,
@@ -766,7 +766,7 @@ $function$;
 -- ============================================================
 DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_header(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_hr_payroll_getdraftsummary_header(p_batch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_hr_payroll_getdraftsummary_header(p_batch_id integer)
  RETURNS TABLE(
    "BatchId"            bigint,
    "CompanyId"          integer,
@@ -840,7 +840,7 @@ $function$;
 -- ============================================================
 DROP FUNCTION IF EXISTS public.usp_inventario_getbycodigo(character varying) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_inventario_getbycodigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_inventario_getbycodigo(p_codigo character varying)
  RETURNS TABLE(
    "ProductId"          bigint,
    "ProductCode"        character varying,
@@ -1301,7 +1301,7 @@ $function$;
 -- ============================================================
 DROP FUNCTION IF EXISTS public.usp_sec_user_getavatar(character varying) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_sec_user_getavatar(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_sec_user_getavatar(p_cod_usuario character varying)
  RETURNS TABLE(
    "Avatar" text
  )
@@ -1366,7 +1366,7 @@ $function$;
 -- ============================================================
 DROP FUNCTION IF EXISTS public.usp_usuarios_getbycodigo(character varying) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_usuarios_getbycodigo(p_cod_usuario character varying)
+CREATE OR REPLACE FUNCTION public.usp_usuarios_getbycodigo(p_cod_usuario character varying)
  RETURNS TABLE(
    "Cod_Usuario"   character varying,
    "Password"      character varying,
@@ -1406,5 +1406,5 @@ END;
 $function$;
 
 -- ============================================================
--- FIN DE MIGRACIÃ“N
+-- FIN DE MIGRACIÃƒâ€œN
 -- ============================================================

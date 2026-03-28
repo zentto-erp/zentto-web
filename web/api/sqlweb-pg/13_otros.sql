@@ -1,6 +1,6 @@
 -- sp_anular_compra_tx
 DROP FUNCTION IF EXISTS public.sp_anular_compra_tx(character varying, character varying, character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.sp_anular_compra_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
+CREATE OR REPLACE FUNCTION public.sp_anular_compra_tx(p_num_fact character varying, p_cod_usuario character varying DEFAULT 'API'::character varying, p_motivo character varying DEFAULT ''::character varying)
  RETURNS TABLE(ok boolean, "numFact" character varying, "codProveedor" character varying, mensaje character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -99,7 +99,7 @@ BEGIN
 
     -- ============================================
 
-    -- 4. Revertir master."Product" — restar lo que se habia sumado
+    -- 4. Revertir master."Product" â€” restar lo que se habia sumado
 
     -- ============================================
 

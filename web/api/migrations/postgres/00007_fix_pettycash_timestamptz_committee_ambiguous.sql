@@ -1,8 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
--- Fix: TIMESTAMPTZâ†’TIMESTAMP casts in pettycash functions + ambiguous column in committee meetings
+-- Fix: TIMESTAMPTZÃ¢â€ â€™TIMESTAMP casts in pettycash functions + ambiguous column in committee meetings
 
--- 1. usp_fin_pettycash_session_getactive â€” add ::TIMESTAMP casts
+-- 1. usp_fin_pettycash_session_getactive Ã¢â‚¬â€ add ::TIMESTAMP casts
 DROP FUNCTION IF EXISTS public.usp_fin_pettycash_session_getactive(INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_session_getactive(
     p_box_id INT
@@ -26,7 +26,7 @@ BEGIN
 END;
 $$;
 
--- 2. usp_fin_pettycash_expense_list â€” add ::TIMESTAMP cast
+-- 2. usp_fin_pettycash_expense_list Ã¢â‚¬â€ add ::TIMESTAMP cast
 DROP FUNCTION IF EXISTS public.usp_fin_pettycash_expense_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_fin_pettycash_expense_list(
     p_box_id INT, p_session_id INT DEFAULT NULL
@@ -49,9 +49,9 @@ BEGIN
 END;
 $$;
 
--- 3. fin.usp_fin_pettycash_summary â€” add ::TIMESTAMP + ::VARCHAR casts
+-- 3. fin.usp_fin_pettycash_summary Ã¢â‚¬â€ add ::TIMESTAMP + ::VARCHAR casts
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(INTEGER) CASCADE;
-DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(p_box_id INTEGER)
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_summary(p_box_id INTEGER)
 RETURNS TABLE(
     "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,
     "Status" VARCHAR, "SessionId" INTEGER, "OpeningAmount" NUMERIC, "TotalExpenses" NUMERIC,
@@ -71,7 +71,7 @@ END;
 $$;
 
 -- Recreate fin wrappers dropped by CASCADE
-DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
 RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmount" NUMERIC,
     "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMP,"ClosedAt" TIMESTAMP,
     "OpenedByUserId" INTEGER,"ClosedByUserId" INTEGER,"Notes" VARCHAR,
@@ -89,7 +89,7 @@ LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_list(p_box_id, p_session_id); END;
 $$;
 
--- 4. usp_HR_Committee_GetMeetings â€” fix ambiguous SafetyCommitteeId
+-- 4. usp_HR_Committee_GetMeetings Ã¢â‚¬â€ fix ambiguous SafetyCommitteeId
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER, INTEGER, DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_GetMeetings(
     p_committee_id INTEGER, p_company_id INTEGER DEFAULT NULL,

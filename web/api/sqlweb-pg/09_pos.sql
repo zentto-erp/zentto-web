@@ -690,7 +690,7 @@ $function$
 
 -- usp_pos_producto_get_by_codigo
 DROP FUNCTION IF EXISTS public.usp_pos_producto_get_by_codigo(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pos_producto_get_by_codigo(p_codigo character varying)
+CREATE OR REPLACE FUNCTION public.usp_pos_producto_get_by_codigo(p_codigo character varying)
  RETURNS TABLE(id character varying, codigo character varying, nombre character varying, "precioDetal" numeric, "precioMayor" numeric, "precioDistribuidor" numeric, existencia numeric, categoria character varying, iva numeric, barra character varying, referencia character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1300,7 +1300,7 @@ $function$
 
 -- usp_pos_saleticket_create
 DROP FUNCTION IF EXISTS public.usp_pos_saleticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, text, integer, numeric, numeric, numeric, numeric) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pos_saleticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_invoice_number character varying, p_cash_register_code character varying, p_sold_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_payment_method character varying DEFAULT NULL::character varying, p_fiscal_payload text DEFAULT NULL::text, p_wait_ticket_id integer DEFAULT NULL::integer, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
+CREATE OR REPLACE FUNCTION public.usp_pos_saleticket_create(p_company_id integer, p_branch_id integer, p_country_code character varying, p_invoice_number character varying, p_cash_register_code character varying, p_sold_by_user_id integer DEFAULT NULL::integer, p_customer_id integer DEFAULT NULL::integer, p_customer_code character varying DEFAULT NULL::character varying, p_customer_name character varying DEFAULT NULL::character varying, p_customer_fiscal_id character varying DEFAULT NULL::character varying, p_price_tier character varying DEFAULT 'Detal'::character varying, p_payment_method character varying DEFAULT NULL::character varying, p_fiscal_payload text DEFAULT NULL::text, p_wait_ticket_id integer DEFAULT NULL::integer, p_net_amount numeric DEFAULT 0, p_discount_amount numeric DEFAULT 0, p_tax_amount numeric DEFAULT 0, p_total_amount numeric DEFAULT 0)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

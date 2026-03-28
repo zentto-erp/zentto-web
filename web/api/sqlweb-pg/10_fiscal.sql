@@ -1,6 +1,6 @@
 -- sp_CxC_Documentos_List
 DROP FUNCTION IF EXISTS public."sp_CxC_Documentos_List"(character varying, character varying, character varying, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public."sp_CxC_Documentos_List"(p_codcliente character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public."sp_CxC_Documentos_List"(p_codcliente character varying DEFAULT NULL::character varying, p_tipodoc character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_fechadesde date DEFAULT NULL::date, p_fechahasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("codCliente" character varying, "tipoDoc" character varying, "numDoc" character varying, fecha date, total numeric, pendiente numeric, estado character varying, observacion character varying, "codUsuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -252,7 +252,7 @@ $function$
 
 -- usp_audit_fiscalrecord_list
 DROP FUNCTION IF EXISTS public.usp_audit_fiscalrecord_list(integer, integer, date, date, integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_audit_fiscalrecord_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+CREATE OR REPLACE FUNCTION public.usp_audit_fiscalrecord_list(p_company_id integer, p_branch_id integer, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "FiscalRecordId" integer, "InvoiceId" integer, "InvoiceNumber" character varying, "InvoiceDate" date, "InvoiceType" character varying, "RecordHash" character varying, "SentToAuthority" boolean, "AuthorityStatus" character varying, "CountryCode" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -348,7 +348,7 @@ $function$
 
 -- usp_audit_log_getbyid
 DROP FUNCTION IF EXISTS public.usp_audit_log_getbyid(bigint) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_audit_log_getbyid(p_audit_log_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_audit_log_getbyid(p_audit_log_id bigint)
  RETURNS TABLE("AuditLogId" bigint, "CompanyId" integer, "BranchId" integer, "UserId" integer, "UserName" character varying, "ModuleName" character varying, "EntityName" character varying, "EntityId" character varying, "ActionType" character varying, "Summary" character varying, "OldValues" character varying, "NewValues" character varying, "IpAddress" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$

@@ -11,7 +11,7 @@
 -- pay.CardReaderDevices: Id=int4, LastSeenAt=timestamp(notz), CreatedAt=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"               integer,
     "EmpresaId"        integer,
@@ -85,7 +85,7 @@ $function$;
 -- pay.CompanyPaymentConfig: CreatedAt/UpdatedAt = timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"            integer,
     "EmpresaId"     integer,
@@ -176,7 +176,7 @@ $function$;
 -- pay.PaymentProviders: CreatedAt=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_provider_get(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_provider_get(p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_provider_get(p_provider_code character varying)
   RETURNS TABLE(
     "Id"             integer,
     "Code"           character varying,
@@ -312,7 +312,7 @@ $function$;
 -- pos.WaitTicket: WaitTicketId=bigint, CreatedAt=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
   RETURNS TABLE(
     id               bigint,
     "cajaId"         character varying,
@@ -341,7 +341,7 @@ $function$;
 -- rest.Purchase: PurchaseId=bigint, PurchaseDate=timestamp(notz)
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
   RETURNS TABLE(
     id                bigint,
     "numCompra"       character varying,
@@ -439,7 +439,7 @@ $function$;
 -- rest.OrderTicket: CountryCode=CHAR(2) -> ::VARCHAR
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
   RETURNS TABLE(
     id               bigint,
     "empresaId"      integer,

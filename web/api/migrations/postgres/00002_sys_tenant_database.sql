@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS sys."TenantDatabase" (
 -- +goose StatementEnd
 
 -- +goose StatementBegin
-DROP FUNCTION IF EXISTS usp_sys_tenantdb_resolve(p_company_id INT)
+CREATE OR REPLACE FUNCTION usp_sys_tenantdb_resolve(p_company_id INT)
 RETURNS TABLE(
   "DbName" VARCHAR, "DbHost" VARCHAR, "DbPort" INT,
   "DbUser" VARCHAR, "DbPassword" VARCHAR,

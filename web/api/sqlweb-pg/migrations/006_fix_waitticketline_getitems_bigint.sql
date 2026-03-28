@@ -8,7 +8,7 @@
 DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_getitems(bigint) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_getitems(integer) CASCADE;
 
-DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_getitems(p_wait_ticket_id bigint)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticketline_getitems(p_wait_ticket_id bigint)
  RETURNS TABLE(
    id                  bigint,
    "productoId"        character varying,

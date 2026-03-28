@@ -1,9 +1,9 @@
 -- ============================================================
--- usp_Cfg_Tenant_GetInfo — obtiene info del tenant por CompanyId
+-- usp_Cfg_Tenant_GetInfo â€” obtiene info del tenant por CompanyId
 -- ============================================================
 DROP FUNCTION IF EXISTS usp_Cfg_Tenant_GetInfo(INT) CASCADE;
 
-DROP FUNCTION IF EXISTS usp_Cfg_Tenant_GetInfo(p_company_id INT)
+CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_GetInfo(p_company_id INT)
 RETURNS TABLE(
   "CompanyId"            INT,
   "CompanyCode"          VARCHAR,

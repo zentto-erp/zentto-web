@@ -15,7 +15,7 @@
 -- Tabla: fin.BankStatementLine.StatementDate -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getpendingstatements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getpendingstatements(p_id integer)
   RETURNS TABLE(
     id            bigint,
     "Fecha"       timestamp without time zone,
@@ -42,7 +42,7 @@ $function$;
 -- Tabla: fin.BankMovement.MovementDate -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_bank_reconciliation_getsystemmovements(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_bank_reconciliation_getsystemmovements(p_id integer)
   RETURNS TABLE(
     id              bigint,
     "Fecha"         timestamp without time zone,
@@ -74,7 +74,7 @@ $function$;
 -- Tabla: master.InventoryMovement.CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(p_id integer)
+CREATE OR REPLACE FUNCTION public.usp_inv_movement_getbyid(p_id integer)
   RETURNS TABLE(
     "MovementId"  integer,
     "Codigo"      character varying,
@@ -190,7 +190,7 @@ $function$;
 -- Tabla: pay.CardReaderDevices.LastSeenAt, CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_cardreader_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"               integer,
     "EmpresaId"        integer,
@@ -263,7 +263,7 @@ $function$;
 -- Tabla: pay.CompanyPaymentConfig.CreatedAt, UpdatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT NULL)
   RETURNS TABLE(
     "Id"            integer,
     "EmpresaId"     integer,
@@ -353,7 +353,7 @@ $function$;
 -- Tabla: pay.PaymentProviders.CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pay_provider_get(character varying) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pay_provider_get(p_provider_code character varying)
+CREATE OR REPLACE FUNCTION public.usp_pay_provider_get(p_provider_code character varying)
   RETURNS TABLE(
     "Id"             integer,
     "Code"           character varying,
@@ -488,7 +488,7 @@ $function$;
 -- Tabla: pos.WaitTicket.CreatedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(integer, integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
+CREATE OR REPLACE FUNCTION public.usp_pos_waitticket_list(p_company_id integer, p_branch_id integer)
   RETURNS TABLE(
     id               integer,
     "cajaId"         character varying,
@@ -517,7 +517,7 @@ $function$;
 -- Tabla: rest.Purchase.PurchaseDate -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_compra_getdetalle_header(p_compra_id integer)
   RETURNS TABLE(
     id                integer,
     "numCompra"       character varying,
@@ -612,7 +612,7 @@ $function$;
 -- Tabla: rest.OrderTicket.ClosedAt -> timestamp without time zone
 -- --------------------------------------------------------
 DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(integer) CASCADE;
-DROP FUNCTION IF EXISTS public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
+CREATE OR REPLACE FUNCTION public.usp_rest_orderticket_getheaderforclose(p_pedido_id integer)
   RETURNS TABLE(
     id               integer,
     "empresaId"      integer,

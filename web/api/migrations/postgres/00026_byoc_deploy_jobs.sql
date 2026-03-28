@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS sys."OnboardingToken" (
   "CreatedAt"   TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Ãndices
+-- ÃƒÂndices
 CREATE INDEX IF NOT EXISTS idx_byoc_company ON sys."ByocDeployJob" ("CompanyId");
 CREATE INDEX IF NOT EXISTS idx_byoc_status ON sys."ByocDeployJob" ("Status")
   WHERE "Status" IN ('PENDING','PROVISIONING','INSTALLING');
@@ -108,7 +108,7 @@ BEGIN
 END; $$;
 
 -- SP: obtener job
-DROP FUNCTION IF EXISTS usp_sys_byocjob_get(p_job_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_sys_byocjob_get(p_job_id BIGINT)
 RETURNS TABLE(
   "JobId" BIGINT, "CompanyId" BIGINT, "Provider" VARCHAR,
   "Status" VARCHAR, "ServerIp" VARCHAR, "TenantUrl" VARCHAR,
@@ -125,7 +125,7 @@ BEGIN
 END; $$;
 
 -- SP: listar jobs de un tenant
-DROP FUNCTION IF EXISTS usp_sys_byocjob_list(p_company_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_sys_byocjob_list(p_company_id BIGINT)
 RETURNS TABLE(
   "JobId" BIGINT, "Provider" VARCHAR, "Status" VARCHAR,
   "ServerIp" VARCHAR, "TenantUrl" VARCHAR, "CreatedAt" TIMESTAMP
@@ -157,7 +157,7 @@ BEGIN
 END; $$;
 
 -- SP: validar y consumir token de onboarding
-DROP FUNCTION IF EXISTS usp_sys_onboardingtoken_validate(p_token VARCHAR(64))
+CREATE OR REPLACE FUNCTION usp_sys_onboardingtoken_validate(p_token VARCHAR(64))
 RETURNS TABLE("CompanyId" BIGINT, "DeployType" VARCHAR, "ok" INT, "reason" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE

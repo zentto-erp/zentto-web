@@ -1,5 +1,5 @@
 -- ============================================================
--- usp_byoc.sql â€” Funciones BYOC Deploy Jobs + Onboarding Tokens
+-- usp_byoc.sql Ã¢â‚¬â€ Funciones BYOC Deploy Jobs + Onboarding Tokens
 -- Motor: PostgreSQL (plpgsql)
 -- Paridad: web/api/sqlweb/includes/sp/usp_byoc.sql
 -- ============================================================
@@ -68,7 +68,7 @@ BEGIN
 END; $$;
 
 -- SP: obtener job
-DROP FUNCTION IF EXISTS usp_sys_byocjob_get(p_job_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_sys_byocjob_get(p_job_id BIGINT)
 RETURNS TABLE(
   "JobId" BIGINT, "CompanyId" BIGINT, "Provider" VARCHAR,
   "Status" VARCHAR, "ServerIp" VARCHAR, "TenantUrl" VARCHAR,
@@ -85,7 +85,7 @@ BEGIN
 END; $$;
 
 -- SP: listar jobs de un tenant
-DROP FUNCTION IF EXISTS usp_sys_byocjob_list(p_company_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_sys_byocjob_list(p_company_id BIGINT)
 RETURNS TABLE(
   "JobId" BIGINT, "Provider" VARCHAR, "Status" VARCHAR,
   "ServerIp" VARCHAR, "TenantUrl" VARCHAR, "CreatedAt" TIMESTAMP
@@ -117,7 +117,7 @@ BEGIN
 END; $$;
 
 -- SP: validar y consumir token de onboarding
-DROP FUNCTION IF EXISTS usp_sys_onboardingtoken_validate(p_token VARCHAR(64))
+CREATE OR REPLACE FUNCTION usp_sys_onboardingtoken_validate(p_token VARCHAR(64))
 RETURNS TABLE("CompanyId" BIGINT, "DeployType" VARCHAR, "ok" INT, "reason" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE

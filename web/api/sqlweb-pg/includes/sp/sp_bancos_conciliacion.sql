@@ -749,7 +749,7 @@ $$;
 -- Alias usado por la API (sp_GetMovimientoBancarioById -> pgCallSp -> sp_getmovimientobancariobyid)
 DROP FUNCTION IF EXISTS sp_getmovimientobancariobyid(INT);
 DROP FUNCTION IF EXISTS sp_getmovimientobancariobyid(BIGINT);
-DROP FUNCTION IF EXISTS sp_getmovimientobancariobyid(p_movimiento_id BIGINT)
+CREATE OR REPLACE FUNCTION sp_getmovimientobancariobyid(p_movimiento_id BIGINT)
 RETURNS TABLE(
     "id" BIGINT, "BankAccountId" BIGINT, "Fecha" TIMESTAMP,
     "Tipo" VARCHAR, "MovementSign" SMALLINT, "Monto" NUMERIC,

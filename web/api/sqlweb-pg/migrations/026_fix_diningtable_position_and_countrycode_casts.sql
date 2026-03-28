@@ -1,20 +1,20 @@
 -- =============================================================================
---  MigraciÃ³n 026: Fix tipos en funciones restaurante
+--  MigraciÃƒÂ³n 026: Fix tipos en funciones restaurante
 --
 --  Problemas encontrados:
 --    1. usp_rest_diningtable_getbyid y usp_rest_diningtable_list declaran
 --       "posicionX"/"posicionY" NUMERIC pero rest."DiningTable"."PositionX/Y"
---       son INT â†’ "structure of query does not match function result type"
+--       son INT Ã¢â€ â€™ "structure of query does not match function result type"
 --       en POST /pedidos/abrir (getDiningTableById).
 --
 --    2. Varias funciones seleccionan rest."OrderTicket"."CountryCode" y
 --       fiscal."CountryConfig"."CountryCode" (ambas CHAR(2)) y las retornan
---       como VARCHAR sin cast explÃ­cito. En algunas versiones de PostgreSQL
+--       como VARCHAR sin cast explÃƒÂ­cito. En algunas versiones de PostgreSQL
 --       esto puede causar "structure of query does not match function result type"
 --       en los flujos de agregar item, cancelar item, cerrar pedido.
 --
---  SoluciÃ³n:
---    - Cambiar NUMERIC â†’ INT para posicionX/posicionY (exacto al DDL)
+--  SoluciÃƒÂ³n:
+--    - Cambiar NUMERIC Ã¢â€ â€™ INT para posicionX/posicionY (exacto al DDL)
 --    - Agregar ::VARCHAR a todas las selecciones de columnas CHAR(2)
 -- =============================================================================
 
@@ -106,7 +106,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_diningtable_list(INT, INT, VARCHAR) TO zentto
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
 RETURNS TABLE(
     "orderId"     BIGINT,
     "companyId"   INT,
@@ -129,7 +129,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_getbyid(BIGINT) TO zentto_app;
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(BIGINT, BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(p_pedido_id BIGINT, p_item_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbyid(p_pedido_id BIGINT, p_item_id BIGINT)
 RETURNS TABLE(
     "itemId"      BIGINT,
     "lineNumber"  INT,
@@ -164,7 +164,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_getbyid(BIGINT, BIGINT) TO ze
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_getheaderforclose(p_pedido_id BIGINT)
 RETURNS TABLE(
     "id"             BIGINT,
     "empresaId"      INT,
@@ -202,7 +202,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_getheaderforclose(BIGINT) TO zent
 \echo '  [026] Fix ::VARCHAR cast en usp_rest_orderticket_infercountrycode...'
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_infercountrycode(INT, INT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticket_infercountrycode(p_empresa_id INT, p_sucursal_id INT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticket_infercountrycode(p_empresa_id INT, p_sucursal_id INT)
 RETURNS TABLE("countryCode" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -220,7 +220,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_infercountrycode(INT, INT) TO zen
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id BIGINT)
 RETURNS TABLE(
     "itemId"      BIGINT,
     "productoId"  VARCHAR,
@@ -252,7 +252,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_getfiscalbreakdown(BIGINT) TO
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(BIGINT) CASCADE;
-DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(p_pedido_id BIGINT)
+CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbypedido(p_pedido_id BIGINT)
 RETURNS TABLE(
     "id"             BIGINT,
     "productoId"     VARCHAR,
@@ -309,9 +309,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_rest_orderticket_getbymesaheader(INT, INT, VARCHAR(20)) TO zentto_app;
 
-\echo '  [026] Registrando migraciÃ³n...'
+\echo '  [026] Registrando migraciÃƒÂ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('026_fix_diningtable_position_and_countrycode_casts', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [026] COMPLETO â€” 8 funciones restaurante corregidas (posicionX/Y INT + ::VARCHAR casts)'
+\echo '  [026] COMPLETO Ã¢â‚¬â€ 8 funciones restaurante corregidas (posicionX/Y INT + ::VARCHAR casts)'
