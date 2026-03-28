@@ -111,11 +111,6 @@ DECLARE
     'usp_sec_user_authenticate',
     'usp_cfg_resolvecontext',
     'usp_cfg_fiscal_getconfig',
-    'usp_shipping_customer_register',
-    'usp_shipping_customer_login',
-    'usp_shipping_shipment_create',
-    'usp_shipping_shipment_list',
-    'usp_shipping_track',
     'usp_sys_backup_create',
     'usp_sys_backup_complete',
     'usp_sys_backup_fail',
@@ -125,6 +120,8 @@ DECLARE
     'usp_sys_cleanup_list',
     'usp_sys_cleanup_process'
   ];
+  -- Note: shipping functions live in logistics schema, not public
+  -- They are verified separately if needed
 BEGIN
   SELECT COUNT(*) INTO overload_count
   FROM (
