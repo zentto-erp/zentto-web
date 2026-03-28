@@ -100,7 +100,7 @@ jobs:
       - name: Deploy Frontend dev container
         uses: appleboy/ssh-action@v1.0.3
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GHCR_PAT }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
