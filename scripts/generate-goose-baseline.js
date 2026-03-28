@@ -126,6 +126,10 @@ function shouldSkipFunctionBlock(relPath) {
   const normalized = relPath.replace(/\\/g, '/');
   const baseName = path.posix.basename(normalized);
 
+  if (normalized.startsWith('fixes/') || normalized.startsWith('migrations/')) {
+    return true;
+  }
+
   if (LEGACY_FUNCTION_BUNDLES.has(baseName)) {
     return true;
   }
