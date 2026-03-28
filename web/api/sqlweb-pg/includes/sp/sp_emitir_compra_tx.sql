@@ -90,7 +90,7 @@ BEGIN
 
     SELECT COUNT(*) INTO v_detalle_rows FROM jsonb_array_elements(p_detalle_json);
 
-    -- 3. Actualizar master."Product" — Ingreso
+    -- 3. Actualizar master."Product" â€” Ingreso
     IF p_actualizar_inventario THEN
         -- Insertar en MovInvent (historial)
         INSERT INTO "MovInvent" (
@@ -130,7 +130,7 @@ BEGIN
          WHERE p."ProductCode" = agg.cod_serv;
     END IF;
 
-    -- 4. Generar CxP (si es credito) — tabla legacy "P_Pagar"
+    -- 4. Generar CxP (si es credito) â€” tabla legacy "P_Pagar"
     IF p_generar_cxp AND v_tipo = 'CREDITO' AND v_total > 0 THEN
         -- Obtener saldo previo del proveedor
         SELECT COALESCE("SALDO", 0) INTO v_saldo_previo

@@ -1,9 +1,9 @@
 -- ============================================================
--- Funciones para alertas automáticas y notificaciones del sistema
+-- Funciones para alertas automÃƒÂ¡ticas y notificaciones del sistema
 -- Compatible con PostgreSQL
 -- ============================================================
 
--- Insertar notificación
+-- Insertar notificaciÃƒÂ³n
 CREATE OR REPLACE FUNCTION usp_sys_notificacion_insert(
     p_tipo VARCHAR(20),
     p_titulo VARCHAR(100),
@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION usp_sys_notificacion_insert(
 )
 RETURNS TABLE("Id" INT, "Mensaje" VARCHAR) LANGUAGE plpgsql AS $$
 BEGIN
-    -- Evitar duplicados recientes (misma alerta en últimas 4 horas)
+    -- Evitar duplicados recientes (misma alerta en ÃƒÂºltimas 4 horas)
     IF EXISTS (
         SELECT 1 FROM "Sys_Notificaciones"
         WHERE "Titulo" = p_titulo
@@ -66,7 +66,7 @@ BEGIN
 END;
 $$;
 
--- Alerta: CxP por vencer (próximos 7 días)
+-- Alerta: CxP por vencer (prÃƒÂ³ximos 7 dÃƒÂ­as)
 CREATE OR REPLACE FUNCTION usp_sys_alert_cxpporvencer()
 RETURNS TABLE("cantidad" BIGINT, "montoTotal" NUMERIC) LANGUAGE plpgsql AS $$
 BEGIN
@@ -83,7 +83,7 @@ BEGIN
 END;
 $$;
 
--- Alerta: Conciliación bancaria pendiente
+-- Alerta: ConciliaciÃƒÂ³n bancaria pendiente
 CREATE OR REPLACE FUNCTION usp_sys_alert_conciliacionpendiente()
 RETURNS TABLE("cantidad" BIGINT) LANGUAGE plpgsql AS $$
 BEGIN
@@ -105,7 +105,7 @@ BEGIN
 END;
 $$;
 
--- Alerta: Nómina sin procesar
+-- Alerta: NÃƒÂ³mina sin procesar
 CREATE OR REPLACE FUNCTION usp_sys_alert_nominapendiente()
 RETURNS TABLE("pendiente" INT) LANGUAGE plpgsql AS $$
 BEGIN
@@ -152,7 +152,7 @@ BEGIN
 END;
 $$;
 
--- Insertar tarea (con deduplicación: no crear si ya existe tarea con mismo título no completada)
+-- Insertar tarea (con deduplicaciÃƒÂ³n: no crear si ya existe tarea con mismo tÃƒÂ­tulo no completada)
 CREATE OR REPLACE FUNCTION usp_sys_tarea_insert(
     p_titulo VARCHAR(200),
     p_descripcion TEXT DEFAULT NULL,
@@ -162,7 +162,7 @@ CREATE OR REPLACE FUNCTION usp_sys_tarea_insert(
 )
 RETURNS TABLE("Id" INT, "Mensaje" VARCHAR) LANGUAGE plpgsql AS $$
 BEGIN
-    -- Deduplicación: no crear si ya existe tarea con mismo título no completada
+    -- DeduplicaciÃƒÂ³n: no crear si ya existe tarea con mismo tÃƒÂ­tulo no completada
     IF EXISTS (
         SELECT 1 FROM "Sys_Tareas"
         WHERE "Titulo" = p_titulo

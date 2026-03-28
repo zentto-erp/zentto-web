@@ -1,6 +1,6 @@
 -- usp_governance_capturesnapshot
 DROP FUNCTION IF EXISTS public.usp_governance_capturesnapshot(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_governance_capturesnapshot(p_notes character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_governance_capturesnapshot(p_notes character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" bigint, "SnapshotAt" timestamp without time zone, "TotalTables" integer, "TablesWithoutPK" integer, "TablesWithoutCreatedAt" integer, "TablesWithoutUpdatedAt" integer, "TablesWithoutCreatedBy" integer, "TablesWithoutDateColumns" integer, "DuplicateNameCandidatePairs" integer, "SimilarityCandidatePairs" integer, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -41,7 +41,7 @@ $function$
 
 -- usp_sys_genericdelete
 DROP FUNCTION IF EXISTS public.usp_sys_genericdelete(character varying, character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_genericdelete(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_sys_genericdelete(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
  RETURNS TABLE("rowsAffected" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -68,7 +68,7 @@ $function$
 
 -- usp_sys_genericgetbykey
 DROP FUNCTION IF EXISTS public.usp_sys_genericgetbykey(character varying, character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_genericgetbykey(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_sys_genericgetbykey(p_schema_name character varying, p_table_name character varying, p_key_json jsonb)
  RETURNS SETOF jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -91,7 +91,7 @@ $function$
 
 -- usp_sys_genericinsert
 DROP FUNCTION IF EXISTS public.usp_sys_genericinsert(character varying, character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_genericinsert(p_schema_name character varying, p_table_name character varying, p_data_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_sys_genericinsert(p_schema_name character varying, p_table_name character varying, p_data_json jsonb)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -126,7 +126,7 @@ $function$
 
 -- usp_sys_genericlist
 DROP FUNCTION IF EXISTS public.usp_sys_genericlist(character varying, character varying, character varying, character varying, integer, integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_genericlist(p_schema_name character varying, p_table_name character varying, p_sort_column character varying DEFAULT 'id'::character varying, p_sort_dir character varying DEFAULT 'ASC'::character varying, p_offset integer DEFAULT 0, p_page_size integer DEFAULT 50, p_filters_json jsonb DEFAULT NULL::jsonb)
+DROP FUNCTION IF EXISTS public.usp_sys_genericlist(p_schema_name character varying, p_table_name character varying, p_sort_column character varying DEFAULT 'id'::character varying, p_sort_dir character varying DEFAULT 'ASC'::character varying, p_offset integer DEFAULT 0, p_page_size integer DEFAULT 50, p_filters_json jsonb DEFAULT NULL::jsonb)
  RETURNS TABLE("TotalCount" bigint, "JsonRow" jsonb)
  LANGUAGE plpgsql
 AS $function$
@@ -162,7 +162,7 @@ $function$
 
 -- usp_sys_genericupdate
 DROP FUNCTION IF EXISTS public.usp_sys_genericupdate(character varying, character varying, jsonb, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_genericupdate(p_schema_name character varying, p_table_name character varying, p_key_json jsonb, p_data_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_sys_genericupdate(p_schema_name character varying, p_table_name character varying, p_key_json jsonb, p_data_json jsonb)
  RETURNS TABLE("rowsAffected" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -208,7 +208,7 @@ $function$
 
 -- usp_sys_gettablecolumns
 DROP FUNCTION IF EXISTS public.usp_sys_gettablecolumns(character varying, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_gettablecolumns(p_schema_name character varying, p_table_name character varying)
+DROP FUNCTION IF EXISTS public.usp_sys_gettablecolumns(p_schema_name character varying, p_table_name character varying)
  RETURNS TABLE("COLUMN_NAME" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -225,7 +225,7 @@ $function$
 
 -- usp_sys_headerdetailtx
 DROP FUNCTION IF EXISTS public.usp_sys_headerdetailtx(character varying, character varying, jsonb, jsonb, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_headerdetailtx(p_header_table character varying, p_detail_table character varying, p_header_json jsonb, p_details_json jsonb, p_link_fields_csv character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_sys_headerdetailtx(p_header_table character varying, p_detail_table character varying, p_header_json jsonb, p_details_json jsonb, p_link_fields_csv character varying DEFAULT NULL::character varying)
  RETURNS TABLE(ok integer, "detailRows" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -320,7 +320,7 @@ $function$
 
 -- usp_sys_mensaje_list
 DROP FUNCTION IF EXISTS public.usp_sys_mensaje_list(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_mensaje_list(p_destinatario_id character varying)
+DROP FUNCTION IF EXISTS public.usp_sys_mensaje_list(p_destinatario_id character varying)
  RETURNS TABLE("Id" integer, "RemitenteId" character varying, "RemitenteNombre" character varying, "Asunto" character varying, "Cuerpo" character varying, "Leido" boolean, "FechaEnvio" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -338,7 +338,7 @@ $function$
 
 -- usp_sys_mensaje_markread
 DROP FUNCTION IF EXISTS public.usp_sys_mensaje_markread(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_mensaje_markread(p_id integer)
+DROP FUNCTION IF EXISTS public.usp_sys_mensaje_markread(p_id integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -476,7 +476,7 @@ $function$
 
 -- usp_sys_notificacion_list
 DROP FUNCTION IF EXISTS public.usp_sys_notificacion_list(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_notificacion_list(p_usuario_id character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_sys_notificacion_list(p_usuario_id character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" integer, "Tipo" character varying, "Titulo" character varying, "Mensaje" character varying, "Leido" boolean, "FechaCreacion" timestamp without time zone, "RutaNavegacion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -494,7 +494,7 @@ $function$
 
 -- usp_sys_notificacion_markread
 DROP FUNCTION IF EXISTS public.usp_sys_notificacion_markread(text) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_notificacion_markread(p_ids_csv text)
+DROP FUNCTION IF EXISTS public.usp_sys_notificacion_markread(p_ids_csv text)
  RETURNS TABLE("AffectedCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -514,7 +514,7 @@ $function$
 
 -- usp_sys_tarea_list
 DROP FUNCTION IF EXISTS public.usp_sys_tarea_list(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_tarea_list(p_asignado_a character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_sys_tarea_list(p_asignado_a character varying DEFAULT NULL::character varying)
  RETURNS TABLE("Id" integer, "Titulo" character varying, "Descripcion" character varying, "Progreso" integer, "Color" character varying, "AsignadoA" character varying, "FechaVencimiento" date, "Completado" boolean, "FechaCreacion" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -534,7 +534,7 @@ $function$
 
 -- usp_sys_tarea_toggle
 DROP FUNCTION IF EXISTS public.usp_sys_tarea_toggle(integer, boolean, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_sys_tarea_toggle(p_id integer, p_completado boolean, p_progress integer)
+DROP FUNCTION IF EXISTS public.usp_sys_tarea_toggle(p_id integer, p_completado boolean, p_progress integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$

@@ -2,18 +2,18 @@
 -- fix_pos_bigint_espera.sql  (PostgreSQL)
 -- Corrige mismatch INT vs BIGINT en funciones WaitTicket/WaitTicketLine
 -- Causa: pos."WaitTicket"."WaitTicketId" y "WaitTicketLineId" son BIGINT
---        pero las funciones los declaraban como INT → error:
+--        pero las funciones los declaraban como INT â†’ error:
 --        "structure of query does not match function result type"
 -- Aplicar: psql -U postgres -d datqboxweb -f fix_pos_bigint_espera.sql
 -- ============================================================
 
 BEGIN;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 1. usp_POS_WaitTicket_Create
---    DECLARE v_id INT → BIGINT
---    RETURNS TABLE("Resultado" INT) → BIGINT
--- ────────────────────────────────────────────────────────────
+--    DECLARE v_id INT â†’ BIGINT
+--    RETURNS TABLE("Resultado" INT) â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_create(
     p_company_id          INT,
@@ -57,10 +57,10 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 2. usp_POS_WaitTicketLine_Insert
---    p_wait_ticket_id INT → BIGINT
--- ────────────────────────────────────────────────────────────
+--    p_wait_ticket_id INT â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_insert(
     p_wait_ticket_id         BIGINT,
@@ -101,11 +101,11 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 3. usp_POS_WaitTicket_GetHeader
---    "id" INT → BIGINT, p_wait_ticket_id INT → BIGINT
---    "fechaCreacion" TIMESTAMPTZ → TIMESTAMP WITHOUT TIME ZONE
--- ────────────────────────────────────────────────────────────
+--    "id" INT â†’ BIGINT, p_wait_ticket_id INT â†’ BIGINT
+--    "fechaCreacion" TIMESTAMPTZ â†’ TIMESTAMP WITHOUT TIME ZONE
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_getheader(
     p_company_id     INT,
@@ -145,10 +145,10 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 4. usp_POS_WaitTicket_Recover
---    p_wait_ticket_id INT → BIGINT
--- ────────────────────────────────────────────────────────────
+--    p_wait_ticket_id INT â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_recover CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
     p_company_id           INT,
@@ -175,10 +175,10 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 5. usp_POS_WaitTicketLine_GetItems
---    "id" INT → BIGINT, p_wait_ticket_id INT → BIGINT
--- ────────────────────────────────────────────────────────────
+--    "id" INT â†’ BIGINT, p_wait_ticket_id INT â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_getitems(
     p_wait_ticket_id BIGINT
@@ -215,10 +215,10 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 6. usp_POS_WaitTicket_Void
---    p_wait_ticket_id INT → BIGINT
--- ────────────────────────────────────────────────────────────
+--    p_wait_ticket_id INT â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_void CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_void(
     p_company_id     INT,
@@ -240,12 +240,12 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 7. usp_POS_SaleTicket_Create
---    p_wait_ticket_id INT → BIGINT
---    DECLARE v_id INT → BIGINT
---    RETURNS TABLE("Resultado" INT) → BIGINT
--- ────────────────────────────────────────────────────────────
+--    p_wait_ticket_id INT â†’ BIGINT
+--    DECLARE v_id INT â†’ BIGINT
+--    RETURNS TABLE("Resultado" INT) â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_saleticket_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticket_create(
     p_company_id            INT,
@@ -304,12 +304,12 @@ BEGIN
 END;
 $$;
 
--- ────────────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 8. usp_POS_SaleTicketLine_Insert
---    p_sale_ticket_id INT → BIGINT
---    DECLARE v_id INT → BIGINT
---    RETURNS TABLE("Resultado" INT) → BIGINT
--- ────────────────────────────────────────────────────────────
+--    p_sale_ticket_id INT â†’ BIGINT
+--    DECLARE v_id INT â†’ BIGINT
+--    RETURNS TABLE("Resultado" INT) â†’ BIGINT
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert CASCADE;
 CREATE OR REPLACE FUNCTION usp_pos_saleticketline_insert(
     p_sale_ticket_id        BIGINT,
@@ -355,4 +355,4 @@ $$;
 
 COMMIT;
 
-\echo '✅ fix_pos_bigint_espera.sql aplicado correctamente'
+\echo 'âœ… fix_pos_bigint_espera.sql aplicado correctamente'

@@ -1,11 +1,11 @@
 -- =============================================================================
 -- usp_fiscal_retenciones.sql (PostgreSQL)
--- SPs para módulo de retenciones fiscales automáticas.
+-- SPs para mÃ³dulo de retenciones fiscales automÃ¡ticas.
 -- =============================================================================
 
 -- =============================================================================
 -- 1. usp_Fiscal_Withholding_Calculate
---    Calcula la retención aplicable a un pago según tipo de proveedor y actividad.
+--    Calcula la retenciÃ³n aplicable a un pago segÃºn tipo de proveedor y actividad.
 --    Retorna: rate, amount, concept_code, subtrahend
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Calculate(INT, VARCHAR, NUMERIC, VARCHAR, VARCHAR) CASCADE;
@@ -93,18 +93,18 @@ BEGIN
 
     -- 5. Si no hay concepto, no retener
     IF v_rate IS NULL OR v_rate <= 0 THEN
-        RETURN QUERY SELECT 0::NUMERIC(8,4), 0::NUMERIC(18,2), ''::VARCHAR(20), 0::NUMERIC(18,2), 'Sin retención aplicable'::VARCHAR(200);
+        RETURN QUERY SELECT 0::NUMERIC(8,4), 0::NUMERIC(18,2), ''::VARCHAR(20), 0::NUMERIC(18,2), 'Sin retenciÃ³n aplicable'::VARCHAR(200);
         RETURN;
     END IF;
 
-    -- 6. Verificar umbral mínimo (en UT)
+    -- 6. Verificar umbral mÃ­nimo (en UT)
     IF v_min_base_ut > 0 AND p_taxable_base < (v_min_base_ut * v_ut_value) THEN
         RETURN QUERY SELECT 0::NUMERIC(8,4), 0::NUMERIC(18,2), v_concept_code, 0::NUMERIC(18,2),
-            ('Base inferior al mínimo de ' || v_min_base_ut || ' UT')::VARCHAR(200);
+            ('Base inferior al mÃ­nimo de ' || v_min_base_ut || ' UT')::VARCHAR(200);
         RETURN;
     END IF;
 
-    -- 7. Calcular retención
+    -- 7. Calcular retenciÃ³n
     v_subtrahend_amount := ROUND(v_subtrahend_ut * v_ut_value, 2);
     v_retention_amount := ROUND(p_taxable_base * v_rate / 100.0, 2) - v_subtrahend_amount;
 

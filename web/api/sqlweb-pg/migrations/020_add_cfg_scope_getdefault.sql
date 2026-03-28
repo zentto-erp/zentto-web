@@ -1,7 +1,7 @@
 -- =============================================================================
---  Migración 020: Crear usp_Cfg_Scope_GetDefault en PostgreSQL
---  Motivo: restaurante/admin y media usan esta función que no existía en PG.
---  Retorna: companyId, branchId, systemUserId (usuario sistema para auditoría)
+--  MigraciÃ³n 020: Crear usp_Cfg_Scope_GetDefault en PostgreSQL
+--  Motivo: restaurante/admin y media usan esta funciÃ³n que no existÃ­a en PG.
+--  Retorna: companyId, branchId, systemUserId (usuario sistema para auditorÃ­a)
 -- =============================================================================
 
 \echo '  [020] Creando usp_Cfg_Scope_GetDefault...'
@@ -44,9 +44,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_cfg_scope_getdefault() TO zentto_app;
 
-\echo '  [020] Registrando migración...'
+\echo '  [020] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('020_add_cfg_scope_getdefault', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [020] COMPLETO — usp_Cfg_Scope_GetDefault creada'
+\echo '  [020] COMPLETO â€” usp_Cfg_Scope_GetDefault creada'

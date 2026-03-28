@@ -1,7 +1,7 @@
 -- =============================================================================
 -- sp_rrhh_salud_ocupacional.sql  (PostgreSQL / PL/pgSQL)
 -- Convertido desde T-SQL: web/api/sqlweb/includes/sp/sp_rrhh_salud_ocupacional.sql
--- Fecha conversión: 2026-03-16
+-- Fecha conversiÃ³n: 2026-03-16
 --
 -- Salud Ocupacional / Occupational Health
 -- Cubre: INPSASEL (VE), OSHA (US), PRL (ES), SG-SST (CO)
@@ -14,28 +14,28 @@
 --   2.  usp_HR_OccHealth_Update                   - Actualizar registro
 --   3.  usp_HR_OccHealth_List                     - Listado paginado
 --   4.  usp_HR_OccHealth_Get                      - Obtener por ID
---   5.  usp_HR_MedExam_Save                       - Crear/actualizar examen médico
+--   5.  usp_HR_MedExam_Save                       - Crear/actualizar examen mÃ©dico
 --   6.  usp_HR_MedExam_List                       - Listado paginado
---   7.  usp_HR_MedExam_GetPending                 - Exámenes vencidos/por vencer
---   8.  usp_HR_MedOrder_Create                    - Crear orden médica
+--   7.  usp_HR_MedExam_GetPending                 - ExÃ¡menes vencidos/por vencer
+--   8.  usp_HR_MedOrder_Create                    - Crear orden mÃ©dica
 --   9.  usp_HR_MedOrder_Approve                   - Aprobar/rechazar orden
 --   10. usp_HR_MedOrder_List                      - Listado paginado
---   11. usp_HR_Training_Save                      - Crear/actualizar capacitación
+--   11. usp_HR_Training_Save                      - Crear/actualizar capacitaciÃ³n
 --   12. usp_HR_Training_List                      - Listado paginado
 --   13. usp_HR_Training_GetEmployeeCertifications - Certificaciones de empleado
---   14. usp_HR_Committee_Save                     - Crear/actualizar comité
+--   14. usp_HR_Committee_Save                     - Crear/actualizar comitÃ©
 --   15. usp_HR_Committee_AddMember                - Agregar miembro
 --   16. usp_HR_Committee_RemoveMember             - Remover miembro
---   17. usp_HR_Committee_RecordMeeting            - Registrar reunión
---   18. usp_HR_Committee_List                     - Listado paginado de comités
---   19. usp_HR_Committee_GetMeetings              - Reuniones paginadas de un comité
+--   17. usp_HR_Committee_RecordMeeting            - Registrar reuniÃ³n
+--   18. usp_HR_Committee_List                     - Listado paginado de comitÃ©s
+--   19. usp_HR_Committee_GetMeetings              - Reuniones paginadas de un comitÃ©
 -- =============================================================================
 
 -- =============================================================================
 -- 1. usp_HR_OccHealth_Create
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Create(INTEGER, CHAR(2), VARCHAR(25), BIGINT, VARCHAR(24), VARCHAR(200), TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, VARCHAR(100), VARCHAR(500), VARCHAR(500), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Create(
+DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Create(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
     p_record_type               VARCHAR(25),
@@ -68,13 +68,13 @@ BEGIN
 
     IF p_record_type NOT IN ('ACCIDENT','DISEASE','NEAR_MISS','INSPECTION','RISK_NOTIFICATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de registro no válido.';
+        p_mensaje   := 'Tipo de registro no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no válida.';
+        p_mensaje   := 'Severidad no vÃ¡lida.';
         RETURN;
     END IF;
 
@@ -114,7 +114,7 @@ $$;
 -- 2. usp_HR_OccHealth_Update
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Update(INTEGER, INTEGER, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, DATE, VARCHAR(100), VARCHAR(15), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Update(
+DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Update(
     p_occupational_health_id        INTEGER,
     p_company_id                    INTEGER,
     p_reported_date                 TIMESTAMP       DEFAULT NULL,
@@ -151,13 +151,13 @@ BEGIN
 
     IF p_status IS NOT NULL AND p_status NOT IN ('OPEN','REPORTED','INVESTIGATING','CLOSED') THEN
         p_resultado := -1;
-        p_mensaje   := 'Estado no válido.';
+        p_mensaje   := 'Estado no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no válida.';
+        p_mensaje   := 'Severidad no vÃ¡lida.';
         RETURN;
     END IF;
 
@@ -363,7 +363,7 @@ $$;
 -- 5. usp_HR_MedExam_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_Save(
+DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(
     p_medical_exam_id   INTEGER         DEFAULT NULL,
     p_company_id        INTEGER         DEFAULT NULL,
     p_employee_id       BIGINT          DEFAULT NULL,
@@ -389,13 +389,13 @@ BEGIN
 
     IF p_exam_type NOT IN ('PRE_EMPLOYMENT','PERIODIC','POST_VACATION','EXIT','SPECIAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de examen no válido.';
+        p_mensaje   := 'Tipo de examen no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_result NOT IN ('FIT','FIT_WITH_RESTRICTIONS','UNFIT','PENDING') THEN
         p_resultado := -1;
-        p_mensaje   := 'Resultado de examen no válido.';
+        p_mensaje   := 'Resultado de examen no vÃ¡lido.';
         RETURN;
     END IF;
 
@@ -416,14 +416,14 @@ BEGIN
             )
             RETURNING "MedicalExamId" INTO p_resultado;
 
-            p_mensaje := 'Examen médico creado exitosamente.';
+            p_mensaje := 'Examen mÃ©dico creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."MedicalExam"
                 WHERE "MedicalExamId" = p_medical_exam_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Examen médico no encontrado.';
+                p_mensaje   := 'Examen mÃ©dico no encontrado.';
                 RETURN;
             END IF;
 
@@ -446,7 +446,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_medical_exam_id;
-            p_mensaje   := 'Examen médico actualizado exitosamente.';
+            p_mensaje   := 'Examen mÃ©dico actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -603,7 +603,7 @@ $$;
 -- 8. usp_HR_MedOrder_Create
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Create(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, VARCHAR(500), VARCHAR(200), TEXT, NUMERIC(18,2), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Create(
+DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Create(
     p_company_id    INTEGER,
     p_employee_id   BIGINT          DEFAULT NULL,
     p_employee_code VARCHAR(24)     DEFAULT NULL,
@@ -627,7 +627,7 @@ BEGIN
 
     IF p_order_type NOT IN ('MEDICAL','PHARMACY','LAB','REFERRAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de orden no válido.';
+        p_mensaje   := 'Tipo de orden no vÃ¡lido.';
         RETURN;
     END IF;
 
@@ -647,7 +647,7 @@ BEGIN
         )
         RETURNING "MedicalOrderId" INTO p_resultado;
 
-        p_mensaje := 'Orden médica creada exitosamente.';
+        p_mensaje := 'Orden mÃ©dica creada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -660,7 +660,7 @@ $$;
 -- 9. usp_HR_MedOrder_Approve
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Approve(INTEGER, INTEGER, VARCHAR(15), NUMERIC(18,2), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Approve(
+DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Approve(
     p_medical_order_id  INTEGER,
     p_company_id        INTEGER,
     p_action            VARCHAR(15),
@@ -678,7 +678,7 @@ BEGIN
 
     IF p_action NOT IN ('APROBADA','RECHAZADA') THEN
         p_resultado := -1;
-        p_mensaje   := 'Acción no válida. Use APROBADA o RECHAZADA.';
+        p_mensaje   := 'AcciÃ³n no vÃ¡lida. Use APROBADA o RECHAZADA.';
         RETURN;
     END IF;
 
@@ -687,7 +687,7 @@ BEGIN
         WHERE "MedicalOrderId" = p_medical_order_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Orden médica no encontrada.';
+        p_mensaje   := 'Orden mÃ©dica no encontrada.';
         RETURN;
     END IF;
 
@@ -697,7 +697,7 @@ BEGIN
           AND "Status" = 'PENDIENTE'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La orden no está en estado PENDIENTE.';
+        p_mensaje   := 'La orden no estÃ¡ en estado PENDIENTE.';
         RETURN;
     END IF;
 
@@ -717,8 +717,8 @@ BEGIN
 
         p_resultado := p_medical_order_id;
         p_mensaje   := CASE WHEN p_action = 'APROBADA'
-                            THEN 'Orden médica aprobada exitosamente.'
-                            ELSE 'Orden médica rechazada.' END;
+                            THEN 'Orden mÃ©dica aprobada exitosamente.'
+                            ELSE 'Orden mÃ©dica rechazada.' END;
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -808,7 +808,7 @@ $$;
 -- 11. usp_HR_Training_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Training_Save(
+DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(
     p_training_record_id    INTEGER         DEFAULT NULL,
     p_company_id            INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -837,19 +837,19 @@ BEGIN
 
     IF p_training_type NOT IN ('SAFETY','REGULATORY','TECHNICAL','APPRENTICESHIP','INDUCTION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de capacitación no válido.';
+        p_mensaje   := 'Tipo de capacitaciÃ³n no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_result IS NOT NULL AND p_result NOT IN ('PASSED','FAILED','IN_PROGRESS','ATTENDED') THEN
         p_resultado := -1;
-        p_mensaje   := 'Resultado no válido.';
+        p_mensaje   := 'Resultado no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_duration_hours <= 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'La duración en horas debe ser mayor a cero.';
+        p_mensaje   := 'La duraciÃ³n en horas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -872,14 +872,14 @@ BEGIN
             )
             RETURNING "TrainingRecordId" INTO p_resultado;
 
-            p_mensaje := 'Registro de capacitación creado exitosamente.';
+            p_mensaje := 'Registro de capacitaciÃ³n creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."TrainingRecord"
                 WHERE "TrainingRecordId" = p_training_record_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Registro de capacitación no encontrado.';
+                p_mensaje   := 'Registro de capacitaciÃ³n no encontrado.';
                 RETURN;
             END IF;
 
@@ -905,7 +905,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_training_record_id;
-            p_mensaje   := 'Registro de capacitación actualizado exitosamente.';
+            p_mensaje   := 'Registro de capacitaciÃ³n actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -1062,7 +1062,7 @@ $$;
 -- 14. usp_HR_Committee_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN, INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Committee_Save(
+DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(
     p_safety_committee_id   INTEGER         DEFAULT NULL,
     p_company_id            INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -1092,14 +1092,14 @@ BEGIN
             )
             RETURNING "SafetyCommitteeId" INTO p_resultado;
 
-            p_mensaje := 'Comité de seguridad creado exitosamente.';
+            p_mensaje := 'ComitÃ© de seguridad creado exitosamente.';
         ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM hr."SafetyCommittee"
                 WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
             ) THEN
                 p_resultado := -1;
-                p_mensaje   := 'Comité no encontrado.';
+                p_mensaje   := 'ComitÃ© no encontrado.';
                 RETURN;
             END IF;
 
@@ -1114,7 +1114,7 @@ BEGIN
               AND "CompanyId" = p_company_id;
 
             p_resultado := p_safety_committee_id;
-            p_mensaje   := 'Comité de seguridad actualizado exitosamente.';
+            p_mensaje   := 'ComitÃ© de seguridad actualizado exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -1128,7 +1128,7 @@ $$;
 -- 15. usp_HR_Committee_AddMember
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_AddMember(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(25), DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Committee_AddMember(
+DROP FUNCTION IF EXISTS public.usp_HR_Committee_AddMember(
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
     p_employee_id           BIGINT          DEFAULT NULL,
@@ -1148,7 +1148,7 @@ BEGIN
 
     IF p_role NOT IN ('PRESIDENT','SECRETARY','DELEGATE','EMPLOYER_REP') THEN
         p_resultado := -1;
-        p_mensaje   := 'Rol no válido.';
+        p_mensaje   := 'Rol no vÃ¡lido.';
         RETURN;
     END IF;
 
@@ -1157,7 +1157,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Comité no encontrado.';
+        p_mensaje   := 'ComitÃ© no encontrado.';
         RETURN;
     END IF;
 
@@ -1168,7 +1168,7 @@ BEGIN
           AND ("EndDate" IS NULL OR "EndDate" >= p_start_date)
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya es miembro activo de este comité.';
+        p_mensaje   := 'El empleado ya es miembro activo de este comitÃ©.';
         RETURN;
     END IF;
 
@@ -1183,7 +1183,7 @@ BEGIN
         )
         RETURNING "MemberId" INTO p_resultado;
 
-        p_mensaje := 'Miembro agregado exitosamente al comité.';
+        p_mensaje := 'Miembro agregado exitosamente al comitÃ©.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -1196,7 +1196,7 @@ $$;
 -- 16. usp_HR_Committee_RemoveMember
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RemoveMember(INTEGER, INTEGER, INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RemoveMember(
+DROP FUNCTION IF EXISTS public.usp_HR_Committee_RemoveMember(
     p_member_id             INTEGER,
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
@@ -1219,7 +1219,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Comité no encontrado.';
+        p_mensaje   := 'ComitÃ© no encontrado.';
         RETURN;
     END IF;
 
@@ -1228,7 +1228,7 @@ BEGIN
         WHERE "MemberId" = p_member_id AND "SafetyCommitteeId" = p_safety_committee_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Miembro no encontrado en este comité.';
+        p_mensaje   := 'Miembro no encontrado en este comitÃ©.';
         RETURN;
     END IF;
 
@@ -1239,7 +1239,7 @@ BEGIN
           AND "SafetyCommitteeId" = p_safety_committee_id;
 
         p_resultado := p_member_id;
-        p_mensaje   := 'Miembro removido del comité exitosamente.';
+        p_mensaje   := 'Miembro removido del comitÃ© exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -1252,7 +1252,7 @@ $$;
 -- 17. usp_HR_Committee_RecordMeeting
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RecordMeeting(INTEGER, INTEGER, TIMESTAMP, VARCHAR(500), TEXT, TEXT, INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RecordMeeting(
+DROP FUNCTION IF EXISTS public.usp_HR_Committee_RecordMeeting(
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
     p_meeting_date          TIMESTAMP,
@@ -1273,7 +1273,7 @@ BEGIN
         WHERE "SafetyCommitteeId" = p_safety_committee_id AND "CompanyId" = p_company_id
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'Comité no encontrado.';
+        p_mensaje   := 'ComitÃ© no encontrado.';
         RETURN;
     END IF;
 
@@ -1289,7 +1289,7 @@ BEGIN
         )
         RETURNING "MeetingId" INTO p_resultado;
 
-        p_mensaje := 'Reunión registrada exitosamente.';
+        p_mensaje := 'ReuniÃ³n registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -1;
@@ -1389,7 +1389,7 @@ BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
-    -- Verificar que el comité pertenece a la empresa
+    -- Verificar que el comitÃ© pertenece a la empresa
     IF p_company_id IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM hr."SafetyCommittee" c2
         WHERE c2."SafetyCommitteeId" = p_committee_id AND c2."CompanyId" = p_company_id
@@ -1426,7 +1426,7 @@ $$;
 -- =============================================================================
 
 -- Internal alias for usp_HR_OccHealth_Create (avoids overload ambiguity)
-CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create_internal(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
     p_record_type               VARCHAR(25),
@@ -1458,13 +1458,13 @@ BEGIN
 
     IF p_record_type NOT IN ('ACCIDENT','DISEASE','NEAR_MISS','INSPECTION','RISK_NOTIFICATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de registro no válido.';
+        p_mensaje   := 'Tipo de registro no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no válida.';
+        p_mensaje   := 'Severidad no vÃ¡lida.';
         RETURN;
     END IF;
 

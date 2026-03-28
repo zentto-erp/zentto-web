@@ -1,5 +1,5 @@
 -- ============================================================================
---  Manufacturing Analytics — Dashboard Enterprise
+--  Manufacturing Analytics â€” Dashboard Enterprise
 --  PostgreSQL functions for charts and analytics
 -- ============================================================================
 

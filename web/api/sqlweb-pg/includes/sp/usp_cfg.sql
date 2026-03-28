@@ -1,6 +1,6 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_cfg.sql
--- Funciones de configuración (cfg.AppSetting, contexto)
+-- Funciones de configuraciÃƒÂ³n (cfg.AppSetting, contexto)
 -- ============================================================
 
 -- usp_Cfg_ResolveContext: resuelve contexto empresa/sucursal/usuario
@@ -62,7 +62,7 @@ BEGIN
 END;
 $$;
 
--- usp_Cfg_AppSetting_ListByModule: lista configuraciones por módulo
+-- usp_Cfg_AppSetting_ListByModule: lista configuraciones por mÃƒÂ³dulo
 DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListByModule(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListByModule(
     p_company_id INT,
@@ -110,7 +110,7 @@ BEGIN
 END;
 $$;
 
--- usp_Cfg_AppSetting_Upsert: insertar o actualizar configuración
+-- usp_Cfg_AppSetting_Upsert: insertar o actualizar configuraciÃƒÂ³n
 DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_Upsert(INT, VARCHAR(60), VARCHAR(128), TEXT, VARCHAR(30), VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_Upsert(
     p_company_id    INT,
@@ -145,7 +145,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- usp_Cfg_AppSetting_ListModules: lista módulos distintos
+-- usp_Cfg_AppSetting_ListModules: lista mÃƒÂ³dulos distintos
 DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListModules(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListModules(
     p_company_id INT

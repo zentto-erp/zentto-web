@@ -10,7 +10,7 @@
  *    - CxP  : usp_ap_payable_*, usp_ap_balance_*
  *    - Nomina: usp_hr_payroll_*, usp_hr_legalconcept_*
  *
- *  Patron: CREATE OR REPLACE FUNCTION (idempotente)
+ *  Patron: DROP FUNCTION IF EXISTS (idempotente)
  * ============================================================================ */
 
 
@@ -784,7 +784,7 @@ $$;
 --  usp_ar_receivable_getbyid
 -- -----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS usp_ar_receivable_getbyid(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_ar_receivable_getbyid(p_id BIGINT)
+DROP FUNCTION IF EXISTS usp_ar_receivable_getbyid(p_id BIGINT)
 RETURNS TABLE(
     "id" BIGINT, "codigo" VARCHAR, "nombre" VARCHAR, "tipo" VARCHAR,
     "documento" VARCHAR, "fecha" DATE, "fechaVence" DATE,
@@ -905,7 +905,7 @@ $$;
 --  usp_ar_receivable_void
 -- -----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS usp_ar_receivable_void(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_ar_receivable_void(p_id BIGINT)
+DROP FUNCTION IF EXISTS usp_ar_receivable_void(p_id BIGINT)
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1879,7 +1879,7 @@ $$;
 --  usp_hr_payroll_getrunlines
 -- -----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS usp_hr_payroll_getrunlines(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_hr_payroll_getrunlines(p_run_id BIGINT)
+DROP FUNCTION IF EXISTS usp_hr_payroll_getrunlines(p_run_id BIGINT)
 RETURNS TABLE(
     "coConcepto" VARCHAR, "nombreConcepto" VARCHAR, "tipoConcepto" VARCHAR,
     "cantidad" NUMERIC, "monto" NUMERIC, "total" NUMERIC,
@@ -1930,7 +1930,7 @@ $$;
 --  usp_hr_payroll_getvacationlines
 -- -----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationlines(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_hr_payroll_getvacationlines(p_vacation_process_id BIGINT)
+DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationlines(p_vacation_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1965,7 +1965,7 @@ $$;
 --  usp_hr_payroll_getsettlementlines
 -- -----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementlines(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementlines(p_settlement_process_id BIGINT)
+DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementlines(p_settlement_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
 LANGUAGE plpgsql AS $$
 BEGIN

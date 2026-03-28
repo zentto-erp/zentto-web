@@ -2,7 +2,7 @@
 -- Change p_user_id from integer to text (service sends username string like "admin" or "API")
 -- with internal try-cast to integer (NULL if not numeric)
 
--- ── usp_acct_period_close ──────────────────────────────────────────────────
+-- â”€â”€ usp_acct_period_close â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS public.usp_acct_period_close(integer, character, integer) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_acct_period_close(integer, character, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_period_close(
@@ -70,7 +70,7 @@ $function$;
 
 GRANT EXECUTE ON FUNCTION public.usp_acct_period_close(integer, character, text) TO zentto_app;
 
--- ── usp_acct_period_reopen ─────────────────────────────────────────────────
+-- â”€â”€ usp_acct_period_reopen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(integer, character, integer) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_acct_period_reopen(integer, character, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_period_reopen(
@@ -125,7 +125,7 @@ $function$;
 
 GRANT EXECUTE ON FUNCTION public.usp_acct_period_reopen(integer, character, text) TO zentto_app;
 
--- ── usp_acct_period_generateclosingentries ──────────────────────────────────
+-- â”€â”€ usp_acct_period_generateclosingentries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(integer, character, integer) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_acct_period_generateclosingentries(integer, character, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_period_generateclosingentries(

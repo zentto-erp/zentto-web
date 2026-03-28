@@ -1,6 +1,6 @@
 -- ============================================================================
 -- sp_nomina_conceptolegal_crud.sql
--- Funciones PostgreSQL para conceptos legales de nómina
+-- Funciones PostgreSQL para conceptos legales de nÃ³mina
 -- Equivalentes a usp_HR_LegalConcept_* en SQL Server (usp_misc.sql)
 -- ============================================================================
 
@@ -72,7 +72,7 @@ $$;
 
 -- =============================================================================
 -- 2. usp_HR_LegalConcept_ValidateFormulas
---    Retorna conceptos activos con su formula y default para validación.
+--    Retorna conceptos activos con su formula y default para validaciÃ³n.
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_validateformulas(INT, VARCHAR(30), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_validateformulas(
@@ -106,7 +106,7 @@ $$;
 
 -- =============================================================================
 -- 3. usp_HR_LegalConcept_ListConventions
---    Resumen de convenciones disponibles con conteo por tipo de cálculo.
+--    Resumen de convenciones disponibles con conteo por tipo de cÃ¡lculo.
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_listconventions(INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_listconventions(
@@ -141,4 +141,4 @@ BEGIN
 END;
 $$;
 
-DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql — funciones creadas'; END $$;
+DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones creadas'; END $$;

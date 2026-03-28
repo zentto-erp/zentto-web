@@ -1,5 +1,5 @@
 -- ============================================================
--- usp_sys_license.sql — Licencias Zentto (validate / create / renew / revoke)
+-- usp_sys_license.sql â€” Licencias Zentto (validate / create / renew / revoke)
 -- Motor: PostgreSQL (plpgsql)
 -- Paridad: web/api/sqlweb/includes/sp/usp_sys_license.sql
 -- ============================================================
@@ -81,7 +81,7 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Verificar expiración (solo para SUBSCRIPTION y TRIAL)
+  -- Verificar expiraciÃ³n (solo para SUBSCRIPTION y TRIAL)
   IF v_license_type NOT IN ('LIFETIME', 'INTERNAL') AND v_expires_at IS NOT NULL THEN
     IF v_expires_at < NOW() THEN
       RETURN QUERY SELECT FALSE, 'LICENSE_EXPIRED'::VARCHAR, v_plan::VARCHAR,
@@ -90,14 +90,14 @@ BEGIN
     END IF;
   END IF;
 
-  -- Calcular días restantes (NULL si no expira)
+  -- Calcular dÃ­as restantes (NULL si no expira)
   IF v_expires_at IS NOT NULL THEN
     v_days_rem := EXTRACT(DAY FROM v_expires_at - NOW())::INT;
   ELSE
     v_days_rem := NULL;
   END IF;
 
-  -- Obtener módulos del plan como JSON string
+  -- Obtener mÃ³dulos del plan como JSON string
   SELECT array_to_json(array_agg(m."ModuleCode" ORDER BY m."SortOrder"))::TEXT
   INTO v_modules_json
   FROM usp_cfg_plan_getmodules(v_plan) m;
@@ -154,7 +154,7 @@ BEGIN
   SET "LicenseKey" = v_license_key
   WHERE "CompanyId" = p_company_id;
 
-  -- Aplicar módulos al admin del tenant
+  -- Aplicar mÃ³dulos al admin del tenant
   SELECT r."ok" INTO v_apply_ok
   FROM usp_cfg_plan_applymodules(p_company_id::INT, p_plan) r;
 

@@ -6,7 +6,7 @@
 
 -- 1. Create alias sp_nomina_getscope -> sp_nomina_get_scope
 DROP FUNCTION IF EXISTS public.sp_nomina_getscope() CASCADE;
-CREATE OR REPLACE FUNCTION public.sp_nomina_getscope(
+DROP FUNCTION IF EXISTS public.sp_nomina_getscope(
     OUT p_company_id INTEGER,
     OUT p_branch_id INTEGER
 )

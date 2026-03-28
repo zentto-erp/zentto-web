@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION usp_inventario_list(
 )
 RETURNS TABLE (
     "TotalCount"          BIGINT,
-    "ProductId"           INT,
+    "ProductId"           BIGINT,
     "ProductCode"         VARCHAR,
     "Referencia"          VARCHAR,
     "Categoria"           VARCHAR,
@@ -170,7 +170,7 @@ CREATE OR REPLACE FUNCTION usp_inventario_getbycodigo(
     p_codigo VARCHAR(15)
 )
 RETURNS TABLE (
-    "ProductId"           INT,
+    "ProductId"           BIGINT,
     "ProductCode"         VARCHAR,
     "Referencia"          VARCHAR,
     "Categoria"           VARCHAR,
@@ -280,7 +280,7 @@ DECLARE
     v_company_id INT;
     v_codigo     VARCHAR(15);
 BEGIN
-    -- Usar CompanyId del parámetro, o buscar el primero activo
+    -- Usar CompanyId del parÃ¡metro, o buscar el primero activo
     v_company_id := p_company_id;
     IF v_company_id IS NULL THEN
         SELECT "CompanyId" INTO v_company_id

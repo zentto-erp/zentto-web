@@ -1,6 +1,6 @@
 \echo '  [016] Fix bpchar CountryCode en usp_pay_companyconfig_listbycompany...'
 
--- pay."CompanyPaymentConfig"."CountryCode" es character(2)/bpchar en producción
+-- pay."CompanyPaymentConfig"."CountryCode" es character(2)/bpchar en producciÃ³n
 -- pero RETURNS TABLE lo declara como character varying.
 -- Fix: agregar ::VARCHAR cast en el SELECT.
 
@@ -38,11 +38,11 @@ BEGIN
     RETURN QUERY
     SELECT
         cc."Id", cc."EmpresaId", cc."SucursalId",
-        cc."CountryCode"::VARCHAR,   -- FIX: bpchar(2) → varchar
+        cc."CountryCode"::VARCHAR,   -- FIX: bpchar(2) â†’ varchar
         cc."ProviderId", p."Code", p."Name", p."ProviderType",
         cc."Environment", cc."ClientId", cc."ClientSecret",
         cc."MerchantId", cc."TerminalId", cc."IntegratorId",
-        cc."CertificatePath", cc."ExtraConfig"::VARCHAR,   -- FIX: text → varchar
+        cc."CertificatePath", cc."ExtraConfig"::VARCHAR,   -- FIX: text â†’ varchar
         cc."AutoCapture", cc."AllowRefunds", cc."MaxRefundDays",
         cc."IsActive", cc."CreatedAt", cc."UpdatedAt"
     FROM pay."CompanyPaymentConfig" cc
@@ -53,4 +53,4 @@ BEGIN
 END;
 $$;
 
-\echo '  [016] COMPLETO — payments config CountryCode bpchar corregido'
+\echo '  [016] COMPLETO â€” payments config CountryCode bpchar corregido'

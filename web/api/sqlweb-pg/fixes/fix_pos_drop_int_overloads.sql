@@ -9,7 +9,7 @@
 
 BEGIN;
 
--- ─── 1. usp_pos_waitticket_create ────────────────────────────
+-- â”€â”€â”€ 1. usp_pos_waitticket_create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_create(
     INT, INT, VARCHAR, VARCHAR, VARCHAR, INT, INT, VARCHAR, VARCHAR, VARCHAR,
     VARCHAR, VARCHAR, NUMERIC, NUMERIC, NUMERIC, NUMERIC
@@ -53,7 +53,7 @@ BEGIN
 END;
 $$;
 
--- ─── 2. usp_pos_waitticketline_insert ────────────────────────
+-- â”€â”€â”€ 2. usp_pos_waitticketline_insert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- Drop ambas versiones (INT y BIGINT) y recrear solo BIGINT
 DROP FUNCTION IF EXISTS usp_pos_waitticketline_insert(
     INT, INT, VARCHAR, INT, VARCHAR, VARCHAR, NUMERIC, NUMERIC, NUMERIC,
@@ -100,7 +100,7 @@ BEGIN
 END;
 $$;
 
--- ─── 3. usp_pos_waitticket_getheader ─────────────────────────
+-- â”€â”€â”€ 3. usp_pos_waitticket_getheader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_getheader(INT, INT, INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_getheader(
@@ -140,7 +140,7 @@ BEGIN
 END;
 $$;
 
--- ─── 4. usp_pos_waitticket_recover ───────────────────────────
+-- â”€â”€â”€ 4. usp_pos_waitticket_recover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_recover(INT, INT, INT, INT, VARCHAR) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_recover(
@@ -166,7 +166,7 @@ BEGIN
 END;
 $$;
 
--- ─── 5. usp_pos_waitticketline_getitems ──────────────────────
+-- â”€â”€â”€ 5. usp_pos_waitticketline_getitems â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticketline_getitems(INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticketline_getitems(
@@ -202,7 +202,7 @@ BEGIN
 END;
 $$;
 
--- ─── 6. usp_pos_waitticket_void ──────────────────────────────
+-- â”€â”€â”€ 6. usp_pos_waitticket_void â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_waitticket_void(INT, INT, INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_pos_waitticket_void(
@@ -223,7 +223,7 @@ BEGIN
 END;
 $$;
 
--- ─── 7. usp_pos_saleticket_create ────────────────────────────
+-- â”€â”€â”€ 7. usp_pos_saleticket_create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- Drop overload INT (p_wait_ticket_id integer)
 DROP FUNCTION IF EXISTS usp_pos_saleticket_create(
     INT, INT, VARCHAR, VARCHAR, VARCHAR, INT, INT, VARCHAR, VARCHAR, VARCHAR,
@@ -240,7 +240,7 @@ DROP FUNCTION IF EXISTS usp_pos_saleticket_create(
 -- los parametros de esta funcion varian por version. El DROP arriba limpia
 -- overloads viejos. El CI/CD reinstalara la version correcta del run_all.sql.
 
--- ─── 8. usp_pos_saleticketline_insert ────────────────────────
+-- â”€â”€â”€ 8. usp_pos_saleticketline_insert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_pos_saleticketline_insert(
     INT, INT, VARCHAR, INT, VARCHAR, VARCHAR, NUMERIC, NUMERIC, NUMERIC,
     VARCHAR, NUMERIC, NUMERIC, NUMERIC, NUMERIC, INT, TEXT
@@ -290,4 +290,4 @@ $$;
 
 COMMIT;
 
-\echo '✅ fix_pos_drop_int_overloads.sql aplicado correctamente'
+\echo 'âœ… fix_pos_drop_int_overloads.sql aplicado correctamente'

@@ -1,16 +1,16 @@
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- Archivo  : sp_nomina_batch.sql
--- Propósito: Stored Procedures para Nómina en Lote (PostgreSQL)
+-- PropÃ³sito: Stored Procedures para NÃ³mina en Lote (PostgreSQL)
 -- Tablas   : hr."PayrollBatch", hr."PayrollBatchLine", hr."PayrollConcept",
 --            hr."PayrollRun", hr."PayrollRunLine", master."Employee"
 -- Requiere : sp_nomina_sistema.sql, sp_nomina_calculo.sql
--- Origen   : Conversión desde T-SQL (SQL Server 2012+)
+-- Origen   : ConversiÃ³n desde T-SQL (SQL Server 2012+)
 -- Fecha    : 2026-03-16
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 0. Tablas de soporte: hr."PayrollBatch", hr."PayrollBatchLine"
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 CREATE SCHEMA IF NOT EXISTS hr;
 
@@ -68,12 +68,12 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
     ON hr."PayrollBatchLine" ("BatchId", "EmployeeCode")
     INCLUDE ("ConceptType", "Total", "IsModified");
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- ALTER TABLE: Agregar columnas faltantes si la tabla fue creada
 -- por 08_fin_hr_extensions.sql con esquema incompleto.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DO $$ BEGIN
-  -- hr."PayrollBatch" — columnas que 08_fin_hr_extensions.sql no incluye
+  -- hr."PayrollBatch" â€” columnas que 08_fin_hr_extensions.sql no incluye
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='BranchId') THEN
     ALTER TABLE hr."PayrollBatch" ADD COLUMN "BranchId" INTEGER NOT NULL DEFAULT 1;
   END IF;
@@ -101,12 +101,12 @@ DO $$ BEGIN
 END $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 1. usp_HR_Payroll_GenerateDraft
---    Genera un borrador de nómina en lote para todos los empleados activos.
--- ═══════════════════════════════════════════════════════════════
+--    Genera un borrador de nÃ³mina en lote para todos los empleados activos.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(
     p_company_id        INTEGER,
     p_branch_id         INTEGER,
     p_payroll_code      VARCHAR(15),
@@ -127,14 +127,14 @@ BEGIN
     p_mensaje   := '';
     p_batch_id  := 0::BIGINT;
 
-    -- Validaciones básicas
+    -- Validaciones bÃ¡sicas
     IF p_from_date >= p_to_date THEN
         p_resultado := -1;
         p_mensaje   := 'La fecha desde debe ser menor que la fecha hasta.';
         RETURN;
     END IF;
 
-    -- Verificar que no exista un batch BORRADOR duplicado para el mismo período
+    -- Verificar que no exista un batch BORRADOR duplicado para el mismo perÃ­odo
     IF EXISTS (
         SELECT 1 FROM hr."PayrollBatch"
         WHERE "CompanyId"   = p_company_id
@@ -145,7 +145,7 @@ BEGIN
           AND "Status"      = 'BORRADOR'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un borrador de nómina para este período y tipo.';
+        p_mensaje   := 'Ya existe un borrador de nÃ³mina para este perÃ­odo y tipo.';
         RETURN;
     END IF;
 
@@ -161,7 +161,7 @@ BEGIN
         )
         RETURNING "BatchId" INTO p_batch_id;
 
-        -- Insertar líneas por cada empleado activo + cada concepto activo de la nómina
+        -- Insertar lÃ­neas por cada empleado activo + cada concepto activo de la nÃ³mina
         INSERT INTO hr."PayrollBatchLine" (
             "BatchId", "EmployeeId", "EmployeeCode", "EmployeeName",
             "ConceptCode", "ConceptName", "ConceptType",
@@ -212,13 +212,13 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 2. usp_HR_Payroll_SaveDraftLine
 --    Guarda cambios de una celda (autosave).
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(BIGINT, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(
     p_line_id   BIGINT,
     p_quantity  NUMERIC(18,4),
     p_amount    NUMERIC(18,4),
@@ -235,7 +235,7 @@ BEGIN
     p_resultado := 0;
     p_mensaje   := '';
 
-    -- Validar que la línea existe y pertenece a un batch en BORRADOR
+    -- Validar que la lÃ­nea existe y pertenece a un batch en BORRADOR
     SELECT bl."BatchId"
     INTO v_batch_id
     FROM hr."PayrollBatchLine" bl
@@ -245,7 +245,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Línea no encontrada o el lote no está en estado BORRADOR.';
+        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -269,7 +269,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'Línea actualizada correctamente.';
+        p_mensaje   := 'LÃ­nea actualizada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -279,10 +279,10 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 3. usp_HR_Payroll_BatchAddLine
 --    Agrega un nuevo concepto a un empleado en el lote.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(BIGINT, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
@@ -313,7 +313,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no está en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -326,7 +326,7 @@ BEGIN
     LIMIT 1;
 
     IF v_employee_name IS NULL THEN
-        -- Intentar obtener de líneas existentes del batch
+        -- Intentar obtener de lÃ­neas existentes del batch
         SELECT bl."EmployeeName", bl."EmployeeId"
         INTO v_employee_name, v_employee_id
         FROM hr."PayrollBatchLine" bl
@@ -377,7 +377,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'Línea agregada correctamente.';
+        p_mensaje   := 'LÃ­nea agregada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -387,10 +387,10 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 4. usp_HR_Payroll_BatchRemoveLine
---    Elimina una línea de concepto del lote.
--- ═══════════════════════════════════════════════════════════════
+--    Elimina una lÃ­nea de concepto del lote.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
@@ -417,7 +417,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Línea no encontrada o el lote no está en estado BORRADOR.';
+        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -435,7 +435,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'Línea eliminada correctamente.';
+        p_mensaje   := 'LÃ­nea eliminada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -445,14 +445,14 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 5. usp_HR_Payroll_GetDraftSummary
---    Retorna resumen del lote para la vista de pre-nómina.
+--    Retorna resumen del lote para la vista de pre-nÃ³mina.
 --    Tres result sets expuestos como tres funciones separadas en PG:
---      _Header   -> cabecera con totales y comparación con período anterior
+--      _Header   -> cabecera con totales y comparaciÃ³n con perÃ­odo anterior
 --      _ByDept   -> resumen general (sin columna departamento en Employee)
 --      _Alerts   -> alertas (sin asignaciones, neto negativo, monto cero)
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 -- 5a. Cabecera del batch con totales
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Header(INTEGER) CASCADE;
@@ -585,7 +585,7 @@ BEGIN
             'SIN_ASIGNACIONES'::TEXT                               AS "AlertType",
             bl."EmployeeCode",
             bl."EmployeeName",
-            'El empleado no tiene conceptos de asignación.'::TEXT  AS "AlertMessage"
+            'El empleado no tiene conceptos de asignaciÃ³n.'::TEXT  AS "AlertMessage"
         FROM hr."PayrollBatchLine" bl
         WHERE bl."BatchId" = p_batch_id
         GROUP BY bl."EmployeeCode", bl."EmployeeName"
@@ -610,7 +610,7 @@ BEGIN
 
         UNION ALL
 
-        -- Líneas con monto cero
+        -- LÃ­neas con monto cero
         SELECT
             'MONTO_CERO'::TEXT AS "AlertType",
             bl."EmployeeCode",
@@ -627,10 +627,10 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 6. usp_HR_Payroll_GetDraftGrid
 --    Retorna los empleados con sus totales para la grilla.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(INTEGER, VARCHAR(100), VARCHAR(100), BOOLEAN, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(BIGINT, VARCHAR, VARCHAR, BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
@@ -702,10 +702,10 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 7. usp_HR_Payroll_GetEmployeeLines
---    Retorna todas las líneas de concepto de un empleado en un lote.
--- ═══════════════════════════════════════════════════════════════
+--    Retorna todas las lÃ­neas de concepto de un empleado en un lote.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(INTEGER, VARCHAR(24)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(BIGINT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetEmployeeLines(
@@ -761,10 +761,10 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 8. usp_HR_Payroll_ApproveDraft
---    Aprueba un borrador de nómina.
--- ═══════════════════════════════════════════════════════════════
+--    Aprueba un borrador de nÃ³mina.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(BIGINT, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
@@ -800,10 +800,10 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Verificar que el lote tiene líneas
+    -- Verificar que el lote tiene lÃ­neas
     IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatchLine" WHERE "BatchId" = p_batch_id) THEN
         p_resultado := -3;
-        p_mensaje   := 'No se puede aprobar un lote sin líneas.';
+        p_mensaje   := 'No se puede aprobar un lote sin lÃ­neas.';
         RETURN;
     END IF;
 
@@ -826,12 +826,12 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 9. usp_HR_Payroll_ProcessBatch
 --    Procesa un lote aprobado: crea PayrollRun individuales.
---    Nota: el XML de líneas se construye como JSON en PostgreSQL
+--    Nota: el XML de lÃ­neas se construye como JSON en PostgreSQL
 --    para compatibilidad con usp_HR_Payroll_UpsertRun.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
@@ -904,7 +904,7 @@ BEGIN
             WHERE "BatchId" = p_batch_id
             GROUP BY "EmployeeCode"
         LOOP
-            -- Construir JSON de líneas para este empleado
+            -- Construir JSON de lÃ­neas para este empleado
             SELECT json_agg(
                 json_build_object(
                     'code',        "ConceptCode",
@@ -970,10 +970,10 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 10. usp_HR_Payroll_ListBatches
---     Lista todos los lotes de nómina con paginación.
--- ═══════════════════════════════════════════════════════════════
+--     Lista todos los lotes de nÃ³mina con paginaciÃ³n.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(20), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(15), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ListBatches(
@@ -1024,15 +1024,15 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 11. usp_HR_Payroll_BatchBulkUpdate
---     Actualización masiva: aplica un concepto a múltiples empleados.
---     Nota: el parámetro XML de T-SQL se reemplaza por JSON array en PG.
+--     ActualizaciÃ³n masiva: aplica un concepto a mÃºltiples empleados.
+--     Nota: el parÃ¡metro XML de T-SQL se reemplaza por JSON array en PG.
 --     Formato JSON: '[{"code":"EMP001"},{"code":"EMP002"}]'
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(BIGINT, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(
     p_batch_id       BIGINT,
     p_concept_code   VARCHAR(20),
     p_concept_type   VARCHAR(15),
@@ -1058,12 +1058,12 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no está en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
     BEGIN
-        -- Actualizar líneas existentes que coincidan
+        -- Actualizar lÃ­neas existentes que coincidan
         UPDATE hr."PayrollBatchLine" bl
         SET "Amount"     = p_amount,
             "Total"      = bl."Quantity" * p_amount,
@@ -1093,7 +1093,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := p_affected_count::TEXT || ' líneas actualizadas.';
+        p_mensaje   := p_affected_count::TEXT || ' lÃ­neas actualizadas.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -1102,11 +1102,11 @@ BEGIN
 END;
 $$;
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- WRAPPER: usp_HR_Payroll_GetDraftSummary
--- La API llama "usp_HR_Payroll_GetDraftSummary" como función única.
+-- La API llama "usp_HR_Payroll_GetDraftSummary" como funciÃ³n Ãºnica.
 -- Este wrapper devuelve la cabecera + totales en una sola fila.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(BIGINT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary(
@@ -1160,4 +1160,4 @@ BEGIN
 END;
 $$;
 
--- ═══ sp_nomina_batch.sql completado exitosamente ═══
+-- â•â•â• sp_nomina_batch.sql completado exitosamente â•â•â•

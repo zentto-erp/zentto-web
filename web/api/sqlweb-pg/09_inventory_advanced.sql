@@ -77,7 +77,7 @@ CREATE INDEX IF NOT EXISTS "IX_inv_WarehouseZone_Warehouse"
   ON inv."WarehouseZone" ("WarehouseId", "IsDeleted", "IsActive");
 
 -- ============================================================
--- 3. inv."WarehouseBin"  (Ubicaciones — estantes, racks)
+-- 3. inv."WarehouseBin"  (Ubicaciones â€” estantes, racks)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS inv."WarehouseBin"(
   "BinId"                 BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

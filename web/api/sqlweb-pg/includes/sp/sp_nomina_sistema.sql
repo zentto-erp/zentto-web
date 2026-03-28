@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS hr."PayrollCalcVariable" (
 -- Funcion: fn_EvaluarExpr
 -- =============================================
 DROP FUNCTION IF EXISTS fn_evaluar_expr(TEXT) CASCADE;
-CREATE OR REPLACE FUNCTION fn_evaluar_expr(p_expr TEXT)
+DROP FUNCTION IF EXISTS fn_evaluar_expr(p_expr TEXT)
 RETURNS NUMERIC(18,6)
 LANGUAGE plpgsql AS $$
 BEGIN

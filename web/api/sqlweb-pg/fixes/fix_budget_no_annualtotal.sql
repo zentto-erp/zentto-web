@@ -1,6 +1,6 @@
 -- Fix: Remove AnnualTotal from INSERT/UPDATE in budget functions (it's a computed column)
 
--- ── usp_acct_budget_insert ──────────────────────────────────────────────────
+-- â”€â”€ usp_acct_budget_insert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS public.usp_acct_budget_insert(integer, character varying, smallint, character varying, text, integer, integer, text) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_acct_budget_insert(integer, character varying, smallint, character varying, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_budget_insert(
@@ -82,7 +82,7 @@ $function$;
 
 GRANT EXECUTE ON FUNCTION public.usp_acct_budget_insert(integer, character varying, smallint, character varying, text) TO zentto_app;
 
--- ── usp_acct_budget_update ──────────────────────────────────────────────────
+-- â”€â”€ usp_acct_budget_update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS public.usp_acct_budget_update(integer, integer, character varying, text, integer, text) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_acct_budget_update(integer, integer, character varying, text) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_acct_budget_update(

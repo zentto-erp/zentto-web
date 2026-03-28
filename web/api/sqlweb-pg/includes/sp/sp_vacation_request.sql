@@ -8,7 +8,7 @@
 -- =============================================================
 -- 1) usp_hr_vacation_request_create
 -- =============================================================
-DROP FUNCTION IF EXISTS usp_hr_vacation_request_create(
+CREATE OR REPLACE FUNCTION usp_hr_vacation_request_create(
     INT, INT, VARCHAR, DATE, DATE, INT, BOOLEAN, VARCHAR, JSONB
 );
 
@@ -72,7 +72,7 @@ $fn$;
 -- =============================================================
 -- 2) usp_hr_vacation_request_list
 -- =============================================================
-DROP FUNCTION IF EXISTS usp_hr_vacation_request_list(
+CREATE OR REPLACE FUNCTION usp_hr_vacation_request_list(
     INT, VARCHAR, VARCHAR, INT, INT
 );
 
@@ -465,7 +465,7 @@ $fn$;
 -- ================================================================
 -- ALIAS: usp_hr_vacationrequest_list
 -- Alias for usp_hr_vacation_request_list to match API calling convention
--- (usp_HR_VacationRequest_List → usp_hr_vacationrequest_list)
+-- (usp_HR_VacationRequest_List â†’ usp_hr_vacationrequest_list)
 -- ================================================================
 DROP FUNCTION IF EXISTS usp_hr_vacationrequest_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_vacationrequest_list(

@@ -1,12 +1,12 @@
 -- ============================================================
--- usp_cfg_plan_modules.sql — Módulos por plan + apply a tenant
+-- usp_cfg_plan_modules.sql â€” MÃ³dulos por plan + apply a tenant
 -- Motor: PostgreSQL (plpgsql)
 -- Paridad: web/api/sqlweb/includes/sp/usp_cfg_plan_modules.sql
 -- ============================================================
 
--- SP: obtener módulos de un plan
+-- SP: obtener mÃ³dulos de un plan
 DROP FUNCTION IF EXISTS public.usp_cfg_plan_getmodules(VARCHAR) CASCADE;
-CREATE OR REPLACE FUNCTION usp_cfg_plan_getmodules(p_plan VARCHAR)
+DROP FUNCTION IF EXISTS usp_cfg_plan_getmodules(p_plan VARCHAR)
 RETURNS TABLE("ModuleCode" VARCHAR, "SortOrder" SMALLINT)
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -25,7 +25,7 @@ BEGIN
       WHERE pm."PlanCode" = p_plan AND pm."IsEnabled" = TRUE
       ORDER BY pm."SortOrder";
   ELSE
-    -- Fallback hardcoded por si la tabla está vacía
+    -- Fallback hardcoded por si la tabla estÃ¡ vacÃ­a
     RETURN QUERY
       SELECT t.code::VARCHAR, t.ord::SMALLINT
       FROM unnest(
@@ -50,7 +50,7 @@ BEGIN
   END IF;
 END; $$;
 
--- SP: aplicar módulos de un plan al usuario admin del tenant
+-- SP: aplicar mÃ³dulos de un plan al usuario admin del tenant
 DROP FUNCTION IF EXISTS public.usp_cfg_plan_applymodules(INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_plan_applymodules(
   p_company_id INT,
@@ -80,7 +80,7 @@ BEGIN
   DELETE FROM sec."UserModuleAccess"
   WHERE "UserCode" = v_admin_code;
 
-  -- Insertar módulos del plan
+  -- Insertar mÃ³dulos del plan
   FOR v_module IN
     SELECT m."ModuleCode", m."SortOrder"
     FROM usp_cfg_plan_getmodules(p_plan) m

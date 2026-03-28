@@ -1,7 +1,7 @@
-\echo '  [013] Fix TIMESTAMPTZ→TIMESTAMP en funciones pettycash...'
+\echo '  [013] Fix TIMESTAMPTZâ†’TIMESTAMP en funciones pettycash...'
 
 -- Las tablas fin."PettyCashBox", fin."PettyCashExpense" y fin."PettyCashSession"
--- tienen columnas TIMESTAMPTZ en producción, pero las funciones declaran TIMESTAMP
+-- tienen columnas TIMESTAMPTZ en producciÃ³n, pero las funciones declaran TIMESTAMP
 -- en RETURNS TABLE. Se agrega ::TIMESTAMP en cada SELECT afectado.
 
 -- 1. usp_fin_pettycash_box_list
@@ -169,9 +169,9 @@ BEGIN
 END;
 $$;
 
-\echo '  [013] Registrando migración...'
+\echo '  [013] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('013_fix_timestamptz_pettycash', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [013] COMPLETO — pettycash TIMESTAMPTZ corregido'
+\echo '  [013] COMPLETO â€” pettycash TIMESTAMPTZ corregido'

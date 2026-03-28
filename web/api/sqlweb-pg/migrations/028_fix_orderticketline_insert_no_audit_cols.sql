@@ -1,13 +1,13 @@
 -- =============================================================================
---  Migración 028: Agregar columnas de auditoría faltantes en rest.OrderTicket
+--  MigraciÃ³n 028: Agregar columnas de auditorÃ­a faltantes en rest.OrderTicket
 --                 y rest.OrderTicketLine
 --
---  El DDL original (04_operations_core.sql) omitió:
+--  El DDL original (04_operations_core.sql) omitiÃ³:
 --    - rest."OrderTicket"."UpdatedAt"  (usado en recalcTotals, close, updateTimestamp)
 --    - rest."OrderTicketLine"."CreatedAt" y "UpdatedAt" (usados en el INSERT)
 --
 --  Se agregan con IF NOT EXISTS para ser idempotentes.
---  También se recrea usp_rest_orderticketline_insert eliminando todos los
+--  TambiÃ©n se recrea usp_rest_orderticketline_insert eliminando todos los
 --  overloads previos.
 -- =============================================================================
 
@@ -45,7 +45,7 @@ BEGIN
 END;
 $$;
 
-\echo '  [028] Recreando usp_rest_orderticketline_insert con columnas de auditoría...'
+\echo '  [028] Recreando usp_rest_orderticketline_insert con columnas de auditorÃ­a...'
 
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_insert(
     p_order_id               BIGINT,
@@ -94,9 +94,9 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_insert(
     NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(600), INT
 ) TO zentto_app;
 
-\echo '  [028] Registrando migración...'
+\echo '  [028] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('028_fix_orderticketline_insert_no_audit_cols', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [028] COMPLETO — columnas auditoría agregadas + función corregida'
+\echo '  [028] COMPLETO â€” columnas auditorÃ­a agregadas + funciÃ³n corregida'

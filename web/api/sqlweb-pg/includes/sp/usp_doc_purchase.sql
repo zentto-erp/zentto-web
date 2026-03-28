@@ -5,7 +5,7 @@
 -- ============================================================
 
 -- =============================================================================
--- 0. Nuclear cleanup de sobrecargas (DROP por OID — elimina TODAS las firmas)
+-- 0. Nuclear cleanup de sobrecargas (DROP por OID â€” elimina TODAS las firmas)
 -- =============================================================================
 DO $$
 DECLARE r RECORD;

@@ -1,6 +1,6 @@
 -- =============================================================================
---  Migración 023: Fix mesas ORDER BY seguro + metadata functions para CRUD
---  1. usp_rest_diningtable_list: ORDER BY seguro (TableNumber no siempre numérico)
+--  MigraciÃƒÂ³n 023: Fix mesas ORDER BY seguro + metadata functions para CRUD
+--  1. usp_rest_diningtable_list: ORDER BY seguro (TableNumber no siempre numÃƒÂ©rico)
 --  2. usp_Sys_Metadata_Tables/Columns/PrimaryKeys: necesarios para CRUD admin PG
 -- =============================================================================
 
@@ -145,9 +145,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_Sys_Metadata_PrimaryKeys() TO zentto_app;
 
-\echo '  [023] Registrando migración...'
+\echo '  [023] Registrando migraciÃƒÂ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('023_fix_mesas_order_and_metadata', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [023] COMPLETO — ORDER BY mesas seguro + metadata functions PG'
+\echo '  [023] COMPLETO Ã¢â‚¬â€ ORDER BY mesas seguro + metadata functions PG'

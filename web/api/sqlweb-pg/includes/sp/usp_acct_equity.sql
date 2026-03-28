@@ -136,7 +136,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Acct_EquityMovement_Update(INTEGER, INTEGER, VARCHAR(30), DATE, NUMERIC(18,2), VARCHAR(400), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_Update(
     p_company_id          INTEGER,
-    p_equity_movement_id  INTEGER,
+    p_equity_movement_id  BIGINT,
     p_movement_type       VARCHAR(30)   DEFAULT NULL,
     p_movement_date       DATE          DEFAULT NULL,
     p_amount              NUMERIC(18,2) DEFAULT NULL,
@@ -179,7 +179,7 @@ $$;
 DROP FUNCTION IF EXISTS usp_Acct_EquityMovement_Delete(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_Delete(
     p_company_id          INTEGER,
-    p_equity_movement_id  INTEGER,
+    p_equity_movement_id  BIGINT,
     OUT p_resultado        INTEGER,
     OUT p_mensaje          TEXT
 )

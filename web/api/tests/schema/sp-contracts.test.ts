@@ -11,9 +11,9 @@
  *   PG_CONNECTION_STRING  o  PG_HOST + PG_PORT + PG_DATABASE + PG_USER + PG_PASSWORD
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import pg from 'pg';
-import 'dotenv/config';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import pg from "pg";
+import "dotenv/config";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Conexión
@@ -25,12 +25,13 @@ beforeAll(() => {
   pool = process.env.PG_CONNECTION_STRING
     ? new pg.Pool({ connectionString: process.env.PG_CONNECTION_STRING })
     : new pg.Pool({
-        host:     process.env.PG_HOST     ?? '127.0.0.1',
-        port:     Number(process.env.PG_PORT ?? 5432),
-        database: process.env.PG_DATABASE ?? 'zentto_prod',
-        user:     process.env.PG_USER     ?? 'zentto_app',
-        password: process.env.PG_PASSWORD ?? '',
-        ssl:      process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false,
+        host: process.env.PG_HOST ?? "127.0.0.1",
+        port: Number(process.env.PG_PORT ?? 5432),
+        database: process.env.PG_DATABASE ?? "zentto_prod",
+        user: process.env.PG_USER ?? "zentto_app",
+        password: process.env.PG_PASSWORD ?? "",
+        ssl:
+          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
       });
 });
 
@@ -60,9 +61,9 @@ async function getAllFunctionNames(): Promise<string[]> {
      JOIN pg_namespace n ON n.oid = p.pronamespace
      WHERE p.proname LIKE 'usp_%'
        AND n.nspname = 'public'
-     ORDER BY p.proname`
+     ORDER BY p.proname`,
   );
-  return res.rows.map(r => r.proname);
+  return res.rows.map((r) => r.proname);
 }
 
 async function getFunctionsWithOverloads(): Promise<FuncOverload[]> {
@@ -74,9 +75,9 @@ async function getFunctionsWithOverloads(): Promise<FuncOverload[]> {
        AND n.nspname = 'public'
      GROUP BY p.proname
      HAVING COUNT(*) > 1
-     ORDER BY p.proname`
+     ORDER BY p.proname`,
   );
-  return res.rows.map(r => ({ proname: r.proname, count: Number(r.count) }));
+  return res.rows.map((r) => ({ proname: r.proname, count: Number(r.count) }));
 }
 
 async function getFuncMeta(funcName: string): Promise<FuncMeta[]> {
@@ -94,12 +95,12 @@ async function getFuncMeta(funcName: string): Promise<FuncMeta[]> {
      FROM pg_proc p
      WHERE p.proname = $1
      ORDER BY p.oid`,
-    [funcName.toLowerCase()]
+    [funcName.toLowerCase()],
   );
-  return res.rows.map(r => ({
+  return res.rows.map((r) => ({
     proname: r.proname,
-    argtypes: r.argtypes ? r.argtypes.split(',').map(s => s.trim()) : [],
-    rettype: r.rettype ?? '',
+    argtypes: r.argtypes ? r.argtypes.split(",").map((s) => s.trim()) : [],
+    rettype: r.rettype ?? "",
     proretset: r.proretset,
   }));
 }
@@ -108,22 +109,22 @@ async function getFuncMeta(funcName: string): Promise<FuncMeta[]> {
 // Test 1: La DB está bootstrapped (sanity check)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — DB bootstrapped', () => {
-  it('debe tener al menos 100 funciones usp_*', async () => {
+describe("SP Contracts — DB bootstrapped", () => {
+  it("debe tener al menos 100 funciones usp_*", async () => {
     const names = await getAllFunctionNames();
     expect(
       names.length,
-      `Solo hay ${names.length} funciones — la DB puede no estar inicializada`
+      `Solo hay ${names.length} funciones — la DB puede no estar inicializada`,
     ).toBeGreaterThanOrEqual(100);
     console.log(`  ℹ  Total funciones únicas usp_*: ${names.length}`);
   });
 
-  it('tabla public._migrations debe existir', async () => {
+  it("tabla public._migrations debe existir", async () => {
     const res = await pool.query<{ exists: boolean }>(
       `SELECT EXISTS (
          SELECT 1 FROM information_schema.tables
          WHERE table_schema = 'public' AND table_name = '_migrations'
-       ) AS exists`
+       ) AS exists`,
     );
     expect(res.rows[0]?.exists).toBe(true);
   });
@@ -134,26 +135,28 @@ describe('SP Contracts — DB bootstrapped', () => {
 // (Este es el test crítico — detecta la causa raíz de los errores POS)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — sin overloads duplicados (todas las funciones)', () => {
-  it('ninguna función usp_* debe tener más de 1 overload', async () => {
+describe("SP Contracts — sin overloads duplicados (todas las funciones)", () => {
+  it("ninguna función usp_* debe tener más de 1 overload", async () => {
     const overloads = await getFunctionsWithOverloads();
 
     if (overloads.length > 0) {
       const report = overloads
-        .map(f => `  - ${f.proname}: ${f.count} overloads`)
-        .join('\n');
+        .map((f) => `  - ${f.proname}: ${f.count} overloads`)
+        .join("\n");
       console.error(`\n⚠️  Funciones con overloads duplicados:\n${report}\n`);
       console.error(
         `Solución: crear migración en sqlweb-pg/migrations/ con:\n` +
-        `  DROP FUNCTION IF EXISTS <nombre>(tipo1, tipo2, ...) CASCADE;\n` +
-        `  CREATE OR REPLACE FUNCTION <nombre>(...)\n`
+          `  DROP FUNCTION IF EXISTS <nombre>(tipo1, tipo2, ...) CASCADE;\n` +
+          `  DROP FUNCTION IF EXISTS <nombre>(...)\n`,
       );
     }
 
     expect(
       overloads.length,
       `Hay ${overloads.length} función(es) con overloads duplicados:\n` +
-      overloads.map(f => `  ${f.proname} (${f.count} versiones)`).join('\n')
+        overloads
+          .map((f) => `  ${f.proname} (${f.count} versiones)`)
+          .join("\n"),
     ).toBe(0);
   });
 });
@@ -162,11 +165,11 @@ describe('SP Contracts — sin overloads duplicados (todas las funciones)', () =
 // Test 3: Funciones POS críticas — tipos BIGINT correctos
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — tipos BIGINT en funciones POS', () => {
+describe("SP Contracts — tipos BIGINT en funciones POS", () => {
   const bigintReturnFunctions = [
-    'usp_pos_waitticket_create',
-    'usp_pos_waitticketline_insert',
-    'usp_pos_saleticketline_insert',
+    "usp_pos_waitticket_create",
+    "usp_pos_waitticketline_insert",
+    "usp_pos_saleticketline_insert",
   ];
 
   for (const fn of bigintReturnFunctions) {
@@ -179,30 +182,30 @@ describe('SP Contracts — tipos BIGINT en funciones POS', () => {
       const meta = metas[0];
       expect(
         meta.rettype.toLowerCase(),
-        `${fn} retorna "${meta.rettype}" — se esperaba bigint`
-      ).toContain('bigint');
+        `${fn} retorna "${meta.rettype}" — se esperaba bigint`,
+      ).toContain("bigint");
     });
   }
 
-  it('usp_pos_waitticketline_insert primer parámetro debe ser bigint', async () => {
-    const metas = await getFuncMeta('usp_pos_waitticketline_insert');
+  it("usp_pos_waitticketline_insert primer parámetro debe ser bigint", async () => {
+    const metas = await getFuncMeta("usp_pos_waitticketline_insert");
     if (metas.length === 0) return;
-    const firstArgType = metas[0]?.argtypes[0] ?? '';
+    const firstArgType = metas[0]?.argtypes[0] ?? "";
     expect(
       firstArgType.toLowerCase(),
-      `Primer argumento es "${firstArgType}" — se esperaba bigint`
-    ).toContain('bigint');
+      `Primer argumento es "${firstArgType}" — se esperaba bigint`,
+    ).toContain("bigint");
   });
 
-  it('usp_pos_waitticket_recover p_wait_ticket_id debe ser bigint', async () => {
-    const metas = await getFuncMeta('usp_pos_waitticket_recover');
+  it("usp_pos_waitticket_recover p_wait_ticket_id debe ser bigint", async () => {
+    const metas = await getFuncMeta("usp_pos_waitticket_recover");
     if (metas.length === 0) return;
     // Tercer parámetro (índice 2) es p_wait_ticket_id
-    const thirdArgType = metas[0]?.argtypes[2] ?? '';
+    const thirdArgType = metas[0]?.argtypes[2] ?? "";
     expect(
       thirdArgType.toLowerCase(),
-      `Tercer argumento de usp_pos_waitticket_recover es "${thirdArgType}" — se esperaba bigint`
-    ).toContain('bigint');
+      `Tercer argumento de usp_pos_waitticket_recover es "${thirdArgType}" — se esperaba bigint`,
+    ).toContain("bigint");
   });
 });
 
@@ -210,40 +213,42 @@ describe('SP Contracts — tipos BIGINT en funciones POS', () => {
 // Test 4: Funciones de infraestructura obligatorias
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — funciones de infraestructura', () => {
+describe("SP Contracts — funciones de infraestructura", () => {
   // Solo las funciones más críticas para que el sistema arranque
   const requiredFunctions = [
-    'usp_sec_user_authenticate',
-    'usp_cfg_resolvecontext',
-    'usp_cfg_fiscal_getconfig',
-    'usp_pos_waitticket_create',
-    'usp_pos_saleticket_create',
+    "usp_sec_user_authenticate",
+    "usp_cfg_resolvecontext",
+    "usp_cfg_fiscal_getconfig",
+    "usp_pos_waitticket_create",
+    "usp_pos_saleticket_create",
     // Módulo shipping (migración 00020)
-    'usp_shipping_customer_register',
-    'usp_shipping_customer_login',
-    'usp_shipping_shipment_create',
-    'usp_shipping_shipment_list',
-    'usp_shipping_track',
+    "usp_shipping_customer_register",
+    "usp_shipping_customer_login",
+    "usp_shipping_shipment_create",
+    "usp_shipping_shipment_list",
+    "usp_shipping_track",
     // Sistema de respaldos de tenants (migraciones 00029/00030)
-    'usp_sys_backup_create',
-    'usp_sys_backup_complete',
-    'usp_sys_backup_fail',
-    'usp_sys_backup_list',
+    "usp_sys_backup_create",
+    "usp_sys_backup_complete",
+    "usp_sys_backup_fail",
+    "usp_sys_backup_list",
     // Resource management + cleanup (migración 00028)
-    'usp_sys_resource_audit',
-    'usp_sys_cleanup_scan',
-    'usp_sys_cleanup_list',
-    'usp_sys_cleanup_process',
+    "usp_sys_resource_audit",
+    "usp_sys_cleanup_scan",
+    "usp_sys_cleanup_list",
+    "usp_sys_cleanup_process",
   ];
 
   for (const fn of requiredFunctions) {
     it(`${fn} debe existir`, async () => {
       const res = await pool.query<{ cnt: string }>(
         `SELECT COUNT(*) AS cnt FROM pg_proc WHERE proname = $1`,
-        [fn.toLowerCase()]
+        [fn.toLowerCase()],
       );
       const exists = Number(res.rows[0]?.cnt ?? 0) > 0;
-      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(true);
+      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(
+        true,
+      );
     });
   }
 });
@@ -252,8 +257,8 @@ describe('SP Contracts — funciones de infraestructura', () => {
 // Test 5: Reporte de estado (informativo, siempre pasa)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — reporte de estado', () => {
-  it('muestra resumen de funciones por módulo', async () => {
+describe("SP Contracts — reporte de estado", () => {
+  it("muestra resumen de funciones por módulo", async () => {
     const res = await pool.query<{ modulo: string; total: string }>(
       `SELECT
          SPLIT_PART(proname, '_', 2) AS modulo,
@@ -261,9 +266,9 @@ describe('SP Contracts — reporte de estado', () => {
        FROM pg_proc
        WHERE proname LIKE 'usp_%'
        GROUP BY modulo
-       ORDER BY total DESC`
+       ORDER BY total DESC`,
     );
-    console.log('\n  📊 Funciones por módulo:');
+    console.log("\n  📊 Funciones por módulo:");
     for (const row of res.rows) {
       console.log(`     ${row.modulo.padEnd(15)} ${row.total}`);
     }
@@ -275,9 +280,13 @@ describe('SP Contracts — reporte de estado', () => {
 // Test 6: Sin TIMESTAMP WITH TIME ZONE — obligatorio, falla si hay problemas
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — sin TIMESTAMP WITH TIME ZONE', () => {
-  it('ninguna función usp_* debe usar timestamp with time zone en argumentos o retorno', async () => {
-    const res = await pool.query<{ proname: string; args: string; ret: string }>(
+describe("SP Contracts — sin TIMESTAMP WITH TIME ZONE", () => {
+  it("ninguna función usp_* debe usar timestamp with time zone en argumentos o retorno", async () => {
+    const res = await pool.query<{
+      proname: string;
+      args: string;
+      ret: string;
+    }>(
       `SELECT
          p.proname,
          pg_get_function_arguments(p.oid) AS args,
@@ -288,32 +297,36 @@ describe('SP Contracts — sin TIMESTAMP WITH TIME ZONE', () => {
            pg_get_function_arguments(p.oid) ILIKE '%timestamp with time zone%'
            OR pg_get_function_result(p.oid) ILIKE '%timestamp with time zone%'
          )
-       ORDER BY p.proname`
+       ORDER BY p.proname`,
     );
 
     const list = res.rows;
 
     if (list.length > 0) {
       console.error(
-        '\n[SP Contracts] Funciones con TIMESTAMP WITH TIME ZONE (TIMESTAMPTZ) — se esperaba TIMESTAMP sin zona:'
+        "\n[SP Contracts] Funciones con TIMESTAMP WITH TIME ZONE (TIMESTAMPTZ) — se esperaba TIMESTAMP sin zona:",
       );
       for (const row of list) {
-        const argsHit = /timestamp with time zone/i.test(row.args ?? '') ? `ARGS: ${row.args}` : '';
-        const retHit  = /timestamp with time zone/i.test(row.ret  ?? '') ? `RET:  ${row.ret}`  : '';
+        const argsHit = /timestamp with time zone/i.test(row.args ?? "")
+          ? `ARGS: ${row.args}`
+          : "";
+        const retHit = /timestamp with time zone/i.test(row.ret ?? "")
+          ? `RET:  ${row.ret}`
+          : "";
         console.error(`  - ${row.proname}`);
         if (argsHit) console.error(`      ${argsHit}`);
-        if (retHit)  console.error(`      ${retHit}`);
+        if (retHit) console.error(`      ${retHit}`);
       }
       console.error(
-        '\nSolución: reemplazar TIMESTAMPTZ / TIMESTAMP WITH TIME ZONE por TIMESTAMP en los scripts sqlweb-pg/\n'
+        "\nSolución: reemplazar TIMESTAMPTZ / TIMESTAMP WITH TIME ZONE por TIMESTAMP en los scripts sqlweb-pg/\n",
       );
     }
 
     expect(
       list.length,
       `Hay ${list.length} función(es) usando TIMESTAMP WITH TIME ZONE. ` +
-      `Todas las fechas deben ser TIMESTAMP (sin zona). ` +
-      `Funciones afectadas: ${list.map(r => r.proname).join(', ')}`
+        `Todas las fechas deben ser TIMESTAMP (sin zona). ` +
+        `Funciones afectadas: ${list.map((r) => r.proname).join(", ")}`,
     ).toBe(0);
   });
 });
@@ -322,7 +335,7 @@ describe('SP Contracts — sin TIMESTAMP WITH TIME ZONE', () => {
 // Test 7: Parámetros de entidades principales deben ser BIGINT — obligatorio
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
+describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
   /**
    * Sufijos de columnas BIGINT según el DDL real del proyecto.
    * El matching es case-insensitive y tolerante a snake_case y camelCase.
@@ -330,22 +343,22 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
    *   p_customer_id, p_customerid, customerid, customer_id
    */
   const bigintEntitySuffixes: string[] = [
-    'customerid',
-    'supplierid',
-    'employeeid',
-    'productid',
-    'accountid',
-    'journalentryid',
-    'waitticketid',
-    'saleticketid',
-    'bankmovementid',
-    'bankaccountid',
-    'bankid',
-    'movementid',
-    'payrollrunid',
-    'orderticketid',
-    'receivabledocumentid',
-    'payabledocumentid',
+    "customerid",
+    "supplierid",
+    "employeeid",
+    "productid",
+    "accountid",
+    "journalentryid",
+    "waitticketid",
+    "saleticketid",
+    "bankmovementid",
+    "bankaccountid",
+    "bankid",
+    "movementid",
+    "payrollrunid",
+    "orderticketid",
+    "receivabledocumentid",
+    "payabledocumentid",
   ];
 
   /**
@@ -357,8 +370,8 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
    */
   function normalizeParamName(raw: string): string {
     // raw = 'p_customer_id integer' -> tomar solo el nombre (primer token)
-    const name = raw.trim().split(/\s+/)[0] ?? '';
-    return name.replace(/^p_/, '').replace(/_/g, '').toLowerCase();
+    const name = raw.trim().split(/\s+/)[0] ?? "";
+    return name.replace(/^p_/, "").replace(/_/g, "").toLowerCase();
   }
 
   /**
@@ -371,22 +384,22 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
   function extractParamType(raw: string): string {
     const tokens = raw.trim().split(/\s+/);
     // El nombre es el primer token; el tipo es el resto
-    return tokens.slice(1).join(' ').toLowerCase();
+    return tokens.slice(1).join(" ").toLowerCase();
   }
 
-  it('todos los parámetros de entidad BIGINT deben declararse como bigint (no integer)', async () => {
+  it("todos los parámetros de entidad BIGINT deben declararse como bigint (no integer)", async () => {
     const res = await pool.query<{ proname: string; args: string }>(
       `SELECT p.proname,
               pg_get_function_arguments(p.oid) AS args
        FROM pg_proc p
        WHERE p.proname LIKE 'usp_%'
-       ORDER BY p.proname`
+       ORDER BY p.proname`,
     );
 
     interface Mismatch {
-      func:     string;
-      param:    string;
-      actual:   string;
+      func: string;
+      param: string;
+      actual: string;
       expected: string;
     }
 
@@ -396,28 +409,28 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
       if (!row.args) continue;
 
       // pg_get_function_arguments devuelve una lista separada por comas
-      const argFragments = row.args.split(',').map(s => s.trim());
+      const argFragments = row.args.split(",").map((s) => s.trim());
 
       for (const fragment of argFragments) {
         if (!fragment) continue;
 
         const normalized = normalizeParamName(fragment);
-        const paramType  = extractParamType(fragment);
+        const paramType = extractParamType(fragment);
 
         // Verifica si el nombre normalizado TERMINA con alguno de los sufijos BIGINT
-        const matchedSuffix = bigintEntitySuffixes.find(suffix =>
-          normalized.endsWith(suffix)
+        const matchedSuffix = bigintEntitySuffixes.find((suffix) =>
+          normalized.endsWith(suffix),
         );
 
         // Excluir IDs externos de terceros (ej: paddle_customer_id es VARCHAR externo, no BIGINT de DB)
-        const isExternalId = normalized.startsWith('paddle');
+        const isExternalId = normalized.startsWith("paddle");
 
-        if (matchedSuffix && !isExternalId && !paramType.includes('bigint')) {
+        if (matchedSuffix && !isExternalId && !paramType.includes("bigint")) {
           mismatches.push({
-            func:     row.proname,
-            param:    fragment.trim().split(/\s+/)[0] ?? fragment,
-            actual:   paramType,
-            expected: 'bigint',
+            func: row.proname,
+            param: fragment.trim().split(/\s+/)[0] ?? fragment,
+            actual: paramType,
+            expected: "bigint",
           });
         }
       }
@@ -425,27 +438,30 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
 
     if (mismatches.length > 0) {
       console.error(
-        `\n[SP Contracts] Parámetros de entidad que deberían ser BIGINT pero no lo son (${mismatches.length}):`
+        `\n[SP Contracts] Parámetros de entidad que deberían ser BIGINT pero no lo son (${mismatches.length}):`,
       );
       console.error(
-        `  ${'FUNCIÓN'.padEnd(50)} ${'PARÁMETRO'.padEnd(30)} ${'TIPO ACTUAL'.padEnd(20)} TIPO ESPERADO`
+        `  ${"FUNCIÓN".padEnd(50)} ${"PARÁMETRO".padEnd(30)} ${"TIPO ACTUAL".padEnd(20)} TIPO ESPERADO`,
       );
-      console.error(`  ${'-'.repeat(115)}`);
+      console.error(`  ${"-".repeat(115)}`);
       for (const m of mismatches) {
         console.error(
-          `  ${m.func.padEnd(50)} ${m.param.padEnd(30)} ${m.actual.padEnd(20)} ${m.expected}`
+          `  ${m.func.padEnd(50)} ${m.param.padEnd(30)} ${m.actual.padEnd(20)} ${m.expected}`,
         );
       }
       console.error(
-        '\nSolución: cambiar INTEGER -> BIGINT en los scripts sqlweb-pg/ para los parámetros afectados.\n'
+        "\nSolución: cambiar INTEGER -> BIGINT en los scripts sqlweb-pg/ para los parámetros afectados.\n",
       );
     }
 
     expect(
       mismatches.length,
       `Hay ${mismatches.length} parámetro(s) de entidad declarados con tipo incorrecto. ` +
-      `Se esperaba bigint. Primeros 5 afectados: ` +
-      mismatches.slice(0, 5).map(m => `${m.func}.${m.param}(${m.actual})`).join(', ')
+        `Se esperaba bigint. Primeros 5 afectados: ` +
+        mismatches
+          .slice(0, 5)
+          .map((m) => `${m.func}.${m.param}(${m.actual})`)
+          .join(", "),
     ).toBe(0);
   });
 });
@@ -454,7 +470,7 @@ describe('SP Contracts — parámetros de entidades deben ser BIGINT', () => {
 // Test 7b: Columnas de RETURNS TABLE de entidades también deben ser BIGINT
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
+describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
   /**
    * Mismos sufijos que Test 7. El matching es case-insensitive y tolerante
    * a snake_case y camelCase en los nombres de columna del RETURNS TABLE.
@@ -462,22 +478,22 @@ describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
    *   "CustomerId", "customer_id", "customerid"
    */
   const bigintEntitySuffixes: string[] = [
-    'customerid',
-    'supplierid',
-    'employeeid',
-    'productid',
-    'accountid',
-    'journalentryid',
-    'waitticketid',
-    'saleticketid',
-    'bankmovementid',
-    'bankaccountid',
-    'bankid',
-    'movementid',
-    'payrollrunid',
-    'orderticketid',
-    'receivabledocumentid',
-    'payabledocumentid',
+    "customerid",
+    "supplierid",
+    "employeeid",
+    "productid",
+    "accountid",
+    "journalentryid",
+    "waitticketid",
+    "saleticketid",
+    "bankmovementid",
+    "bankaccountid",
+    "bankid",
+    "movementid",
+    "payrollrunid",
+    "orderticketid",
+    "receivabledocumentid",
+    "payabledocumentid",
   ];
 
   /**
@@ -488,41 +504,41 @@ describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
    * comparación con bigintEntitySuffixes.
    */
   function parseReturnsCols(rettype: string): { name: string; type: string }[] {
-    if (!rettype.trim().toUpperCase().startsWith('TABLE')) return [];
+    if (!rettype.trim().toUpperCase().startsWith("TABLE")) return [];
 
     // Extraer el interior del TABLE(...)
-    const inner = rettype.replace(/^TABLE\s*\(/i, '').replace(/\)\s*$/, '');
+    const inner = rettype.replace(/^TABLE\s*\(/i, "").replace(/\)\s*$/, "");
 
     return inner
-      .split(',')
-      .map(col => {
+      .split(",")
+      .map((col) => {
         const trimmed = col.trim();
         if (!trimmed) return null;
         // Soporta tanto "ColName" tipo  como  colname tipo
         const m = trimmed.match(/^"?([^"\s]+)"?\s+(.+)$/);
         if (!m) return null;
         return {
-          name: m[1].replace(/_/g, '').toLowerCase(),
+          name: m[1].replace(/_/g, "").toLowerCase(),
           type: m[2].trim().toLowerCase(),
         };
       })
       .filter((x): x is { name: string; type: string } => x !== null);
   }
 
-  it('todas las columnas de RETURNS TABLE con sufijo de entidad deben ser bigint (no integer)', async () => {
+  it("todas las columnas de RETURNS TABLE con sufijo de entidad deben ser bigint (no integer)", async () => {
     const res = await pool.query<{ proname: string; rettype: string }>(
       `SELECT p.proname,
               pg_get_function_result(p.oid) AS rettype
        FROM pg_proc p
        WHERE p.proname LIKE 'usp_%'
          AND pg_get_function_result(p.oid) ILIKE 'TABLE(%'
-       ORDER BY p.proname`
+       ORDER BY p.proname`,
     );
 
     interface Mismatch {
-      func:     string;
-      column:   string;
-      actual:   string;
+      func: string;
+      column: string;
+      actual: string;
       expected: string;
     }
 
@@ -535,19 +551,19 @@ describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
 
       for (const col of cols) {
         // Verifica si el nombre normalizado TERMINA con alguno de los sufijos BIGINT
-        const matchedSuffix = bigintEntitySuffixes.find(suffix =>
-          col.name.endsWith(suffix)
+        const matchedSuffix = bigintEntitySuffixes.find((suffix) =>
+          col.name.endsWith(suffix),
         );
 
         // Excluir IDs externos de terceros (ej: paddlecustomerid es VARCHAR externo, no BIGINT de DB)
-        const isExternalId = col.name.startsWith('paddle');
+        const isExternalId = col.name.startsWith("paddle");
 
-        if (matchedSuffix && !isExternalId && !col.type.includes('bigint')) {
+        if (matchedSuffix && !isExternalId && !col.type.includes("bigint")) {
           mismatches.push({
-            func:     row.proname,
-            column:   col.name,
-            actual:   col.type,
-            expected: 'bigint',
+            func: row.proname,
+            column: col.name,
+            actual: col.type,
+            expected: "bigint",
           });
         }
       }
@@ -555,27 +571,30 @@ describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
 
     if (mismatches.length > 0) {
       console.error(
-        `\n[SP Contracts] Columnas de RETURNS TABLE que deberían ser BIGINT pero no lo son (${mismatches.length}):`
+        `\n[SP Contracts] Columnas de RETURNS TABLE que deberían ser BIGINT pero no lo son (${mismatches.length}):`,
       );
       console.error(
-        `  ${'FUNCIÓN'.padEnd(50)} ${'COLUMNA RETORNO'.padEnd(30)} ${'TIPO ACTUAL'.padEnd(20)} TIPO ESPERADO`
+        `  ${"FUNCIÓN".padEnd(50)} ${"COLUMNA RETORNO".padEnd(30)} ${"TIPO ACTUAL".padEnd(20)} TIPO ESPERADO`,
       );
-      console.error(`  ${'-'.repeat(115)}`);
+      console.error(`  ${"-".repeat(115)}`);
       for (const m of mismatches) {
         console.error(
-          `  ${m.func.padEnd(50)} ${m.column.padEnd(30)} ${m.actual.padEnd(20)} ${m.expected}`
+          `  ${m.func.padEnd(50)} ${m.column.padEnd(30)} ${m.actual.padEnd(20)} ${m.expected}`,
         );
       }
       console.error(
-        '\nSolución: cambiar INTEGER -> BIGINT en las columnas de RETURNS TABLE de los scripts sqlweb-pg/\n'
+        "\nSolución: cambiar INTEGER -> BIGINT en las columnas de RETURNS TABLE de los scripts sqlweb-pg/\n",
       );
     }
 
     expect(
       mismatches.length,
       `Hay ${mismatches.length} columna(s) de RETURNS TABLE con tipo incorrecto. ` +
-      `Se esperaba bigint. Primeros 5 afectados: ` +
-      mismatches.slice(0, 5).map(m => `${m.func}."${m.column}"(${m.actual})`).join(', ')
+        `Se esperaba bigint. Primeros 5 afectados: ` +
+        mismatches
+          .slice(0, 5)
+          .map((m) => `${m.func}."${m.column}"(${m.actual})`)
+          .join(", "),
     ).toBe(0);
   });
 });
@@ -584,46 +603,48 @@ describe('SP Contracts — columnas de RETURNS TABLE deben ser BIGINT', () => {
 // Test 8: Funciones de módulo críticas — opcionales (warn si no existen)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
+describe("SP Contracts — funciones de módulo críticas (opcionales)", () => {
   const optionalModuleFunctions: string[] = [
-    'usp_ar_receivabledocument_list',
-    'usp_ap_payabledocument_list',
-    'usp_fin_bank_list',
-    'usp_fin_bankaccount_list',
-    'usp_fin_bankmovement_list',
-    'usp_acct_account_list',
-    'usp_master_customer_list',
-    'usp_master_supplier_list',
-    'usp_master_product_list',
-    'usp_hr_payrollrun_list',
+    "usp_ar_receivabledocument_list",
+    "usp_ap_payabledocument_list",
+    "usp_fin_bank_list",
+    "usp_fin_bankaccount_list",
+    "usp_fin_bankmovement_list",
+    "usp_acct_account_list",
+    "usp_master_customer_list",
+    "usp_master_supplier_list",
+    "usp_master_product_list",
+    "usp_hr_payrollrun_list",
     // Módulos con filtro de estado (migración 00021)
-    'usp_doc_salesdocument_list',
-    'usp_doc_purchasedocument_list',
+    "usp_doc_salesdocument_list",
+    "usp_doc_purchasedocument_list",
     // Shipping dashboard y customs
-    'usp_shipping_dashboard',
-    'usp_shipping_customs_upsert',
+    "usp_shipping_dashboard",
+    "usp_shipping_customs_upsert",
     // Backup helpers
-    'usp_sys_backup_tenantinfo',
-    'usp_sys_backup_latest_per_tenant',
+    "usp_sys_backup_tenantinfo",
+    "usp_sys_backup_latest_per_tenant",
   ];
 
   for (const fn of optionalModuleFunctions) {
     it(`${fn} debe existir (opcional — warn si falta)`, async () => {
       const res = await pool.query<{ cnt: string }>(
         `SELECT COUNT(*) AS cnt FROM pg_proc WHERE proname = $1`,
-        [fn.toLowerCase()]
+        [fn.toLowerCase()],
       );
       const exists = Number(res.rows[0]?.cnt ?? 0) > 0;
 
       if (!exists) {
         console.warn(
-          `[SP Contracts] WARN: La función "${fn}" no existe — puede estar pendiente de implementación.`
+          `[SP Contracts] WARN: La función "${fn}" no existe — puede estar pendiente de implementación.`,
         );
         // Test opcional: no falla, solo advierte
         return;
       }
 
-      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(true);
+      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(
+        true,
+      );
     });
   }
 });
@@ -632,14 +653,14 @@ describe('SP Contracts — funciones de módulo críticas (opcionales)', () => {
 // Test 9: Tablas del esquema sys — deben existir tras las migraciones
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — tablas sys de gestión de tenants', () => {
+describe("SP Contracts — tablas sys de gestión de tenants", () => {
   const requiredSysTables = [
-    { schema: 'sys', table: 'TenantDatabase' },
-    { schema: 'sys', table: 'License' },
-    { schema: 'sys', table: 'TenantBackup' },
-    { schema: 'sys', table: 'TenantResourceLog' },
-    { schema: 'sys', table: 'CleanupQueue' },
-    { schema: 'cfg', table: 'Company' },
+    { schema: "sys", table: "TenantDatabase" },
+    { schema: "sys", table: "License" },
+    { schema: "sys", table: "TenantBackup" },
+    { schema: "sys", table: "TenantResourceLog" },
+    { schema: "sys", table: "CleanupQueue" },
+    { schema: "cfg", table: "Company" },
   ];
 
   for (const { schema, table } of requiredSysTables) {
@@ -649,11 +670,11 @@ describe('SP Contracts — tablas sys de gestión de tenants', () => {
            SELECT 1 FROM information_schema.tables
            WHERE table_schema = $1 AND table_name = $2
          ) AS exists`,
-        [schema, table]
+        [schema, table],
       );
       expect(
         res.rows[0]?.exists,
-        `La tabla ${schema}."${table}" no existe — revisar migraciones goose`
+        `La tabla ${schema}."${table}" no existe — revisar migraciones goose`,
       ).toBe(true);
     });
   }
@@ -663,9 +684,13 @@ describe('SP Contracts — tablas sys de gestión de tenants', () => {
 // Test 10: Reporte de inconsistencias TIMESTAMPTZ (informativo, siempre pasa)
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('SP Contracts — reporte TIMESTAMPTZ (informativo)', () => {
-  it('imprime funciones con timestamp with time zone como reporte informativo', async () => {
-    const res = await pool.query<{ proname: string; args: string; ret: string }>(
+describe("SP Contracts — reporte TIMESTAMPTZ (informativo)", () => {
+  it("imprime funciones con timestamp with time zone como reporte informativo", async () => {
+    const res = await pool.query<{
+      proname: string;
+      args: string;
+      ret: string;
+    }>(
       `SELECT p.proname,
               pg_get_function_arguments(p.oid) AS args,
               pg_get_function_result(p.oid)    AS ret
@@ -675,30 +700,36 @@ describe('SP Contracts — reporte TIMESTAMPTZ (informativo)', () => {
            pg_get_function_arguments(p.oid) ILIKE '%timestamp with time zone%'
            OR pg_get_function_result(p.oid) ILIKE '%timestamp with time zone%'
          )
-       ORDER BY p.proname`
+       ORDER BY p.proname`,
     );
 
     if (res.rows.length === 0) {
-      console.log('\n[SP Contracts] Reporte TIMESTAMPTZ: sin inconsistencias detectadas.');
+      console.log(
+        "\n[SP Contracts] Reporte TIMESTAMPTZ: sin inconsistencias detectadas.",
+      );
     } else {
       console.log(
-        `\n[SP Contracts] Reporte TIMESTAMPTZ — ${res.rows.length} función(es) con TIMESTAMP WITH TIME ZONE:`
+        `\n[SP Contracts] Reporte TIMESTAMPTZ — ${res.rows.length} función(es) con TIMESTAMP WITH TIME ZONE:`,
       );
       console.log(
-        `  ${'FUNCIÓN'.padEnd(50)} ${'ARGS (fragmento)'.padEnd(60)} RETORNO`
+        `  ${"FUNCIÓN".padEnd(50)} ${"ARGS (fragmento)".padEnd(60)} RETORNO`,
       );
-      console.log(`  ${'-'.repeat(130)}`);
+      console.log(`  ${"-".repeat(130)}`);
       for (const row of res.rows) {
         // Trunca cadenas largas para legibilidad en consola
-        const argStr = (row.args ?? '').length > 58
-          ? (row.args ?? '').slice(0, 55) + '...'
-          : (row.args ?? '');
-        const retStr = (row.ret ?? '').length > 40
-          ? (row.ret ?? '').slice(0, 37) + '...'
-          : (row.ret ?? '');
-        console.log(`  ${row.proname.padEnd(50)} ${argStr.padEnd(60)} ${retStr}`);
+        const argStr =
+          (row.args ?? "").length > 58
+            ? (row.args ?? "").slice(0, 55) + "..."
+            : (row.args ?? "");
+        const retStr =
+          (row.ret ?? "").length > 40
+            ? (row.ret ?? "").slice(0, 37) + "..."
+            : (row.ret ?? "");
+        console.log(
+          `  ${row.proname.padEnd(50)} ${argStr.padEnd(60)} ${retStr}`,
+        );
       }
-      console.log('');
+      console.log("");
     }
 
     // Siempre pasa — es solo informativo

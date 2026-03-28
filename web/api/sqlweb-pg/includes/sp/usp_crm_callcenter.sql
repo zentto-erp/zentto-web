@@ -5,11 +5,11 @@
 -- Fecha: 2026-03-22
 -- ============================================================
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 --  TABLAS
--- ═══════════════════════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
--- ── 1. crm.CallQueue ────────────────────────────────────────────────────────
+-- â”€â”€ 1. crm.CallQueue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS crm."CallQueue" (
     "QueueId"           BIGINT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"         INT            NOT NULL REFERENCES cfg."Company"("CompanyId"),
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS crm."CallQueue" (
     CONSTRAINT "CK_CallQueue_Type" CHECK ("QueueType" IN ('SALES','SUPPORT','COLLECTIONS','GENERAL'))
 );
 
--- ── 2. crm.Agent ────────────────────────────────────────────────────────────
+-- â”€â”€ 2. crm.Agent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS crm."Agent" (
     "AgentId"              BIGINT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"            INT            NOT NULL REFERENCES cfg."Company"("CompanyId"),
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS crm."Agent" (
     CONSTRAINT "CK_Agent_Status" CHECK ("Status" IN ('AVAILABLE','BUSY','ON_CALL','BREAK','OFFLINE'))
 );
 
--- ── 3. crm.CallLog ──────────────────────────────────────────────────────────
+-- â”€â”€ 3. crm.CallLog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS crm."CallLog" (
     "CallLogId"              BIGINT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"              INT            NOT NULL REFERENCES cfg."Company"("CompanyId"),
@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS "IX_CallLog_CompanyDate" ON crm."CallLog" ("CompanyId
 CREATE INDEX IF NOT EXISTS "IX_CallLog_CustomerCode" ON crm."CallLog" ("CompanyId", "CustomerCode");
 CREATE INDEX IF NOT EXISTS "IX_CallLog_Agent" ON crm."CallLog" ("AgentId", "CallStartTime" DESC);
 
--- ── 4. crm.CallScript ──────────────────────────────────────────────────────
+-- â”€â”€ 4. crm.CallScript â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS crm."CallScript" (
     "ScriptId"          BIGINT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"         INT            NOT NULL REFERENCES cfg."Company"("CompanyId"),
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS crm."CallScript" (
     CONSTRAINT "UQ_CallScript_Code" UNIQUE ("CompanyId", "ScriptCode")
 );
 
--- ── 5. crm.Campaign ────────────────────────────────────────────────────────
+-- â”€â”€ 5. crm.Campaign â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS crm."Campaign" (
     "CampaignId"        BIGINT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CompanyId"         INT            NOT NULL REFERENCES cfg."Company"("CompanyId"),
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS crm."Campaign" (
     CONSTRAINT "CK_Campaign_Status" CHECK ("Status" IN ('DRAFT','ACTIVE','PAUSED','COMPLETED','CANCELLED'))
 );
 
--- ── 6. crm.CampaignContact ─────────────────────────────────────────────────
+-- â”€â”€ 6. crm.CampaignContact â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS crm."CampaignContact" (
     "CampaignContactId"  BIGINT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "CampaignId"         BIGINT         NOT NULL REFERENCES crm."Campaign"("CampaignId"),
@@ -175,9 +175,9 @@ CREATE TABLE IF NOT EXISTS crm."CampaignContact" (
 CREATE INDEX IF NOT EXISTS "IX_CampaignContact_Status" ON crm."CampaignContact" ("CampaignId", "Status", "Priority");
 
 
--- ═══════════════════════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 --  FUNCIONES (equivalentes a SPs de SQL Server)
--- ═══════════════════════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 -- =============================================================================
 --  usp_CRM_CallQueue_List

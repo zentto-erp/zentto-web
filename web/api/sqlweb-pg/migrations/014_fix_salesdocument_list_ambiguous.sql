@@ -1,4 +1,4 @@
-\echo '  [014] Fix usp_doc_salesdocument_list — columnas reales + alias de tabla...'
+\echo '  [014] Fix usp_doc_salesdocument_list â€” columnas reales + alias de tabla...'
 
 -- Columnas reales en doc."SalesDocument":
 --   DocumentId, DocumentNumber, SerialType, FiscalMemoryNumber, OperationType,
@@ -9,7 +9,7 @@
 --   Concept, CurrencyCode, ExchangeRate, LegacyUserCode, CreatedAt, UpdatedAt,
 --   CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId
 --
--- Columnas inexistentes en la tabla → devuelven NULL para mantener contrato de la API.
+-- Columnas inexistentes en la tabla â†’ devuelven NULL para mantener contrato de la API.
 
 CREATE OR REPLACE FUNCTION public.usp_doc_salesdocument_list(
     p_tipo_operacion character varying,
@@ -100,7 +100,7 @@ BEGIN
         sd."IssueDate",                               -- DocumentDate
         sd."DueDate",
         sd."DocumentTime"::VARCHAR,
-        sd."Subtotal"::NUMERIC,                       -- SubTotal (float8→numeric)
+        sd."Subtotal"::NUMERIC,                       -- SubTotal (float8â†’numeric)
         sd."TaxableAmount"::NUMERIC,
         sd."ExemptAmount"::NUMERIC,
         sd."TaxAmount"::NUMERIC,
@@ -151,4 +151,4 @@ BEGIN
 END;
 $$;
 
-\echo '  [014] COMPLETO — usp_doc_salesdocument_list corregido'
+\echo '  [014] COMPLETO â€” usp_doc_salesdocument_list corregido'

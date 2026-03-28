@@ -1,9 +1,9 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_sys.sql
--- Funciones de sistema (diagnóstico y utilidades)
+-- Funciones de sistema (diagnÃƒÂ³stico y utilidades)
 -- ============================================================
 
--- usp_Sys_HealthCheck: verificación rápida de salud
+-- usp_Sys_HealthCheck: verificaciÃƒÂ³n rÃƒÂ¡pida de salud
 DROP FUNCTION IF EXISTS usp_Sys_HealthCheck() CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sys_HealthCheck()
 RETURNS TABLE("ok" INT, "serverTime" TIMESTAMP, "dbName" TEXT)

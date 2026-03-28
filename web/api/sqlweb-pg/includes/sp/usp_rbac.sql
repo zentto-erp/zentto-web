@@ -1,7 +1,7 @@
 /*
  * usp_rbac.sql
  *
- * Funciones RBAC alineadas al esquema canónico PostgreSQL.
+ * Funciones RBAC alineadas al esquema canÃƒÂ³nico PostgreSQL.
  */
 
 -- =============================================================================

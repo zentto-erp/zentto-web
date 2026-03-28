@@ -1,6 +1,6 @@
 -- Fix: usp_acct_recurringentry_getdue - column reference "RecurringEntryId" is ambiguous
 DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_getdue(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_acct_recurringentry_getdue(p_company_id integer)
+DROP FUNCTION IF EXISTS public.usp_acct_recurringentry_getdue(p_company_id integer)
 RETURNS TABLE(
     "RecurringEntryId"   integer,
     "TemplateName"       character varying,

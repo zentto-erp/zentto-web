@@ -5,10 +5,10 @@
 -- Entrada arrays por JSONB (reemplazo de XML en SQL Server)
 -- ============================================================
 
-DROP FUNCTION IF EXISTS usp_cxp_aplicar_pago(
+CREATE OR REPLACE FUNCTION usp_cxp_aplicar_pago(
     VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB, BOOLEAN, VARCHAR, VARCHAR
 );
-DROP FUNCTION IF EXISTS usp_cxp_aplicar_pago(
+CREATE OR REPLACE FUNCTION usp_cxp_aplicar_pago(
     VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB
 );
 
@@ -167,7 +167,7 @@ BEGIN
         IF v_payable_id IS NOT NULL AND v_pending > 0 AND v_doc.monto_aplicar > 0 THEN
             v_apply := LEAST(v_doc.monto_aplicar, v_pending);
 
-            -- Calcular retención si está habilitado
+            -- Calcular retenciÃ³n si estÃ¡ habilitado
             v_ret_rate := 0;
             v_ret_amount := 0;
             IF p_apply_retention THEN
@@ -240,7 +240,7 @@ BEGIN
     END IF;
 
     -- -------------------------------------------------------
-    -- Generar comprobante de retención si hubo retención
+    -- Generar comprobante de retenciÃ³n si hubo retenciÃ³n
     -- -------------------------------------------------------
     IF v_ret_total > 0 THEN
         BEGIN
@@ -285,7 +285,7 @@ BEGIN
     v_resultado := 1;
     v_mensaje := 'Pago aplicado exitosamente. Pago: ' || v_num_pago;
     IF v_ret_total > 0 THEN
-        v_mensaje := v_mensaje || ' | Retención: ' || v_ret_total::TEXT;
+        v_mensaje := v_mensaje || ' | RetenciÃ³n: ' || v_ret_total::TEXT;
     END IF;
 
     RETURN QUERY SELECT

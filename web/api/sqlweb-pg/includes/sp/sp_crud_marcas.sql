@@ -56,7 +56,7 @@ $$;
 
 -- GET BY CODIGO
 DROP FUNCTION IF EXISTS usp_marcas_getbycodigo(INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_marcas_getbycodigo(p_codigo INT)
+DROP FUNCTION IF EXISTS usp_marcas_getbycodigo(p_codigo INT)
 RETURNS TABLE("Codigo" INT, "Descripcion" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -69,7 +69,7 @@ $$;
 
 -- INSERT
 DROP FUNCTION IF EXISTS usp_marcas_insert(JSONB) CASCADE;
-CREATE OR REPLACE FUNCTION usp_marcas_insert(p_row_json JSONB)
+DROP FUNCTION IF EXISTS usp_marcas_insert(p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500), "NuevoCodigo" INT)
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -94,7 +94,7 @@ $$;
 
 -- UPDATE
 DROP FUNCTION IF EXISTS usp_marcas_update(INT, JSONB) CASCADE;
-CREATE OR REPLACE FUNCTION usp_marcas_update(p_codigo INT, p_row_json JSONB)
+DROP FUNCTION IF EXISTS usp_marcas_update(p_codigo INT, p_row_json JSONB)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -111,7 +111,7 @@ $$;
 
 -- DELETE
 DROP FUNCTION IF EXISTS usp_marcas_delete(INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_marcas_delete(p_codigo INT)
+DROP FUNCTION IF EXISTS usp_marcas_delete(p_codigo INT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
 LANGUAGE plpgsql AS $$
 BEGIN

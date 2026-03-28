@@ -1,10 +1,10 @@
 -- ============================================================
--- usp_sys_backoffice.sql — SPs de backoffice para gestión de tenants
+-- usp_sys_backoffice.sql Ã¢â‚¬â€ SPs de backoffice para gestiÃƒÂ³n de tenants
 -- Motor: PostgreSQL (plpgsql)
 -- Paridad: web/api/sqlweb/includes/sp/usp_sys_backoffice.sql
 -- ============================================================
 
--- ─── usp_Sys_Backoffice_TenantList ───────────────────────────────────────────
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ usp_Sys_Backoffice_TenantList Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 DROP FUNCTION IF EXISTS usp_sys_backoffice_tenantlist(INT, INT, VARCHAR, VARCHAR, VARCHAR) CASCADE;
 
@@ -80,11 +80,11 @@ BEGIN
   LIMIT v_limit OFFSET v_offset;
 END; $$;
 
--- ─── usp_Sys_Backoffice_TenantDetail ─────────────────────────────────────────
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ usp_Sys_Backoffice_TenantDetail Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 DROP FUNCTION IF EXISTS usp_sys_backoffice_tenantdetail(INT) CASCADE;
 
-CREATE OR REPLACE FUNCTION usp_sys_backoffice_tenantdetail(p_company_id INT)
+DROP FUNCTION IF EXISTS usp_sys_backoffice_tenantdetail(p_company_id INT)
 RETURNS TABLE(
   "CompanyId"        INT,
   "CompanyCode"      VARCHAR,
@@ -142,7 +142,7 @@ BEGIN
     AND c."IsDeleted" = FALSE;
 END; $$;
 
--- ─── usp_Sys_Backoffice_RevenueMetrics ───────────────────────────────────────
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ usp_Sys_Backoffice_RevenueMetrics Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 DROP FUNCTION IF EXISTS usp_sys_backoffice_revenuemetrics() CASCADE;
 

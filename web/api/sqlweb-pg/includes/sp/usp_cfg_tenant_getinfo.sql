@@ -3,7 +3,7 @@
 -- ============================================================
 DROP FUNCTION IF EXISTS usp_Cfg_Tenant_GetInfo(INT) CASCADE;
 
-CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_GetInfo(p_company_id INT)
+DROP FUNCTION IF EXISTS usp_Cfg_Tenant_GetInfo(p_company_id INT)
 RETURNS TABLE(
   "CompanyId"            INT,
   "CompanyCode"          VARCHAR,

@@ -74,7 +74,7 @@ $$;
 --                             p_employee_code, p_occurrence_date (TIMESTAMP), p_description,
 --                             p_severity, p_created_by
 -- NOTE: p_incident_date is DATE (not TIMESTAMP) to match what the service sends
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(
+CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(
     INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, TEXT, VARCHAR, INTEGER
 ) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(
@@ -133,7 +133,7 @@ $$;
 --                             p_employee_code, p_employee_name (NOT NULL in table),
 --                             p_exam_type, p_exam_date, p_result, p_notes, p_next_due_date
 -- We look up employee name from code to satisfy NOT NULL constraint
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(
+CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
     INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, DATE, INTEGER
 ) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
@@ -199,7 +199,7 @@ $$;
 --             p_title, p_provider, p_start_date, p_end_date, p_duration_hours,
 --             p_employee_code (NOT NULL in table), p_employee_name (NOT NULL in table), p_notes
 -- Training courses at company level: use 'GENERAL'/'N/A' placeholders for employee fields
-DROP FUNCTION IF EXISTS public.usp_hr_training_save(
+CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
     INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, VARCHAR, NUMERIC, VARCHAR, INTEGER
 ) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
@@ -263,7 +263,7 @@ $$;
 --                p_committee_type, p_start_date, p_end_date, p_user_id
 -- Underlying: p_safety_committee_id, p_company_id, p_country_code,
 --             p_committee_name, p_formation_date, p_meeting_frequency, p_is_active
-DROP FUNCTION IF EXISTS public.usp_hr_committee_save(
+CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
     INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, INTEGER
 ) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(

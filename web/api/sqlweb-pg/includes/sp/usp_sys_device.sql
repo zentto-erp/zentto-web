@@ -1,5 +1,5 @@
 -- ============================================================================
--- sys.PushDevice — Registro de dispositivos móviles para push notifications
+-- sys.PushDevice â€” Registro de dispositivos mÃ³viles para push notifications
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS sys;
@@ -99,7 +99,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================================
--- usp_Sys_Device_GetTokensByUser — Para envío de push desde backend
+-- usp_Sys_Device_GetTokensByUser â€” Para envÃ­o de push desde backend
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_Sys_Device_GetTokensByUser(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sys_Device_GetTokensByUser(

@@ -13,7 +13,7 @@
 
 -- 1. Rename underlying usp_hr_occhealth_create (21 params) to internal name
 -- First create the internal version, then drop the original
-CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create_internal(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
     p_record_type               VARCHAR(25),
@@ -46,13 +46,13 @@ BEGIN
 
     IF p_record_type NOT IN ('ACCIDENT','DISEASE','NEAR_MISS','INSPECTION','RISK_NOTIFICATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de registro no válido.';
+        p_mensaje   := 'Tipo de registro no vÃ¡lido.';
         RETURN;
     END IF;
 
     IF p_severity IS NOT NULL AND p_severity NOT IN ('MINOR','MODERATE','SEVERE','FATAL') THEN
         p_resultado := -1;
-        p_mensaje   := 'Severidad no válida.';
+        p_mensaje   := 'Severidad no vÃ¡lida.';
         RETURN;
     END IF;
 

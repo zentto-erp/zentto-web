@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
--- Función para insertar tareas desde el Kafka notification consumer
--- Con deduplicación: no crear si ya existe tarea con mismo título no completada
+-- FunciÃ³n para insertar tareas desde el Kafka notification consumer
+-- Con deduplicaciÃ³n: no crear si ya existe tarea con mismo tÃ­tulo no completada
 
 CREATE OR REPLACE FUNCTION usp_sys_tarea_insert(
     p_titulo VARCHAR(200),
@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION usp_sys_tarea_insert(
 )
 RETURNS TABLE("Id" INT, "Mensaje" VARCHAR) LANGUAGE plpgsql AS $$
 BEGIN
-    -- Deduplicación: no crear si ya existe tarea con mismo título no completada
+    -- DeduplicaciÃ³n: no crear si ya existe tarea con mismo tÃ­tulo no completada
     IF EXISTS (
         SELECT 1 FROM "Sys_Tareas"
         WHERE "Titulo" = p_titulo

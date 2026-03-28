@@ -6,7 +6,7 @@
 
 -- =============================================================================
 --  usp_Mfg_BOM_List
---  Service envía: CompanyId, Status, Search, Page, Limit
+--  Service envÃ­a: CompanyId, Status, Search, Page, Limit
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_list(
@@ -58,7 +58,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Get
---  Service envía: BOMId
+--  Service envÃ­a: BOMId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_get(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_get(
@@ -91,7 +91,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Create
---  Service envía: CompanyId, ProductId, BOMCode, BOMName, OutputQuantity, LinesJson, UserId
+--  Service envÃ­a: CompanyId, ProductId, BOMCode, BOMName, OutputQuantity, LinesJson, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_create(INT, INT, VARCHAR, VARCHAR, NUMERIC, TEXT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_create(
@@ -150,7 +150,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Activate
---  Service envía: BOMId, UserId
+--  Service envÃ­a: BOMId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_activate(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_activate(
@@ -173,7 +173,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_BOM_Obsolete
---  Service envía: BOMId, UserId
+--  Service envÃ­a: BOMId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_bom_obsolete(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_bom_obsolete(
@@ -196,7 +196,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkCenter_List
---  Service envía: CompanyId, Search, Page, Limit
+--  Service envÃ­a: CompanyId, Search, Page, Limit
 --  Tabla tiene: WorkCenterId, CompanyId, WorkCenterCode, WorkCenterName,
 --               WarehouseId, CostPerHour, Capacity, CapacityUom, IsActive
 -- =============================================================================
@@ -250,7 +250,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkCenter_Upsert
---  Service envía: CompanyId, WorkCenterId, WorkCenterCode, WorkCenterName,
+--  Service envÃ­a: CompanyId, WorkCenterId, WorkCenterCode, WorkCenterName,
 --                 CostPerHour, Capacity, IsActive, UserId
 --  Nota: CapacityUom y WarehouseId NO vienen del service, usan defaults
 -- =============================================================================
@@ -297,7 +297,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_Routing_List
---  Service envía: BOMId
+--  Service envÃ­a: BOMId
 --  Tabla Routing: RoutingId, BOMId, OperationNumber, OperationName,
 --                 WorkCenterId, SetupTimeMinutes, RunTimeMinutes, Notes
 -- =============================================================================
@@ -333,7 +333,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_Routing_Upsert
---  Service envía: BOMId, RoutingId, OperationNumber, WorkCenterId,
+--  Service envÃ­a: BOMId, RoutingId, OperationNumber, WorkCenterId,
 --                 OperationName, SetupTimeMinutes, RunTimeMinutes, Notes, UserId
 --  Nota: Tabla Routing NO tiene CreatedByUserId/UpdatedByUserId, solo timestamps
 -- =============================================================================
@@ -376,7 +376,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_List
---  Service envía: CompanyId, Status, FechaDesde, FechaHasta, Page, Limit
+--  Service envÃ­a: CompanyId, Status, FechaDesde, FechaHasta, Page, Limit
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_list(INT, VARCHAR, TIMESTAMP, TIMESTAMP, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_list(
@@ -443,7 +443,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Get
---  Service envía: WorkOrderId
+--  Service envÃ­a: WorkOrderId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_get(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_get(
@@ -493,7 +493,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Create
---  Service envía: CompanyId, BranchId, BOMId, ProductId, PlannedQuantity,
+--  Service envÃ­a: CompanyId, BranchId, BOMId, ProductId, PlannedQuantity,
 --                 PlannedStart, PlannedEnd, Priority, WarehouseId, Notes,
 --                 AssignedToUserId, UserId
 --  Nota: AssignedToUserId se acepta pero se ignora (tabla no tiene esa columna)
@@ -549,7 +549,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Start
---  Service envía: WorkOrderId, UserId
+--  Service envÃ­a: WorkOrderId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_start(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_start(
@@ -582,7 +582,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Complete
---  Service envía: WorkOrderId, UserId
+--  Service envÃ­a: WorkOrderId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_complete(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_complete(
@@ -615,7 +615,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_Cancel
---  Service envía: WorkOrderId, UserId
+--  Service envÃ­a: WorkOrderId, UserId
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_cancel(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_cancel(
@@ -647,8 +647,8 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_ConsumeMaterial
---  Service envía: WorkOrderId, ProductId, Quantity, LotNumber, WarehouseId, UserId
---  Mapeo: p_quantity → "ConsumedQuantity", p_lot_number → ignorado (tabla usa "LotId")
+--  Service envÃ­a: WorkOrderId, ProductId, Quantity, LotNumber, WarehouseId, UserId
+--  Mapeo: p_quantity â†’ "ConsumedQuantity", p_lot_number â†’ ignorado (tabla usa "LotId")
 --  Nota: Tabla tiene LotId (INT), no LotNumber. Se ignora p_lot_number por ahora.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_mfg_workorder_consumematerial(INT, INT, NUMERIC, VARCHAR, INT, INT) CASCADE;
@@ -691,7 +691,7 @@ $$;
 
 -- =============================================================================
 --  usp_Mfg_WorkOrder_ReportOutput
---  Service envía: WorkOrderId, Quantity, LotNumber, WarehouseId, BinId, UserId
+--  Service envÃ­a: WorkOrderId, Quantity, LotNumber, WarehouseId, BinId, UserId
 --  Tabla WorkOrderOutput: ProductId, Quantity, LotNumber, WarehouseId, BinId,
 --                         UnitCost, IsScrap
 --  Nota: ProductId se obtiene del WorkOrder

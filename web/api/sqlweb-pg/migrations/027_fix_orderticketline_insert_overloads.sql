@@ -1,13 +1,13 @@
 -- =============================================================================
---  Migración 027: Eliminar todos los overloads de usp_rest_orderticketline_insert
+--  MigraciÃ³n 027: Eliminar todos los overloads de usp_rest_orderticketline_insert
 --
 --  Problema: "function usp_rest_orderticketline_insert(...) is not unique"
 --    Al llamar con args nombrados y todos los valores NULL (tipo 'unknown'),
---    PostgreSQL no puede resolver entre múltiples overloads con firmas distintas
+--    PostgreSQL no puede resolver entre mÃºltiples overloads con firmas distintas
 --    (INT/BIGINT para p_order_id y p_product_id, distintas precisiones NUMERIC).
 --
---  Solución: eliminar TODOS los overloads dinámicamente via pg_proc,
---    luego crear UNA sola versión canónica.
+--  SoluciÃ³n: eliminar TODOS los overloads dinÃ¡micamente via pg_proc,
+--    luego crear UNA sola versiÃ³n canÃ³nica.
 -- =============================================================================
 
 \echo '  [027] Eliminando todos los overloads de usp_rest_orderticketline_insert...'
@@ -28,7 +28,7 @@ BEGIN
 END;
 $$;
 
-\echo '  [027] Recreando usp_rest_orderticketline_insert (versión única BIGINT)...'
+\echo '  [027] Recreando usp_rest_orderticketline_insert (versiÃ³n Ãºnica BIGINT)...'
 
 CREATE OR REPLACE FUNCTION usp_rest_orderticketline_insert(
     p_order_id               BIGINT,
@@ -77,9 +77,9 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_insert(
     NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(600), INT
 ) TO zentto_app;
 
-\echo '  [027] Registrando migración...'
+\echo '  [027] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('027_fix_orderticketline_insert_overloads', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [027] COMPLETO — un solo overload de usp_rest_orderticketline_insert'
+\echo '  [027] COMPLETO â€” un solo overload de usp_rest_orderticketline_insert'

@@ -1,4 +1,4 @@
-\echo '  [017] Fix usp_doc_purchasedocument_list — alias de tabla + columnas reales...'
+\echo '  [017] Fix usp_doc_purchasedocument_list â€” alias de tabla + columnas reales...'
 
 -- Columnas reales en doc."PurchaseDocument":
 --   DocumentId, DocumentNumber, SerialType, FiscalMemoryNumber, DocumentType,
@@ -9,10 +9,10 @@
 --   CreatedByUserId, UpdatedByUserId, IsDeleted, DeletedAt, DeletedByUserId
 --
 -- Problemas:
---   1. COUNT sin alias de tabla → "DocumentType" ambiguo con columna RETURNS TABLE
---   2. d."PurchaseDocumentId" no existe → d."DocumentId"::BIGINT
---   3. d."SubTotal" no existe → d."Subtotal" (t minúscula)
---   4. Muchas columnas no existen en la tabla → NULL con el tipo correcto
+--   1. COUNT sin alias de tabla â†’ "DocumentType" ambiguo con columna RETURNS TABLE
+--   2. d."PurchaseDocumentId" no existe â†’ d."DocumentId"::BIGINT
+--   3. d."SubTotal" no existe â†’ d."Subtotal" (t minÃºscula)
+--   4. Muchas columnas no existen en la tabla â†’ NULL con el tipo correcto
 
 CREATE OR REPLACE FUNCTION public.usp_doc_purchasedocument_list(
     p_tipo_operacion character varying DEFAULT 'COMPRA',
@@ -85,7 +85,7 @@ DECLARE
     v_offset INT := (v_page - 1) * v_limit;
     v_total  BIGINT;
 BEGIN
-    -- FIX: alias pd.* para evitar ambigüedad con columnas RETURNS TABLE
+    -- FIX: alias pd.* para evitar ambigÃ¼edad con columnas RETURNS TABLE
     SELECT COUNT(*) INTO v_total
     FROM doc."PurchaseDocument" pd
     WHERE pd."DocumentType" = p_tipo_operacion
@@ -101,7 +101,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        d."DocumentId"::BIGINT,              -- FIX: PurchaseDocumentId → DocumentId
+        d."DocumentId"::BIGINT,              -- FIX: PurchaseDocumentId â†’ DocumentId
         d."DocumentNumber",
         d."SerialType",
         d."DocumentType",
@@ -113,7 +113,7 @@ BEGIN
         NULL::TIMESTAMP WITHOUT TIME ZONE,   -- ReceiptDate (no existe)
         NULL::TIMESTAMP WITHOUT TIME ZONE,   -- PaymentDate (no existe)
         NULL::CHARACTER VARYING,             -- DocumentTime (no existe)
-        d."Subtotal",                        -- FIX: SubTotal → Subtotal (t minúscula)
+        d."Subtotal",                        -- FIX: SubTotal â†’ Subtotal (t minÃºscula)
         d."TaxableAmount",
         d."ExemptAmount",
         d."TaxAmount",
@@ -146,7 +146,7 @@ BEGIN
         d."CurrencyCode",
         d."ExchangeRate",
         NULL::DOUBLE PRECISION,              -- UsdAmount (no existe)
-        d."LegacyUserCode",                  -- FIX: UserCode → LegacyUserCode
+        d."LegacyUserCode",                  -- FIX: UserCode â†’ LegacyUserCode
         NULL::CHARACTER VARYING,             -- ShortUserCode (no existe)
         NULL::TIMESTAMP WITHOUT TIME ZONE,   -- ReportDate (no existe)
         NULL::CHARACTER VARYING,             -- HostName (no existe)
@@ -170,4 +170,4 @@ BEGIN
 END;
 $$;
 
-\echo '  [017] COMPLETO — purchasedocument_list columnas reales + alias corregido'
+\echo '  [017] COMPLETO â€” purchasedocument_list columnas reales + alias corregido'

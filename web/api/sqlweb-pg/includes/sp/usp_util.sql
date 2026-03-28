@@ -6,7 +6,7 @@
  *  CRUD Generico, Inventario Cache, Metadata, Scope, Auth-Security, Bancos, Media.
  *
  *  Traducido de SQL Server -> PostgreSQL.
- *  Patron: CREATE OR REPLACE FUNCTION (idempotente)
+ *  Patron: DROP FUNCTION IF EXISTS (idempotente)
  * ============================================================================ */
 
 -- ============================================================================
@@ -431,7 +431,7 @@ $$;
 -- 3f. SISTEMA: usp_sys_mensaje_markread
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sys_mensaje_markread(INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sys_mensaje_markread(p_id INT)
+DROP FUNCTION IF EXISTS usp_sys_mensaje_markread(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -492,7 +492,7 @@ $$;
 -- 5c. RETENCIONES: usp_tax_retention_getbycode
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_tax_retention_getbycode(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_tax_retention_getbycode(p_codigo VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_tax_retention_getbycode(p_codigo VARCHAR(60))
 RETURNS TABLE(
     "RetentionId" INT, "Codigo" VARCHAR, "Descripcion" VARCHAR,
     "Tipo" VARCHAR, "Porcentaje" NUMERIC, "Pais" VARCHAR, "IsActive" BOOLEAN
@@ -585,7 +585,7 @@ $$;
 -- 6d. EMPLEADOS: usp_hr_employee_getbycode
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_hr_employee_getbycode(INT, VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_hr_employee_getbycode(p_company_id INT, p_cedula VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_hr_employee_getbycode(p_company_id INT, p_cedula VARCHAR(60))
 RETURNS TABLE("EmployeeCode" VARCHAR, "EmployeeName" VARCHAR, "FiscalId" VARCHAR, "HireDate" DATE, "TerminationDate" DATE, "IsActive" BOOLEAN)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -601,7 +601,7 @@ $$;
 -- 6e. EMPLEADOS: usp_hr_employee_existsbycode
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_hr_employee_existsbycode(INT, VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_hr_employee_existsbycode(p_company_id INT, p_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_hr_employee_existsbycode(p_company_id INT, p_code VARCHAR(60))
 RETURNS TABLE("EmployeeId" BIGINT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -669,7 +669,7 @@ $$;
 -- 6h. EMPLEADOS: usp_hr_employee_delete
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_hr_employee_delete(INT, VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_hr_employee_delete(p_company_id INT, p_cedula VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_hr_employee_delete(p_company_id INT, p_cedula VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -821,7 +821,7 @@ $$;
 -- 8. SUPERVISOR OVERRIDE: usp_sec_supervisor_getrecord
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_supervisor_getrecord(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_supervisor_getrecord(p_supervisor_user VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_supervisor_getrecord(p_supervisor_user VARCHAR(60))
 RETURNS TABLE("codUsuario" VARCHAR, "nombre" VARCHAR, "tipo" VARCHAR, "isAdmin" BOOLEAN, "canDelete" BOOLEAN, "passwordHash" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -927,7 +927,7 @@ $$;
 -- 9b. PAYMENT ENGINE: usp_pay_transaction_insert
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_pay_transaction_insert(VARCHAR(36), INT, INT, VARCHAR(30), INT, VARCHAR(50), VARCHAR(30), INT, VARCHAR(3), NUMERIC(18,2), VARCHAR(20), VARCHAR(20), VARCHAR(100), VARCHAR(50), TEXT, VARCHAR(500), VARCHAR(4), VARCHAR(20), VARCHAR(20), VARCHAR(10), VARCHAR(50), VARCHAR(50), VARCHAR(20), VARCHAR(45)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_pay_transaction_insert(
+DROP FUNCTION IF EXISTS usp_pay_transaction_insert(
     p_transaction_uuid    VARCHAR(36),
     p_empresa_id          INT,
     p_sucursal_id         INT,
@@ -1076,7 +1076,7 @@ $$;
 -- 11. INVENTARIO CACHE: usp_inventario_cacheload
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_inventario_cacheload(INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_inventario_cacheload(p_company_id INT)
+DROP FUNCTION IF EXISTS usp_inventario_cacheload(p_company_id INT)
 RETURNS TABLE(
     "ProductId" BIGINT, "ProductCode" VARCHAR, "ProductName" VARCHAR,
     "CategoryCode" VARCHAR, "UnitCode" VARCHAR,
@@ -1100,7 +1100,7 @@ $$;
 -- 11b. INVENTARIO CACHE: usp_inventario_getbycode
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_inventario_getbycode(INT, VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_inventario_getbycode(p_company_id INT, p_codigo VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_inventario_getbycode(p_company_id INT, p_codigo VARCHAR(60))
 RETURNS TABLE(
     "ProductId" BIGINT, "ProductCode" VARCHAR, "ProductName" VARCHAR,
     "CategoryCode" VARCHAR, "UnitCode" VARCHAR,
@@ -1224,7 +1224,7 @@ $$;
 -- 15c. USER: usp_sec_user_resolvebycode
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_user_resolvebycode(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_user_resolvebycode(p_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_user_resolvebycode(p_code VARCHAR(60))
 RETURNS TABLE("userId" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1237,7 +1237,7 @@ $$;
 -- 15d. USER: usp_sec_user_resolvebycodeactive
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_user_resolvebycodeactive(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_user_resolvebycodeactive(p_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_user_resolvebycodeactive(p_code VARCHAR(60))
 RETURNS TABLE("userId" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1280,7 +1280,7 @@ $$;
 -- 16b. BANCOS: usp_fin_bank_getbyname
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_fin_bank_getbyname(INT, VARCHAR(100)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_fin_bank_getbyname(p_company_id INT, p_bank_name VARCHAR(100))
+DROP FUNCTION IF EXISTS usp_fin_bank_getbyname(p_company_id INT, p_bank_name VARCHAR(100))
 RETURNS TABLE("Nombre" VARCHAR, "Contacto" VARCHAR, "Direccion" VARCHAR, "Telefonos" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1350,7 +1350,7 @@ $$;
 -- 16e. BANCOS: usp_fin_bank_delete
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_fin_bank_delete(INT, VARCHAR(100), INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_fin_bank_delete(p_company_id INT, p_bank_name VARCHAR(100), p_user_id INT DEFAULT NULL)
+DROP FUNCTION IF EXISTS usp_fin_bank_delete(p_company_id INT, p_bank_name VARCHAR(100), p_user_id INT DEFAULT NULL)
 RETURNS TABLE("Success" BOOLEAN, "Message" TEXT)
 LANGUAGE plpgsql AS $$
 DECLARE v_affected INT;
@@ -1402,7 +1402,7 @@ $$;
 -- 17b. MEDIA: usp_cfg_mediaasset_getbyid
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_cfg_mediaasset_getbyid(INT, INT, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_cfg_mediaasset_getbyid(p_company_id INT, p_branch_id INT, p_media_asset_id INT)
+DROP FUNCTION IF EXISTS usp_cfg_mediaasset_getbyid(p_company_id INT, p_branch_id INT, p_media_asset_id INT)
 RETURNS TABLE("mediaAssetId" INT, "storageKey" VARCHAR, "publicUrl" VARCHAR, "mimeType" VARCHAR, "originalFileName" VARCHAR, "fileSizeBytes" BIGINT, "isActive" BOOLEAN, "isDeleted" BOOLEAN)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1418,7 +1418,7 @@ $$;
 -- 17c. MEDIA: usp_cfg_mediaasset_getbystoragekey
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_cfg_mediaasset_getbystoragekey(INT, INT, VARCHAR(500)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_cfg_mediaasset_getbystoragekey(p_company_id INT, p_branch_id INT, p_storage_key VARCHAR(500))
+DROP FUNCTION IF EXISTS usp_cfg_mediaasset_getbystoragekey(p_company_id INT, p_branch_id INT, p_storage_key VARCHAR(500))
 RETURNS TABLE("mediaAssetId" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1473,7 +1473,7 @@ $$;
 -- 17e. MEDIA: usp_cfg_entityimage_list
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_cfg_entityimage_list(INT, INT, VARCHAR(50), INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_cfg_entityimage_list(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT)
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_list(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT)
 RETURNS TABLE("entityImageId" INT, "entityType" VARCHAR, "entityId" INT, "mediaAssetId" INT, "roleCode" VARCHAR, "sortOrder" INT, "isPrimary" BOOLEAN, "publicUrl" VARCHAR, "originalFileName" VARCHAR, "mimeType" VARCHAR, "fileSizeBytes" BIGINT, "altText" VARCHAR, "createdAt" TIMESTAMP)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1490,7 +1490,7 @@ $$;
 -- 17f. MEDIA: usp_cfg_entityimage_setprimary
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_cfg_entityimage_setprimary(INT, INT, VARCHAR(50), INT, INT, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_cfg_entityimage_setprimary(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT, p_entity_image_id INT, p_actor_user_id INT DEFAULT NULL)
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_setprimary(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT, p_entity_image_id INT, p_actor_user_id INT DEFAULT NULL)
 RETURNS TABLE("affected" INT)
 LANGUAGE plpgsql AS $$
 DECLARE v_affected INT;
@@ -1510,7 +1510,7 @@ $$;
 -- 17g. MEDIA: usp_cfg_entityimage_unlink
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_cfg_entityimage_unlink(INT, INT, VARCHAR(50), INT, INT, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_cfg_entityimage_unlink(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT, p_entity_image_id INT, p_actor_user_id INT DEFAULT NULL)
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_unlink(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT, p_entity_image_id INT, p_actor_user_id INT DEFAULT NULL)
 RETURNS TABLE("ok" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1556,7 +1556,7 @@ $$;
 -- 18b. AUTH-SECURITY: usp_sec_auth_userexistslegacy
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_userexistslegacy(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_userexistslegacy(p_user_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_auth_userexistslegacy(p_user_code VARCHAR(60))
 RETURNS TABLE("existsFlag" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1569,7 +1569,7 @@ $$;
 -- 18c. AUTH-SECURITY: usp_sec_auth_emailexists
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_emailexists(VARCHAR(200)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_emailexists(p_email_normalized VARCHAR(200))
+DROP FUNCTION IF EXISTS usp_sec_auth_emailexists(p_email_normalized VARCHAR(200))
 RETURNS TABLE("existsFlag" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1628,7 +1628,7 @@ $$;
 -- 18f. AUTH-SECURITY: usp_sec_auth_getloginsecuritystate
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_getloginsecuritystate(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_getloginsecuritystate(p_user_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_auth_getloginsecuritystate(p_user_code VARCHAR(60))
 RETURNS TABLE("IsRegistrationPending" BOOLEAN, "EmailVerifiedAtUtc" TIMESTAMP, "LockoutUntilUtc" TIMESTAMP)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1666,7 +1666,7 @@ $$;
 -- 18h. AUTH-SECURITY: usp_sec_auth_registerloginsuccess
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_registerloginsuccess(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_registerloginsuccess(p_user_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_auth_registerloginsuccess(p_user_code VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1680,7 +1680,7 @@ $$;
 -- 18i. AUTH-SECURITY: usp_sec_auth_consumetoken
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_consumetoken(VARCHAR(64), VARCHAR(30)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_consumetoken(p_token_hash VARCHAR(64), p_token_type VARCHAR(30))
+DROP FUNCTION IF EXISTS usp_sec_auth_consumetoken(p_token_hash VARCHAR(64), p_token_type VARCHAR(30))
 RETURNS TABLE("UserCode" VARCHAR, "EmailNormalized" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1701,7 +1701,7 @@ $$;
 -- 18j. AUTH-SECURITY: usp_sec_auth_verifyemail
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_verifyemail(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_verifyemail(p_user_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_auth_verifyemail(p_user_code VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1716,7 +1716,7 @@ $$;
 -- 18k. AUTH-SECURITY: usp_sec_auth_resolvebyidentifier
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_resolvebyidentifier(VARCHAR(60), VARCHAR(200), BOOLEAN) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_resolvebyidentifier(p_user_code VARCHAR(60), p_email_normalized VARCHAR(200), p_is_email BOOLEAN)
+DROP FUNCTION IF EXISTS usp_sec_auth_resolvebyidentifier(p_user_code VARCHAR(60), p_email_normalized VARCHAR(200), p_is_email BOOLEAN)
 RETURNS TABLE("UserCode" VARCHAR, "Email" VARCHAR, "EmailNormalized" VARCHAR, "IsRegistrationPending" BOOLEAN, "EmailVerifiedAtUtc" TIMESTAMP)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1733,7 +1733,7 @@ $$;
 -- 18l. AUTH-SECURITY: usp_sec_auth_invalidatetokens
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_invalidatetokens(VARCHAR(60), VARCHAR(30)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_invalidatetokens(p_user_code VARCHAR(60), p_token_type VARCHAR(30))
+DROP FUNCTION IF EXISTS usp_sec_auth_invalidatetokens(p_user_code VARCHAR(60), p_token_type VARCHAR(30))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1747,7 +1747,7 @@ $$;
 -- 18m. AUTH-SECURITY: usp_sec_auth_registeruser
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_registeruser(VARCHAR(60), VARCHAR(200), VARCHAR(100)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_registeruser(p_user_code VARCHAR(60), p_password_hash VARCHAR(200), p_nombre VARCHAR(100))
+DROP FUNCTION IF EXISTS usp_sec_auth_registeruser(p_user_code VARCHAR(60), p_password_hash VARCHAR(200), p_nombre VARCHAR(100))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1760,7 +1760,7 @@ $$;
 -- 18n. AUTH-SECURITY: usp_sec_auth_updatepassword
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_updatepassword(VARCHAR(60), VARCHAR(200)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_updatepassword(p_user_code VARCHAR(60), p_password_hash VARCHAR(200))
+DROP FUNCTION IF EXISTS usp_sec_auth_updatepassword(p_user_code VARCHAR(60), p_password_hash VARCHAR(200))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -1772,7 +1772,7 @@ $$;
 -- 18o. AUTH-SECURITY: usp_sec_auth_resetlockout
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_sec_auth_resetlockout(VARCHAR(60)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_sec_auth_resetlockout(p_user_code VARCHAR(60))
+DROP FUNCTION IF EXISTS usp_sec_auth_resetlockout(p_user_code VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN

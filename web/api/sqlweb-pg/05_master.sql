@@ -1,6 +1,6 @@
 -- usp_bancos_delete
 DROP FUNCTION IF EXISTS public.usp_bancos_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_bancos_delete(p_nombre character varying)
+DROP FUNCTION IF EXISTS public.usp_bancos_delete(p_nombre character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -23,7 +23,7 @@ $function$
 
 -- usp_bancos_getbynombre
 DROP FUNCTION IF EXISTS public.usp_bancos_getbynombre(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_bancos_getbynombre(p_nombre character varying)
+DROP FUNCTION IF EXISTS public.usp_bancos_getbynombre(p_nombre character varying)
  RETURNS TABLE("Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -38,7 +38,7 @@ $function$
 
 -- usp_bancos_insert
 DROP FUNCTION IF EXISTS public.usp_bancos_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_bancos_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_bancos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -72,7 +72,7 @@ $function$
 
 -- usp_bancos_list
 DROP FUNCTION IF EXISTS public.usp_bancos_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_bancos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_bancos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Nombre" character varying, "Contacto" character varying, "Direccion" character varying, "Telefonos" character varying, "Co_Usuario" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -117,7 +117,7 @@ $function$
 
 -- usp_bancos_update
 DROP FUNCTION IF EXISTS public.usp_bancos_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_bancos_update(p_nombre character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_bancos_update(p_nombre character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -145,7 +145,7 @@ $function$
 
 -- usp_categorias_delete
 DROP FUNCTION IF EXISTS public.usp_categorias_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_categorias_delete(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_categorias_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -167,7 +167,7 @@ $function$
 
 -- usp_categorias_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_categorias_getbycodigo(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_categorias_getbycodigo(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_categorias_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Nombre" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -182,7 +182,7 @@ $function$
 
 -- usp_categorias_insert
 DROP FUNCTION IF EXISTS public.usp_categorias_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_categorias_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_categorias_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -207,7 +207,7 @@ $function$
 
 -- usp_categorias_list
 DROP FUNCTION IF EXISTS public.usp_categorias_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_categorias_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_categorias_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Codigo" integer, "Nombre" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -250,7 +250,7 @@ $function$
 
 -- usp_categorias_update
 DROP FUNCTION IF EXISTS public.usp_categorias_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_categorias_update(p_codigo integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_categorias_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -276,7 +276,7 @@ $function$
 
 -- usp_centrocosto_delete
 DROP FUNCTION IF EXISTS public.usp_centrocosto_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_centrocosto_delete(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_centrocosto_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -298,7 +298,7 @@ $function$
 
 -- usp_centrocosto_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_centrocosto_getbycodigo(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_centrocosto_getbycodigo(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_centrocosto_getbycodigo(p_codigo character varying)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Presupuestado" character varying, "Saldo_Real" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -317,7 +317,7 @@ $function$
 
 -- usp_centrocosto_insert
 DROP FUNCTION IF EXISTS public.usp_centrocosto_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_centrocosto_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_centrocosto_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -353,7 +353,7 @@ $function$
 
 -- usp_centrocosto_list
 DROP FUNCTION IF EXISTS public.usp_centrocosto_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_centrocosto_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_centrocosto_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Presupuestado" character varying, "Saldo_Real" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -400,7 +400,7 @@ $function$
 
 -- usp_centrocosto_update
 DROP FUNCTION IF EXISTS public.usp_centrocosto_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_centrocosto_update(p_codigo character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_centrocosto_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -435,7 +435,7 @@ $function$
 
 -- usp_clases_delete
 DROP FUNCTION IF EXISTS public.usp_clases_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clases_delete(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_clases_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -457,7 +457,7 @@ $function$
 
 -- usp_clases_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_clases_getbycodigo(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clases_getbycodigo(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_clases_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -474,7 +474,7 @@ $function$
 
 -- usp_clases_insert
 DROP FUNCTION IF EXISTS public.usp_clases_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clases_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_clases_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -498,7 +498,7 @@ $function$
 
 -- usp_clases_list
 DROP FUNCTION IF EXISTS public.usp_clases_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clases_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_clases_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -543,7 +543,7 @@ $function$
 
 -- usp_clases_update
 DROP FUNCTION IF EXISTS public.usp_clases_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clases_update(p_codigo integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_clases_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -571,7 +571,7 @@ $function$
 
 -- usp_clientes_delete
 DROP FUNCTION IF EXISTS public.usp_clientes_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clientes_delete(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_clientes_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -598,7 +598,7 @@ $function$
 
 -- usp_clientes_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_clientes_getbycodigo(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clientes_getbycodigo(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_clientes_getbycodigo(p_codigo character varying)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "CustomerCode" character varying, "CustomerName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Telefono" character varying, "Contacto" character varying, "SalespersonCode" character varying, "PriceListCode" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -639,7 +639,7 @@ $function$
 
 -- usp_clientes_insert
 DROP FUNCTION IF EXISTS public.usp_clientes_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clientes_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_clientes_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -716,7 +716,7 @@ $function$
 
 -- usp_clientes_list
 DROP FUNCTION IF EXISTS public.usp_clientes_list(character varying, character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clientes_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_clientes_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "CustomerCode" character varying, "CustomerName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Telefono" character varying, "Contacto" character varying, "SalespersonCode" character varying, "PriceListCode" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -788,7 +788,7 @@ $function$
 
 -- usp_clientes_update
 DROP FUNCTION IF EXISTS public.usp_clientes_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_clientes_update(p_codigo character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_clientes_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -840,7 +840,7 @@ $function$
 
 -- usp_grupos_delete
 DROP FUNCTION IF EXISTS public.usp_grupos_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_grupos_delete(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_grupos_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -862,7 +862,7 @@ $function$
 
 -- usp_grupos_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_grupos_getbycodigo(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_grupos_getbycodigo(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_grupos_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying, "Co_Usuario" character varying, "Porcentaje" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -881,7 +881,7 @@ $function$
 
 -- usp_grupos_insert
 DROP FUNCTION IF EXISTS public.usp_grupos_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_grupos_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_grupos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -915,7 +915,7 @@ $function$
 
 -- usp_grupos_list
 DROP FUNCTION IF EXISTS public.usp_grupos_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_grupos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_grupos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Codigo" integer, "Descripcion" character varying, "Co_Usuario" character varying, "Porcentaje" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -952,7 +952,7 @@ $function$
 
 -- usp_grupos_update
 DROP FUNCTION IF EXISTS public.usp_grupos_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_grupos_update(p_codigo integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_grupos_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -992,7 +992,7 @@ $function$
 
 -- usp_lineas_delete
 DROP FUNCTION IF EXISTS public.usp_lineas_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_lineas_delete(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_lineas_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1015,7 +1015,7 @@ $function$
 
 -- usp_lineas_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_lineas_getbycodigo(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_lineas_getbycodigo(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_lineas_getbycodigo(p_codigo integer)
  RETURNS TABLE("CODIGO" integer, "DESCRIPCION" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1030,7 +1030,7 @@ $function$
 
 -- usp_lineas_insert
 DROP FUNCTION IF EXISTS public.usp_lineas_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_lineas_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_lineas_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -1055,7 +1055,7 @@ $function$
 
 -- usp_lineas_list
 DROP FUNCTION IF EXISTS public.usp_lineas_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_lineas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_lineas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("CODIGO" integer, "DESCRIPCION" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1091,7 +1091,7 @@ $function$
 
 -- usp_lineas_update
 DROP FUNCTION IF EXISTS public.usp_lineas_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_lineas_update(p_codigo integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_lineas_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1120,7 +1120,7 @@ $function$
 
 -- usp_marcas_delete
 DROP FUNCTION IF EXISTS public.usp_marcas_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_marcas_delete(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_marcas_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1143,7 +1143,7 @@ $function$
 
 -- usp_marcas_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_marcas_getbycodigo(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_marcas_getbycodigo(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_marcas_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1158,7 +1158,7 @@ $function$
 
 -- usp_marcas_insert
 DROP FUNCTION IF EXISTS public.usp_marcas_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_marcas_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_marcas_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -1180,7 +1180,7 @@ $function$
 
 -- usp_marcas_list
 DROP FUNCTION IF EXISTS public.usp_marcas_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_marcas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_marcas_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" integer, "Descripcion" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1218,7 +1218,7 @@ $function$
 
 -- usp_marcas_update
 DROP FUNCTION IF EXISTS public.usp_marcas_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_marcas_update(p_codigo integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_marcas_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1243,7 +1243,7 @@ $function$
 
 -- usp_proveedores_delete
 DROP FUNCTION IF EXISTS public.usp_proveedores_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_proveedores_delete(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_proveedores_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1268,7 +1268,7 @@ $function$
 
 -- usp_proveedores_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_proveedores_getbycodigo(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_proveedores_getbycodigo(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_proveedores_getbycodigo(p_codigo character varying)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Direccion1" character varying, "Sucursal" character varying, "Telefono" character varying, "Fax" character varying, "Contacto" character varying, "VENDEDOR" character varying, "ESTADO" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision, "ListaPrecio" integer, "Notas" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1314,7 +1314,7 @@ $function$
 
 -- usp_proveedores_insert
 DROP FUNCTION IF EXISTS public.usp_proveedores_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_proveedores_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_proveedores_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1384,7 +1384,7 @@ $function$
 
 -- usp_proveedores_list
 DROP FUNCTION IF EXISTS public.usp_proveedores_list(character varying, character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_proveedores_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_proveedores_list(p_search character varying DEFAULT NULL::character varying, p_estado character varying DEFAULT NULL::character varying, p_vendedor character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("CODIGO" character varying, "NOMBRE" character varying, "RIF" character varying, "SALDO_TOT" double precision, "LIMITE" double precision, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SupplierCode" character varying, "SupplierName" character varying, "FiscalId" character varying, "TotalBalance" double precision, "CreditLimit" double precision, "NIT" character varying, "Direccion" character varying, "Direccion1" character varying, "Sucursal" character varying, "Telefono" character varying, "Fax" character varying, "Contacto" character varying, "VENDEDOR" character varying, "ESTADO" character varying, "Ciudad" character varying, "CodPostal" character varying, "Email" character varying, "PaginaWww" character varying, "CodUsuario" character varying, "Credito" double precision, "ListaPrecio" integer, "Notas" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1462,7 +1462,7 @@ $function$
 
 -- usp_proveedores_update
 DROP FUNCTION IF EXISTS public.usp_proveedores_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_proveedores_update(p_codigo character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_proveedores_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1514,7 +1514,7 @@ $function$
 
 -- usp_tipos_delete
 DROP FUNCTION IF EXISTS public.usp_tipos_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_tipos_delete(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_tipos_delete(p_codigo integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1537,7 +1537,7 @@ $function$
 
 -- usp_tipos_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_tipos_getbycodigo(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_tipos_getbycodigo(p_codigo integer)
+DROP FUNCTION IF EXISTS public.usp_tipos_getbycodigo(p_codigo integer)
  RETURNS TABLE("Codigo" integer, "Nombre" character varying, "Categoria" character varying, "Co_Usuario" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1552,7 +1552,7 @@ $function$
 
 -- usp_tipos_insert
 DROP FUNCTION IF EXISTS public.usp_tipos_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_tipos_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_tipos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoCodigo" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -1581,7 +1581,7 @@ $function$
 
 -- usp_tipos_list
 DROP FUNCTION IF EXISTS public.usp_tipos_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_tipos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_tipos_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" integer, "Nombre" character varying, "Categoria" character varying, "Co_Usuario" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1621,7 +1621,7 @@ $function$
 
 -- usp_tipos_update
 DROP FUNCTION IF EXISTS public.usp_tipos_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_tipos_update(p_codigo integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_tipos_update(p_codigo integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1656,7 +1656,7 @@ $function$
 
 -- usp_unidades_delete
 DROP FUNCTION IF EXISTS public.usp_unidades_delete(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_unidades_delete(p_id integer)
+DROP FUNCTION IF EXISTS public.usp_unidades_delete(p_id integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1679,7 +1679,7 @@ $function$
 
 -- usp_unidades_getbyid
 DROP FUNCTION IF EXISTS public.usp_unidades_getbyid(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_unidades_getbyid(p_id integer)
+DROP FUNCTION IF EXISTS public.usp_unidades_getbyid(p_id integer)
  RETURNS TABLE("Id" integer, "Unidad" character varying, "Cantidad" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -1694,7 +1694,7 @@ $function$
 
 -- usp_unidades_insert
 DROP FUNCTION IF EXISTS public.usp_unidades_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_unidades_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_unidades_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying, "NuevoId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -1720,7 +1720,7 @@ $function$
 
 -- usp_unidades_list
 DROP FUNCTION IF EXISTS public.usp_unidades_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_unidades_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_unidades_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Id" integer, "Unidad" character varying, "Cantidad" double precision, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1759,7 +1759,7 @@ $function$
 
 -- usp_unidades_update
 DROP FUNCTION IF EXISTS public.usp_unidades_update(integer, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_unidades_update(p_id integer, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_unidades_update(p_id integer, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1788,7 +1788,7 @@ $function$
 
 -- usp_vehiculos_delete
 DROP FUNCTION IF EXISTS public.usp_vehiculos_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vehiculos_delete(p_placa character varying)
+DROP FUNCTION IF EXISTS public.usp_vehiculos_delete(p_placa character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1810,7 +1810,7 @@ $function$
 
 -- usp_vehiculos_getbyplaca
 DROP FUNCTION IF EXISTS public.usp_vehiculos_getbyplaca(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vehiculos_getbyplaca(p_placa character varying)
+DROP FUNCTION IF EXISTS public.usp_vehiculos_getbyplaca(p_placa character varying)
  RETURNS TABLE("Placa" character varying, "Cedula" character varying, "Marca" character varying, "Anio" character varying, "Cauchos" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1825,7 +1825,7 @@ $function$
 
 -- usp_vehiculos_insert
 DROP FUNCTION IF EXISTS public.usp_vehiculos_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vehiculos_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_vehiculos_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1859,7 +1859,7 @@ $function$
 
 -- usp_vehiculos_list
 DROP FUNCTION IF EXISTS public.usp_vehiculos_list(character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vehiculos_list(p_search character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_vehiculos_list(p_search character varying DEFAULT NULL::character varying, p_cedula character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "Placa" character varying, "Cedula" character varying, "Marca" character varying, "Anio" character varying, "Cauchos" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1904,7 +1904,7 @@ $function$
 
 -- usp_vehiculos_update
 DROP FUNCTION IF EXISTS public.usp_vehiculos_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vehiculos_update(p_placa character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_vehiculos_update(p_placa character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1932,7 +1932,7 @@ $function$
 
 -- usp_vendedores_delete
 DROP FUNCTION IF EXISTS public.usp_vendedores_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vendedores_delete(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_vendedores_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -1957,7 +1957,7 @@ $function$
 
 -- usp_vendedores_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vendedores_getbycodigo(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(p_codigo character varying)
  RETURNS TABLE("Codigo" character varying, "Nombre" character varying, "Comision" double precision, "Status" boolean, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SellerCode" character varying, "SellerName" character varying, "Commission" double precision, "Direccion" character varying, "Telefonos" character varying, "Email" character varying, "Tipo" character varying, "Clave" character varying, "RangoVentasUno" double precision, "ComisionVentasUno" double precision, "RangoVentasDos" double precision, "ComisionVentasDos" double precision, "RangoVentasTres" double precision, "ComisionVentasTres" double precision, "RangoVentasCuatro" double precision, "ComisionVentasCuatro" double precision)
  LANGUAGE plpgsql
 AS $function$
@@ -1996,7 +1996,7 @@ $function$
 
 -- usp_vendedores_insert
 DROP FUNCTION IF EXISTS public.usp_vendedores_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vendedores_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_vendedores_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -2069,7 +2069,7 @@ $function$
 
 -- usp_vendedores_list
 DROP FUNCTION IF EXISTS public.usp_vendedores_list(character varying, boolean, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vendedores_list(p_search character varying DEFAULT NULL::character varying, p_status boolean DEFAULT NULL::boolean, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_vendedores_list(p_search character varying DEFAULT NULL::character varying, p_status boolean DEFAULT NULL::boolean, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" character varying, "Nombre" character varying, "Comision" double precision, "Status" boolean, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "SellerCode" character varying, "SellerName" character varying, "Commission" double precision, "Direccion" character varying, "Telefonos" character varying, "Email" character varying, "Tipo" character varying, "Clave" character varying, "RangoVentasUno" double precision, "ComisionVentasUno" double precision, "RangoVentasDos" double precision, "ComisionVentasDos" double precision, "RangoVentasTres" double precision, "ComisionVentasTres" double precision, "RangoVentasCuatro" double precision, "ComisionVentasCuatro" double precision, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -2140,7 +2140,7 @@ $function$
 
 -- usp_vendedores_update
 DROP FUNCTION IF EXISTS public.usp_vendedores_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vendedores_update(p_codigo character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_vendedores_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

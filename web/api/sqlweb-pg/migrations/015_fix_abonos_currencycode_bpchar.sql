@@ -1,4 +1,4 @@
-\echo '  [015] Fix character(3)→VARCHAR en usp_ar_application_listbycontext...'
+\echo '  [015] Fix character(3)â†’VARCHAR en usp_ar_application_listbycontext...'
 
 -- d."CurrencyCode" es character(3) (bpchar) en ar."ReceivableDocument"
 -- pero RETURNS TABLE lo declara como character varying.
@@ -77,7 +77,7 @@ BEGIN
         a."ApplyDate",
         a."AppliedAmount",
         a."AppliedAmount",
-        d."CurrencyCode"::VARCHAR,   -- FIX: bpchar → varchar
+        d."CurrencyCode"::VARCHAR,   -- FIX: bpchar â†’ varchar
         a."PaymentReference",
         a."PaymentReference",
         d."PendingAmount",
@@ -100,4 +100,4 @@ BEGIN
 END;
 $$;
 
-\echo '  [015] COMPLETO — abonos CurrencyCode bpchar corregido'
+\echo '  [015] COMPLETO â€” abonos CurrencyCode bpchar corregido'

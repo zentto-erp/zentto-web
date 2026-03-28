@@ -3,7 +3,7 @@
 -- Schema: sys
 -- ============================================================
 
--- ── Tabla sys.BillingEvent ──
+-- â”€â”€ Tabla sys.BillingEvent â”€â”€
 CREATE TABLE IF NOT EXISTS sys."BillingEvent" (
   "BillingEventId"    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "CompanyId"         INT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS sys."BillingEvent" (
 CREATE INDEX IF NOT EXISTS idx_billing_event_company
   ON sys."BillingEvent" ("CompanyId", "CreatedAt");
 
--- ── Tabla sys.Subscription ──
+-- â”€â”€ Tabla sys.Subscription â”€â”€
 CREATE TABLE IF NOT EXISTS sys."Subscription" (
   "SubscriptionId"        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "CompanyId"             INT NULL,
@@ -66,7 +66,7 @@ $$;
 -- usp_sys_Subscription_Upsert
 -- Crea o actualiza una suscripcion de Paddle
 -- ============================================================
-DROP FUNCTION IF EXISTS usp_sys_Subscription_Upsert(
+CREATE OR REPLACE FUNCTION usp_sys_Subscription_Upsert(
   INT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
 ) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_Subscription_Upsert(

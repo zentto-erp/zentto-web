@@ -1,12 +1,12 @@
 -- =============================================================================
 -- sp_cfg_country.sql  (PostgreSQL / PL/pgSQL)
 -- Convertido desde T-SQL: web/api/sqlweb/includes/sp/sp_cfg_country.sql
--- Fecha conversión: 2026-03-16
+-- Fecha conversiÃ³n: 2026-03-16
 --
 -- Funciones:
---   1. usp_CFG_Country_List  - Lista países activos ordenados por SortOrder, CountryName
---   2. usp_CFG_Country_Save  - Insert o Update país (OUT params)
---   3. usp_CFG_Country_Get   - Obtener un país por código
+--   1. usp_CFG_Country_List  - Lista paÃ­ses activos ordenados por SortOrder, CountryName
+--   2. usp_CFG_Country_Save  - Insert o Update paÃ­s (OUT params)
+--   3. usp_CFG_Country_Get   - Obtener un paÃ­s por cÃ³digo
 --
 -- Seed data: VE, ES, CO, MX, US
 --
@@ -191,19 +191,19 @@ SET "CountryName"       = 'Venezuela',
     "IsActive"          = TRUE,
     "UpdatedAt"         = (NOW() AT TIME ZONE 'UTC');
 
--- España
+-- EspaÃ±a
 INSERT INTO cfg."Country" (
     "CountryCode", "CountryName", "CurrencyCode",
     "TaxAuthorityCode", "FiscalIdName",
     "IsActive", "CreatedAt", "UpdatedAt"
 )
 VALUES (
-    'ES', 'España', 'EUR',
+    'ES', 'EspaÃ±a', 'EUR',
     'AEAT', 'NIF',
     TRUE, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 )
 ON CONFLICT ("CountryCode") DO UPDATE
-SET "CountryName"       = 'España',
+SET "CountryName"       = 'EspaÃ±a',
     "CurrencyCode"      = 'EUR',
     "TaxAuthorityCode"  = 'AEAT',
     "FiscalIdName"      = 'NIF',
@@ -223,14 +223,14 @@ VALUES (
 )
 ON CONFLICT ("CountryCode") DO NOTHING;
 
--- México
+-- MÃ©xico
 INSERT INTO cfg."Country" (
     "CountryCode", "CountryName", "CurrencyCode",
     "TaxAuthorityCode", "FiscalIdName",
     "IsActive", "CreatedAt", "UpdatedAt"
 )
 VALUES (
-    'MX', 'México', 'MXN',
+    'MX', 'MÃ©xico', 'MXN',
     'SAT', 'RFC',
     TRUE, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 )

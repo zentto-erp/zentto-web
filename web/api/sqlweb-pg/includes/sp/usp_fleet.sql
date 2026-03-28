@@ -9,9 +9,9 @@
  *
  *  Convenciones:
  *    - Nombrado: usp_fleet_[entity]_[action]
- *    - Patron: CREATE OR REPLACE FUNCTION ... LANGUAGE plpgsql
+ *    - Patron: DROP FUNCTION IF EXISTS ... LANGUAGE plpgsql
  *    - Los parametros de entrada usan los nombres que el service.ts envia
- *      (PascalCase → snake_case via callSp). Internamente se mapean a las
+ *      (PascalCase â†’ snake_case via callSp). Internamente se mapean a las
  *      columnas reales de la tabla.
  *
  *  Columnas reales de tablas fleet.* (produccion):
@@ -217,8 +217,8 @@ $$;
 --   VehicleType, FuelType, CurrentMileage, PurchaseDate, PurchaseCost, InsurancePolicy,
 --   InsuranceExpiry, TechnicalReviewExpiry, PermitExpiry, AssignedDriverId, AssignedBranchId,
 --   Notes, IsActive, UserId
--- Mapeo: VehiclePlate→LicensePlate, VIN→VinNumber, CurrentMileage→CurrentOdometer,
---   AssignedDriverId→DefaultDriverId, AssignedBranchId→WarehouseId
+-- Mapeo: VehiclePlateâ†’LicensePlate, VINâ†’VinNumber, CurrentMileageâ†’CurrentOdometer,
+--   AssignedDriverIdâ†’DefaultDriverId, AssignedBranchIdâ†’WarehouseId
 -- TechnicalReviewExpiry y PermitExpiry se aceptan pero se ignoran (la tabla no los tiene)
 DROP FUNCTION IF EXISTS usp_fleet_vehicle_upsert CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_vehicle_upsert(
@@ -382,7 +382,7 @@ $$;
 -- usp_Fleet_FuelLog_Create
 -- Service envia: CompanyId, VehicleId, LogDate, Mileage, FuelType, Liters, PricePerLiter,
 --   TotalCost, StationName, DriverId, Notes, UserId
--- Mapeo: LogDate→FuelDate, Mileage→OdometerReading, Liters→Quantity, PricePerLiter→UnitPrice
+-- Mapeo: LogDateâ†’FuelDate, Mileageâ†’OdometerReading, Litersâ†’Quantity, PricePerLiterâ†’UnitPrice
 DROP FUNCTION IF EXISTS usp_fleet_fuellog_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_fuellog_create(
     p_company_id      INT,
@@ -666,8 +666,8 @@ $$;
 -- usp_Fleet_MaintenanceOrder_Create
 -- Service envia: CompanyId, BranchId, VehicleId, MaintenanceTypeId, MileageAtService,
 --   ScheduledDate, SupplierId, EstimatedCost, Description, LinesJson, UserId
--- Mapeo: MileageAtService→OdometerAtService, Description→Notes, EstimatedCost→TotalCost,
---   SupplierId→WorkshopName (se guarda como texto del id)
+-- Mapeo: MileageAtServiceâ†’OdometerAtService, Descriptionâ†’Notes, EstimatedCostâ†’TotalCost,
+--   SupplierIdâ†’WorkshopName (se guarda como texto del id)
 -- BranchId se acepta pero se ignora (la tabla no lo tiene directamente)
 DROP FUNCTION IF EXISTS usp_fleet_maintenanceorder_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_maintenanceorder_create(
@@ -748,7 +748,7 @@ $$;
 
 -- usp_Fleet_MaintenanceOrder_Complete
 -- Service envia: MaintenanceOrderId, ActualCost, CompletedDate, UserId
--- Mapeo: ActualCost→TotalCost, CompletedDate→CompletedAt
+-- Mapeo: ActualCostâ†’TotalCost, CompletedDateâ†’CompletedAt
 DROP FUNCTION IF EXISTS usp_fleet_maintenanceorder_complete CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_maintenanceorder_complete(
     p_maintenance_order_id INT,
@@ -891,7 +891,7 @@ $$;
 -- usp_Fleet_Trip_Create
 -- Service envia: CompanyId, VehicleId, DriverId, Origin, Destination, DepartureDate,
 --   StartMileage, DeliveryNoteId, Notes, UserId
--- Mapeo: DepartureDate→DepartedAt, StartMileage→OdometerStart
+-- Mapeo: DepartureDateâ†’DepartedAt, StartMileageâ†’OdometerStart
 DROP FUNCTION IF EXISTS usp_fleet_trip_create CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_trip_create(
     p_company_id       INT,
@@ -943,7 +943,7 @@ $$;
 
 -- usp_Fleet_Trip_Complete
 -- Service envia: TripId, EndMileage, ArrivalDate, FuelUsed, UserId
--- Mapeo: EndMileage→OdometerEnd, ArrivalDate→ArrivedAt
+-- Mapeo: EndMileageâ†’OdometerEnd, ArrivalDateâ†’ArrivedAt
 -- FuelUsed se acepta pero se ignora (la tabla no tiene esa columna)
 DROP FUNCTION IF EXISTS usp_fleet_trip_complete CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_trip_complete(
@@ -1038,7 +1038,7 @@ $$;
 -- usp_Fleet_VehicleDocument_Upsert
 -- Service envia: CompanyId, DocumentId, VehicleId, DocumentType, DocumentNumber,
 --   IssueDate, ExpiryDate, FilePath, Notes, UserId
--- Mapeo: DocumentId→VehicleDocumentId, IssueDate→IssuedAt, ExpiryDate→ExpiresAt, FilePath→FileUrl
+-- Mapeo: DocumentIdâ†’VehicleDocumentId, IssueDateâ†’IssuedAt, ExpiryDateâ†’ExpiresAt, FilePathâ†’FileUrl
 -- CompanyId se acepta pero se ignora (la tabla no lo tiene directamente)
 DROP FUNCTION IF EXISTS usp_fleet_vehicledocument_upsert CASCADE;
 CREATE OR REPLACE FUNCTION usp_fleet_vehicledocument_upsert(

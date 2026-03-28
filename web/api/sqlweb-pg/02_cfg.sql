@@ -1,6 +1,6 @@
 -- usp_cfg_appsetting_list
 DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_list(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_list(p_company_id integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_list(p_company_id integer)
  RETURNS TABLE("SettingId" bigint, "Module" character varying, "SettingKey" character varying, "SettingValue" character varying, "ValueType" character varying, "Description" character varying, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -18,7 +18,7 @@ $function$
 
 -- usp_cfg_appsetting_listbymodule
 DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listbymodule(integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_listbymodule(p_company_id integer, p_module character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listbymodule(p_company_id integer, p_module character varying)
  RETURNS TABLE("SettingId" bigint, "Module" character varying, "SettingKey" character varying, "SettingValue" character varying, "ValueType" character varying, "Description" character varying, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -37,7 +37,7 @@ $function$
 
 -- usp_cfg_appsetting_listmodules
 DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listmodules(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_listmodules(p_company_id integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listmodules(p_company_id integer)
  RETURNS TABLE("Module" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -69,7 +69,7 @@ $function$
 
 -- usp_cfg_appsetting_listwithmeta
 DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listwithmeta(integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_listwithmeta(p_company_id integer, p_module character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_listwithmeta(p_company_id integer, p_module character varying DEFAULT NULL::character varying)
  RETURNS TABLE("SettingId" bigint, "Module" character varying, "SettingKey" character varying, "SettingValue" character varying, "ValueType" character varying, "Description" character varying, "IsReadOnly" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -88,7 +88,7 @@ $function$
 
 -- usp_cfg_appsetting_upsert
 DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_upsert(integer, character varying, character varying, text, character varying, character varying, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_appsetting_upsert(p_company_id integer, p_module character varying, p_setting_key character varying, p_setting_value text, p_value_type character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_appsetting_upsert(p_company_id integer, p_module character varying, p_setting_key character varying, p_setting_value text, p_value_type character varying DEFAULT NULL::character varying, p_description character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -117,7 +117,7 @@ $function$
 
 -- usp_cfg_country_get
 DROP FUNCTION IF EXISTS public.usp_cfg_country_get(character) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_country_get(p_country_code character)
+DROP FUNCTION IF EXISTS public.usp_cfg_country_get(p_country_code character)
  RETURNS TABLE("CountryCode" character, "CountryName" character varying, "CurrencyCode" character, "TaxAuthorityCode" character varying, "FiscalIdName" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -140,7 +140,7 @@ $function$
 
 -- usp_cfg_country_list
 DROP FUNCTION IF EXISTS public.usp_cfg_country_list(boolean) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_country_list(p_active_only boolean DEFAULT true)
+DROP FUNCTION IF EXISTS public.usp_cfg_country_list(p_active_only boolean DEFAULT true)
  RETURNS TABLE("CountryCode" character, "CountryName" character varying, "CurrencyCode" character, "TaxAuthorityCode" character varying, "FiscalIdName" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -164,7 +164,7 @@ $function$
 
 -- usp_cfg_country_save
 DROP FUNCTION IF EXISTS public.usp_cfg_country_save(character, character varying, character, character varying, character varying, boolean, integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -184,7 +184,7 @@ BEGIN
             WHERE "CountryCode" = p_country_code;
 
             p_resultado := 0;
-            p_mensaje   := 'País actualizado correctamente.';
+            p_mensaje   := 'PaÃ­s actualizado correctamente.';
         ELSE
             INSERT INTO cfg."Country" (
                 "CountryCode", "CountryName", "CurrencyCode",
@@ -199,7 +199,7 @@ BEGIN
             );
 
             p_resultado := 0;
-            p_mensaje   := 'País creado correctamente.';
+            p_mensaje   := 'PaÃ­s creado correctamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -212,7 +212,7 @@ $function$
 
 -- usp_cfg_country_save
 DROP FUNCTION IF EXISTS public.usp_cfg_country_save(character, character varying, character, character varying, character, character varying, numeric, boolean, numeric, boolean, character varying, character varying, character varying, character varying, integer, boolean, integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_currency_symbol character varying, p_reference_currency character, p_reference_currency_symbol character varying, p_default_exchange_rate numeric, p_prices_include_tax boolean, p_special_tax_rate numeric, p_special_tax_enabled boolean, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_timezone_iana character varying, p_phone_prefix character varying, p_sort_order integer, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_country_save(p_country_code character, p_country_name character varying, p_currency_code character, p_currency_symbol character varying, p_reference_currency character, p_reference_currency_symbol character varying, p_default_exchange_rate numeric, p_prices_include_tax boolean, p_special_tax_rate numeric, p_special_tax_enabled boolean, p_tax_authority_code character varying, p_fiscal_id_name character varying, p_timezone_iana character varying, p_phone_prefix character varying, p_sort_order integer, p_is_active boolean, OUT p_resultado integer, OUT p_mensaje character varying)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -242,7 +242,7 @@ BEGIN
             WHERE "CountryCode" = p_country_code;
 
             p_resultado := 0;
-            p_mensaje   := 'País actualizado correctamente.';
+            p_mensaje   := 'PaÃ­s actualizado correctamente.';
         ELSE
             INSERT INTO cfg."Country" (
                 "CountryCode", "CountryName", "CurrencyCode", "CurrencySymbol",
@@ -261,7 +261,7 @@ BEGIN
             );
 
             p_resultado := 0;
-            p_mensaje   := 'País creado correctamente.';
+            p_mensaje   := 'PaÃ­s creado correctamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -274,7 +274,7 @@ $function$
 
 -- usp_cfg_entityimage_link
 DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_link(integer, integer, character varying, integer, integer, character varying, integer, boolean, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_link(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_media_asset_id integer, p_role_code character varying DEFAULT NULL::character varying, p_sort_order integer DEFAULT 0, p_is_primary boolean DEFAULT false, p_actor_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_link(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_media_asset_id integer, p_role_code character varying DEFAULT NULL::character varying, p_sort_order integer DEFAULT 0, p_is_primary boolean DEFAULT false, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("entityImageId" integer, "entityType" character varying, "entityId" integer, "mediaAssetId" integer, "roleCode" character varying, "sortOrder" integer, "isPrimary" boolean, "publicUrl" character varying, "mimeType" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -309,7 +309,7 @@ $function$
 
 -- usp_cfg_entityimage_list
 DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_list(integer, integer, character varying, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_list(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_list(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer)
  RETURNS TABLE("entityImageId" integer, "entityType" character varying, "entityId" integer, "mediaAssetId" integer, "roleCode" character varying, "sortOrder" integer, "isPrimary" boolean, "publicUrl" character varying, "originalFileName" character varying, "mimeType" character varying, "fileSizeBytes" bigint, "altText" character varying, "createdAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -326,7 +326,7 @@ $function$
 
 -- usp_cfg_entityimage_setprimary
 DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_setprimary(integer, integer, character varying, integer, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_setprimary(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_setprimary(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(affected integer)
  LANGUAGE plpgsql
 AS $function$
@@ -346,7 +346,7 @@ $function$
 
 -- usp_cfg_entityimage_unlink
 DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_unlink(integer, integer, character varying, integer, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_unlink(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_unlink(p_company_id integer, p_branch_id integer, p_entity_type character varying, p_entity_id integer, p_entity_image_id integer, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE(ok integer)
  LANGUAGE plpgsql
 AS $function$
@@ -376,7 +376,7 @@ $function$
 
 -- usp_cfg_exchangerate_upsert
 DROP FUNCTION IF EXISTS public.usp_cfg_exchangerate_upsert(date, numeric, numeric, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_exchangerate_upsert(p_rate_date date, p_tasa_usd numeric, p_tasa_eur numeric, p_source_name character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_exchangerate_upsert(p_rate_date date, p_tasa_usd numeric, p_tasa_eur numeric, p_source_name character varying)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -398,7 +398,7 @@ $function$
 
 -- usp_cfg_fiscal_getconfig
 DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_getconfig(integer, integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_getconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_getconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
  RETURNS TABLE("EmpresaId" integer, "SucursalId" integer, "CountryCode" character varying, "Currency" character varying, "TaxRegime" character varying, "DefaultTaxCode" character varying, "DefaultTaxRate" numeric, "FiscalPrinterEnabled" boolean, "PrinterBrand" character varying, "PrinterPort" character varying, "VerifactuEnabled" boolean, "VerifactuMode" character varying, "CertificatePath" character varying, "CertificatePassword" character varying, "AEATEndpoint" character varying, "SenderNIF" character varying, "SenderRIF" character varying, "SoftwareId" character varying, "SoftwareName" character varying, "SoftwareVersion" character varying, "PosEnabled" boolean, "RestaurantEnabled" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -425,7 +425,7 @@ $function$
 
 -- usp_cfg_fiscal_getlatestrecord
 DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_getlatestrecord(integer, integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_getlatestrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_getlatestrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying)
  RETURNS TABLE("Id" bigint, "InvoiceId" integer, "CountryCode" character varying, "InvoiceType" character varying, "XmlContent" character varying, "RecordHash" character varying, "PreviousRecordHash" character varying, "DigitalSignature" character varying, "QRCodeData" character varying, "SentToAuthority" boolean, "AuthorityResponse" character varying, "CreatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -484,7 +484,7 @@ $function$
 
 -- usp_cfg_fiscal_infercountry
 DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_infercountry(integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_infercountry(p_empresa_id integer, p_sucursal_id integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_infercountry(p_empresa_id integer, p_sucursal_id integer)
  RETURNS TABLE("CountryCode" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -503,7 +503,7 @@ $function$
 
 -- usp_cfg_fiscal_insertrecord
 DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_insertrecord(integer, integer, character varying, integer, character varying, character varying, timestamp without time zone, character varying, numeric, character varying, character varying, text, text, text, boolean, timestamp without time zone, text, character varying, character varying, character varying, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_insertrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_invoice_id integer, p_invoice_type character varying, p_invoice_number character varying, p_invoice_date timestamp without time zone, p_recipient_id character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_record_hash character varying DEFAULT NULL::character varying, p_previous_record_hash character varying DEFAULT NULL::character varying, p_xml_content text DEFAULT NULL::text, p_digital_signature text DEFAULT NULL::text, p_qr_code_data text DEFAULT NULL::text, p_sent_to_authority boolean DEFAULT false, p_sent_at timestamp without time zone DEFAULT NULL::timestamp without time zone, p_authority_response text DEFAULT NULL::text, p_authority_status character varying DEFAULT NULL::character varying, p_fiscal_printer_serial character varying DEFAULT NULL::character varying, p_fiscal_control_number character varying DEFAULT NULL::character varying, p_z_report_number integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_insertrecord(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_invoice_id integer, p_invoice_type character varying, p_invoice_number character varying, p_invoice_date timestamp without time zone, p_recipient_id character varying DEFAULT NULL::character varying, p_total_amount numeric DEFAULT 0, p_record_hash character varying DEFAULT NULL::character varying, p_previous_record_hash character varying DEFAULT NULL::character varying, p_xml_content text DEFAULT NULL::text, p_digital_signature text DEFAULT NULL::text, p_qr_code_data text DEFAULT NULL::text, p_sent_to_authority boolean DEFAULT false, p_sent_at timestamp without time zone DEFAULT NULL::timestamp without time zone, p_authority_response text DEFAULT NULL::text, p_authority_status character varying DEFAULT NULL::character varying, p_fiscal_printer_serial character varying DEFAULT NULL::character varying, p_fiscal_control_number character varying DEFAULT NULL::character varying, p_z_report_number integer DEFAULT NULL::integer)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
@@ -531,7 +531,7 @@ $function$
 
 -- usp_cfg_fiscal_upsertconfig
 DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_upsertconfig(integer, integer, character varying, character varying, character varying, character varying, numeric, boolean, character varying, character varying, boolean, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, character varying, boolean, boolean) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_fiscal_upsertconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_currency character varying, p_tax_regime character varying, p_default_tax_code character varying, p_default_tax_rate numeric, p_fiscal_printer_enabled boolean, p_printer_brand character varying DEFAULT NULL::character varying, p_printer_port character varying DEFAULT NULL::character varying, p_verifactu_enabled boolean DEFAULT false, p_verifactu_mode character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_certificate_password character varying DEFAULT NULL::character varying, p_aeat_endpoint character varying DEFAULT NULL::character varying, p_sender_nif character varying DEFAULT NULL::character varying, p_sender_rif character varying DEFAULT NULL::character varying, p_software_id character varying DEFAULT NULL::character varying, p_software_name character varying DEFAULT NULL::character varying, p_software_version character varying DEFAULT NULL::character varying, p_pos_enabled boolean DEFAULT false, p_restaurant_enabled boolean DEFAULT false)
+DROP FUNCTION IF EXISTS public.usp_cfg_fiscal_upsertconfig(p_empresa_id integer, p_sucursal_id integer, p_country_code character varying, p_currency character varying, p_tax_regime character varying, p_default_tax_code character varying, p_default_tax_rate numeric, p_fiscal_printer_enabled boolean, p_printer_brand character varying DEFAULT NULL::character varying, p_printer_port character varying DEFAULT NULL::character varying, p_verifactu_enabled boolean DEFAULT false, p_verifactu_mode character varying DEFAULT NULL::character varying, p_certificate_path character varying DEFAULT NULL::character varying, p_certificate_password character varying DEFAULT NULL::character varying, p_aeat_endpoint character varying DEFAULT NULL::character varying, p_sender_nif character varying DEFAULT NULL::character varying, p_sender_rif character varying DEFAULT NULL::character varying, p_software_id character varying DEFAULT NULL::character varying, p_software_name character varying DEFAULT NULL::character varying, p_software_version character varying DEFAULT NULL::character varying, p_pos_enabled boolean DEFAULT false, p_restaurant_enabled boolean DEFAULT false)
  RETURNS TABLE("Affected" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -582,7 +582,7 @@ $function$
 
 -- usp_cfg_mediaasset_getbyid
 DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_getbyid(integer, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_mediaasset_getbyid(p_company_id integer, p_branch_id integer, p_media_asset_id integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_getbyid(p_company_id integer, p_branch_id integer, p_media_asset_id integer)
  RETURNS TABLE("mediaAssetId" integer, "storageKey" character varying, "publicUrl" character varying, "mimeType" character varying, "originalFileName" character varying, "fileSizeBytes" bigint, "isActive" boolean, "isDeleted" boolean)
  LANGUAGE plpgsql
 AS $function$
@@ -598,7 +598,7 @@ $function$
 
 -- usp_cfg_mediaasset_getbystoragekey
 DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_getbystoragekey(integer, integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_mediaasset_getbystoragekey(p_company_id integer, p_branch_id integer, p_storage_key character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_getbystoragekey(p_company_id integer, p_branch_id integer, p_storage_key character varying)
  RETURNS TABLE("mediaAssetId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -614,7 +614,7 @@ $function$
 
 -- usp_cfg_mediaasset_insert
 DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_insert(integer, integer, character varying, character varying, character varying, character varying, character varying, bigint, character varying, character varying, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_mediaasset_insert(p_company_id integer, p_branch_id integer, p_storage_key character varying, p_public_url character varying, p_original_file_name character varying DEFAULT NULL::character varying, p_mime_type character varying DEFAULT NULL::character varying, p_file_extension character varying DEFAULT NULL::character varying, p_file_size_bytes bigint DEFAULT 0, p_checksum_sha256 character varying DEFAULT NULL::character varying, p_alt_text character varying DEFAULT NULL::character varying, p_actor_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_cfg_mediaasset_insert(p_company_id integer, p_branch_id integer, p_storage_key character varying, p_public_url character varying, p_original_file_name character varying DEFAULT NULL::character varying, p_mime_type character varying DEFAULT NULL::character varying, p_file_extension character varying DEFAULT NULL::character varying, p_file_size_bytes bigint DEFAULT 0, p_checksum_sha256 character varying DEFAULT NULL::character varying, p_alt_text character varying DEFAULT NULL::character varying, p_actor_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("mediaAssetId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -637,7 +637,7 @@ $function$
 
 -- usp_cfg_resolvecontext
 DROP FUNCTION IF EXISTS public.usp_cfg_resolvecontext(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_cfg_resolvecontext(p_user_code character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_cfg_resolvecontext(p_user_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("CompanyId" integer, "BranchId" integer, "UserId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -732,7 +732,7 @@ $function$
 
 -- usp_empresa_update
 DROP FUNCTION IF EXISTS public.usp_empresa_update(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_empresa_update(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_empresa_update(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -760,7 +760,7 @@ $function$
 
 -- usp_feriados_delete
 DROP FUNCTION IF EXISTS public.usp_feriados_delete(date) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_feriados_delete(p_fecha date)
+DROP FUNCTION IF EXISTS public.usp_feriados_delete(p_fecha date)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -782,7 +782,7 @@ $function$
 
 -- usp_feriados_getbyfecha
 DROP FUNCTION IF EXISTS public.usp_feriados_getbyfecha(date) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_feriados_getbyfecha(p_fecha date)
+DROP FUNCTION IF EXISTS public.usp_feriados_getbyfecha(p_fecha date)
  RETURNS TABLE("Fecha" date, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -799,7 +799,7 @@ $function$
 
 -- usp_feriados_insert
 DROP FUNCTION IF EXISTS public.usp_feriados_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_feriados_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_feriados_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -832,7 +832,7 @@ $function$
 
 -- usp_feriados_list
 DROP FUNCTION IF EXISTS public.usp_feriados_list(character varying, integer, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_feriados_list(p_search character varying DEFAULT NULL::character varying, p_anio integer DEFAULT NULL::integer, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_feriados_list(p_search character varying DEFAULT NULL::character varying, p_anio integer DEFAULT NULL::integer, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" integer, "Fecha" date, "Descripcion" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -876,7 +876,7 @@ $function$
 
 -- usp_feriados_update
 DROP FUNCTION IF EXISTS public.usp_feriados_update(date, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_feriados_update(p_fecha date, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_feriados_update(p_fecha date, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -900,7 +900,7 @@ $function$
 
 -- usp_moneda_delete
 DROP FUNCTION IF EXISTS public.usp_moneda_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_moneda_delete(p_nombre character varying)
+DROP FUNCTION IF EXISTS public.usp_moneda_delete(p_nombre character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -923,7 +923,7 @@ $function$
 
 -- usp_moneda_getbynombre
 DROP FUNCTION IF EXISTS public.usp_moneda_getbynombre(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_moneda_getbynombre(p_nombre character varying)
+DROP FUNCTION IF EXISTS public.usp_moneda_getbynombre(p_nombre character varying)
  RETURNS TABLE("Nombre" character varying, "Simbolo" character varying, "Tasa_Local" double precision, "Local_Tasa" double precision, "Local" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -938,7 +938,7 @@ $function$
 
 -- usp_moneda_insert
 DROP FUNCTION IF EXISTS public.usp_moneda_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_moneda_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_moneda_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -974,7 +974,7 @@ $function$
 
 -- usp_moneda_list
 DROP FUNCTION IF EXISTS public.usp_moneda_list(character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_moneda_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_moneda_list(p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Nombre" character varying, "Simbolo" character varying, "Tasa_Local" double precision, "Local_Tasa" double precision, "Local" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -1019,7 +1019,7 @@ $function$
 
 -- usp_moneda_update
 DROP FUNCTION IF EXISTS public.usp_moneda_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_moneda_update(p_nombre character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_moneda_update(p_nombre character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

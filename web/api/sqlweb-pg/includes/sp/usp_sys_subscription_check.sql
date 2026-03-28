@@ -72,7 +72,7 @@ BEGIN
 
   -- 7. Suscripcion cancelada
   IF v_sub."Status" = 'canceled' THEN
-    -- Si CurrentPeriodEnd aun no pasó, permitir acceso hasta que expire
+    -- Si CurrentPeriodEnd aun no pasÃ³, permitir acceso hasta que expire
     IF v_sub."CurrentPeriodEnd" IS NOT NULL AND v_sub."CurrentPeriodEnd" > (NOW() AT TIME ZONE 'UTC') THEN
       RETURN QUERY SELECT TRUE, 'CANCELING_ACTIVE'::VARCHAR, v_company."Plan"::VARCHAR, 'canceled'::VARCHAR,
         v_sub."CurrentPeriodEnd",

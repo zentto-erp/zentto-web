@@ -5,10 +5,10 @@
 -- Transaccional: si falla cualquier paso hace ROLLBACK
 --
 -- NOTA: Los nombres de columna de salida usan "New" prefix para
--- evitar ambigüedad con columnas homónimas de las tablas en PL/pgSQL.
+-- evitar ambigÃ¼edad con columnas homÃ³nimas de las tablas en PL/pgSQL.
 -- El caller TS lee "NewCompanyId" y "NewUserId".
 -- ============================================================
-DROP FUNCTION IF EXISTS usp_Cfg_Tenant_Provision(
+CREATE OR REPLACE FUNCTION usp_Cfg_Tenant_Provision(
   VARCHAR, VARCHAR, VARCHAR, CHAR(2), CHAR(3), VARCHAR, VARCHAR, VARCHAR, VARCHAR
 ) CASCADE;
 

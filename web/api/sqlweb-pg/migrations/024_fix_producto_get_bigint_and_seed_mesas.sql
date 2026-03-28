@@ -1,8 +1,8 @@
 -- =============================================================================
---  Migración 024: Fix BIGINT en GET funciones de producto + Seed mesas/ambientes
---  1. usp_rest_admin_producto_get: "id" INT → BIGINT, "categoriaId" INT → BIGINT
---  2. usp_rest_admin_producto_get_componentes: "id" INT → BIGINT, "opcionId" INT → BIGINT
---  3. usp_rest_admin_producto_get_receta: "id" INT → BIGINT, "productoId" INT → BIGINT
+--  MigraciÃ³n 024: Fix BIGINT en GET funciones de producto + Seed mesas/ambientes
+--  1. usp_rest_admin_producto_get: "id" INT â†’ BIGINT, "categoriaId" INT â†’ BIGINT
+--  2. usp_rest_admin_producto_get_componentes: "id" INT â†’ BIGINT, "opcionId" INT â†’ BIGINT
+--  3. usp_rest_admin_producto_get_receta: "id" INT â†’ BIGINT, "productoId" INT â†’ BIGINT
 --  4. Seed idempotente de ambientes y mesas para DEFAULT/MAIN
 -- =============================================================================
 
@@ -191,16 +191,16 @@ BEGIN
     LIMIT 1;
 
     IF v_company_id IS NULL OR v_branch_id IS NULL THEN
-        RAISE NOTICE 'No se encontró empresa/sucursal DEFAULT/MAIN — seed omitido';
+        RAISE NOTICE 'No se encontrÃ³ empresa/sucursal DEFAULT/MAIN â€” seed omitido';
         RETURN;
     END IF;
 
-    -- Ambiente: Salón Principal
+    -- Ambiente: SalÃ³n Principal
     INSERT INTO rest."MenuEnvironment" (
         "CompanyId", "BranchId", "EnvironmentCode", "EnvironmentName",
         "ColorHex", "SortOrder", "IsActive", "CreatedByUserId", "UpdatedByUserId"
     ) VALUES (
-        v_company_id, v_branch_id, 'SALON', 'Salón Principal',
+        v_company_id, v_branch_id, 'SALON', 'SalÃ³n Principal',
         '#4CAF50', 1, TRUE, v_user_id, v_user_id
     )
     ON CONFLICT ("CompanyId", "BranchId", "EnvironmentCode") DO UPDATE
@@ -241,7 +241,7 @@ BEGIN
             'Mesa ' || n::TEXT,
             4,
             'SALON',
-            'Salón Principal',
+            'SalÃ³n Principal',
             ((n - 1) % 5) * 150,
             ((n - 1) / 5) * 150,
             TRUE,
@@ -257,9 +257,9 @@ BEGIN
 
 END $$;
 
-\echo '  [024] Registrando migración...'
+\echo '  [024] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('024_fix_producto_get_bigint_and_seed_mesas', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [024] COMPLETO — BIGINT GET producto + seed mesas/ambientes'
+\echo '  [024] COMPLETO â€” BIGINT GET producto + seed mesas/ambientes'

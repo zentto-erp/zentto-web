@@ -1,5 +1,5 @@
 -- ============================================================================
---  Fleet Analytics — Dashboard Enterprise
+--  Fleet Analytics â€” Dashboard Enterprise
 --  PostgreSQL functions for charts and analytics
 -- ============================================================================
 

@@ -73,7 +73,7 @@ BEGIN
     WHERE "NUM_FACT" = p_num_fact;
 
     -- ============================================
-    -- 4. Revertir master."Product" — restar lo que se habia sumado
+    -- 4. Revertir master."Product" â€” restar lo que se habia sumado
     -- ============================================
     CREATE TEMP TABLE _detalles_compra_anul (
         "CODIGO"   VARCHAR(60),

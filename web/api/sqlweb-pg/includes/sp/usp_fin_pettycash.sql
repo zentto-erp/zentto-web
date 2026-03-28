@@ -508,7 +508,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_box_list(INTEGER) CASCADE;
-CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_list(p_company_id INTEGER)
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_box_list(p_company_id INTEGER)
 RETURNS TABLE("Id" INT,"CompanyId" INT,"BranchId" INT,"Name" VARCHAR(100),
     "AccountCode" VARCHAR(20),"MaxAmount" NUMERIC(18,2),"CurrentBalance" NUMERIC(18,2),
     "Responsible" VARCHAR(100),"Status" VARCHAR(20),"CreatedAt" TIMESTAMP,"CreatedByUserId" INT)
@@ -547,7 +547,7 @@ BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_close(
 $$;
 
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_getactive(INTEGER) CASCADE;
-CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
 RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmount" NUMERIC,
     "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMP,"ClosedAt" TIMESTAMP,
     "OpenedByUserId" INTEGER,"ClosedByUserId" INTEGER,"Notes" VARCHAR,
@@ -580,7 +580,7 @@ $$;
 
 -- Combined summary (API calls fin.usp_Fin_PettyCash_Summary)
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(INTEGER) CASCADE;
-CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_summary(p_box_id INTEGER)
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(p_box_id INTEGER)
 RETURNS TABLE(
     "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,
     "Status" VARCHAR, "SessionId" INTEGER, "OpeningAmount" NUMERIC, "TotalExpenses" NUMERIC,

@@ -1,13 +1,13 @@
 -- =============================================================================
---  Migración 022: Corregir tipos BIGINT en funciones restaurante
+--  MigraciÃ³n 022: Corregir tipos BIGINT en funciones restaurante
 --  Motivo: Las tablas rest.* usan BIGINT GENERATED ALWAYS AS IDENTITY para
 --          sus PKs (DiningTableId, MenuEnvironmentId, MenuCategoryId,
 --          MenuProductId, PurchaseId, PurchaseLineId) pero las funciones
 --          declaraban RETURNS TABLE("id" INT), causando error runtime:
 --          "returned type bigint does not match expected type integer".
---          Esto impedía que listMesas, listAmbientes, listCategorias,
---          listProductos y listCompras funcionaran después de que
---          usp_cfg_scope_getdefault fue añadido (migración 020).
+--          Esto impedÃ­a que listMesas, listAmbientes, listCategorias,
+--          listProductos y listCompras funcionaran despuÃ©s de que
+--          usp_cfg_scope_getdefault fue aÃ±adido (migraciÃ³n 020).
 -- =============================================================================
 
 \echo '  [022] Fix BIGINT en usp_rest_diningtable_list...'
@@ -351,9 +351,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_rest_admin_compra_getdetalle_lines(BIGINT) TO zentto_app;
 
-\echo '  [022] Registrando migración...'
+\echo '  [022] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('022_fix_rest_bigint_return_types', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [022] COMPLETO — tipos BIGINT corregidos en 7 funciones restaurante'
+\echo '  [022] COMPLETO â€” tipos BIGINT corregidos en 7 funciones restaurante'

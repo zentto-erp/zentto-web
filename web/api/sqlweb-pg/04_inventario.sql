@@ -1,6 +1,6 @@
 -- usp_almacen_delete
 DROP FUNCTION IF EXISTS public.usp_almacen_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_almacen_delete(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_almacen_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -27,7 +27,7 @@ $function$
 
 -- usp_almacen_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_almacen_getbycodigo(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_almacen_getbycodigo(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_almacen_getbycodigo(p_codigo character varying)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "WarehouseCode" character varying, "Description" character varying, "WarehouseType" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -52,7 +52,7 @@ $function$
 
 -- usp_almacen_insert
 DROP FUNCTION IF EXISTS public.usp_almacen_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_almacen_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_almacen_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -100,7 +100,7 @@ $function$
 
 -- usp_almacen_list
 DROP FUNCTION IF EXISTS public.usp_almacen_list(character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_almacen_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_almacen_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("Codigo" character varying, "Descripcion" character varying, "Tipo" character varying, "IsActive" boolean, "IsDeleted" boolean, "CompanyId" integer, "WarehouseCode" character varying, "Description" character varying, "WarehouseType" character varying, "TotalCount" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -154,7 +154,7 @@ $function$
 
 -- usp_almacen_update
 DROP FUNCTION IF EXISTS public.usp_almacen_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_almacen_update(p_codigo character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_almacen_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -190,7 +190,7 @@ $function$
 
 -- usp_inv_movement_getbyid
 DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inv_movement_getbyid(p_id integer)
+DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(p_id integer)
  RETURNS TABLE("MovementId" integer, "Codigo" character varying, "Product" character varying, "Documento" character varying, "Tipo" character varying, "Fecha" timestamp with time zone, "Quantity" numeric, "UnitCost" numeric, "TotalCost" numeric, "Notes" character varying)
  LANGUAGE plpgsql
 AS $function$ BEGIN
@@ -202,7 +202,7 @@ END; $function$
 
 -- usp_inv_movement_list
 DROP FUNCTION IF EXISTS public.usp_inv_movement_list(character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inv_movement_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_inv_movement_list(p_search character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("MovementId" integer, "Codigo" character varying, "Product" character varying, "Documento" character varying, "Tipo" character varying, "Fecha" timestamp with time zone, "Quantity" numeric, "UnitCost" numeric, "TotalCost" numeric, "Notes" character varying, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -227,7 +227,7 @@ $function$
 
 -- usp_inv_movement_listperiodsummary
 DROP FUNCTION IF EXISTS public.usp_inv_movement_listperiodsummary(character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inv_movement_listperiodsummary(p_periodo character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_inv_movement_listperiodsummary(p_periodo character varying DEFAULT NULL::character varying, p_codigo character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
  RETURNS TABLE("SummaryId" integer, "Periodo" character varying, "Codigo" character varying, "OpeningQty" numeric, "InboundQty" numeric, "OutboundQty" numeric, "ClosingQty" numeric, fecha timestamp with time zone, "IsClosed" boolean, "TotalCount" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -247,7 +247,7 @@ END; $function$
 
 -- usp_inventario_cacheload
 DROP FUNCTION IF EXISTS public.usp_inventario_cacheload(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_cacheload(p_company_id integer)
+DROP FUNCTION IF EXISTS public.usp_inventario_cacheload(p_company_id integer)
  RETURNS TABLE("ProductId" bigint, "ProductCode" character varying, "ProductName" character varying, "CategoryCode" character varying, "UnitCode" character varying, "SalesPrice" numeric, "CostPrice" numeric, "DefaultTaxRate" numeric, "StockQty" numeric, "IsService" boolean, "IsDeleted" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -266,7 +266,7 @@ $function$
 
 -- usp_inventario_dashboard
 DROP FUNCTION IF EXISTS public.usp_inventario_dashboard(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_dashboard(p_company_id integer DEFAULT 1)
+DROP FUNCTION IF EXISTS public.usp_inventario_dashboard(p_company_id integer DEFAULT 1)
  RETURNS TABLE("TotalArticulos" bigint, "BajoStock" bigint, "TotalCategorias" bigint, "ValorInventario" numeric, "MovimientosMes" bigint)
  LANGUAGE plpgsql
 AS $function$
@@ -302,7 +302,7 @@ $function$
 
 -- usp_inventario_delete
 DROP FUNCTION IF EXISTS public.usp_inventario_delete(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_delete(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_inventario_delete(p_codigo character varying)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -330,7 +330,7 @@ $function$
 
 -- usp_inventario_getbycode
 DROP FUNCTION IF EXISTS public.usp_inventario_getbycode(integer, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_getbycode(p_company_id integer, p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_inventario_getbycode(p_company_id integer, p_codigo character varying)
  RETURNS TABLE("ProductId" bigint, "ProductCode" character varying, "ProductName" character varying, "CategoryCode" character varying, "UnitCode" character varying, "SalesPrice" numeric, "CostPrice" numeric, "DefaultTaxRate" numeric, "StockQty" numeric, "IsService" boolean, "IsDeleted" boolean, "UpdatedAt" timestamp without time zone)
  LANGUAGE plpgsql
 AS $function$
@@ -349,7 +349,7 @@ $function$
 
 -- usp_inventario_getbycodigo
 DROP FUNCTION IF EXISTS public.usp_inventario_getbycodigo(character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_getbycodigo(p_codigo character varying)
+DROP FUNCTION IF EXISTS public.usp_inventario_getbycodigo(p_codigo character varying)
  RETURNS TABLE("ProductId" integer, "ProductCode" character varying, "Referencia" character varying, "Categoria" character varying, "Marca" character varying, "Tipo" character varying, "Unidad" character varying, "Clase" character varying, "ProductName" character varying, "StockQty" double precision, "VENTA" double precision, "MINIMO" double precision, "MAXIMO" double precision, "CostPrice" double precision, "SalesPrice" double precision, "PORCENTAJE" double precision, "UBICACION" character varying, "Co_Usuario" character varying, "Linea" character varying, "N_PARTE" character varying, "Barra" character varying, "IsService" boolean, "IsActive" boolean, "CompanyId" integer, "CODIGO" character varying, "DESCRIPCION" character varying, "EXISTENCIA" double precision, "PRECIO" double precision, "COSTO" double precision, "Servicio" boolean, "DescripcionCompleta" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -402,7 +402,7 @@ $function$
 
 -- usp_inventario_insert
 DROP FUNCTION IF EXISTS public.usp_inventario_insert(jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_insert(p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_inventario_insert(p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -471,7 +471,7 @@ $function$
 
 -- usp_inventario_libroinventario
 DROP FUNCTION IF EXISTS public.usp_inventario_libroinventario(integer, date, date, character varying) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_libroinventario(p_company_id integer DEFAULT 1, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_product_code character varying DEFAULT NULL::character varying)
+DROP FUNCTION IF EXISTS public.usp_inventario_libroinventario(p_company_id integer DEFAULT 1, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_product_code character varying DEFAULT NULL::character varying)
  RETURNS TABLE("CODIGO" character varying, "DESCRIPCION" character varying, "DescripcionCompleta" character varying, "StockInicial" numeric, "Entradas" numeric, "Salidas" numeric, "StockFinal" numeric, "CostoUnitario" numeric, "Unidad" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -516,7 +516,7 @@ $function$
 
 -- usp_inventario_list
 DROP FUNCTION IF EXISTS public.usp_inventario_list(character varying, character varying, character varying, character varying, character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_marca character varying DEFAULT NULL::character varying, p_linea character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_inventario_list(p_search character varying DEFAULT NULL::character varying, p_categoria character varying DEFAULT NULL::character varying, p_marca character varying DEFAULT NULL::character varying, p_linea character varying DEFAULT NULL::character varying, p_tipo character varying DEFAULT NULL::character varying, p_clase character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "ProductId" integer, "ProductCode" character varying, "Referencia" character varying, "Categoria" character varying, "Marca" character varying, "Tipo" character varying, "Unidad" character varying, "Clase" character varying, "ProductName" character varying, "StockQty" double precision, "VENTA" double precision, "MINIMO" double precision, "MAXIMO" double precision, "CostPrice" double precision, "SalesPrice" double precision, "PORCENTAJE" double precision, "UBICACION" character varying, "Co_Usuario" character varying, "Linea" character varying, "N_PARTE" character varying, "Barra" character varying, "IsService" boolean, "IsActive" boolean, "CompanyId" integer, "CODIGO" character varying, "DESCRIPCION" character varying, "EXISTENCIA" double precision, "PRECIO" double precision, "COSTO" double precision, "Servicio" boolean, "DescripcionCompleta" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -613,7 +613,7 @@ $function$
 
 -- usp_inventario_movimiento_insert
 DROP FUNCTION IF EXISTS public.usp_inventario_movimiento_insert(integer, character varying, character varying, numeric, numeric, character varying, character varying, character varying, character varying, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_movimiento_insert(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT 0, p_unit_cost numeric DEFAULT 0, p_document_ref character varying DEFAULT NULL::character varying, p_warehouse_from character varying DEFAULT NULL::character varying, p_warehouse_to character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
+DROP FUNCTION IF EXISTS public.usp_inventario_movimiento_insert(p_company_id integer DEFAULT 1, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_quantity numeric DEFAULT 0, p_unit_cost numeric DEFAULT 0, p_document_ref character varying DEFAULT NULL::character varying, p_warehouse_from character varying DEFAULT NULL::character varying, p_warehouse_to character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$
@@ -716,7 +716,7 @@ $function$
 
 -- usp_inventario_movimiento_list
 DROP FUNCTION IF EXISTS public.usp_inventario_movimiento_list(integer, character varying, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_movimiento_list(p_company_id integer DEFAULT 1, p_search character varying DEFAULT NULL::character varying, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_warehouse_code character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
+DROP FUNCTION IF EXISTS public.usp_inventario_movimiento_list(p_company_id integer DEFAULT 1, p_search character varying DEFAULT NULL::character varying, p_product_code character varying DEFAULT NULL::character varying, p_movement_type character varying DEFAULT NULL::character varying, p_warehouse_code character varying DEFAULT NULL::character varying, p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
  RETURNS TABLE("TotalCount" bigint, "MovementId" integer, "ProductCode" character varying, "ProductName" character varying, "MovementType" character varying, "MovementDate" date, "Quantity" numeric, "UnitCost" numeric, "TotalCost" numeric, "DocumentRef" character varying, "WarehouseFrom" character varying, "WarehouseTo" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "CreatedByUserId" integer)
  LANGUAGE plpgsql
 AS $function$
@@ -769,7 +769,7 @@ $function$
 
 -- usp_inventario_update
 DROP FUNCTION IF EXISTS public.usp_inventario_update(character varying, jsonb) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inventario_update(p_codigo character varying, p_row_json jsonb)
+DROP FUNCTION IF EXISTS public.usp_inventario_update(p_codigo character varying, p_row_json jsonb)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
 AS $function$

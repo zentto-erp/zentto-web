@@ -1,14 +1,14 @@
 -- =============================================================================
---  Migración 021: Limpiar columnas canónicas expuestas en usp_Proveedores_*
---  Motivo: usp_proveedores_list y usp_proveedores_getbycodigo devolvían
---          columnas canónicas crudas (IsActive, IsDeleted, CompanyId,
+--  MigraciÃ³n 021: Limpiar columnas canÃ³nicas expuestas en usp_Proveedores_*
+--  Motivo: usp_proveedores_list y usp_proveedores_getbycodigo devolvÃ­an
+--          columnas canÃ³nicas crudas (IsActive, IsDeleted, CompanyId,
 --          SupplierCode, SupplierName, FiscalId, TotalBalance, CreditLimit)
---          además de los alias legacy, causando que el frontend mostrara
+--          ademÃ¡s de los alias legacy, causando que el frontend mostrara
 --          columnas internas de la tabla master."Supplier".
 --  Fix: RETURNS TABLE solo con campos legacy (CODIGO, NOMBRE, RIF, etc.)
 -- =============================================================================
 
-\echo '  [021] Limpiando columnas canónicas en usp_proveedores_list...'
+\echo '  [021] Limpiando columnas canÃ³nicas en usp_proveedores_list...'
 
 DROP FUNCTION IF EXISTS usp_proveedores_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_list(
@@ -94,7 +94,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_proveedores_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) TO zentto_app;
 
-\echo '  [021] Limpiando columnas canónicas en usp_proveedores_getbycodigo...'
+\echo '  [021] Limpiando columnas canÃ³nicas en usp_proveedores_getbycodigo...'
 
 DROP FUNCTION IF EXISTS usp_proveedores_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_getbycodigo(
@@ -150,9 +150,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_proveedores_getbycodigo(VARCHAR) TO zentto_app;
 
-\echo '  [021] Registrando migración...'
+\echo '  [021] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('021_fix_proveedores_clean_columns', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [021] COMPLETO — usp_Proveedores_List y GetByCodigo sin columnas canónicas expuestas'
+\echo '  [021] COMPLETO â€” usp_Proveedores_List y GetByCodigo sin columnas canÃ³nicas expuestas'

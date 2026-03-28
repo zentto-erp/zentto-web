@@ -1,5 +1,5 @@
 -- ============================================================================
---  Logistics Analytics — Dashboard Enterprise
+--  Logistics Analytics â€” Dashboard Enterprise
 --  PostgreSQL functions for charts and analytics
 -- ============================================================================
 

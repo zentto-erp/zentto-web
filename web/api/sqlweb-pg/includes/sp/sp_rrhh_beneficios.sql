@@ -1,7 +1,7 @@
 -- =============================================================================
 -- sp_rrhh_beneficios.sql  (PostgreSQL / PL/pgSQL)
 -- Convertido desde T-SQL: web/api/sqlweb/includes/sp/sp_rrhh_beneficios.sql
--- Fecha conversión: 2026-03-16
+-- Fecha conversiÃ³n: 2026-03-16
 --
 -- Beneficios Laborales (LOTTT Venezuela):
 --   1. Utilidades (Profit Sharing) - Art. 131-140
@@ -9,7 +9,7 @@
 --   3. Caja de Ahorro (Savings Fund)
 --
 -- Funciones (16 en total):
---   1.  usp_HR_ProfitSharing_Generate        - Generar cálculo de utilidades
+--   1.  usp_HR_ProfitSharing_Generate        - Generar cÃ¡lculo de utilidades
 --   2.  usp_HR_ProfitSharing_GetSummary      - Resumen cabecera + detalle
 --   3.  usp_HR_ProfitSharing_Approve         - Aprobar utilidades
 --   4.  usp_HR_ProfitSharing_List            - Listado paginado de utilidades
@@ -20,11 +20,11 @@
 --   9.  usp_HR_Savings_Enroll                - Inscribir empleado
 --   10. usp_HR_Savings_ProcessMonthly        - Procesar aportes mensuales
 --   11. usp_HR_Savings_GetBalance            - Saldo y transacciones
---   12. usp_HR_Savings_RequestLoan           - Solicitar préstamo
---   13. usp_HR_Savings_ApproveLoan           - Aprobar/rechazar préstamo
---   14. usp_HR_Savings_ProcessLoanPayment    - Registrar pago de préstamo
+--   12. usp_HR_Savings_RequestLoan           - Solicitar prÃ©stamo
+--   13. usp_HR_Savings_ApproveLoan           - Aprobar/rechazar prÃ©stamo
+--   14. usp_HR_Savings_ProcessLoanPayment    - Registrar pago de prÃ©stamo
 --   15. usp_HR_Savings_List                  - Listado paginado de afiliados
---   16. usp_HR_Savings_LoanList              - Listado paginado de préstamos
+--   16. usp_HR_Savings_LoanList              - Listado paginado de prÃ©stamos
 -- =============================================================================
 
 -- =============================================================================
@@ -55,7 +55,7 @@ BEGIN
 
     IF p_days_granted < 30 OR p_days_granted > 120 THEN
         p_resultado := -1;
-        p_mensaje   := 'Los días otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
+        p_mensaje   := 'Los dÃ­as otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
         RETURN;
     END IF;
 
@@ -65,7 +65,7 @@ BEGIN
           AND "Status" IN ('CALCULADA','PROCESADA','CERRADA')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cálculo de utilidades procesado para este año fiscal.';
+        p_mensaje   := 'Ya existe un cÃ¡lculo de utilidades procesado para este aÃ±o fiscal.';
         RETURN;
     END IF;
 
@@ -397,7 +397,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "FiscalYear" = p_fiscal_year AND "Quarter" = p_quarter
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cálculo para el trimestre ' || p_quarter::TEXT || ' del año ' || p_fiscal_year::TEXT || '.';
+        p_mensaje   := 'Ya existe un cÃ¡lculo para el trimestre ' || p_quarter::TEXT || ' del aÃ±o ' || p_fiscal_year::TEXT || '.';
         RETURN;
     END IF;
 
@@ -426,7 +426,7 @@ BEGIN
                 ORDER BY pr."CreatedAt" DESC LIMIT 1
             ), 0) / 30.0, 2) AS "DailySalary",
             15 AS "DaysDeposited",
-            -- BonusDays: 2 días por cada año después del primero, max 30, solo en Q4
+            -- BonusDays: 2 dÃ­as por cada aÃ±o despuÃ©s del primero, max 30, solo en Q4
             CASE
                 WHEN p_quarter = 4
                  AND DATE_PART('year', v_year_end_str::DATE) - DATE_PART('year', e."HireDate") > 1
@@ -731,7 +731,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "EmployeeCode" = p_employee_code AND "Status" = 'ACTIVO'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya está inscrito en la caja de ahorro.';
+        p_mensaje   := 'El empleado ya estÃ¡ inscrito en la caja de ahorro.';
         RETURN;
     END IF;
 
@@ -954,19 +954,19 @@ BEGIN
         WHERE "SavingsFundId" = v_fund_id AND "Status" IN ('SOLICITADO','APROBADO','ACTIVO')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene un préstamo activo o pendiente.';
+        p_mensaje   := 'El empleado ya tiene un prÃ©stamo activo o pendiente.';
         RETURN;
     END IF;
 
     IF p_loan_amount <= 0 THEN
         p_resultado := -3;
-        p_mensaje   := 'El monto del préstamo debe ser mayor a cero.';
+        p_mensaje   := 'El monto del prÃ©stamo debe ser mayor a cero.';
         RETURN;
     END IF;
 
     IF p_installments_total <= 0 THEN
         p_resultado := -4;
-        p_mensaje   := 'El número de cuotas debe ser mayor a cero.';
+        p_mensaje   := 'El nÃºmero de cuotas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -989,7 +989,7 @@ BEGIN
         )
         RETURNING "LoanId" INTO p_resultado;
 
-        p_mensaje := 'Solicitud de préstamo registrada exitosamente.';
+        p_mensaje := 'Solicitud de prÃ©stamo registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -1028,13 +1028,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Préstamo no encontrado.';
+        p_mensaje   := 'PrÃ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'SOLICITADO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden aprobar/rechazar préstamos en estado SOLICITADO. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden aprobar/rechazar prÃ©stamos en estado SOLICITADO. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -1067,12 +1067,12 @@ BEGIN
                 'PRESTAMO',
                 v_loan_amount,
                 v_cur_balance,
-                'Desembolso préstamo #' || p_loan_id::TEXT,
+                'Desembolso prÃ©stamo #' || p_loan_id::TEXT,
                 'Aprobado por usuario ' || p_approved_by::TEXT,
                 (NOW() AT TIME ZONE 'UTC')
             );
 
-            p_mensaje := 'Préstamo aprobado y desembolsado exitosamente.';
+            p_mensaje := 'PrÃ©stamo aprobado y desembolsado exitosamente.';
         ELSE
             UPDATE hr."SavingsLoan"
             SET "Status"    = 'RECHAZADO',
@@ -1081,7 +1081,7 @@ BEGIN
                 "UpdatedAt"  = (NOW() AT TIME ZONE 'UTC')
             WHERE "LoanId" = p_loan_id;
 
-            p_mensaje := 'Préstamo rechazado.';
+            p_mensaje := 'PrÃ©stamo rechazado.';
         END IF;
 
         p_resultado := p_loan_id;
@@ -1128,13 +1128,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Préstamo no encontrado.';
+        p_mensaje   := 'PrÃ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden registrar pagos en préstamos ACTIVOS. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden registrar pagos en prÃ©stamos ACTIVOS. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -1175,15 +1175,15 @@ BEGIN
             'PAGO_PRESTAMO',
             p_payment_amount,
             v_cur_balance,
-            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' préstamo #' || p_loan_id::TEXT,
+            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' prÃ©stamo #' || p_loan_id::TEXT,
             p_payroll_batch_id,
-            CASE WHEN v_outstanding <= 0 THEN 'Préstamo liquidado' ELSE NULL END,
+            CASE WHEN v_outstanding <= 0 THEN 'PrÃ©stamo liquidado' ELSE NULL END,
             (NOW() AT TIME ZONE 'UTC')
         );
 
         p_resultado := p_loan_id;
         IF v_outstanding <= 0 THEN
-            p_mensaje := 'Préstamo liquidado exitosamente.';
+            p_mensaje := 'PrÃ©stamo liquidado exitosamente.';
         ELSE
             p_mensaje := 'Pago registrado. Saldo pendiente: ' || v_outstanding::TEXT;
         END IF;

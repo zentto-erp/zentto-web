@@ -3,10 +3,10 @@
 -- Fix: Eliminar TODAS las sobrecargas de funciones DocumentTemplate
 -- que causan "function is not unique" en cada deploy.
 --
--- Causa raíz: sp_nomina_documentos.sql creaba funciones con firma
+-- Causa raÃ­z: sp_nomina_documentos.sql creaba funciones con firma
 -- (INTEGER, CHAR(2), VARCHAR(40)) mientras las migraciones 00008/00009
--- las creaban con (INT, VARCHAR, VARCHAR). Ambas coexistían como
--- sobrecargas separadas, y callSp no podía resolver cuál usar.
+-- las creaban con (INT, VARCHAR, VARCHAR). Ambas coexistÃ­an como
+-- sobrecargas separadas, y callSp no podÃ­a resolver cuÃ¡l usar.
 
 DO $do$
 DECLARE _oid OID;
@@ -24,7 +24,7 @@ BEGIN
   END LOOP;
 END $do$;
 
--- Recrear con firma canónica: VARCHAR sin tamaño, BIGINT para IDs, TIMESTAMP sin precisión
+-- Recrear con firma canÃ³nica: VARCHAR sin tamaÃ±o, BIGINT para IDs, TIMESTAMP sin precisiÃ³n
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(
     p_company_id INT, p_country_code VARCHAR DEFAULT NULL, p_template_type VARCHAR DEFAULT NULL
 )

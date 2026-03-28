@@ -527,7 +527,7 @@ $$;
 
 -- ============================================================================
 --  SP: usp_Logistics_GoodsReceipt_Get
---  PG no soporta multiples resultsets — retorna header + lines via JSON.
+--  PG no soporta multiples resultsets â€” retorna header + lines via JSON.
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_Logistics_GoodsReceipt_Get(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Logistics_GoodsReceipt_Get(

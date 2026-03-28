@@ -1,6 +1,6 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_sec.sql
--- Funciones de seguridad (autenticación, permisos, usuarios)
+-- Funciones de seguridad (autenticaciÃƒÂ³n, permisos, usuarios)
 -- ============================================================
 
 -- sec."UserCompanyAccess" table: user-company-branch access control
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS sec."UserCompanyAccess" (
     CONSTRAINT "UQ_sec_UserCompanyAccess" UNIQUE ("CodUsuario", "CompanyId", "BranchId")
 );
 
--- usp_Sec_User_Authenticate: datos del usuario para autenticación
--- La verificación bcrypt se hace en Node.js
+-- usp_Sec_User_Authenticate: datos del usuario para autenticaciÃƒÂ³n
+-- La verificaciÃƒÂ³n bcrypt se hace en Node.js
 DROP FUNCTION IF EXISTS usp_Sec_User_Authenticate(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_Authenticate(
     p_cod_usuario VARCHAR(60)
@@ -68,7 +68,7 @@ BEGIN
 END;
 $$;
 
--- usp_Sec_User_GetModuleAccess: permisos de módulos
+-- usp_Sec_User_GetModuleAccess: permisos de mÃƒÂ³dulos
 DROP FUNCTION IF EXISTS usp_Sec_User_GetModuleAccess(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetModuleAccess(
     p_cod_usuario VARCHAR(60)
@@ -178,7 +178,7 @@ BEGIN
         a."CompanyId", a."BranchId";
 
 EXCEPTION WHEN OTHERS THEN
-    -- Si la tabla no existe, retornar vacío
+    -- Si la tabla no existe, retornar vacÃƒÂ­o
     RETURN;
 END;
 $$;
@@ -245,7 +245,7 @@ BEGIN
 END;
 $$;
 
--- usp_Sec_User_UpdatePassword: actualiza hash de contraseña
+-- usp_Sec_User_UpdatePassword: actualiza hash de contraseÃƒÂ±a
 DROP FUNCTION IF EXISTS usp_Sec_User_UpdatePassword(VARCHAR(60), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_UpdatePassword(
     p_cod_usuario  VARCHAR(60),

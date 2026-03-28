@@ -1,6 +1,6 @@
 /*
  * usp_mfg_integracion.sql (PostgreSQL)
- * Integración Manufactura ↔ Inventario
+ * IntegraciÃ³n Manufactura â†” Inventario
  */
 
 CREATE OR REPLACE FUNCTION usp_mfg_workorder_processstock(
@@ -71,7 +71,7 @@ BEGIN
         CASE WHEN v_completed_qty > 0 THEN ROUND(v_total_material_cost / v_completed_qty, 4) ELSE 0 END,
         v_total_material_cost,
         'WORK_ORDER', v_wo_number,
-        'Producción terminada',
+        'ProducciÃ³n terminada',
         NOW() AT TIME ZONE 'UTC', p_user_id, NOW() AT TIME ZONE 'UTC'
       );
 

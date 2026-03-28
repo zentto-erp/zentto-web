@@ -10,7 +10,7 @@
 
 -- 1. usp_inv_movement_getbyid
 DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_inv_movement_getbyid(p_id integer)
+DROP FUNCTION IF EXISTS public.usp_inv_movement_getbyid(p_id integer)
   RETURNS TABLE(
     "MovementId"  bigint,
     "Codigo"      character varying,

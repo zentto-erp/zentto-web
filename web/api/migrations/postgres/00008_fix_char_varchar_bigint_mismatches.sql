@@ -1,9 +1,9 @@
 -- +goose Up
 -- +goose StatementBegin
--- Fix: CHAR→VARCHAR casts, BIGINT→INT mismatches, missing p_company_id params,
+-- Fix: CHARÃ¢â€ â€™VARCHAR casts, BIGINTÃ¢â€ â€™INT mismatches, missing p_company_id params,
 -- wrong table/schema references across multiple functions
 
--- 1. payments/config — CountryCode CHAR(2)→VARCHAR, TIMESTAMPTZ→TIMESTAMP
+-- 1. payments/config Ã¢â‚¬â€ CountryCode CHAR(2)Ã¢â€ â€™VARCHAR, TIMESTAMPTZÃ¢â€ â€™TIMESTAMP
 DROP FUNCTION IF EXISTS public.usp_pay_companyconfig_listbycompany(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_pay_companyconfig_listbycompany(
     p_company_id INT, p_branch_id INT DEFAULT NULL
@@ -35,9 +35,9 @@ BEGIN
 END;
 $fn$;
 
--- 2. retenciones/{codigo} — CountryCode CHAR(2)→VARCHAR
+-- 2. retenciones/{codigo} Ã¢â‚¬â€ CountryCode CHAR(2)Ã¢â€ â€™VARCHAR
 DROP FUNCTION IF EXISTS public.usp_tax_retention_getbycode(VARCHAR) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_tax_retention_getbycode(p_codigo VARCHAR)
+DROP FUNCTION IF EXISTS public.usp_tax_retention_getbycode(p_codigo VARCHAR)
 RETURNS TABLE(
     "RetentionId" INT, "RetentionCode" VARCHAR, "Description" VARCHAR,
     "RetentionType" VARCHAR, "RetentionRate" NUMERIC, "CountryCode" VARCHAR, "IsActive" BOOLEAN
@@ -53,9 +53,9 @@ BEGIN
 END;
 $fn$;
 
--- 3. vendedores/{codigo} — Direccion→Address, Telefonos→Phone
+-- 3. vendedores/{codigo} Ã¢â‚¬â€ DireccionÃ¢â€ â€™Address, TelefonosÃ¢â€ â€™Phone
 DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(VARCHAR) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_vendedores_getbycodigo(p_codigo VARCHAR)
+DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(p_codigo VARCHAR)
 RETURNS TABLE(
     "Codigo" VARCHAR, "Nombre" VARCHAR, "Comision" NUMERIC, "Status" BOOLEAN,
     "IsActive" BOOLEAN, "IsDeleted" BOOLEAN, "CompanyId" INT,
@@ -84,9 +84,9 @@ BEGIN
 END;
 $fn$;
 
--- 4. centro-costo/{codigo} — public.Centro_Costo→master.CostCenter
+-- 4. centro-costo/{codigo} Ã¢â‚¬â€ public.Centro_CostoÃ¢â€ â€™master.CostCenter
 DROP FUNCTION IF EXISTS public.usp_centrocosto_getbycodigo(VARCHAR) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_centrocosto_getbycodigo(p_codigo VARCHAR)
+DROP FUNCTION IF EXISTS public.usp_centrocosto_getbycodigo(p_codigo VARCHAR)
 RETURNS TABLE("Codigo" VARCHAR, "Descripcion" VARCHAR, "Presupuestado" NUMERIC, "Saldo_Real" NUMERIC)
 LANGUAGE plpgsql AS $fn$
 BEGIN
@@ -97,7 +97,7 @@ BEGIN
 END;
 $fn$;
 
--- 5. empresa — public.Empresa→cfg.Company
+-- 5. empresa Ã¢â‚¬â€ public.EmpresaÃ¢â€ â€™cfg.Company
 DROP FUNCTION IF EXISTS public.usp_empresa_get() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_empresa_get()
 RETURNS TABLE("Empresa" VARCHAR, "RIF" VARCHAR, "Nit" VARCHAR, "Telefono" VARCHAR, "Direccion" VARCHAR, "Rifs" VARCHAR)
@@ -110,7 +110,7 @@ BEGIN
 END;
 $fn$;
 
--- 6. movinvent/mes — SummaryId BIGINT→INT
+-- 6. movinvent/mes Ã¢â‚¬â€ SummaryId BIGINTÃ¢â€ â€™INT
 DROP FUNCTION IF EXISTS public.usp_inv_movement_listperiodsummary(VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_inv_movement_listperiodsummary(
     p_periodo VARCHAR, p_codigo VARCHAR, p_offset INT, p_limit INT
@@ -135,7 +135,7 @@ BEGIN
 END;
 $fn$;
 
--- 7. fideicomiso/summary — p_fiscal_year→p_year, flat rows
+-- 7. fideicomiso/summary Ã¢â‚¬â€ p_fiscal_yearÃ¢â€ â€™p_year, flat rows
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(INT, INT, SMALLINT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_trust_getsummary(
@@ -157,7 +157,7 @@ BEGIN
 END;
 $fn$;
 
--- 8-9. clientes — agregar p_company_id
+-- 8-9. clientes Ã¢â‚¬â€ agregar p_company_id
 DROP FUNCTION IF EXISTS public.usp_clientes_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_clientes_list(
     p_company_id INT DEFAULT NULL, p_search VARCHAR DEFAULT NULL,
@@ -237,7 +237,7 @@ BEGIN
 END;
 $fn$;
 
--- 10-11. document templates — TemplateId INT→BIGINT, CountryCode CHAR→VARCHAR
+-- 10-11. document templates Ã¢â‚¬â€ TemplateId INTÃ¢â€ â€™BIGINT, CountryCode CHARÃ¢â€ â€™VARCHAR
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(INT, CHARACTER, VARCHAR) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(INT, VARCHAR, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(
@@ -283,10 +283,10 @@ BEGIN
 END;
 $fn$;
 
--- Save function — p_country_code CHAR→VARCHAR
+-- Save function Ã¢â‚¬â€ p_country_code CHARÃ¢â€ â€™VARCHAR
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(INT, VARCHAR, VARCHAR, VARCHAR, CHARACTER, TEXT, VARCHAR, BOOLEAN) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(INT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, VARCHAR, BOOLEAN) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
+DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(
     p_company_id INT, p_template_code VARCHAR, p_template_name VARCHAR,
     p_template_type VARCHAR, p_country_code VARCHAR, p_content_md TEXT,
     p_payroll_code VARCHAR DEFAULT NULL, p_is_default BOOLEAN DEFAULT FALSE,
@@ -320,4 +320,4 @@ $fn$;
 
 -- +goose StatementEnd
 -- +goose Down
--- No rollback needed — these are type-safety fixes
+-- No rollback needed Ã¢â‚¬â€ these are type-safety fixes

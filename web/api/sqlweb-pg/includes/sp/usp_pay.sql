@@ -5,7 +5,7 @@
  *  proveedores, capacidades, configuracion por empresa y dispositivos lectores.
  *
  *  Traducido de SQL Server -> PostgreSQL.
- *  Patron: CREATE OR REPLACE FUNCTION (idempotente)
+ *  Patron: DROP FUNCTION IF EXISTS (idempotente)
  * ============================================================================ */
 
 -- =============================================================================
@@ -327,7 +327,7 @@ $$;
 --  8b: usp_pay_companyconfig_deactivatebyid
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_pay_companyconfig_deactivatebyid(INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_pay_companyconfig_deactivatebyid(p_id INT)
+DROP FUNCTION IF EXISTS usp_pay_companyconfig_deactivatebyid(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -430,7 +430,7 @@ $$;
 --  10b: usp_pay_acceptedmethod_deactivate
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_deactivate(INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_pay_acceptedmethod_deactivate(p_id INT)
+DROP FUNCTION IF EXISTS usp_pay_acceptedmethod_deactivate(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN

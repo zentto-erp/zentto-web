@@ -1,8 +1,8 @@
 -- =============================================================================
---  Migración 025: Fix BIGINT en todas las funciones de OrderTicket/OrderTicketLine
+--  MigraciÃ³n 025: Fix BIGINT en todas las funciones de OrderTicket/OrderTicketLine
 --  Motivo: rest."OrderTicket"."OrderTicketId" y rest."OrderTicketLine"."OrderTicketLineId"
 --          son BIGINT GENERATED ALWAYS AS IDENTITY, pero las funciones declaraban
---          RETURNS TABLE("id" INT), DECLARE v_id INT, y parámetros p_pedido_id INT,
+--          RETURNS TABLE("id" INT), DECLARE v_id INT, y parÃ¡metros p_pedido_id INT,
 --          causando "returned type bigint does not match expected type integer" en runtime.
 -- =============================================================================
 
@@ -56,7 +56,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_create(INT, INT, VARCHAR(5), VARC
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getbyid(p_pedido_id BIGINT)
 RETURNS TABLE("orderId" BIGINT, "companyId" INT, "branchId" INT, "countryCode" VARCHAR, "status" VARCHAR)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -72,7 +72,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_getbyid(BIGINT) TO zentto_app;
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticketline_nextlinenumber(p_order_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_nextlinenumber(p_order_id BIGINT)
 RETURNS TABLE("nextLine" INT)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -120,7 +120,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_insert(BIGINT, INT, VARCHAR(5
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_recalctotals(p_order_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_recalctotals(p_order_id BIGINT)
 RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE v_net NUMERIC(18,2); v_tax NUMERIC(18,2); v_total NUMERIC(18,2);
 BEGIN
@@ -140,7 +140,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_recalctotals(BIGINT) TO zentto_ap
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(BIGINT, BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_checkpriorvoid(p_pedido_id BIGINT, p_item_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_checkpriorvoid(p_pedido_id BIGINT, p_item_id BIGINT)
 RETURNS TABLE("alreadyVoided" INT) LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY SELECT 1 FROM sec."SupervisorOverride"
@@ -155,7 +155,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_checkpriorvoid(BIGINT, BIGINT) TO
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(BIGINT, BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbyid(p_pedido_id BIGINT, p_item_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbyid(p_pedido_id BIGINT, p_item_id BIGINT)
 RETURNS TABLE(
     "itemId" BIGINT, "lineNumber" INT, "countryCode" VARCHAR, "productId" BIGINT,
     "productCode" VARCHAR, "nombre" VARCHAR, "cantidad" NUMERIC, "unitPrice" NUMERIC,
@@ -178,7 +178,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_getbyid(BIGINT, BIGINT) TO ze
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_sendtokitchen(p_pedido_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_sendtokitchen(p_pedido_id BIGINT)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE rest."OrderTicket"
@@ -195,7 +195,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_sendtokitchen(BIGINT) TO zentto_a
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_getheaderforclose(p_pedido_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getheaderforclose(p_pedido_id BIGINT)
 RETURNS TABLE(
     "id" BIGINT, "empresaId" INT, "sucursalId" INT, "countryCode" VARCHAR, "mesaId" BIGINT,
     "clienteNombre" VARCHAR, "clienteRif" VARCHAR, "estado" VARCHAR, "total" NUMERIC,
@@ -223,7 +223,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_getheaderforclose(BIGINT) TO zent
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_close(INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_close(BIGINT, INT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_close(p_pedido_id BIGINT, p_closed_by_user_id INT DEFAULT NULL)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_close(p_pedido_id BIGINT, p_closed_by_user_id INT DEFAULT NULL)
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500)) LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE rest."OrderTicket"
@@ -240,7 +240,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_close(BIGINT, INT) TO zentto_app;
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_getfiscalbreakdown(p_pedido_id BIGINT)
 RETURNS TABLE(
     "itemId" BIGINT, "productoId" VARCHAR, "nombre" VARCHAR, "quantity" NUMERIC,
     "unitPrice" NUMERIC, "baseAmount" NUMERIC, "taxCode" VARCHAR, "taxRate" NUMERIC,
@@ -262,7 +262,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_getfiscalbreakdown(BIGINT) TO
 \echo '  [025] Fix BIGINT: usp_Rest_OrderTicket_GetByMesaHeader...'
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_getbymesaheader(INT, INT, VARCHAR(20)) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_getbymesaheader(p_company_id INT, p_branch_id INT, p_table_number VARCHAR(20))
+DROP FUNCTION IF EXISTS usp_rest_orderticket_getbymesaheader(p_company_id INT, p_branch_id INT, p_table_number VARCHAR(20))
 RETURNS TABLE("id" BIGINT, "clienteNombre" VARCHAR, "clienteRif" VARCHAR, "estado" VARCHAR, "total" NUMERIC)
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -281,7 +281,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticket_getbymesaheader(INT, INT, VARCHAR
 
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticketline_getbypedido(p_pedido_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticketline_getbypedido(p_pedido_id BIGINT)
 RETURNS TABLE(
     "id" BIGINT, "productoId" VARCHAR, "nombre" VARCHAR, "cantidad" NUMERIC,
     "precioUnitario" NUMERIC, "subtotal" NUMERIC, "iva" NUMERIC, "taxCode" VARCHAR,
@@ -305,7 +305,7 @@ GRANT EXECUTE ON FUNCTION usp_rest_orderticketline_getbypedido(BIGINT) TO zentto
 
 DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(BIGINT) CASCADE;
-CREATE OR REPLACE FUNCTION usp_rest_orderticket_updatetimestamp(p_pedido_id BIGINT)
+DROP FUNCTION IF EXISTS usp_rest_orderticket_updatetimestamp(p_pedido_id BIGINT)
 RETURNS VOID LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE rest."OrderTicket"
@@ -316,9 +316,9 @@ $$;
 
 GRANT EXECUTE ON FUNCTION usp_rest_orderticket_updatetimestamp(BIGINT) TO zentto_app;
 
-\echo '  [025] Registrando migración...'
+\echo '  [025] Registrando migraciÃ³n...'
 INSERT INTO public._migrations (name, applied_at)
 VALUES ('025_fix_orderticket_bigint', NOW() AT TIME ZONE 'UTC')
 ON CONFLICT (name) DO NOTHING;
 
-\echo '  [025] COMPLETO — BIGINT corregido en 14 funciones OrderTicket/OrderTicketLine'
+\echo '  [025] COMPLETO â€” BIGINT corregido en 14 funciones OrderTicket/OrderTicketLine'
