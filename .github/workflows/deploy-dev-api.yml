@@ -49,24 +49,17 @@ jobs:
         working-directory: web/api
     services:
       postgres:
-        image: postgres:16
+        image: public.ecr.aws/docker/library/postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: zentto_app
+          POSTGRES_PASSWORD: test_password
           POSTGRES_DB: zentto_test
-        ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
+          --health-cmd pg_isready
+          --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
-    env:
-      DB_TYPE: postgres
-      PG_HOST: localhost
-      PG_PORT: 5432
-      PG_USER: postgres
-      PG_PASSWORD: postgres
-      PG_DATABASE: zentto_test
+          --health-retries 5
+        ports: ['5432:5432']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -76,32 +69,37 @@ jobs:
           cache-dependency-path: web/api/package-lock.json
       - run: npm ci
 
-      - name: Bootstrap PG extensions
+      - name: Bootstrap schema (goose-style cold bootstrap)
+        env:
+          PGPASSWORD: test_password
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+          DB_TYPE: postgres
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -c "
-            CREATE EXTENSION IF NOT EXISTS pgcrypto;
-            CREATE EXTENSION IF NOT EXISTS unaccent;
-            CREATE EXTENSION IF NOT EXISTS pg_trgm;
-            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
-            CREATE EXTENSION IF NOT EXISTS btree_gin;
-          "
-
-      - name: Download goose
-        run: |
-          curl -fsSL https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64 -o /usr/local/bin/goose
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
+          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
           chmod +x /usr/local/bin/goose
-
-      - name: Run migrations
-        run: bash ../../scripts/migrate.sh up
-
-      - name: Load functions + seeds
-        working-directory: web/api/sqlweb-pg
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -f run-functions.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -f run-seeds-config.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d zentto_test -f run-seeds-starter.sql
+          bash ../../scripts/migrate.sh up
+          cd sqlweb-pg
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
 
       - name: Run schema contract tests
+        env:
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+          PG_DATABASE: zentto_test
+          DB_TYPE: postgres
         run: npm run test:schema
 
   # ── 3. Build Docker image (:dev tag) ───────────────────────────────
