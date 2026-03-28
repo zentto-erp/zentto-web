@@ -13,10 +13,11 @@ Ambos motores son **funcionalmente equivalentes**. La API expone los mismos endp
 
 ## Directorios de scripts
 
-| Motor | Directorio | Despliegue |
-|-------|-----------|------------|
-| SQL Server | `web/api/sqlweb/` | SSMS con `:r` includes en `run_all.sql` |
-| PostgreSQL | `web/api/sqlweb-pg/` | `psql -U postgres -d datqboxweb -f run_all.sql` |
+| Motor      | Directorio              | Despliegue                                       |
+| ---------- | ----------------------- | ------------------------------------------------ |
+| PostgreSQL | `web/api/sqlweb-pg/`    | `psql` + goose migrations (produccion)           |
+| SQL Server | `web/api/sqlweb/`       | SPs en T-SQL (referencia, clientes)              |
+| SQL Server | `web/api/sqlweb-mssql/` | BD canonica `zentto_dev` (bootstrap automatico)  |
 
 ### Estructura de sqlweb/ (SQL Server)
 
@@ -80,7 +81,41 @@ psql -U postgres -d datqboxweb -f web/api/sqlweb-pg/run_all.sql
 
 ## Despliegue SQL Server
 
+### BD canonica (zentto_dev) — recomendado
+
+```bash
+cd web/api/sqlweb-mssql
+
+# Rebuild completo: drop/create BD + schemas + DDL + seeds
+node execute.cjs
+
+# Ejecutar stored procedures (lee desde sqlweb/includes/sp/)
+node execute_sps.cjs
+
+# Verificar
+npx vitest run tests/schema/sp-contracts-mssql.test.ts
+```
+
+- BD: `zentto_dev` en `DELLXEONE31545` (SQL Server 2012 SP4)
+- 167 tablas, 673 SPs, 21 schemas
+- Schemas renombrados: `master` → `mstr`, `sys` → `zsys` (reservados)
+- Generador: `pg2mssql.cjs` traduce baseline PG → T-SQL 2012
+
+### BD legacy (DatqBoxWeb) — solo referencia
+
 Abrir `web/api/sqlweb/run_all.sql` en SSMS y ejecutar. Usa `:r` para incluir los sub-scripts.
+
+### Estructura de sqlweb-mssql/ (BD canonica)
+
+```
+web/api/sqlweb-mssql/
+  pg2mssql.cjs             # Generador: PG baseline → T-SQL 2012
+  execute.cjs              # Bootstrap: drop/create BD + DDL + seeds
+  execute_sps.cjs          # Ejecuta SPs desde sqlweb/includes/sp/
+  01_ddl_tables.sql        # DDL generado (~7K lineas)
+  02_seed_core.sql         # Seeds minimos (users, company, countries)
+  03_patch_missing_columns.sql  # Columnas extra para SPs
+```
 
 ## Capa API: Abstraccion de motor
 
@@ -122,62 +157,63 @@ Ver `web/api/.env.example` para la plantilla completa.
 
 ### Checklist para cualquier cambio SQL
 
-- [ ] Crear/modificar SP en `web/api/sqlweb/includes/sp/` (SQL Server)
+- [ ] Crear/modificar SP en `web/api/sqlweb/includes/sp/` (SQL Server T-SQL)
 - [ ] Crear/modificar funcion equivalente en `web/api/sqlweb-pg/includes/sp/` (PostgreSQL)
-- [ ] Si es tabla nueva: DDL en ambos directorios
+- [ ] Si es tabla nueva: DDL en migracion goose + regenerar `sqlweb-mssql/pg2mssql.cjs`
 - [ ] Si es seed: seed en ambos directorios
-- [ ] Si es indice: indice en ambos directorios
-- [ ] Verificar que `run_all.sql` de PG incluye el nuevo archivo (linea `\i`)
-- [ ] Verificar que `run_all.sql` de SQL Server incluye el nuevo archivo (linea `:r`)
+- [ ] Verificar que `run-functions.sql` de PG incluye el nuevo archivo (linea `\i`)
+- [ ] Regenerar BD SQL Server: `cd sqlweb-mssql && node execute.cjs && node execute_sps.cjs`
+- [ ] Tests PG: `npx vitest run tests/schema/sp-contracts.test.ts`
+- [ ] Tests MSSQL: `npx vitest run tests/schema/sp-contracts-mssql.test.ts`
 - [ ] Probar con `DB_TYPE=sqlserver` y con `DB_TYPE=postgres`
 
 ### Tabla de traduccion rapida
 
-| SQL Server | PostgreSQL |
-|---|---|
-| `CREATE PROCEDURE usp_X` | `CREATE OR REPLACE FUNCTION usp_x(...) RETURNS ... LANGUAGE plpgsql AS $$` |
-| `@Param INT` | `p_param INT` |
-| `@Resultado INT OUTPUT` | `RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR)` |
-| `@TotalCount INT OUTPUT` | Columna `"TotalCount"` en `RETURNS TABLE` |
-| `NVARCHAR(n)` | `VARCHAR(n)` |
-| `NVARCHAR(MAX)` | `TEXT` |
-| `BIT` | `BOOLEAN` |
-| `DATETIME` / `DATETIME2` | `TIMESTAMP` |
-| `INT IDENTITY(1,1)` | `INT GENERATED ALWAYS AS IDENTITY` |
-| `DECIMAL(p,s)` | `NUMERIC(p,s)` |
-| `FLOAT` | `DOUBLE PRECISION` |
-| `SYSUTCDATETIME()` | `NOW() AT TIME ZONE 'UTC'` |
-| `GETDATE()` | **PROHIBIDO** — usar `NOW() AT TIME ZONE 'UTC'` |
-| `ISNULL(x, d)` | `COALESCE(x, d)` |
-| `OPENJSON(...)` | `jsonb_array_elements(...)` |
-| `FOR JSON PATH` | `json_agg(row_to_json(...))` |
-| `BEGIN TRY...CATCH` | `EXCEPTION WHEN OTHERS THEN` |
-| `IF OBJECT_ID(...) IS NULL` | `CREATE TABLE IF NOT EXISTS` |
-| `MERGE...WHEN NOT MATCHED` | `INSERT...ON CONFLICT DO NOTHING/UPDATE` |
-| `N'texto'` | `'texto'` |
-| `GO` | (omitir) |
-| `PascalCase` columnas | `"PascalCase"` entre comillas dobles |
+| SQL Server                  | PostgreSQL                                                              |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `CREATE PROCEDURE usp_X`    | `DROP FUNCTION IF EXISTS usp_x(...) RETURNS ... LANGUAGE plpgsql AS $$` |
+| `@Param INT`                | `p_param INT`                                                           |
+| `@Resultado INT OUTPUT`     | `RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR)`                        |
+| `@TotalCount INT OUTPUT`    | Columna `"TotalCount"` en `RETURNS TABLE`                               |
+| `NVARCHAR(n)`               | `VARCHAR(n)`                                                            |
+| `NVARCHAR(MAX)`             | `TEXT`                                                                  |
+| `BIT`                       | `BOOLEAN`                                                               |
+| `DATETIME` / `DATETIME2`    | `TIMESTAMP`                                                             |
+| `INT IDENTITY(1,1)`         | `INT GENERATED ALWAYS AS IDENTITY`                                      |
+| `DECIMAL(p,s)`              | `NUMERIC(p,s)`                                                          |
+| `FLOAT`                     | `DOUBLE PRECISION`                                                      |
+| `SYSUTCDATETIME()`          | `NOW() AT TIME ZONE 'UTC'`                                              |
+| `GETDATE()`                 | **PROHIBIDO** — usar `NOW() AT TIME ZONE 'UTC'`                         |
+| `ISNULL(x, d)`              | `COALESCE(x, d)`                                                        |
+| `OPENJSON(...)`             | `jsonb_array_elements(...)`                                             |
+| `FOR JSON PATH`             | `json_agg(row_to_json(...))`                                            |
+| `BEGIN TRY...CATCH`         | `EXCEPTION WHEN OTHERS THEN`                                            |
+| `IF OBJECT_ID(...) IS NULL` | `CREATE TABLE IF NOT EXISTS`                                            |
+| `MERGE...WHEN NOT MATCHED`  | `INSERT...ON CONFLICT DO NOTHING/UPDATE`                                |
+| `N'texto'`                  | `'texto'`                                                               |
+| `GO`                        | (omitir)                                                                |
+| `PascalCase` columnas       | `"PascalCase"` entre comillas dobles                                    |
 
 ## Schemas de base de datos
 
 Ambos motores usan los mismos schemas logicos:
 
-| Schema | Descripcion |
-|--------|-------------|
-| `cfg` | Configuracion (Company, Branch, AppSetting) |
-| `sec` | Seguridad (User, Role, Permission) |
+| Schema   | Descripcion                                      |
+| -------- | ------------------------------------------------ |
+| `cfg`    | Configuracion (Company, Branch, AppSetting)      |
+| `sec`    | Seguridad (User, Role, Permission)               |
 | `master` | Maestros (Customer, Supplier, Employee, Product) |
-| `doc` | Documentos (alias a ar/ap) |
-| `ar` | Cuentas por Cobrar |
-| `ap` | Cuentas por Pagar |
-| `acct` | Contabilidad |
-| `pay` | Pasarela de pagos |
-| `pos` | Punto de Venta |
-| `rest` | Restaurante |
-| `hr` | Recursos Humanos |
-| `fin` | Finanzas |
-| `sys` | Sistema (logs, audit) |
-| `store` | Ecommerce |
+| `doc`    | Documentos (alias a ar/ap)                       |
+| `ar`     | Cuentas por Cobrar                               |
+| `ap`     | Cuentas por Pagar                                |
+| `acct`   | Contabilidad                                     |
+| `pay`    | Pasarela de pagos                                |
+| `pos`    | Punto de Venta                                   |
+| `rest`   | Restaurante                                      |
+| `hr`     | Recursos Humanos                                 |
+| `fin`    | Finanzas                                         |
+| `sys`    | Sistema (logs, audit)                            |
+| `store`  | Ecommerce                                        |
 
 ## Convenciones de nombrado
 

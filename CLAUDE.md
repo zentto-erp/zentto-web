@@ -32,9 +32,10 @@
 | API              | `web/api`                    | Node + Express + TypeScript        |
 | Frontend modular | `web/modular-frontend`       | Monorepo micro-frontends (Next.js) |
 | Contratos        | `web/contracts/openapi.yaml` | OpenAPI                            |
-| PostgreSQL (prod) | `web/api/sqlweb-pg/`         | PostgreSQL functions (plpgsql)     |
-| Migraciones       | `web/api/migrations/postgres/` | Goose migrations (fuente de verdad) |
-| SQL Server (ref)  | `web/api/sqlweb/`            | SQL Server SPs (referencia legacy) |
+| SQL Server        | `web/api/sqlweb/`            | SQL Server stored procedures       |
+| PostgreSQL        | `web/api/sqlweb-pg/`         | PostgreSQL functions (plpgsql)     |
+| SQL Server nuevo  | `web/api/sqlweb-mssql/`      | BD canónica zentto_dev (SQL 2012)  |
+| Migraciones       | `web/api/migrations/postgres/` | Goose migrations                 |
 
 ## Base de datos — PostgreSQL (produccion)
 
@@ -56,11 +57,15 @@
 ### SQL Server (activo — clientes en produccion)
 
 - Servidor local: `DELLXEONE31545`
-- Base: `DatqBoxWeb`
-- Scripts: `web/api/sqlweb/includes/sp/` (165 SPs en T-SQL)
-- **Clientes reales usan SQL Server** — OBLIGATORIO mantener al dia
-- Todo SP/funcion nuevo en PostgreSQL DEBE tener su equivalente T-SQL en `sqlweb/`
+- Base legacy: `DatqBoxWeb` (tablas dbo.*)
+- **Base canonica**: `zentto_dev` (schemas canonicos, sin legacy)
+- SPs T-SQL: `web/api/sqlweb/includes/sp/` (165+ archivos)
+- Bootstrap canonico: `web/api/sqlweb-mssql/` (generador + executor)
+- **Rebuild**: `cd web/api/sqlweb-mssql && node execute.cjs && node execute_sps.cjs`
+- Tests: `npx vitest run tests/schema/sp-contracts-mssql.test.ts`
 - El switch `DB_TYPE=sqlserver` en `.env` activa SQL Server en la API
+- **Schemas renombrados**: `master` → `mstr`, `sys` → `zsys` (reservados en SQL Server)
+- Compatible SQL Server 2012+ (compat level 110)
 
 ### REGLA CRITICA: Todo cambio de BD va como migracion goose
 
@@ -69,23 +74,17 @@
 1. Migración goose: `web/api/migrations/postgres/NNNNN_descripcion.sql`
 2. Actualizar funciones en: `web/api/sqlweb-pg/includes/sp/` (PostgreSQL)
 3. Actualizar equivalente en: `web/api/sqlweb/includes/sp/` (SQL Server T-SQL)
-4. Deploy: `scripts/goose-deploy.sh` ejecuta `goose up`
+4. Regenerar DDL SQL Server: `cd web/api/sqlweb-mssql && node pg2mssql.cjs`
+5. Deploy PG: `scripts/goose-deploy.sh` ejecuta `goose up`
 
 | Accion            | PostgreSQL (`sqlweb-pg/`)                        | SQL Server (`sqlweb/`)             |
 | ----------------- | ------------------------------------------------ | ---------------------------------- |
 | Nuevo SP/funcion  | Migración goose + `includes/sp/usp_*.sql`        | `includes/sp/usp_*.sql` (T-SQL)   |
-| Nueva tabla       | Migración goose con DDL                          | DDL en archivo correspondiente     |
-| Seed data         | `includes/sp/seed_*.sql`                         | `includes/sp/seed_*.sql`           |
-| Cambio de esquema | Migración goose con ALTER                        | Script ALTER verificable           |
+| Nueva tabla       | Migración goose con DDL                          | Regenerar `pg2mssql.cjs`           |
+| Seed data         | `includes/sp/seed_*.sql`                         | `sqlweb-mssql/02_seed_core.sql`    |
+| Cambio de esquema | Migración goose con ALTER                        | `sqlweb-mssql/03_patch_*.sql`      |
 
 **Si solo actualizas UN motor, el otro queda roto. No hay excepciones.**
-| Seed data         | Migración goose o `sqlweb-pg/includes/sp/seed_*.sql` |
-| Cambio de esquema | Migración goose con ALTER verificable            |
-
-### Carpetas eliminadas
-
-- ~~`web/api/sql/`~~ — archivada, eliminada (scripts legacy sin uso)
-- ~~`web/api/sqlweb-mssql/`~~ — intento incompleto de regenerar SQL Server, eliminado
 
 ## Nomenclatura del proyecto
 

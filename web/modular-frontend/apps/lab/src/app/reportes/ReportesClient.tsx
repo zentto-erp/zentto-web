@@ -36,6 +36,10 @@ import {
   Select,
   FormControl,
   InputLabel,
+  InputAdornment,
+  Fade,
+  Skeleton,
+  Badge,
 } from "@mui/material";
 import {
   Edit as DesignIcon,
@@ -63,6 +67,14 @@ import {
   EditNote as ManualIcon,
   Block as NoDataIcon,
   CheckCircle as CheckIcon,
+  Storefront as StoreIcon,
+  Search as SearchIcon,
+  Download as DownloadIcon,
+  OpenInNew as OpenInNewIcon,
+  FilterList as FilterIcon,
+  Public as PublicIcon,
+  Person as PersonIcon,
+  Category as CategoryIcon,
 } from "@mui/icons-material";
 import type { ReportLayout, DataSet } from "@zentto/report-core";
 
@@ -288,7 +300,7 @@ function downloadAsFile(content: string, filename: string, mimeType = "applicati
 
 export default function ReportStudio() {
   // ── State ──
-  const [mode, setMode] = useState<"designer" | "viewer" | "split">("designer");
+  const [mode, setMode] = useState<"store" | "designer" | "viewer" | "split">("store");
   const [registered, setRegistered] = useState(false);
   const [layout, setLayout] = useState<ReportLayout>(CORE_TEMPLATES[0]?.layout || DEFAULT_BLANK_LAYOUT);
   const [sampleData, setSampleData] = useState<DataSet>(CORE_TEMPLATES[0]?.sampleData || {});
@@ -301,6 +313,18 @@ export default function ReportStudio() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [newMenuAnchor, setNewMenuAnchor] = useState<null | HTMLElement>(null);
   const [recoverySnackbar, setRecoverySnackbar] = useState(false);
+
+  // ── Store state ──
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storeCategory, setStoreCategory] = useState<string>("all");
+  const [savedReports, setSavedReports] = useState<{ id: string; name: string; updatedAt?: string }[]>([]);
+  const [savedReportsLoading, setSavedReportsLoading] = useState(false);
+  const [publicReports, setPublicReports] = useState<{ id: string; name: string; updatedAt?: string; description?: string }[]>([]);
+  const [publicReportsLoading, setPublicReportsLoading] = useState(false);
+  const [previewLayout, setPreviewLayout] = useState<ReportLayout | null>(null);
+  const [previewData, setPreviewData] = useState<DataSet>({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTitle, setPreviewTitle] = useState("");
 
   // ── New Report Wizard state ──
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -991,6 +1015,141 @@ export default function ReportStudio() {
   }, [clearAutosave]);
 
   // ═══════════════════════════════════════════════════════════════════
+  // STORE — fetch saved reports + actions
+  // ═══════════════════════════════════════════════════════════════════
+
+  const fetchSavedReports = useCallback(async () => {
+    setSavedReportsLoading(true);
+    try {
+      const resp = await fetch("/api/v1/reportes/saved");
+      if (resp.ok) {
+        const json = await resp.json();
+        setSavedReports(json.data || []);
+      }
+    } catch {
+      // Cache service not available
+    } finally {
+      setSavedReportsLoading(false);
+    }
+  }, []);
+
+  const fetchPublicReports = useCallback(async () => {
+    setPublicReportsLoading(true);
+    try {
+      const resp = await fetch("/api/v1/reportes/public");
+      if (resp.ok) {
+        const json = await resp.json();
+        setPublicReports(json.data || []);
+      }
+    } catch {
+      // Cache service not available
+    } finally {
+      setPublicReportsLoading(false);
+    }
+  }, []);
+
+  // Fetch saved + public reports when entering store mode
+  useEffect(() => {
+    if (mode === "store") {
+      fetchSavedReports();
+      fetchPublicReports();
+    }
+  }, [mode, fetchSavedReports, fetchPublicReports]);
+
+  const handleStoreUseTemplate = useCallback((tmpl: TemplateEntry) => {
+    setLayout(tmpl.layout);
+    setSampleData(tmpl.data);
+    setFileName(null);
+    setFileHandle(null);
+    setIsModified(false);
+    setLastSaveTime(null);
+    setMode("designer");
+    notify(`Plantilla "${tmpl.name}" cargada en el diseñador`);
+  }, [notify]);
+
+  const handleStorePreview = useCallback((tmpl: TemplateEntry) => {
+    setPreviewLayout(tmpl.layout);
+    setPreviewData(tmpl.data);
+    setPreviewTitle(tmpl.name);
+    setPreviewOpen(true);
+  }, []);
+
+  const handleStoreDownload = useCallback((tmpl: TemplateEntry) => {
+    const json = JSON.stringify(tmpl.layout, null, 2);
+    downloadAsFile(json, `${safeFileName(tmpl.layout.name)}.report.json`);
+    notify(`"${tmpl.name}" descargado`);
+  }, [notify]);
+
+  const handleStoreLoadSaved = useCallback(async (report: { id: string; name: string }) => {
+    try {
+      const resp = await fetch(`/api/v1/reportes/saved/${report.id}`);
+      if (!resp.ok) { notify("Error al cargar el reporte", "error"); return; }
+      const json = await resp.json();
+      if (json.layout) {
+        setLayout(json.layout);
+        setSampleData(json.sampleData || {});
+        setFileName(report.name);
+        setFileHandle(null);
+        setIsModified(false);
+        setLastSaveTime(null);
+        setMode("designer");
+        notify(`Reporte "${report.name}" cargado`);
+      }
+    } catch {
+      notify("Error de conexión al cargar el reporte", "error");
+    }
+  }, [notify]);
+
+  const handleStorePreviewSaved = useCallback(async (report: { id: string; name: string }) => {
+    try {
+      const resp = await fetch(`/api/v1/reportes/saved/${report.id}`);
+      if (!resp.ok) return;
+      const json = await resp.json();
+      if (json.layout) {
+        setPreviewLayout(json.layout);
+        setPreviewData(json.sampleData || {});
+        setPreviewTitle(report.name);
+        setPreviewOpen(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const handleStoreDownloadSaved = useCallback(async (report: { id: string; name: string }) => {
+    try {
+      const resp = await fetch(`/api/v1/reportes/saved/${report.id}`);
+      if (!resp.ok) return;
+      const json = await resp.json();
+      if (json.layout) {
+        downloadAsFile(JSON.stringify(json.layout, null, 2), `${safeFileName(report.name)}.report.json`);
+        notify(`"${report.name}" descargado`);
+      }
+    } catch { /* ignore */ }
+  }, [notify]);
+
+  // ── Store: compute filtered templates ──
+  const filteredTemplates = useMemo(() => {
+    let list = TEMPLATES;
+    if (storeCategory !== "all") {
+      list = list.filter((t) => t.category === storeCategory);
+    }
+    if (storeSearch.trim()) {
+      const q = storeSearch.toLowerCase();
+      list = list.filter((t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.id.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [storeSearch, storeCategory]);
+
+  const filteredSavedReports = useMemo(() => {
+    if (!storeSearch.trim()) return savedReports;
+    const q = storeSearch.toLowerCase();
+    return savedReports.filter((r) => r.name.toLowerCase().includes(q));
+  }, [storeSearch, savedReports]);
+
+  // ═══════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════
 
@@ -1007,62 +1166,91 @@ export default function ReportStudio() {
         sx={{ bgcolor: "background.paper", color: "text.primary", borderBottom: "1px solid", borderColor: "divider" }}
       >
         <Toolbar variant="dense" sx={{ gap: 0.5, minHeight: 48, px: "12px !important" }}>
-          {/* ── File group ── */}
-          <Tooltip title="Nuevo (Ctrl+N)" arrow>
-            <IconButton
-              size="small"
-              onClick={handleOpenWizard}
-              sx={{ borderRadius: 1 }}
-            >
-              <NewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Abrir archivo (Ctrl+O)" arrow>
-            <IconButton size="small" onClick={handleOpenFile} sx={{ borderRadius: 1 }}>
-              <OpenIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Guardar (Ctrl+S)" arrow>
-            <span>
-              <IconButton
+          {/* ── Back to Store (visible in designer/viewer/split) ── */}
+          {mode !== "store" && (
+            <Tooltip title="Volver al Store" arrow>
+              <Button
                 size="small"
-                onClick={handleSave}
-                disabled={!isModified}
-                sx={{ borderRadius: 1 }}
+                variant="outlined"
+                startIcon={<StoreIcon sx={{ fontSize: 16 }} />}
+                onClick={() => setMode("store")}
+                sx={{
+                  textTransform: "none", fontSize: 12, fontWeight: 700, mr: 1,
+                  borderColor: "#1a237e", color: "#1a237e",
+                  "&:hover": { bgcolor: "#1a237e", color: "#fff", borderColor: "#1a237e" },
+                }}
               >
-                <SaveIcon fontSize="small" />
-              </IconButton>
-            </span>
-          </Tooltip>
+                Store
+              </Button>
+            </Tooltip>
+          )}
 
-          <Tooltip title="Guardar como (Ctrl+Shift+S)" arrow>
-            <IconButton size="small" onClick={handleSaveAs} sx={{ borderRadius: 1 }}>
-              <SaveAsIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {/* ── File group (hidden in store mode) ── */}
+          {mode !== "store" && (
+            <>
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+              <Tooltip title="Nuevo (Ctrl+N)" arrow>
+                <IconButton
+                  size="small"
+                  onClick={handleOpenWizard}
+                  sx={{ borderRadius: 1 }}
+                >
+                  <NewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
 
-          {/* ── Export group ── */}
-          <Tooltip title="Exportar PDF (Ctrl+E)" arrow>
-            <IconButton size="small" onClick={handleExportPdf} sx={{ borderRadius: 1, color: "#d32f2f" }}>
-              <PdfIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+              <Tooltip title="Abrir archivo (Ctrl+O)" arrow>
+                <IconButton size="small" onClick={handleOpenFile} sx={{ borderRadius: 1 }}>
+                  <OpenIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
 
-          <Tooltip title="Exportar HTML (Ctrl+Shift+E)" arrow>
-            <IconButton size="small" onClick={handleExportHtml} sx={{ borderRadius: 1, color: "#1565c0" }}>
-              <HtmlIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+              <Tooltip title="Guardar (Ctrl+S)" arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={handleSave}
+                    disabled={!isModified}
+                    sx={{ borderRadius: 1 }}
+                  >
+                    <SaveIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
 
-          <Tooltip title="Imprimir (Ctrl+P)" arrow>
-            <IconButton size="small" onClick={handlePrint} sx={{ borderRadius: 1 }}>
-              <PrintIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+              <Tooltip title="Guardar como (Ctrl+Shift+S)" arrow>
+                <IconButton size="small" onClick={handleSaveAs} sx={{ borderRadius: 1 }}>
+                  <SaveAsIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+
+          {/* ── Export group (hidden in store mode) ── */}
+          {mode !== "store" && (
+            <>
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+
+              <Tooltip title="Exportar PDF (Ctrl+E)" arrow>
+                <IconButton size="small" onClick={handleExportPdf} sx={{ borderRadius: 1, color: "#d32f2f" }}>
+                  <PdfIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Exportar HTML (Ctrl+Shift+E)" arrow>
+                <IconButton size="small" onClick={handleExportHtml} sx={{ borderRadius: 1, color: "#1565c0" }}>
+                  <HtmlIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Imprimir (Ctrl+P)" arrow>
+                <IconButton size="small" onClick={handlePrint} sx={{ borderRadius: 1 }}>
+                  <PrintIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
 
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
@@ -1149,6 +1337,450 @@ export default function ReportStudio() {
           </Box>
         ) : (
           <>
+            {/* ── Store mode ── */}
+            {mode === "store" && (
+              <Box sx={{ flex: 1, overflow: "auto", bgcolor: "#f5f5f5" }}>
+                {/* ── Store Header ── */}
+                <Box
+                  sx={{
+                    px: 4, pt: 4, pb: 3,
+                    background: "linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%)",
+                    color: "#fff",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                    <StoreIcon sx={{ fontSize: 28 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: -0.5 }}>
+                      Report Store
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ opacity: 0.85, mb: 2.5, maxWidth: 500 }}>
+                    Plantillas profesionales listas para usar. Explora, previsualiza y descarga reportes para tu negocio.
+                  </Typography>
+
+                  {/* Search + Filter bar */}
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                    <TextField
+                      size="small"
+                      placeholder="Buscar reportes..."
+                      value={storeSearch}
+                      onChange={(e) => setStoreSearch(e.target.value)}
+                      sx={{
+                        minWidth: 300, bgcolor: "rgba(255,255,255,0.15)", borderRadius: 1,
+                        "& .MuiOutlinedInput-root": {
+                          color: "#fff",
+                          "& fieldset": { borderColor: "rgba(255,255,255,0.3)" },
+                          "&:hover fieldset": { borderColor: "rgba(255,255,255,0.5)" },
+                          "&.Mui-focused fieldset": { borderColor: "#fff" },
+                        },
+                        "& .MuiInputAdornment-root": { color: "rgba(255,255,255,0.7)" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>
+                        ),
+                      }}
+                    />
+
+                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                      {[
+                        { key: "all", label: "Todos" },
+                        ...CATEGORY_ORDER.map((c) => ({ key: c, label: c })),
+                      ].map((cat) => (
+                        <Chip
+                          key={cat.key}
+                          label={cat.label}
+                          size="small"
+                          onClick={() => setStoreCategory(cat.key)}
+                          sx={{
+                            fontWeight: 600, fontSize: 11, height: 28,
+                            bgcolor: storeCategory === cat.key ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.15)",
+                            color: storeCategory === cat.key ? "#1a237e" : "#fff",
+                            "&:hover": { bgcolor: storeCategory === cat.key ? "#fff" : "rgba(255,255,255,0.25)" },
+                            cursor: "pointer",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Box sx={{ px: 4, py: 3 }}>
+                  {/* ── Built-in Templates Section ── */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                    <CategoryIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Plantillas del Sistema
+                    </Typography>
+                    <Chip label={filteredTemplates.length} size="small" sx={{ height: 20, fontSize: 10, fontWeight: 700 }} />
+                  </Box>
+
+                  {filteredTemplates.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 4, textAlign: "center", mb: 4, borderStyle: "dashed" }}>
+                      <SearchIcon sx={{ fontSize: 40, color: "text.disabled", mb: 1 }} />
+                      <Typography color="text.secondary">No se encontraron plantillas con ese filtro</Typography>
+                    </Paper>
+                  ) : (
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 2.5, mb: 4 }}>
+                      {filteredTemplates.map((t) => (
+                        <Fade in key={t.id}>
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                borderColor: t.color,
+                                boxShadow: `0 4px 20px ${t.color}25`,
+                                transform: "translateY(-2px)",
+                              },
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
+                            {/* Preview area */}
+                            <Box
+                              sx={{
+                                height: 140,
+                                bgcolor: `${t.color}08`,
+                                borderBottom: "1px solid",
+                                borderColor: "divider",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                position: "relative",
+                                overflow: "hidden",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => handleStorePreview(t)}
+                            >
+                              <Box sx={{ color: t.color, opacity: 0.15, transform: "scale(5)", position: "absolute" }}>
+                                {t.icon}
+                              </Box>
+                              <Box sx={{ color: t.color, opacity: 0.8, transform: "scale(2.5)", zIndex: 1 }}>
+                                {t.icon}
+                              </Box>
+                              {/* Hover overlay */}
+                              <Box
+                                sx={{
+                                  position: "absolute", inset: 0,
+                                  bgcolor: "rgba(0,0,0,0.5)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  opacity: 0,
+                                  transition: "opacity 0.2s",
+                                  "&:hover": { opacity: 1 },
+                                }}
+                              >
+                                <Chip
+                                  icon={<ViewIcon sx={{ fontSize: 14, color: "#fff !important" }} />}
+                                  label="Vista previa"
+                                  size="small"
+                                  sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "#fff", fontWeight: 600, fontSize: 11, backdropFilter: "blur(4px)" }}
+                                />
+                              </Box>
+                            </Box>
+
+                            <CardContent sx={{ py: 1.5, px: 2, flex: 1, display: "flex", flexDirection: "column" }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, lineHeight: 1.3, mb: 0.5 }}>
+                                {t.name}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.4, mb: 1, flex: 1 }}>
+                                {t.description}
+                              </Typography>
+
+                              {/* Metadata chips */}
+                              <Box sx={{ display: "flex", gap: 0.5, mb: 1.5, flexWrap: "wrap" }}>
+                                <Chip label={t.category} size="small" variant="outlined" sx={{ height: 20, fontSize: 10, fontWeight: 600 }} />
+                                <Chip label={`${t.layout.pageSize.width}x${t.layout.pageSize.height} ${t.layout.pageSize.unit}`} size="small" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
+                                <Chip label={`${countElements(t.layout)} elem.`} size="small" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
+                              </Box>
+
+                              {/* Actions */}
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={<DesignIcon sx={{ fontSize: 14 }} />}
+                                  onClick={() => handleStoreUseTemplate(t)}
+                                  sx={{ textTransform: "none", fontSize: 11, flex: 1, fontWeight: 600 }}
+                                >
+                                  Usar
+                                </Button>
+                                <Tooltip title="Vista previa" arrow>
+                                  <IconButton size="small" onClick={() => handleStorePreview(t)} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                                    <ViewIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Descargar .report.json" arrow>
+                                  <IconButton size="small" onClick={() => handleStoreDownload(t)} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                                    <DownloadIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </Fade>
+                      ))}
+                    </Box>
+                  )}
+
+                  {/* ── Saved Reports Section ── */}
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                    <PersonIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Mis Reportes Guardados
+                    </Typography>
+                    {!savedReportsLoading && (
+                      <Chip label={filteredSavedReports.length} size="small" sx={{ height: 20, fontSize: 10, fontWeight: 700 }} />
+                    )}
+                    <Box sx={{ flex: 1 }} />
+                    <Tooltip title="Recargar" arrow>
+                      <IconButton size="small" onClick={fetchSavedReports} disabled={savedReportsLoading}>
+                        <OpenInNewIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+
+                  {savedReportsLoading ? (
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 2.5, mb: 3 }}>
+                      {[1, 2, 3].map((i) => (
+                        <Card key={i} variant="outlined">
+                          <Skeleton variant="rectangular" height={100} />
+                          <CardContent>
+                            <Skeleton width="60%" height={20} />
+                            <Skeleton width="40%" height={16} sx={{ mt: 0.5 }} />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Box>
+                  ) : filteredSavedReports.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 4, textAlign: "center", mb: 4, borderStyle: "dashed" }}>
+                      <SaveIcon sx={{ fontSize: 40, color: "text.disabled", mb: 1 }} />
+                      <Typography color="text.secondary" sx={{ mb: 1 }}>
+                        {savedReports.length === 0
+                          ? "No tienes reportes guardados aun"
+                          : "No se encontraron reportes con ese filtro"}
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled">
+                        Los reportes que guardes desde el Designer apareceran aqui
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 2.5, mb: 3 }}>
+                      {filteredSavedReports.map((r) => (
+                        <Fade in key={r.id}>
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                borderColor: "primary.main",
+                                boxShadow: "0 4px 20px rgba(25,118,210,0.15)",
+                                transform: "translateY(-2px)",
+                              },
+                            }}
+                          >
+                            {/* Saved report header */}
+                            <Box
+                              sx={{
+                                height: 80,
+                                bgcolor: "#e3f2fd",
+                                borderBottom: "1px solid",
+                                borderColor: "divider",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                position: "relative",
+                              }}
+                              onClick={() => handleStorePreviewSaved(r)}
+                            >
+                              <TemplateIcon sx={{ fontSize: 32, color: "#1565c0", opacity: 0.6 }} />
+                              <Box
+                                sx={{
+                                  position: "absolute", inset: 0,
+                                  bgcolor: "rgba(0,0,0,0.4)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  opacity: 0, transition: "opacity 0.2s",
+                                  "&:hover": { opacity: 1 },
+                                }}
+                              >
+                                <Chip
+                                  icon={<ViewIcon sx={{ fontSize: 14, color: "#fff !important" }} />}
+                                  label="Vista previa"
+                                  size="small"
+                                  sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "#fff", fontWeight: 600, fontSize: 11, backdropFilter: "blur(4px)" }}
+                                />
+                              </Box>
+                            </Box>
+
+                            <CardContent sx={{ py: 1.5, px: 2 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
+                                {r.name}
+                              </Typography>
+                              {r.updatedAt && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5, fontSize: 10 }}>
+                                  Actualizado: {new Date(r.updatedAt).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </Typography>
+                              )}
+
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={<DesignIcon sx={{ fontSize: 14 }} />}
+                                  onClick={() => handleStoreLoadSaved(r)}
+                                  sx={{ textTransform: "none", fontSize: 11, flex: 1, fontWeight: 600 }}
+                                >
+                                  Editar
+                                </Button>
+                                <Tooltip title="Vista previa" arrow>
+                                  <IconButton size="small" onClick={() => handleStorePreviewSaved(r)} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                                    <ViewIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Descargar .report.json" arrow>
+                                  <IconButton size="small" onClick={() => handleStoreDownloadSaved(r)} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                                    <DownloadIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </Fade>
+                      ))}
+                    </Box>
+                  )}
+
+                  {/* ── Public Reports Section ── */}
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                    <PublicIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Reportes Publicos de la Empresa
+                    </Typography>
+                    {!publicReportsLoading && (
+                      <Chip label={publicReports.length} size="small" sx={{ height: 20, fontSize: 10, fontWeight: 700 }} />
+                    )}
+                  </Box>
+
+                  {publicReportsLoading ? (
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 2.5, mb: 3 }}>
+                      {[1, 2].map((i) => (
+                        <Card key={i} variant="outlined">
+                          <Skeleton variant="rectangular" height={80} />
+                          <CardContent>
+                            <Skeleton width="60%" height={20} />
+                            <Skeleton width="40%" height={16} sx={{ mt: 0.5 }} />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Box>
+                  ) : publicReports.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 4, textAlign: "center", mb: 4, borderStyle: "dashed" }}>
+                      <PublicIcon sx={{ fontSize: 40, color: "text.disabled", mb: 1 }} />
+                      <Typography color="text.secondary" sx={{ mb: 1 }}>
+                        No hay reportes publicos de la empresa
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled">
+                        Los administradores pueden publicar reportes para toda la organizacion
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 2.5, mb: 3 }}>
+                      {publicReports.map((r) => (
+                        <Fade in key={r.id}>
+                          <Card
+                            variant="outlined"
+                            sx={{
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                borderColor: "#4caf50",
+                                boxShadow: "0 4px 20px rgba(76,175,80,0.15)",
+                                transform: "translateY(-2px)",
+                              },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                height: 80,
+                                bgcolor: "#e8f5e9",
+                                borderBottom: "1px solid",
+                                borderColor: "divider",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                position: "relative",
+                              }}
+                              onClick={() => handleStorePreviewSaved(r)}
+                            >
+                              <PublicIcon sx={{ fontSize: 32, color: "#2e7d32", opacity: 0.6 }} />
+                              <Box
+                                sx={{
+                                  position: "absolute", inset: 0,
+                                  bgcolor: "rgba(0,0,0,0.4)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  opacity: 0, transition: "opacity 0.2s",
+                                  "&:hover": { opacity: 1 },
+                                }}
+                              >
+                                <Chip
+                                  icon={<ViewIcon sx={{ fontSize: 14, color: "#fff !important" }} />}
+                                  label="Vista previa"
+                                  size="small"
+                                  sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "#fff", fontWeight: 600, fontSize: 11, backdropFilter: "blur(4px)" }}
+                                />
+                              </Box>
+                            </Box>
+
+                            <CardContent sx={{ py: 1.5, px: 2 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
+                                {r.name}
+                              </Typography>
+                              {r.description && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, lineHeight: 1.3 }}>
+                                  {r.description}
+                                </Typography>
+                              )}
+                              {r.updatedAt && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5, fontSize: 10 }}>
+                                  {new Date(r.updatedAt).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" })}
+                                </Typography>
+                              )}
+
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="success"
+                                  startIcon={<DesignIcon sx={{ fontSize: 14 }} />}
+                                  onClick={() => handleStoreLoadSaved(r)}
+                                  sx={{ textTransform: "none", fontSize: 11, flex: 1, fontWeight: 600 }}
+                                >
+                                  Usar
+                                </Button>
+                                <Tooltip title="Vista previa" arrow>
+                                  <IconButton size="small" onClick={() => handleStorePreviewSaved(r)} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                                    <ViewIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Descargar" arrow>
+                                  <IconButton size="small" onClick={() => handleStoreDownloadSaved(r)} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                                    <DownloadIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </Fade>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            )}
+
             {/* ── Designer mode ── */}
             {mode === "designer" && (
               <Box sx={{ flex: 1, overflow: "hidden" }}>
@@ -1213,9 +1845,9 @@ export default function ReportStudio() {
       </Box>
 
       {/* ════════════════════════════════════════════════════════════ */}
-      {/* STATUS BAR                                                 */}
+      {/* STATUS BAR (hidden in store mode)                          */}
       {/* ════════════════════════════════════════════════════════════ */}
-      <Paper
+      {mode !== "store" && <Paper
         elevation={0}
         sx={{
           px: 2,
@@ -1262,7 +1894,95 @@ export default function ReportStudio() {
             ? `Guardado: ${lastSaveTime.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
             : "Sin guardar"}
         </Typography>
-      </Paper>
+      </Paper>}
+
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* STORE PREVIEW DIALOG                                       */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { maxHeight: "90vh", minHeight: 500 } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <ViewIcon sx={{ color: "primary.main" }} />
+            <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>{previewTitle}</span>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            {previewLayout && (
+              <>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<DesignIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => {
+                    setLayout(previewLayout);
+                    setSampleData(previewData);
+                    setFileName(null);
+                    setFileHandle(null);
+                    setIsModified(false);
+                    setMode("designer");
+                    setPreviewOpen(false);
+                    notify(`"${previewTitle}" cargado en el diseñador`);
+                  }}
+                  sx={{ textTransform: "none", fontSize: 12, fontWeight: 600 }}
+                >
+                  Usar en Designer
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<DownloadIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => {
+                    downloadAsFile(JSON.stringify(previewLayout, null, 2), `${safeFileName(previewTitle)}.report.json`);
+                    notify(`"${previewTitle}" descargado`);
+                  }}
+                  sx={{ textTransform: "none", fontSize: 12, fontWeight: 600 }}
+                >
+                  Descargar
+                </Button>
+              </>
+            )}
+            <IconButton onClick={() => setPreviewOpen(false)} size="small"><CloseIcon /></IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, bgcolor: "#e0e0e0", overflow: "auto" }}>
+          {previewLayout && renderToFullHtml ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3, minHeight: 400 }}>
+              <Paper
+                elevation={4}
+                sx={{
+                  width: previewLayout.orientation === "landscape" ? "min(95%, 1000px)" : "min(95%, 700px)",
+                  bgcolor: "#fff",
+                  overflow: "hidden",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: (() => {
+                    try {
+                      const full = renderToFullHtml(previewLayout, previewData);
+                      // Extract body content from the full HTML
+                      const bodyMatch = full.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                      const styleMatch = full.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+                      const styles = styleMatch ? styleMatch.join("") : "";
+                      const body = bodyMatch ? bodyMatch[1] : full;
+                      return `${styles}<div style="transform-origin: top center;">${body}</div>`;
+                    } catch {
+                      return '<div style="padding: 40px; text-align: center; color: #999;">Error al renderizar la vista previa</div>';
+                    }
+                  })(),
+                }}
+              />
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: 400 }}>
+              <Typography color="text.secondary">Motor de renderizado no disponible</Typography>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ════════════════════════════════════════════════════════════ */}
       {/* TEMPLATE GALLERY DIALOG (legacy — kept for direct calls)   */}
