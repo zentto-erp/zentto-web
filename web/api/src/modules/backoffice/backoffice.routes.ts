@@ -376,11 +376,21 @@ backofficeRouter.post("/cleanup/:queueId/action", async (req, res) => {
 
 backofficeRouter.get("/dashboard", async (_req, res) => {
   try {
-    const [tenantRows, cleanupRows, resourceRows, revenueRows] = await Promise.all([
+    const GITHUB_TOKEN = process.env.GITHUB_PAT || '';
+    const SUPPORT_REPO = 'zentto-erp/zentto-support';
+
+    const [tenantRows, cleanupRows, resourceRows, revenueRows, openIssuesRes, closedIssuesRes] = await Promise.all([
       callSp<DashboardTenantRow>("usp_Sys_Backoffice_TenantList", { Page: 1, PageSize: 1, Status: null, Plan: null, Search: null }),
       callSp<DashboardCleanupRow>("usp_Sys_Cleanup_List", { Status: 'PENDING' }),
       callSp<DashboardResourceRow>("usp_Sys_Cleanup_List", { Status: null }),
       callSp<RevenueRow>("usp_Sys_Backoffice_RevenueMetrics", {}),
+      // Support stats from GitHub
+      fetch(`https://api.github.com/repos/${SUPPORT_REPO}/issues?state=open&per_page=100`, {
+        headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' },
+      }).then(r => r.json()).catch(() => []),
+      fetch(`https://api.github.com/repos/${SUPPORT_REPO}/issues?state=closed&per_page=100`, {
+        headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' },
+      }).then(r => r.json()).catch(() => []),
     ]);
 
     const tenantCount = (tenantRows[0] as any)?.TotalCount ?? 0;
@@ -388,6 +398,11 @@ backofficeRouter.get("/dashboard", async (_req, res) => {
     const cleanupPending = cleanupRows.length;
     const totalDbSizeMB = (resourceRows as any[]).reduce((sum, r) => sum + (Number(r.DbSizeMB) || 0), 0);
     const estimatedMRR = revenueRows.reduce((sum, r) => sum + (r.EstimatedMRR ?? 0), 0);
+
+    // Support ticket stats
+    const openIssues = Array.isArray(openIssuesRes) ? openIssuesRes : [];
+    const closedIssues = Array.isArray(closedIssuesRes) ? closedIssuesRes : [];
+    const allIssues = [...openIssues, ...closedIssues];
 
     res.json({
       ok: true,
@@ -397,6 +412,12 @@ backofficeRouter.get("/dashboard", async (_req, res) => {
         cleanupPending,
         totalDbSizeMB,
         estimatedMRR,
+        // Support stats
+        TicketsOpen: openIssues.length,
+        TicketsClosed: closedIssues.length,
+        TicketsUrgent: openIssues.filter((i: any) => i.labels?.some((l: any) => l.name === 'urgent')).length,
+        TicketsAiPending: openIssues.filter((i: any) => i.labels?.some((l: any) => l.name === 'ai-fix') && !i.labels?.some((l: any) => l.name === 'ai-pr')).length,
+        TicketsAiResolved: allIssues.filter((i: any) => i.labels?.some((l: any) => l.name === 'ai-pr')).length,
       },
     });
   } catch (err: unknown) {
