@@ -1,8 +1,10 @@
 name: Deploy API
 
 on:
-  push:
+  # Solo deploya a producción cuando un PR se mergea a main
+  pull_request:
     branches: [main]
+    types: [closed]
     paths:
       - 'web/api/**'
       - 'docker/Dockerfile.api'
@@ -28,8 +30,11 @@ env:
   REPO: zentto-erp/zentto-web
 
 jobs:
+  # Gate: solo ejecutar si el PR fue mergeado (no cerrado sin merge)
+  # workflow_dispatch bypassa esta condición automáticamente
   # ── Step 0: Hacer repo público para usar minutos gratuitos ───
   set-public:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     name: Make repo public (free minutes)
     runs-on: ubuntu-22.04
     steps:

@@ -1,8 +1,10 @@
 name: Deploy Frontend
 
 on:
-  push:
+  # Solo deploya a producción cuando un PR se mergea a main
+  pull_request:
     branches: [main]
+    types: [closed]
     paths:
       - 'web/modular-frontend/**'
       - 'docker/Dockerfile.frontend'
@@ -27,6 +29,7 @@ env:
 jobs:
   # ── Step 0: Hacer repo público para usar minutos gratuitos ───
   set-public:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     name: Make repo public (free minutes)
     runs-on: ubuntu-22.04
     steps:

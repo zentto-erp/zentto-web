@@ -41,9 +41,11 @@ jobs:
             Eres un agente de desarrollo para Zentto ERP.
             Lee SIEMPRE CLAUDE.md antes de empezar cualquier tarea.
             Reglas criticas:
-            - Todo cambio SQL va en AMBOS motores: sqlweb/ y sqlweb-pg/
-            - Ramas: feature/nombre -> develop (nunca a main directamente)
-            - No hacer commits directos a develop ni main
+            - Todo cambio SQL va en AMBOS motores: sqlweb/ y sqlweb-pg/ + migracion goose
+            - Ramas: feature/nombre -> developer (PR) -> main (PR)
+            - Push a developer = deploy a dev.zentto.net (automatico)
+            - Push a main SOLO via PR merge = deploy a produccion
+            - No hacer commits directos a main
             - Abre un PR con descripcion clara del cambio
             - Fechas siempre en UTC-0
             - No exponer secrets ni credenciales

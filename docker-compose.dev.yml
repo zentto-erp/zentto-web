@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Zentto DEV — ambiente de desarrollo en el mismo servidor
+#
+#  Rama: developer
+#  URLs: app.dev.zentto.net / api.dev.zentto.net
+#  Puertos: API 4100, Frontend 3100-3115
+#  BD: zentto_dev (PostgreSQL separada de producción)
+#  Imágenes: ghcr.io/zentto-erp/zentto-web/api:dev
+#            ghcr.io/zentto-erp/zentto-web/frontend:dev
+# ─────────────────────────────────────────────────────────────────────
+
+services:
+  api-dev:
+    image: ghcr.io/zentto-erp/zentto-web/api:dev
+    container_name: zentto-api-dev
+    ports:
+      - "4100:4000"
+    env_file:
+      - /opt/zentto-dev/.env.api
+    environment:
+      - CORS_ORIGINS=https://dev.zentto.net,https://app.dev.zentto.net
+      - STORE_URL=https://app.dev.zentto.net
+      - NODE_ENV=development
+    volumes:
+      - api_storage_dev:/app/storage/media
+    networks:
+      - zentto_zentto-net
+    restart: unless-stopped
+
+  frontend-dev:
+    image: ghcr.io/zentto-erp/zentto-web/frontend:dev
+    container_name: zentto-frontend-dev
+    ports:
+      - "3100-3115:3000-3015"
+    env_file:
+      - /opt/zentto-dev/.env.frontend
+    environment:
+      - NODE_ENV=development
+      - AUTH_TRUST_HOST=true
+      - NEXTAUTH_URL=https://app.dev.zentto.net
+      - BACKEND_URL=http://zentto-api-dev:4000
+      - API_URL=http://zentto-api-dev:4000
+    volumes:
+      - /opt/zentto-dev/docker/pm2.config.cjs:/app/pm2.config.cjs:ro
+    networks:
+      - zentto_zentto-net
+    restart: unless-stopped
+
+networks:
+  zentto_zentto-net:
+    external: true
+
+volumes:
+  api_storage_dev:
+    name: zentto_api_storage_dev

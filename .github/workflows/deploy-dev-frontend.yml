@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Deploy Frontend → DEV environment (app.dev.zentto.net)
+#
+#  Trigger: push to developer branch (web/modular-frontend/**)
+#  Target: Same Hetzner server, separate containers + ports
+#  Image: ghcr.io/zentto-erp/zentto-web/frontend:dev
+# ─────────────────────────────────────────────────────────────────────
+
+name: Deploy Frontend (DEV)
+
+on:
+  push:
+    branches: [developer]
+    paths:
+      - 'web/modular-frontend/**'
+      - 'docker/Dockerfile.frontend'
+      - 'docker/pm2.config.cjs'
+      - 'docker-compose.dev.yml'
+      - 'nginx/zentto-dev.conf'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev-frontend
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Build Docker image (:dev tag) ───────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.frontend
+          push: true
+          tags: ghcr.io/zentto-erp/zentto-web/frontend:dev
+          cache-from: type=gha,scope=frontend-dev
+          cache-to: type=gha,mode=max,scope=frontend-dev
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://api.dev.zentto.net
+            NEXT_PUBLIC_API_BASE=https://api.dev.zentto.net
+            NEXT_PUBLIC_API_URL=https://api.dev.zentto.net
+            NEXT_PUBLIC_BACKEND_URL=https://api.dev.zentto.net
+            NEXT_PUBLIC_SHELL_URL=https://app.dev.zentto.net
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}
+            NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=${{ secrets.PADDLE_CLIENT_TOKEN }}
+
+  # ── 2. Deploy DEV container ────────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy config to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.dev.yml,docker/pm2.config.cjs,nginx/zentto-dev.conf,nginx/zentto-proxy.conf"
+          target: /opt/zentto-dev
+          overwrite: true
+
+      - name: Deploy Frontend dev container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            # Ensure dev env file exists
+            touch /opt/zentto-dev/.env.frontend
+            chmod 600 /opt/zentto-dev/.env.frontend
+
+            # Sync AUTH_SECRET
+            grep -q "^AUTH_SECRET=" /opt/zentto-dev/.env.frontend || echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> /opt/zentto-dev/.env.frontend
+            sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=${{ secrets.AUTH_SECRET }}|" /opt/zentto-dev/.env.frontend
+
+            # Ensure PM2 config is in place
+            mkdir -p /opt/zentto-dev/docker
+            cp -f /opt/zentto-dev/docker/pm2.config.cjs /opt/zentto-dev/docker/pm2.config.cjs 2>/dev/null || true
+
+            # Login to GHCR
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u zentto-erp --password-stdin
+
+            # Pull and restart dev frontend
+            cd /opt/zentto-dev
+            docker compose -f docker-compose.dev.yml pull frontend-dev
+            docker compose -f docker-compose.dev.yml up -d --force-recreate --no-deps frontend-dev
+
+            # Update nginx
+            cp -f /opt/zentto-dev/nginx/zentto-dev.conf /etc/nginx/sites-available/zentto-dev.conf
+            cp -f /opt/zentto-dev/nginx/zentto-proxy.conf /etc/nginx/zentto-proxy.conf
+            ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
+            nginx -t && systemctl reload nginx
+
+            echo "✅ Frontend DEV deployed → app.dev.zentto.net"
