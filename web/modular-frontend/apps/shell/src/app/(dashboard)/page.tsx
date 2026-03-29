@@ -25,6 +25,7 @@ const VerifiedUserIcon = dynamic(() => import('@mui/icons-material/VerifiedUser'
 const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
 const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
 const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
+const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -91,6 +92,8 @@ export default function AppSelectorPage() {
   allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
 
   allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/shipping', bgColor: '#1565C0' });
+
+  allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/report-studio', bgColor: '#FF6F00' });
 
   // Siempre agregar App Store y Settings al final
   allApps.push({ id: 'apps', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });

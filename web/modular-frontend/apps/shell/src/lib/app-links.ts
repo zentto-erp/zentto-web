@@ -10,6 +10,7 @@ const DEV_APP_ORIGINS: Record<string, string> = {
   ecommerce: process.env.NEXT_PUBLIC_APP_URL_ECOMMERCE || 'http://localhost:3009',
   auditoria: process.env.NEXT_PUBLIC_APP_URL_AUDITORIA || 'http://localhost:3010',
   shipping: process.env.NEXT_PUBLIC_APP_URL_SHIPPING || 'http://localhost:3015',
+  'report-studio': process.env.NEXT_PUBLIC_APP_URL_REPORT_STUDIO || 'http://localhost:3017',
 };
 
 const SHELL_LOCAL_PATHS = new Set([
