@@ -1,0 +1,3 @@
+# Forzar LF en migraciones SQL y scripts bash (goose falla con CRLF en $$)
+web/api/migrations/**/*.sql text eol=lf
+scripts/*.sh text eol=lf
