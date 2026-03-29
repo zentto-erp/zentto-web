@@ -583,11 +583,11 @@ function TenantsTab({ gridId, masterKey }: { gridId: string; masterKey: string }
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<{ rows: Record<string, unknown>[]; totalCount: number }>(
-        `/v1/backoffice/tenants?page=1&pageSize=200`,
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[]; total: number }>(
+        `/v1/backoffice/tenants?page=1&pageSize=100`,
         masterKey
       );
-      const mapped: TenantRow[] = (res.rows ?? []).map((r, i) => ({
+      const mapped: TenantRow[] = (res.data ?? []).map((r, i) => ({
         id: i,
         CompanyId: r.CompanyId as number,
         CompanyCode: r.CompanyCode as string,
@@ -1027,11 +1027,11 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<{ rows: Record<string, unknown>[] }>(
-        "/v1/backoffice/tenants?page=1&pageSize=200",
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+        "/v1/backoffice/tenants?page=1&pageSize=100",
         masterKey
       );
-      const mapped: BackupRow[] = (res.rows ?? []).map((r, i) => ({
+      const mapped: BackupRow[] = (res.data ?? []).map((r, i) => ({
         id: i,
         CompanyId: r.CompanyId as number,
         CompanyCode: r.CompanyCode as string,
@@ -1191,11 +1191,11 @@ export default function BackofficePage() {
     if (!isSet) return;
     setDashLoading(true);
     try {
-      const res = await apiFetch<DashboardData>(
+      const res = await apiFetch<{ ok: boolean; data: DashboardData }>(
         "/v1/backoffice/dashboard",
         token
       );
-      setDashboard(res);
+      setDashboard(res.data);
     } catch (e: unknown) {
       // Si el token expiró, limpiar sesión y volver al login
       if (e instanceof Error && e.message.startsWith("401")) {

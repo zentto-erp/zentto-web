@@ -82,7 +82,6 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
 -- ALTER TABLE: Agregar columnas faltantes si la tabla fue creada
 -- por 08_fin_hr_extensions.sql con esquema incompleto.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DO $$ BEGIN
   -- hr."PayrollBatch" â€” columnas que 08_fin_hr_extensions.sql no incluye
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='BranchId') THEN
@@ -110,14 +109,12 @@ DO $$ BEGIN
     ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedAt" TIMESTAMP NULL;
   END IF;
 END $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 1. usp_HR_Payroll_GenerateDraft
 --    Genera un borrador de nÃ³mina en lote para todos los empleados activos.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_company_id        INTEGER,
@@ -223,14 +220,12 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 2. usp_HR_Payroll_SaveDraftLine
 --    Guarda cambios de una celda (autosave).
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(BIGINT, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
@@ -292,14 +287,12 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 3. usp_HR_Payroll_BatchAddLine
 --    Agrega un nuevo concepto a un empleado en el lote.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(BIGINT, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
@@ -402,14 +395,12 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 4. usp_HR_Payroll_BatchRemoveLine
 --    Elimina una lÃ­nea de concepto del lote.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
@@ -462,7 +453,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -475,7 +465,6 @@ $$;
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 -- 5a. Cabecera del batch con totales
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Header(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Header(
     p_batch_id BIGINT
@@ -549,10 +538,8 @@ BEGIN
     WHERE b."BatchId" = p_batch_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- 5b. Resumen general (sin columna departamento)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_ByDept(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_ByDept(
     p_batch_id BIGINT
@@ -581,10 +568,8 @@ BEGIN
     WHERE bl."BatchId" = p_batch_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- 5c. Alertas
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Alerts(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Alerts(
     p_batch_id BIGINT
@@ -650,14 +635,12 @@ BEGIN
     ORDER BY alerts."AlertType", alerts."EmployeeCode";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 6. usp_HR_Payroll_GetDraftGrid
 --    Retorna los empleados con sus totales para la grilla.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(INTEGER, VARCHAR(100), VARCHAR(100), BOOLEAN, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(BIGINT, VARCHAR, VARCHAR, BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
@@ -727,14 +710,12 @@ BEGIN
     LIMIT p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 7. usp_HR_Payroll_GetEmployeeLines
 --    Retorna todas las lÃ­neas de concepto de un empleado en un lote.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(INTEGER, VARCHAR(24)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(BIGINT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetEmployeeLines(
@@ -788,14 +769,12 @@ BEGIN
         bl."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 8. usp_HR_Payroll_ApproveDraft
 --    Aprueba un borrador de nÃ³mina.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(BIGINT, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
@@ -855,7 +834,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -864,7 +842,6 @@ $$;
 --    Nota: el XML de lÃ­neas se construye como JSON en PostgreSQL
 --    para compatibilidad con usp_HR_Payroll_UpsertRun.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
@@ -1001,14 +978,12 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 10. usp_HR_Payroll_ListBatches
 --     Lista todos los lotes de nÃ³mina con paginaciÃ³n.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(20), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(15), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ListBatches(
@@ -1057,7 +1032,6 @@ BEGIN
     LIMIT p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1066,7 +1040,6 @@ $$;
 --     Nota: el parÃ¡metro XML de T-SQL se reemplaza por JSON array en PG.
 --     Formato JSON: '[{"code":"EMP001"},{"code":"EMP002"}]'
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(BIGINT, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
@@ -1138,14 +1111,12 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- WRAPPER: usp_HR_Payroll_GetDraftSummary
 -- La API llama "usp_HR_Payroll_GetDraftSummary" como funciÃ³n Ãºnica.
 -- Este wrapper devuelve la cabecera + totales en una sola fila.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(BIGINT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary(
@@ -1198,7 +1169,6 @@ BEGIN
     FROM public.usp_HR_Payroll_GetDraftSummary_Header(p_batch_id) h;
 END;
 $$;
--- +goose StatementEnd
 
 -- â•â•â• sp_nomina_batch.sql completado exitosamente â•â•â•
 
@@ -1215,7 +1185,6 @@ $$;
 -- Funcion: sp_Nomina_ReemplazarVariables
 -- Reemplaza variables en formula por sus valores
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_reemplazar_variables(VARCHAR(80), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_reemplazar_variables(
   p_session_id VARCHAR(80),
@@ -1239,14 +1208,12 @@ BEGIN
   RETURN v_result;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_EvaluarFormula
 -- Evalua una formula matematica con variables
 -- Retorna resultado y formula resuelta
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_evaluar_formula(VARCHAR(80), TEXT, NUMERIC(18,6), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_evaluar_formula(
   p_session_id VARCHAR(80),
@@ -1284,13 +1251,11 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularConcepto
 -- Calcula un concepto de nomina individual
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_concepto(VARCHAR(80), VARCHAR(32), VARCHAR(20), VARCHAR(20), NUMERIC(18,6), NUMERIC(18,6), NUMERIC(18,6), VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_concepto(
   p_session_id VARCHAR(80),
@@ -1338,13 +1303,11 @@ BEGIN
   p_total := p_monto * v_cantidad;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleado
 -- Procesa la nomina completa de un empleado
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_procesar_empleado(VARCHAR(20), VARCHAR(32), DATE, DATE, VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado(
   p_nomina VARCHAR(20),
@@ -1500,13 +1463,11 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarNomina
 -- Procesa la nomina para todos los empleados
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_procesar_nomina(VARCHAR(20), DATE, DATE, VARCHAR(50), BOOLEAN, INT, INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_nomina(
   p_nomina VARCHAR(20),
@@ -1558,7 +1519,6 @@ BEGIN
   p_mensaje := 'Proceso completado. Procesados=' || CAST(p_procesados AS VARCHAR(20)) || ' Errores=' || CAST(p_errores AS VARCHAR(20));
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_calculo_regimen.sql
@@ -1571,7 +1531,6 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantesRegimen
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_cargar_constantes_regimen(VARCHAR(80), VARCHAR(10), VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes_regimen(
   p_session_id VARCHAR(80),
@@ -1615,12 +1574,10 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularVacacionesRegimen
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_vacaciones_regimen(VARCHAR(80), VARCHAR(10), INT, INT, NUMERIC(18,6), NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_vacaciones_regimen(
   p_session_id VARCHAR(80),
@@ -1652,12 +1609,10 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'DIAS_BONO_POST_VAC', p_dias_bono_post_vacacional, 'Bono post vacacional');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularUtilidadesRegimen
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_utilidades_regimen(VARCHAR(80), VARCHAR(10), INT, NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_utilidades_regimen(
   p_session_id VARCHAR(80),
@@ -1694,12 +1649,10 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'MONTO_UTILIDADES', p_utilidades, 'Monto utilidades');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularPrestacionesRegimen
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_prestaciones_regimen(VARCHAR(80), VARCHAR(10), INT, INT, NUMERIC(18,6), NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_prestaciones_regimen(
   p_session_id VARCHAR(80),
@@ -1732,12 +1685,10 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'INTERESES_PRESTACIONES', p_intereses, 'Intereses prestaciones');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_PrepararVariablesRegimen
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_preparar_variables_regimen(VARCHAR(80), VARCHAR(32), VARCHAR(20), VARCHAR(15), VARCHAR(10), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_preparar_variables_regimen(
   p_session_id VARCHAR(80),
@@ -1759,12 +1710,10 @@ BEGIN
   PERFORM sp_nomina_cargar_constantes_regimen(p_session_id, v_reg, p_tipo_nomina);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleadoRegimen
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_procesar_empleado_regimen(VARCHAR(20), VARCHAR(32), DATE, DATE, VARCHAR(10), VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado_regimen(
   p_nomina VARCHAR(20),
@@ -1801,7 +1750,6 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_conceptolegal_adapter.sql
@@ -1838,7 +1786,6 @@ WHERE pc."ConventionCode" IS NOT NULL;
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantesDesdeConceptoLegal
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_cargar_constantes_desde_concepto_legal(VARCHAR(80), VARCHAR(50), VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes_desde_concepto_legal(
   p_session_id VARCHAR(80),
@@ -1854,12 +1801,10 @@ BEGIN
   PERFORM sp_nomina_cargar_constantes_regimen(p_session_id, v_regimen, v_tipo_nomina);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleadoConceptoLegal
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_procesar_empleado_concepto_legal(VARCHAR(20), VARCHAR(32), DATE, DATE, VARCHAR(50), VARCHAR(50), VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado_concepto_legal(
   p_nomina VARCHAR(20),
@@ -1884,12 +1829,10 @@ BEGIN
   ) r;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ConceptosLegales_List
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_conceptos_legales_list(VARCHAR(50), VARCHAR(50), VARCHAR(15), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_conceptos_legales_list(
   p_convencion VARCHAR(50) DEFAULT NULL,
@@ -1940,12 +1883,10 @@ BEGIN
   ORDER BY pc."ConventionCode", pc."CalculationType", pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ValidarFormulasConceptoLegal
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_validar_formulas_concepto_legal(VARCHAR(50), VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_validar_formulas_concepto_legal(
   p_convencion VARCHAR(50) DEFAULT NULL,
@@ -2017,7 +1958,6 @@ BEGIN
   ORDER BY t."EsValida" ASC, t."CO_CONCEPT";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_conceptolegal_crud.sql
@@ -2033,7 +1973,6 @@ $$;
 --    Lista conceptos legales con filtros opcionales.
 -- =============================================================================
 -- Nuclear drop: query pg_proc to find ALL overloads and drop them
--- +goose StatementBegin
 DO $$
 DECLARE _oid OID;
 BEGIN
@@ -2045,8 +1984,6 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $$;
--- +goose StatementEnd
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id       INT,
     p_convention_code  VARCHAR  DEFAULT NULL,
@@ -2096,13 +2033,11 @@ BEGIN
     ORDER BY c."ConventionCode", c."CalculationType", c."SortOrder", c."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_LegalConcept_ValidateFormulas
 --    Retorna conceptos activos con su formula y default para validaciÃ³n.
 -- =============================================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_validateformulas(INT, VARCHAR(30), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_validateformulas(
     p_company_id       INT,
@@ -2132,13 +2067,11 @@ BEGIN
     ORDER BY c."SortOrder", c."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_LegalConcept_ListConventions
 --    Resumen de convenciones disponibles con conteo por tipo de cÃ¡lculo.
 -- =============================================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_listconventions(INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_listconventions(
     p_company_id INT
@@ -2171,11 +2104,8 @@ BEGIN
     ORDER BY c."ConventionCode";
 END;
 $$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones creadas'; END $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_constantes_convenios.sql
@@ -2186,7 +2116,6 @@ DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones cr
 -- Traducido de SQL Server a PostgreSQL
 -- =============================================
 
--- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT;
@@ -2302,7 +2231,6 @@ BEGIN
   RAISE NOTICE 'Conceptos por convenio sembrados/actualizados en hr.PayrollConcept';
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_constantes_venezuela.sql
@@ -2313,7 +2241,6 @@ $$;
 -- Inserta o actualiza constantes en hr.PayrollConstant.
 -- ============================================================
 
--- +goose StatementBegin
 DO $$
 DECLARE
     v_company_id INT;
@@ -2400,7 +2327,6 @@ BEGIN
     RAISE NOTICE 'Constantes de nómina Venezuela sembradas/actualizadas en hr.PayrollConstant';
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_consultas.sql
@@ -2414,7 +2340,6 @@ $$;
 -- =============================================
 -- sp_Nomina_Conceptos_List
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Conceptos_List(VARCHAR, VARCHAR, VARCHAR, INT, INT);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Conceptos_List(
@@ -2500,13 +2425,11 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Concepto_Save
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Concepto_Save(VARCHAR, VARCHAR, VARCHAR, TEXT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, DOUBLE PRECISION);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Concepto_Save(
@@ -2602,13 +2525,11 @@ BEGIN
     RETURN QUERY SELECT v_resultado, v_mensaje;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_List
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_List(VARCHAR, VARCHAR, DATE, DATE, BOOLEAN, INT, INT);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_List(
@@ -2684,7 +2605,6 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2692,7 +2612,6 @@ $$;
 -- En PostgreSQL se usa SETOF RECORD o dos funciones separadas.
 -- AquÃ­ usamos la cabecera; el detalle se obtiene con sp_Nomina_Get_Lines.
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Get(VARCHAR, VARCHAR);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Get(
@@ -2744,13 +2663,11 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Get_Lines (detalle de lÃ­neas de la nÃ³mina)
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Get_Lines(VARCHAR, VARCHAR);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Get_Lines(
@@ -2798,13 +2715,11 @@ BEGIN
     ORDER BY rl."PayrollRunLineId";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Cerrar
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Cerrar(VARCHAR, VARCHAR, VARCHAR);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Cerrar(
@@ -2849,13 +2764,11 @@ BEGIN
     RETURN QUERY SELECT 1, ('Registros cerrados: ' || v_rows::VARCHAR)::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Vacaciones_List
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Vacaciones_List(VARCHAR, INT, INT);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Vacaciones_List(
@@ -2915,13 +2828,11 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Vacaciones_Get (cabecera)
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Vacaciones_Get(VARCHAR);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Vacaciones_Get(
@@ -2963,13 +2874,11 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Vacaciones_Get_Lines (detalle de lÃ­neas de vacaciones)
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Vacaciones_Get_Lines(VARCHAR);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Vacaciones_Get_Lines(
@@ -3002,13 +2911,11 @@ BEGIN
     ORDER BY vl."VacationProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Liquidaciones_List
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Liquidaciones_List(VARCHAR, INT, INT);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Liquidaciones_List(
@@ -3064,13 +2971,11 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Constantes_List
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Constantes_List(INT, INT);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Constantes_List(
@@ -3115,13 +3020,11 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- sp_Nomina_Constante_Save
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.sp_Nomina_Constante_Save(VARCHAR, VARCHAR, DOUBLE PRECISION, VARCHAR);
 
 CREATE OR REPLACE FUNCTION public.sp_Nomina_Constante_Save(
@@ -3183,7 +3086,6 @@ BEGIN
     RETURN QUERY SELECT v_resultado, v_mensaje;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_documentos.sql
@@ -3219,7 +3121,6 @@ CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
 );
 
 -- Agregar columna IsSystem si la tabla ya existe sin ella (migraciÃ³n)
--- +goose StatementBegin
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -3234,7 +3135,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- 2. FUNCIONES (equivalentes a los SPs)
@@ -3243,7 +3143,6 @@ $$;
 -- Nuclear drop: eliminar TODAS las sobrecargas por OID para evitar
 -- el error "function is not unique" que ocurre cuando conviven
 -- sobrecargas con firmas (CHAR vs VARCHAR) diferentes.
--- +goose StatementBegin
 DO $do$
 DECLARE _oid OID;
 BEGIN
@@ -3259,13 +3158,11 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $do$;
--- +goose StatementEnd
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_List
 -- Firma canÃ³nica: (INT, VARCHAR, VARCHAR) â€” sin CHAR, sin tamaÃ±o
 -- --------------------------------------------
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(
     p_company_id    INT,
     p_country_code  VARCHAR DEFAULT NULL,
@@ -3306,13 +3203,11 @@ BEGIN
     ORDER BY t."CountryCode", t."TemplateType", t."TemplateName";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_Get
 -- --------------------------------------------
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(
     p_company_id    INT,
     p_template_code VARCHAR
@@ -3353,13 +3248,11 @@ BEGIN
       AND t."TemplateCode" = p_template_code;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_Save
 -- --------------------------------------------
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     p_company_id    INT,
     p_template_code VARCHAR,
@@ -3416,13 +3309,11 @@ BEGIN
     p_mensaje   := 'Plantilla guardada correctamente.'::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_Delete
 -- --------------------------------------------
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_delete(
     p_company_id    INT,
     p_template_code VARCHAR,
@@ -3464,13 +3355,11 @@ BEGIN
     p_mensaje   := 'Plantilla eliminada correctamente.'::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- 3. SEED â€” Plantillas legales (IsSystem=TRUE)
 -- =============================================
--- +goose StatementBegin
 DO $$
 DECLARE
     v_seed_company_id INTEGER;
@@ -3967,7 +3856,6 @@ En **{{empresa.direccion}}**, a {{fecha.generacion}},
 
 END;
 $$;
--- +goose StatementEnd
 
 -- >> sp_nomina_documentos.sql â€” despliegue completo OK
 
@@ -3995,7 +3883,6 @@ CREATE TABLE IF NOT EXISTS hr."PayrollCalcVariable" (
 -- =============================================
 -- Funcion: fn_EvaluarExpr
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS fn_evaluar_expr(TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION fn_evaluar_expr(p_expr TEXT)
 RETURNS NUMERIC(18,6)
@@ -4006,12 +3893,10 @@ EXCEPTION WHEN OTHERS THEN
   RETURN NULL;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: fn_Nomina_GetVariable
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS fn_nomina_get_variable(VARCHAR(80), VARCHAR(120)) CASCADE;
 CREATE OR REPLACE FUNCTION fn_nomina_get_variable(
   p_session_id VARCHAR(80),
@@ -4030,12 +3915,10 @@ BEGIN
   RETURN COALESCE(v_valor, 0);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: fn_Nomina_ContarFeriados
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS fn_nomina_contar_feriados(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION fn_nomina_contar_feriados(
   p_fecha_desde DATE,
@@ -4049,12 +3932,10 @@ BEGIN
   RETURN 0;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: fn_Nomina_ContarDomingos
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS fn_nomina_contar_domingos(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION fn_nomina_contar_domingos(
   p_fecha_desde DATE,
@@ -4076,13 +3957,11 @@ BEGIN
   RETURN v_domingos;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_GetScope
 -- Retorna CompanyId y BranchId
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_get_scope(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_scope(
   OUT p_company_id INT,
@@ -4113,12 +3992,10 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_LimpiarVariables
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_limpiar_variables(VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_limpiar_variables(
   p_session_id VARCHAR(80)
@@ -4129,12 +4006,10 @@ BEGIN
   DELETE FROM hr."PayrollCalcVariable" WHERE "SessionID" = p_session_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_SetVariable
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_set_variable(VARCHAR(80), VARCHAR(120), NUMERIC(18,6), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_set_variable(
   p_session_id VARCHAR(80),
@@ -4153,12 +4028,10 @@ BEGIN
     "UpdatedAt" = NOW() AT TIME ZONE 'UTC';
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantes
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_cargar_constantes(VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes(
   p_session_id VARCHAR(80)
@@ -4188,12 +4061,10 @@ BEGIN
     );
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularAntiguedad
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_antiguedad(VARCHAR(80), VARCHAR(32), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad(
   p_session_id VARCHAR(80),
@@ -4237,12 +4108,10 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'ANTI_TOTAL_MESES', v_total_meses, 'Total meses de antiguedad');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_PrepararVariablesBase
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_preparar_variables_base(VARCHAR(80), VARCHAR(32), VARCHAR(20), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_preparar_variables_base(
   p_session_id VARCHAR(80),
@@ -4299,7 +4168,6 @@ BEGIN
   PERFORM sp_nomina_calcular_antiguedad(p_session_id, p_cedula, p_fecha_hasta);
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_vacaciones_liquidacion.sql
@@ -4312,7 +4180,6 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularSalariosPromedio
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_salarios_promedio(VARCHAR(80), VARCHAR(32), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_salarios_promedio(
   p_session_id VARCHAR(80),
@@ -4345,12 +4212,10 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'DIAS_CALCULO', v_dias, 'Dias del calculo');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularDiasVacaciones
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_dias_vacaciones(VARCHAR(80), VARCHAR(32), DATE, NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_dias_vacaciones(
   p_session_id VARCHAR(80),
@@ -4400,12 +4265,10 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'DIAS_BONO_VAC', p_dias_bono_vacacional, 'Dias bono vacacional calculados');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarVacaciones
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_procesar_vacaciones(VARCHAR(50), VARCHAR(32), DATE, DATE, DATE, VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_vacaciones(
   p_vacacion_id VARCHAR(50),
@@ -4535,12 +4398,10 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularLiquidacion
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_liquidacion(VARCHAR(50), VARCHAR(32), DATE, VARCHAR(50), VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_liquidacion(
   p_liquidacion_id VARCHAR(50),
@@ -4663,13 +4524,11 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_GetLiquidacion
 -- Retorna header, lineas y totales
 -- =============================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_header(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_header(
   p_liquidacion_id VARCHAR(50)
@@ -4704,9 +4563,7 @@ BEGIN
   LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_lines(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_lines(
   p_liquidacion_id VARCHAR(50)
@@ -4733,9 +4590,7 @@ BEGIN
   ORDER BY sl."SettlementProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_totals(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_totals(
   p_liquidacion_id VARCHAR(50)
@@ -4757,7 +4612,6 @@ BEGIN
   WHERE sp."SettlementCode" = p_liquidacion_id;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_venezuela_install.sql
@@ -4783,7 +4637,6 @@ CREATE TABLE IF NOT EXISTS hr."PayrollCalcVariable" (
 -- Wrappers de compatibilidad por si aun no se ejecuto sp_nomina_sistema.sql
 -- En PG usamos CREATE OR REPLACE que es idempotente
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_limpiar_variables_compat(VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_limpiar_variables_compat(
   p_session_id VARCHAR(80)
@@ -4794,9 +4647,7 @@ BEGIN
   DELETE FROM hr."PayrollCalcVariable" WHERE "SessionID" = p_session_id;
 END;
 $$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_set_variable_compat(VARCHAR(80), VARCHAR(120), NUMERIC(18,6), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_set_variable_compat(
   p_session_id VARCHAR(80),
@@ -4815,9 +4666,7 @@ BEGIN
     "UpdatedAt" = NOW() AT TIME ZONE 'UTC';
 END;
 $$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS sp_nomina_calcular_antiguedad_compat(VARCHAR(80), VARCHAR(32), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad_compat(
   p_session_id VARCHAR(80),
@@ -4835,10 +4684,8 @@ BEGIN
   PERFORM sp_nomina_set_variable_compat(p_session_id, 'ANTI_TOTAL_MESES', 0, 'Total meses');
 END;
 $$;
--- +goose StatementEnd
 
 -- Semilla de constantes base para Venezuela (idempotente)
--- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT;
@@ -4874,7 +4721,6 @@ BEGIN
   RAISE NOTICE 'Instalacion canonica de nomina completada.';
 END;
 $$;
--- +goose StatementEnd
 
 -- Verificacion de conteos
 SELECT 'PayrollType' AS "Objeto", COUNT(1) AS "Total" FROM hr."PayrollType"
@@ -4893,7 +4739,6 @@ UNION ALL SELECT 'PayrollCalcVariable', COUNT(1) FROM hr."PayrollCalcVariable";
 -- Fecha: 2026-03-16
 -- ============================================================================
 
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED NOMINA COMPLETO — Inicio ===';
@@ -5616,7 +5461,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_nomina_completo.sql: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 
 -- Source: seed_nomina_completo_p2.sql
@@ -5630,7 +5474,6 @@ END $$;
 -- Fecha: 2026-03-16
 -- ============================================================================
 
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED NOMINA COMPLETO P2 — Inicio ===';
@@ -6378,7 +6221,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_nomina_completo_p2.sql: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 
 
@@ -6409,7 +6251,6 @@ END $$;
 --  Aplica un cobro transaccional a documentos CxC de un cliente.
 --  Recibe la lista de documentos como JSON.
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_applypayment(
     p_cod_cliente      VARCHAR(24),
@@ -6519,13 +6360,11 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -99, ('Error aplicando cobro canonico: ' || SQLERRM)::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_list
 --  Lista paginada de documentos CxC.
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_list(VARCHAR(24), VARCHAR(20), VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_list(
     p_cod_cliente   VARCHAR(24)    DEFAULT NULL,
@@ -6582,12 +6421,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_getpending
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_getpending(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_getpending(
     p_cod_cliente VARCHAR(24)
@@ -6616,12 +6453,10 @@ BEGIN
     ORDER BY d."IssueDate" ASC, d."ReceivableDocumentId" ASC;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_balance_getbycustomer
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_balance_getbycustomer(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_balance_getbycustomer(
     p_cod_cliente VARCHAR(24)
@@ -6647,7 +6482,6 @@ BEGIN
       AND c."IsDeleted" = FALSE;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -6657,7 +6491,6 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_applypayment
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_applypayment(
     p_cod_proveedor    VARCHAR(24),
@@ -6762,12 +6595,10 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -99, ('Error aplicando pago canonico: ' || SQLERRM)::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_list
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_list(VARCHAR(24), VARCHAR(20), VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_list(
     p_cod_proveedor  VARCHAR(24)    DEFAULT NULL,
@@ -6824,12 +6655,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_getpending
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_getpending(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_getpending(
     p_cod_proveedor VARCHAR(24)
@@ -6858,12 +6687,10 @@ BEGIN
     ORDER BY d."IssueDate" ASC, d."PayableDocumentId" ASC;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_balance_getbysupplier
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_balance_getbysupplier(VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_balance_getbysupplier(
     p_cod_proveedor VARCHAR(24)
@@ -6889,7 +6716,6 @@ BEGIN
       AND s."IsDeleted" = FALSE;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -6899,7 +6725,6 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_listfull
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_listfull(VARCHAR(200), VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_listfull(
     p_search   VARCHAR(200)  DEFAULT NULL,
@@ -6972,12 +6797,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_getbyid
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_getbyid(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_getbyid(
     p_id BIGINT
@@ -7001,12 +6824,10 @@ BEGIN
     WHERE d."PayableDocumentId" = p_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_create
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_create(VARCHAR(24), VARCHAR(20), VARCHAR(120), DATE, DATE, VARCHAR(10), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_create(
     p_codigo         VARCHAR(24),
@@ -7063,12 +6884,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_update
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_update(BIGINT, VARCHAR(20), VARCHAR(120), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), VARCHAR(20), VARCHAR(10), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_update(
     p_id              BIGINT,
@@ -7101,12 +6920,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_void
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ap_payable_void(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_void(
     p_id BIGINT
@@ -7124,7 +6941,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -7134,7 +6950,6 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_listfull
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_listfull(VARCHAR(200), VARCHAR(24), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_listfull(
     p_search        VARCHAR(200)  DEFAULT NULL,
@@ -7192,12 +7007,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_getbyid
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_getbyid(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_getbyid(p_id BIGINT)
 RETURNS TABLE(
@@ -7219,12 +7032,10 @@ BEGIN
     WHERE d."ReceivableDocumentId" = p_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_create
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_create(VARCHAR(24), VARCHAR(20), VARCHAR(120), DATE, DATE, VARCHAR(10), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_create(
     p_codigo          VARCHAR(24),
@@ -7281,12 +7092,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_update
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_update(BIGINT, VARCHAR(20), VARCHAR(120), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), VARCHAR(20), VARCHAR(10), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_update(
     p_id              BIGINT,
@@ -7319,12 +7128,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_void
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_ar_receivable_void(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_void(p_id BIGINT)
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
@@ -7340,7 +7147,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -7350,7 +7156,6 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_resolvescope
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_resolvescope() CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_resolvescope()
 RETURNS TABLE("companyId" INT, "branchId" INT, "systemUserId" INT)
@@ -7372,12 +7177,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_resolveuser
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_resolveuser(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_resolveuser(
     p_user_code VARCHAR(60) DEFAULT NULL
@@ -7403,12 +7206,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getconstant
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getconstant(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getconstant(
     p_company_id INT,
@@ -7427,12 +7228,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_ensuretype
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_ensuretype(INT, VARCHAR(15), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_ensuretype(
     p_company_id   INT,
@@ -7451,12 +7250,10 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_ensureemployee
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_ensureemployee(INT, VARCHAR(24), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_ensureemployee(
     p_company_id INT,
@@ -7497,12 +7294,10 @@ BEGIN
     RETURNING "EmployeeId", "EmployeeCode", "EmployeeName", "HireDate";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listconcepts
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_listconcepts(INT, VARCHAR(15), VARCHAR(15), VARCHAR(200), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listconcepts(
     p_company_id   INT,
@@ -7554,12 +7349,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_saveconcept
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_saveconcept(INT, VARCHAR(15), VARCHAR(20), VARCHAR(120), VARCHAR(500), VARCHAR(200), VARCHAR(30), VARCHAR(15), VARCHAR(30), BOOLEAN, BOOLEAN, VARCHAR(50), BOOLEAN, NUMERIC(18,4), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconcept(
     p_company_id              INT,
@@ -7629,12 +7422,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'Concepto guardado'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_loadconceptsforrun
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_loadconceptsforrun(INT, VARCHAR(15), VARCHAR(15), VARCHAR(30), VARCHAR(30), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_loadconceptsforrun(
     p_company_id       INT,
@@ -7677,12 +7468,10 @@ BEGIN
     ORDER BY pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertrun
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_upsertrun(INT, INT, VARCHAR(15), BIGINT, VARCHAR(24), VARCHAR(200), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(50), INT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertrun(
     p_company_id         INT,
@@ -7771,12 +7560,10 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -99, ('Error en upsert run: ' || SQLERRM)::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listactiveemployees
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_listactiveemployees(INT, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listactiveemployees(
     p_company_id   INT,
@@ -7794,12 +7581,10 @@ BEGIN
     ORDER BY e."EmployeeCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listruns
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_listruns(INT, VARCHAR(15), VARCHAR(24), DATE, DATE, BOOLEAN, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listruns(
     p_company_id    INT,
@@ -7849,12 +7634,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_closerun
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_closerun(INT, VARCHAR(15), VARCHAR(24), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_closerun(
     p_company_id    INT,
@@ -7887,12 +7670,10 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertvacation
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_upsertvacation(INT, INT, VARCHAR(60), BIGINT, VARCHAR(24), VARCHAR(200), DATE, DATE, DATE, NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertvacation(
     p_company_id        INT,
@@ -7955,12 +7736,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listvacations
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_listvacations(INT, VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listvacations(
     p_company_id    INT,
@@ -7996,12 +7775,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertsettlement
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_upsertsettlement(INT, INT, VARCHAR(60), BIGINT, VARCHAR(24), VARCHAR(200), DATE, VARCHAR(120), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertsettlement(
     p_company_id       INT,
@@ -8064,12 +7841,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listsettlements
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_listsettlements(INT, VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listsettlements(
     p_company_id    INT,
@@ -8103,12 +7878,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listconstants
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_listconstants(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_listconstants(
     p_company_id INT,
@@ -8139,12 +7912,10 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_saveconstant
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_saveconstant(INT, VARCHAR(60), VARCHAR(200), NUMERIC(18,4), VARCHAR(120), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconstant(
     p_company_id  INT,
@@ -8191,7 +7962,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -8201,7 +7971,6 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_list
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_legalconcept_list(INT, VARCHAR(30), VARCHAR(30), VARCHAR(15), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_legalconcept_list(
     p_company_id       INT,
@@ -8237,12 +8006,10 @@ BEGIN
     ORDER BY pc."ConventionCode", pc."CalculationType", pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_validateformulas
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_legalconcept_validateformulas(INT, VARCHAR(30), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_legalconcept_validateformulas(
     p_company_id       INT,
@@ -8264,12 +8031,10 @@ BEGIN
     ORDER BY pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_listconventions
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_legalconcept_listconventions(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_legalconcept_listconventions(
     p_company_id INT
@@ -8298,7 +8063,6 @@ BEGIN
     ORDER BY pc."ConventionCode";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -8308,7 +8072,6 @@ $$;
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getrunheader
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getrunheader(INT, VARCHAR(15), VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getrunheader(
     p_company_id    INT,
@@ -8339,12 +8102,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getrunlines
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getrunlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getrunlines(p_run_id BIGINT)
 RETURNS TABLE(
@@ -8364,12 +8125,10 @@ BEGIN
     ORDER BY rl."PayrollRunLineId";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getvacationheader
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationheader(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getvacationheader(
     p_company_id   INT,
@@ -8394,12 +8153,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getvacationlines
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getvacationlines(p_vacation_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
@@ -8412,12 +8169,10 @@ BEGIN
     ORDER BY vl."VacationProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getsettlementheader
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementheader(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementheader(
     p_company_id      INT,
@@ -8433,12 +8188,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getsettlementlines
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementlines(p_settlement_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
@@ -8451,12 +8204,10 @@ BEGIN
     ORDER BY sl."SettlementProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_HR_Payroll_DeleteConcept — soft-delete (IsActive = FALSE)
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_hr_payroll_deleteconcept(
     p_company_id   INT,
     p_concept_code VARCHAR(20)
@@ -8479,12 +8230,10 @@ BEGIN
     RETURN QUERY SELECT 1, 'Concepto desactivado'::VARCHAR(500);
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_HR_Payroll_DeleteConstant — soft-delete (IsActive = FALSE)
 -- -----------------------------------------------------------------------------
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_hr_payroll_deleteconstant(
     p_company_id    INT,
     p_constant_code VARCHAR(50)
@@ -8507,7 +8256,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'Constante desactivada'::VARCHAR(500);
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_vacation_request.sql
@@ -8522,7 +8270,6 @@ $$;
 -- =============================================================
 -- 1) usp_hr_vacation_request_create
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_create(INT, INT, VARCHAR, DATE, DATE, INT, BOOLEAN, VARCHAR, JSONB) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_create(
@@ -8580,13 +8327,11 @@ BEGIN
     RETURN QUERY SELECT v_request_id;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 2) usp_hr_vacation_request_list
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_list(
@@ -8652,13 +8397,11 @@ BEGIN
     OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 3) usp_hr_vacation_request_get
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_get(BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_get(
@@ -8714,13 +8457,11 @@ BEGIN
      WHERE vr."RequestId" = p_request_id;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 3b) usp_hr_vacation_request_get_days
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_get_days(BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_get_days(
@@ -8746,13 +8487,11 @@ BEGIN
      ORDER BY d."SelectedDate";
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 4) usp_hr_vacation_request_approve
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_approve(BIGINT, VARCHAR);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_approve(
@@ -8785,13 +8524,11 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'APROBADA'::VARCHAR;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 5) usp_hr_vacation_request_reject
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_reject(BIGINT, VARCHAR, VARCHAR);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_reject(
@@ -8826,13 +8563,11 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'RECHAZADA'::VARCHAR;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 6) usp_hr_vacation_request_cancel
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_cancel(BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_cancel(
@@ -8862,13 +8597,11 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'CANCELADA'::VARCHAR;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 7) usp_hr_vacation_request_process
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_process(BIGINT, BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_process(
@@ -8901,13 +8634,11 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'PROCESADA'::VARCHAR, p_vacation_id;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
 -- 8) usp_hr_vacation_request_get_available_days
 -- =============================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_get_available_days(INT, VARCHAR);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_get_available_days(
@@ -8988,14 +8719,12 @@ BEGIN
         (v_dias_disponibles - COALESCE(v_dias_tomados, 0) - COALESCE(v_dias_pendientes, 0));
 END;
 $fn$;
--- +goose StatementEnd
 
 -- ================================================================
 -- ALIAS: usp_hr_vacationrequest_list
 -- Alias for usp_hr_vacation_request_list to match API calling convention
 -- (usp_HR_VacationRequest_List â†’ usp_hr_vacationrequest_list)
 -- ================================================================
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacationrequest_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_vacationrequest_list(
     p_company_id    INT,
@@ -9028,7 +8757,6 @@ BEGIN
     );
 END;
 $$;
--- +goose StatementEnd
 
 
 -- +goose Down
