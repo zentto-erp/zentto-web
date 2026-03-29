@@ -6,6 +6,7 @@
 -- ===========================================================================
 
 -- Helper: usp_HR_Payroll_ResolveScope
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ResolveScope() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ResolveScope()
 RETURNS TABLE(
@@ -32,8 +33,10 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
 
 -- Helper: usp_HR_Payroll_ResolveUser
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ResolveUser(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ResolveUser(
     p_user_code  VARCHAR DEFAULT NULL
@@ -58,6 +61,7 @@ BEGIN
     END IF;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- RRHH Tables
@@ -1520,6 +1524,7 @@ END $$;
 -- =============================================================================
 -- 1. usp_HR_ProfitSharing_Generate
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Generate(INTEGER, INTEGER, INTEGER, INTEGER, NUMERIC(18,2), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Generate(
     p_company_id            INTEGER,
@@ -1694,10 +1699,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_ProfitSharing_GetSummary
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_GetSummary(
     p_profit_sharing_id INTEGER
@@ -1758,10 +1765,12 @@ BEGIN
     ORDER BY l."EmployeeName";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_ProfitSharing_Approve
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Approve(INTEGER, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Approve(
     p_profit_sharing_id INTEGER,
@@ -1804,10 +1813,12 @@ BEGIN
     p_mensaje   := 'Utilidades aprobadas exitosamente.';
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_HR_ProfitSharing_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_List(
@@ -1854,10 +1865,12 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_HR_Trust_CalculateQuarter
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_CalculateQuarter(INTEGER, INTEGER, SMALLINT, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_CalculateQuarter(
     p_company_id    INTEGER,
@@ -2021,10 +2034,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_HR_Trust_GetEmployeeBalance
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetEmployeeBalance(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetEmployeeBalance(
     p_company_id    INTEGER,
@@ -2076,10 +2091,12 @@ BEGIN
     ORDER BY t."FiscalYear", t."Quarter";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_HR_Trust_GetSummary
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetSummary(
@@ -2132,10 +2149,12 @@ BEGIN
     ORDER BY t."EmployeeName";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_HR_Trust_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_List(INTEGER, INTEGER, SMALLINT, VARCHAR(24), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_List(
     p_company_id    INTEGER,
@@ -2195,10 +2214,12 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_HR_Savings_Enroll
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_Enroll(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), NUMERIC(8,4), NUMERIC(8,4), DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_Enroll(
     p_company_id                INTEGER,
@@ -2252,10 +2273,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_HR_Savings_ProcessMonthly
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessMonthly(INTEGER, DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessMonthly(
     p_company_id        INTEGER,
@@ -2347,10 +2370,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 11. usp_HR_Savings_GetBalance
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_GetBalance(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_GetBalance(
     p_company_id    INTEGER,
@@ -2405,10 +2430,12 @@ BEGIN
     ORDER BY tx."TransactionDate" DESC, tx."TransactionId" DESC;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 12. usp_HR_Savings_RequestLoan
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_RequestLoan(INTEGER, VARCHAR(24), NUMERIC(18,2), NUMERIC(8,5), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_RequestLoan(
     p_company_id        INTEGER,
@@ -2488,10 +2515,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 13. usp_HR_Savings_ApproveLoan
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_ApproveLoan(INTEGER, BOOLEAN, INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ApproveLoan(
     p_loan_id       INTEGER,
@@ -2583,10 +2612,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 14. usp_HR_Savings_ProcessLoanPayment
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessLoanPayment(INTEGER, NUMERIC(18,2), DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessLoanPayment(
     p_loan_id           INTEGER,
@@ -2685,10 +2716,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 15. usp_HR_Savings_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_List(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_List(
     p_company_id    INTEGER,
@@ -2738,10 +2771,12 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 16. usp_HR_Savings_LoanList
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_LoanList(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_LoanList(
     p_company_id    INTEGER,
@@ -2802,6 +2837,7 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- RRHH Functions: Obligaciones Legales
@@ -2936,6 +2972,7 @@ CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
 -- =============================================================================
 -- 1. usp_HR_Obligation_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_List(CHAR(2), VARCHAR(20), BOOLEAN, VARCHAR(100), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
     p_country_code      CHAR(2)         DEFAULT NULL,
@@ -3004,10 +3041,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_Obligation_Save
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_Save(INTEGER, CHAR(2), VARCHAR(30), VARCHAR(200), VARCHAR(200), VARCHAR(20), VARCHAR(30), NUMERIC(18,2), VARCHAR(20), NUMERIC(8,5), NUMERIC(8,5), BOOLEAN, VARCHAR(15), VARCHAR(200), DATE, DATE, BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_Save(
     p_legal_obligation_id   INTEGER         DEFAULT NULL,
@@ -3151,10 +3190,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_Obligation_GetByCountry
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_GetByCountry(CHAR(2), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_GetByCountry(
     p_country_code  CHAR(2),
@@ -3213,10 +3254,12 @@ BEGIN
     ORDER BY o."Code";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_HR_EmployeeObligation_Enroll
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Enroll(BIGINT, INTEGER, VARCHAR(50), VARCHAR(50), INTEGER, DATE, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Enroll(
     p_employee_id           BIGINT,
@@ -3285,10 +3328,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_HR_EmployeeObligation_Disenroll
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Disenroll(INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Disenroll(
     p_employee_obligation_id    INTEGER,
@@ -3344,10 +3389,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_HR_EmployeeObligation_GetByEmployee
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_GetByEmployee(BIGINT, VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_GetByEmployee(
     p_employee_id       BIGINT,
@@ -3414,10 +3461,12 @@ BEGIN
     ORDER BY lo."CountryCode", lo."Code";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_HR_Filing_Generate
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_Generate(INTEGER, INTEGER, DATE, DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_Generate(
     p_company_id            INTEGER,
@@ -3585,10 +3634,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_HR_Filing_GetSummary
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_GetSummary(
     p_filing_id INTEGER
@@ -3659,10 +3710,12 @@ BEGIN
     ORDER BY e."EmployeeName";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_HR_Filing_MarkFiled
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_MarkFiled(INTEGER, DATE, VARCHAR(100), INTEGER, VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_MarkFiled(
     p_obligation_filing_id  INTEGER,
@@ -3723,12 +3776,14 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_HR_Filing_List
 -- =============================================================================
 -- usp_HR_Filing_List: service sends (p_company_id, p_obligation_id, p_status, p_offset, p_limit)
 -- Function accepts those exact param names and inlines the query.
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, CHAR, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_List(
@@ -3794,6 +3849,7 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- Seed data - Obligaciones legales Venezuela (VE)
@@ -3927,6 +3983,7 @@ $$;
 -- =============================================================================
 -- 1. usp_HR_OccHealth_Create
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Create(INTEGER, CHAR(2), VARCHAR(25), BIGINT, VARCHAR(24), VARCHAR(200), TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, VARCHAR(100), VARCHAR(500), VARCHAR(500), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Create(
     p_company_id                INTEGER,
@@ -4002,10 +4059,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_OccHealth_Update
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Update(INTEGER, INTEGER, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, DATE, VARCHAR(100), VARCHAR(15), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Update(
     p_occupational_health_id        INTEGER,
@@ -4084,10 +4143,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_OccHealth_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_List(INTEGER, VARCHAR(25), VARCHAR(15), VARCHAR(24), CHAR(2), DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_List(
     p_company_id    INTEGER,
@@ -4177,10 +4238,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_HR_OccHealth_Get
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Get(INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Get(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Get(
@@ -4251,10 +4314,12 @@ BEGIN
       AND (p_company_id IS NULL OR o."CompanyId" = p_company_id);
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_HR_MedExam_Save
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_Save(
     p_medical_exam_id   INTEGER         DEFAULT NULL,
@@ -4348,10 +4413,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_HR_MedExam_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_List(INTEGER, VARCHAR(20), VARCHAR(20), VARCHAR(24), DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_List(
     p_company_id    INTEGER,
@@ -4419,10 +4486,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_HR_MedExam_GetPending
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_GetPending(INTEGER, DATE, INTEGER, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_GetPending(
     p_company_id    INTEGER,
@@ -4491,10 +4560,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_HR_MedOrder_Create
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Create(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, VARCHAR(500), VARCHAR(200), TEXT, NUMERIC(18,2), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Create(
     p_company_id    INTEGER,
@@ -4548,10 +4619,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_HR_MedOrder_Approve
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Approve(INTEGER, INTEGER, VARCHAR(15), NUMERIC(18,2), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Approve(
     p_medical_order_id  INTEGER,
@@ -4619,10 +4692,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_HR_MedOrder_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_List(INTEGER, VARCHAR(20), VARCHAR(15), VARCHAR(24), DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_List(
     p_company_id    INTEGER,
@@ -4696,10 +4771,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 11. usp_HR_Training_Save
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_Save(
     p_training_record_id    INTEGER         DEFAULT NULL,
@@ -4807,10 +4884,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 12. usp_HR_Training_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Training_List(INTEGER, VARCHAR(25), VARCHAR(24), CHAR(2), BOOLEAN, VARCHAR(15), DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_List(
     p_company_id    INTEGER,
@@ -4888,10 +4967,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 13. usp_HR_Training_GetEmployeeCertifications
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Training_GetEmployeeCertifications(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_GetEmployeeCertifications(
     p_company_id    INTEGER,
@@ -4950,10 +5031,12 @@ BEGIN
     ORDER BY t."StartDate" DESC;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 14. usp_HR_Committee_Save
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_Save(
     p_safety_committee_id   INTEGER         DEFAULT NULL,
@@ -5016,10 +5099,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 15. usp_HR_Committee_AddMember
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_AddMember(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(25), DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_AddMember(
     p_safety_committee_id   INTEGER,
@@ -5084,10 +5169,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 16. usp_HR_Committee_RemoveMember
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RemoveMember(INTEGER, INTEGER, INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RemoveMember(
     p_member_id             INTEGER,
@@ -5140,10 +5227,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 17. usp_HR_Committee_RecordMeeting
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RecordMeeting(INTEGER, INTEGER, TIMESTAMP, VARCHAR(500), TEXT, TEXT, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RecordMeeting(
     p_safety_committee_id   INTEGER,
@@ -5190,10 +5279,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 18. usp_HR_Committee_List
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_List(INTEGER, CHAR(2), BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_List(
     p_company_id    INTEGER,
@@ -5250,10 +5341,12 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 19. usp_HR_Committee_GetMeetings
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER, INTEGER, DATE, DATE, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_GetMeetings(
@@ -5310,6 +5403,7 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- =============================================================================
@@ -5319,6 +5413,7 @@ $$;
 -- =============================================================================
 
 -- Internal alias for usp_HR_OccHealth_Create (avoids overload ambiguity)
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
@@ -5391,10 +5486,12 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- Service wrapper: usp_HR_OccHealth_Create
 -- Service sends: p_company_id, p_branch_id, p_employee_code, p_record_type,
 --                p_incident_date (DATE), p_description, p_severity, p_user_id
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, CHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR, VARCHAR, INTEGER, VARCHAR, TEXT, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, VARCHAR, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, INTEGER, VARCHAR, VARCHAR, TIMESTAMP, TEXT, VARCHAR, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, TEXT, VARCHAR, INTEGER) CASCADE;
@@ -5441,11 +5538,13 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- Service wrapper: usp_HR_MedExam_Save
 -- Service sends: p_company_id, p_branch_id, p_exam_id, p_employee_code,
 --                p_exam_type, p_exam_date, p_result, p_notes, p_next_due_date, p_user_id
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, DATE, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
@@ -5499,11 +5598,13 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- Service wrapper: usp_HR_Training_Save
 -- Service sends: p_company_id, p_branch_id, p_training_id, p_name, p_description,
 --                p_start_date, p_end_date, p_instructor, p_hours, p_participants, p_user_id
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_training_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, VARCHAR, NUMERIC, VARCHAR, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
@@ -5556,11 +5657,13 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- Service wrapper: usp_HR_Committee_Save
 -- Service sends: p_company_id, p_branch_id, p_committee_id, p_name,
 --                p_committee_type, p_start_date, p_end_date, p_user_id
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_committee_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
@@ -5614,6 +5717,7 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- RRHH Seed Data
