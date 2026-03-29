@@ -449,6 +449,7 @@ CREATE INDEX IF NOT EXISTS "IX_Training_Regulatory"
 -- ----------------------------------------------------------------------------
 -- Seed: master."Employee" (si no hay empleados)
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: Empleados base (si no existen)';
@@ -497,10 +498,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed empleados: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFund" — Caja de Ahorro
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SavingsFund';
@@ -565,10 +568,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFund: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFundTransaction"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT; v_fund2 INT;
 BEGIN
@@ -633,10 +638,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFundTransaction: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsLoan"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT;
 BEGIN
@@ -663,10 +670,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsLoan: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SocialBenefitsTrust" — Fideicomiso Prestaciones Sociales
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SocialBenefitsTrust';
@@ -798,10 +807,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SocialBenefitsTrust: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."ProfitSharing" + hr."ProfitSharingLine" — Utilidades 2025
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_ps_id INT;
 BEGIN
@@ -912,10 +923,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed ProfitSharing: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."OccupationalHealth"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: OccupationalHealth';
@@ -1054,10 +1067,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed OccupationalHealth: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalExam"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalExam';
@@ -1162,10 +1177,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalExam: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalOrder"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalOrder';
@@ -1244,10 +1261,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalOrder: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."TrainingRecord"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: TrainingRecord';
@@ -1386,10 +1405,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed TrainingRecord: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SafetyCommittee" + hr."SafetyCommitteeMember" + hr."SafetyCommitteeMeeting"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_comm1 INT; v_comm2 INT;
 BEGIN
@@ -1488,6 +1509,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SafetyCommittee: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 
 -- RRHH Functions: Beneficios
@@ -3916,6 +3938,7 @@ SELECT
 WHERE NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "CountryCode" = 'VE' AND "Code" = 'VE_INCE');
 
 -- VE_SSO niveles de riesgo (clases I a IV)
+-- +goose StatementBegin
 DO $$
 DECLARE
     v_sso_id INTEGER;
@@ -3943,6 +3966,7 @@ BEGIN
     END IF;
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- RRHH Functions: Salud Ocupacional
@@ -5729,6 +5753,7 @@ $$;
 -- Fecha: 2026-03-15
 -- ============================================================================
 
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED RRHH COMPLETO — Inicio ===';
@@ -6257,6 +6282,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_rrhh_completo.sql: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 
 -- +goose Down
