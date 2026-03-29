@@ -441,6 +441,9 @@ END $cleanup$;
 \echo '[116] sp_MovUnidadesMes.sql'
 \i includes/sp/sp_MovUnidadesMes.sql
 
+\echo '[117] usp_zsys_studio.sql'
+\i includes/sp/usp_zsys_studio.sql
+
 \echo ''
 \echo '============================================================'
 \echo '  Todas las funciones recreadas'

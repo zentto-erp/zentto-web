@@ -84,6 +84,7 @@ import byocRouter from "./modules/byoc/byoc.routes.js";
 import licenseRouter from "./modules/license/license.routes.js";
 import backofficeRouter from "./modules/backoffice/backoffice.routes.js";
 import backofficeAuthRouter from "./modules/backoffice/backoffice-auth.routes.js";
+import { studioRouter } from "./modules/studio/routes.js";
 import { startResourceCleanupJob } from "./jobs/resource-cleanup.job.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
@@ -463,6 +464,7 @@ export async function createApp() {
   app.use("/v1/integrations/zoho", zohoRouter);
   app.use("/v1/support", supportRouter);
   app.use("/v1/analytics", analyticsRouter);
+  app.use("/v1/studio", studioRouter);
 
   // BYOC — Bring Your Own Cloud
   app.use("/v1/byoc", byocRouter);
@@ -533,6 +535,7 @@ export async function createApp() {
   app.use("/api/v1/crm", crmRouter);
   app.use("/api/v1/manufactura", manufacturaRouter);
   app.use("/api/v1/flota", flotaRouter);
+  app.use("/api/v1/studio", studioRouter);
 
   await loadAddons(app);
 
