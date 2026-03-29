@@ -31,7 +31,7 @@ services:
     image: ghcr.io/zentto-erp/zentto-web/frontend:dev
     container_name: zentto-frontend-dev
     ports:
-      - "3200-3215:3000-3015"
+      - "3200-3217:3000-3017"
     env_file:
       - /opt/zentto-dev/.env.frontend
     environment:
