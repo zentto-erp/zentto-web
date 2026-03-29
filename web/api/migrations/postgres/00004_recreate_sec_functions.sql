@@ -3,7 +3,6 @@
 -- Las funciones existentes pueden estar "rotas" si fueron compiladas
 -- antes de que las columnas existieran.
 
--- +goose StatementBegin
 -- Recrear usp_sec_user_listcompanyaccesses (versiÃƒÂ³n con parÃƒÂ¡metro)
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses(VARCHAR);
 CREATE OR REPLACE FUNCTION public.usp_sec_user_listcompanyaccesses(p_cod_usuario VARCHAR)
@@ -11,6 +10,7 @@ RETURNS TABLE(
   "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
   "branchId" INT, "branchCode" VARCHAR, "branchName" VARCHAR,
   "countryCode" VARCHAR, "timeZone" VARCHAR, "isDefault" BOOLEAN
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -51,7 +51,6 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Recrear usp_sec_user_listcompanyaccesses_default (versiÃƒÂ³n sin parÃƒÂ¡metro)
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses_default();
 CREATE OR REPLACE FUNCTION public.usp_sec_user_listcompanyaccesses_default()
@@ -59,6 +58,7 @@ RETURNS TABLE(
   "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
   "branchId" INT, "branchCode" VARCHAR, "branchName" VARCHAR,
   "countryCode" VARCHAR, "timeZone" VARCHAR, "isDefault" BOOLEAN
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY

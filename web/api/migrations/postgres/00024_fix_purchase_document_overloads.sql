@@ -1,8 +1,8 @@
 -- +goose Up
--- +goose StatementBegin
 -- Nuclear DROP de sobrecargas en funciones de documentos de compra
 -- Corrige "function is not unique" al existir firmas antiguas en produccion
 
+-- +goose StatementBegin
 DO $$
 DECLARE r RECORD;
 BEGIN
@@ -23,6 +23,7 @@ BEGIN
     EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE';
   END LOOP;
 END $$;
+-- +goose StatementEnd
 
 -- Re-crear funcion principal con firma canonica
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_List(
@@ -89,6 +90,7 @@ RETURNS TABLE (
     "UpdatedAt"            TIMESTAMP,
     "TotalCount"           BIGINT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total  BIGINT;

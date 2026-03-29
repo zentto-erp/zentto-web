@@ -18,6 +18,7 @@ RETURNS TABLE(
   "LastLoginAt"     TIMESTAMP,
   "DaysUntilDelete"  INT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -48,6 +49,7 @@ BEGIN
   WHERE (p_status IS NULL OR q."Status" = p_status)
   ORDER BY q."FlaggedAt" DESC;
 END; $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_sys_cleanup_list(VARCHAR);
