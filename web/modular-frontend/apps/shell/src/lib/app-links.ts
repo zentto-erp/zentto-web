@@ -20,6 +20,8 @@ const SHELL_LOCAL_PATHS = new Set([
   '/soporte',
   '/info',
   '/pricing',
+  '/studio-designer',
+  '/addons',
 ]);
 
 export function resolveAppHref(appId: string, path: string): string {

@@ -22,7 +22,7 @@ export type {
 export { calcTotals } from './usePosStore';
 /** @deprecated Use useModuleSettings + useHydrateLocalizacion instead */
 export * from './useConfigStore';
-export { loadFrontendAddons } from './addons';
+export { loadFrontendAddons, listAddons, getAddon, createAddon, updateAddon, deleteAddon } from './addons';
 
 // Localizacion utilities (centralized)
 export {
@@ -41,7 +41,7 @@ export type { CountryPreset, BcvRates, CountryRecord, StateRecord, LookupRecord 
 // Settings hydration
 export { useHydrateLocalizacion } from './useHydrateLocalizacion';
 export { useHydrateModuleSettings } from './useHydrateModuleSettings';
-export type { FrontendAddon } from './addons';
+export type { FrontendAddon, StudioAddon, SaveAddonInput } from './addons';
 export type { RequestLog } from './requestLogger';
 export type { GridLayoutSnapshot } from './types/grid-layout';
 
