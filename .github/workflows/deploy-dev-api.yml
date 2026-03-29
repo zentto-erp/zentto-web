@@ -244,6 +244,8 @@ jobs:
             # If goose is out of sync (partial state from failed deploys), drop and recreate
             if [ "$GOOSE_APPLIED" -gt "0" ] && [ "$GOOSE_APPLIED" -lt "$GOOSE_MAX" ]; then
               echo "==> DB in inconsistent state (goose: $GOOSE_APPLIED/$GOOSE_MAX) — recreating..."
+              # Terminate active connections before dropping
+              sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='zentto_dev' AND pid <> pg_backend_pid();" || true
               sudo -u postgres psql -c "DROP DATABASE IF EXISTS zentto_dev;"
               sudo -u postgres psql -c "CREATE DATABASE zentto_dev OWNER zentto_app;"
               sudo -u postgres psql -d zentto_dev -c "
