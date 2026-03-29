@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 -- Tabla de lockout de login persistente en BD (no en memoria)
 -- Reemplaza el lockout in-memory que se pierde al reiniciar el servicio
 
@@ -117,6 +118,7 @@ BEGIN
   RETURN QUERY SELECT 1;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS zsys."usp_Sec_AuthStore_Check"();
