@@ -14,7 +14,7 @@ BEGIN
     "UserCode", "PasswordHash", "UserName", "UserType",
     "Email", "IsAdmin", "IsActive"
   ) VALUES (
-    'admin', v_hash, 'Administrador', 'ADMIN',
+    'ADMIN', v_hash, 'Administrador', 'ADMIN',
     'admin@zentto.net', TRUE, TRUE
   ) ON CONFLICT ("UserCode") DO UPDATE
     SET "PasswordHash" = v_hash,
@@ -26,7 +26,7 @@ BEGIN
     "UserCode", "PasswordHash", "UserName", "UserType",
     "Email", "IsAdmin", "IsActive"
   ) VALUES (
-    'gerente', v_hash, 'Gerente Demo', 'USER',
+    'GERENTE', v_hash, 'Gerente Demo', 'USER',
     'gerente@zentto.net', FALSE, TRUE
   ) ON CONFLICT ("UserCode") DO UPDATE
     SET "PasswordHash" = v_hash, "IsActive" = TRUE;
@@ -36,7 +36,7 @@ BEGIN
     "UserCode", "PasswordHash", "UserName", "UserType",
     "Email", "IsAdmin", "IsActive"
   ) VALUES (
-    'cajero', v_hash, 'Cajero Demo', 'USER',
+    'CAJERO', v_hash, 'Cajero Demo', 'USER',
     'cajero@zentto.net', FALSE, TRUE
   ) ON CONFLICT ("UserCode") DO UPDATE
     SET "PasswordHash" = v_hash, "IsActive" = TRUE;
@@ -45,7 +45,7 @@ BEGIN
   INSERT INTO sec."UserRole" ("UserId", "RoleId")
   SELECT u."UserId", r."RoleId"
   FROM sec."User" u, sec."Role" r
-  WHERE u."UserCode" = 'admin' AND r."RoleCode" = 'ADMIN'
+  WHERE u."UserCode" = 'ADMIN' AND r."RoleCode" = 'ADMIN'
   ON CONFLICT ("UserId", "RoleId") DO NOTHING;
 
   -- Uniformar clave a todos los usuarios importados del live data
