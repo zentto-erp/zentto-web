@@ -26,6 +26,7 @@ const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/Pre
 const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
 const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
 const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
+const ExtensionIcon = dynamic(() => import('@mui/icons-material/Extension'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -95,8 +96,7 @@ export default function AppSelectorPage() {
 
   allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/report-studio', bgColor: '#FF6F00' });
 
-  // Siempre agregar App Store y Settings al final
-  allApps.push({ id: 'apps', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/aplicaciones', bgColor: '#E74C3C' });
+  allApps.push({ id: 'apps-custom', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <ExtensionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/addons', bgColor: '#546E7A' });
   if (isAdmin) {
     allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
   }

@@ -86,6 +86,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: '', title: 'Inicio / Aplicaciones', icon: <AppsIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'addons', title: 'Addons', icon: <ExtensionIcon /> });
         nav.push({ kind: 'header', title: 'RECURSOS' });
         nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'soporte', title: 'Soporte Técnico', icon: <HelpIcon /> });
@@ -95,6 +97,18 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // Helper
     const isApp = (appPath: string) => pathname.startsWith(appPath);
+
+    // ── App: Studio Designer / Addons ──────────────────────────────
+    if (isApp('/studio-designer') || isApp('/addons')) {
+        nav.push({ kind: 'header', title: 'STUDIO' });
+        nav.push({ kind: 'page', segment: 'studio-designer', title: 'Designer', icon: <ExtensionIcon /> });
+        nav.push({ kind: 'page', segment: 'studio-designer/wizard', title: 'Wizard', icon: <SmartToyIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'addons', title: 'Mis Aplicaciones', icon: <AppsIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
+        return nav;
+    }
 
     // ── App: Contabilidad (acordeones) ──────────────────────────────
     if (has(modulos, 'contabilidad') && isApp('/contabilidad')) {
