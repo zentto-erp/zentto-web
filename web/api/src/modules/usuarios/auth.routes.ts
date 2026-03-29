@@ -269,7 +269,8 @@ authRouter.get("/login-options", loginOptionsLimiter, async (req, res) => {
     return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
   }
 
-  const user = await getUsuarioTipo(parsed.data.usuario);
+  const normalizedUsuario = String(parsed.data.usuario).trim().toUpperCase();
+  const user = await getUsuarioTipo(normalizedUsuario);
   if (!user) return res.status(404).json({ error: "user_not_found" });
 
   const isAdmin =
@@ -292,7 +293,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   }
 
   const { usuario, clave, companyId, branchId, captchaToken } = parsed.data;
-  const normalizedUser = String(usuario ?? "").trim();
+  const normalizedUser = String(usuario ?? "").trim().toUpperCase();
 
   if (requireCaptchaOnLogin) {
     const captcha = await ensureCaptcha(req, captchaToken, "login");
@@ -318,7 +319,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     });
   }
 
-  const record = await authenticateUsuario(usuario, clave);
+  const record = await authenticateUsuario(normalizedUser, clave);
 
   if (!record) {
     await registerLoginFailure(normalizedUser, getClientIp(req));
