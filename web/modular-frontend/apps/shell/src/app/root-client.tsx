@@ -20,7 +20,7 @@ import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
 const ZENTTO_DOMAINS = new Set([
   'app.zentto.net', 'www.zentto.net', 'zentto.net',
-  'app.dev.zentto.net', 'dev.zentto.net',
+  'appdev.zentto.net',
   'localhost',
 ]);
 

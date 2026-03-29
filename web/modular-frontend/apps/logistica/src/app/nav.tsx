@@ -1,29 +1,50 @@
 import React from 'react';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
-import DescriptionIcon from '@mui/icons-material/Description';
-import PeopleIcon from '@mui/icons-material/People';
-import BadgeIcon from '@mui/icons-material/Badge';
-import PrintIcon from '@mui/icons-material/Print';
+import dynamic from 'next/dynamic';
+
+const DashboardIcon = dynamic(() => import('@mui/icons-material/Dashboard'), { ssr: false });
+const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShipping'), { ssr: false });
+const ReceiptLongIcon = dynamic(() => import('@mui/icons-material/ReceiptLong'), { ssr: false });
+const AssignmentReturnIcon = dynamic(() => import('@mui/icons-material/AssignmentReturn'), { ssr: false });
+const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
+const BadgeIcon = dynamic(() => import('@mui/icons-material/Badge'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
+
     if (has('logistica') || has('inventario')) {
-        nav.push({ kind: 'header', title: 'LOGISTICA' });
+        // Dashboard
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
-        nav.push({ kind: 'header', title: 'OPERACIONES' });
-        nav.push({ kind: 'page', segment: 'recepciones', title: 'Recepcion Mercancia', icon: <ReceiptLongIcon /> });
-        nav.push({ kind: 'page', segment: 'devoluciones', title: 'Devoluciones', icon: <AssignmentReturnIcon /> });
-        nav.push({ kind: 'page', segment: 'albaranes', title: 'Albaranes / Guias', icon: <DescriptionIcon /> });
-        nav.push({ kind: 'header', title: 'CONFIGURACION' });
-        nav.push({ kind: 'page', segment: 'transportistas', title: 'Transportistas', icon: <LocalShippingIcon /> });
-        nav.push({ kind: 'page', segment: 'conductores', title: 'Conductores', icon: <BadgeIcon /> });
+
+        // ── Operaciones (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'recepciones',
+            title: 'Operaciones',
+            icon: <LocalShippingIcon />,
+            children: [
+                { kind: 'page', segment: 'recepciones', title: 'Recepción Mercancía', icon: <ReceiptLongIcon /> },
+                { kind: 'page', segment: 'devoluciones', title: 'Devoluciones', icon: <AssignmentReturnIcon /> },
+                { kind: 'page', segment: 'albaranes', title: 'Albaranes / Guías', icon: <DescriptionIcon /> },
+            ],
+        });
+
+        // ── Configuración (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'transportistas',
+            title: 'Configuración',
+            icon: <SettingsIcon />,
+            children: [
+                { kind: 'page', segment: 'transportistas', title: 'Transportistas', icon: <LocalShippingIcon /> },
+                { kind: 'page', segment: 'conductores', title: 'Conductores', icon: <BadgeIcon /> },
+            ],
+        });
     }
 
-    nav.push({ kind: 'divider' });
+    // ── Reportes
     nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
 
     return nav;

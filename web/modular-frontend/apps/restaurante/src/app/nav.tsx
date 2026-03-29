@@ -17,68 +17,31 @@ export function buildRestauranteNav(isAdmin: boolean, modulos: string[]): Array<
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('restaurante') || has('pos')) {
-        nav.push({
-            kind: 'page',
-            segment: '',
-            title: 'Salón / Mesas',
-            icon: <TableRestaurantIcon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'cocina',
-            title: 'Cocina / Pedidos',
-            icon: <KitchenIcon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'fiscal',
-            title: 'Módulo fiscal',
-            icon: <ReceiptLongIcon />
-        });
+        // ── Salón (principal)
+        nav.push({ kind: 'page', segment: '', title: 'Salón / Mesas', icon: <TableRestaurantIcon /> });
+        nav.push({ kind: 'page', segment: 'cocina', title: 'Cocina / Pedidos', icon: <KitchenIcon /> });
+        nav.push({ kind: 'page', segment: 'fiscal', title: 'Módulo fiscal', icon: <ReceiptLongIcon /> });
     }
 
     if (isAdmin) {
-        nav.push({ kind: 'divider' });
-        nav.push({ kind: 'header', title: 'CONFIGURACIÓN' });
+        // ── Configuración (acordeón)
         nav.push({
             kind: 'page',
             segment: 'admin/ambientes',
-            title: 'Salones y mesas',
-            icon: <DashboardIcon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'admin/productos',
-            title: 'Platos y bebidas',
-            icon: <TableRestaurantIcon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'admin/recetas',
-            title: 'Recetas e insumos',
-            icon: <SettingsIcon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'admin/compras',
-            title: 'Compras',
-            icon: <ShoppingCartIcon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'admin/insumos',
-            title: 'Insumos',
-            icon: <Inventory2Icon />
-        });
-        nav.push({
-            kind: 'page',
-            segment: 'admin/configuracion',
             title: 'Configuración',
-            icon: <SettingsIcon />
+            icon: <SettingsIcon />,
+            children: [
+                { kind: 'page', segment: 'admin/ambientes', title: 'Salones y mesas', icon: <DashboardIcon /> },
+                { kind: 'page', segment: 'admin/productos', title: 'Platos y bebidas', icon: <TableRestaurantIcon /> },
+                { kind: 'page', segment: 'admin/recetas', title: 'Recetas e insumos', icon: <SettingsIcon /> },
+                { kind: 'page', segment: 'admin/compras', title: 'Compras', icon: <ShoppingCartIcon /> },
+                { kind: 'page', segment: 'admin/insumos', title: 'Insumos', icon: <Inventory2Icon /> },
+                { kind: 'page', segment: 'admin/configuracion', title: 'Configuración', icon: <SettingsIcon /> },
+            ],
         });
     }
 
-    nav.push({ kind: 'divider' });
+    // ── Reportes
     nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
 
     return nav;

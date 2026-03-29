@@ -1,27 +1,53 @@
 import React from 'react';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
-import PeopleIcon from '@mui/icons-material/People';
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import SettingsIcon from '@mui/icons-material/Settings';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import PrintIcon from '@mui/icons-material/Print';
+import dynamic from 'next/dynamic';
+
+const DashboardIcon = dynamic(() => import('@mui/icons-material/Dashboard'), { ssr: false });
+const ViewKanbanIcon = dynamic(() => import('@mui/icons-material/ViewKanban'), { ssr: false });
+const PeopleIcon = dynamic(() => import('@mui/icons-material/People'), { ssr: false });
+const EventNoteIcon = dynamic(() => import('@mui/icons-material/EventNote'), { ssr: false });
+const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
+const TimelineIcon = dynamic(() => import('@mui/icons-material/Timeline'), { ssr: false });
+const SmartToyIcon = dynamic(() => import('@mui/icons-material/SmartToy'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+const TrendingUpIcon = dynamic(() => import('@mui/icons-material/TrendingUp'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
+
     if (has('crm') || has('ventas')) {
-        nav.push({ kind: 'header', title: 'CRM' });
+        // Dashboard
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
-        nav.push({ kind: 'page', segment: 'pipeline', title: 'Pipeline', icon: <ViewKanbanIcon /> });
-        nav.push({ kind: 'page', segment: 'leads', title: 'Leads', icon: <PeopleIcon /> });
-        nav.push({ kind: 'page', segment: 'actividades', title: 'Actividades', icon: <EventNoteIcon /> });
-        nav.push({ kind: 'page', segment: 'timeline', title: 'Timeline', icon: <TimelineIcon /> });
-        nav.push({ kind: 'page', segment: 'automatizaciones', title: 'Automatizaciones', icon: <SmartToyIcon /> });
+
+        // ── CRM (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'pipeline',
+            title: 'CRM',
+            icon: <TrendingUpIcon />,
+            children: [
+                { kind: 'page', segment: 'pipeline', title: 'Pipeline', icon: <ViewKanbanIcon /> },
+                { kind: 'page', segment: 'leads', title: 'Leads', icon: <PeopleIcon /> },
+                { kind: 'page', segment: 'actividades', title: 'Actividades', icon: <EventNoteIcon /> },
+                { kind: 'page', segment: 'timeline', title: 'Timeline', icon: <TimelineIcon /> },
+            ],
+        });
+
+        // ── Automatización (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'automatizaciones',
+            title: 'Automatización',
+            icon: <SmartToyIcon />,
+            children: [
+                { kind: 'page', segment: 'automatizaciones', title: 'Automatizaciones', icon: <SmartToyIcon /> },
+                { kind: 'page', segment: 'configuracion', title: 'Configuración', icon: <SettingsIcon /> },
+            ],
+        });
+
+        // ── Reportes
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
-        nav.push({ kind: 'page', segment: 'configuracion', title: 'Configuracion', icon: <SettingsIcon /> });
     }
+
     return nav;
 }

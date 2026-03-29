@@ -10,23 +10,42 @@ const PlaylistAddCheckIcon = dynamic(() => import('@mui/icons-material/PlaylistA
 const LocalAtmIcon = dynamic(() => import('@mui/icons-material/LocalAtm'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 
-
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('bancos')) {
-        nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
+        // Dashboard
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
-        nav.push({ kind: 'page', segment: 'entidades', title: 'Bancos', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'cuentas', title: 'Cuentas bancarias', icon: <CreditCardIcon /> });
-        nav.push({ kind: 'page', segment: 'movimientos/generar', title: 'Generar movimiento', icon: <AddCardIcon /> });
-        nav.push({ kind: 'page', segment: 'conciliacion', title: 'Conciliaciones', icon: <CompareArrowsIcon /> });
-        nav.push({ kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva conciliación', icon: <PlaylistAddCheckIcon /> });
-        nav.push({ kind: 'page', segment: 'caja-chica', title: 'Caja chica', icon: <LocalAtmIcon /> });
+
+        // ── Bancos e Instituciones (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'entidades',
+            title: 'Bancos e Instituciones',
+            icon: <AccountBalanceIcon />,
+            children: [
+                { kind: 'page', segment: 'entidades', title: 'Bancos', icon: <AccountBalanceIcon /> },
+                { kind: 'page', segment: 'cuentas', title: 'Cuentas bancarias', icon: <CreditCardIcon /> },
+                { kind: 'page', segment: 'movimientos/generar', title: 'Generar movimiento', icon: <AddCardIcon /> },
+                { kind: 'page', segment: 'caja-chica', title: 'Caja chica', icon: <LocalAtmIcon /> },
+            ],
+        });
+
+        // ── Conciliaciones (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'conciliacion',
+            title: 'Conciliaciones',
+            icon: <CompareArrowsIcon />,
+            children: [
+                { kind: 'page', segment: 'conciliacion', title: 'Conciliaciones', icon: <CompareArrowsIcon /> },
+                { kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva conciliación', icon: <PlaylistAddCheckIcon /> },
+            ],
+        });
     }
 
-    nav.push({ kind: 'divider' });
+    // ── Reportes
     nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
 
     return nav;
